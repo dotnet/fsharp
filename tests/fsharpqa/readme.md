@@ -32,3 +32,17 @@ A convenience "fsharpqafiles.csproj" project is located in the fsharp.sln soluti
 
 (TODO, provide some guidance about how to define env.lst files)
 
+## Updating baselines in tests
+
+Some tests use "baseline" files.  There is sometimes a way to update these baselines en-masse in your local build,
+useful when some change affects many baselines.  For example, in the 'fsharpqa' tests the baselines
+are updated using scripts or utilities that allow the following environment variable to be set:
+
+```
+set TEST_UPDATE_BSL=1
+```
+
+Updating baselines en-masse should be done very carefully and subject to careful code review.   Where possible the
+compiler change causing the en-masse update should be isolated and minimized so it is obvious at review time that no other
+code generation chagnes will be caused.
+

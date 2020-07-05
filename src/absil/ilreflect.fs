@@ -17,16 +17,12 @@ open System.Collections.Generic
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILAsciiWriter 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Core.Printf
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
 
@@ -314,10 +310,8 @@ let convAssemblyRef (aref: ILAssemblyRef) =
        asmName.Version <- System.Version (int32 version.Major, int32 version.Minor, int32 version.Build, int32 version.Revision)
     Option.iter setVersion aref.Version
     //  asmName.ProcessorArchitecture <- System.Reflection.ProcessorArchitecture.MSIL
-#if !FX_RESHAPED_GLOBALIZATION
     //Option.iter (fun name -> asmName.CultureInfo <- System.Globalization.CultureInfo.CreateSpecificCulture name) aref.Locale
     asmName.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
-#endif
     asmName
 
 /// The global environment.
@@ -326,6 +320,26 @@ type cenv =
       tryFindSysILTypeRef: string -> ILTypeRef option
       generatePdb: bool
       resolveAssemblyRef: (ILAssemblyRef -> Choice<string, System.Reflection.Assembly> option) }
+
+    override x.ToString() = "<cenv>"
+
+let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
+    let assembly = 
+        match cenv.resolveAssemblyRef asmref with
+        | Some (Choice1Of2 path) ->
+            // asmRef is a path but the runtime is smarter with assembly names so make one
+            let asmName = AssemblyName.GetAssemblyName(path)
+            asmName.CodeBase <- path
+            FileSystem.AssemblyLoad asmName
+        | Some (Choice2Of2 assembly) ->
+            assembly
+        | None ->
+            let asmName = convAssemblyRef asmref
+            FileSystem.AssemblyLoad asmName
+    let typT = assembly.GetType qualifiedName
+    match typT with 
+    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+    | res -> res
 
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
 // This ought to be an adequate substitute for this whole function, but it needs 
@@ -338,27 +352,15 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
     let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
     match tref.Scope with
     | ILScopeRef.Assembly asmref ->
-        let assembly = 
-            match cenv.resolveAssemblyRef asmref with                     
-            | Some (Choice1Of2 path) ->
-                FileSystem.AssemblyLoadFrom path              
-            | Some (Choice2Of2 assembly) ->
-                assembly
-            | None ->
-                let asmName = convAssemblyRef asmref
-                FileSystem.AssemblyLoad asmName
-        let typT = assembly.GetType qualifiedName
-        match typT with 
-        | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
-        | res -> res
+        convResolveAssemblyRef cenv asmref qualifiedName
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
         let typT = Type.GetType qualifiedName 
         match typT with 
         | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
         | res -> res
-
-
+    | ILScopeRef.PrimaryAssembly ->
+        convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
 
 /// The (local) emitter env (state). Some of these fields are effectively global accumulators
 /// and could be placed as hash tables in the global environment.
@@ -663,9 +665,6 @@ let TypeBuilderInstantiationT =
     ty
 
 let typeIsNotQueryable (ty: Type) = 
-#if FX_RESHAPED_REFLECTION
-    let ty = ty.GetTypeInfo()
-#endif
     (ty :? TypeBuilder) || ((ty.GetType()).Equals(TypeBuilderInstantiationT))
 //----------------------------------------------------------------------------
 // convFieldSpec
@@ -794,11 +793,7 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) =
               parentT.GetMethod(mref.Name, cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic, 
                                 null, 
                                 argTs, 
-#if FX_RESHAPED_REFLECTION
-                                (null: obj[]))
-#else
                                 (null: ParameterModifier[]))
-#endif
             // This can fail if there is an ambiguity w.r.t. return type 
             with _ -> null
         if (isNonNull methInfo && equalTypes resT methInfo.ReturnType) then 
@@ -1434,11 +1429,7 @@ let buildGenParamsPass1 _emEnv defineGenericParameters (gps: ILGenericParameterD
 
 
 let buildGenParamsPass1b cenv emEnv (genArgs: Type array) (gps: ILGenericParameterDefs) = 
-#if FX_RESHAPED_REFLECTION
-    let genpBs = genArgs |> Array.map (fun x -> (x.GetTypeInfo() :?> GenericTypeParameterBuilder)) 
-#else
     let genpBs = genArgs |> Array.map (fun x -> (x :?> GenericTypeParameterBuilder)) 
-#endif
     gps |> List.iteri (fun i (gp: ILGenericParameterDef) ->
         let gpB = genpBs.[i]
         // the Constraints are either the parent (base) type or interfaces.
@@ -1490,14 +1481,13 @@ let emitParameter cenv emEnv (defineParameter: int * ParameterAttributes * strin
 // buildMethodPass2
 //----------------------------------------------------------------------------
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
 
 let enablePInvoke = true
 
 #else
 
-// We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-// but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+// Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
 let definePInvokeMethod =
     typeof<TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
         typeof<string>
@@ -1550,13 +1540,12 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
 (* p.CharBestFit *)
 (* p.NoMangle *)
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
-        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCORE_APP3_0.
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
+        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCOREAPP3.
         // It has always been available in the desktop framework
         let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs)
 #else
-        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+        // Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
         let methB =
             System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod")   // Absolutely can't happen
             definePInvokeMethod.Invoke(typB,  [| mdef.Name; p.Where.Name; p.Name; attrs; cconv; rty; null; null; argtys; null; null; pcc; pcs |]) :?> MethodBuilder
@@ -1739,7 +1728,7 @@ let buildMethodImplsPass3 cenv _tref (typB: TypeBuilder) emEnv (mimpl: IL.ILMeth
 // typeAttributesOf*
 //----------------------------------------------------------------------------
 
-let typeAttrbutesOfTypeDefKind x = 
+let typeAttributesOfTypeDefKind x = 
     match x with 
     // required for a TypeBuilder
     | ILTypeDefKind.Class -> TypeAttributes.Class
@@ -1748,14 +1737,14 @@ let typeAttrbutesOfTypeDefKind x =
     | ILTypeDefKind.Enum -> TypeAttributes.Class
     | ILTypeDefKind.Delegate -> TypeAttributes.Class
 
-let typeAttrbutesOfTypeAccess x =
+let typeAttributesOfTypeAccess x =
     match x with 
     | ILTypeDefAccess.Public -> TypeAttributes.Public
     | ILTypeDefAccess.Private -> TypeAttributes.NotPublic
     | ILTypeDefAccess.Nested macc -> 
         match macc with
         | ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
-        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controled."
+        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controlled."
         | ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
         | ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
         | ILMemberAccess.Family -> TypeAttributes.NestedFamily
@@ -1944,7 +1933,7 @@ let rec getTypeRefsInType (allTypes: CollectTypes) ty acc =
         | CollectTypes.ValueTypesOnly -> acc 
         | CollectTypes.All -> getTypeRefsInType allTypes eltType acc
     | ILType.Value tspec -> 
-        // We usee CollectTypes.All because the .NET type loader appears to always eagerly require all types
+        // We use CollectTypes.All because the .NET type loader appears to always eagerly require all types
         // referred to in an instantiation of a generic value type
         tspec.TypeRef :: List.foldBack (getTypeRefsInType CollectTypes.All) tspec.GenericArgs acc
     | ILType.Boxed tspec -> 
@@ -2086,11 +2075,9 @@ let buildModuleFragment cenv emEnv (asmB: AssemblyBuilder) (modB: ModuleBuilder)
     m.Resources.AsList |> List.iter (fun r -> 
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
-        | ILResourceLocation.LocalIn (file, start, len) -> 
-            let bytes = FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
-            modB.DefineManifestResourceAndLog (r.Name, new MemoryStream(bytes), attribs)
-        | ILResourceLocation.LocalOut bytes -> 
-            modB.DefineManifestResourceAndLog (r.Name, new MemoryStream(bytes), attribs)
+        | ILResourceLocation.Local bytes -> 
+            use stream = bytes.AsStream()
+            modB.DefineManifestResourceAndLog (r.Name, stream, attribs)
         | ILResourceLocation.File (mr, _) -> 
            asmB.AddResourceFileAndLog (r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 

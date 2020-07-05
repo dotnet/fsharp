@@ -2,10 +2,13 @@
 
   <PropertyGroup>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Authors>Microsoft and F# Software Foundation</Authors>
     <PackageTags>Visual F# Compiler FSharp functional programming</PackageTags>
-    <Copyright>$(CopyrightMicrosoft)</Copyright>
     <NuspecBasePath>$(ArtifactsBinDir)</NuspecBasePath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- workaround for https://github.com/dotnet/wpf/issues/1718 -->
+    <EmbedUntrackedSources>false</EmbedUntrackedSources>
   </PropertyGroup>
 
 </Project>

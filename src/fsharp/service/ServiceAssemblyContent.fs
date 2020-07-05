@@ -11,14 +11,19 @@ open System
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 type ShortIdent = string
+
 type Idents = ShortIdent[]
+
 type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
+
 type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
+
 type IsAutoOpen = bool
 
 [<AutoOpen>]
@@ -113,6 +118,7 @@ type AssemblySymbol =
       Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind
       UnresolvedSymbol: UnresolvedSymbol }
+
     override x.ToString() = sprintf "%A" x  
 
 type AssemblyPath = string
@@ -125,6 +131,7 @@ type Parent =
       AutoOpen: Idents option
       WithModuleSuffix: Idents option 
       IsModule: bool }
+
     static member Empty = 
         { Namespace = None
           ThisRequiresQualifiedAccess = fun _ -> None
@@ -132,6 +139,7 @@ type Parent =
           AutoOpen = None
           WithModuleSuffix = None 
           IsModule = true }
+
     static member RewriteParentIdents (parentIdents: Idents option) (idents: Idents) =
         match parentIdents with
         | Some p when p.Length <= idents.Length -> 
@@ -238,16 +246,16 @@ module AssemblyContentProvider =
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
             let processIdents fullName idents = 
-                let cleanedIdentes = parent.FixParentModuleSuffix idents
+                let cleanedIdents = parent.FixParentModuleSuffix idents
                 { FullName = fullName
-                  CleanedIdents = cleanedIdentes
+                  CleanedIdents = cleanedIdents
                   Namespace = ns
                   NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
                   TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
                   AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdentes fullName }
+                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))
@@ -353,7 +361,7 @@ module AssemblyContentProvider =
 #endif
         | [], _ -> []
         | assemblies, Some fileName ->
-            let fileWriteTime = FileInfo(fileName).LastWriteTime 
+            let fileWriteTime = FileSystem.GetLastWriteTimeShim(fileName) 
             withCache <| fun cache ->
                 match contentType, cache.TryGet fileName with 
                 | _, Some entry
@@ -491,8 +499,6 @@ type OpenStatementInsertionPoint =
     | Nearest
 
 module ParsedInput =
-    open FSharp.Compiler
-    open FSharp.Compiler.Ast
 
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
@@ -503,8 +509,8 @@ module ParsedInput =
         | _ -> None
 
     let (|ConstructorPats|) = function
-        | SynConstructorArgs.Pats ps -> ps
-        | SynConstructorArgs.NamePatPairs(xs, _) -> List.map snd xs
+        | SynArgPats.Pats ps -> ps
+        | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
@@ -529,7 +535,7 @@ module ParsedInput =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
-        and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, _)) =
+        and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, Attributes attrs, _, _)) =
             List.iter walkAttribute attrs
             List.iter walkSynModuleDecl decls
     
@@ -537,7 +543,7 @@ module ParsedInput =
             addLongIdentWithDots attr.TypeName
             walkExpr attr.ArgExpr
     
-        and walkTyparDecl (SynTyparDecl.TyparDecl (attrs, typar)) =
+        and walkTyparDecl (SynTyparDecl.TyparDecl (Attributes attrs, typar)) =
             List.iter walkAttribute attrs
             walkTypar typar
     
@@ -564,7 +570,7 @@ module ParsedInput =
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t
-            | SynPat.Attrib (pat, attrs, _) ->
+            | SynPat.Attrib (pat, Attributes attrs, _) ->
                 walkPat pat
                 List.iter walkAttribute attrs
             | SynPat.Or (pat1, pat2, _) -> List.iter walkPat [pat1; pat2]
@@ -582,7 +588,7 @@ module ParsedInput =
     
         and walkTypar (Typar (_, _, _)) = ()
     
-        and walkBinding (SynBinding.Binding (_, _, _, _, attrs, _, _, pat, returnInfo, e, _, _)) =
+        and walkBinding (SynBinding.Binding (_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
@@ -591,13 +597,14 @@ module ParsedInput =
         and walkInterfaceImpl (InterfaceImpl(_, bindings, _)) = List.iter walkBinding bindings
     
         and walkIndexerArg = function
-            | SynIndexerArg.One e -> walkExpr e
-            | SynIndexerArg.Two (e1, e2) -> List.iter walkExpr [e1; e2]
+            | SynIndexerArg.One (e, _, _) -> walkExpr e
+            | SynIndexerArg.Two (e1, _, e2, _, _, _) -> List.iter walkExpr [e1; e2]
     
         and walkType = function
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
-            | SynType.MeasurePower (t, _, _) -> walkType t
+            | SynType.MeasurePower (t, _, _)
+            | SynType.Paren (t, _) -> walkType t
             | SynType.Fun (t1, t2, _)
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1; walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
@@ -705,9 +712,13 @@ module ParsedInput =
                 addLongIdentWithDots ident
                 List.iter walkExpr [e1; e2; e3]
             | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [e1; e2]
-            | SynExpr.LetOrUseBang (_, _, _, pat, e1, e2, _) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, e1, es, e2, _) ->
                 walkPat pat
-                List.iter walkExpr [e1; e2]
+                walkExpr e1
+                for (_,_,_,patAndBang,eAndBang,_) in es do
+                    walkPat patAndBang
+                    walkExpr eAndBang
+                walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
                 List.iter walkTypar ts
                 walkMemberSig sign
@@ -726,7 +737,7 @@ module ParsedInput =
             | SynMeasure.Anon _ -> ()
     
         and walkSimplePat = function
-            | SynSimplePat.Attrib (pat, attrs, _) ->
+            | SynSimplePat.Attrib (pat, Attributes attrs, _) ->
                 walkSimplePat pat
                 List.iter walkAttribute attrs
             | SynSimplePat.Typed(pat, t, _) ->
@@ -734,16 +745,15 @@ module ParsedInput =
                 walkType t
             | _ -> ()
     
-        and walkField (SynField.Field(attrs, _, _, t, _, _, _, _)) =
+        and walkField (SynField.Field(Attributes attrs, _, _, t, _, _, _, _)) =
             List.iter walkAttribute attrs
             walkType t
     
-        and walkValSig (SynValSig.ValSpfn(attrs, _, _, t, SynValInfo(argInfos, argInfo), _, _, _, _, _, _)) =
+        and walkValSig (SynValSig.ValSpfn(Attributes attrs, _, _, t, SynValInfo(argInfos, argInfo), _, _, _, _, _, _)) =
             List.iter walkAttribute attrs
             walkType t
             argInfo :: (argInfos |> List.concat)
-            |> List.map (fun (SynArgInfo(attrs, _, _)) -> attrs)
-            |> List.concat
+            |> List.collect (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
             |> List.iter walkAttribute
     
         and walkMemberSig = function
@@ -765,9 +775,9 @@ module ParsedInput =
         and walkMember = function
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor (_, attrs, pats, _, _) ->
+            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _) ->
                 List.iter walkAttribute attrs
-                List.iter walkSimplePat pats
+                List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) -> walkType t; walkExpr e
             | SynMemberDefn.LetBindings (bindings, _, _, _) -> List.iter walkBinding bindings
             | SynMemberDefn.Interface (t, members, _) ->
@@ -776,19 +786,19 @@ module ParsedInput =
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
             | SynMemberDefn.ValField (field, _) -> walkField field
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
-            | SynMemberDefn.AutoProperty (attrs, _, _, t, _, _, _, _, e, _, _) ->
+            | SynMemberDefn.AutoProperty (Attributes attrs, _, _, t, _, _, _, _, e, _, _) ->
                 List.iter walkAttribute attrs
                 Option.iter walkType t
                 walkExpr e
             | _ -> ()
     
-        and walkEnumCase (EnumCase(attrs, _, _, _, _)) = List.iter walkAttribute attrs
+        and walkEnumCase (EnumCase(Attributes attrs, _, _, _, _)) = List.iter walkAttribute attrs
     
         and walkUnionCaseType = function
             | SynUnionCaseType.UnionCaseFields fields -> List.iter walkField fields
             | SynUnionCaseType.UnionCaseFullType (t, _) -> walkType t
     
-        and walkUnionCase (SynUnionCase.UnionCase (attrs, _, t, _, _, _)) =
+        and walkUnionCase (SynUnionCase.UnionCase (Attributes attrs, _, t, _, _, _)) =
             List.iter walkAttribute attrs
             walkUnionCaseType t
     
@@ -799,7 +809,7 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev (_, t, _) -> walkType t
             | _ -> ()
     
-        and walkComponentInfo isTypeExtensionOrAlias (ComponentInfo(attrs, typars, constraints, longIdent, _, _, _, _)) =
+        and walkComponentInfo isTypeExtensionOrAlias (ComponentInfo(Attributes attrs, typars, constraints, longIdent, _, _, _, _)) =
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints
@@ -836,7 +846,7 @@ module ParsedInput =
             | SynModuleDecl.Let (_, bindings, _) -> List.iter walkBinding bindings
             | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.iter walkTypeDefn types
-            | SynModuleDecl.Attributes (attrs, _) -> List.iter walkAttribute attrs
+            | SynModuleDecl.Attributes (Attributes attrs, _) -> List.iter walkAttribute attrs
             | _ -> ()
     
         match input with
@@ -862,30 +872,30 @@ module ParsedInput =
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
         use _ignoreAllDiagnostics = new ErrorScope()  
 
-        let result: (Scope * pos * (* finished *) bool) option ref = ref None
-        let ns: string[] option ref = ref None
+        let mutable result = None
+        let mutable ns = None
         let modules = ResizeArray<Module>()  
 
-        let inline longIdentToIdents ident = ident |> Seq.map (fun x -> string x) |> Seq.toArray
+        let inline longIdentToIdents ident = ident |> Seq.map string |> Seq.toArray
         
         let addModule (longIdent: LongIdent, range: range) =
             modules.Add 
-                { Idents = longIdent |> List.map string |> List.toArray 
+                { Idents = longIdentToIdents longIdent
                   Range = range }
 
         let doRange kind (scope: LongIdent) line col =
             if line <= currentLine then
-                match !result, insertionPoint with
+                match result, insertionPoint with
                 | None, _ -> 
-                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
+                    result <- Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
                 | Some (_, _, true), _ -> ()
                 | Some (oldScope, oldPos, false), OpenStatementInsertionPoint.TopLevel when kind <> OpenDeclaration ->
-                    result := Some (oldScope, oldPos, true)
+                    result <- Some (oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
                     | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
-                        result := 
+                        result <-
                             Some ({ Idents = 
                                         match scope with 
                                         | [] -> oldScope.Idents 
@@ -895,7 +905,7 @@ module ParsedInput =
                                   false)
                     | _ -> ()
 
-        let getMinColumn (decls: SynModuleDecls) =
+        let getMinColumn decls =
             match decls with
             | [] -> None
             | firstDecl :: _ -> 
@@ -918,11 +928,11 @@ module ParsedInput =
             if range.EndLine >= currentLine then
                 let isModule = kind.IsModule
                 match isModule, parent, ident with
-                | false, _, _ -> ns := Some (longIdentToIdents ident)
+                | false, _, _ -> ns <- Some (longIdentToIdents ident)
                 // top level module with "inlined" namespace like Ns1.Ns2.TopModule
                 | true, [], _f :: _s :: _ -> 
                     let ident = longIdentToIdents ident
-                    ns := Some (ident.[0..ident.Length - 2])
+                    ns <- Some (ident.[0..ident.Length - 2])
                 | _ -> ()
                 
                 let fullIdent = parent @ ident
@@ -948,8 +958,8 @@ module ParsedInput =
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
                 if range.EndLine >= currentLine then
-                    let moduleBodyIdentation = getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
-                    doRange NestedModule fullIdent range.StartLine moduleBodyIdentation
+                    let moduleBodyIndentation = getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
+                    doRange NestedModule fullIdent range.StartLine moduleBodyIndentation
                     List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open (_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective (_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
@@ -960,9 +970,9 @@ module ParsedInput =
         | ParsedInput.ImplFile input -> walkImplFileInput input
 
         let res =
-            !result
+            result
             |> Option.map (fun (scope, pos, _) ->
-                let ns = !ns |> Option.map longIdentToIdents
+                let ns = ns |> Option.map longIdentToIdents
                 scope, ns, mkPos (pos.Line + 1) pos.Column)
         
         let modules = 
@@ -1008,9 +1018,9 @@ module ParsedInput =
                 if ctx.Pos.Line > 1 then
                     // it's an implicit module without any open declarations    
                     let line = getLineStr (ctx.Pos.Line - 2)
-                    let isImpliciteTopLevelModule =
+                    let isImplicitTopLevelModule =
                         not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
-                    if isImpliciteTopLevelModule then 1 else ctx.Pos.Line
+                    if isImplicitTopLevelModule then 1 else ctx.Pos.Line
                 else 1
             | ScopeKind.Namespace ->
                 // for namespaces the start line is start line of the first nested entity

@@ -83,12 +83,10 @@ open System.Collections.Generic
 
 module internal List =
 
-    let arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
+    let inline arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
     [<SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")>]
     let nonempty x = match x with [] -> false | _ -> true
-
-    let rec iter f x = match x with [] -> () | h :: t -> f h; iter f t
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -294,16 +292,16 @@ module internal List =
         | [], xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
         | xs1, [] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
-    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_, _, _, _>) xs1 xs2 xs3 =
+    let rec map3ToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_, _, _, _>) xs1 xs2 xs3 cut =
         match xs1, xs2, xs3 with
         | [], [], [] ->
             setFreshConsTail cons []
         | h1 :: t1, h2 :: t2, h3 :: t3 ->
             let cons2 = freshConsNoTail (f.Invoke(h1, h2, h3))
             setFreshConsTail cons cons2
-            map3ToFreshConsTail cons2 f t1 t2 t3
+            map3ToFreshConsTail cons2 f t1 t2 t3 (cut + 1)
         | xs1, xs2, xs3 ->
-            invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length
+            invalidArg3ListsDifferent "list1" "list2" "list3" (xs1.Length + cut) (xs2.Length + cut) (xs3.Length + cut)
 
     let map3 mapping xs1 xs2 xs3 =
         match xs1, xs2, xs3 with
@@ -311,7 +309,7 @@ module internal List =
         | h1 :: t1, h2 :: t2, h3 :: t3 ->
             let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(mapping)
             let cons = freshConsNoTail (f.Invoke(h1, h2, h3))
-            map3ToFreshConsTail cons f t1 t2 t3
+            map3ToFreshConsTail cons f t1 t2 t3 1
             cons
         | xs1, xs2, xs3 ->
             invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length
@@ -498,15 +496,6 @@ module internal List =
                 cons
             else
                 filter predicate t
-
-    let iteri action x =
-        let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(action)
-        let rec loop n x =
-            match x with
-            | [] -> ()
-            | h :: t -> f.Invoke(n, h); loop (n+1) t
-
-        loop 0 x
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -717,25 +706,28 @@ module internal List =
                         invalidArgDifferentListLength "list.[0]" (System.String.Format("list.[{0}]", j)) t.Length
                 [], [], 0
             | h :: t ->
+                let mutable j = 0
+                for t' in tail do
+                    j <- j + 1
+                    if t'.IsEmpty then
+                        invalidArgDifferentListLength (System.String.Format("list.[{0}]", j)) "list.[0]" (t.Length + 1)
                 let headsCons = freshConsNoTail h
                 let tailsCons = freshConsNoTail t
                 let headCount = transposeGetHeadsFreshConsTail headsCons tailsCons tail 1
                 headsCons, tailsCons, headCount
 
     /// Append the next element to the transposed list
-    let rec transposeToFreshConsTail cons list expectedCount =
+    let rec transposeToFreshConsTail cons list =
         match list with
         | [] -> setFreshConsTail cons []
         | _ ->
             match transposeGetHeads list with
             | [], _, _ ->
                 setFreshConsTail cons []
-            | heads, tails, headCount ->
-                if headCount < expectedCount then
-                    invalidArgDifferentListLength (System.String.Format("list.[{0}]", headCount)) "list.[0]" <| tails.[0].Length + 1
+            | heads, tails, _ ->
                 let cons2 = freshConsNoTail heads
                 setFreshConsTail cons cons2
-                transposeToFreshConsTail cons2 tails expectedCount
+                transposeToFreshConsTail cons2 tails
 
     /// Build the transposed list
     let transpose (list: 'T list list) =
@@ -746,7 +738,7 @@ module internal List =
             let heads, tails, headCount = transposeGetHeads list
             if headCount = 0 then [] else
             let cons = freshConsNoTail heads
-            transposeToFreshConsTail cons tails headCount
+            transposeToFreshConsTail cons tails
             cons
 
     let rec truncateToFreshConsTail cons count list =
@@ -985,6 +977,12 @@ module internal List =
             takeWhileFreshConsTail cons p xs
             cons
 
+    let rec tryLastV (list: 'T list) = 
+        match list with
+        | [] -> ValueNone
+        | [x] -> ValueSome x        
+        | _ :: tail -> tryLastV tail           
+
 module internal Array =
 
     open System
@@ -1176,11 +1174,34 @@ module internal Array =
             let count = min count len
             let res = zeroCreateUnchecked count : 'T[][]
             let minChunkSize = len / count
-            let startIndex = ref 0
+            let mutable startIndex = 0
             for i = 0 to len % count - 1 do
-                res.[i] <- subUnchecked !startIndex (minChunkSize + 1) array
-                startIndex := !startIndex + minChunkSize + 1
+                res.[i] <- subUnchecked startIndex (minChunkSize + 1) array
+                startIndex <- startIndex + minChunkSize + 1
             for i = len % count to count - 1 do
-                res.[i] <- subUnchecked !startIndex minChunkSize array
-                startIndex := !startIndex + minChunkSize
+                res.[i] <- subUnchecked startIndex minChunkSize array
+                startIndex <- startIndex + minChunkSize
             res
+
+module internal Seq =
+    let tryLastV (source : seq<_>) =
+        //checkNonNull "source" source //done in main Seq.tryLast
+        match source with
+        | :? ('T[]) as a -> 
+            if a.Length = 0 then ValueNone
+            else ValueSome(a.[a.Length - 1])
+        
+        | :? ('T IList) as a -> //ResizeArray and other collections
+            if a.Count = 0 then ValueNone
+            else ValueSome(a.[a.Count - 1])
+        
+        | :? ('T list) as a -> List.tryLastV a 
+        
+        | _ -> 
+            use e = source.GetEnumerator()
+            if e.MoveNext() then
+                let mutable res = e.Current
+                while (e.MoveNext()) do res <- e.Current
+                ValueSome(res)
+            else
+                ValueNone

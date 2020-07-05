@@ -4,11 +4,11 @@ module internal FSharp.Compiler.PatternMatchCompilation
 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Range
-
+open FSharp.Compiler.InfoReader
 
 /// What should the decision tree contain for any incomplete match? 
 type ActionOnFailure = 
@@ -18,24 +18,26 @@ type ActionOnFailure =
     | Rethrow 
     | FailFilter
 
-[<NoEquality; NoComparison>]
 /// Represents the typechecked, elaborated form of a pattern, prior to pattern-match compilation.
+[<NoEquality; NoComparison>]
 type Pattern =
     | TPat_const of Const * range
     | TPat_wild of range
-    | TPat_as of  Pattern * PatternValBinding * range
-    | TPat_disjs of  Pattern list * range
-    | TPat_conjs of  Pattern list * range
+    | TPat_as of Pattern * PatternValBinding * range
+    | TPat_disjs of Pattern list * range
+    | TPat_conjs of Pattern list * range
     | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * PrettyNaming.ActivePatternInfo) * Pattern * range
     | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
     | TPat_exnconstr of TyconRef * Pattern list * range
-    | TPat_tuple of  TupInfo * Pattern list * TType list * range
-    | TPat_array of  Pattern list * TType * range
+    | TPat_tuple of TupInfo * Pattern list * TType list * range
+    | TPat_array of Pattern list * TType * range
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_range of char * char * range
     | TPat_null of range
     | TPat_isinst of TType * TType * PatternValBinding option * range
-    member Range : range
+    | TPat_error of range
+
+    member Range: range
 
 and PatternValBinding = 
     | PBind of Val * TypeScheme
@@ -43,13 +45,16 @@ and PatternValBinding =
 and TypedMatchClause =  
     | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
-val ilFieldToTastConst : ILFieldInit -> Tast.Const
+val ilFieldToTastConst: ILFieldInit -> Const
 
 /// Compile a pattern into a decision tree and a set of targets.
-val internal CompilePattern : 
+val internal CompilePattern: 
     TcGlobals ->
     DisplayEnv ->
-    Import.ImportMap -> 
+    Import.ImportMap ->
+    // tcVal
+    (ValRef -> ValUseFlag -> TTypes -> range -> Expr * TType) ->
+    InfoReader ->
     // range of the expression we are matching on 
     range ->  
     // range to report "incomplete match" on
@@ -66,9 +71,11 @@ val internal CompilePattern :
     TType -> 
     // result type
     TType ->
-      // produce TAST nodes
-      DecisionTree * DecisionTreeTarget list
+        // produce TAST nodes
+        DecisionTree * DecisionTreeTarget list
 
 exception internal MatchIncomplete of bool * (string * bool) option * range
+
 exception internal RuleNeverMatched of range
+
 exception internal EnumMatchIncomplete of bool * (string * bool) option * range

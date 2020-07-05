@@ -11,12 +11,6 @@ open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open FSharp.Compiler.AbstractIL.IL 
 
 // -------------------------------------------------------------------- 
-// IL Parser state - must be initialized before parsing a module
-// -------------------------------------------------------------------- 
-
-val parseILGlobals: ILGlobals ref
-
-// -------------------------------------------------------------------- 
 // IL Lexer and pretty-printer tables
 // -------------------------------------------------------------------- 
 
@@ -41,7 +35,6 @@ val Int64Instrs:  LazyInstrTable<Int64Instr>
 val Int32Instrs:  LazyInstrTable<Int32Instr>
 val Int32Int32Instrs: LazyInstrTable<Int32Int32Instr>
 val DoubleInstrs:  LazyInstrTable<DoubleInstr>
-val MethodSpecInstrs:  LazyInstrTable<MethodSpecInstr>
 val StringInstrs:  LazyInstrTable<StringInstr>
 val TokenInstrs:  LazyInstrTable<TokenInstr>
 val TypeInstrs:  LazyInstrTable<TypeInstr>

@@ -42,21 +42,21 @@
     <Reference Include="Microsoft.VisualBasic" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.ManagedInterfaces" Version="$(MicrosoftVisualStudioManagedInterfacesPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.ProjectAggregator" Version="$(MicrosoftVisualStudioProjectAggregatorPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="$(MicrosoftVisualStudioShellImmutable110PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.10.0" Version="$(MicrosoftVisualStudioShellInterop100PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.11.0" Version="$(MicrosoftVisualStudioShellInterop110PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.WCFReference.Interop" Version="$(MicrosoftVisualStudioWCFReferenceInteropPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpPackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="VSSDK.VSLangProj.11" Version="$(VSSDKVSLangProj11PackageVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="EnvDTE80" Version="$(EnvDTE80Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.ManagedInterfaces" Version="$(MicrosoftVisualStudioManagedInterfacesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.ProjectAggregator" Version="$(MicrosoftVisualStudioProjectAggregatorVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Design" Version="$(MicrosoftVisualStudioShellDesignVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="$(MicrosoftVisualStudioShellImmutable100Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="$(MicrosoftVisualStudioShellImmutable110Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.10.0" Version="$(MicrosoftVisualStudioShellInterop100Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop.11.0" Version="$(MicrosoftVisualStudioShellInterop110Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.WCFReference.Interop" Version="$(MicrosoftVisualStudioWCFReferenceInteropVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
+    <PackageReference Include="VSSDK.VSLangProj.11" Version="$(VSSDKVSLangProj11Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj">
@@ -66,44 +66,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.vb" />
-    <Compile Include="Common\ArgumentValidation.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Common\ArgumentValidation.vb" />
     <Compile Include="Common\DTEUtils.vb" />
-    <Compile Include="Common\ShellUtil.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\Utils.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\Switches.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\wmuserconstants.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Common\myapplicationproperties.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\BaseRootDesigner.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\DesignerMenuCommand.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\DesignerMessageBox.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\DesignUtil.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Common\ShellUtil.vb" />
+    <Compile Include="Common\Utils.vb" />
+    <Compile Include="Common\Switches.vb" />
+    <Compile Include="Common\wmuserconstants.vb" />
+    <Compile Include="Common\myapplicationproperties.vb" />
+    <Compile Include="DesignFramework\BaseRootDesigner.vb" />
+    <Compile Include="DesignFramework\DesignerMenuCommand.vb" />
+    <Compile Include="DesignFramework\DesignerMessageBox.vb" />
+    <Compile Include="DesignFramework\DesignUtil.vb" />
     <Compile Include="HelpKeywords.vb" />
-    <Compile Include="interop\IVbpackage.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Interop\IVsAppId.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="interop\IVbpackage.vb" />
+    <Compile Include="Interop\IVsAppId.vb" />
     <Compile Include="Interop\IVsBuildEventCommandLineDialogService.vb" />
     <Compile Include="Interop\IVsBuildEventMacroProvider.vb" />
     <Compile Include="Interop\NativeMethods.vb" />
@@ -114,68 +90,30 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Package\Constants.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Package\InternalException.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ApplicationPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ApplicationPropPageBase.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\BuildEventCommandLineDialog.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\BuildEventCommandLineDialogService.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\BuildEventsPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\BuildPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\DebugPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="Package\Constants.vb" />
+    <Compile Include="Package\InternalException.vb" />
+    <Compile Include="PropertyPages\ApplicationPropPage.vb" />
+    <Compile Include="PropertyPages\ApplicationPropPageBase.vb" />
+    <Compile Include="PropertyPages\BuildEventCommandLineDialog.vb" />
+    <Compile Include="PropertyPages\BuildEventCommandLineDialogService.vb" />
+    <Compile Include="PropertyPages\BuildEventsPropPage.vb" />
+    <Compile Include="PropertyPages\BuildPropPage.vb" />
+    <Compile Include="PropertyPages\DebugPropPage.vb" />
     <Compile Include="PropertyPages\PropertyListener.vb" />
     <Compile Include="PropertyPages\skumatrix.vb" />
-    <Compile Include="PropertyPages\FSharpApplicationPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ReferencePathsPropPage.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\PropPage.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="DesignFramework\BaseDialog.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ValidationException.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\PropertyControlData.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\FSharpApplicationPropPage.vb" />
+    <Compile Include="PropertyPages\ReferencePathsPropPage.vb" />
+    <Compile Include="PropertyPages\PropPage.vb" />
+    <Compile Include="DesignFramework\BaseDialog.vb" />
+    <Compile Include="PropertyPages\ValidationException.vb" />
+    <Compile Include="PropertyPages\PropertyControlData.vb" />
     <Compile Include="PropertyPages\ControlDataFlags.vb" />
-    <Compile Include="PropertyPages\PropPageHostDialog.vb">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\PropPageUserControlBase.vb">
-      <SubType>UserControl</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\PropPageHostDialog.vb" />
+    <Compile Include="PropertyPages\PropPageUserControlBase.vb" />
     <Compile Include="PropertyPages\VSProductSKU.vb" />
     <Compile Include="PropertyPages\ValidationResult.vb" />
-    <Compile Include="PropertyPages\ChildPageSite.vb">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PropertyPages\ProjectReloadedException.vb">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="PropertyPages\ChildPageSite.vb" />
+    <Compile Include="PropertyPages\ProjectReloadedException.vb" />
     <Compile Include="PropertyPages\SingleConfigPropertyControlData.vb" />
     <Compile Include="PropertyPages\TargetFrameworkAssemblies.vb" />
     <Compile Include="PropertyPages\TargetFrameworkMoniker.vb" />

@@ -15,13 +15,15 @@ module internal ExtensionTyping =
     open FSharp.Compiler.ErrorLogger
     open FSharp.Compiler.Range
     open FSharp.Compiler.AbstractIL.IL
-    open FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
+    open Internal.Utilities.FSharpEnvironment  
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
-    exception ProvidedTypeResolution of range * System.Exception 
-    exception ProvidedTypeResolutionNoRange of System.Exception 
+    exception ProvidedTypeResolution of range * System.Exception
+    exception ProvidedTypeResolutionNoRange of System.Exception
+
+    let toolingCompatiblePaths() = toolingCompatiblePaths ()
 
     /// Represents some of the configuration parameters passed to type provider components 
     type ResolutionEnvironment =
@@ -29,101 +31,27 @@ module internal ExtensionTyping =
           outputFile                : string option
           showResolutionMessages    : bool
           referencedAssemblies      : string[]
-          temporaryFolder           : string } 
-
-
-    // Specify the tooling-compatible fragments of a path such as:
-    //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
-    //     tools/fsharp41/net461/MyProvider.DesignTime.dll
-    // See https://github.com/Microsoft/visualfsharp/issues/3736
-
-    // Represents the FF#-compiler <-> type provider protocol.
-    // When the API or protocol updates, add a new version moniker to the front of the list here.
-    let toolingCompatibleTypeProviderProtocolMonikers() = 
-        [ "fsharp41" ] 
-
-    // Detect the host tooling context
-    let toolingCompatibleVersions() = 
-        if typeof<obj>.Assembly.GetName().Name = "mscorlib" then 
-            [ "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
-        elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then 
-            [ "netcoreapp2.0"; "netstandard2.0"]
-        else
-            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
-            [  "netstandard2.0"]
-
-
-    let toolingCompatiblePaths() = 
-        [ for protocol in toolingCompatibleTypeProviderProtocolMonikers() do
-            for netRuntime in toolingCompatibleVersions() do 
-                yield Path.Combine("typeproviders", protocol, netRuntime)
-                yield Path.Combine("tools", protocol, netRuntime)
-        ]
+          temporaryFolder           : string }
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m: range) =
+    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
 
         // Report an error, blaming the particular type provider component
-        let raiseError (e: exn) =
-            raise (TypeProviderError(FSComp.SR.etProviderHasWrongDesignerAssembly(typeof<TypeProviderAssemblyAttribute>.Name, designTimeAssemblyNameString, e.Message), runTimeAssemblyFileName, m))
+        let raiseError designTimeAssemblyPathOpt (e: exn) =
+            let attrName = typeof<TypeProviderAssemblyAttribute>.Name
+            let exnTypeName = e.GetType().FullName
+            let exnMsg = e.Message
+            match designTimeAssemblyPathOpt with 
+            | None -> 
+                let msg = FSComp.SR.etProviderHasWrongDesignerAssemblyNoPath(attrName, designTimeAssemblyNameString, exnTypeName, exnMsg)
+                raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
+            | Some designTimeAssemblyPath -> 
+                let msg = FSComp.SR.etProviderHasWrongDesignerAssembly(attrName, designTimeAssemblyNameString, designTimeAssemblyPath, exnTypeName, exnMsg)
+                raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
 
-        // Find and load the designer assembly for the type provider component.
-        //
-        // We look in the directories stepping up from the location of the runtime assembly.
+        let designTimeAssemblyOpt = getTypeProviderAssembly (runTimeAssemblyFileName, designTimeAssemblyNameString, compilerToolPaths, raiseError)
 
-        let loadFromLocation designTimeAssemblyPath =
-            try
-                Some (FileSystem.AssemblyLoadFrom designTimeAssemblyPath)
-            with e ->
-                raiseError e
-
-        let rec searchParentDirChain dir designTimeAssemblyName = 
-            seq { 
-                for subdir in toolingCompatiblePaths() do
-                    let designTimeAssemblyPath  = Path.Combine (dir, subdir, designTimeAssemblyName)
-                    if FileSystem.SafeExists designTimeAssemblyPath then 
-                        yield loadFromLocation designTimeAssemblyPath
-                match Path.GetDirectoryName dir with
-                | s when s = "" || s = null || Path.GetFileName dir = "packages" || s = dir -> ()
-                | parentDir -> yield! searchParentDirChain parentDir designTimeAssemblyName 
-            } 
-
-        let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName = 
-            let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-            searchParentDirChain runTimeAssemblyPath  designTimeAssemblyName
-            |> Seq.tryHead
-            |> function 
-               | Some res -> res 
-               | None -> 
-                // The search failed, just load from the first location and report an error
-                let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-                loadFromLocation (Path.Combine (runTimeAssemblyPath, designTimeAssemblyName))
-
-        let designTimeAssemblyOpt = 
-
-            if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyNameString
-            else
-                // Cover the case where the ".dll" extension has been left off and no version etc. has been used in the assembly
-                // string specification.  The Name=FullName comparison is particularly strange, and was there to support
-                // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
-                // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
-                // and will always succeed.  
-                let name = System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyNameString)
-                if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
-                    let designTimeAssemblyName = designTimeAssemblyNameString+".dll"
-                    loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName
-                else
-                    // Load from the GAC using Assembly.Load.  This is legacy since type provider design-time components are
-                    // never in the GAC these days and  "x.DesignTIme, Version= ..." specifications are never used.
-                    try
-                        let asmName = System.Reflection.AssemblyName designTimeAssemblyNameString
-                        Some (FileSystem.AssemblyLoad asmName)
-                    with e ->
-                        raiseError e
-
-        // If we've find a design-time assembly, look for the public types with TypeProviderAttribute
         match designTimeAssemblyOpt with
         | Some loadedDesignTimeAssembly ->
             try
@@ -135,14 +63,22 @@ module internal ExtensionTyping =
                               yield t ]
                 filtered
             with e ->
-                raiseError e
+                let folder = System.IO.Path.GetDirectoryName loadedDesignTimeAssembly.Location
+                let exnTypeName = e.GetType().FullName
+                let exnMsg = e.Message
+                match e with 
+                | :? System.IO.FileLoadException -> 
+                    let msg = FSComp.SR.etProviderHasDesignerAssemblyDependency(designTimeAssemblyNameString, folder, exnTypeName, exnMsg)
+                    raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
+                
+                | _ -> 
+                    let msg = FSComp.SR.etProviderHasDesignerAssemblyException(designTimeAssemblyNameString, folder, exnTypeName, exnMsg)
+                    raise (TypeProviderError(msg, runTimeAssemblyFileName, m))
         | None -> []
 
     let StripException (e: exn) =
         match e with
-#if !FX_REDUCED_EXCEPTIONS
         |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
-#endif
         |   :? TypeInitializationException as e -> e.InnerException
         |   _ -> e
 
@@ -196,7 +132,8 @@ module internal ExtensionTyping =
              isInteractive: bool, 
              systemRuntimeContainsType : string -> bool, 
              systemRuntimeAssemblyVersion : System.Version, 
-             m: range) =         
+             compilerToolPaths: string list,
+             m:range) =
 
         let providerSpecs = 
                 try
@@ -213,19 +150,25 @@ module internal ExtensionTyping =
                     [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
                       // Check if the attribute is pointing to the file being compiled, in which case ignore it
                       // This checks seems like legacy but is included for compat.
-                      | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
+                      | Some designTimeAssemblyName, Some path 
+                         when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                           ()
+
                       | Some _, _ ->
-                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m) do
-                            let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
+                          let provImplTypes = GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths)
+                          for t in provImplTypes do
+                            let resolver =
+                                CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported,
+                                    isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
                             | null -> ()
                             | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
+
                       |   None, _ -> 
                           () ]
 
                 with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )                        
+                    tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
                     []
 
         let providers = Tainted<_>.CreateAll providerSpecs
@@ -293,6 +236,10 @@ module internal ExtensionTyping =
         BindingFlags.Instance |||
         BindingFlags.Public
 
+    type CustomAttributeData = System.Reflection.CustomAttributeData
+    type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
+    type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
+
     // NOTE: for the purposes of remapping the closure of generated types, the FullName is sufficient.
     // We do _not_ rely on object identity or any other notion of equivalence provided by System.Type
     // itself. The mscorlib implementations of System.Type equality relations are not suitable: for
@@ -303,11 +250,12 @@ module internal ExtensionTyping =
     // providers can implement wrap-and-filter "views" over existing System.Type clusters without needing
     // to preserve object identity when presenting the types to the F# compiler.
 
-    let providedSystemTypeComparer = 
-        let key (ty: System.Type) = (ty.Assembly.FullName, ty.FullName)
-        { new IEqualityComparer<Type> with 
-            member __.GetHashCode(ty: Type) = hash (key ty)
-            member __.Equals(ty1: Type, ty2: Type) = (key ty1 = key ty2) }
+    type ProvidedTypeComparer() = 
+        let key (ty: ProvidedType) = (ty.Assembly.FullName, ty.FullName)
+        static member val Instance = ProvidedTypeComparer()
+        interface IEqualityComparer<ProvidedType> with
+            member __.GetHashCode(ty: ProvidedType) = hash (key ty)
+            member __.Equals(ty1: ProvidedType, ty2: ProvidedType) = (key ty1 = key ty2)
 
     /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
     /// info objects coming from the type provider.
@@ -317,9 +265,9 @@ module internal ExtensionTyping =
     ///
     /// Laziness is used "to prevent needless computation for every type during remapping". However it
     /// appears that the laziness likely serves no purpose and could be safely removed.
-    type ProvidedTypeContext = 
+    and ProvidedTypeContext = 
         | NoEntries
-        | Entries of Dictionary<System.Type, ILTypeRef> * Lazy<Dictionary<System.Type, obj>>
+        | Entries of Dictionary<ProvidedType, ILTypeRef> * Lazy<Dictionary<ProvidedType, obj>>
 
         static member Empty = NoEntries
 
@@ -328,7 +276,7 @@ module internal ExtensionTyping =
         member ctxt.GetDictionaries()  = 
             match ctxt with
             | NoEntries -> 
-                Dictionary<System.Type, ILTypeRef>(providedSystemTypeComparer), Dictionary<System.Type, obj>(providedSystemTypeComparer)
+                Dictionary<ProvidedType, ILTypeRef>(ProvidedTypeComparer.Instance), Dictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
             | Entries (lookupILTR, lookupILTCR) ->
                 lookupILTR, lookupILTCR.Force()
 
@@ -353,17 +301,17 @@ module internal ExtensionTyping =
             match ctxt with 
             | NoEntries -> NoEntries
             | Entries(d1, d2) ->
-                Entries(d1, lazy (let dict = new Dictionary<System.Type, obj>(providedSystemTypeComparer)
+                Entries(d1, lazy (let dict = Dictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
                                   for KeyValue (st, tcref) in d2.Force() do dict.Add(st, f tcref)
                                   dict))
 
-    type CustomAttributeData = System.Reflection.CustomAttributeData
-    type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
-    type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
-
-    [<AllowNullLiteral; Sealed>]
-    type ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
+    and [<AllowNullLiteral; Sealed>]
+        ProvidedType (x: System.Type, ctxt: ProvidedTypeContext) =
         inherit ProvidedMemberInfo(x, ctxt)
+        let isMeasure = 
+            lazy
+                x.CustomAttributes 
+                |> Seq.exists (fun a -> a.Constructor.DeclaringType.FullName = typeof<MeasureAttribute>.FullName)
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.CustomAttributes)
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute provider = provide().GetHasTypeProviderEditorHideMethodsAttribute provider
@@ -383,7 +331,7 @@ module internal ExtensionTyping =
         member __.Namespace = x.Namespace
         member __.FullName = x.FullName
         member __.IsArray = x.IsArray
-        member __.Assembly = x.Assembly |> ProvidedAssembly.Create ctxt
+        member __.Assembly: ProvidedAssembly = x.Assembly |> ProvidedAssembly.Create
         member __.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
         member __.GetMethods() = x.GetMethods bindingFlags |> ProvidedMethodInfo.CreateArray ctxt
         member __.GetEvents() = x.GetEvents bindingFlags |> ProvidedEventInfo.CreateArray ctxt
@@ -416,7 +364,9 @@ module internal ExtensionTyping =
         member __.IsNestedPublic = x.IsNestedPublic
         member __.IsEnum = x.IsEnum
         member __.IsClass = x.IsClass
+        member __.IsMeasure = isMeasure.Value
         member __.IsSealed = x.IsSealed
+        member __.IsAbstract = x.IsAbstract
         member __.IsInterface = x.IsInterface
         member __.GetArrayRank() = x.GetArrayRank()
         member __.GenericParameterPosition = x.GenericParameterPosition
@@ -424,7 +374,15 @@ module internal ExtensionTyping =
         /// Type.GetEnumUnderlyingType either returns type or raises exception, null is not permitted
         member __.GetEnumUnderlyingType() = 
             x.GetEnumUnderlyingType() 
-            |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
+            |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"    
+        member __.MakePointerType() = ProvidedType.CreateNoContext(x.MakePointerType())
+        member __.MakeByRefType() = ProvidedType.CreateNoContext(x.MakeByRefType())
+        member __.MakeArrayType() = ProvidedType.CreateNoContext(x.MakeArrayType())
+        member __.MakeArrayType rank = ProvidedType.CreateNoContext(x.MakeArrayType(rank))
+        member __.MakeGenericType (args: ProvidedType[]) =
+            let argTypes = args |> Array.map (fun arg -> arg.RawSystemType)
+            ProvidedType.CreateNoContext(x.MakeGenericType(argTypes))
+        member __.AsProvidedVar name = ProvidedVar.Create ctxt (Quotations.Var(name, x))
         static member Create ctxt x = match x with null -> null | t -> ProvidedType (t, ctxt)
         static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t, ctxt)
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
@@ -433,9 +391,9 @@ module internal ExtensionTyping =
         member __.Handle = x
         override __.Equals y = assert false; match y with :? ProvidedType as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
-        member __.TryGetILTypeRef() = ctxt.TryGetILTypeRef x
-        member __.TryGetTyconRef() = ctxt.TryGetTyconRef x
         member __.Context = ctxt
+        member this.TryGetILTypeRef() = this.Context.TryGetILTypeRef this
+        member this.TryGetTyconRef() = this.Context.TryGetTyconRef this
         static member ApplyContext (pt: ProvidedType, ctxt) = ProvidedType(pt.Handle, ctxt)
         static member TaintedEquals (pt1: Tainted<ProvidedType>, pt2: Tainted<ProvidedType>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
@@ -526,11 +484,11 @@ module internal ExtensionTyping =
         override __.GetHashCode() = assert false; x.GetHashCode()
 
     and [<AllowNullLiteral; Sealed>] 
-        ProvidedAssembly (x: System.Reflection.Assembly, _ctxt) = 
+        ProvidedAssembly (x: System.Reflection.Assembly) = 
         member __.GetName() = x.GetName()
         member __.FullName = x.FullName
         member __.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents x
-        static member Create ctxt x = match x with null -> null | t -> ProvidedAssembly (t, ctxt)
+        static member Create (x: System.Reflection.Assembly) = match x with null -> null | t -> ProvidedAssembly (t)
         member __.Handle = x
         override __.Equals y = assert false; match y with :? ProvidedAssembly as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
@@ -566,8 +524,11 @@ module internal ExtensionTyping =
                 | :? ITypeProvider2 as itp2 -> 
                     itp2.GetStaticParametersForMethod x  
                 | _ -> 
-                    // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement an appropriate method called GetStaticParametersForMethod
-                    let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase> |], null)  
+                    // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively
+                    // implement an appropriate method called GetStaticParametersForMethod
+                    let meth =
+                        provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null,
+                            [| typeof<System.Reflection.MethodBase> |], null)  
                     if isNull meth then [| |] else
                     let paramsAsObj = 
                         try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
@@ -584,8 +545,12 @@ module internal ExtensionTyping =
                 | :? ITypeProvider2 as itp2 -> 
                     itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)  
                 | _ -> 
+
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement a method called GetStaticParametersForMethod
-                    let meth = provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase>; typeof<string>; typeof<obj[]> |], null)  
+                    let meth =
+                        provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null,
+                            [| typeof<System.Reflection.MethodBase>; typeof<string>; typeof<obj[]> |], null)  
+
                     match meth with 
                     | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                     | _ -> 
@@ -637,9 +602,7 @@ module internal ExtensionTyping =
 
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedMethodInfo.Create ctxt)
         member __.Handle = x
-#if !FX_NO_REFLECTION_METADATA_TOKENS
         member __.MetadataToken = x.MetadataToken
-#endif
         override __.Equals y = assert false; match y with :? ProvidedMethodInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 
@@ -689,168 +652,100 @@ module internal ExtensionTyping =
         override __.Equals y = assert false; match y with :? ProvidedConstructorInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 
-    [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-    type ProvidedExpr (x: Quotations.Expr, ctxt) =
+    and ProvidedExprType =
+        | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
+#if PROVIDED_ADDRESS_OF
+        | ProvidedAddressOfExpr of ProvidedExpr
+#endif
+        | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
+        | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
+        | ProvidedForIntegerRangeLoopExpr of ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr
+        | ProvidedSequentialExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedTryWithExpr of ProvidedExpr * ProvidedVar * ProvidedExpr * ProvidedVar * ProvidedExpr
+        | ProvidedTryFinallyExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
+        | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[] 
+        | ProvidedConstantExpr of obj * ProvidedType
+        | ProvidedDefaultExpr of ProvidedType
+        | ProvidedNewTupleExpr of ProvidedExpr[]
+        | ProvidedTupleGetExpr of ProvidedExpr * int
+        | ProvidedTypeAsExpr of ProvidedExpr * ProvidedType
+        | ProvidedTypeTestExpr of ProvidedExpr * ProvidedType
+        | ProvidedLetExpr of ProvidedVar * ProvidedExpr * ProvidedExpr
+        | ProvidedVarSetExpr of ProvidedVar * ProvidedExpr
+        | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
+        | ProvidedVarExpr of ProvidedVar
+
+    and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
+        ProvidedExpr (x: Quotations.Expr, ctxt) =
         member __.Type = x.Type |> ProvidedType.Create ctxt
         member __.Handle = x
         member __.Context = ctxt
         member __.UnderlyingExpressionString = x.ToString()
+        member __.GetExprType() =
+            match x with
+            | Quotations.Patterns.NewObject(ctor, args) ->
+                Some (ProvidedNewObjectExpr (ProvidedConstructorInfo.Create ctxt ctor, [| for a in args -> ProvidedExpr.Create ctxt a |]))
+            | Quotations.Patterns.WhileLoop(guardExpr, bodyExpr) ->
+                Some (ProvidedWhileLoopExpr (ProvidedExpr.Create ctxt guardExpr, ProvidedExpr.Create ctxt bodyExpr))
+            | Quotations.Patterns.NewDelegate(ty, vs, expr) ->
+                Some (ProvidedNewDelegateExpr(ProvidedType.Create ctxt ty, ProvidedVar.CreateArray ctxt (List.toArray vs), ProvidedExpr.Create ctxt expr))
+            | Quotations.Patterns.Call(objOpt, meth, args) ->
+                Some (ProvidedCallExpr((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create ctxt obj)), 
+                        ProvidedMethodInfo.Create ctxt meth, [| for a in args -> ProvidedExpr.Create ctxt a |]))
+            | Quotations.Patterns.DefaultValue ty ->
+                Some (ProvidedDefaultExpr (ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.Value(obj, ty) ->
+                Some (ProvidedConstantExpr (obj, ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.Coerce(arg, ty) ->
+                Some (ProvidedTypeAsExpr (ProvidedExpr.Create ctxt arg, ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.NewTuple args ->
+                Some (ProvidedNewTupleExpr(ProvidedExpr.CreateArray ctxt (Array.ofList args)))
+            | Quotations.Patterns.TupleGet(arg, n) ->
+                Some (ProvidedTupleGetExpr (ProvidedExpr.Create ctxt arg, n))
+            | Quotations.Patterns.NewArray(ty, args) ->
+                Some (ProvidedNewArrayExpr(ProvidedType.Create ctxt ty, ProvidedExpr.CreateArray ctxt (Array.ofList args)))
+            | Quotations.Patterns.Sequential(e1, e2) ->
+                Some (ProvidedSequentialExpr(ProvidedExpr.Create ctxt e1, ProvidedExpr.Create ctxt e2))
+            | Quotations.Patterns.Lambda(v, body) ->
+                Some (ProvidedLambdaExpr (ProvidedVar.Create ctxt v,  ProvidedExpr.Create ctxt body))
+            | Quotations.Patterns.TryFinally(b1, b2) ->
+                Some (ProvidedTryFinallyExpr (ProvidedExpr.Create ctxt b1, ProvidedExpr.Create ctxt b2))
+            | Quotations.Patterns.TryWith(b, v1, e1, v2, e2) ->
+                Some (ProvidedTryWithExpr (ProvidedExpr.Create ctxt b, ProvidedVar.Create ctxt v1, ProvidedExpr.Create ctxt e1, ProvidedVar.Create ctxt v2, ProvidedExpr.Create ctxt e2))
+#if PROVIDED_ADDRESS_OF
+            | Quotations.Patterns.AddressOf e -> Some (ProvidedAddressOfExpr (ProvidedExpr.Create ctxt e))
+#endif
+            | Quotations.Patterns.TypeTest(e, ty) ->
+                Some (ProvidedTypeTestExpr(ProvidedExpr.Create ctxt e, ProvidedType.Create ctxt ty))
+            | Quotations.Patterns.Let(v, e, b) ->
+                Some (ProvidedLetExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e, ProvidedExpr.Create ctxt b))
+            | Quotations.Patterns.ForIntegerRangeLoop (v, e1, e2, e3) ->
+                Some (ProvidedForIntegerRangeLoopExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e1, ProvidedExpr.Create ctxt e2, ProvidedExpr.Create ctxt e3))
+            | Quotations.Patterns.VarSet(v, e) ->
+                Some (ProvidedVarSetExpr (ProvidedVar.Create ctxt v, ProvidedExpr.Create ctxt e))
+            | Quotations.Patterns.IfThenElse(g, t, e) ->
+                Some (ProvidedIfThenElseExpr (ProvidedExpr.Create ctxt g, ProvidedExpr.Create ctxt t, ProvidedExpr.Create ctxt e))
+            | Quotations.Patterns.Var v ->
+                Some (ProvidedVarExpr (ProvidedVar.Create ctxt v))
+            | _ -> None
         static member Create ctxt t = match box t with null -> null | _ -> ProvidedExpr (t, ctxt)
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedExpr.Create ctxt)
         override __.Equals y = match y with :? ProvidedExpr as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = x.GetHashCode()
 
-    [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
-    type ProvidedVar (x: Quotations.Var, ctxt) =
+    and [<RequireQualifiedAccess; Class; AllowNullLiteral; Sealed>]
+        ProvidedVar (x: Quotations.Var, ctxt) =
         member __.Type = x.Type |> ProvidedType.Create ctxt
         member __.Name = x.Name
         member __.IsMutable = x.IsMutable
         member __.Handle = x
         member __.Context = ctxt
         static member Create ctxt t = match box t with null -> null | _ -> ProvidedVar (t, ctxt)
-        static member Fresh (nm, ty: ProvidedType) = ProvidedVar.Create ty.Context (new Quotations.Var(nm, ty.Handle))
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedVar.Create ctxt)
         override __.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = x.GetHashCode()
-
-
-    /// Detect a provided new-object expression 
-    let (|ProvidedNewObjectExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewObject(ctor, args)  -> 
-            Some (ProvidedConstructorInfo.Create x.Context ctor, [| for a in args -> ProvidedExpr.Create x.Context a |])
-        | _ -> None
-
-    /// Detect a provided while-loop expression 
-    let (|ProvidedWhileLoopExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.WhileLoop(guardExpr, bodyExpr)  -> 
-            Some (ProvidedExpr.Create x.Context guardExpr, ProvidedExpr.Create x.Context bodyExpr)
-        | _ -> None
-
-    /// Detect a provided new-delegate expression 
-    let (|ProvidedNewDelegateExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewDelegate(ty, vs, expr)  -> 
-            Some (ProvidedType.Create x.Context ty, ProvidedVar.CreateArray x.Context (List.toArray vs), ProvidedExpr.Create x.Context expr)
-        | _ -> None
-
-    /// Detect a provided call expression 
-    let (|ProvidedCallExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Call(objOpt, meth, args) -> 
-            Some ((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create  x.Context obj)), 
-                  ProvidedMethodInfo.Create x.Context meth, 
-                  [| for a in args -> ProvidedExpr.Create  x.Context a |])
-        | _ -> None
-
-    /// Detect a provided default-value expression 
-    let (|ProvidedDefaultExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.DefaultValue ty   -> Some (ProvidedType.Create x.Context ty)
-        | _ -> None
-
-    /// Detect a provided constant expression 
-    let (|ProvidedConstantExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Value(obj, ty)   -> Some (obj, ProvidedType.Create x.Context ty)
-        | _ -> None
-
-    /// Detect a provided type-as expression 
-    let (|ProvidedTypeAsExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Coerce(arg, ty) -> Some (ProvidedExpr.Create x.Context arg, ProvidedType.Create  x.Context ty)
-        | _ -> None
-
-    /// Detect a provided new-tuple expression 
-    let (|ProvidedNewTupleExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewTuple args -> Some (ProvidedExpr.CreateArray x.Context (Array.ofList args))
-        | _ -> None
-
-    /// Detect a provided tuple-get expression 
-    let (|ProvidedTupleGetExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TupleGet(arg, n) -> Some (ProvidedExpr.Create x.Context arg, n)
-        | _ -> None
-
-    /// Detect a provided new-array expression 
-    let (|ProvidedNewArrayExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.NewArray(ty, args) -> Some (ProvidedType.Create  x.Context ty, ProvidedExpr.CreateArray x.Context (Array.ofList args))
-        | _ -> None
-
-    /// Detect a provided sequential expression 
-    let (|ProvidedSequentialExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Sequential(e1, e2) -> Some (ProvidedExpr.Create x.Context e1, ProvidedExpr.Create x.Context e2)
-        | _ -> None
-
-    /// Detect a provided lambda expression 
-    let (|ProvidedLambdaExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Lambda(v, body) -> Some (ProvidedVar.Create x.Context v,  ProvidedExpr.Create x.Context body)
-        | _ -> None
-
-    /// Detect a provided try/finally expression 
-    let (|ProvidedTryFinallyExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TryFinally(b1, b2) -> Some (ProvidedExpr.Create x.Context b1, ProvidedExpr.Create x.Context b2)
-        | _ -> None
-
-    /// Detect a provided try/with expression 
-    let (|ProvidedTryWithExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TryWith(b, v1, e1, v2, e2) -> Some (ProvidedExpr.Create x.Context b, ProvidedVar.Create x.Context v1, ProvidedExpr.Create x.Context e1, ProvidedVar.Create x.Context v2, ProvidedExpr.Create x.Context e2)
-        | _ -> None
-
-#if PROVIDED_ADDRESS_OF
-    let (|ProvidedAddressOfExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.AddressOf e -> Some (ProvidedExpr.Create x.Context e)
-        | _ -> None
-#endif
-
-    /// Detect a provided type-test expression 
-    let (|ProvidedTypeTestExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.TypeTest(e, ty) -> Some (ProvidedExpr.Create x.Context e, ProvidedType.Create x.Context ty)
-        | _ -> None
-
-    /// Detect a provided 'let' expression 
-    let (|ProvidedLetExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Let(v, e, b) -> Some (ProvidedVar.Create x.Context v, ProvidedExpr.Create x.Context e, ProvidedExpr.Create x.Context b)
-        | _ -> None
-
-
-    /// Detect a provided expression which is a for-loop over integers
-    let (|ProvidedForIntegerRangeLoopExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.ForIntegerRangeLoop (v, e1, e2, e3) -> 
-            Some (ProvidedVar.Create x.Context v, 
-                  ProvidedExpr.Create x.Context e1, 
-                  ProvidedExpr.Create x.Context e2, 
-                  ProvidedExpr.Create x.Context e3)
-        | _ -> None
-
-    /// Detect a provided 'set variable' expression 
-    let (|ProvidedVarSetExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.VarSet(v, e) -> Some (ProvidedVar.Create x.Context v, ProvidedExpr.Create x.Context e)
-        | _ -> None
-
-    /// Detect a provided 'IfThenElse' expression 
-    let (|ProvidedIfThenElseExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.IfThenElse(g, t, e) ->  Some (ProvidedExpr.Create x.Context g, ProvidedExpr.Create x.Context t, ProvidedExpr.Create x.Context e)
-        | _ -> None
-
-    /// Detect a provided 'Var' expression 
-    let (|ProvidedVarExpr|_|) (x: ProvidedExpr) = 
-        match x.Handle with 
-        |  Quotations.Patterns.Var v  -> Some (ProvidedVar.Create x.Context v)
-        | _ -> None
 
     /// Get the provided invoker expression for a particular use of a method.
     let GetInvokerExpression (provider: ITypeProvider, methodBase: ProvidedMethodBase, paramExprs: ProvidedVar[]) = 
@@ -907,7 +802,7 @@ module internal ExtensionTyping =
             let namespaceName = TryTypeMember(st, name, "Namespace", m, FSComp.SR.invalidNamespaceForProvidedType(), fun st -> st.Namespace) |> unmarshal
             let fullName = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName) |> unmarshal
             ValidateExpectedName m expectedPath expectedName st
-            // Must be able to call (GetMethods|GetEvents|GetPropeties|GetNestedTypes|GetConstructors)(bindingFlags).
+            // Must be able to call (GetMethods|GetEvents|GetProperties|GetNestedTypes|GetConstructors)(bindingFlags).
             let usedMembers : Tainted<ProvidedMemberInfo>[] = 
                 // These are the members the compiler will actually use
                 [| for x in TryTypeMemberArray(st, fullName, "GetMethods", m, fun st -> st.GetMethods()) -> x.Coerce m
@@ -942,8 +837,11 @@ module internal ExtensionTyping =
                         errorR(Error(FSComp.SR.etNullMemberDeclaringType(fullName, memberName), m))   
                     | _ ->     
                         let miDeclaringTypeFullName = 
-                            TryMemberMember(miDeclaringType, fullName, memberName, "FullName", m, "invalid declaring type full name", fun miDeclaringType -> miDeclaringType.FullName)
+                            TryMemberMember (miDeclaringType, fullName, memberName, "FullName", m,
+                                "invalid declaring type full name",
+                                fun miDeclaringType -> miDeclaringType.FullName)
                             |> unmarshal
+
                         if not (ProvidedType.TaintedEquals (st, miDeclaringType)) then 
                             errorR(Error(FSComp.SR.etNullMemberDeclaringTypeDifferentFromProvidedType(fullName, memberName, miDeclaringTypeFullName), m))   
 
@@ -1157,7 +1055,9 @@ module internal ExtensionTyping =
         | _ -> 
             // Take the static arguments (as strings, taken from the text in the reference we're relinking), 
             // and convert them to objects of the appropriate type, based on the expected kind.
-            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, resolver) -> typeBeforeArguments.GetStaticParameters resolver), range=range0)
+            let staticParameters =
+                typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, resolver) ->
+                    typeBeforeArguments.GetStaticParameters resolver),range=range0)
 
             let staticParameters = staticParameters.PApplyArray(id, "", m)
             
@@ -1170,9 +1070,8 @@ module internal ExtensionTyping =
                           /// Find the name of the representation type for the static parameter
                           let spReprTypeName = 
                               sp.PUntaint((fun sp -> 
-                                  let pt = sp.ParameterType 
-                                  let ut = pt.RawSystemType
-                                  let uet = if pt.IsEnum then ut.GetEnumUnderlyingType() else ut
+                                  let pt = sp.ParameterType
+                                  let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
                                   uet.FullName), m)
 
                           match spReprTypeName with 

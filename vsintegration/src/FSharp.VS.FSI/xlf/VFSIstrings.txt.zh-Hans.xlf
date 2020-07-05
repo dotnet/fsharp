@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="fsharpInteractive">
         <source>F# Interactive</source>
-        <target state="translated">F# 交互</target>
+        <target state="translated">F# 交互窗口</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotFindFsiExe">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="sessionIsNotDebugFriendly">
         <source>The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session.\n\nAttempt debugging with current settings?</source>
-        <target state="translated">当前 F# 交互会话未进行调试配置。为实现最佳体验，请启用 F# 交互设置中的调试，然后重置会话。\n\n是否尝试用当前设置进行调试?</target>
+        <target state="translated">当前 F# 交互窗口会话未进行调试配置。为实现最佳体验，请启用 F# 交互窗口设置中的调试，然后重置会话。\n\n是否尝试用当前设置进行调试?</target>
         <note />
       </trans-unit>
       <trans-unit id="doNotShowWarningInFuture">

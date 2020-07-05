@@ -161,6 +161,35 @@ namespace Microsoft.FSharp.Control
         /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
         static member Parallel : computations:seq<Async<'T>> -> Async<'T[]>
 
+        /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations,
+        /// initially queueing each as work items and using a fork/join pattern.</summary>
+        ///
+        /// <remarks>If all child computations succeed, an array of results is passed to the success continuation.
+        ///
+        /// If any child computation raises an exception, then the overall computation will trigger an
+        /// exception, and cancel the others.
+        ///
+        /// The overall computation will respond to cancellation while executing the child computations.
+        /// If cancelled, the computation will cancel any remaining child computations but will still wait
+        /// for the other child computations to complete.</remarks>
+        /// <param name="computations">A sequence of distinct computations to be parallelized.</param>
+        /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
+        static member Parallel : computations:seq<Async<'T>> * ?maxDegreeOfParallelism : int -> Async<'T[]>
+
+        /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations sequentially.</summary>
+        ///
+        /// <remarks>If all child computations succeed, an array of results is passed to the success continuation.
+        ///
+        /// If any child computation raises an exception, then the overall computation will trigger an
+        /// exception, and cancel the others.
+        ///
+        /// The overall computation will respond to cancellation while executing the child computations.
+        /// If cancelled, the computation will cancel any remaining child computations but will still wait
+        /// for the other child computations to complete.</remarks>
+        /// <param name="computations">A sequence of distinct computations to be run in sequence.</param>
+        /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
+        static member Sequential : computations:seq<Async<'T>> -> Async<'T[]>
+
         /// <summary>Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
         /// returning the result of the first succeeding computation (one whose result is 'Some x').
         /// If all child computations complete with None, the parent computation also returns None.</summary>
@@ -252,6 +281,15 @@ namespace Microsoft.FSharp.Control
         /// <exception cref="System.ArgumentOutOfRangeException">Thrown when the due time is negative
         /// and not infinite.</exception>
         static member Sleep: millisecondsDueTime:int -> Async<unit>
+
+        /// <summary>Creates an asynchronous computation that will sleep for the given time. This is scheduled
+        /// using a System.Threading.Timer object. The operation will not block operating system threads
+        /// for the duration of the wait.</summary>
+        /// <param name="dueTime">The amount of time to sleep.</param>
+        /// <returns>An asynchronous computation that will sleep for the given time.</returns>
+        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when the due time is negative.</exception>
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        static member Sleep: dueTime:TimeSpan -> Async<unit>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
         /// the style used in CLI APIs. For example, 
@@ -415,8 +453,8 @@ namespace Microsoft.FSharp.Control
         static member StartImmediate: 
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
-        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system, 
-        /// but also returns the execution as <c>System.Threading.Tasks.Task</c> 
+        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
+        /// thread, but also returns the execution as <c>System.Threading.Tasks.Task</c>
         /// </summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.
         /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 
@@ -739,8 +777,7 @@ namespace Microsoft.FSharp.Control
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
             [<CompiledName("AsyncGetResponse")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncGetResponse : unit -> Async<System.Net.WebResponse>
-    
-#if !FX_NO_WEB_CLIENT
+
         type System.Net.WebClient with
 
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI.</summary>
@@ -761,7 +798,6 @@ namespace Microsoft.FSharp.Control
             /// <returns>An asynchronous computation that will wait for the download of the URI to specified file.</returns>
             [<CompiledName("AsyncDownloadFile")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadFile : address:System.Uri * fileName: string -> Async<unit>
-#endif
 
     // Internals used by MailboxProcessor
     module internal AsyncBuilderImpl = 

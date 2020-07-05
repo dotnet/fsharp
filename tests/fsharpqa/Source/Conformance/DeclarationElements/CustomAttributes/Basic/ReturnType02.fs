@@ -3,7 +3,7 @@
 // F# supports custom attributes on return type.
 // Multiple attributes on the same return value (two different attributes)
 // Note: the syntax is kind of awkward...
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light
 

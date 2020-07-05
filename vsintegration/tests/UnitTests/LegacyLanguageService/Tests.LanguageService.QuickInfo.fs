@@ -762,7 +762,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
       
         let fileContents = """namespace NS
                            type Re(*MarkerRecord*) = { X : int } """
-        let expectedQuickinfoTypeRecored = "type Re =  {X: int;}"
+        let expectedQuickinfoTypeRecored = "type Re =  { X: int }"
         
         this.InfoInDeclarationTestQuickInfoImplWithTrim fileContents "Re(*MarkerRecord*)" expectedQuickinfoTypeRecored
     
@@ -2942,7 +2942,8 @@ query."
                              type bar() =
                                  /// <summary> Test for members</summary>
                                  /// <param name="x1">x1 param!</param>
-                                 member this.foo (x1:int)=
+                                 member this.foo
+                                     (x1:int)=
                                      System.Console.WriteLine(x1.ToString())
                              
                              type Uni1 = 
@@ -2956,7 +2957,7 @@ query."
                              exception Ex1 of value: string
 
                              // Methods
-                             let f1 = (new bar()).foo(x1(*Marker1*) = 10)
+                             let f1 = (new bar()).foo(*Marker0*)(x1(*Marker1*) = 10)
                              let f2 = System.String.Concat(1, arg1(*Marker2*) = "") 
                              
                              //Unions
@@ -2976,6 +2977,7 @@ query."
                              type provType = N1.T<Param1(*Marker7*)="hello", ParamIgnored(*Marker8*)=10>
                              """
 
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker0*)", "Test for members")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "x1 param!")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "[ParamName: arg1]")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker3*)", "str of case1")

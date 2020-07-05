@@ -3,6 +3,8 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.Test.Utilities
+open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
 module AnonRecordsTests =
@@ -30,9 +32,10 @@ let sAnon = StructClass<struct {| S: int |}>()
 type RefClass<'a when 'a : not struct>() = class end
 let rAnon = RefClass<struct {| R: int |}>()
             """ 
+            FSharpErrorSeverity.Error
             1
-            (3, 12, 3, 41)
-            "A generic construct requires that the type 'struct {|R : int|}' have reference semantics, but it does not, i.e. it is a struct"
+            (3, 13, 3, 42)
+            "A generic construct requires that the type 'struct {| R: int |}' have reference semantics, but it does not, i.e. it is a struct"
 
     [<Test>]
     let StructConstraintFail() =
@@ -40,7 +43,8 @@ let rAnon = RefClass<struct {| R: int |}>()
             """
 type StructClass<'a when 'a : struct>() = class end
 let sAnon = StructClass<{| S: int |}>()
-            """ 
+            """
+            FSharpErrorSeverity.Error
             1
-            (3, 12, 3, 37)
-            "A generic construct requires that the type '{|S : int|}' is a CLI or F# struct type"
+            (3, 13, 3, 38)
+            "A generic construct requires that the type '{| S: int |}' is a CLI or F# struct type"

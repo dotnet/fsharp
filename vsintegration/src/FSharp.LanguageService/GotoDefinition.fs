@@ -5,15 +5,10 @@
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
-open System.IO
-open System.Collections.Generic
 open System.Diagnostics
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop 
 open Microsoft.VisualStudio.TextManager.Interop 
 open FSharp.Compiler
-open FSharp.Compiler.Lib
 open FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =
@@ -21,7 +16,9 @@ module internal OperatorToken =
     let asIdentifier_DEPRECATED (token : TokenInfo) =
         // Typechecker reports information about all values in the same fashion no matter whether it is named value (let binding) or operator
         // here we piggyback on this fact and just pretend that we need data time for identifier
-        let tagOfIdentToken = FSharp.Compiler.Parser.tagOfToken(FSharp.Compiler.Parser.IDENT "")
+
+        let tagOfIdentToken = FSharpTokenTag.IDENT
+
         let endCol = token.EndIndex + 1 // EndIndex from GetTokenInfoAt points to the last operator char, but here it should point to column 'after' the last char 
         tagOfIdentToken, token.StartIndex, endCol
 
@@ -69,7 +66,9 @@ module internal GotoDefinition =
                 |> GotoDefinitionResult_DEPRECATED.MakeError
             | Some(colIdent, tag, qualId) ->
                 if typedResults.HasFullTypeCheckInfo then 
-                    if Parser.tokenTagToTokenId tag <> Parser.TOKEN_IDENT then 
+                    // Used to be the Parser's internal definition, now hard-coded to avoid an IVT into the parser itsef.
+                    // Dead code (aside from legacy tests), ignore
+                    if tag <> FSharpTokenTag.IDENT then
                         Strings.GotoDefinitionFailed_NotIdentifier()
                         |> GotoDefinitionResult_DEPRECATED.MakeError
                     else

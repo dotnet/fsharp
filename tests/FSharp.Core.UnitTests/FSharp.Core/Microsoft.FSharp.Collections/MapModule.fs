@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Map module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
@@ -61,6 +61,40 @@ type MapModule() =
         Assert.AreEqual(resultExt.[2], "dup")   
         
          
+        ()
+
+    [<Test>]
+    member this.Change() =
+
+        let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
+        let b = Map.change 4 (fun current -> Assert.AreEqual(current, None); Some 16) a
+        Assert.AreEqual(b.[1], 1)
+        Assert.AreEqual(b.[2], 4)
+        Assert.AreEqual(b.[3], 9)
+        Assert.AreEqual(b.[4], 16)
+        let c = Map.change 4 (fun current -> Assert.AreEqual(current, Some 16); Some 25) b
+        Assert.AreEqual(b.[1], 1)
+        Assert.AreEqual(b.[2], 4)
+        Assert.AreEqual(b.[3], 9)
+        Assert.AreEqual(c.[4], 25)
+
+        // empty Map
+        let eptMap = Map.empty
+        let resultEpt = Map.change 1 (fun current -> Assert.AreEqual(current, None); Some "a") eptMap
+        Assert.AreEqual(resultEpt.[1], "a")
+
+        // One-element Map
+        let oeleMap = Map.ofSeq [(1, "one")]
+        let resultOele = Map.change 7 (fun current -> Assert.AreEqual(current, None); Some "seven") oeleMap
+        Assert.AreEqual(resultOele.[7], "seven")
+
+        // Remove element
+        let resultRm = Map.change 1 (fun current -> Assert.AreEqual(current, Some 1); None) c
+        Assert.IsFalse(resultRm.ContainsKey 1)
+        Assert.AreEqual(resultRm.[2], 4)
+        Assert.AreEqual(resultRm.[3], 9)
+        Assert.AreEqual(resultRm.[4], 25)
+
         ()
 
     [<Test>]

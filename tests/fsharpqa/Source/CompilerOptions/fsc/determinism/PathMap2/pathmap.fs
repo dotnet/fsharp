@@ -1,5 +1,5 @@
 // #NoMT #CompilerOptions #Deterministic
-//<Expected status=success></Expects>
+//<Expects status="success"></Expects>
 //
 // IMPORTANT: PathMap1/pathmap.fs and PathMap2/pathmap.fs must be identical!
 module TestPathMap

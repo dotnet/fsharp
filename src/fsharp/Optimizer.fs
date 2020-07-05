@@ -1,34 +1,33 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// The F# expression simplifier. The main aim is to inline simple, known functions
-// and constant values, and to eliminate non-side-affecting bindings that 
-// are never used.
-//------------------------------------------------------------------------- 
-
-
+/// The F# expression simplifier. The main aim is to inline simple, known functions
+/// and constant values, and to eliminate non-side-affecting bindings that 
+/// are never used.
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open FSharp.Compiler
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
 open FSharp.Compiler.AttributeChecking
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Tast 
-open FSharp.Compiler.TastPickle
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.Tastops.DebugPrint
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.Lib
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree 
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeOps.DebugPrint
+open FSharp.Compiler.TypedTreePickle
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
@@ -100,7 +99,7 @@ type ExprValueInfo =
   ///    arities: The number of bunches of untupled args and type args, and 
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
-  ///    ty: The type of lamba term
+  ///    ty: The type of lambda term
   | CurriedLambdaValue of Unique * int * int * Expr * TType
 
   /// ConstExprValue(size, value)
@@ -136,16 +135,33 @@ type ValInfos(entries) =
                    t.Add (vref.Deref, (vref, x))
               t)
 
-    // The compiler ValRef's into fslib stored in env.fs break certain invariants that hold elsewhere, 
+    // The compiler's ValRef's in TcGlobals.fs that refer to things in FSharp.Core break certain invariants that hold elsewhere, 
     // because they dereference to point to Val's from signatures rather than Val's from implementations.
-    // Thus a backup alternative resolution technique is needed for these.
+    // Thus a backup alternative resolution technique is needed for these when processing the FSharp.Core implementation files
+    // holding these items. This resolution must be able to distinguish between overloaded methods, so we use
+    // XmlDocSigOfVal as a cheap hack to get a unique item of data for a value.
     let valInfosForFslib = 
-        lazy (
-            let dict = Dictionary<_, _>()
+        LazyWithContext<_, TcGlobals>.Create ((fun g -> 
+            let dict = 
+                Dictionary<(ValRef * ValLinkageFullKey), (ValRef * ValInfo)>
+                    (HashIdentity.FromFunctions
+                         (fun (_: ValRef, k: ValLinkageFullKey) -> hash k.PartialKey)
+                         (fun (v1, k1) (v2, k2) -> 
+                             k1.PartialKey = k2.PartialKey && 
+                             // dismbiguate overloads, somewhat low-perf but only use for a handful of overloads in FSharp.Core
+                             match k1.TypeForLinkage, k2.TypeForLinkage with
+                             | Some _, Some _ -> 
+                                 let sig1 = XmlDocSigOfVal g true "" v1.Deref 
+                                 let sig2 = XmlDocSigOfVal g true "" v2.Deref
+                                 (sig1 = sig2) 
+                             | None, None -> true
+                             | _ -> false))
             for (vref, _x) as p in entries do 
-                let vkey = vref.Deref.GetLinkagePartialKey()
+                let vkey = (vref, vref.Deref.GetLinkageFullKey())
+                if dict.ContainsKey vkey then 
+                    failwithf "dictionary already contains key %A" vkey
                 dict.Add(vkey, p) |> ignore
-            dict)
+            dict), id)
 
     member x.Entries = valInfoTable.Force().Values
 
@@ -155,7 +171,8 @@ type ValInfos(entries) =
 
     member x.TryFind (v: ValRef) = valInfoTable.Force().TryFind v.Deref
 
-    member x.TryFindForFslib (v: ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
+    member x.TryFindForFslib (g, vref: ValRef) =
+        valInfosForFslib.Force(g).TryGetValue((vref, vref.Deref.GetLinkageFullKey()))
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -172,7 +189,8 @@ let braceL x = leftL (tagText "{") ^^ x ^^ rightL (tagText "}")
 let seqL xL xs = Seq.fold (fun z x -> z @@ xL x) emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z) xmap emptyL
 
-let rec exprValueInfoL g exprVal = 
+let rec exprValueInfoL g exprVal =
+    let exprL expr = exprL g expr
     match exprVal with
     | ConstValue (x, ty) -> NicePrint.layoutConst g ty x
     | UnknownValue -> wordL (tagText "?")
@@ -349,14 +367,14 @@ type OptimizationSettings =
 
     member x.EliminateTupleFieldGet () = x.localOpt () 
 
-    member x.EliminatUnionCaseFieldGet () = x.localOpt () 
+    member x.EliminateUnionCaseFieldGet () = x.localOpt () 
 
     /// eliminate non-compiler generated immediate bindings 
     member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
 
     /// expand "let x = (exp1, exp2, ...)" bindings as prior tmps 
     /// expand "let x = Some exp1" bindings as prior tmps 
-    member x.ExpandStructrualValues() = x.localOpt () 
+    member x.ExpandStructuralValues() = x.localOpt () 
 
 type cenv =
     { g: TcGlobals
@@ -379,6 +397,8 @@ type cenv =
       casApplied : Dictionary<Stamp, bool>
     }
 
+    override x.ToString() = "<cenv>"
+
 type IncrementalOptimizationEnv =
     { /// An identifier to help with name generation
       latestBoundId: Ident option
@@ -395,7 +415,7 @@ type IncrementalOptimizationEnv =
       inLoop: bool
 
       /// The Val for the function binding being generated, if any. 
-      functionVal: (Val * Tast.ValReprInfo) option
+      functionVal: (Val * ValReprInfo) option
 
       typarInfos: (Typar * TypeValueInfo) list 
 
@@ -413,6 +433,8 @@ type IncrementalOptimizationEnv =
           inLoop = false
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty }
+
+    override x.ToString() = "<IncrementalOptimizationEnv>"
 
 //-------------------------------------------------------------------------
 // IsPartialExprVal - is the expr fully known?
@@ -565,7 +587,7 @@ let BindTypeVarsToUnknown (tps: Typar list) env =
                 tp.typar_id <- ident (nm, tp.Range))      
     List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
-let BindCcu (ccu: Tast.CcuThunk) mval env (_g: TcGlobals) = 
+let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
 
 /// Lookup information about values 
@@ -617,7 +639,7 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))  
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if cenv.g.compilingFslib then 
-                      match structInfo.ValInfos.TryFindForFslib vref with 
+                      match structInfo.ValInfos.TryFindForFslib (cenv.g, vref) with 
                       | true, ninfo -> snd ninfo
                       | _ -> UnknownValInfo
                   else
@@ -1127,7 +1149,7 @@ let AbstractOptimizationInfoToEssentials =
 /// Hide information because of a "let ... in ..." or "let rec ... in ... "
 let AbstractExprInfoByVars (boundVars: Val list, boundTyVars) ivalue =
   // Module and member bindings can be skipped when checking abstraction, since abstraction of these values has already been done when 
-  // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadtratically retraversing  
+  // we hit the end of the module and called AbstractLazyModulInfoByHiding. If we don't skip these then we end up quadratically retraversing  
   // the inferred optimization data, i.e. at each binding all the way up a sequences of 'lets' in a module. 
   let boundVars = boundVars |> List.filter (fun v -> not v.IsMemberOrModuleBinding)
 
@@ -1519,7 +1541,7 @@ and RewriteBoolLogicCase data (TCase(test, tree)) =
     TCase(test, RewriteBoolLogicTree data tree)
 
 /// Repeatedly combine switch-over-match decision trees, see https://github.com/Microsoft/visualfsharp/issues/635.
-/// The outer decision tree is doing a swithc over a boolean result, the inner match is producing only
+/// The outer decision tree is doing a switch over a boolean result, the inner match is producing only
 /// constant boolean results in its targets.  
 let rec CombineBoolLogic expr = 
 
@@ -1571,7 +1593,7 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     ve, mkCompGenBind v arg
            
 let ExpandStructuralBindingRaw cenv expr =
-    assert cenv.settings.ExpandStructrualValues()
+    assert cenv.settings.ExpandStructuralValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _) 
         when (isRefTupleExpr rhs &&
@@ -1606,7 +1628,7 @@ let rec RearrangeTupleBindings expr fin =
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
-    assert cenv.settings.ExpandStructrualValues()
+    assert cenv.settings.ExpandStructuralValues()
     match expr with
     | Expr.Let (TBind(v, rhs, tgtSeqPtOpt), body, m, _)
         when (isRefTupleTy cenv.g v.Type &&
@@ -1703,7 +1725,7 @@ let (|AnyQueryBuilderOpTrans|_|) g = function
 //     | query.For(<qexprInner>, <other-arguments>) --> IQueryable if qexprInner is IQueryable, otherwise seq { qexprInner' } 
 //     | query.Yield <expr> --> not IQueryable, seq { <expr> } 
 //     | query.YieldFrom <expr> --> not IQueryable, seq { yield! <expr> } 
-//     | query.Op(<qexprOuter>, <other-arguments>) --> IQueryable if qexprOuter is IQueryable, otherwise query.Op(qexpOuter', <other-arguments>)   
+//     | query.Op(<qexprOuter>, <other-arguments>) --> IQueryable if qexprOuter is IQueryable, otherwise query.Op(qexprOuter', <other-arguments>)   
 let rec tryRewriteToSeqCombinators g (e: Expr) = 
     let m = e.Range
     match e with 
@@ -1825,22 +1847,27 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
         //printfn "Not eliminating because no Run found"
         None
 
-let IsILMethodRefDeclaringTypeSystemString (ilg: ILGlobals) (mref: ILMethodRef) =
-    mref.DeclaringTypeRef.Scope.IsAssemblyRef &&
-    mref.DeclaringTypeRef.Scope.AssemblyRef.Name = ilg.typ_String.TypeRef.Scope.AssemblyRef.Name &&
-    mref.DeclaringTypeRef.BasicQualifiedName = ilg.typ_String.BasicQualifiedName
-                
-let IsILMethodRefSystemStringConcatOverload (ilg: ILGlobals) (mref: ILMethodRef) =
-    IsILMethodRefDeclaringTypeSystemString ilg mref &&
+let IsILMethodRefSystemStringConcat (mref: ILMethodRef) =
     mref.Name = "Concat" &&
-    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
-    mref.ArgCount >= 2 && mref.ArgCount <= 4 && mref.ArgTypes |> List.forall(fun ilty -> ilty.BasicQualifiedName = ilg.typ_String.BasicQualifiedName)
+    mref.DeclaringTypeRef.Name = "System.String" &&
+    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
+    (mref.ArgCount >= 2 && mref.ArgCount <= 4 &&
+        mref.ArgTypes 
+        |> List.forall (fun ilTy ->
+            ilTy.IsNominal && ilTy.TypeRef.Name = "System.String"))
 
-let IsILMethodRefSystemStringConcatArray (ilg: ILGlobals) (mref: ILMethodRef) =
-    IsILMethodRefDeclaringTypeSystemString ilg mref &&
+let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
     mref.Name = "Concat" &&
-    mref.ReturnType.BasicQualifiedName = ilg.typ_String.BasicQualifiedName &&
-    mref.ArgCount = 1 && mref.ArgTypes.Head.BasicQualifiedName = "System.String[]"
+    mref.DeclaringTypeRef.Name = "System.String" &&
+    (mref.ReturnType.IsNominal && mref.ReturnType.TypeRef.Name = "System.String") &&
+    (mref.ArgCount = 1 && 
+        mref.ArgTypes
+        |> List.forall (fun ilTy ->          
+            match ilTy with
+            | ILType.Array (shape, ilTy) when shape = ILArrayShape.SingleDimensional &&
+                                              ilTy.IsNominal &&
+                                              ilTy.TypeRef.Name = "System.String" -> true
+            | _ -> false))
     
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
@@ -1866,8 +1893,12 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         OptimizeVal cenv env expr (v, m)
 
     | Expr.Quote (ast, splices, isFromQueryExpression, m, ty) -> 
-          let splices = ref (splices.Value |> Option.map (map3Of4 (List.map (OptimizeExpr cenv env >> fst))))
-          Expr.Quote (ast, splices, isFromQueryExpression, m, ty), 
+          let doData data = map3Of4 (List.map (OptimizeExpr cenv env >> fst)) data
+          let splices =
+              match splices.Value with
+              | Some (data1, data2opt) -> Some (doData data1, doData data2opt)
+              | None -> None
+          Expr.Quote (ast, ref splices, isFromQueryExpression, m, ty), 
           { TotalSize = 10
             FunctionSize = 1
             HasEffect = false  
@@ -1919,6 +1950,14 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         assert ("unexpected reclink" = "")
         failwith "Unexpected reclink"
 
+    | Expr.WitnessArg _ ->
+        expr, 
+        { TotalSize = 10
+          FunctionSize = 1
+          HasEffect = false  
+          MightMakeCriticalTailcall=false
+          Info=UnknownValue }
+
 /// Optimize/analyze an object expression
 and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m) =
     let basecallR, basecallinfo = OptimizeExpr cenv env basecall
@@ -1967,10 +2006,12 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
 and MakeOptimizedSystemStringConcatCall cenv env m args =
     let rec optimizeArg argExpr accArgs =
         match argExpr, accArgs with
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ when IsILMethodRefSystemStringConcatArray cenv.g.ilg methRef ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ 
+          when IsILMethodRefSystemStringConcatArray mref ->
             optimizeArgs args accArgs
 
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args, _), _ when IsILMethodRefSystemStringConcatOverload cenv.g.ilg mref ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args, _), _ 
+          when IsILMethodRefSystemStringConcat mref ->
             optimizeArgs args accArgs
 
         // Optimize string constants, e.g. "1" + "2" will turn into "12"
@@ -2000,7 +2041,8 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             mkStaticCall_String_Concat_Array cenv.g m arg
 
     match expr with
-    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methRef, _, _, _) as op, tyargs, args, m) when IsILMethodRefSystemStringConcatOverload cenv.g.ilg methRef || IsILMethodRefSystemStringConcatArray cenv.g.ilg methRef ->
+    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _) as op, tyargs, args, m) 
+      when IsILMethodRefSystemStringConcat mref || IsILMethodRefSystemStringConcatArray mref ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
         OptimizeExpr cenv env expr
@@ -2057,9 +2099,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
    // guarantees to optimize.
   
     | TOp.ILCall (_, _, _, _, _, _, _, mref, _enclTypeArgs, _methTypeArgs, _tys), _, [arg]
-        when (mref.DeclaringTypeRef.Scope.IsAssemblyRef &&
-              mref.DeclaringTypeRef.Scope.AssemblyRef.Name = cenv.g.ilg.typ_Array.TypeRef.Scope.AssemblyRef.Name &&
-              mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
+        when (mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
               mref.Name = "get_Length" &&
               isArray1DTy cenv.g (tyOfExpr cenv.g arg)) -> 
          OptimizeExpr cenv env (Expr.Op (TOp.ILAsm (i_ldlen, [cenv.g.int_ty]), [], [arg], m))
@@ -2069,9 +2109,11 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILAsm ([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
     // Optimize calls when concatenating strings, e.g. "1" + "2" + "3" + "4" .. etc.
-    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] when IsILMethodRefSystemStringConcatArray cenv.g.ilg mref ->
+    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] 
+      when IsILMethodRefSystemStringConcatArray mref ->
         MakeOptimizedSystemStringConcatCall cenv env m args
-    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args when IsILMethodRefSystemStringConcatOverload cenv.g.ilg mref ->
+    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args 
+      when IsILMethodRefSystemStringConcat mref ->
         MakeOptimizedSystemStringConcatCall cenv env m args
 
     | _ -> 
@@ -2097,7 +2139,7 @@ and OptimizeExprOpReductionsAfter cenv env (op, tyargs, argsR, arginfos, m) =
     | None -> OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos UnknownValue
 
 and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
-    // The generic case - we may collect information, but the construction/projection doesnRt disappear 
+    // The generic case - we may collect information, but the construction/projection doesn't disappear 
     let argsTSize = AddTotalSizes arginfos
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
@@ -2193,7 +2235,7 @@ and OptimizeConst cenv env expr (c, m, ty) =
                 Info=MakeValueInfoForConst c ty}
 
 /// Optimize/analyze a record lookup. 
-and TryOptimizeRecordFieldGet cenv _env (e1info, (RFRef (rtcref, _) as r), _tinst, m) =
+and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r), _tinst, m) =
     match destRecdValue e1info.Info with
     | Some finfos when cenv.settings.EliminateRecdFieldGet() && not e1info.HasEffect ->
         match TryFindFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute rtcref.Attribs with
@@ -2215,7 +2257,7 @@ and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
       
 and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
     match e1info.Info with
-    | StripUnionCaseValue(cspec2, args) when cenv.settings.EliminatUnionCaseFieldGet() && not e1info.HasEffect && cenv.g.unionCaseRefEq cspec cspec2 ->
+    | StripUnionCaseValue(cspec2, args) when cenv.settings.EliminateUnionCaseFieldGet() && not e1info.HasEffect && cenv.g.unionCaseRefEq cspec cspec2 ->
         if n >= args.Length then errorR(InternalError( "TryOptimizeUnionCaseGet: term argument out of range", m))
         Some args.[n]
     | _ -> None
@@ -2273,7 +2315,7 @@ and OptimizeLetRec cenv env (binds, bodyExpr, m) =
     // Trim out any optimization info that involves escaping values 
     let evalueR = AbstractExprInfoByVars (vs, []) einfo.Info 
     // REVIEW: size of constructing new closures - should probably add #freevars + #recfixups here 
-    let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, NewFreeVarsCache()) 
+    let bodyExprR = Expr.LetRec (bindsRR, bodyExprR, m, Construct.NewFreeVarsCache()) 
     let info = CombineValueInfos (einfo :: bindinfos) evalueR 
     bodyExprR, info
 
@@ -2283,7 +2325,7 @@ and OptimizeLinearExpr cenv env expr contf =
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
     let expr = DetectAndOptimizeForExpression cenv.g OptimizeAllForExpressions expr
-    let expr = if cenv.settings.ExpandStructrualValues() then ExpandStructuralBinding cenv expr else expr 
+    let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr 
     let expr = stripExpr expr
 
     match expr with 
@@ -2311,7 +2353,7 @@ and OptimizeLinearExpr cenv env expr contf =
       let (bindR, bindingInfo), env = OptimizeBinding cenv false env bind 
       OptimizeLinearExpr cenv env body (contf << (fun (bodyR, bodyInfo) ->  
         // PERF: This call to ValueIsUsedOrHasEffect/freeInExpr amounts to 9% of all optimization time.
-        // Is it quadratic or quasi-quadtratic?
+        // Is it quadratic or quasi-quadratic?
         if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr CollectLocals bodyR).FreeLocals) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
             let exprR, adjust = TryEliminateLet cenv env bindR bodyR m 
@@ -2364,9 +2406,9 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
         let sp = 
             match spTry with 
-            | SequencePointAtTry _ -> SequencePointsAtSeq 
-            | SequencePointInBodyOfTry -> SequencePointsAtSeq 
-            | NoSequencePointAtTry -> SuppressSequencePointOnExprOfSequential
+            | DebugPointAtTry.Yes _ -> DebugPointAtSequential.Both 
+            | DebugPointAtTry.Body -> DebugPointAtSequential.Both 
+            | DebugPointAtTry.No -> DebugPointAtSequential.StmtOnly
         Expr.Sequential (e1R, e2R, ThenDoSeq, sp, m), info 
     else
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 
@@ -2409,7 +2451,7 @@ and OptimizeWhileLoop cenv env (spWhile, marker, e1, e2, m) =
 and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 
@@ -2770,7 +2812,10 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
                     match vref.ApparentEnclosingEntity with
                     | Parent tcr when (tyconRefEq cenv.g cenv.g.lazy_tcr_canon tcr) ->
                             match tcr.CompiledRepresentation with
-                            | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> iltr.Scope.AssemblyRef.Name = "FSharp.Core"
+                            | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> 
+                                match iltr.Scope with
+                                | ILScopeRef.Assembly aref -> aref.Name = "FSharp.Core"
+                                | _ -> false
                             | _ -> false
                     | _ -> false
                 | _ -> false                                          
@@ -2896,7 +2941,6 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
         let env = BindTypeVarsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
-        let env = BindInternalValsToUnknown cenv (Option.toList baseValOpt) env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
         let arities = vsl.Length
@@ -2942,7 +2986,6 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
                   let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (bodyR, bodyty)
                   CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
                   
-
         let estimatedSize = 
             match vspec with
             | Some v when v.IsCompiledAsTopLevel -> methodDefnTotalSize
@@ -3012,7 +3055,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
              // None of them should be byrefs 
              not (isByrefLikeTy cenv.g m v.Type) && 
              //  None of them should be local polymorphic constrained values 
-             not (IsGenericValWithGenericContraints cenv.g v) &&
+             not (IsGenericValWithGenericConstraints cenv.g v) &&
              // None of them should be mutable 
              not v.IsMutable)))) &&
     not (isByrefLikeTy cenv.g m (tyOfExpr cenv.g e)) 

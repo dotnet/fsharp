@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 #if !NETCOREAPP
 [<TestFixture>]
@@ -833,16 +834,19 @@ let test9 () =
                 test9Source
             ]
         let source = String.Join("", sources)
-        ILChecker.check source
-            [
-                test1IL
-                test2IL
-                test3IL
-                test4IL
-                test5IL
-                test6IL
-                test7IL
-                test8IL
-                test9IL
-            ]
+        CompilerAssert.CompileLibraryAndVerifyIL source
+            (fun verifier ->
+                verifier.VerifyIL
+                    [
+                        test1IL
+                        test2IL
+                        test3IL
+                        test4IL
+                        test5IL
+                        test6IL
+                        test7IL
+                        test8IL
+                        test9IL
+                    ]
+            )
 #endif

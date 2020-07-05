@@ -218,6 +218,43 @@ module MapTree =
                     mk l sk sv r'
             else rebalance l k2 v2 (remove comparer k r) 
 
+    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value option) (m: MapTree<'Key, 'Value>) =
+        match m with
+        | MapEmpty ->
+            match u None with
+            | None -> m
+            | Some v -> MapOne (k, v)
+        | MapOne (k2, v2) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0 then
+                match u None with
+                | None -> m
+                | Some v -> MapNode (k, v, MapEmpty, m, 2)
+            elif c = 0 then
+                match u (Some v2) with
+                | None -> MapEmpty
+                | Some v -> MapOne (k, v)
+            else
+                match u None with
+                | None -> m
+                | Some v -> MapNode (k, v, m, MapEmpty, 2)
+        | MapNode (k2, v2, l, r, h) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0 then
+                rebalance (change comparer k u l) k2 v2 r
+            elif c = 0 then
+                match u (Some v2) with
+                | None ->
+                    match l, r with
+                    | MapEmpty, _ -> r
+                    | _, MapEmpty -> l
+                    | _ ->
+                        let sk, sv, r' = spliceOutSuccessor r
+                        mk l sk sv r'
+                | Some v -> MapNode (k, v, l, r, h)
+            else
+                rebalance l k2 v2 (change comparer k u r)
+
     let rec mem (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
         match m with 
         | MapEmpty -> false
@@ -374,8 +411,8 @@ module MapTree =
             mkFromEnumerator comparer empty ie 
 
     let copyToArray m (arr: _[]) i =
-        let j = ref i 
-        m |> iter (fun x y -> arr.[!j] <- KeyValuePair(x, y); j := !j + 1)
+        let mutable j = i 
+        m |> iter (fun x y -> arr.[j] <- KeyValuePair(x, y); j <- j + 1)
 
     /// Imperative left-to-right iterators.
     [<NoEquality; NoComparison>]
@@ -446,21 +483,19 @@ module MapTree =
 [<CompiledName("FSharpMap`2")>]
 type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonConditionalOn>]'Value when 'Key : comparison >(comparer: IComparer<'Key>, tree: MapTree<'Key, 'Value>) =
 
-#if !FX_NO_BINARY_SERIALIZATION
     [<System.NonSerialized>]
-    // This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable comparer = comparer 
+    // This type is logically immutable. This field is only mutated during deserialization.
+    let mutable comparer = comparer
  
     [<System.NonSerialized>]
-    // This type is logically immutable. This field is only mutated during deserialization. 
-    let mutable tree = tree 
+    // This type is logically immutable. This field is only mutated during deserialization.
+    let mutable tree = tree
 
-    // This type is logically immutable. This field is only mutated during serialization and deserialization. 
+    // This type is logically immutable. This field is only mutated during serialization and deserialization.
     //
-    // WARNING: The compiled name of this field may never be changed because it is part of the logical 
+    // WARNING: The compiled name of this field may never be changed because it is part of the logical
     // WARNING: permanent serialization format for this type.
-    let mutable serializedData = null 
-#endif
+    let mutable serializedData = null
 
     // We use .NET generics per-instantiation static fields to avoid allocating a new object for each empty
     // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
@@ -468,7 +503,6 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
         let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
         new Map<'Key, 'Value>(comparer, MapTree<_, _>.MapEmpty)
 
-#if !FX_NO_BINARY_SERIALIZATION
     [<System.Runtime.Serialization.OnSerializingAttribute>]
     member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
@@ -483,9 +517,8 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member __.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         comparer <- LanguagePrimitives.FastGenericComparer<'Key>
-        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer 
+        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer
         serializedData <- null
-#endif
 
     static member Empty : Map<'Key, 'Value> =
         empty
@@ -515,6 +548,10 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
             MapTree.largestMapStackTrace <- System.Diagnostics.StackTrace().ToString()
 #endif
         new Map<'Key, 'Value>(comparer, MapTree.add comparer key value tree)
+
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    member m.Change(key, f) : Map<'Key, 'Value> =
+        new Map<'Key, 'Value>(comparer, MapTree.change comparer key f tree)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member m.IsEmpty = MapTree.isEmpty tree
@@ -732,6 +769,11 @@ module Map =
     [<CompiledName("Add")>]
     let add key value (table: Map<_, _>) =
         table.Add (key, value)
+
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<CompiledName("Change")>]
+    let change key f (table: Map<_, _>) =
+        table.Change (key, f)
 
     [<CompiledName("Find")>]
     let find key (table: Map<_, _>) =

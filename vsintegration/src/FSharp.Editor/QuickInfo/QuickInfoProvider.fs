@@ -163,7 +163,8 @@ type internal FSharpAsyncQuickInfoSource
         xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
-        textBuffer:ITextBuffer
+        textBuffer:ITextBuffer,
+        _settings: EditorOptions
     ) =
 
     static let joinWithLineBreaks segments =
@@ -269,7 +270,8 @@ type internal FSharpAsyncQuickInfoSourceProvider
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider:FSharpCheckerProvider,
-        projectInfoManager:FSharpProjectOptionsManager
+        projectInfoManager:FSharpProjectOptionsManager,
+        settings: EditorOptions
     ) =
 
     interface IAsyncQuickInfoSourceProvider with
@@ -278,4 +280,4 @@ type internal FSharpAsyncQuickInfoSourceProvider
             // It is safe to do it here (see #4713)
             let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
             let xmlMemberIndexService = serviceProvider.XMLMemberIndexService
-            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(statusBar, xmlMemberIndexService, checkerProvider, projectInfoManager, textBuffer, settings) :> IAsyncQuickInfoSource

@@ -178,7 +178,7 @@ function Get-PackageDir([string]$name, [string]$version = "") {
     return $p
 }
 
-function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration) {
+function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]$logFileName = "", [switch]$parallel = $true, [switch]$summary = $true, [switch]$warnAsError = $true, [string]$configuration = $script:configuration, [string]$verbosity = $script:verbosity) {
     # Because we override the C#/VB toolset to build against our LKG package, it is important
     # that we do not reuse MSBuild nodes from other jobs/builds on the machine. Otherwise,
     # we'll run into issues such as https://github.com/dotnet/roslyn/issues/6211.
@@ -216,10 +216,6 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
         $args += " /p:ContinuousIntegrationBuild=true"
     }
 
-    if ($bootstrapDir -ne "") {
-        $args += " /p:BootstrapBuildPath=$bootstrapDir"
-    }
-
     $args += " $buildArgs"
     $args += " $projectFilePath"
     $args += " $properties"
@@ -234,22 +230,45 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
 # Important to not set $script:bootstrapDir here yet as we're actually in the process of
 # building the bootstrap.
 function Make-BootstrapBuild() {
-    Write-Host "Building bootstrap compiler"
+    Write-Host "Building bootstrap '$bootstrapTfm' compiler"
 
     $dir = Join-Path $ArtifactsDir "Bootstrap"
     Remove-Item -re $dir -ErrorAction SilentlyContinue
     Create-Directory $dir
 
-    # prepare FsLex and Fsyacc
-    Run-MSBuild "$RepoRoot\src\buildtools\buildtools.proj" "/restore /t:Build" -logFileName "BuildTools" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp2.1\*" -Destination $dir
+    # prepare FsLex and Fsyacc and AssemblyCheck
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $buildToolsProject = "$RepoRoot\src\buildtools\buildtools.proj"
+
+    $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
+    $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
+
+    $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
+    }
+    Exec-Console $dotnetExe $args
+
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\netcoreapp3.1" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\netcoreapp3.1" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\netcoreapp3.1" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
-    $projectPath = "$RepoRoot\proto.proj"
-    Run-MSBuild $projectPath "/restore /t:Build" -logFileName "Bootstrap" -configuration $bootstrapConfiguration
-    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
-    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm\*" -Destination $dir
+    $protoProject = "$RepoRoot\proto.proj"
+    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
+    }
+    Exec-Console $dotnetExe $args
+
+    Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsc" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsi\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsi" -Force -Recurse
 
     return $dir
 }
+
+
+

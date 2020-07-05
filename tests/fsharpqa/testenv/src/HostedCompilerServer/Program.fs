@@ -25,7 +25,7 @@ type HostedCompilerServer(port) =
     let (|FscCompile|Unknown|) (message : string) =
         match message.Split([|MessageDelimiter|], StringSplitOptions.RemoveEmptyEntries) with
         | [|directory; commandLine|] ->
-            let legacyReferenceResolver = MSBuildReferenceResolver.Resolver 
+            let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver()
             let args = CompilerHelpers.parseCommandLine commandLine
             log <| sprintf "Args parsed as [%s]" (String.Join("] [", args))
             log <| sprintf "Dir  parsed as [%s]" directory

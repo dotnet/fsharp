@@ -46,6 +46,8 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
         let projectId = projectContext.Id
 
+        projectInfoManager.SetLegacyProjectSite (projectId, site)
+
         // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
         // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
         let updatedFiles = site.CompilationSourceFiles |> wellFormedFilePathSetIgnoreCase

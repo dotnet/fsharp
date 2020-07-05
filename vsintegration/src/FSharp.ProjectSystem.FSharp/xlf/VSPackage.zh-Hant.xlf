@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -409,7 +409,7 @@
       </trans-unit>
       <trans-unit id="6001">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="6002">
@@ -429,17 +429,17 @@
       </trans-unit>
       <trans-unit id="7001">
         <source>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</source>
-        <target state="translated">自訂環境，將程式編輯器的螢幕空間最大化，並且改善 F# 命令及工具視窗的可視性。</target>
+        <target state="translated">自訂環境，將程式編輯器的螢幕空間最大化，並且改善 F# 命令及工具視窗的可見度。</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">適用於 F# 4.6 的 Microsoft Visual F# Tools 10.4</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">適用於 F# {{FSLanguageVersion}} 的 Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">適用於 F# 4.6 的 Microsoft Visual F# Tools</target>
+        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">適用於 F# {{FSLanguageVersion}} 的 Microsoft Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,13 +453,13 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">適用於 F# 4.6 的 Visual F# Tools 10.4</target>
+        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
+        <target state="translated">適用於 F# {{FSLanguageVersion}} 的 Visual F# Tools {{FSProductVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# 互動</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductRegistryName">
@@ -509,7 +509,7 @@
       </trans-unit>
       <trans-unit id="6005">
         <source>Change path and command line arguments passed to the F# Interactive</source>
-        <target state="translated">變更傳遞到 F# Interactive 的路徑和命令列引數</target>
+        <target state="translated">變更傳遞到 F# 互動的路徑和命令列引數</target>
         <note />
       </trans-unit>
       <trans-unit id="6006">

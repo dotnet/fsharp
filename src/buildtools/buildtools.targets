@@ -20,7 +20,7 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsLexPath Condition="'$(FsLexPath)' == ''">$(ArtifactsDir)\Bootstrap\fslex.dll</FsLexPath>
+        <FsLexPath Condition="'$(FsLexPath)' == ''">$(ArtifactsDir)\Bootstrap\fslex\fslex.dll</FsLexPath>
     </PropertyGroup>
 
     <!-- Create the output directory -->
@@ -43,7 +43,7 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(ArtifactsDir)\Bootstrap\fsyacc.dll</FsYaccPath>
+        <FsYaccPath Condition="'$(FsYaccPath)' == ''">$(ArtifactsDir)\Bootstrap\fsyacc\fsyacc.dll</FsYaccPath>
     </PropertyGroup>
 
     <!-- Create the output directory -->

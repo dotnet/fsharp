@@ -7,6 +7,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Classification
 
 [<TestFixture; Category "Roslyn Services">]
 type SemanticClassificationServiceTests() =
@@ -30,7 +31,7 @@ type SemanticClassificationServiceTests() =
     let checker = FSharpChecker.Create()
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
-    let getRanges (source: string) : (Range.range * SemanticClassificationType) list =
+    let getRanges (source: string) : struct (Range.range * SemanticClassificationType) list =
         asyncMaybe {
 
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")
@@ -45,7 +46,7 @@ type SemanticClassificationServiceTests() =
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)
-        match ranges |> List.tryFind (fun (range, _) -> Range.rangeContainsPos range markerPos) with
+        match ranges |> List.tryFind (fun struct (range, _) -> Range.rangeContainsPos range markerPos) with
         | None -> Assert.Fail("Cannot find colorization data for end of marker")
         | Some(_, ty) -> Assert.AreEqual(classificationType, FSharpClassificationTypes.getClassificationTypeName ty, "Classification data doesn't match for end of marker")
 
@@ -54,16 +55,16 @@ type SemanticClassificationServiceTests() =
         let ranges = getRanges fileContents
         let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
         let markerPos = Range.mkPos (Range.Line.fromZ line.Line) (line.Character + marker.Length - 1)
-        let anyData = ranges |> List.exists (fun (range, sct) -> Range.rangeContainsPos range markerPos && ((FSharpClassificationTypes.getClassificationTypeName sct) = classificationType))
+        let anyData = ranges |> List.exists (fun struct (range, sct) -> Range.rangeContainsPos range markerPos && ((FSharpClassificationTypes.getClassificationTypeName sct) = classificationType))
         Assert.False(anyData, "Classification data was found when it wasn't expected.")
 
-    [<TestCase("(*1*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*2*)", FSharpClassificationTypes.ReferenceType)>]
-    [<TestCase("(*3*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*4*)", FSharpClassificationTypes.ReferenceType)>]
-    [<TestCase("(*5*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*6*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*7*)", FSharpClassificationTypes.ReferenceType)>]
+    [<TestCase("(*1*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*2*)", ClassificationTypeNames.ClassName)>]
+    [<TestCase("(*3*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*4*)", ClassificationTypeNames.ClassName)>]
+    [<TestCase("(*5*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*6*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*7*)", ClassificationTypeNames.ClassName)>]
     member __.Measured_Types(marker: string, classificationType: string) =
         verifyClassificationAtEndOfMarker(
                 """#light (*Light*)

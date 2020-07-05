@@ -1,150 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#nowarn "1204"
-
-namespace Microsoft.FSharp.Linq
-
-
-open Microsoft.FSharp
-open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-
-module NullableOperators =
-    open System
-    let (?>=) (x : Nullable<'T>) (y: 'T) = x.HasValue && x.Value >= y
-
-    let (?>) (x : Nullable<'T>) (y: 'T) = x.HasValue && x.Value > y
-
-    let (?<=) (x : Nullable<'T>) (y: 'T) = x.HasValue && x.Value <= y
-
-    let (?<) (x : Nullable<'T>) (y: 'T) = x.HasValue && x.Value < y
-
-    let (?=) (x : Nullable<'T>) (y: 'T) = x.HasValue && x.Value = y
-
-    let (?<>) (x : Nullable<'T>) (y: 'T) = not (x ?= y)
-
-    let (>=?) (x : 'T) (y: Nullable<'T>) = y.HasValue && x >= y.Value
-
-    let (>?) (x : 'T) (y: Nullable<'T>) = y.HasValue && x > y.Value
-
-    let (<=?) (x : 'T) (y: Nullable<'T>) = y.HasValue && x <= y.Value
-
-    let (<?) (x : 'T) (y: Nullable<'T>) = y.HasValue && x < y.Value
-
-    let (=?) (x : 'T) (y: Nullable<'T>) = y.HasValue && x = y.Value
-
-    let (<>?) (x : 'T) (y: Nullable<'T>) = not (x =? y)
-
-    let (?>=?) (x : Nullable<'T>) (y: Nullable<'T>) = (x.HasValue && y.HasValue && x.Value >= y.Value)
-
-    let (?>?) (x : Nullable<'T>) (y: Nullable<'T>) = (x.HasValue && y.HasValue && x.Value > y.Value)
-
-    let (?<=?) (x : Nullable<'T>) (y: Nullable<'T>) = (x.HasValue && y.HasValue && x.Value <= y.Value)
-
-    let (?<?) (x : Nullable<'T>) (y: Nullable<'T>) = (x.HasValue && y.HasValue && x.Value < y.Value)
-
-    let (?=?) (x : Nullable<'T>) (y: Nullable<'T>) = (not x.HasValue && not y.HasValue) || (x.HasValue && y.HasValue && x.Value = y.Value)
-
-    let (?<>?) (x : Nullable<'T>) (y: Nullable<'T>) = not (x ?=? y)
-
-    let inline (?+) (x : Nullable<_>) y = if x.HasValue then Nullable(x.Value + y) else Nullable()
-
-    let inline (+?) x (y: Nullable<_>) = if y.HasValue then Nullable(x + y.Value) else Nullable()
-
-    let inline (?+?) (x : Nullable<_>) (y: Nullable<_>) = if x.HasValue && y.HasValue then Nullable(x.Value + y.Value) else Nullable()
-
-    let inline (?-) (x : Nullable<_>) y = if x.HasValue then Nullable(x.Value - y) else Nullable()
-
-    let inline (-?) x (y: Nullable<_>) = if y.HasValue then Nullable(x - y.Value) else Nullable()
-
-    let inline (?-?) (x : Nullable<_>) (y: Nullable<_>) = if x.HasValue && y.HasValue then Nullable(x.Value - y.Value) else Nullable()
-
-    let inline ( ?*  ) (x : Nullable<_>) y = if x.HasValue then Nullable(x.Value * y) else Nullable()
-
-    let inline ( *?  ) x (y: Nullable<_>) = if y.HasValue then Nullable(x * y.Value) else Nullable()
-
-    let inline ( ?*? ) (x : Nullable<_>) (y: Nullable<_>) = if x.HasValue && y.HasValue then Nullable(x.Value * y.Value) else Nullable()
-
-    let inline ( ?%  ) (x : Nullable<_>) y = if x.HasValue then Nullable(x.Value % y) else Nullable()
-
-    let inline ( %?  ) x (y: Nullable<_>) = if y.HasValue then Nullable(x % y.Value) else Nullable()
-
-    let inline ( ?%? ) (x : Nullable<_>) (y: Nullable<_>) = if x.HasValue && y.HasValue then Nullable(x.Value % y.Value) else Nullable()
-
-    let inline ( ?/  ) (x : Nullable<_>) y = if x.HasValue then Nullable(x.Value / y) else Nullable()
-
-    let inline ( /?  ) x (y: Nullable<_>) = if y.HasValue then Nullable(x / y.Value) else Nullable()
-
-    let inline ( ?/? ) (x : Nullable<_>) (y: Nullable<_>) = if x.HasValue && y.HasValue then Nullable(x.Value / y.Value) else Nullable()
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-[<RequireQualifiedAccess>]
-module Nullable =
-
-    open System
-
-    [<CompiledName("ToUInt8")>]
-    let inline uint8 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.byte value.Value) else Nullable()
-
-    [<CompiledName("ToInt8")>]
-    let inline int8 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.sbyte value.Value) else Nullable()
-
-    [<CompiledName("ToByte")>]
-    let inline byte (value:Nullable<_>) = if value.HasValue then Nullable(Operators.byte value.Value) else Nullable()
-
-    [<CompiledName("ToSByte")>]
-    let inline sbyte (value:Nullable<_>) = if value.HasValue then Nullable(Operators.sbyte value.Value) else Nullable()
-
-    [<CompiledName("ToInt16")>]
-    let inline int16 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int16 value.Value) else Nullable()
-
-    [<CompiledName("ToUInt16")>]
-    let inline uint16 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.uint16 value.Value) else Nullable()
-
-    [<CompiledName("ToInt")>]
-    let inline int (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int value.Value) else Nullable()
-
-    [<CompiledName("ToEnum")>]
-    let inline enum (value:Nullable< int32 >) = if value.HasValue then Nullable(Operators.enum value.Value) else Nullable()
-
-    [<CompiledName("ToInt32")>]
-    let inline int32 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int32 value.Value) else Nullable()
-
-    [<CompiledName("ToUInt32")>]
-    let inline uint32 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.uint32 value.Value) else Nullable()
-
-    [<CompiledName("ToInt64")>]
-    let inline int64 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int64 value.Value) else Nullable()
-
-    [<CompiledName("ToUInt64")>]
-    let inline uint64 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.uint64 value.Value) else Nullable()
-
-    [<CompiledName("ToFloat32")>]
-    let inline float32 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float32 value.Value) else Nullable()
-
-    [<CompiledName("ToFloat")>]
-    let inline float (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float value.Value) else Nullable()
-
-    [<CompiledName("ToSingle")>]
-    let inline single (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float32 value.Value) else Nullable()
-
-    [<CompiledName("ToDouble")>]
-    let inline double (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float value.Value) else Nullable()
-
-    [<CompiledName("ToIntPtr")>]
-    let inline nativeint (value:Nullable<_>) = if value.HasValue then Nullable(Operators.nativeint value.Value) else Nullable()
-
-    [<CompiledName("ToUIntPtr")>]
-    let inline unativeint (value:Nullable<_>) = if value.HasValue then Nullable(Operators.unativeint value.Value) else Nullable()
-
-    [<CompiledName("ToDecimal")>]
-    let inline decimal (value:Nullable<_>) = if value.HasValue then Nullable(Operators.decimal value.Value) else Nullable()
-
-    [<CompiledName("ToChar")>]
-    let inline char (value:Nullable<_>) = if value.HasValue then Nullable(Operators.char value.Value) else Nullable()
-
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 open System
@@ -162,10 +17,7 @@ open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
 
-#if FX_RESHAPED_REFLECTION
-open PrimReflectionAdapters
-open ReflectionAdapters
-#endif
+#nowarn "1204"
 
 module LeafExpressionConverter =
 
@@ -219,11 +71,7 @@ module LeafExpressionConverter =
         SubstHelperRaw(q, x, y) |> Expr.Cast
 
     let showAll =
-#if FX_RESHAPED_REFLECTION
-        true
-#else
         BindingFlags.Public ||| BindingFlags.NonPublic
-#endif
 
     let NullableConstructor =
         typedefof<Nullable<int>>.GetConstructors().[0]
@@ -235,9 +83,7 @@ module LeafExpressionConverter =
             match tm with
             | Call(obj, minfo2, args)
                 when (
-#if !FX_NO_REFLECTION_METADATA_TOKENS
                         minfo.MetadataToken = minfo2.MetadataToken &&
-#endif
                         if isg1 then minfo2.IsGenericMethod && gmd = minfo2.GetGenericMethodDefinition()
                         else minfo = minfo2
                      ) ->
@@ -514,88 +360,87 @@ module LeafExpressionConverter =
             | PlusQ (_, [ty1; ty2; ty3], [x1; x2]) when (ty1 = typeof<string>) && (ty2 = typeof<string>) && (ty3 = typeof<string>) ->
                  Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2, StringConcat) |> asExpr
 
-            | GenericEqualityQ (_, _, [x1; x2])
-            | EqualsQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Equal
-            | NotEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.NotEqual
-            | GreaterQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.GreaterThan
-            | GreaterEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.GreaterThanOrEqual
-            | LessQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.LessThan
-            | LessEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.LessThanOrEqual
-            | NotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
+            | GenericEqualityQ _ 
+            | EqualsQ _ -> transBinOp inp env false args false Expression.Equal
+            | NotEqQ _ -> transBinOp inp env false args false Expression.NotEqual
+            | GreaterQ _ -> transBinOp inp env false args false Expression.GreaterThan
+            | GreaterEqQ _ -> transBinOp inp env false args false Expression.GreaterThanOrEqual
+            | LessQ _ -> transBinOp inp env false args false Expression.LessThan
+            | LessEqQ _ -> transBinOp inp env false args false Expression.LessThanOrEqual
+            | NotQ (_, _, [x1])   -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
 
-            | StaticEqualsQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Equal
-            | StaticNotEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.NotEqual
-            | StaticGreaterQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.GreaterThan
-            | StaticGreaterEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.GreaterThanOrEqual
-            | StaticLessQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.LessThan
-            | StaticLessEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.LessThanOrEqual
+            | StaticEqualsQ _ -> transBinOp inp env false args false Expression.Equal
+            | StaticNotEqQ _ -> transBinOp inp env false args false Expression.NotEqual
+            | StaticGreaterQ _ -> transBinOp inp env false args false Expression.GreaterThan
+            | StaticGreaterEqQ _ -> transBinOp inp env false args false Expression.GreaterThanOrEqual
+            | StaticLessQ _ -> transBinOp inp env false args false Expression.LessThan
+            | StaticLessEqQ _ -> transBinOp inp env false args false Expression.LessThanOrEqual
 
-            | NullableEqualsQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Equal
-            | NullableNotEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.NotEqual
-            | NullableGreaterQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.GreaterThan
-            | NullableGreaterEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.GreaterThanOrEqual
-            | NullableLessQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.LessThan
-            | NullableLessEqQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.LessThanOrEqual
+            | NullableEqualsQ _ -> transBinOp inp env false args true Expression.Equal
+            | NullableNotEqQ _ -> transBinOp inp env false args true Expression.NotEqual
+            | NullableGreaterQ _ -> transBinOp inp env false args true Expression.GreaterThan
+            | NullableGreaterEqQ _ -> transBinOp inp env false args true Expression.GreaterThanOrEqual
+            | NullableLessQ  _ -> transBinOp inp env false args true Expression.LessThan
+            | NullableLessEqQ _ -> transBinOp inp env false args true Expression.LessThanOrEqual
 
-            | EqualsNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Equal
-            | NotEqNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.NotEqual
-            | GreaterNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.GreaterThan
-            | GreaterEqNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.GreaterThanOrEqual
-            | LessNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.LessThan
-            | LessEqNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.LessThanOrEqual
+            | EqualsNullableQ _ -> transBinOp inp env true args false Expression.Equal              
+            | NotEqNullableQ _ -> transBinOp inp env true args false Expression.NotEqual           
+            | GreaterNullableQ _ -> transBinOp inp env true args false Expression.GreaterThan        
+            | GreaterEqNullableQ _ -> transBinOp inp env true args false Expression.GreaterThanOrEqual 
+            | LessNullableQ  _ -> transBinOp inp env true args false Expression.LessThan           
+            | LessEqNullableQ _ -> transBinOp inp env true args false Expression.LessThanOrEqual    
 
-            | NullableEqualsNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Equal
-            | NullableNotEqNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.NotEqual
-            | NullableGreaterNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.GreaterThan
-            | NullableGreaterEqNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.GreaterThanOrEqual
-            | NullableLessNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.LessThan
-            | NullableLessEqNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.LessThanOrEqual
-
+            | NullableEqualsNullableQ _ -> transBinOp inp env false args false Expression.Equal
+            | NullableNotEqNullableQ _ -> transBinOp inp env false args false Expression.NotEqual
+            | NullableGreaterNullableQ _ -> transBinOp inp env false args false Expression.GreaterThan
+            | NullableGreaterEqNullableQ _ -> transBinOp inp env false args false Expression.GreaterThanOrEqual
+            | NullableLessNullableQ _ -> transBinOp inp env false args false Expression.LessThan
+            | NullableLessEqNullableQ _ -> transBinOp inp env false args false Expression.LessThanOrEqual
+            
             // Detect the F# quotation encoding of decimal literals
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) ->
                 Expression.Constant (new System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
 
-            | NegQ (_, _, [x1]) -> Expression.Negate(ConvExprToLinqInContext env x1) |> asExpr
-            | PlusQ (_, _, [x1; x2]) -> Expression.Add(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | DivideQ (_, _, [x1; x2]) -> Expression.Divide (ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | MinusQ (_, _, [x1; x2]) -> Expression.Subtract(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | MultiplyQ (_, _, [x1; x2]) -> Expression.Multiply(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | ModuloQ (_, _, [x1; x2]) -> Expression.Modulo (ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
+            | NegQ (_, _, [x1])    -> Expression.Negate(ConvExprToLinqInContext env x1) |> asExpr
+            | PlusQ _ -> transBinOp inp env false args false Expression.Add
+            | DivideQ _ -> transBinOp inp env false args false Expression.Divide
+            | MinusQ _ -> transBinOp inp env false args false Expression.Subtract
+            | MultiplyQ _ -> transBinOp inp env false args false Expression.Multiply
+            | ModuloQ _ -> transBinOp inp env false args false Expression.Modulo
 
-            | ShiftLeftQ (_, _, [x1; x2]) -> Expression.LeftShift(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | ShiftRightQ (_, _, [x1; x2]) -> Expression.RightShift(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | BitwiseAndQ (_, _, [x1; x2]) -> Expression.And(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | BitwiseOrQ (_, _, [x1; x2]) -> Expression.Or(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | BitwiseXorQ (_, _, [x1; x2]) -> Expression.ExclusiveOr(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
+            | ShiftLeftQ _ -> transBinOp inp env false args false Expression.LeftShift
+            | ShiftRightQ _ -> transBinOp inp env false args false Expression.RightShift
+            | BitwiseAndQ _ -> transBinOp inp env false args false Expression.And
+            | BitwiseOrQ _ -> transBinOp inp env false args false Expression.Or
+            | BitwiseXorQ _ -> transBinOp inp env false args false Expression.ExclusiveOr
             | BitwiseNotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
+            
+            | CheckedNeg (_, _, [x1]) -> Expression.NegateChecked(ConvExprToLinqInContext env x1)                                |> asExpr
+            | CheckedPlusQ _ -> transBinOp inp env false args false Expression.AddChecked
+            | CheckedMinusQ _ -> transBinOp inp env false args false Expression.SubtractChecked
+            | CheckedMultiplyQ _ -> transBinOp inp env false args false Expression.MultiplyChecked
+            
+            | NullablePlusQ _ -> transBinOp inp env false args true Expression.Add
+            | PlusNullableQ _ -> transBinOp inp env true args false Expression.Add
+            | NullablePlusNullableQ _ -> transBinOp inp env false args false Expression.Add
+            
+            | NullableMinusQ _ -> transBinOp inp env false args true Expression.Subtract
+            | MinusNullableQ _ -> transBinOp inp env true args false Expression.Subtract
+            | NullableMinusNullableQ _ -> transBinOp inp env false args false Expression.Subtract
+            
+            | NullableMultiplyQ _ -> transBinOp inp env false args true Expression.Multiply
+            | MultiplyNullableQ _ -> transBinOp inp env true args false Expression.Multiply
+            | NullableMultiplyNullableQ _ -> transBinOp inp env false args false Expression.Multiply
+            
+            | NullableDivideQ _ -> transBinOp inp env false args true Expression.Divide
+            | DivideNullableQ _ -> transBinOp inp env true args false Expression.Divide
+            | NullableDivideNullableQ _ -> transBinOp inp env false args false Expression.Divide
+            
+            | NullableModuloQ _ -> transBinOp inp env false args true Expression.Modulo
+            | ModuloNullableQ _ -> transBinOp inp env true args false Expression.Modulo
+            | NullableModuloNullableQ _ -> transBinOp inp env false args false Expression.Modulo
 
-            | CheckedNeg (_, _, [x1]) -> Expression.NegateChecked(ConvExprToLinqInContext env x1) |> asExpr
-            | CheckedPlusQ (_, _, [x1; x2]) -> Expression.AddChecked(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | CheckedMinusQ (_, _, [x1; x2]) -> Expression.SubtractChecked(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-            | CheckedMultiplyQ (_, _, [x1; x2]) -> Expression.MultiplyChecked(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
-
-
-            | NullablePlusQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Add
-            | PlusNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Add
-            | NullablePlusNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Add
-
-            | NullableMinusQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Subtract
-            | MinusNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Subtract
-            | NullableMinusNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Subtract
-
-            | NullableMultiplyQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Multiply
-            | MultiplyNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Multiply
-            | NullableMultiplyNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Multiply
-
-            | NullableDivideQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Divide
-            | DivideNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Divide
-            | NullableDivideNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Divide
-
-            | NullableModuloQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 true Expression.Modulo
-            | ModuloNullableQ (_, _, [x1; x2]) -> transBinOp env true x1 x2 false Expression.Modulo
-            | NullableModuloNullableQ (_, _, [x1; x2]) -> transBinOp env false x1 x2 false Expression.Modulo
-
-            | ConvNullableCharQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
+            | ConvNullableCharQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
             | ConvNullableDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<decimal>>) |> asExpr
             | ConvNullableFloatQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float>>) |> asExpr
             | ConvNullableDoubleQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<double>>) |> asExpr
@@ -651,10 +496,19 @@ module LeafExpressionConverter =
             // Throw away markers inserted to satisfy C#'s design where they pass an argument
             // or type T to an argument expecting Expression<T>.
             | ImplicitExpressionConversionHelperQ (_, [_], [x1]) -> ConvExprToLinqInContext env x1
+             
+            /// Use witnesses if they are available
+            | CallWithWitnesses (objArgOpt, _, minfo2, witnessArgs, args) -> 
+                let fullArgs = witnessArgs @ args
+                let replacementExpr =
+                    match objArgOpt with
+                    | None -> Expr.Call(minfo2, fullArgs)
+                    | Some objArg -> Expr.Call(objArg, minfo2, fullArgs)
+                ConvExprToLinqInContext env replacementExpr
 
-            | _ ->
-                let argsP = ConvExprsToLinq env args
-                Expression.Call(ConvObjArg env objOpt None, minfo, argsP) |> asExpr
+            | _ -> 
+                let argsP = ConvExprsToLinq env args 
+                Expression.Call(ConvObjArg env objOpt None, minfo, argsP) |> asExpr  
 
 #if !NO_CURRIED_FUNCTION_OPTIMIZATIONS
         // f x1 x2 x3 x4 --> InvokeFast4
@@ -746,7 +600,12 @@ module LeafExpressionConverter =
             Expression.Lambda(dty, bodyP, vsP) |> asExpr
 
         | Patterns.NewTuple args ->
-             let tupTy = args |> List.map (fun arg -> arg.Type) |> Array.ofList |> Reflection.FSharpType.MakeTupleType
+             let tupTy = 
+                let argTypes = args |> List.map (fun arg -> arg.Type) |> Array.ofList
+                if inp.Type.IsValueType then 
+                    Reflection.FSharpType.MakeStructTupleType(inp.Type.Assembly, argTypes)
+                else
+                    Reflection.FSharpType.MakeTupleType(argTypes)
              let argsP = ConvExprsToLinq env args
              let rec build ty (argsP: Expression[]) =
                  match Reflection.FSharpValue.PreComputeTupleConstructorInfo ty with
@@ -800,17 +659,21 @@ module LeafExpressionConverter =
             let convType = lambdaTy.MakeGenericType tyargs
             let convDelegate = Expression.Lambda(convType, bodyP, [| vP |]) |> asExpr
             Expression.Call(typeof<FuncConvert>, "ToFSharpFunc", tyargs, [| convDelegate |]) |> asExpr
-
         | _ ->
+            failConvert inp
+
+    and failConvert inp =
             raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%A\n-------------\n" inp))
 
-    and transBinOp env addConvertLeft x1 x2 addConvertRight (exprErasedConstructor : _ * _ -> _) =
-        let e1 = ConvExprToLinqInContext env x1
-        let e2 = ConvExprToLinqInContext env x2
-        let e1 = if addConvertLeft then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
-        let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
-        exprErasedConstructor(e1, e2) |> asExpr
-
+    and transBinOp inp env addConvertLeft args addConvertRight (exprErasedConstructor : _ * _ -> _) =
+        match args with 
+        | [x1; x2] -> 
+            let e1 = ConvExprToLinqInContext env x1
+            let e2 = ConvExprToLinqInContext env x2
+            let e1 = if addConvertLeft  then Expression.Convert(e1, typedefof<Nullable<int>>.MakeGenericType [| e1.Type |]) |> asExpr else e1
+            let e2 = if addConvertRight then Expression.Convert(e2, typedefof<Nullable<int>>.MakeGenericType [| e2.Type |]) |> asExpr else e2
+            exprErasedConstructor(e1, e2) |> asExpr
+        | _ -> failConvert inp
 
     and ConvObjArg env objOpt coerceTo : Expression =
         match objOpt with

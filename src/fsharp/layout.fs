@@ -3,7 +3,6 @@
 module FSharp.Compiler.Layout
 
 open System
-open System.Collections.Generic
 open System.IO
 open Internal.Utilities.StructuredFormat
 open Microsoft.FSharp.Core.Printf
@@ -19,6 +18,7 @@ type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
     interface TaggedText with
         member x.Tag = taggedText.Tag
         member x.Text = taggedText.Text
+
 let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
 let spaces n = new String(' ', n)
@@ -389,7 +389,7 @@ type LayoutRenderer<'a, 'b> =
 let renderL (rr: LayoutRenderer<_, _>) layout =
     let rec addL z pos i layout k = 
       match layout with
-      | ObjLeaf _ -> failwith "ObjLeaf should never apper here"
+      | ObjLeaf _ -> failwith "ObjLeaf should never appear here"
         (* pos is tab level *)
       | Leaf (_, text, _)                 -> 
           k(rr.AddText z text, i + text.Text.Length)

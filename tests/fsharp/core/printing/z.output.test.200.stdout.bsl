@@ -121,7 +121,7 @@ type T =
   end
 val f_as_method : x:int -> int
 val f_as_thunk : (int -> int)
-val refCell : string ref = {contents = "value";}
+val refCell : string ref = { contents = "value" }
 module D1 = begin
   val words : System.Collections.Generic.IDictionary<string,int>
   val words2000 : System.Collections.Generic.IDictionary<int,string>
@@ -237,54 +237,57 @@ val tree_5_3 : tree =
 val generate : x:int -> X
 
 > val exps : X list =
-  [Bop (1,Var 0,Var 0); Var 2; Bop (3,Bop (1,Var 0,Var 0),Bop (1,Var 0,...));
-   ...]
+  [Bop (1, Var 0, Var 0); Var 2;
+   Bop (3, Bop (1, Var 0, Var 0), Bop (1, Var 0, ...)); ...]
 
 > module Exprs = begin
   val x1 : X =
     Bop
-      (213,Var 106,
+      (213, Var 106,
        Bop
-         (71,Bop (35,Bop (17,Var 8,Bop (5,Var 2,Bop (1,Var 0,...))),...),...))
+         (71,
+          Bop (35, Bop (17, Var 8, Bop (5, Var 2, Bop (1, Var 0, ...))), ...),
+          ...))
   val x2 : X = Var 21342314
   val x3 : X = Var 3214
-  val x4 : X = Bop (1231357,Var 615678,Var 410452)
+  val x4 : X = Bop (1231357, Var 615678, Var 410452)
   val x5 : X =
     Bop
-      (5234547,Bop (2617273,Var 1308636,Var 872424),
-       Bop (1744849,Var 872424,Var 581616))
+      (5234547, Bop (2617273, Var 1308636, Var 872424),
+       Bop (1744849, Var 872424, Var 581616))
   val x6 : X =
-    Bop (923759825,Var 461879912,Bop (307919941,Var 153959970,Var 102639980))
+    Bop
+      (923759825, Var 461879912, Bop (307919941, Var 153959970, Var 102639980))
   val x7 : X = Var 2435234
   val x8 : X =
     Bop
-      (12396777,Var 6198388,
+      (12396777, Var 6198388,
        Bop
          (4132259,
           Bop
-            (2066129,Var 1033064,
+            (2066129, Var 1033064,
              Bop
-               (688709,Var 344354,Bop (229569,Var 114784,Bop (76523,...,...)))),
-          ...))
+               (688709, Var 344354,
+                Bop (229569, Var 114784, Bop (76523, ..., ...)))), ...))
   val x9 : X =
     Bop
-      (3333333,Var 1666666,
+      (3333333, Var 1666666,
        Bop
          (1111111,
           Bop
-            (555555,Bop (277777,Var 138888,Var 92592),
-             Bop (185185,Var 92592,Var 61728)),...))
+            (555555, Bop (277777, Var 138888, Var 92592),
+             Bop (185185, Var 92592, Var 61728)), ...))
   val x10 : X =
     Bop
-      (1312311237,Var 656155618,
+      (1312311237, Var 656155618,
        Bop
          (437437079,
           Bop
             (218718539,
              Bop
-               (109359269,Var 54679634,
-                Bop (36453089,Var 18226544,Bop (12151029,Var 6075514,...))),
-             ...),...))
+               (109359269, Var 54679634,
+                Bop (36453089, Var 18226544, Bop (12151029, Var 6075514, ...))),
+             ...), ...))
   val x11 : X =
     Bop
       (2147483647,
@@ -301,8 +304,9 @@ val generate : x:int -> X
                       Bop
                         (33554431,
                          Bop
-                           (16777215,Bop (8388607,Bop (4194303,...,...),...),
-                            ...),...),...),...),...),...),...),...)
+                           (16777215,
+                            Bop (8388607, Bop (4194303, ..., ...), ...), ...),
+                         ...), ...), ...), ...), ...), ...), ...)
 end
 
 > type C =
@@ -366,7 +370,7 @@ exception ExUnits of unit * unit
 exception ExUnitOption of unit option
 val ex0 : exn = Ex0
 val exU : exn = ExUnit ()
-val exUs : exn = ExUnits ((),())
+val exUs : exn = ExUnits ((), ())
 val exUSome : exn = ExUnitOption (Some ())
 val exUNone : exn = ExUnitOption None
 type 'a T4063 = | AT4063 of 'a
@@ -458,7 +462,7 @@ end
   | B
 
 > type internal T2 =
-  {x: int;}
+  { x: int }
 
 > type internal T3
 
@@ -472,28 +476,28 @@ end
            | B
 
 > type T2 =
-  internal {x: int;}
+  internal { x: int }
 
 > type private T1 =
   | A
   | B
 
 > type private T2 =
-  {x: int;}
+  { x: int }
 
 > type T1 =
   private | A
           | B
 
 > type T2 =
-  private {x: int;}
+  private { x: int }
 
 > type internal T1 =
   private | A
           | B
 
 > type internal T2 =
-  private {x: int;}
+  private { x: int }
 
 > type private T3
 
@@ -557,46 +561,46 @@ type 'a T1Pre with
   member E : IEvent<obj>
 
 > type r =
-  {f0: int;
-   f1: int;
-   f2: int;
-   f3: int;
-   f4: int;
-   f5: int;
-   f6: int;
-   f7: int;
-   f8: int;
-   f9: int;}
-val r10 : r = {f0 = 0;
-               f1 = 1;
-               f2 = 2;
-               f3 = 3;
-               f4 = 4;
-               f5 = 5;
-               f6 = 6;
-               f7 = 7;
-               f8 = 8;
-               f9 = 9;}
-val r10s : r [] = [|{f0 = 0;
-                     f1 = 1;
-                     f2 = 2;
-                     f3 = 3;
-                     f4 = 4;
-                     f5 = 5;
-                     f6 = 6;
-                     f7 = 7;
-                     f8 = 8;
-                     f9 = 9;}; ...|]
-val r10s' : string * r [] = ("one extra node", [|{f0 = 0;
-                                                  f1 = 1;
-                                                  f2 = 2;
-                                                  f3 = 3;
-                                                  f4 = 4;
-                                                  f5 = 5;
-                                                  f6 = 6;
-                                                  f7 = 7;
-                                                  f8 = 8;
-                                                  f9 = ...;}; ...|])
+  { f0: int
+    f1: int
+    f2: int
+    f3: int
+    f4: int
+    f5: int
+    f6: int
+    f7: int
+    f8: int
+    f9: int }
+val r10 : r = { f0 = 0
+                f1 = 1
+                f2 = 2
+                f3 = 3
+                f4 = 4
+                f5 = 5
+                f6 = 6
+                f7 = 7
+                f8 = 8
+                f9 = 9 }
+val r10s : r [] = [|{ f0 = 0
+                      f1 = 1
+                      f2 = 2
+                      f3 = 3
+                      f4 = 4
+                      f5 = 5
+                      f6 = 6
+                      f7 = 7
+                      f8 = 8
+                      f9 = 9 }; ...|]
+val r10s' : string * r [] = ("one extra node", [|{ f0 = 0
+                                                   f1 = 1
+                                                   f2 = 2
+                                                   f3 = 3
+                                                   f4 = 4
+                                                   f5 = 5
+                                                   f6 = 6
+                                                   f7 = 7
+                                                   f8 = 8
+                                                   f9 = ... }; ...|])
 
 > val x1564_A1 : int = 1
 
@@ -647,7 +651,7 @@ val x1564_A3 : int = 3
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -657,22 +661,22 @@ val x1564_A3 : int = 3
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class
@@ -695,7 +699,7 @@ module internal PrivateM = begin
     | A
     | B
   type T2 =
-    {x: int;}
+    { x: int }
   type T3
   type T4 =
     class
@@ -705,22 +709,22 @@ module internal PrivateM = begin
     | A
     | B
   type T6 =
-    {x: int;}
+    { x: int }
   type private T7 =
     | A
     | B
   type private T8 =
-    {x: int;}
+    { x: int }
   type T9 =
     private | A
             | B
   type T10 =
-    private {x: int;}
+    private { x: int }
   type T11 =
     private | A
             | B
   type T12 =
-    private {x: int;}
+    private { x: int }
   type private T13
   type private T14 =
     class
@@ -1055,9 +1059,9 @@ module Regression1019_long = begin
   val single_infinity : float32 = infinityf
 end
 
-> val it : int ref = {contents = 1;}
+> val it : int ref = { contents = 1 }
 
-> val x : int ref = {contents = 1;}
+> val x : int ref = { contents = 1 }
 val f : (unit -> int)
 
 > val it : int = 1
@@ -1967,7 +1971,7 @@ type T =
   | Case5 of bool * string
   | Case6 of Val1: int * bool * string
   | Case7 of Big Name: int
-val namedFieldVar1 : MyDU = Case1 (5,"")
+val namedFieldVar1 : MyDU = Case1 (5, "")
 val namedFieldVar2 : MyDU = Case7 25
 
 > exception MyNamedException1 of Val1: int * Val2: string
@@ -1977,15 +1981,15 @@ exception MyNamedException4 of bool
 exception MyNamedException5 of int * string
 exception MyNamedException6 of Val1: int * bool * string * Data8: float
 exception MyNamedException7 of Big Named Field: int
-val namedEx1 : exn = MyNamedException1 (5,"")
+val namedEx1 : exn = MyNamedException1 (5, "")
 val namedEx2 : exn = MyNamedException7 25
 
 > type optionRecord =
-  {x: int option;}
-val x : optionRecord = {x = None;}
+  { x: int option }
+val x : optionRecord = { x = None }
 
 > type optionRecord =
-  {x: obj;}
-val x : optionRecord = {x = null;}
+  { x: obj }
+val x : optionRecord = { x = null }
 
 > > > 

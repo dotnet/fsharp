@@ -2,15 +2,13 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Immutable
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open SymbolHelpers
+open FSharp.Compiler.SourceCodeServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FixIndexerAccess"); Shared>]
 type internal FSharpFixIndexerAccessCodeFixProvider() =
@@ -50,7 +48,7 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
 
                     let codefix = 
                         CodeFixHelpers.createTextChangeCodeFix(
-                            FSComp.SR.addIndexerDot(), 
+                            CompilerDiagnostics.getErrorMessage AddIndexerDot, 
                             context,
                             (fun () -> asyncMaybe.Return [| TextChange(span, replacement.TrimEnd() + ".") |]))
 

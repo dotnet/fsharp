@@ -7,10 +7,6 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 
-// set to the proper value at CompileOps.fs (BuildFrameworkTcImports)
-// Only reelvant when compiling FSharp.Core.dll
-let parseILGlobals = ref EcmaMscorlibILGlobals
-
 /// Table of parsing and pretty printing data for instructions.
 let noArgInstrs =
     lazy [
@@ -225,12 +221,6 @@ let DoubleInstrs : Lazy<InstrTable<DoubleInstr>> =
         ["ldc";"r4"], (fun x -> (AI_ldc (DT_R4, x)))
         ["ldc";"r8"], (fun x -> (AI_ldc (DT_R8, x))) 
     ]
-
-/// Table of parsing and pretty printing data for instructions.
-let MethodSpecInstrs : Lazy<InstrTable<MethodSpecInstr>> =
-    lazy [
-        ["call"], (fun (mspec, y) -> I_call (Normalcall, mspec, y)) 
-    ] 
 
 /// Table of parsing and pretty printing data for instructions.
 let StringInstrs : Lazy<InstrTable<StringInstr>> =

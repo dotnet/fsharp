@@ -54,6 +54,7 @@ module internal ExtensionTyping =
           * isInteractive: bool
           * systemRuntimeContainsType : (string -> bool)
           * systemRuntimeAssemblyVersion : System.Version
+          * compilerToolsPath : string list
           * range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
@@ -73,20 +74,20 @@ module internal ExtensionTyping =
     [<Sealed>]
     type ProvidedTypeContext =
 
-        member TryGetILTypeRef : System.Type -> ILTypeRef option
+        member TryGetILTypeRef : ProvidedType -> ILTypeRef option
 
-        member TryGetTyconRef : System.Type -> obj option
+        member TryGetTyconRef : ProvidedType -> obj option
 
         static member Empty : ProvidedTypeContext 
 
-        static member Create : Dictionary<System.Type,ILTypeRef> * Dictionary<System.Type,obj (* TyconRef *) > -> ProvidedTypeContext 
+        static member Create : Dictionary<ProvidedType, ILTypeRef> * Dictionary<ProvidedType, obj (* TyconRef *) > -> ProvidedTypeContext 
 
-        member GetDictionaries : unit -> Dictionary<System.Type,ILTypeRef> * Dictionary<System.Type,obj (* TyconRef *) > 
+        member GetDictionaries : unit -> Dictionary<ProvidedType, ILTypeRef> * Dictionary<ProvidedType, obj (* TyconRef *) > 
 
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
 
-    type [<AllowNullLiteral; Sealed; Class>] 
+    and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedType =
         inherit ProvidedMemberInfo
         member IsSuppressRelocate : bool
@@ -119,7 +120,9 @@ module internal ExtensionTyping =
         member IsEnum : bool
         member IsInterface : bool
         member IsClass : bool
+        member IsMeasure: bool
         member IsSealed : bool
+        member IsAbstract : bool
         member IsPublic : bool
         member IsNestedPublic : bool
         member GenericParameterPosition : int
@@ -128,6 +131,12 @@ module internal ExtensionTyping =
         member GetArrayRank : unit -> int
         member RawSystemType : System.Type
         member GetEnumUnderlyingType : unit -> ProvidedType
+        member MakePointerType: unit -> ProvidedType
+        member MakeByRefType: unit -> ProvidedType
+        member MakeArrayType: unit -> ProvidedType
+        member MakeArrayType: rank: int -> ProvidedType
+        member MakeGenericType: args: ProvidedType[] -> ProvidedType
+        member AsProvidedVar : name: string -> ProvidedVar
         static member Void : ProvidedType
         static member CreateNoContext : Type -> ProvidedType
         member TryGetILTypeRef : unit -> ILTypeRef option
@@ -181,9 +190,7 @@ module internal ExtensionTyping =
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
-#if !FX_NO_REFLECTION_METADATA_TOKENS
         member MetadataToken : int
-#endif
 
     and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedParameterInfo = 
@@ -236,85 +243,46 @@ module internal ExtensionTyping =
     and [<AllowNullLiteral; Class; Sealed>] 
         ProvidedConstructorInfo = 
         inherit ProvidedMethodBase
+      
+    and ProvidedExprType =
+        | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
+#if PROVIDED_ADDRESS_OF
+        | ProvidedAddressOfExpr of ProvidedExpr
+#endif
+        | ProvidedNewObjectExpr of ProvidedConstructorInfo * ProvidedExpr[]
+        | ProvidedWhileLoopExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedNewDelegateExpr of ProvidedType * ProvidedVar[] * ProvidedExpr
+        | ProvidedForIntegerRangeLoopExpr of ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr
+        | ProvidedSequentialExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedTryWithExpr of ProvidedExpr * ProvidedVar * ProvidedExpr * ProvidedVar * ProvidedExpr
+        | ProvidedTryFinallyExpr of ProvidedExpr * ProvidedExpr
+        | ProvidedLambdaExpr of ProvidedVar * ProvidedExpr
+        | ProvidedCallExpr of ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]
+        | ProvidedConstantExpr of obj * ProvidedType
+        | ProvidedDefaultExpr of ProvidedType
+        | ProvidedNewTupleExpr of ProvidedExpr[]
+        | ProvidedTupleGetExpr of ProvidedExpr * int
+        | ProvidedTypeAsExpr of ProvidedExpr * ProvidedType
+        | ProvidedTypeTestExpr of ProvidedExpr * ProvidedType
+        | ProvidedLetExpr of ProvidedVar * ProvidedExpr * ProvidedExpr
+        | ProvidedVarSetExpr of ProvidedVar * ProvidedExpr
+        | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
+        | ProvidedVarExpr of ProvidedVar
         
-    [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
-    type ProvidedExpr =
+    and [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
+        ProvidedExpr =
         member Type : ProvidedType
         /// Convert the expression to a string for diagnostics
         member UnderlyingExpressionString : string
+        member GetExprType : unit -> ProvidedExprType option
 
-    [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
-    type ProvidedVar =
+    and [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
+        ProvidedVar =
         member Type : ProvidedType
         member Name : string
         member IsMutable : bool
-        static member Fresh : string * ProvidedType -> ProvidedVar
         override Equals : obj -> bool
         override GetHashCode : unit -> int
-
-    /// Detect a provided new-array expression 
-    val (|ProvidedNewArrayExpr|_|)   : ProvidedExpr -> (ProvidedType * ProvidedExpr[]) option
-
-#if PROVIDED_ADDRESS_OF
-    val (|ProvidedAddressOfExpr|_|)  : ProvidedExpr -> ProvidedExpr option
-#endif
-
-    /// Detect a provided new-object expression 
-    val (|ProvidedNewObjectExpr|_|)     : ProvidedExpr -> (ProvidedConstructorInfo * ProvidedExpr[]) option
-
-    /// Detect a provided while-loop expression 
-    val (|ProvidedWhileLoopExpr|_|) : ProvidedExpr -> (ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided new-delegate expression 
-    val (|ProvidedNewDelegateExpr|_|) : ProvidedExpr -> (ProvidedType * ProvidedVar[] * ProvidedExpr) option
-
-    /// Detect a provided expression which is a for-loop over integers
-    val (|ProvidedForIntegerRangeLoopExpr|_|) : ProvidedExpr -> (ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided sequential expression 
-    val (|ProvidedSequentialExpr|_|)    : ProvidedExpr -> (ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided try/with expression 
-    val (|ProvidedTryWithExpr|_|)       : ProvidedExpr -> (ProvidedExpr * ProvidedVar * ProvidedExpr * ProvidedVar * ProvidedExpr) option
-
-    /// Detect a provided try/finally expression 
-    val (|ProvidedTryFinallyExpr|_|)    : ProvidedExpr -> (ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided lambda expression 
-    val (|ProvidedLambdaExpr|_|)     : ProvidedExpr -> (ProvidedVar * ProvidedExpr) option
-
-    /// Detect a provided call expression 
-    val (|ProvidedCallExpr|_|) : ProvidedExpr -> (ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]) option
-
-    /// Detect a provided constant expression 
-    val (|ProvidedConstantExpr|_|)   : ProvidedExpr -> (obj * ProvidedType) option
-
-    /// Detect a provided default-value expression 
-    val (|ProvidedDefaultExpr|_|)    : ProvidedExpr -> ProvidedType option
-
-    /// Detect a provided new-tuple expression 
-    val (|ProvidedNewTupleExpr|_|)   : ProvidedExpr -> ProvidedExpr[] option
-
-    /// Detect a provided tuple-get expression 
-    val (|ProvidedTupleGetExpr|_|)   : ProvidedExpr -> (ProvidedExpr * int) option
-
-    /// Detect a provided type-as expression 
-    val (|ProvidedTypeAsExpr|_|)      : ProvidedExpr -> (ProvidedExpr * ProvidedType) option
-
-    /// Detect a provided type-test expression 
-    val (|ProvidedTypeTestExpr|_|)      : ProvidedExpr -> (ProvidedExpr * ProvidedType) option
-
-    /// Detect a provided 'let' expression 
-    val (|ProvidedLetExpr|_|)      : ProvidedExpr -> (ProvidedVar * ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided 'set variable' expression 
-    val (|ProvidedVarSetExpr|_|)      : ProvidedExpr -> (ProvidedVar * ProvidedExpr) option
-
-    /// Detect a provided 'IfThenElse' expression 
-    val (|ProvidedIfThenElseExpr|_|) : ProvidedExpr -> (ProvidedExpr * ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided 'Var' expression 
-    val (|ProvidedVarExpr|_|)  : ProvidedExpr -> ProvidedVar option
 
     /// Get the provided expression for a particular use of a method.
     val GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr

@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Threading
@@ -11,6 +12,8 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
@@ -21,9 +24,8 @@ type internal DiagnosticsType =
     | Syntax
     | Semantic
 
-[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
-type internal FSharpDocumentDiagnosticAnalyzer() =
-    inherit DocumentDiagnosticAnalyzer()
+[<Export(typeof<IFSharpDocumentDiagnosticAnalyzer>)>]
+type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     static let userOpName = "DocumentDiagnosticAnalyzer"
     let getChecker(document: Document) =
@@ -31,7 +33,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     let getProjectInfoManager(document: Document) =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
-    
+
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpErrorInfo> with 
             member __.Equals (x, y) =
@@ -105,40 +107,33 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
             return results
         }
 
-    override __.Priority = 10 // Default = 50
+    interface IFSharpDocumentDiagnosticAnalyzer with
 
-    override this.SupportedDiagnostics = RoslynHelpers.SupportedDiagnostics()
-
-    override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-        let projectInfoManager = getProjectInfoManager document
-        asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
-            let! sourceText = document.GetTextAsync(cancellationToken)
-            let! textVersion = document.GetTextVersionAsync(cancellationToken)
-            return! 
-                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Syntax)
-                |> liftAsync
-        } 
-        |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-        |> RoslynHelpers.StartAsyncAsTask cancellationToken
-
-    override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
-        let projectInfoManager = getProjectInfoManager document
-        asyncMaybe {
-            let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken) 
-            let! sourceText = document.GetTextAsync(cancellationToken)
-            let! textVersion = document.GetTextVersionAsync(cancellationToken)
-            if document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName || isScriptFile document.FilePath then
+        member this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            let projectInfoManager = getProjectInfoManager document
+            asyncMaybe {
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Syntax)
                     |> liftAsync
-            else
-                return ImmutableArray<Diagnostic>.Empty
-        }
-        |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-        |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            } 
+            |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
-    interface IBuiltInAnalyzer with
-        member __.GetAnalyzerCategory() : DiagnosticAnalyzerCategory = DiagnosticAnalyzerCategory.SemanticDocumentAnalysis
-        member __.OpenFileOnly _ = true
-
+        member this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
+            let projectInfoManager = getProjectInfoManager document
+            asyncMaybe {
+                let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken) 
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                if document.Project.Name <> FSharpConstants.FSharpMiscellaneousFilesName || isScriptFile document.FilePath then
+                    return! 
+                        FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
+                        |> liftAsync
+                else
+                    return ImmutableArray<Diagnostic>.Empty
+            }
+            |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken

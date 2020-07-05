@@ -1,6 +1,6 @@
 // #Regression #Conformance #DeclarationElements #Accessibility 
 // Regression test for FSHARP1.0:4679
-//<Expect status="success"></Expect>
+//<Expects status="success"></Expects>
 module M
 type internal A() = class end
 

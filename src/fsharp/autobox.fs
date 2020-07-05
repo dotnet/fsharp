@@ -5,8 +5,9 @@ module internal FSharp.Compiler.AutoBox
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
@@ -17,6 +18,8 @@ open FSharp.Compiler.TypeRelations
 type cenv = 
     { g: TcGlobals
       amap: Import.ImportMap }
+
+    override x.ToString() = "<cenv>"
 
 /// Find all the mutable locals that escape a method, function or lambda expression
 let DecideEscapes syntacticArgs body =
@@ -124,7 +127,6 @@ let DecideImplFile g amap implFile =
 
     z
 
-
 //----------------------------------------------------------------------------
 // Apply the transform
 
@@ -151,7 +153,6 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
        Some (mkRecdFieldGetAddrViaExprAddr (readonly, nve, mkRefCellContentsRef g, [v.Type], m))
 
     | _ -> None
-
 
 /// Rewrite bindings for mutable locals which we are transforming
 let TransformBinding g (nvs: ValMap<_>) exprF (TBind(v, expr, m)) = 

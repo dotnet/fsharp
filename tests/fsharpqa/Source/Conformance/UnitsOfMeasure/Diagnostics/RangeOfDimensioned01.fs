@@ -1,6 +1,6 @@
 // #Regression #Conformance #UnitsOfMeasure #Diagnostics 
 // Regression test for FSHARP1.0:2732
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 // Note: you need the 'step' in the range in order to see the warning!
 
 [<Measure>] type Kg

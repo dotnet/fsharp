@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="cannotCreateToolWindow">
         <source>Cannot create window F# Interactive ToolWindow</source>
-        <target state="translated">F# Interactive ToolWindow ウィンドウを作成できません</target>
+        <target state="translated">F# インタラクティブ ToolWindow ウィンドウを作成できません</target>
         <note />
       </trans-unit>
       <trans-unit id="exceptionRaisedWhenCreatingRemotingClient">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="fsharpInteractive">
         <source>F# Interactive</source>
-        <target state="translated">F# Interactive</target>
+        <target state="translated">F# インタラクティブ</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotFindFsiExe">

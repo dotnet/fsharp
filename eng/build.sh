@@ -13,7 +13,9 @@ usage()
   echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
+  echo "  --bootstrap                Force the build of the bootstrap compiler"
   echo "  --restore                  Restore projects required to build (short: -r)"
+  echo "  --norestore                Don't restore projects required to build"
   echo "  --build                    Build all projects (short: -b)"
   echo "  --rebuild                  Rebuild all projects"
   echo "  --pack                     Build nuget packages"
@@ -54,13 +56,18 @@ test_core_clr=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
+force_bootstrap=false
 ci=false
 skip_analyzers=false
 prepare_machine=false
+source_build=false
 properties=""
 
 docker=false
 args=""
+
+BuildCategory=""
+BuildMessage=""
 
 if [[ $# = 0 ]]
 then
@@ -87,6 +94,9 @@ while [[ $# > 0 ]]; do
       ;;
     --binarylog|-bl)
       binary_log=true
+      ;;
+    --bootstrap)
+      force_bootstrap=true
       ;;
     --restore|-r)
       restore=true
@@ -125,6 +135,9 @@ while [[ $# > 0 ]]; do
       ;;
     /p:*)
       properties="$properties $1"
+      if [[ "$1" == "/p:dotnetbuildfromsource=true" ]]; then
+        source_build=true
+      fi
       ;;
     *)
       echo "Invalid argument: $1"
@@ -140,6 +153,8 @@ done
 . "$scriptroot/common/tools.sh"
 
 function TestUsingNUnit() {
+  BuildCategory="Test"
+  BuildMessage="Error running tests"
   testproject=""
   targetframework=""
   while [[ $# > 0 ]]; do
@@ -166,27 +181,34 @@ function TestUsingNUnit() {
     exit 1
   fi
 
+  filterArgs=""
+  if [[ "${RunningAsPullRequest:-}" != "true" ]]; then
+    filterArgs=" --filter TestCategory!=PullRequest"
+  fi
+
   projectname=$(basename -- "$testproject")
   projectname="${projectname%.*}"
   testlogpath="$artifacts_dir/TestResults/$configuration/${projectname}_$targetframework.xml"
-  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\""
-  "$DOTNET_INSTALL_DIR/dotnet" $args
+  args="test \"$testproject\" --no-restore --no-build -c $configuration -f $targetframework --test-adapter-path . --logger \"nunit;LogFilePath=$testlogpath\"$filterArgs"
+  "$DOTNET_INSTALL_DIR/dotnet" $args || exit $?
 }
 
 function BuildSolution {
+  BuildCategory="Build"
+  BuildMessage="Error preparing build"
   local solution="FSharp.sln"
   echo "$solution:"
 
   InitializeToolset
   local toolset_build_proj=$_InitializeToolset
-  
+
   local bl=""
   if [[ "$binary_log" = true ]]; then
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
-  
-  local projects="$repo_root/$solution" 
-  
+
+  local projects="$repo_root/$solution"
+
   # https://github.com/dotnet/roslyn/issues/23736
   local enable_analyzers=!$skip_analyzers
   UNAME="$(uname)"
@@ -205,21 +227,41 @@ function BuildSolution {
     quiet_restore=true
   fi
 
+  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
+  node_reuse=false
+
   # build bootstrap tools
   bootstrap_config=Proto
-  MSBuild "$repo_root/src/buildtools/buildtools.proj" \
-    /restore \
-    /p:Configuration=$bootstrap_config \
-    /t:Build
-
   bootstrap_dir=$artifacts_dir/Bootstrap
-  mkdir -p "$bootstrap_dir"
-  cp $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
-  cp $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp2.1/* $bootstrap_dir
+  if [[ "$force_bootstrap" == true ]]; then
+     rm -fr $bootstrap_dir
+  fi
+  if [ ! -f "$bootstrap_dir/fslex.dll" ]; then
+    BuildMessage="Error building tools"
+    MSBuild "$repo_root/src/buildtools/buildtools.proj" \
+      /restore \
+      /p:Configuration=$bootstrap_config \
+      /t:Publish
+
+    mkdir -p "$bootstrap_dir"
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fsyacc
+  fi
+  if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
+    BuildMessage="Error building bootstrap"
+    MSBuild "$repo_root/proto.proj" \
+      /restore \
+      /p:Configuration=$bootstrap_config \
+      /t:Publish
+
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fsc
+  fi
 
   # do real build
+  BuildMessage="Error building solution"
   MSBuild $toolset_build_proj \
     $bl \
+    /v:$verbosity \
     /p:Configuration=$configuration \
     /p:Projects="$projects" \
     /p:RepoRoot="$repo_root" \
@@ -235,13 +277,26 @@ function BuildSolution {
     $properties
 }
 
+function TrapAndReportError {
+  local exit_code=$?
+  if [[ ! $exit_code == 0 ]]; then
+    Write-PipelineTelemetryError -category $BuildCategory "$BuildMessage (exit code '$exit_code')."
+    ExitWithExitCode $exit_code
+  fi
+}
+
+# allow early termination to report the appropriate build failure reason
+trap TrapAndReportError EXIT
+
 InitializeDotNetCli $restore
 
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=netcoreapp2.1
+  coreclrtestframework=netcoreapp3.1
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi

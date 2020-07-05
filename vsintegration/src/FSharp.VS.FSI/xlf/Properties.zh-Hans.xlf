@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="translated">64 位 F# 交互</target>
+        <target state="translated">64 位 F# 交互窗口</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">如果设为 true，且当前计算机是 64 位的，则将 F# 交互作为 64 位进程运行。(否则，F# 交互为 32 位进程。)</target>
+        <target state="translated">如果设为 true，且当前计算机是 64 位的，则将 F# 交互窗口作为 64 位进程运行。(否则，F# 交互为 32 位进程。)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
@@ -25,6 +25,21 @@
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
         <target state="translated">杂项</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreview">
+        <source>FSI Preview</source>
+        <target state="translated">FSI 预览</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewMode">
+        <source>Enable preview language features</source>
+        <target state="translated">启用预览语言功能</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewModeDescr">
+        <source>Enable preview of in-development language features in F# Interactive</source>
+        <target state="translated">在 F# 交互中启用开发中语言功能的预览</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
@@ -44,7 +59,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">启用 F# 脚本的调试(可能会影响脚本性能，需要重置 F# 交互)</target>
+        <target state="translated">启用 F# 脚本的调试(可能会影响脚本性能，需要重置 F# 交互窗口)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">

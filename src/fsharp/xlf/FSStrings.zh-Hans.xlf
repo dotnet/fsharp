@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSStrings.resx">
     <body>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">符号 "..^"</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">。请参见 {0}。</target>
@@ -63,23 +68,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">通常不应在模式中使用大写的变量标识符，这可能标明某个模式名称存在拼写错误。</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="needs-review-translation">通常不应在模式中使用大写的变量标识符，这可能标明某个模式名称存在拼写错误。</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">可区分的联合用例和异常标签必须是大写的标识符</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">可能的重载:“{0}”。{1}。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleBestOverload">
-        <source>\n\nPossible best overload: '{0}'.</source>
-        <target state="translated">\n\n可能的最佳重载:“{0}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -424,7 +419,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HASH">
         <source>symbol #</source>
-        <target state="translated">意外的</target>
+        <target state="translated">符号 #</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.UNDERSCORE">
@@ -984,7 +979,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.STRING">
         <source>string literal</source>
-        <target state="translated">字符串</target>
+        <target state="translated">字符串文本</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.EOF">
@@ -1344,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化 。请考虑在成员中或 "&lt;ctor-expr&gt; then &lt;expr&gt;" 格式的尾随表达式中放置自引用。</target>
+        <target state="translated">将检查对要定义的对象的递归引用，以查看其在运行时能否通过使用延迟的引用来完整地进行初始化。请考虑在成员中或 "&lt;ctor-expr&gt; then &lt;expr&gt;" 格式的尾随表达式中放置自引用。</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1625,6 +1620,11 @@
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
         <target state="translated">符号 "|}"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">关键字 "and!"</target>
         <note />
       </trans-unit>
     </body>

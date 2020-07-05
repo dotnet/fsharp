@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.Async module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
 open System.Threading
@@ -63,7 +63,7 @@ module ChoiceUtils =
     let runChoice (ChoiceWorkflow(ops, cancelAfter)) =
         // Step 1. build a choice workflow from the abstract representation
         let completed = ref 0
-        let returnAfter time f = async {
+        let returnAfter (time: int) f = async {
             do! Async.Sleep time
             let _ = Interlocked.Increment completed
             return f ()
@@ -168,8 +168,8 @@ type AsyncModule() =
 
     let dispose(d : #IDisposable) = d.Dispose()
 
-    let testErrorAndCancelRace computation = 
-        for _ in 1..20 do
+    let testErrorAndCancelRace testCaseName computation = 
+        for i in 1..20 do
             let cts = new System.Threading.CancellationTokenSource()
             use barrier = new System.Threading.ManualResetEvent(false)
             async { cts.Cancel() } 
@@ -180,7 +180,7 @@ type AsyncModule() =
 
             Async.StartWithContinuations(
                 computation,
-                (fun _ -> failwith "success not expected"),
+                (fun _ -> failwith (sprintf "Testcase: %s  --- success not expected iterations 1 .. 20 - failed on iteration %d" testCaseName i)),
                 (fun _ -> incr()),
                 (fun _ -> incr()),
                 cts.Token
@@ -427,12 +427,11 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
         let disposedEvent = new System.Threading.ManualResetEvent(false)
         dispose disposedEvent
-
-        testErrorAndCancelRace(Async.AwaitWaitHandle disposedEvent)
+        testErrorAndCancelRace "RaceBetweenCancellationAndError.AwaitWaitHandle" (Async.AwaitWaitHandle disposedEvent)
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.Sleep``() =
-        testErrorAndCancelRace (Async.Sleep (-5))
+        testErrorAndCancelRace "RaceBetweenCancellationAndError.Sleep" (Async.Sleep (-5))
 
 #if EXPENSIVE
 #if NET46
@@ -626,3 +625,69 @@ type AsyncModule() =
         } |> Async.RunSynchronously
         Console.WriteLine "Checking result...."
         Assert.AreEqual(1, !x)
+
+    [<Test>]
+    member this.``Parallel with maxDegreeOfParallelism`` () =
+        let mutable i = 1
+        let action j = async {
+            do! Async.Sleep 1
+            Assert.AreEqual(j, i)
+            i <- i + 1
+        }
+        let computation =
+            [| for i in 1 .. 1000 -> action i |]
+            |> fun cs -> Async.Parallel(cs, 1)
+        Async.RunSynchronously(computation) |> ignore
+
+    [<Test>]
+    member this.``maxDegreeOfParallelism can not be 0`` () =
+        try
+            [| for i in 1 .. 10 -> async { return i } |]
+            |> fun cs -> Async.Parallel(cs, 0)
+            |> ignore
+            Assert.Fail("Unexpected success")
+        with
+        | :? System.ArgumentException as exc ->
+            Assert.AreEqual("maxDegreeOfParallelism", exc.ParamName)
+            Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was 0"))
+
+    [<Test>]
+    member this.``maxDegreeOfParallelism can not be negative`` () =
+        try
+            [| for i in 1 .. 10 -> async { return i } |]
+            |> fun cs -> Async.Parallel(cs, -1)
+            |> ignore
+            Assert.Fail("Unexpected success")
+        with
+        | :? System.ArgumentException as exc ->
+            Assert.AreEqual("maxDegreeOfParallelism", exc.ParamName)
+            Assert.True(exc.Message.Contains("maxDegreeOfParallelism must be positive, was -1"))
+
+    [<Test>]
+    member this.``RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)``() =
+        [| for i in 1 .. 1000 -> async { failwith "boom" } |]
+        |> fun cs -> Async.Parallel(cs, 1)
+        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel(maxDegreeOfParallelism)"
+
+    [<Test>]
+    member this.``RaceBetweenCancellationAndError.Parallel``() =
+        [| for i in 1 .. 1000 -> async { failwith "boom" } |]
+        |> fun cs -> Async.Parallel(cs)
+        |> testErrorAndCancelRace "RaceBetweenCancellationAndError.Parallel"
+
+    [<Test>]
+    member this.``error on one workflow should cancel all others with maxDegreeOfParallelism``() =
+        let counter =
+            async {
+                let counter = ref 0
+                let job i = async {
+                    if i = 55 then failwith "boom"
+                    else
+                        incr counter
+                }
+
+                let! _ = Async.Parallel ([ for i in 1 .. 100 -> job i ], 1) |> Async.Catch
+                return !counter
+            } |> Async.RunSynchronously
+
+        Assert.AreEqual(54, counter)

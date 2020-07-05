@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="PPG_BuildTitle">
         <source>Build</source>
-        <target state="translated">Kompiluj</target>
+        <target state="translated">Kompilacja</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_BuildEventsTitle">
@@ -704,7 +704,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_BrowseCertFileFilter">
         <source>Certificate Files</source>
-        <target state="translated">Certyfikuj pliki</target>
+        <target state="translated">Pliki certyfikatów</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_IssuedTo">
@@ -1642,7 +1642,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="RSE_Err_RenameNotSupported">
         <source>The current object is auto-generated and only supports renaming through the Managed Resources Editor.</source>
-        <target state="translated">Bieżący obiekt został wygenerowany automatycznie i obsługuje zmianę nazwy poprzez edytor zarządzanych zasobów.</target>
+        <target state="translated">Bieżący obiekt został wygenerowany automatycznie i obsługuje zmianę nazwy poprzez edytor zasobów zarządzanych.</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Err_CantFindResourceFile_1Arg">
@@ -1830,7 +1830,6 @@ CONSIDER: get this from CodeDom</note>
         <source>{0} x {1}</source>
         <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -2123,7 +2122,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceEditor">
         <source>Managed Resources Editor</source>
-        <target state="translated">Edytor zarządzanych zasobów</target>
+        <target state="translated">Edytor zasobów zarządzanych</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_DlgTitle_AddExisting">

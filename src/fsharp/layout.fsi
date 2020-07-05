@@ -1,59 +1,88 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+/// DSL to create structured layout objects with optional breaks and render them
 module public FSharp.Compiler.Layout
 
 open System.Text
-open System.Collections.Generic
 open System.IO
+open FSharp.Compiler.Range
 open Internal.Utilities.StructuredFormat
-open Internal.Utilities.StructuredFormat.TaggedTextOps
 
 type layout = Internal.Utilities.StructuredFormat.Layout
 type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
 
 type NavigableTaggedText =
-    new : TaggedText * Range.range -> NavigableTaggedText
-    member Range: Range.range
+    new : TaggedText * range -> NavigableTaggedText
+    member Range: range
     interface TaggedText
-val mkNav : Range.range -> TaggedText -> TaggedText
 
-module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
+val mkNav : range -> TaggedText -> TaggedText
 
 val emptyL                : Layout
 val isEmptyL              : Layout -> bool
   
 val wordL                 : TaggedText -> Layout
+
 val sepL                  : TaggedText -> Layout
+
 val rightL                : TaggedText -> Layout
+
 val leftL                 : TaggedText -> Layout
-val ( ^^ )                : Layout -> Layout -> Layout   (* never break "glue" *)
-val ( ++ )                : Layout -> Layout -> Layout   (* if break, indent=0 *)
-val ( -- )                : Layout -> Layout -> Layout   (* if break, indent=1 *)
-val ( --- )               : Layout -> Layout -> Layout   (* if break, indent=2 *)
-val ( ---- )              : Layout -> Layout -> Layout   (* if break, indent=2 *)
-val ( ----- )             : Layout -> Layout -> Layout   (* if break, indent=2 *)
-val ( @@ )                : Layout -> Layout -> Layout   (* broken ident=0 *)
-val ( @@- )               : Layout -> Layout -> Layout   (* broken ident=1 *)
-val ( @@-- )              : Layout -> Layout -> Layout   (* broken ident=2 *)
+
+/// never break "glue"
+val ( ^^ )                : Layout -> Layout -> Layout   
+
+/// optional break, indent=0
+val ( ++ )                : Layout -> Layout -> Layout
+
+// optional break, indent=1
+val ( -- )                : Layout -> Layout -> Layout
+
+/// optional break, indent=2
+val ( --- )               : Layout -> Layout -> Layout
+
+/// optional break, indent=3
+val ( ---- )              : Layout -> Layout -> Layout
+
+/// optional break, indent=4
+val ( ----- )             : Layout -> Layout -> Layout
+
+/// non-optional break ident=0
+val ( @@ )                : Layout -> Layout -> Layout
+
+/// non-optional break ident=1
+val ( @@- )               : Layout -> Layout -> Layout
+
+/// non-optional break ident=2
+val ( @@-- )              : Layout -> Layout -> Layout
 
 val commaListL            : Layout list -> Layout
+
 val spaceListL            : Layout list -> Layout
+
 val semiListL             : Layout list -> Layout
+
 val sepListL              : Layout -> Layout list -> Layout
 
 val bracketL              : Layout -> Layout
+
 val tupleL                : Layout list -> Layout
+
 val aboveL                : Layout -> Layout -> Layout
+
 val aboveListL            : Layout list -> Layout
 
 val optionL               : ('a -> Layout) -> 'a option -> Layout    
+
 val listL                 : ('a -> Layout) -> 'a list   -> Layout
 
 val squashTo              : int -> Layout -> Layout
 
 val showL                 : Layout -> string
+
 val outL                  : TextWriter -> Layout -> unit
+
 val bufferL               : StringBuilder -> Layout -> unit
 
 module TaggedTextOps =
@@ -177,7 +206,7 @@ module RightL =
     val rightBracketAngle: Layout
     val rightBracketBar: Layout
 
-/// render a Layout yielding an 'a using a 'b (hidden state) type 
+/// Render a Layout yielding an 'a using a 'b (hidden state) type 
 type LayoutRenderer<'a,'b> =
     abstract Start    : unit -> 'b
     abstract AddText  : 'b -> TaggedText -> 'b
@@ -191,9 +220,15 @@ type NoResult = NoResult
 /// Run a render on a Layout       
 val renderL  : LayoutRenderer<'b,'a> -> Layout -> 'b
 
-/// Primitive renders 
+/// Render layout to string 
 val stringR  : LayoutRenderer<string,string list>
+
+/// Render layout to channel
 val channelR : TextWriter -> LayoutRenderer<NoResult,NoState>
+
+/// Render layout to StringBuilder
 val bufferR  : StringBuilder -> LayoutRenderer<NoResult,NoState>
+
+/// Render layout to collector of TaggedText
 val taggedTextListR  : collector: (TaggedText -> unit) -> LayoutRenderer<NoResult, NoState>
 

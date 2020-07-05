@@ -2,13 +2,14 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open System.Collections.Generic
-
 open FSharp.Compiler.ErrorResolutionHints
 
 module ErrorResolutionHints =
-    let getSuggestedNames (namesToCheck: string[]) (unresolvedIdentifier: string) =
-        let res = FilterPredictions (fun () -> HashSet<string>(namesToCheck)) unresolvedIdentifier |> List.map snd
-        match res with
-        | [] -> None
-        | _ -> Some res
+
+    let getSuggestedNames (suggestionsF: FSharp.Compiler.ErrorLogger.Suggestions) (unresolvedIdentifier: string) =
+        let buffer = SuggestionBuffer(unresolvedIdentifier)
+        if buffer.Disabled then
+            Seq.empty
+        else
+            suggestionsF buffer.Add
+            buffer :> seq<string>

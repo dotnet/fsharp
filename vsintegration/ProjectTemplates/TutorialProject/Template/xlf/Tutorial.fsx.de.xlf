@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="XmlComments-Line2">
         <source>and they also allow editors (such as Visual Studio) to extract information from them.</source>
-        <target state="translated">und sie ermöglichen das Extrahieren von Informationen über Editoren (z. B. Visual Studio).</target>
+        <target state="translated">und sie ermöglichen das Extrahieren von Informationen über Editoren (z.B. Visual Studio).</target>
         <note />
       </trans-unit>
       <trans-unit id="XmlComments-Line3">
@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="Module-Line1">
         <source>A module is a grouping of F# code, such as values, types, and function values.</source>
-        <target state="translated">Ein Modul ist eine Gruppierung von F#-Code, z. B. Werte, Typen und Funktionswerte.</target>
+        <target state="translated">Ein Modul ist eine Gruppierung von F#-Code, z.B. Werte, Typen und Funktionswerte.</target>
         <note />
       </trans-unit>
       <trans-unit id="Module-Line2">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment-Line2">
         <source>You could not use '=' here for this purpose since it is used for equality</source>
-        <target state="translated">Sie können '=' hier nicht verwenden, da es für Gleichheit verwendet wird.</target>
+        <target state="translated">Sie können "=" hier nicht verwenden, da es für Gleichheit verwendet wird.</target>
         <note />
       </trans-unit>
       <trans-unit id="MutableAssignment-Line3">
@@ -234,7 +234,7 @@
       </trans-unit>
       <trans-unit id="ApplyFunction-Line1">
         <source>Apply the function, naming the function return result using 'let'.</source>
-        <target state="translated">Die Funktion anwenden, und das Rückgabeergebnis der Funktion mithilfe von 'let' benennen.</target>
+        <target state="translated">Die Funktion anwenden, und das Rückgabeergebnis der Funktion mithilfe von "let" benennen.</target>
         <note />
       </trans-unit>
       <trans-unit id="ApplyFunction-Line2">
@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="printf-Line2">
         <source>If 'result1' were not of type 'int', then the line would fail to compile.</source>
-        <target state="translated">Wenn "result1" nicht vom Typ "int" wäre, würde die Kompilierung der Zeile fehlschlagen.</target>
+        <target state="translated">Wenn "result1" nicht vom Typ "int" wäre, käme es bei der Kompilierung der Zeile zu einem Fehler.</target>
         <note />
       </trans-unit>
       <trans-unit id="TypeAnnotation">
@@ -1294,7 +1294,7 @@
       </trans-unit>
       <trans-unit id="Option-Line1">
         <source>Option values are any kind of value tagged with either 'Some' or 'None'.</source>
-        <target state="translated">Bei Optionswerten handelt es sich um eine beliebige Art von Werten, die entweder mit 'Some' oder mit 'None' markiert sind.</target>
+        <target state="translated">Bei Optionswerten handelt es sich um eine beliebige Art von Werten, die entweder mit "Some" oder mit "None" markiert sind.</target>
         <note />
       </trans-unit>
       <trans-unit id="Option-Line2">
@@ -1394,7 +1394,7 @@
       </trans-unit>
       <trans-unit id="PrintUnitsOfMeasure">
         <source>Values using Units of Measure can be used just like the primitive numeric type for things like printing.</source>
-        <target state="translated">Werte, die Maßeinheiten verwenden, können wie der primitive numerische Typ z. B. zum Drucken genutzt werden.</target>
+        <target state="translated">Werte, die Maßeinheiten verwenden, können wie der primitive numerische Typ z.B. zum Drucken genutzt werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="Classes-Line1">
@@ -1444,7 +1444,7 @@
       </trans-unit>
       <trans-unit id="ThisKeyword-Line1">
         <source>'this' specifies a name for the object's self identifier.</source>
-        <target state="translated">'this' gibt einen Namen für den Selbstbezeichner des Objekts an.</target>
+        <target state="translated">"this" gibt einen Namen für den Selbstbezeichner des Objekts an.</target>
         <note />
       </trans-unit>
       <trans-unit id="ThisKeyword-Line2">
@@ -1494,7 +1494,7 @@
       </trans-unit>
       <trans-unit id="MutableAssignment">
         <source>use the '&lt;-' operator to mutate the value.</source>
-        <target state="translated">Den '&lt;-'-Operator verwenden, um den Wert zu mutieren</target>
+        <target state="translated">Den "&lt;-"-Operator verwenden, um den Wert zu mutieren</target>
         <note />
       </trans-unit>
       <trans-unit id="History">
@@ -1509,7 +1509,7 @@
       </trans-unit>
       <trans-unit id="InferredTypeParameter">
         <source>An 'int' instance of the state tracker class. Note that the type parameter is inferred.</source>
-        <target state="translated">Eine 'int'-Instanz der 'state tracker'-Klasse. Beachten Sie, dass der Typ-Parameter abgeleitet wird.</target>
+        <target state="translated">Eine int-Instanz der state tracker-Klasse. Beachten Sie, dass der Typ-Parameter abgeleitet wird.</target>
         <note />
       </trans-unit>
       <trans-unit id="AddState">
@@ -1529,7 +1529,7 @@
       </trans-unit>
       <trans-unit id="Interfaces-Line3">
         <source>To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/interfaces</source>
-        <target state="translated">Weitere Informationen finden Sie unter:: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
+        <target state="translated">Weitere Informationen finden Sie unter: https://docs.microsoft.com/de-de/dotnet/articles/fsharp/language-reference/interfaces</target>
         <note />
       </trans-unit>
       <trans-unit id="IDisposable">

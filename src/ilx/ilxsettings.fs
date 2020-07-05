@@ -2,28 +2,26 @@
 
 module internal FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
 
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Extensions.ILX
 
 type IlxCallImplementation = 
   | VirtEntriesVirtCode
 
 //++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
-let ilxCompilingFSharpCoreLib = ref false
+let mutable ilxCompilingFSharpCoreLib = false
 
 //++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
-let ilxFsharpCoreLibAssemRef = ref (None : ILAssemblyRef option)
+let mutable ilxFsharpCoreLibAssemRef = None : ILAssemblyRef option
 
 /// Scope references for FSharp.Core.dll
 let ilxFsharpCoreLibScopeRef () =
-    if !ilxCompilingFSharpCoreLib then 
+    if ilxCompilingFSharpCoreLib then 
         ILScopeRef.Local 
     else 
         let assemblyRef = 
-            match !ilxFsharpCoreLibAssemRef with 
+            match ilxFsharpCoreLibAssemRef with 
             | Some o -> o
             | None -> 
                  // The exact public key token and version used here don't actually matter, or shouldn't.

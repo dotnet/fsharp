@@ -74,7 +74,7 @@
       IL_0006:  ldc.i4     0x483
       IL_000b:  ldc.i4.s   99
       IL_000d:  ldstr      "5"
-      IL_0012:  call       instance int32 [mscorlib]System.String::GetHashCode()
+      IL_0012:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
       IL_0017:  xor
       IL_0018:  xor
       IL_0019:  stloc.0

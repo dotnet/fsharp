@@ -1,16 +1,15 @@
 {
   "tools": {
-    "dotnet": "2.2.203",
+    "dotnet": "3.1.301",
     "vs": {
-      "version": "16.0",
+      "version": "16.4",
       "components": [
-        "Microsoft.Net.Core.Component.SDK.2.1",
         "Microsoft.VisualStudio.Component.FSharp"
       ]
     }
   },
   "msbuild-sdks": {
-    "Microsoft.DotNet.Arcade.Sdk": "1.0.0-beta.19252.2",
+    "Microsoft.DotNet.Arcade.Sdk": "1.0.0-beta.20326.2",
     "Microsoft.DotNet.Helix.Sdk": "2.0.0-beta.19069.2"
   }
 }

@@ -2,18 +2,16 @@
 
 module internal FSharp.Compiler.AbstractIL.Internal.Support
 
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Bytes
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.NativeRes
+open FSharp.Compiler.AbstractIL.Internal.Utils
 #if FX_NO_CORHOST_SIGNER
 open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 #endif
+
 open System
 open System.IO
-open System.Text
 open System.Reflection
 
 #if !FX_NO_SYMBOLSTORE
@@ -22,23 +20,20 @@ open System.Diagnostics.SymbolStore
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
 
+
 let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
-#if !FX_NO_LINKEDRESOURCES
 // Force inline, so GetLastWin32Error calls are immediately after interop calls as seen by FxCop under Debug build.
 let inline ignore _x = ()
 
 // Native Resource linking/unlinking
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
-#endif
 
 let check _action (hresult) =
   if uint32 hresult >= 0x80000000ul then
     System.Runtime.InteropServices.Marshal.ThrowExceptionForHR hresult
   //printf "action = %s, hresult = 0x%nx \n" action hresult
-
-type PEFileType = X86 | X64
 
 let MAX_PATH = 260
 
@@ -56,7 +51,6 @@ let bytesToQWord ((b0: byte), (b1: byte), (b2: byte), (b3: byte), (b4: byte), (b
 let dwToBytes n = [| byte (n &&& 0xff) ; byte ((n >>> 8) &&& 0xff) ; byte ((n >>> 16) &&& 0xff) ; byte ((n >>> 24) &&& 0xff) |], 4
 let wToBytes (n: int16) = [| byte (n &&& 0xffs) ; byte ((n >>> 8) &&& 0xffs) |], 2
 
-#if !FX_NO_LINKEDRESOURCES
 // REVIEW: factor these classes under one hierarchy, use reflection for creation from buffer and toBytes()
 // Though, everything I'd like to unify is static - metaclasses?
 type IMAGE_FILE_HEADER (m: int16, secs: int16, tds: int32, ptst: int32, nos: int32, soh: int16, c: int16) =
@@ -583,173 +577,23 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         !size
 
-let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) (fileType: PEFileType) (outputFilePath: string) =
-    let nPEFileType = match fileType with X86  -> 0 | X64 -> 2
-    let mutable tempResFiles: string list = []
-    let mutable objBytes: byte[] = [||]
-
-    let unlinkedResources = unlinkedResources |> List.filter (fun arr -> arr.Length > 0)
-    if isNil unlinkedResources then // bail if there's nothing to link
-        objBytes
-    else
-        // Part 1: Write unlinked resources to an object file for linking
-        // check if the first dword is 0x0
-        let firstDWord = bytesToDWord(unlinkedResources.[0].[0], unlinkedResources.[0].[1], unlinkedResources.[0].[2], unlinkedResources.[0].[3])
-        if firstDWord = 0 then
-            // build the command line invocation string for cvtres.exe
-            let corSystemDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-            // We'll use the current dir and a random file name rather than System.IO.Path.GetTempFileName
-            // to try and prevent the command line invocation string from being > MAX_PATH
-
-            let outputFilePaths =
-                if outputFilePath = "" then
-                    [ FileSystem.GetTempPathShim() ]
-                else
-                    [ FileSystem.GetTempPathShim() ; (outputFilePath + "\\") ]
-
-            // Get a unique random file
-            let rec GetUniqueRandomFileName path =
-                let tfn =  path + System.IO.Path.GetRandomFileName()
-                if FileSystem.SafeExists tfn then
-                    GetUniqueRandomFileName path
-                else
-                    tfn
-
-
-            let machine = if 2 = nPEFileType then "X64" else "X86"
-            let cmdLineArgsPreamble = sprintf "/NOLOGO /READONLY /MACHINE:%s" machine
-
-            let cvtres = corSystemDir + "cvtres.exe "
-
-            let createCvtresArgs path =
-                let tempObjFileName = GetUniqueRandomFileName path
-                let mutable cmdLineArgs = sprintf "%s \"/Out:%s\"" cmdLineArgsPreamble tempObjFileName
-                let mutable resFiles: string list = []
-
-                for _ulr in unlinkedResources do
-                    let tempResFileName = GetUniqueRandomFileName path
-                    resFiles <- tempResFileName :: resFiles
-                    cmdLineArgs <- cmdLineArgs + " \"" + tempResFileName + "\""
-                let trf = resFiles
-                let cmd = cmdLineArgs
-                cmd, tempObjFileName, trf
-
-            let cmdLineArgs, tempObjFileName, tempResFileNames =
-                let attempts =
-                    outputFilePaths |>
-                    List.map (fun path -> createCvtresArgs path) |>
-                    List.filter (fun ((argstring: string), (_t: string), (_f: string list)) -> (cvtres.Length + argstring.Length) < MAX_PATH)
-                let invoc, tmp, files =
-                    match attempts with
-                    | [] -> createCvtresArgs ".\\" // hope for the best...
-                    | (i, t, f) :: _rest -> i, t, f // use the first one, since they're listed in order of precedence
-                tempResFiles <- files
-                (invoc, tmp, files)
-
-            let cvtresInvocation = cvtres + cmdLineArgs
-
-            try
-                let mutable iFiles = 0
-
-                for ulr in unlinkedResources do
-                    // REVIEW: What can go wrong here?  What happens when the various file calls fail
-                    // dump the unlinked resource bytes into the temp file
-                    System.IO.File.WriteAllBytes(tempResFileNames.[iFiles], ulr)
-                    iFiles <- iFiles + 1
-
-                // call cvtres.exe using the full cmd line string we've generated
-
-                // check to see if the generated string is too long - if it is, fail with E_FAIL
-                if cvtresInvocation.Length >= MAX_PATH then
-                    System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-
-                // REVIEW: We really shouldn't be calling out to cvtres
-                let mutable psi = System.Diagnostics.ProcessStartInfo cvtres
-                psi.Arguments <- cmdLineArgs
-                psi.CreateNoWindow <- true ; // REVIEW: For some reason, this still creates a window unless WindowStyle is set to hidden
-                psi.WindowStyle <- System.Diagnostics.ProcessWindowStyle.Hidden
-                let p = System.Diagnostics.Process.Start psi
-
-                // Wait for the process to finish
-                p.WaitForExit()
-
-                check "Process.Start" p.ExitCode // TODO: really need to check against 0
-
-                // Conversion was successful, so read the object file
-                objBytes <- FileSystem.ReadAllBytesShim tempObjFileName
-                //Array.Copy(objBytes, pbUnlinkedResource, pbUnlinkedResource.Length)
-                FileSystem.FileDelete tempObjFileName
-            finally
-                // clean up the temp files
-                List.iter (fun tempResFileName -> FileSystem.FileDelete tempResFileName) tempResFiles
-
-        // Part 2: Read the COFF file held in pbUnlinkedResource, spit it out into pResBuffer and apply the COFF fixups
-        // pResBuffer will become  the .rsrc section of the PE file
-        if (objBytes = Unchecked.defaultof<byte[]>) then
-            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-
-        let hMod = bytesToIFH objBytes 0
-
-        if hMod.SizeOfOptionalHeader <> 0s then
-            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-
-        let rsrc01Name = 0x313024637273722eL // ".rsrc$01"
-        let rsrc02Name = 0x323024637273722eL // ".rsrc$02"
-        let nullHdr = Unchecked.defaultof<IMAGE_SECTION_HEADER>
-        let mutable rsrc01 = nullHdr
-        let mutable rsrc02 = nullHdr
-
-        for i = 0 to int hMod.NumberOfSections do
-            let pSection = bytesToISH objBytes (IMAGE_FILE_HEADER.Width + (IMAGE_SECTION_HEADER.Width * i))
-            if pSection.Name = rsrc01Name then
-                rsrc01 <- pSection
-            else if pSection.Name = rsrc02Name then
-                rsrc02 <- pSection
-
-        if (nullHdr = rsrc01) || (nullHdr = rsrc02) then
-            // One of the rsrc sections wasn't found
-            System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-
-        let size = rsrc01.SizeOfRawData + rsrc02.SizeOfRawData
-
-        let pResBuffer = Bytes.zeroCreate size
-
-        // Copy over the raw data
-        Bytes.blit objBytes rsrc01.PointerToRawData pResBuffer 0 rsrc01.SizeOfRawData
-
-        // map all the relocs in .rsrc$01 using the reloc and symbol tables in the COFF object
-        let symbolTableHead = hMod.PointerToSymbolTable
-        let IMAGE_SYM_CLASS_STATIC = 0x3uy
-        let IMAGE_SYM_TYPE_NULL = 0x0s
-
-        let GetSymbolEntry (buffer: byte[]) (idx: int) =
-            bytesToIS buffer (symbolTableHead + (idx * IMAGE_SYMBOL.Width) )
-
-        for iReloc = 0 to int (rsrc01.NumberOfRelocations - 1s) do
-            let pReloc = bytesToIR objBytes (rsrc01.PointerToRelocations + (iReloc * IMAGE_RELOCATION.Width))
-            let IdxSymbol = pReloc.SymbolTableIndex
-            let pSymbolEntry = GetSymbolEntry objBytes IdxSymbol
-
-            // Ensure the symbol entry is valid for a resource
-            if ((pSymbolEntry.StorageClass <> IMAGE_SYM_CLASS_STATIC) ||
-                (pSymbolEntry.Type <> IMAGE_SYM_TYPE_NULL) ||
-                (pSymbolEntry.SectionNumber <> 3s)) then
-                System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-
-            // Ensure that RVA is a valid address inside rsrc02
-            if pSymbolEntry.Value >= rsrc02.SizeOfRawData then
-                // pSymbolEntry.Value is too big
-                System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)
-
-            // store the value
-            let vBuff, vSize = dwToBytes (ulLinkedResourceBaseRVA + rsrc01.SizeOfRawData + pSymbolEntry.Value)
-            //Bytes.blit objBytes rsrc02.PointerToRawData pResBuffer pReloc.VirtualAddress rsrc02.SizeOfRawData
-            Bytes.blit vBuff 0 pResBuffer pReloc.VirtualAddress vSize
-        // Copy $02 (resource raw into pResBuffer
-        Bytes.blit objBytes rsrc02.PointerToRawData pResBuffer rsrc01.SizeOfRawData  rsrc02.SizeOfRawData
-
-        // return the buffer
-        pResBuffer
+let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) =
+   let resources =
+       unlinkedResources
+       |> Seq.map (fun s -> new MemoryStream(s))
+       |> Seq.map (fun s -> 
+           let res = CvtResFile.ReadResFile s
+           s.Dispose()
+           res)
+       |> Seq.collect id
+       // See MakeWin32ResourceList https://github.com/dotnet/roslyn/blob/f40b89234db51da1e1153c14af184e618504be41/src/Compilers/Core/Portable/Compilation/Compilation.cs
+       |> Seq.map (fun r -> 
+           Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId, 
+                               id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
+                               typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
+   let bb = new System.Reflection.Metadata.BlobBuilder()
+   NativeResourceWriter.SerializeWin32Resources(bb, resources, ulLinkedResourceBaseRVA)
+   bb.ToArray()
 
 let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
     let mutable nResNodes = 0
@@ -854,7 +698,6 @@ let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =
             resBufferOffset <- resBufferOffset + pResNodes.[i].Save(ulLinkedResourceBaseRVA, pbLinkedResource, pResBuffer, resBufferOffset)
 
     pResBuffer
-#endif
 
 #if !FX_NO_PDB_WRITER
 // PDB Writing
@@ -910,7 +753,7 @@ type ISymUnmanagedWriter2 =
     abstract OpenScope: startOffset: int * pRetVal: int byref -> unit
     abstract CloseScope: endOffset: int -> unit
     abstract SetScopeRange: scopeID: int * startOffset: int * endOffset: int -> unit
-    abstract DefineLocalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] varname: string *
+    abstract DefineLocalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] varName: string *
                                 attributes: int *
                                 cSig: int *
                                 [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] *
@@ -920,7 +763,7 @@ type ISymUnmanagedWriter2 =
                                 addr3: int *
                                 startOffset: int *
                                 endOffset: int -> unit
-    abstract DefineParameter: [<MarshalAs(UnmanagedType.LPWStr)>] paramname: string *
+    abstract DefineParameter: [<MarshalAs(UnmanagedType.LPWStr)>] paramName: string *
                             attributes: int *
                             sequence: int *
                             addressKind: int *
@@ -928,7 +771,7 @@ type ISymUnmanagedWriter2 =
                             addr2: int *
                             addr3: int -> unit
     abstract DefineField: parent: int *
-                      [<MarshalAs(UnmanagedType.LPWStr)>] fieldname: string *
+                      [<MarshalAs(UnmanagedType.LPWStr)>] fieldName: string *
                       attributes: int *
                       cSig: int *
                       [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=3s)>]signature: byte[] *
@@ -936,7 +779,7 @@ type ISymUnmanagedWriter2 =
                       addr1: int *
                       addr2: int *
                       addr3: int -> unit
-    abstract DefineGlobalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname: string *
+    abstract DefineGlobalVariable: [<MarshalAs(UnmanagedType.LPWStr)>] globalVarName: string *
                                   attributes: int *
                                   cSig: int *
                                   [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] *
@@ -946,7 +789,7 @@ type ISymUnmanagedWriter2 =
                                   addr3: int -> unit
     abstract Close: unit -> unit
     abstract SetSymAttribute: parent: int *
-                            [<MarshalAs(UnmanagedType.LPWStr)>] attname: string *
+                            [<MarshalAs(UnmanagedType.LPWStr)>] attName: string *
                             cData: int *
                             [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]data: byte[] -> unit
     abstract OpenNamespace: [<MarshalAs(UnmanagedType.LPWStr)>] nsname: string -> unit
@@ -975,16 +818,16 @@ type ISymUnmanagedWriter2 =
                                   [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=1s)>]endColumns: int [] -> unit
     abstract RemapToken: oldToken: int * newToken: int -> unit
     abstract Initialize2: emitter: nativeint *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] tempfilename: string *
+                    [<MarshalAs(UnmanagedType.LPWStr)>] tempFileName: string *
                     stream: IStream *
                     fullBuild: bool *
-                    [<MarshalAs(UnmanagedType.LPWStr)>] finalfilename: string -> unit
-    abstract DefineConstant: [<MarshalAs(UnmanagedType.LPWStr)>] constname: string *
+                    [<MarshalAs(UnmanagedType.LPWStr)>] finalFileName: string -> unit
+    abstract DefineConstant: [<MarshalAs(UnmanagedType.LPWStr)>] constName: string *
                             value: Object *
                             cSig: int *
                             [<MarshalAs(UnmanagedType.LPArray, SizeParamIndex=2s)>]signature: byte[] -> unit
     abstract Abort: unit -> unit
-    abstract DefineLocalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] localvarname2: string *
+    abstract DefineLocalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] localVarName2: string *
                                   attributes: int *
                                   sigToken: int *
                                   addressKind: int *
@@ -993,14 +836,14 @@ type ISymUnmanagedWriter2 =
                                   addr3: int *
                                   startOffset: int *
                                   endOffset: int -> unit
-    abstract DefineGlobalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] globalvarname2: string *
+    abstract DefineGlobalVariable2: [<MarshalAs(UnmanagedType.LPWStr)>] globalVarName2: string *
                                     attributes: int *
                                     sigToken: int *
                                     addressKind: int *
                                     addr1: int *
                                     addr2: int *
                                     addr3: int -> unit
-    abstract DefineConstant2: [<MarshalAs(UnmanagedType.LPWStr)>] constantname2: string *
+    abstract DefineConstant2: [<MarshalAs(UnmanagedType.LPWStr)>] constantName2: string *
                               value: Object *
                               sigToken: int -> unit
     abstract OpenMethod2: method2: int *
@@ -1444,7 +1287,7 @@ let getICLRStrongName () =
     | Some sn -> sn
 
 let signerGetPublicKeyForKeyPair kp =
- if IL.runningOnMono then
+ if runningOnMono then
     let snt = System.Type.GetType("Mono.Security.StrongName")
     let sn = System.Activator.CreateInstance(snt, [| box kp |])
     snt.InvokeMember("PublicKey", (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public), null, sn, [| |], Globalization.CultureInfo.InvariantCulture) :?> byte[]
@@ -1476,7 +1319,7 @@ let signerCloseKeyContainer kc =
     iclrSN.StrongNameKeyDelete kc |> ignore
 
 let signerSignatureSize (pk: byte[]) =
- if IL.runningOnMono then
+ if runningOnMono then
    if pk.Length > 32 then pk.Length - 32 else 128
  else
     let mutable pSize =  0u
@@ -1485,7 +1328,7 @@ let signerSignatureSize (pk: byte[]) =
     int pSize
 
 let signerSignFileWithKeyPair fileName kp =
- if IL.runningOnMono then
+ if runningOnMono then
     let snt = System.Type.GetType("Mono.Security.StrongName")
     let sn = System.Activator.CreateInstance(snt, [| box kp |])
     let conv (x: obj) = if (unbox x: bool) then 0 else -1

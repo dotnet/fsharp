@@ -1,6 +1,6 @@
 // #Regression #XMLDoc
 // Verify that XmlDoc name is correctly generated
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 #light 
 

@@ -564,7 +564,7 @@
       </trans-unit>
       <trans-unit id="printfBadIntegerForDynamicFomatter">
         <source>Bad integer supplied to dynamic formatter</source>
-        <target state="translated">提供給動態格式子的整數錯誤</target>
+        <target state="translated">提供給動態格式器的整數錯誤</target>
         <note />
       </trans-unit>
       <trans-unit id="printfExpectedPrecision">
@@ -705,6 +705,11 @@
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
         <target state="translated">這不是有效的查詢運算式。查詢中使用了建構 '{0}'，但 F#-to-LINQ 查詢翻譯工具無法加以辨認。請檢查所允許之查詢的規格，並考慮將一些運算移出查詢運算式。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism 必須為正數，原先為 {0}</target>
         <note />
       </trans-unit>
     </body>

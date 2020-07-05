@@ -8,8 +8,14 @@ You're invited to contribute to future releases of the F# compiler, core library
 
 Build from the command line:
 
-```bash
+```
 build.cmd
+```
+
+The build depends on an installation of Visual Studio. To build the compiler without this dependency use:
+
+```
+build.cmd -noVisualStudio
 ```
 
 After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your editor of choice. The latter solution is larger but includes the F# tools for Visual Studio and its associated infrastructure.
@@ -18,11 +24,19 @@ After it's finished, open either `FSharp.sln` or `VisualFSharp.sln` in your edit
 
 Build from the command line:
 
-```bash
-sh ./build.sh
+```
+./build.sh
 ```
 
 After it's finished, open `FSharp.sln` in your editor of choice.
+
+### Visual Studio Online quickstart
+
+If you'd like to use Visual Studio online (or VSCode with VSO as backend), just click this button to create a new online environment:
+
+<a href="https://online.visualstudio.com/environments/new?name=my-fsharp&repo=dotnet/fsharp"><img src="https://img.shields.io/static/v1?style=flat-square&logo=microsoft&label=VS%20Online&message=Create&color=blue" alt="VS Online"></a>
+
+This will provision an environment with all necessary dependencies. Initial build of the environment may take up to 10 minutes, as it's also performing initial build of the F# compiler.
 
 ### More options and information
 
@@ -36,9 +50,7 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 
 | Branch | Status |
 |:------:|:------:|
-|master|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=master)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev15.9|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev15.9)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
-|dev16.0|[![Build Status](https://dnceng.visualstudio.com/_apis/public/build/definitions/9ee6d478-d288-47f7-aacc-f6e6d082ae6d/106/badge?branchname=dev16.0)](https://dnceng.visualstudio.com/public/public%20Team/_build?definitionId=106&_a=history)|
+|master|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=master)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=master)|
 
 ## Using nightly releases in Visual Studio
 
@@ -67,7 +79,7 @@ These are the branches in use:
 
 * `dev15.9`
   - Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
-  
+
 * `dev16.x`
   - Latest release branch for the particular point release of Visual Studio.
   - Incorporates features and fixes from master up to a particular branch point, then selective cherry-picks.
@@ -86,8 +98,8 @@ Evolution of the F# language and core library follows a process spanning two add
 
 The following links can help you get an overview of some technical aspects of the F# language and compiler:
 
-* [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
-* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
+* [The F# Compiler Technical Guide](https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
+* [The F# Language Specification](https://fsharp.org/specs/language-spec/)
 
 ## License
 
@@ -95,19 +107,20 @@ This project is subject to the MIT License. A copy of this license is in [Licens
 
 ## Code of Conduct
 
-This project has adopted the [Contributor Covenant](http://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
+This project has adopted the [Contributor Covenant](https://contributor-covenant.org/) code of conduct to clarify expected behavior in our community. You can read it at [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md).
 
 ## Get In Touch
 
-Members of the [F# Software Foundation](http://fsharp.org) are invited to the [FSSF Slack](http://fsharp.org/guides/slack/). You can find support from other contributors in the `#compiler` and `#editor-support` channels.
+Members of the [F# Software Foundation](https://fsharp.org) are invited to the [FSSF Slack](https://fsharp.org/guides/slack/). You can find support from other contributors in the `#compiler` and `#editor-support` channels.
 
 Additionally, you can use the `#fsharp` tag on Twitter if you have general F# questions, including about this repository. Chances are you'll get multiple responses.
 
-## About F#
+## About F\#
 
 If you're curious about F# itself, check out these links:
 
 * [What is F#](https://docs.microsoft.com/dotnet/fsharp/what-is-fsharp)
 * [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
-* [F# Software Foundation](http://fsharp.org)
-* [F# Testimonials](http://fsharp.org/testimonials)
+* [F# Software Foundation](https://fsharp.org)
+* [F# Testimonials](https://fsharp.org/testimonials)
+

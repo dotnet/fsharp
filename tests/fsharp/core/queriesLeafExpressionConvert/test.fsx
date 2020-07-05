@@ -146,6 +146,24 @@ module LeafExpressionEvaluationTests =
     checkEval "2ver9ewrx" (<@ (1,2,3,4,5,6,7,8,9,10) @>) (1,2,3,4,5,6,7,8,9,10)
     checkEval "2ver9ewrc" (<@ (1,2,3,4,5,6,7,8,9,10,11) @>) (1,2,3,4,5,6,7,8,9,10,11)
     checkEval "2ver9ewrv" (<@ (1,2,3,4,5,6,7,8,9,10,11,12) @>) (1,2,3,4,5,6,7,8,9,10,11,12)
+
+
+    check "2ver9ewrsf" (let v2 = struct(3,4) in Eval <@ v2 @>) struct(3,4)
+    
+    check "2ver9ewrsg" (let v2 = struct(3,4) in Eval <@ struct(v2,v2) @>) struct(struct(3,4),struct(3,4))
+
+    checkEval "2ver9ewrst" (<@ struct(1,2) @>) struct(1,2)
+    checkEval "2ver9ewvsk" (<@ struct(1,2,3) @>) struct(1,2,3)
+    checkEval "2ver9ewrsh" (<@ struct(1,2,3,4) @>) struct(1,2,3,4)
+    checkEval "2ver9ewrsj" (<@ struct(1,2,3,4,5) @>) struct(1,2,3,4,5)
+    checkEval "2ver9ewrsk" (<@ struct(1,2,3,4,5,6) @>) struct(1,2,3,4,5,6)
+    checkEval "2ver9ewrsl" (<@ struct(1,2,3,4,5,6,7) @>) struct(1,2,3,4,5,6,7)
+    checkEval "2ver9ewrsa" (<@ struct(1,2,3,4,5,6,7,8) @>) struct(1,2,3,4,5,6,7,8)
+    checkEval "2ver9ewrss" (<@ struct(1,2,3,4,5,6,7,8,9) @>) struct(1,2,3,4,5,6,7,8,9)
+    checkEval "2ver9ewrsx" (<@ struct(1,2,3,4,5,6,7,8,9,10) @>) struct(1,2,3,4,5,6,7,8,9,10)
+    checkEval "2ver9ewrsc" (<@ struct(1,2,3,4,5,6,7,8,9,10,11) @>) struct(1,2,3,4,5,6,7,8,9,10,11)
+    checkEval "2ver9ewrsv" (<@ struct(1,2,3,4,5,6,7,8,9,10,11,12) @>) struct(1,2,3,4,5,6,7,8,9,10,11,12)
+
     checkEval "2ver9ewrb" (<@ System.DateTime.Now.DayOfWeek @>) System.DateTime.Now.DayOfWeek
     checkEval "2ver9ewrn" (<@ Checked.(+) 1 1 @>) 2
     checkEval "2ver9ewrm" (<@ Checked.(-) 1 1 @>) 0

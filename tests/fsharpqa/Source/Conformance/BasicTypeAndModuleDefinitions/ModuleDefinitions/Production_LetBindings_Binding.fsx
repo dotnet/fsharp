@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Modules 
 // Productions
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 module M1 = begin 

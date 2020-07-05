@@ -9,26 +9,32 @@ open System.Text
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
 
 
-exception RequiredButNotSpecified of DisplayEnv * Tast.ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
-exception ValueNotContained       of DisplayEnv * Tast.ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
-exception ConstrNotContained      of DisplayEnv * UnionCase * UnionCase * (string * string -> string)
-exception ExnconstrNotContained   of DisplayEnv * Tycon * Tycon * (string * string -> string)
-exception FieldNotContained       of DisplayEnv * RecdField * RecdField * (string * string -> string)
-exception InterfaceNotRevealed    of DisplayEnv * TType * range
+exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
+exception ValueNotContained of DisplayEnv * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
+
+exception ConstrNotContained of DisplayEnv * UnionCase * UnionCase * (string * string -> string)
+
+exception ExnconstrNotContained of DisplayEnv * Tycon * Tycon * (string * string -> string)
+
+exception FieldNotContained of DisplayEnv * RecdField * RecdField * (string * string -> string)
+
+exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 // Use a type to capture the constant, common parameters 
 type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 
@@ -305,7 +311,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             let m = implVal.Range
             if implVal.IsMutable <> sigVal.IsMutable then (err denv FSComp.SR.ValueNotContainedMutabilityAttributesDiffer)
             elif implVal.LogicalName <> sigVal.LogicalName then (err denv FSComp.SR.ValueNotContainedMutabilityNamesDiffer)
-            elif implVal.CompiledName <> sigVal.CompiledName then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
+            elif (implVal.CompiledName g.CompilerGlobalState) <> (sigVal.CompiledName g.CompilerGlobalState) then (err denv FSComp.SR.ValueNotContainedMutabilityCompiledNamesDiffer)
             elif implVal.DisplayName <> sigVal.DisplayName then (err denv FSComp.SR.ValueNotContainedMutabilityDisplayNamesDiffer)
             elif isLessAccessible implVal.Accessibility sigVal.Accessibility then (err denv FSComp.SR.ValueNotContainedMutabilityAccessibilityMore)
             elif implVal.MustInline <> sigVal.MustInline then (err denv FSComp.SR.ValueNotContainedMutabilityInlineFlagsDiffer)
@@ -346,8 +352,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             sigUnionCase.OtherRangeOpt <- Some (implUnionCase.Range, true)
             implUnionCase.OtherRangeOpt <- Some (sigUnionCase.Range, false)
             if implUnionCase.Id.idText <> sigUnionCase.Id.idText then  err FSComp.SR.ModuleContainsConstructorButNamesDiffer
-            elif implUnionCase.RecdFields.Length <> sigUnionCase.RecdFields.Length then err FSComp.SR.ModuleContainsConstructorButDataFieldsDiffer
-            elif not (List.forall2 (checkField aenv) implUnionCase.RecdFields sigUnionCase.RecdFields) then err FSComp.SR.ModuleContainsConstructorButTypesOfFieldsDiffer
+            elif implUnionCase.RecdFieldsArray.Length <> sigUnionCase.RecdFieldsArray.Length then err FSComp.SR.ModuleContainsConstructorButDataFieldsDiffer
+            elif not (Array.forall2 (checkField aenv) implUnionCase.RecdFieldsArray sigUnionCase.RecdFieldsArray) then err FSComp.SR.ModuleContainsConstructorButTypesOfFieldsDiffer
             elif isLessAccessible implUnionCase.Accessibility sigUnionCase.Accessibility then err FSComp.SR.ModuleContainsConstructorButAccessibilityDiffers
             else checkAttribs aenv implUnionCase.Attribs sigUnionCase.Attribs (fun attribs -> implUnionCase.Attribs <- attribs)
 
@@ -369,7 +375,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             match implMemberInfo, sigMemberInfo with 
             | None, None -> true
             | Some implMembInfo, Some sigMembInfo -> 
-                if not (implVal.CompiledName = sigVal.CompiledName) then 
+                if not ((implVal.CompiledName  g.CompilerGlobalState) = (sigVal.CompiledName g.CompilerGlobalState)) then 
                   err(FSComp.SR.ValueNotContainedMutabilityDotNetNamesDiffer)
                 elif not (implMembInfo.MemberFlags.IsInstance = sigMembInfo.MemberFlags.IsInstance) then 
                   err(FSComp.SR.ValueNotContainedMutabilityStaticsDiffer)
@@ -399,14 +405,6 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                    else true
 
             | _ -> false
-
-        // -------------------------------------------------------------------------------
-        // WARNING!!!!
-        // checkRecordFields and checkRecordFieldsForExn are the EXACT SAME FUNCTION.
-        // The only difference is the signature for err - this is because err is a function
-        // that reports errors, and checkRecordFields is called with a different
-        // sig for err then checkRecordFieldsForExn.
-        // -------------------------------------------------------------------------------
 
         and checkRecordFields m aenv (implTycon: Tycon) (implFields: TyconRecdFields) (sigFields: TyconRecdFields) =
             let implFields = implFields.TrueFieldsAsList

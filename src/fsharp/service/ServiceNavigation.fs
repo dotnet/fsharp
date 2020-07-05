@@ -7,8 +7,10 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open System.Collections.Generic
 open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 /// Represents the different kinds of items that can appear in the navigation bar
 type FSharpNavigationDeclarationItemKind =
@@ -77,9 +79,9 @@ module NavigationImpl =
         else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 
-      match (decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange))) with 
-      | hd :: tl -> tl |> List.fold unionRangesChecked hd
-      | [] -> range.Zero
+        match decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange)) with 
+        | hd :: tl -> tl |> List.fold unionRangesChecked hd
+        | [] -> range.Zero
     
     let rangeOfDecls = rangeOfDecls2 fst
 
@@ -97,15 +99,18 @@ module NavigationImpl =
     /// Get information for implementation file      
     let getNavigationFromImplFile (modules: SynModuleOrNamespace list) =
         // Map for dealing with name conflicts
-        let nameMap = ref Map.empty 
+        let names = Dictionary()
 
         let addItemName name = 
-            let count = defaultArg (!nameMap |> Map.tryFind name) 0
-            nameMap := (Map.add name (count + 1) (!nameMap))
-            (count + 1)
+            let count =
+                match names.TryGetValue name with
+                | true, count -> count + 1
+                | _ -> 1
+            names.[name] <- count
+            count
         
         let uniqueName name idx = 
-            let total = Map.find name (!nameMap)
+            let total = names.[name]
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                
@@ -127,13 +132,13 @@ module NavigationImpl =
             FSharpNavigationDeclarationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(id.idText))
 
         // Process let-binding
-        let processBinding isMember enclosingEntityKind isAbstract (Binding(_, _, _, _, _, _, SynValData(memebrOpt, _, _), synPat, _, synExpr, _, _)) =
+        let processBinding isMember enclosingEntityKind isAbstract (Binding(_, _, _, _, _, _, SynValData(memberOpt, _, _), synPat, _, synExpr, _, _)) =
             let m = 
                 match synExpr with 
                 | SynExpr.Typed (e, _, _) -> e.Range // fix range for properties with type annotations
                 | _ -> synExpr.Range
 
-            match synPat, memebrOpt with
+            match synPat, memberOpt with
             | SynPat.LongIdent(longDotId=LongIdentWithDots(lid,_); accessibility=access), Some(flags) when isMember -> 
                 let icon, kind =
                   match flags.MemberKind with
@@ -194,8 +199,11 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.Record(_, fields, mb) ->
                     let fields = 
                         [ for (Field(_, _, id, _, _, _, _, m)) in fields do
-                            if (id.IsSome) then
-                              yield createMember(id.Value, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access) ]
+                            match id with
+                            | Some ident -> 
+                                yield createMember(ident, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access)
+                            | _ -> 
+                                () ]
                     let nested = fields@topMembers
                     [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Type, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.Record, false, access) ]
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
@@ -243,7 +251,7 @@ module NavigationImpl =
                      | _ -> [])) 
             
             (members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero),
-            (members |> List.map snd |> List.concat)
+            (members |> List.collect snd)
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
         let processNestedDeclarations decls = decls |> List.collect (function
@@ -305,13 +313,13 @@ module NavigationImpl =
     /// Get information for signature file      
     let getNavigationFromSigFile (modules: SynModuleOrNamespaceSig list) =
         // Map for dealing with name conflicts
-        let nameMap = ref Map.empty 
+        let mutable nameMap = Map.empty 
         let addItemName name = 
-            let count = defaultArg (!nameMap |> Map.tryFind name) 0
-            nameMap := (Map.add name (count + 1) (!nameMap))
+            let count = defaultArg (nameMap |> Map.tryFind name) 0
+            nameMap <- (Map.add name (count + 1) (nameMap))
             (count + 1)
         let uniqueName name idx = 
-            let total = Map.find name (!nameMap)
+            let total = Map.find name nameMap
             sprintf "%s_%d_of_%d" name idx total
 
         // Create declaration (for the left dropdown)                
@@ -363,8 +371,11 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.Record(_, fields, mb) ->
                     let fields = 
                         [ for (Field(_, _, id, _, _, _, _, m)) in fields do
-                            if (id.IsSome) then
-                              yield createMember(id.Value, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access) ]
+                            match id with
+                            | Some ident ->
+                                yield createMember(ident, FieldDecl, FSharpGlyph.Field, m, FSharpEnclosingEntityKind.Record, false, access)
+                            | _ ->
+                                () ]
                     let nested = fields@topMembers
                     [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Type, m, bodyRange mb nested, nested, FSharpEnclosingEntityKind.Record, false, access) ]
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
@@ -392,14 +403,16 @@ module NavigationImpl =
 
         // Process declarations nested in a module that should be displayed in the left dropdown
         // (such as type declarations, nested modules etc.)                            
-        let rec processFSharpNavigationTopLevelSigDeclarations(baseName, decls) = decls |> List.collect (function
+        let rec processFSharpNavigationTopLevelSigDeclarations(baseName, decls) = 
+            decls 
+            |> List.collect (function
             | SynModuleSigDecl.ModuleAbbrev(id, lid, m) ->
                 [ createDecl(baseName, id, ModuleDecl, FSharpGlyph.Module, m, rangeOfLid lid, [], FSharpEnclosingEntityKind.Module, false, None) ]
                 
             | SynModuleSigDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _), _, decls, m) ->                
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
-                let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
+                let newBaseName = (if baseName = "" then "" else baseName + ".") + (textOfLid lid)
                 
                 // Get nested modules and types (for the left dropdown)
                 let other = processFSharpNavigationTopLevelSigDeclarations(newBaseName, decls)
@@ -441,10 +454,12 @@ module NavigationImpl =
         items |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
         new FSharpNavigationItems(items)
 
+[<RequireQualifiedAccess>]
+module FSharpNavigation =
     let getNavigation (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.SigFile (ParsedSigFileInput (modules = modules)) -> getNavigationFromSigFile modules
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> getNavigationFromImplFile modules
+        | ParsedInput.SigFile (ParsedSigFileInput (modules = modules)) -> NavigationImpl.getNavigationFromSigFile modules
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> NavigationImpl.getNavigationFromImplFile modules
 
     let empty = FSharpNavigationItems([||])
 
@@ -630,7 +645,7 @@ module NavigateTo =
             | SynMemberSig.Inherit _
             | SynMemberSig.Interface _ -> ()
     
-        and walkImplFileInpit (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
+        and walkImplFileInput (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = 
             let container = { Type = ContainerType.File; Name = fileName }
             for item in moduleOrNamespaceList do
                 walkSynModuleOrNamespace item container
@@ -730,7 +745,7 @@ module NavigateTo =
 
         match parsedInput with
         | ParsedInput.SigFile input -> walkSigFileInput input
-        | ParsedInput.ImplFile input -> walkImplFileInpit input
+        | ParsedInput.ImplFile input -> walkImplFileInput input
     
         result.ToArray()
 

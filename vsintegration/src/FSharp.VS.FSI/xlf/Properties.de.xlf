@@ -24,7 +24,22 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="translated">Verschiedenes</target>
+        <target state="translated">Verschiedene</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreview">
+        <source>FSI Preview</source>
+        <target state="translated">FSI-Vorschau</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewMode">
+        <source>Enable preview language features</source>
+        <target state="translated">Vorschausprachfeatures aktivieren</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewModeDescr">
+        <source>Enable preview of in-development language features in F# Interactive</source>
+        <target state="translated">Vorschau der in Entwicklung befindlichen Sprachfeatures in F# Interactive aktivieren</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
@@ -34,7 +49,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">Verhindert, dass referenzierte Assemblys vom interaktiven F#-Prozess gesperrt werden.</target>
+        <target state="translated">Verhindert, dass referenzierte Assemblys vom F# Interactive-Prozess gesperrt werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">

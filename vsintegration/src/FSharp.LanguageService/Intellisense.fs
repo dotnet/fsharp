@@ -183,7 +183,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let buf = Text.StringBuilder()
-            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionText) 
+            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionTextAsync |> Async.RunSynchronously) 
             buf.ToString()
         else ""
 
@@ -224,7 +224,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         // We intercept this call only to get the initial extent
         // of what was committed to the source buffer.
         let result = decl.GetName(filterText, index)
-        FSharp.Compiler.Lexhelp.Keywords.QuoteIdentifierIfNeeded result
+        Keywords.QuoteIdentifierIfNeeded result
 
     override decl.IsCommitChar(commitCharacter) =
         // Usual language identifier rules...

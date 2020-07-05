@@ -3,7 +3,9 @@
 namespace FSharp.Compiler.UnitTests
 
 open System
+open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 #if NETCOREAPP
 [<TestFixture>]
@@ -50,4 +52,55 @@ test ()
         // We expect this error until System.Reflection.Emit gets fixed for emitting `modreq` on method calls.
         // See: https://github.com/dotnet/corefx/issues/29254
         CompilerAssert.RunScript script [ "Method not found: '!0 ByRef System.ReadOnlySpan`1.get_Item(Int32)'." ]
+
+
+    [<Test>]
+    let ``Invalid usage of type abbreviated span should fail to compile``() =
+        CompilerAssert.TypeCheckWithErrors """
+open System
+
+type Bytes = ReadOnlySpan<byte>
+
+type Test() =
+
+    member _.M1 (data: Bytes) =
+        let x = 
+            if false then
+                failwith ""
+            else
+                data
+        x
+
+    member _.M2 (data: Bytes) =
+        let x = 
+            if false then
+                failwithf ""
+            else
+                data
+        x
+
+let test () =
+    let span = ReadOnlySpan<_>(Array.empty)
+    let result = Test().M1(span)
+    let result = Test().M2(span)
+    0
+            """
+            [|
+                FSharpErrorSeverity.Error, 412, (11, 17, 11, 28), "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
+                FSharpErrorSeverity.Error, 412, (19, 17, 19, 29), "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
+                FSharpErrorSeverity.Error, 412, (19, 27, 19, 29), "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
+            |]
+
+    [<Test>]
+    let ``Type abbreviation that boxes a span should fail to compile``() =
+        CompilerAssert.TypeCheckWithErrors """
+open System
+
+type TA = Span<int> * Span<int>
+
+let f (x: TA) = ()
+            """
+            [|
+                FSharpErrorSeverity.Error, 3300, (6, 8, 6, 9), "The parameter 'x' has an invalid type 'TA'. This is not permitted by the rules of Common IL."
+            |]
 #endif
