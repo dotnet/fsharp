@@ -9,16 +9,51 @@ open FSharp.Compiler.AbstractIL.Internal
 
 module ``Numeric Literals`` =
 
-    [<Fact>]
-    let ``1up is invalid Numeric Literal``() =
-        CompilerAssert.TypeCheckSingleError
-            """
-let foo = 1up // int
-            """
+    [<Theory>]
+    [<InlineData("1up")>]
+    [<InlineData("3._1415F")>]
+    [<InlineData("999_99_9999_L")>]
+    [<InlineData("52_")>]
+    [<InlineData("0_x52")>]
+    [<InlineData("0x_52")>]
+    [<InlineData("0x52_")>]
+    [<InlineData("052_")>]
+    [<InlineData("0_o52")>]
+    [<InlineData("0o_52")>]
+    [<InlineData("0o52_")>]
+    [<InlineData("2.1_e2F")>]
+    [<InlineData("2.1e_2F")>]
+    [<InlineData("1.0_F")>]
+    let ``Invalid Numeric Literals`` literal =
+        CompilerAssert.TypeCheckSingleError 
+            ("let x = " + literal)
             FSharpErrorSeverity.Error
             1156
-            (2, 11, 2, 14)
+            (1, 9, 1, 9 + (String.length literal))
             "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger)."
+
+    [<Fact>]
+    let ``3_(dot)1415F is invalid numeric literal``() =
+        CompilerAssert.TypeCheckWithErrors
+            """
+let x = 3_.1415F
+            """
+            [|
+                FSharpErrorSeverity.Error, 1156, (2, 9, 2, 11), "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).";
+                FSharpErrorSeverity.Error, 599, (2, 11, 2, 12),"Missing qualification after '.'"
+            |]
+
+    [<Fact>]
+    let ``_52 is invalid numeric literal``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+let x = _52
+            """
+            FSharpErrorSeverity.Error
+            39
+            (2, 9, 2, 12)
+            "The value or constructor '_52' is not defined."
+
 
     [<Fact>]
     let ``1N is invalid numeric literal``() =
