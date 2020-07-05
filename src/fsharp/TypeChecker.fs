@@ -8571,7 +8571,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
                         let maxMergeSourcesN = if hasMergeSourcesN then  List.max mergeSourcesNArities else 1
 
-                        if maxMergeSourcesN = 1 && maxMergeSourcesNumeric = 1 then error(Error(FSComp.SR.tcRequireMergeSourcesOrBindN(bindNName), bindRange))
+                        if maxMergeSourcesN = 1 && maxMergeSourcesNumeric = 1 then error(Error(FSComp.SR.tcRequireMergeSourcesOrBindN(numericBindNName), bindRange))
 
                         let rec mergeSources (sourcesAndPats: (SynExpr * SynPat) list) =
                             let numSourcesAndPats = sourcesAndPats.Length
