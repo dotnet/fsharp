@@ -5,6 +5,7 @@ namespace FSharp.Compiler.ErrorMessages.ComponentTests
 open Xunit
 open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.AbstractIL.Internal
 
 module ``Numeric Literals`` =
 
@@ -30,6 +31,18 @@ let x = 1N
             (2, 9, 2, 11)
             "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope"
 
+    [<Fact>]
+    let ``1N is invalid numeric literal in FSI``() =
+        if Utils.runningOnMono then ()
+        else 
+            CompilerAssert.RunScriptWithOptions [| "--langversion:preview"; "--test:ErrorRanges" |]
+                """
+let x = 1N
+                """
+                [
+                    "This numeric literal requires that a module 'NumericLiteralN' defining functions FromZero, FromOne, FromInt32, FromInt64 and FromString be in scope";
+                    "Operation could not be completed due to earlier error"
+                ]
 
     [<Theory>]
     [<InlineData("1.0E28M")>]
