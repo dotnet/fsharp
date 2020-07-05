@@ -13,6 +13,7 @@ open NUnit.Framework
 open FsUnit
 open System
 open System.IO
+open System.Text
 open System.Collections.Generic
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
@@ -22,6 +23,60 @@ let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
 
 [<AutoOpen>]
 module internal Utils = 
+    let getTempPath() = 
+        Path.Combine(Path.GetTempPath(), "ExprTests")
+
+    /// If it doesn't exists, create a folder 'ExprTests' in local user's %TEMP% folder
+    let createTempDir() = 
+        let tempPath = getTempPath()
+        do 
+            if Directory.Exists tempPath then ()
+            else Directory.CreateDirectory tempPath |> ignore
+
+    /// Returns the filename part of a temp file name created with Path.GetTempFileName().
+    let getTempFileName() =
+        let tempFileName = Path.GetTempFileName()
+        try
+            let tempFileName = Path.GetFileName(tempFileName)
+            tempFileName
+        finally
+            try 
+                // since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up
+                File.Delete tempFileName
+            with _ -> ()
+
+    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing.
+    let cleanupTempFiles files =
+        for fileName in files do 
+            try
+                // cleanup: only the source file is written to the temp dir.
+                File.Delete fileName
+            with _ -> ()
+
+        try
+            // remove the dir when empty
+            let tempPath = getTempPath()
+            if Directory.GetFiles tempPath |> Array.isEmpty then
+                Directory.Delete tempPath
+        with _ -> ()
+
+
+    /// Given just a filename, returns it with changed extension located in %TEMP%\ExprTests
+    let getTempFilePathChangeExt tmp ext =
+        Path.Combine(getTempPath(), Path.ChangeExtension(tmp, ext))
+
+    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
+    // Presumably this is very small differences in Mono reflection causing F# printing to change behaviour
+    // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
+    let filterHack l = 
+        l |> List.map (fun (s:string) -> 
+            // potential difference on Mono
+            s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShape [(Some 0, null)]")
+             // spacing difference when run locally in VS
+             .Replace("I_ldelema (NormalAddress,false,ILArrayShape [(Some 0, null)],!0)]", "I_ldelema (NormalAddress, false, ILArrayShape [(Some 0, null)], !0)]")
+             // local VS IDE vs CI env difference
+             .Replace("Operators.Hash<Microsoft.FSharp.Core.string> (x)", "x.GetHashCode()"))
+
     let rec printExpr low (e:FSharpExpr) = 
         match e with 
         | BasicPatterns.AddressOf(e1) -> "&"+printExpr 0 e1
@@ -280,11 +335,6 @@ module internal Utils =
 
 module internal Project1 = 
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
-    let fileName2 = Path.ChangeExtension(base2, ".fs")
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
 module M
 
@@ -539,7 +589,7 @@ let anonRecd = {| X = 1; Y = 2 |}
 let anonRecdGet = (anonRecd.X, anonRecd.Y)
 
     """
-    File.WriteAllText(fileName1, fileSource1)
+
 
     let fileSource2 = """
 module N
@@ -572,11 +622,27 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    File.WriteAllText(fileName2, fileSource2)
+    let createOptions() =
+        let temp1 = Utils.getTempFileName()
+        let temp2 = Utils.getTempFileName()
+        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs"  // Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+        let fileName2 = Utils.getTempFilePathChangeExt temp2 ".fs" //Path.ChangeExtension(base2, ".fs")
+        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" //Path.ChangeExtension(base2, ".dll")
+        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" //Path.ChangeExtension(base2, ".fsproj")
 
-    let fileNames = [fileName1; fileName2]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        Utils.createTempDir()
+        File.WriteAllText(fileName1, fileSource1)
+        File.WriteAllText(fileName2, fileSource2)
+        let fileNames = [fileName1; fileName2]
+        let args = mkProjectCommandLineArgs (dllName, fileNames)
+        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+        [fileName1; fileName2; dllName; projFileName], options
+
+    let options = lazy createOptions()
+
+    
+
 
     let operatorTests = """
 module OperatorTests{0}
@@ -637,13 +703,9 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
-[<Test>]
-// FCS Has a problem with these tests because of FSharp Core versions.
-#if !COMPILER_SERVICE_AS_DLL
-[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
-#endif
+/// This test is run in unison with its optimized counterpart below
 let ``Test Unoptimized Declarations Project1`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd Project1.options.Value) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -656,14 +718,6 @@ let ``Test Unoptimized Declarations Project1`` () =
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
     let file2 = wholeProjectResults.AssemblyContents.ImplementationFiles.[1]
-
-    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
-    // Presumably this is very small differences in Mono reflection causing F# printing to change behavious
-    // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
-    let filterHack l = 
-        l |> List.map (fun (s:string) -> 
-            s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShapeFIX")
-             .Replace("ILArrayShape [(Some 0, null)]", "ILArrayShapeFIX"))
 
     let expected = [
         "type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
@@ -714,7 +768,7 @@ let ``Test Unoptimized Declarations Project1`` () =
         "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (m.Method(7,8),fun tupledArg -> let arg00: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg01: Microsoft.FSharp.Core.int = tupledArg.Item1 in fun tupledArg -> let arg10: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg11: Microsoft.FSharp.Core.int = tupledArg.Item1 in m.CurriedMethod(arg00,arg01,arg10,arg11) (9,10) (11,12)) @ (110,8--110,9)";
         "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (x,y) @ (122,70--122,75)";
-        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress, false, ILArrayShapeFIX, !0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
+        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress, false, ILArrayShape [(Some 0, null)], !0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
         "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
         "let testFunctionThatUsesStructs2(unitVar0) = let dt1: System.DateTime = DateTime.get_Now () in let mutable dt2: System.DateTime = DateTime.get_Now () in let dt3: System.TimeSpan = Operators.op_Subtraction<System.DateTime,System.DateTime,System.TimeSpan> (dt1,dt2) in let dt4: System.DateTime = dt1.AddDays(3) in let dt5: Microsoft.FSharp.Core.int = dt1.get_Millisecond() in let dt6: Microsoft.FSharp.Core.byref<System.DateTime> = &dt2 in let dt7: System.TimeSpan = Operators.op_Subtraction<System.DateTime,System.DateTime,System.TimeSpan> (dt6,dt4) in dt7 @ (142,7--142,10)";
         "let testFunctionThatUsesWhileLoop(unitVar0) = let mutable x: Microsoft.FSharp.Core.int = 1 in (while Operators.op_LessThan<Microsoft.FSharp.Core.int> (x,100) do x <- Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,1) done; x) @ (152,15--152,16)";
@@ -771,24 +825,19 @@ let ``Test Unoptimized Declarations Project1`` () =
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldEqual (filterHack expected)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldEqual (filterHack expected2)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
-
-[<Test>]
-// FCS Has a problem with these tests because of FSharp Core versions
-#if !COMPILER_SERVICE_AS_DLL
-[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
-#endif
+/// This test is run in unison with its unoptimized counterpart below
 let ``Test Optimized Declarations Project1`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd Project1.options.Value) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -801,14 +850,6 @@ let ``Test Optimized Declarations Project1`` () =
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
     let file2 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[1]
-
-    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
-    // Presumably this is very small differences in Mono reflection causing F# printing to change behavious
-    // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
-    let filterHack l = 
-        l |> List.map (fun (s:string) -> 
-            s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShapeFIX")
-             .Replace("ILArrayShape [(Some 0, null)]", "ILArrayShapeFIX"))
 
     let expected = [
         "type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
@@ -859,7 +900,7 @@ let ``Test Optimized Declarations Project1`` () =
         "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (m.Method(7,8),let arg00: Microsoft.FSharp.Core.int = 9 in let arg01: Microsoft.FSharp.Core.int = 10 in let arg10: Microsoft.FSharp.Core.int = 11 in let arg11: Microsoft.FSharp.Core.int = 12 in m.CurriedMethod(arg00,arg01,arg10,arg11)) @ (110,8--110,9)";
         "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (x,y) @ (122,70--122,75)";
-        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress,false,ILArrayShapeFIX,!0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
+        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress, false, ILArrayShape [(Some 0, null)], !0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
         "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
         "let testFunctionThatUsesStructs2(unitVar0) = let dt1: System.DateTime = DateTime.get_Now () in let mutable dt2: System.DateTime = DateTime.get_Now () in let dt3: System.TimeSpan = DateTime.op_Subtraction (dt1,dt2) in let dt4: System.DateTime = dt1.AddDays(3) in let dt5: Microsoft.FSharp.Core.int = dt1.get_Millisecond() in let dt6: Microsoft.FSharp.Core.byref<System.DateTime> = &dt2 in let dt7: System.TimeSpan = DateTime.op_Subtraction (dt6,dt4) in dt7 @ (142,7--142,10)";
         "let testFunctionThatUsesWhileLoop(unitVar0) = let mutable x: Microsoft.FSharp.Core.int = 1 in (while Operators.op_LessThan<Microsoft.FSharp.Core.int> (x,100) do x <- Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,1) done; x) @ (152,15--152,16)";
@@ -918,43 +959,72 @@ let ``Test Optimized Declarations Project1`` () =
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldEqual (filterHack expected)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected)
 
     printDeclarations None (List.ofSeq file2.Declarations) 
       |> Seq.toList 
-      |> filterHack
-      |> shouldEqual (filterHack expected2)
+      |> Utils.filterHack
+      |> shouldPairwiseEqual (Utils.filterHack expected2)
 
     ()
 
+[<Test>]
+let ``Test Optimized and Unoptimized Declarations for Project1`` () =
+    let filenames = fst Project1.options.Value
+    try
+        ``Test Optimized Declarations Project1`` ()
+        ``Test Unoptimized Declarations Project1`` ()
+    finally
+        Utils.cleanupTempFiles filenames
+
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
-    let basePath = Path.GetTempFileName()
-    let fileName = Path.ChangeExtension(basePath, ".fs")
-    let dllName = Path.ChangeExtension(basePath, ".dll")
-    let projFileName = Path.ChangeExtension(basePath, ".fsproj")
-    let source = System.String.Format(Project1.operatorTests, dnName, fsName)
-    let replace (s:string) r = s.Replace("let " + r, "// let " + r)
-    let fileSource = excludedTests |> List.fold replace source
-    File.WriteAllText(fileName, fileSource)
 
-    let args = mkProjectCommandLineArgsSilent (dllName, [fileName])
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let tempFileName = Utils.getTempFileName()
+    let filePath = Utils.getTempFilePathChangeExt tempFileName ".fs"
+    let dllPath =Utils.getTempFilePathChangeExt tempFileName ".dll"
+    let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
 
-    for e in wholeProjectResults.Errors do 
-        printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
+    try
+        createTempDir()
+        let source = System.String.Format(Project1.operatorTests, dnName, fsName)
+        let replace (s:string) r = s.Replace("let " + r, "// let " + r)
+        let fileSource = excludedTests |> List.fold replace source
+        File.WriteAllText(filePath, fileSource)
 
-    wholeProjectResults.Errors.Length |> shouldEqual 0
+        let args = [|
+            yield! mkProjectCommandLineArgsSilent (dllPath, [filePath])
+            yield @"-r:System.Numerics.dll"         // needed for some tests
+        |]
 
-    let fileUnoptimized = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
-    let fileOptimized = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
+        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFilePath, args)
 
-    printDeclarations None (List.ofSeq fileUnoptimized.Declarations)
-    |> Seq.toList |> shouldEqual expectedUnoptimized
+        let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
-    printDeclarations None (List.ofSeq fileOptimized.Declarations)
-    |> Seq.toList |> shouldEqual expectedOptimized
+        for r in wholeProjectResults.ProjectContext.GetReferencedAssemblies() do
+            printfn "Referenced assembly %s: %O" r.QualifiedName r.FileName
+
+        let errors = StringBuilder()
+        for e in wholeProjectResults.Errors do 
+            printfn "%s Operator Tests error: <<<%s>>>" dnName e.Message
+            errors.AppendLine e.Message |> ignore
+
+        errors.ToString() |> shouldEqual ""
+        wholeProjectResults.Errors.Length |> shouldEqual 0
+
+        let fileUnoptimized = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+        let fileOptimized = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
+
+        // fail test on first line that fails, show difference in output window
+        printDeclarations None (List.ofSeq fileUnoptimized.Declarations)
+        |> shouldPairwiseEqual expectedUnoptimized
+
+        // fail test on first line that fails, show difference in output window
+        printDeclarations None (List.ofSeq fileOptimized.Declarations)
+        |> shouldPairwiseEqual expectedOptimized
+
+    finally
+        Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
 
     ()
 
@@ -2735,10 +2805,6 @@ let ``Test Operator Declarations for String`` () =
 
 module internal ProjectStressBigExpressions = 
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
 module StressBigExpressions 
 
@@ -2926,16 +2992,30 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
     
     """
-    File.WriteAllText(fileName1, fileSource1)
-
-    let fileNames = [fileName1]
-    let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  exprChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
-[<Test>]
+    let createOptions() =
+        let temp1 = Utils.getTempFileName()
+        let temp2 = Utils.getTempFileName()
+        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs" //Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" //Path.ChangeExtension(base2, ".dll")
+        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" //Path.ChangeExtension(base2, ".fsproj")
+
+        Utils.createTempDir()
+        File.WriteAllText(fileName1, fileSource1)
+
+        let fileNames = [fileName1]
+        let args = mkProjectCommandLineArgs (dllName, fileNames)
+        let options =  exprChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+        
+        [fileName1; dllName; projFileName], options
+
+    let options = lazy createOptions()
+
+
+/// This test is run in unison with its optimized counterpart below
 let ``Test expressions of declarations stress big expressions`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectStressBigExpressions.options.Value) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -2946,9 +3026,9 @@ let ``Test expressions of declarations stress big expressions`` () =
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 
-[<Test>]
+/// This test is run in unison with its unoptimized counterpart below
 let ``Test expressions of optimized declarations stress big expressions`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectStressBigExpressions.options.Value) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -2958,5 +3038,11 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
-
-
+[<Test>]
+let ``Test expressions of both optimized and unoptimized declarations for StressTest Big Expressions`` () =
+    let filenames = fst ProjectStressBigExpressions.options.Value
+    try
+        ``Test expressions of optimized declarations stress big expressions`` ()
+        ``Test expressions of declarations stress big expressions`` ()
+    finally
+        Utils.cleanupTempFiles filenames
