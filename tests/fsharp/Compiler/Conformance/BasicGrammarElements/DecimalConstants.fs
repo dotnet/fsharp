@@ -43,3 +43,12 @@ module ``Decimal Constants`` =
         let x = 1.0E00M + 2.0E01M + 3.E02M + 1.E-01M + 2.0E-02M
 
         Assert.areEqual 321.12M x
+
+    [<Test>]
+    let ``Non-representable small values are rounded to zero``() =
+        // This test involves rounding of decimals. The F# design is to follow the BCL.
+        // This means that the behavior is not deterministic, e.g. Mono and NetFx4 round; NetFx2 gives an error
+        // This is a positive test on Dev10, at least until
+        // FSHARP1.0:4523 gets resolved.
+
+        Assert.areEqual 0.0M 1.0E-50M
