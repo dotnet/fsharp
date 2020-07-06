@@ -1473,39 +1473,35 @@ module InfoMemberPrinting =
     //          new: argName1: argType1 * ... * argNameN: argTypeN -> retType
     //          Method: argName1: argType1 * ... * argNameN: argTypeN -> retType
     let private layoutMethInfoFSharpStyleCore amap m denv (minfo: MethInfo) minst =
-        let layout = 
-            if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
-            else emptyL
+        match minfo.ArbitraryValRef with
+        | Some vref ->
+            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref
+        | None ->
+            let layout = 
+                if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
+                else emptyL
 
-        let methodTag =
-            let tag = tagMethod minfo.LogicalName
-            match minfo.ArbitraryValRef with
-            | Some vref ->
-                tag |> mkNav vref.DefinitionRange
-            | None ->
-                tag
-
-        let layout =
-            layout ^^ 
-            (
-                if minfo.IsConstructor then
-                    wordL (tagKeyword "new")
-                else
-                    WordL.keywordMember ^^
-                    PrintTypes.layoutTyparDecls denv (wordL methodTag) true minfo.FormalMethodTypars
-            ) ^^
-            WordL.colon
-        let paramDatas = minfo.GetParamDatas(amap, m, minst)
-        let layout =
+            let layout =
+                layout ^^ 
+                (
+                    if minfo.IsConstructor then
+                        wordL (tagKeyword "new")
+                    else
+                        WordL.keywordMember ^^
+                        PrintTypes.layoutTyparDecls denv (minfo.LogicalName |> tagMethod |> wordL) true minfo.FormalMethodTypars
+                ) ^^
+                WordL.colon
+            let paramDatas = minfo.GetParamDatas(amap, m, minst)
+            let layout =
+                layout ^^
+                    if List.forall isNil paramDatas then
+                        WordL.structUnit
+                    else
+                        sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)
+            let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
             layout ^^
-                if List.forall isNil paramDatas then
-                    WordL.structUnit
-                else
-                    sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)
-        let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
-        layout ^^
-        WordL.arrow ^^
-        PrintTypes.layoutType denv retTy
+            WordL.arrow ^^
+            PrintTypes.layoutType denv retTy
 
     /// Format a method info using "half C# style".
     //
@@ -1729,48 +1725,33 @@ module private TastDefinitionPrinting =
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL
        
     let private layoutPropInfo denv amap m (p: PropInfo) =
-        let modifierAndMember =
-            match p.ArbitraryValRef with
-            | Some v ->
-                match v.MemberInfo with
-                | Some info ->
-                    layoutMemberFlags info.MemberFlags
-                | None ->
-                    WordL.keywordMember
-            | None ->
+        match p.ArbitraryValRef with
+        | Some v ->
+            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv v.Deref
+        | None ->
+            let modifierAndMember =
                 if p.IsStatic then
                     WordL.keywordStatic ^^ WordL.keywordMember
                 else
                     WordL.keywordMember
         
-        let propTag =
-            let tag =
-                p.PropertyName
-                |> adjustILName
-                |> tagProperty
+            let propTag =
+                let tag =
+                    p.PropertyName
+                    |> adjustILName
+                    |> tagProperty
 
-            match p.ArbitraryValRef with
-            | Some vref ->
-                tag |> mkNav vref.DefinitionRange
-            | None ->
-                tag
+                match p.ArbitraryValRef with
+                | Some vref ->
+                    tag |> mkNav vref.DefinitionRange
+                | None ->
+                    tag
 
-        let nameL = propTag |> wordL
+            let nameL = propTag |> wordL
             
-        let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
-                
-        let getterSetter =
-            match p.HasGetter, p.HasSetter with
-            | (true, false) ->
-                wordL (tagKeyword "with") ^^ wordL (tagText "get")
-            | (false, true) ->
-                wordL (tagKeyword "with") ^^ wordL (tagText "set")
-            | (true, true) ->
-                wordL (tagKeyword "with") ^^ wordL (tagText "get, set")
-            | (false, false) ->
-                emptyL
+            let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
 
-        modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL ^^ getterSetter
+            modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL
 
     let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
         let g = denv.g
