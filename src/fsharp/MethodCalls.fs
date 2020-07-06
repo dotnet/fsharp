@@ -1173,6 +1173,11 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
         if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
         assignedArg
 
+    // For non-nullable, non-optional arguments no conversion is needed
+    | NotOptional when not (isNullableTy g calledArgTy) -> 
+        if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
+        assignedArg
+
     | _ ->
 
         let callerArgExpr2 = 
