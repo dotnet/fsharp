@@ -152,6 +152,11 @@
         <target state="translated">Для конечного среза, для которого требуется версия языка 5.0, используйте параметр /langversion:preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Поток не начинается с нулевого ресурса и не соответствует формату ".RES".</target>

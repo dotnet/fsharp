@@ -122,11 +122,6 @@
         <target state="translated">Das Verzeichnis "{0}" ist nicht vorhanden.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">Ungültige Direktive "#{0} {1}"</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">Warnung: Die Zeile ist zu lang, einige Zeichen werden ignoriert.\n</target>

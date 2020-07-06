@@ -1,4 +1,10 @@
 
+  #blaaaaaa // blaaaaaa is not a known command;;
+  ^
+
+stdin(220,1): warning FS3353: Invalid directive '#blaaaaaa '
+
+
   type Regression4319_T0  = static member (+-+-+)             = "0 arguments";;
   -----------------------------------------^^^^^
 

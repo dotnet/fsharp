@@ -152,6 +152,11 @@
         <target state="translated">Vytváření průřezů od konce vyžaduje jazykovou verzi 5.0, použijte /langversion:preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Stream nezačíná zdrojem s hodnotou null a není ve formátu .RES.</target>
