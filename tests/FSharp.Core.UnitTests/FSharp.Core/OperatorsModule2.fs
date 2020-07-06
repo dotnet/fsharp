@@ -362,8 +362,8 @@ type OperatorsModule2() =
         // Max and min value as literals (this breaks compilation if the lexer fails).
         // The following tests ensure that the proper value is parsed, which is similar to `nativeint Int64.MaxValue` etc.
         if Info.isX86Runtime then
-            Assert.AreEqual("-1", string -9223372036854775808n)
-            Assert.AreEqual("-1", string 9223372036854775807n)
+            Assert.AreEqual("0", string -9223372036854775808n)  // same as int32 -9223372036854775808L
+            Assert.AreEqual("-1", string 9223372036854775807n)    // same as int32 9223372036854775807L
         else
             Assert.AreEqual("-9223372036854775808", string -9223372036854775808n)
             Assert.AreEqual("9223372036854775807", string 9223372036854775807n)
