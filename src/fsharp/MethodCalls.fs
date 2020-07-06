@@ -1173,7 +1173,11 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
         if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
         assignedArg
 
-    // For non-nullable, non-optional arguments no conversion is needed
+    // For non-nullable, non-optional arguments no conversion is needed.
+    // We return precisely the assignedArg.  This also covers the case where there
+    // can be a lingering permitted type mismatch between caller argument and called argument, 
+    // specifically caller can by `byref` and called `outref`.  No coercion is inserted in the
+    // expression tree in this case. 
     | NotOptional when not (isNullableTy g calledArgTy) -> 
         if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
         assignedArg
@@ -1188,7 +1192,7 @@ let AdjustCallerArgForOptional tcFieldInit eCallerMemberName (infoReader: InfoRe
                 if isNullableTy g calledArgTy then 
                     MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy callerArgExpr m
                 else
-                    callerArgExpr
+                    failwith "unreachable" // see case above
             
             | CallerSide dfltVal -> 
                 let calledArgTy = calledArg.CalledArgumentType
