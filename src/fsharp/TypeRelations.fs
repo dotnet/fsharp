@@ -59,14 +59,6 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
     let ty1str = stripAll ty1
     let ty2str = stripAll ty2
 
-    let _found, _tc_eq =
-        match ty1str, ty2str with
-        | TType_app (tc1, _l1), TType_app (tc2, _l2) ->
-            let tc1_local = tc1
-            let tc2_local = tc2
-            true, tyconRefEq g tc1_local tc2_local
-        | _ -> false, false
-
     match ty1str, ty2str with
     | TType_var _, _  
     | _, TType_var _ -> true
