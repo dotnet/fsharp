@@ -405,9 +405,13 @@ rule token args skip = parse
        UINT64(n) } 
 
  | nativeint  
-     { try 
-           NATIVEINT(int64 (removeUnderscores (lexemeTrimRight lexbuf 1)))
-       with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeSigned()) (NATIVEINT(0L)) } 
+     { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
+       // Allow <max_nativeint+1> to parse as min_nativeint.  Stupid but allowed because we parse '-' as an operator. 
+       if s = "9223372036854775808" then NATIVEINT(-9223372036854775808L, true) else
+       let n = 
+          try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeSigned()) 0L
+       NATIVEINT(n,false)
+     }
 
  | unativeint 
      { try 
