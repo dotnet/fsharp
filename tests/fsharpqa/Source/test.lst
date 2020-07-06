@@ -31,7 +31,6 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
 CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
 CodeGen01,NoMT,CodeGen				CodeGen\Structure
 
-
 CompilerOptions01,NoMT				CompilerOptions\fsc\checked
 CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
