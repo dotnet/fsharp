@@ -42,7 +42,7 @@ type LanguageVersion (specifiedVersionAsString) =
     static let languageVersion47 = 4.7m
     static let languageVersion50 = 5.0m
     static let previewVersion = 9999m                   // Language version when preview specified
-    static let defaultVersion = languageVersion50       // Language version when default specified
+    static let defaultVersion = languageVersion47       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
     static let latestMajorVersion = languageVersion47   // Language version when latestmajor specified
 
