@@ -267,10 +267,10 @@ type Async =
   static member AwaitTask<'T> : task: Task<'T> -> Async<'T> + 1 overload
   static member AwaitWaitHandle : waitHandle: WaitHandle *?millisecondsTimeout: int -> Async<bool>
   static member CancelDefaultToken : unit -> unit
-  static member CancellationToken : Async<CancellationToken> with get
+  static member CancellationToken : Async<CancellationToken>
   static member Catch<'T> : computation: Async<'T> -> Async<Choice<'T,exn>>
   static member Choice<'T> : computations: seq<Async<'T option>> -> Async<'T option>
-  static member DefaultCancellationToken : CancellationToken with get
+  static member DefaultCancellationToken : CancellationToken
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
@@ -372,7 +372,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal with get\nFull name: N.T",
+         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\nFull name: N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
          
 
@@ -1020,7 +1020,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
     member public this.``FrameworkClass``() =
         let fileContent = """let l = new System.Collections.Generic.List<int>()"""
         let marker = "Generic.List"
-        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"member Capacity : int with get, set\n")
+        this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"member Capacity : int\n")
         this.AssertQuickInfoContainsAtEndOfMarker(fileContent,marker,"member Clear : unit -> unit\n")
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent marker "get_Capacity"
         this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker fileContent marker "set_Capacity"
@@ -2106,13 +2106,13 @@ query."
                "  new : allowScheme: string * allowPort: int -> unit + 2 overloads";
                "  member Equals : o: obj -> bool";
                "  member GetHashCode : unit -> int";
-               "  member IsAnyScheme : bool with get";
-               "  member IsDefaultPort : bool with get";
-               "  member IsOriginPort : bool with get";
-               "  member IsOriginScheme : bool with get";
-               "  member Port : int with get";
-               "  member Scheme : string with get";
-               "  member StrPort : string with get";
+               "  member IsAnyScheme : bool";
+               "  member IsDefaultPort : bool";
+               "  member IsOriginPort : bool";
+               "  member IsOriginScheme : bool";
+               "  member Port : int";
+               "  member Scheme : string";
+               "  member StrPort : string";
                "  ...";
              ])
 
@@ -2156,11 +2156,11 @@ query."
                "  new : unit -> F1";
                "  static val x: F1";
                "  val x: F1";
-               "  abstract member AAA : int with get, set";
+               "  abstract member AAA : int";
                "  member B : unit -> int";
-               "  member D : int with get, set";
+               "  member D : int";
                "  member ToString : unit -> string";
-               "  abstract member ZZZ : int with get";
+               "  abstract member ZZZ : int";
                "  ...";
              ])
 
