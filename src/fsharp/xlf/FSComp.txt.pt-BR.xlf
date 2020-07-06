@@ -152,6 +152,11 @@
         <target state="translated">A opção 'Divisão começando no final' requer a versão de idioma 5.0. Use /langversion:preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Stream não começa com um recurso nulo e não está no formato '.RES'.</target>

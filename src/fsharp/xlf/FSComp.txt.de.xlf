@@ -152,6 +152,11 @@
         <target state="translated">Für das vom Ende ausgehende Slicing ist Sprachversion 5.0 erforderlich. Verwenden Sie /langversion:preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="nativeResourceFormatError">
         <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
         <target state="translated">Der Stream beginnt nicht mit einer NULL-Ressource und ist nicht im RES-Format.</target>
