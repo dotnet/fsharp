@@ -710,3 +710,190 @@ let ceResult =
 check "grwerjkrwejgk42" ceResult.Value 2
     """
 
+    [<Test>]
+    let ``Applicative MergeSourcesN`` () =
+        let source = """
+open System
+
+let inline ivk f x =
+    let inline call ( f : ^I, x:'TT) = ((^I or ^TT) : (static member Invoke : _-> _) x)
+    call ( f, x)  
+
+let inline loop f x =
+    let inline call ( f : ^I, x:'TT) = ((^I or ^TT) : (static member Loop : _-> _) x)
+    call ( f, x)
+
+type Uncons = Uncons with
+    static member inline Invoke tuple = (Unchecked.defaultof<Uncons> => tuple)
+
+    static member inline (=>) (_:obj, t : 't when 't : not struct) =
+        let rest = (Uncons.Invoke (^t : (member Rest : _) t))
+        (^t : (member Item1 : _) t) , 
+            System.Tuple<_,_,_,_,_,_,_,_>(
+                (^t : (member Item2 : _) t) ,
+                (^t : (member Item3 : _) t) ,
+                (^t : (member Item4 : _) t) ,
+                (^t : (member Item5 : _) t) ,
+                (^t : (member Item6 : _) t) ,
+                (^t : (member Item7 : _) t) ,
+                fst rest, snd rest)
+
+    static member inline (=>) (Uncons, t : 't when 't : not struct) =
+        let rest = (Uncons.Invoke (^t : (member Rest : _) t)) : _ * unit
+        (^t : (member Item1 : _) t) , 
+            System.Tuple<_,_,_,_,_,_,_>(
+                (^t : (member Item2 : _) t) ,
+                (^t : (member Item3 : _) t) ,
+                (^t : (member Item4 : _) t) ,
+                (^t : (member Item5 : _) t) ,
+                (^t : (member Item6 : _) t) ,
+                (^t : (member Item7 : _) t) ,
+                fst rest)
+
+    static member (=>) (Uncons, x1:Tuple<_>) = (x1.Item1, ())
+    static member (=>) (Uncons, (a, b)) = a, System.Tuple<_>(b)
+    static member (=>) (Uncons, (a, b, c)) = a, (b, c)
+    static member (=>) (Uncons, (a, b, c, d)) = a, (b, c, d)
+    static member (=>) (Uncons, (a, b, c, d, e)) = a, (b, c, d, e)
+    static member (=>) (Uncons, (a, b, c, d, e, f)) = a, (b, c, d, e, f)
+    static member (=>) (Uncons, (a, b, c, d, e, f, g)) = a, (b, c, d, e, f, g)
+ 
+
+type Cons = Cons with
+    static member inline Invoke tuple = let inline f (m : 'M, t:'T) = ((^M or ^T) : (static member (!) : _ -> _) t) in f (Cons, tuple)
+    static member inline (!) (t:'t) = fun x -> 
+        let (x1,x2,x3,x4,x5,x6,x7,xr) = 
+            (
+                (^t : (member Item1 : 't1) t),
+                (^t : (member Item2 : 't2) t),
+                (^t : (member Item3 : 't3) t),
+                (^t : (member Item4 : 't4) t),
+                (^t : (member Item5 : 't5) t),
+                (^t : (member Item6 : 't6) t),
+                (^t : (member Item7 : 't7) t),
+                (^t : (member Rest  : 'tr) t)
+           )
+        System.Tuple<_,_,_,_,_,_,_,_>(x, x1, x2, x3, x4, x5, x6, Cons.Invoke xr x7)
+    static member (!) (()                    ) = fun x -> Tuple x
+    static member (!) (x1:Tuple<_>           ) = fun x -> (x,x1.Item1)
+    static member (!) ((x1,x2)               ) = fun x -> (x,x1,x2)
+    static member (!) ((x1,x2,x3)            ) = fun x -> (x,x1,x2,x3)
+    static member (!) ((x1,x2,x3,x4)         ) = fun x -> (x,x1,x2,x3,x4)
+    static member (!) ((x1,x2,x3,x4,x5)      ) = fun x -> (x,x1,x2,x3,x4,x5)
+    static member (!) ((x1,x2,x3,x4,x5,x6)   ) = fun x -> (x,x1,x2,x3,x4,x5,x6)
+    static member (!) ((x1,x2,x3,x4,x5,x6,x7)) = fun x -> (x,x1,x2,x3,x4,x5,x6,x7)
+
+let inline (|Cons|) tuple   = Uncons.Invoke tuple
+
+type Rev = Rev with
+    static member inline Invoke tuple = ($) Rev tuple ()
+    static member inline ($) (Rev, Cons(h,t)) = fun ac -> ($) Rev t (Cons.Invoke ac h)
+    static member        ($) (Rev, ()       ) = id
+
+type ZipOption = ZipOption with
+    static member inline Loop (tup: ^a when ^a : not struct) =
+        fun acc ->
+            let tHead, tRest = Uncons.Invoke tup
+            let nextAcc =
+                match acc, tHead with
+                | Some t, Some x -> Some (Cons.Invoke t x)
+                | _, _ -> None
+            loop ZipOption tRest nextAcc
+    static member inline Loop (()) = fun acc -> acc
+    static member inline Invoke tuple = 
+        match loop ZipOption tuple (Some ()) with
+        | Some x -> Some (Rev.Invoke x)
+        | None -> None
+        
+let inline zipN_Srtp tuple = ZipOption.Invoke tuple
+
+let zipN_Reflection tuple =
+    let read a =
+        let ty = typedefof<option<_>>
+        if obj.ReferenceEquals(a, null) then None
+        else
+            let aty = a.GetType()
+            let v = aty.GetProperty("Value")
+            if aty.IsGenericType && aty.GetGenericTypeDefinition() = ty then
+              if a = null then None
+              else Some(v.GetValue(a, [| |]))
+            else None
+    let arrayToTuple a =
+        let types = a |> Array.map (fun o -> o.GetType())
+        let tupleType = Microsoft.FSharp.Reflection.FSharpType.MakeTupleType types
+        Microsoft.FSharp.Reflection.FSharpValue.MakeTuple (a, tupleType)
+
+    let a = Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields tuple
+    let res = a |> Array.choose read
+    if Array.length res = Array.length a then Some (arrayToTuple res) else None
+    |> Option.map unbox
+
+
+
+// computation expressions
+
+type ResultBuilder_srtp() = 
+    member inline _.MergeSourcesN tupleOfOptions = zipN_Srtp tupleOfOptions
+    member        _.BindReturn (x: 'T option, f) = Option.map f x
+
+type ResultBuilder_reflection() = 
+    member        _.MergeSourcesN tupleOfOptions = zipN_Reflection tupleOfOptions
+    member        _.BindReturn (x: 'T option, f) = Option.map f x
+
+let option_srtp = ResultBuilder_srtp()
+let option_reflection = ResultBuilder_reflection()
+
+
+let testSrtp r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 =
+    let res1: _ option =
+        option_srtp { 
+            let! a = r1
+            and! b = r2
+            and! c = r3
+            and! d = r4
+            and! e = r5
+            and! f = r6
+            and! g = r7
+            and! h = r8
+            and! i = r9
+            and! j = r10
+            return a + b - c + d - e - f - g - h - i + j
+        }
+    
+    match res1 with
+    | Some x -> sprintf "Result is: %d" x
+    | None   -> "No result"
+
+
+let testReflection r1 r2 r3 r4 r5 r6 r7 r8 r9 r10 =
+    let res1: _ option =
+        option_reflection { 
+            let! a = r1
+            and! b = r2
+            and! c = r3
+            and! d = r4
+            and! e = r5
+            and! f = r6
+            and! g = r7
+            and! h = r8
+            and! i = r9
+            and! j = r10
+            return a + b - c + d - e - f - g - h - i + j
+        }
+
+    match res1 with
+    | Some x -> sprintf "Result is: %d" x
+    | None   -> "No result"
+
+let a1, a2, a3, a4, a5, a6, a7, a8, a9, a10 = (Some 1, Some 2, Some 3, Some 4, Some 5, Some 6, Some 7, Some 8, Some 9, Some 10)
+
+let res1 = testSrtp a1 a2 a3 a4 a5 a6 a7 a8 a9 a10
+let res2 = testReflection a1 a2 a3 a4 a5 a6 a7 a8 a9 a10
+
+if res1 <> "Result is: -21" then failwithf "Unexpected result for testSrtp. Expected was -21 but actual was %s" res1
+if res2 <> "Result is: -21" then failwithf "Unexpected result for testSrtp. Expected was -21 but actual was %s" res2
+
+()
+
+        """
+        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview" |] source
