@@ -1054,8 +1054,13 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, optIm
              let text = if memberFlags.MemberKind <> MemberKind.Constructor && memberFlags.MemberKind <> MemberKind.ClassConstructor && not memberFlags.IsInstance then text + ".Static" else text
              let text = if memberFlags.IsOverrideOrExplicitImpl then text + ".Override" else text
              text
+        else if not optIntfSlotTys.IsEmpty then
+            // interface implementation
+            if optIntfSlotTys.Length > 1 then
+                failwithf "unexpected: optIntfSlotTys.Length > 1 (== %i) in MakeMemberDataAndMangledNameForMemberVal for '%s'" optIntfSlotTys.Length logicalName
+            qualifiedInterfaceImplementationName g optIntfSlotTys.Head logicalName
         else
-            List.foldBack (tcrefOfAppTy g >> qualifiedMangledNameOfTyconRef) optIntfSlotTys logicalName
+            List.foldBack (fun x -> qualifiedMangledNameOfTyconRef (tcrefOfAppTy g x)) optIntfSlotTys logicalName
     
     if not isCompGen && IsMangledOpName id.idText && IsInfixOperator id.idText then 
         let m = id.idRange
