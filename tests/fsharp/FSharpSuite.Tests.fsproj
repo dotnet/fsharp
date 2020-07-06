@@ -33,6 +33,9 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
     <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
@@ -76,6 +79,9 @@
     <Compile Include="Compiler\Libraries\Core\Operators\RoundTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\SignTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Operators\StringTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Reflection\SprintfTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Reflection\PreComputedTupleConstructorTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
