@@ -1976,16 +1976,33 @@ module private TastDefinitionPrinting =
                             |> aboveListL
 
                         addMembersAsWithEnd (addReprAccessL layoutUnionCases)
+
+                    | TAsmRepr _ ->
+                        wordL (tagText "(# \"<Common IL Type Omitted>\" #)")
+
+                    | TMeasureableRepr ty ->
+                        layoutType denv ty
+
+                    | TFSharpObjectRepr r ->
+                        match r.fsobjmodel_kind with
+                        | TTyconDelegate (TSlotSig(_, _, _, _, paraml, rty)) ->
+                            let rty = GetFSharpViewOfReturnType denv.g rty
+                            WordL.keywordDelegate ^^ WordL.keywordOf --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty []
+                        | _ ->
+                            declsL
                     | _ ->
                         declsL
 
                 let brk = not (isNil decls) || breakTypeDefnEqn tycon.TypeReprInfo
                 let brk = match tycon.TypeReprInfo with | TILObjectRepr _ -> true | _ -> brk
                 let layout =
-                    if brk then
-                        (lhsL ^^ WordL.equals) @@-- rhsL 
-                    else 
-                        (lhsL ^^ WordL.equals) --- rhsL
+                    match tycon.TypeReprInfo with
+                    | TNoRepr -> lhsL
+                    | _ ->
+                        if brk then
+                            (lhsL ^^ WordL.equals) @@-- rhsL 
+                        else 
+                            (lhsL ^^ WordL.equals) --- rhsL
 
                 layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs layout
         #endif
