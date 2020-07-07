@@ -716,11 +716,11 @@ check "grwerjkrwejgk42" ceResult.Value 2
 open System
 
 let inline ivk f x =
-    let inline call ( f : ^I, x:'TT) = ((^I or ^TT) : (static member Invoke : _-> _) x)
+    let inline call (_: ^I, x:'TT) = ((^I or ^TT) : (static member Invoke : _-> _) x)
     call ( f, x)  
 
 let inline loop f x =
-    let inline call ( f : ^I, x:'TT) = ((^I or ^TT) : (static member Loop : _-> _) x)
+    let inline call (_: ^I, x:'TT) = ((^I or ^TT) : (static member Loop : _-> _) x)
     call ( f, x)
 
 type Uncons = Uncons with
@@ -760,7 +760,7 @@ type Uncons = Uncons with
  
 
 type Cons = Cons with
-    static member inline Invoke tuple = let inline f (m : 'M, t:'T) = ((^M or ^T) : (static member (!) : _ -> _) t) in f (Cons, tuple)
+    static member inline Invoke tuple = let inline f (_: 'M, t: 'T) = ((^M or ^T) : (static member (!) : _ -> _) t) in f (Cons, tuple)
     static member inline (!) (t:'t) = fun x -> 
         let (x1,x2,x3,x4,x5,x6,x7,xr) = 
             (
