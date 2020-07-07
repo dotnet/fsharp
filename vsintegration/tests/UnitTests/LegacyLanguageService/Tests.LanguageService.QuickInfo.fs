@@ -261,15 +261,15 @@ type UsingMSBuild() =
         """
         let expectedTooltip = """
 type Async =
-  static member AsBeginEnd<'Arg,'T> : computation: 'Arg -> Async<'T> -> ('Arg * AsyncCallback * obj -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
-  static member AwaitEvent<'Del,'T (requires delegate and 'Del :> Delegate)> : event: IEvent<'Del,'T> *?cancelAction: unit -> unit -> Async<'T>
-  static member AwaitIAsyncResult : iar: IAsyncResult *?millisecondsTimeout: int -> Async<bool>
-  static member AwaitTask<'T> : task: Task<'T> -> Async<'T> + 1 overload
-  static member AwaitWaitHandle : waitHandle: WaitHandle *?millisecondsTimeout: int -> Async<bool>
+  static member AsBeginEnd : computation:('Arg -> Async<'T>) -> ('Arg * AsyncCallback * obj -> IAsyncResult) * (IAsyncResult -> 'T) * (IAsyncResult -> unit)
+  static member AwaitEvent : event:IEvent<'Del,'T> * ?cancelAction:(unit -> unit) -> Async<'T> (requires delegate and 'Del :> Delegate)
+  static member AwaitIAsyncResult : iar:IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
+  static member AwaitTask : task:Task<'T> -> Async<'T> + 1 overload
+  static member AwaitWaitHandle : waitHandle:WaitHandle * ?millisecondsTimeout:int -> Async<bool>
   static member CancelDefaultToken : unit -> unit
   static member CancellationToken : Async<CancellationToken>
-  static member Catch<'T> : computation: Async<'T> -> Async<Choice<'T,exn>>
-  static member Choice<'T> : computations: seq<Async<'T option>> -> Async<'T option>
+  static member Catch : computation:Async<'T> -> Async<Choice<'T,exn>>
+  static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
   static member DefaultCancellationToken : CancellationToken
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
@@ -2159,7 +2159,7 @@ query."
                "  abstract member AAA : int";
                "  member B : unit -> int";
                "  member D : int";
-               "  member ToString : unit -> string";
+               "  override ToString : unit -> string";
                "  abstract member ZZZ : int";
                "  ...";
              ])
