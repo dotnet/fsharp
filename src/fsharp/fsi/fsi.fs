@@ -2053,7 +2053,7 @@ type internal FsiInteractionProcessor
             f istate
         with  e ->
             stopProcessingRecovery e range0
-            istate,CompletedWithReportedError e
+            istate, CompletedWithReportedError e
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
 
@@ -2099,11 +2099,11 @@ type internal FsiInteractionProcessor
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
         istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 
-            | IDefns ([  ],_) ->
+            | IDefns ([], _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 istate,Completed None
 
-            | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],_) ->
+            | IDefns ([SynModuleDecl.DoExpr(_, expr, _)], _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
 
@@ -2111,7 +2111,7 @@ type internal FsiInteractionProcessor
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
-            | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
+            | IHash (ParsedHashDirective("load", sourceFiles, m), _) -> 
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
@@ -2161,69 +2161,69 @@ type internal FsiInteractionProcessor
                         fsiConsoleOutput.uprintnfnn "%s" format)
                     istate,Completed None
 
-            | IHash (ParsedHashDirective("I",[path],m),_) -> 
-                tcConfigB.AddIncludePath (m,path, tcConfig.implicitIncludeDir)
+            | IHash (ParsedHashDirective("I", [path], m), _) -> 
+                tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
-                istate,Completed None
+                istate, Completed None
 
-            | IHash (ParsedHashDirective("cd",[path],m),_) ->
+            | IHash (ParsedHashDirective("cd", [path], m), _) ->
                 ChangeDirectory path m
-                istate,Completed None
+                istate, Completed None
 
-            | IHash (ParsedHashDirective("silentCd",[path],m),_) ->
+            | IHash (ParsedHashDirective("silentCd", [path], m), _) ->
                 ChangeDirectory path m
                 fsiConsolePrompt.SkipNext() (* "silent" directive *)
-                istate,Completed None                  
+                istate, Completed None                  
                                
-            | IHash (ParsedHashDirective("dbgbreak",[],_),_) -> 
-                {istate with debugBreak = true},Completed None
+            | IHash (ParsedHashDirective("dbgbreak", [], _), _) -> 
+                {istate with debugBreak = true}, Completed None
 
-            | IHash (ParsedHashDirective("time",[],_),_) -> 
+            | IHash (ParsedHashDirective("time", [], _), _) -> 
                 if istate.timing then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
-                {istate with timing = not istate.timing},Completed None
+                {istate with timing = not istate.timing}, Completed None
 
-            | IHash (ParsedHashDirective("time",[("on" | "off") as v],_),_) -> 
+            | IHash (ParsedHashDirective("time", [("on" | "off") as v], _), _) -> 
                 if v <> "on" then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
-                {istate with timing = (v = "on")},Completed None
+                {istate with timing = (v = "on")}, Completed None
 
-            | IHash (ParsedHashDirective("nowarn",numbers,m),_) -> 
-                List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m,d)) numbers
-                istate,Completed None
+            | IHash (ParsedHashDirective("nowarn", numbers, m), _) -> 
+                List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m, d)) numbers
+                istate, Completed None
 
-            | IHash (ParsedHashDirective("terms",[],_),_) -> 
+            | IHash (ParsedHashDirective("terms", [], _), _) -> 
                 tcConfigB.showTerms <- not tcConfig.showTerms
-                istate,Completed None
+                istate, Completed None
 
-            | IHash (ParsedHashDirective("types",[],_),_) -> 
+            | IHash (ParsedHashDirective("types", [], _), _) -> 
                 fsiOptions.ShowTypes <- not fsiOptions.ShowTypes
-                istate,Completed None
+                istate, Completed None
 
     #if DEBUG
-            | IHash (ParsedHashDirective("ilcode",[],_m),_) -> 
+            | IHash (ParsedHashDirective("ilcode", [], _m), _) -> 
                 fsiOptions.ShowILCode <- not fsiOptions.ShowILCode; 
-                istate,Completed None
+                istate, Completed None
 
-            | IHash (ParsedHashDirective("info",[],_m),_) -> 
+            | IHash (ParsedHashDirective("info", [], _m), _) -> 
                 PrintOptionInfo tcConfigB
-                istate,Completed None         
+                istate, Completed None
     #endif
 
-            | IHash (ParsedHashDirective(("q" | "quit"),[],_),_) -> 
+            | IHash (ParsedHashDirective(("q" | "quit"), [], _), _) -> 
                 fsiInterruptController.Exit()
 
-            | IHash (ParsedHashDirective("help",[],_),_) ->
+            | IHash (ParsedHashDirective("help", [], _), _) ->
                 fsiOptions.ShowHelp()
-                istate,Completed None
+                istate, Completed None
 
-            | IHash (ParsedHashDirective(c,arg,_),_) -> 
-                fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiInvalidDirective(c, String.concat " " arg))  // REVIEW: uprintnfnn - like other directives above
-                istate,Completed None  (* REVIEW: cont = CompletedWithReportedError *)
+            | IHash (ParsedHashDirective(c, arg, m), _) -> 
+                warning(Error((FSComp.SR.fsiInvalidDirective(c, String.concat " " arg)), m))
+                istate, Completed None
         )
 
     /// Execute a single parsed interaction which may contain multiple items to be executed

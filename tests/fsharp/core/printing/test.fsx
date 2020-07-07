@@ -217,7 +217,7 @@ module RepeatedModule = begin let repeatedByteLiteral = [| 12uy; 13uy; 14uy |] e
 (* no eval in between, since time can vary and look like a regression *)
 #time;; (* time off *)
 "Check #unknown command";;
-#blaaaaaa;; // blaaaaaa is not a known command
+#blaaaaaa // blaaaaaa is not a known command;;
 "Check #I with a known directory (to avoid a warning, which includes the location of this file, which is fragile...)";;
 #I "/";;
 

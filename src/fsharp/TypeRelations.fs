@@ -47,30 +47,37 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
 type CanCoerce = CanCoerce | NoCoerce
 
 /// The feasible equivalence relation. Part of the language spec.
-let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 = 
+let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 = 
 
     if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m));
-    let ty1 = stripTyEqns g ty1
-    let ty2 = stripTyEqns g ty2
-    match ty1, ty2 with 
+    let stripAll ty =
+        if stripMeasures then
+            ty |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTType g
+        else
+            ty |> stripTyEqns g
+
+    let ty1str = stripAll ty1
+    let ty2str = stripAll ty2
+
+    match ty1str, ty2str with
     | TType_var _, _  
     | _, TType_var _ -> true
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  ->  
-        List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
+    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2 ->
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
         (evalTupInfoIsStruct anonInfo1.TupInfo = evalTupInfoIsStruct anonInfo2.TupInfo) &&
         (match anonInfo1.Assembly, anonInfo2.Assembly with ccu1, ccu2 -> ccuEq ccu1 ccu2) &&
         (anonInfo1.SortedNames = anonInfo2.SortedNames) &&
-        List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)     -> 
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
-        List.lengthsEqAndForall2 (TypesFeasiblyEquiv ndeep g amap m) l1 l2 
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
     | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
-        (TypesFeasiblyEquiv ndeep g amap m) d1 d2 && (TypesFeasiblyEquiv ndeep g amap m) r1 r2
+        (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) d1 d2 && (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) r1 r2
 
     | TType_measure _, TType_measure _ ->
         true
@@ -78,8 +85,15 @@ let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
     | _ -> 
         false
 
-/// The feasible coercion relation. Part of the language spec.
+/// The feasible equivalence relation. Part of the language spec.
+let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
+    TypesFeasiblyEquivalent false ndeep g amap m ty1 ty2
 
+/// The feasible equivalence relation after stripping Measures.
+let TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
+    TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
+
+/// The feasible coercion relation. Part of the language spec.
 let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 = 
     if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
     let ty1 = stripTyEqns g ty1
