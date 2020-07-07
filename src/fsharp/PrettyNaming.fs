@@ -764,3 +764,9 @@ let FSharpSignatureDataResourceName = "FSharpSignatureData."
 let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
+// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
+let [<Literal>] prefixForVariablesThatMayNotBeEliminated = "__stack_"
+let [<Literal>] stackStepName = "__stack_step"
+let [<Literal>] expansionFunctionPrefix = "__expand_"
+

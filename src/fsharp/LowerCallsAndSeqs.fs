@@ -483,31 +483,33 @@ let ConvertSequenceExprToObject g amap overallExpr =
         // transferred to the r.h.s. are not yet compiled.
         //
         // TODO: remove this limitation
-        | Expr.Match (spBind, exprm, pt, targets, m, ty) when targets |> Array.forall (fun (TTarget(vs, _e, _spTarget)) -> isNil vs) ->
+        | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
             // lower all the targets. abandon if any fail to lower
-            // lower all the targets. abandon if any fail to lower
-            let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget)) -> ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel targetExpr)
+            let tglArray = targets |> Array.map (fun (TTarget(_vs, targetExpr, _spTarget, _)) -> ConvertSeqExprCode false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel targetExpr)
             if tglArray |> Array.forall Option.isSome then
                 let tglArray = Array.map Option.get tglArray
                 let tgl = Array.toList tglArray
                 let labs = tgl |> List.collect (fun res -> res.entryPoints)
 
-                let (asyncVars, _) =
-                    ((emptyFreeVars, false), Array.zip targets tglArray)
-                    ||> Array.fold (fun (fvs, seenLabel) ((TTarget(_vs, e, _spTarget)), res) ->
-                        if seenLabel then unionFreeVars fvs (freeInExpr CollectLocals e), true
-                        else res.asyncVars, not res.entryPoints.IsEmpty)
+                let asyncVars =
+                    (emptyFreeVars, Array.zip targets tglArray)
+                    ||> Array.fold (fun fvs ((TTarget(_vs, _, _spTarget, _)), res) ->
+                        if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
 
-                let stateVars = tgl |> List.collect (fun res -> res.stateVars)
+                let stateVars = 
+                    (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _, _), res) -> 
+                        let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
+                        stateVars @ res.stateVars)
 
                 let significantClose = tgl |> List.exists (fun res -> res.significantClose)
 
                 Some { phase2 = (fun ctxt ->
                             let gtgs, disposals, checkDisposes =
                                 (Array.toList targets, tgl)
-                                  ||> List.map2 (fun (TTarget(vs, _, spTarget)) res ->
+                                  ||> List.map2 (fun (TTarget(vs, _, spTarget, _)) res ->
+                                        let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
                                         let generate, dispose, checkDispose = res.phase2 ctxt
-                                        let gtg = TTarget(vs, generate, spTarget)
+                                        let gtg = TTarget(vs, generate, spTarget, Some flags)
                                         gtg, dispose, checkDispose)
                                   |> List.unzip3
                             let generate = primMkMatch (spBind, exprm, pt, Array.ofList gtgs, m, ty)
@@ -776,5 +778,4 @@ let ConvertSequenceExprToObject g amap overallExpr =
             // printfn "FAILED: no compilation found! %s" (stringOfRange m)
             None
     | _ -> None
-
 
