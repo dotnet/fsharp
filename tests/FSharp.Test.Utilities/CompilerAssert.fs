@@ -362,6 +362,14 @@ let main argv = 0"""
             disposals
             |> Seq.iter (fun x -> x.Dispose())
 
+    // NOTE: This function will not clean up all the compiled projects after itself.
+    // The reason behind is so we can compose verification of test runs easier.
+    // TODO: We must not rely on the filesystem when compiling
+    static let rec returnCompilation (cmpl: Compilation) =
+        let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
+        Directory.CreateDirectory(compileDirectory) |> ignore
+        compileCompilationAux compileDirectory (ResizeArray()) false cmpl
+
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         lock gate (fun () ->
@@ -370,6 +378,9 @@ let main argv = 0"""
 
     static member Compile(cmpl: Compilation, ?ignoreWarnings) =
         CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
+
+    static member CompileRaw(cmpl: Compilation) =
+        lock gate (fun () -> returnCompilation cmpl)
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
         let ignoreWarnings = defaultArg ignoreWarnings false
