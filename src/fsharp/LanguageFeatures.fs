@@ -143,6 +143,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
         | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation()
+        | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
