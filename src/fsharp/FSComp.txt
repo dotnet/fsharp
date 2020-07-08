@@ -1525,3 +1525,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3363,lexSingleQuoteInSingleQuote,"Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal."
 3364,lexTripleQuoteInTripleQuote,"Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression."
 featureWitnessPassing,"witness passing for trait constraints in F# quotations"
+3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
+3360,typrelInterfaceWithConcreteAndVariable,"'%s' cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
+3361,typrelInterfaceWithConcreteAndVariableObjectExpression,"You cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
+featureInterfacesWithMultipleGenericInstantiation,"interfaces with multiple generic instantiation"
