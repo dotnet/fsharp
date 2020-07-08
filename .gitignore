@@ -53,6 +53,7 @@ scripts/*.patch
 /src/fsharp/FSharp.LanguageService.Compiler/pplex.fs
 /src/fsharp/FSharp.LanguageService.Compiler/pppars.fs
 /src/fsharp/FSharp.LanguageService.Compiler/pppars.fsi
+/src/fsharp/*/Properties/launchSettings.json
 /vsintegration/src/unittests/Unittests.fsi
 /tests/*FSharp_Failures.env
 /tests/*FSharp_Failures.lst
