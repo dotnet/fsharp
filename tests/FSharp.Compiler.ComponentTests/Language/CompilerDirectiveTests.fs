@@ -15,12 +15,12 @@ module ``Test Compiler Directives`` =
 #r ""
         """ |> compile
             |> shouldFail
-            |> withWarnings [213]
+            |> withWarning (213, (2,1,2,6), "'' is not a valid assembly name")
 
     [<Fact>]
-    let ``#r "   " is invalid`` () =
+    let ``#r "    " is invalid`` () =
         Fsx"""
-#r "   "
+#r "    "
         """ |> compile
             |> shouldFail
-            |> withWarnings [213]
+            |> withWarning (213, (2,1,2,10), "'' is not a valid assembly name")

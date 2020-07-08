@@ -4,10 +4,59 @@ namespace FSharp.Compiler.ErrorMessages.ComponentTests
 
 open Xunit
 open FSharp.Test.Utilities
+open FSharp.Test.Utilities.Compiler
 open FSharp.Test.Utilities.Utilities
 open FSharp.Compiler.SourceCodeServices
 
 module ``Confusing Type Name`` =
+
+    [<Fact>]
+    let ``Expected types with multiple references`` () =
+
+        let csLibA =
+            CSharp """
+public class A { }
+public class B<T> { }
+        """ |> withName "libA"
+
+        let csLibB =
+            csLibA |> withName "libB"
+
+        let fsLibC =
+            FSharp """
+module AMaker
+let makeA () : A = A()
+let makeB () = B<_>()
+        """ |> withName "libC" |> withReferences [csLibA]
+
+        let fsLibD =
+            FSharp """
+module OtherAMaker
+let makeOtherA () : A = A()
+let makeOtherB () = B<_>()
+        """ |> withName "libD" |> withReferences [csLibB]
+
+        let app =
+            FSharp """
+module ConfusingTypeName
+let a = AMaker.makeA()
+let otherA = OtherAMaker.makeOtherA()
+printfn "%A %A" (a.GetType().AssemblyQualifiedName) (otherA.GetType().AssemblyQualifiedName)
+printfn "%A" (a = otherA)
+
+let b = AMaker.makeB<int>()
+let otherB = OtherAMaker.makeOtherB<int>()
+printfn "%A %A" (b.GetType().AssemblyQualifiedName) (otherB.GetType().AssemblyQualifiedName)
+printfn "%A" (b = otherB)
+        """ |> withReferences [csLibA; csLibB; fsLibC; fsLibD]
+        
+        app
+        |> compile
+        |> shouldFail
+        |> withErrors [
+            (1, (6, 19, 6, 25), ("This expression was expected to have type\n    'A (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'A (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))
+            (1, (11, 19, 11, 25), ("This expression was expected to have type\n    'B<Microsoft.FSharp.Core.int> (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'B<Microsoft.FSharp.Core.int> (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))]
+
 
     [<Fact>]
     let ``Checks expected types with multiple references``() =
