@@ -222,6 +222,11 @@
         <target state="translated">Атрибуты не могут быть применены к расширениям типа.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
+        <source>Byref types are not allowed in an open type declaration.</source>
+        <target state="new">Byref types are not allowed in an open type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! запрещено сочетать с and!</target>

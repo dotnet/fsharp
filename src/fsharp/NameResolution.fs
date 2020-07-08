@@ -774,60 +774,6 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: Un
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
-let GetStaticMethodItems infoReader nenv ad m ty =
-    let methGroups = 
-        AllMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None ad PreferOverrides m ty
-        |> List.groupBy (fun m -> m.LogicalName)
-
-    seq {
-        for (methName, methGroup) in methGroups do
-            let methGroup = 
-                methGroup 
-                |> List.filter (fun m -> 
-                    not (m.IsInstance || m.IsClassConstructor || m.IsConstructor) && typeEquiv infoReader.amap.g m.ApparentEnclosingType ty)
-            if not methGroup.IsEmpty then
-                yield KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
-    }
-
-let GetStaticPropertyItems infoReader nenv ad m ty =
-    let propInfos = 
-        AllPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None ad PreferOverrides m ty
-        |> List.groupBy (fun m -> m.PropertyName)
-
-    seq {
-        for (propName, propInfos) in propInfos do
-            let propInfos = 
-                propInfos 
-                |> List.filter (fun m -> 
-                    m.IsStatic && typeEquiv infoReader.amap.g m.ApparentEnclosingType ty)
-            for propInfo in propInfos do 
-                yield KeyValuePair(propName , Item.Property(propName,[propInfo]))
-    }
-
-let GetStaticILFieldItems (infoReader: InfoReader) ad m ty =
-    let fields =
-       infoReader.GetILFieldInfosOfType(None, ad, m, ty)
-       |> List.groupBy (fun f -> f.FieldName)
-
-    seq {
-         for (fieldName, fieldInfos) in fields do
-           let fieldInfos = fieldInfos |> List.filter (fun fi -> fi.IsStatic)
-           for fieldInfo in fieldInfos do
-               yield KeyValuePair(fieldName, Item.ILField(fieldInfo))
-    }
-
-let GetStaticEventItems (infoReader: InfoReader) ad m ty =
-    let events =
-        infoReader.GetEventInfosOfType(None, ad, m, ty)
-        |> List.groupBy (fun e -> e.EventName)
-
-    seq {
-        for (eventName, eventInfos) in events do
-          let eventInfos = eventInfos |> List.filter (fun e -> e.IsStatic)
-          for eventInfo in eventInfos do
-              yield KeyValuePair(eventName, Item.Event(eventInfo))
-    }
-
 //-------------------------------------------------------------------------
 // TypeNameResolutionInfo
 //-------------------------------------------------------------------------
@@ -1058,28 +1004,90 @@ let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, che
     GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, optFilter, staticResInfo, checkForGenerated, m) ty
     |> List.map (fun (tcref, tinst) -> MakeNestedType ncenv tinst m tcref)
 
+let ChooseMethInfosForNameEnv g ty (minfos: MethInfo list) =
+    let methGroups =
+        minfos
+        |> List.filter (fun minfo ->
+            not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty)
+        |> List.groupBy (fun minfo -> minfo.LogicalName)
+
+    seq {
+        for (methName, methGroup) in methGroups do
+            if not methGroup.IsEmpty then
+                KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
+    }
+
+let ChoosePropInfosForNameEnv g ty (pinfos: PropInfo list) =
+    let propGroups =
+        pinfos
+        |> List.filter (fun pinfo ->
+            pinfo.IsStatic && typeEquiv g pinfo.ApparentEnclosingType ty)
+        |> List.groupBy (fun pinfo -> pinfo.PropertyName)
+
+    seq {
+        for (propName, propGroup) in propGroups do
+            if not propGroup.IsEmpty then
+                KeyValuePair(propName, Item.Property(propName, propGroup))
+    }
+
+let ChooseILFieldInfosForNameEnv g ty (finfos: ILFieldInfo list) =
+    seq {
+        for finfo in finfos do
+            if finfo.IsStatic && typeEquiv g finfo.ApparentEnclosingType ty then
+                KeyValuePair(finfo.FieldName, Item.ILField finfo)
+    }
+
+let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
+    seq {
+        for einfo in einfos do
+            if einfo.IsStatic && typeEquiv g einfo.ApparentEnclosingType ty then
+                KeyValuePair(einfo.EventName, Item.Event einfo)
+    }
+
 let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)
 
+    // The order of items matter such as intrinsic members will always be favored over extension members of the same name.
+    // Extension property members will always be favored over extenion methods of the same name.
     let items =
         [| 
-            yield! GetStaticMethodItems infoReader nenv ad m ty
-            yield! GetStaticPropertyItems infoReader nenv ad m ty
-            yield! GetStaticILFieldItems infoReader ad m ty
-            yield! GetStaticEventItems infoReader ad m ty
-        |]
+            // Extension methods
+            yield! 
+                ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None m ty
+                |> ChooseMethInfosForNameEnv g ty
 
+            // Extension properties
+            yield!
+                ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None ad m ty
+                |> ChoosePropInfosForNameEnv g ty
+
+            // Methods
+            yield!
+                IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+                |> ChooseMethInfosForNameEnv g ty
+
+            // Properties
+            yield!
+                IntrinsicPropInfosOfTypeInScope infoReader None ad PreferOverrides m ty
+                |> ChoosePropInfosForNameEnv g ty
+
+            // Events
+            yield!
+                infoReader.GetEventInfosOfType(None, ad, m, ty)
+                |> ChooseEventInfosForNameEnv g ty
+
+            // Fields
+            yield!
+                infoReader.GetILFieldInfosOfType(None, ad, m, ty)
+                |> ChooseILFieldInfosForNameEnv g ty
+        |]
 
     let nenv = { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
     AddNestedTypesOfTypeToNameEnv infoReader amap ad m nenv ty
     
 and private AddNestedTypesOfTypeToNameEnv infoReader (amap: Import.ImportMap) ad m nenv ty =
-    let nestedTcrefGroups =
-        GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
-        |> List.groupBy (fun (tcref, _) -> DemangleGenericTypeName tcref.LogicalName)
-
-    (nenv, nestedTcrefGroups)
-    ||> List.fold (fun nenv (_, nestedTypes) -> AddTyconRefsWithTypeArgsToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv nestedTypes)
+    GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
+    |> AddTyconRefsWithTypeArgsToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv
 
 and private AddTyconRefsWithTypeArgsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv (tcrefsWithArgs: (TyconRef * TTypes) list) =
     let tcrefs = tcrefsWithArgs |> List.map (fun (tcref, _) -> tcref)

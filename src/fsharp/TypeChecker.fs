@@ -13022,8 +13022,7 @@ let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
         error(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
 
     if isByrefTy g typ then
-        // TODO: Better error.
-        error(Error(FSComp.SR.tcByrefsMayNotHaveTypeExtensions(), m))
+        error(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
 
     let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [typ], scopem, false)
     let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env typ openDecl

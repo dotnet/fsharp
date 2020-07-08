@@ -222,6 +222,11 @@
         <target state="translated">형식 확장에 특성을 적용할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
+        <source>Byref types are not allowed in an open type declaration.</source>
+        <target state="new">Byref types are not allowed in an open type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use!는 and!와 함께 사용할 수 없습니다.</target>

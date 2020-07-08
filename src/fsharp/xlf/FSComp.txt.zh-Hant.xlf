@@ -222,6 +222,11 @@
         <target state="translated">屬性無法套用到類型延伸模組。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
+        <source>Byref types are not allowed in an open type declaration.</source>
+        <target state="new">Byref types are not allowed in an open type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! 不可與 and! 合併</target>
