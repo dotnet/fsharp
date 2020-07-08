@@ -13,8 +13,9 @@ module ``Test Compiler Directives`` =
     let ``r# "" is invalid`` () =
         Fsx"""
 #r ""
-        """ |> compile
-            |> shouldFail
+        """ |> ignoreWarnings
+            |> compile
+            |> shouldSucceed
             |> withWarning (213, (2,1,2,6), "'' is not a valid assembly name")
 
     [<Fact>]

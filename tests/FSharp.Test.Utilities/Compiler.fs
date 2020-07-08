@@ -111,6 +111,10 @@ module Compiler =
     let asExe (src: FSharpCompilationSource) : CompilationUnit =
         CompilationUnit.FS { src with OutputType = CompileOutput.Exe }
 
+    let ignoreWarnings (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> CompilationUnit.FS { fs with IgnoreWarnings = true }
+        | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
     let private processReferences (references: CompilationUnit list) =
         let rec loop acc = function
@@ -167,12 +171,17 @@ module Compiler =
         | FS fs -> compileFSharp fs
         | _ -> failwith "TODO"
 
-    // TODO: baseline helpers
+    // TODO: Typecheck with baseline
+    let parse (_: CompilationUnit option) = failwith "TODO"
+
     let typecheck (_: CompilationUnit option) = failwith "TODO"
 
     let execute (_: CompilationUnit option) = failwith "TODO"
 
+    let run (_: CompilationUnit option) = failwith "TODO"
+
     let getIL (_: CompilationUnit option) = failwith "TODO"
+
 
     [<AutoOpen>]
     // TODO: Reuse FluentAssertions' assertions here.
@@ -182,7 +191,6 @@ module Compiler =
             sprintf "%A %A %A" info.Severity info.ErrorNumber info.Message
 
         // TODO: Better error messages.
-        // TODO: Should we preserve the order (i.e. expect errors/warnings to be in the same order as in parameters)?
         // TODO: Should probably generalize/dedupicate asserts
         let private assertErrorsLength (source: FSharpErrorInfo list) (expected: int list) : unit =
             if (List.length source) <> (List.length expected) then
