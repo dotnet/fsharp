@@ -1864,8 +1864,8 @@ module private TastDefinitionPrinting =
             if isRecdTy g ty then
                 []
             else
-                tycon.TrueFieldsAsList
-                |> List.filter (fun f -> not f.IsStatic && not (isDiscard f.Name))
+                tycon.TrueInstanceFieldsAsList
+                |> List.filter (fun f -> not (isDiscard f.Name))
                 |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
     
         let propLs = 

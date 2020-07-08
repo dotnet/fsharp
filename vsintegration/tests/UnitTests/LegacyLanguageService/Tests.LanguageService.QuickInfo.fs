@@ -2154,13 +2154,13 @@ query."
                "  inherit Form";
                "  interface IDisposable";
                "  new : unit -> F1";
-               "  static val x: F1";
-               "  val x: F1";
                "  abstract member AAA : int";
                "  member B : unit -> int";
                "  member D : int";
                "  override ToString : unit -> string";
                "  abstract member ZZZ : int";
+               "  static member A : unit -> int";
+               "  static member C : unit -> int";
                "  ...";
              ])
 
