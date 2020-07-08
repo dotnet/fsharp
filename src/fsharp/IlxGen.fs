@@ -4366,8 +4366,10 @@ and GenActualSlotsig m cenv eenv (TSlotSig(_, ty, ctps, mtps, ilSlotParams, ilSl
 
 and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
     let (TSlotSig(nameOfOverridenMethod, enclTypOfOverridenMethod, _, _, _, _)) = slotsig
-    if useMethodImpl then qualifiedMangledNameOfTyconRef (tcrefOfAppTy cenv.g enclTypOfOverridenMethod) nameOfOverridenMethod
-    else nameOfOverridenMethod
+    if useMethodImpl then
+        qualifiedInterfaceImplementationName cenv.g enclTypOfOverridenMethod nameOfOverridenMethod
+    else
+        nameOfOverridenMethod
 
 and GenMethodImpl cenv eenv (useMethodImpl, (TSlotSig(nameOfOverridenMethod, _, _, _, _, _) as slotsig)) m =
     let ilOverrideTy, ilOverrideParams, ilOverrideRet = GenFormalSlotsig m cenv eenv slotsig

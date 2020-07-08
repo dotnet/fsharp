@@ -108,8 +108,4 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" PrivateAssets="All" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Remove="FSharp.Core\OperatorsModule2.fs" />
-  </ItemGroup>
-
 </Project>

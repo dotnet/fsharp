@@ -450,7 +450,6 @@ end
 
 > val it : string = "Check #unknown command"
 
-> Invalid directive '#blaaaaaa '
 > val it : string =
   "Check #I with a known directory (to avoid a warning, which includes the location of this file, which is fragile...)"
 

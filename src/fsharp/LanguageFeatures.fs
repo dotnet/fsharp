@@ -33,6 +33,7 @@ type LanguageFeature =
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
+    | InterfacesWithMultipleGenericInstantiation
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -70,6 +71,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.ResumableStateMachines, previewVersion
             LanguageFeature.WitnessPassing, previewVersion
+            LanguageFeature.InterfacesWithMultipleGenericInstantiation, previewVersion
             LanguageFeature.NameOf, previewVersion
         ]
 
@@ -141,6 +143,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
+        | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

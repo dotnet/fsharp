@@ -157,6 +157,11 @@
         <target state="translated">言語バージョン 5.0 が必要な最後からのスライスで、/langversion:preview を使用してください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">
         <source>The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableStateMachines then ...' and the overall composition must form valid resumable code.</source>
         <target state="new">The resumable code construct '{0}' may only be used in inlined code protected by 'if __useResumableStateMachines then ...' and the overall composition must form valid resumable code.</target>
