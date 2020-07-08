@@ -1789,7 +1789,7 @@ module private TastDefinitionPrinting =
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
-            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+            |> List.filter (fun v -> not v.IsClassConstructor && shouldShow v.ArbitraryValRef)
 
         let meths =
             GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
@@ -1878,7 +1878,7 @@ module private TastDefinitionPrinting =
 
         let membLs = (methLs @ fieldLs @ propLs @ eventLs) |> List.sortBy fst |> List.map snd
 
-        let membLs = staticValsLs @ instanceValsLs @ membLs
+        let membLs = membLs @ staticValsLs @ instanceValsLs
 
         let nestedTypeLs =
             match tryTcrefOfAppTy g ty with
