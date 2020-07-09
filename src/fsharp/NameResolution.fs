@@ -334,8 +334,8 @@ type NameResolutionEnv =
       /// Values, functions, methods and other items available by unqualified name
       eUnqualifiedItems: UnqualifiedItems
 
-      /// Type arguments that are associated with an unqualified type item
-      eUnqualifiedTyconTypeArgs: TyconRefMap<TypeInst>
+      /// Type instantiations that are associated with an unqualified type item
+      eUnqualifiedTyconDeclaringTypeInsts: TyconRefMap<TypeInst>
 
       /// Data Tags and Active Pattern Tags available by unqualified name
       ePatItems: NameMap<Item>
@@ -395,7 +395,7 @@ type NameResolutionEnv =
           eFullyQualifiedModulesAndNamespaces = Map.empty
           eFieldLabels = Map.empty
           eUnqualifiedItems = LayeredMap.Empty
-          eUnqualifiedTyconTypeArgs = TyconRefMap.Empty
+          eUnqualifiedTyconDeclaringTypeInsts = TyconRefMap.Empty
           ePatItems = Map.empty
           eTyconsByAccessNames = LayeredMultiMap.Empty
           eTyconsByDemangledNameAndArity = LayeredMap.Empty
@@ -1087,15 +1087,15 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
     
 and private AddNestedTypesOfTypeToNameEnv infoReader (amap: Import.ImportMap) ad m nenv ty =
     GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
-    |> AddTyconRefsWithTypeArgsToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv
+    |> AddTyconRefsWithTypeInstToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv
 
-and private AddTyconRefsWithTypeArgsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv (tcrefsWithArgs: (TyconRef * TTypes) list) =
+and private AddTyconRefsWithTypeInstToNameEnv bulkAddMode ownDefinition g amap ad m root nenv (tcrefsWithArgs: (TyconRef * TypeInst) list) =
     let tcrefs = tcrefsWithArgs |> List.map (fun (tcref, _) -> tcref)
     let nenv = AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
     (nenv, tcrefsWithArgs)
     ||> List.fold (fun nenv (tcref, tinstDeclaring) ->
         if tinstDeclaring.IsEmpty then nenv
-        else { nenv with eUnqualifiedTyconTypeArgs = nenv.eUnqualifiedTyconTypeArgs.Add tcref tinstDeclaring })
+        else { nenv with eUnqualifiedTyconDeclaringTypeInsts = nenv.eUnqualifiedTyconDeclaringTypeInsts.Add tcref tinstDeclaring })
 
 /// Add any implied contents of a type definition to the environment.
 and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
@@ -1350,8 +1350,8 @@ let FreshenTycon (ncenv: NameResolver) m (tcref: TyconRef) =
     improvedTy
 
 /// Convert a reference to a named type into a type that includes
-/// a set of declaring type variables and a fresh set of inference type variables for the type parameters.
-let FreshenTyconWithDeclaringTypeArgs (ncenv: NameResolver) m (tcrefNested: TyconRef) (tinstDeclaring: TypeInst) =
+/// a set of declaring type arguments and a fresh set of inference type variables for the type parameters.
+let FreshenTyconWithDeclaringTypeInst (ncenv: NameResolver) m (tcrefNested: TyconRef) (tinstDeclaring: TypeInst) =
     let tps = ncenv.InstantiationGenerator m (tcrefNested.Typars m)
     let tinstNested = List.skip tinstDeclaring.Length tps
     let improvedTy = ncenv.g.decompileType tcrefNested (tinstDeclaring @ tinstNested)
@@ -2610,7 +2610,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
 
 /// An identifier has resolved to a type name in an expression (corresponding to one or more TyconRefs).
 /// Return either a set of constructors (later refined by overload resolution), or a set of TyconRefs.
-let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameResInfo: TypeNameResolutionInfo, resInfo: ResolutionInfo, tcrefs) =
+let ChooseUnqualifiedTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameResInfo: TypeNameResolutionInfo, resInfo: ResolutionInfo, tcrefs) =
     let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo, tcref))
     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
     match typeNameResInfo.ResolutionFlag with
@@ -2618,24 +2618,24 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
         let tys = 
             tcrefs 
             |> List.map (fun (resInfo, tcref) -> 
-                match nenv.eUnqualifiedTyconTypeArgs.TryFind tcref with
+                match nenv.eUnqualifiedTyconDeclaringTypeInsts.TryFind tcref with
                 | None ->
                     (resInfo, FreshenTycon ncenv m tcref)
                 | Some tinst ->
-                    (resInfo, FreshenTyconWithDeclaringTypeArgs ncenv m tcref tinst))
+                    (resInfo, FreshenTyconWithDeclaringTypeInst ncenv m tcref tinst))
         tys
             |> CollectAtMostOneResult (fun (resInfo, ty) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad ty)
-            |> MapResults (fun (resInfo, item) -> (resInfo, item, []))
+            |> MapResults (fun (resInfo, item) -> (resInfo, item))
     | ResolveTypeNamesToTypeRefs ->
         let tys = 
             tcrefs 
             |> List.map (fun (resInfo, tcref) -> 
-                match nenv.eUnqualifiedTyconTypeArgs.TryFind tcref with
+                match nenv.eUnqualifiedTyconDeclaringTypeInsts.TryFind tcref with
                 | None ->
                     (resInfo, FreshenTycon ncenv m tcref)
                 | Some tinst ->
-                    (resInfo, FreshenTyconWithDeclaringTypeArgs ncenv m tcref tinst))
-        success (tys |> List.map (fun (resInfo, ty) -> (resInfo, Item.Types(id.idText, [ty]), [])))
+                    (resInfo, FreshenTyconWithDeclaringTypeInst ncenv m tcref tinst))
+        success (tys |> List.map (fun (resInfo, ty) -> (resInfo, Item.Types(id.idText, [ty]))))
 
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers
@@ -2676,10 +2676,10 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
                             typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length)
 
-                    let search = ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
+                    let search = ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
                     match AtMostOneResult m search with
                     | Result _ as res ->
-                        let resInfo, item, rest = ForceRaise res
+                        let resInfo, item = ForceRaise res
                         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
                         Some(item, rest)
                     | Exception e -> typeError <- Some e; None
@@ -2693,8 +2693,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
                             None
                          else
-                            Some (fresh, [])
-                    | _ -> Some (fresh, [])
+                            Some (fresh, rest)
+                    | _ -> Some (fresh, rest)
                 | _ ->
                     None
 
@@ -2705,17 +2705,17 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     // Check if it's a type name, e.g. a constructor call or a type instantiation
                     let ctorSearch =
                         let tcrefs = LookupTypeNameInEnvMaybeHaveArity fullyQualified id.idText typeNameResInfo nenv
-                        ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
+                        ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
 
                     let implicitOpSearch() =
                         if IsMangledOpName id.idText then
-                            success [(resInfo, Item.ImplicitOp(id, ref None), [])]
+                            success [(resInfo, Item.ImplicitOp(id, ref None))]
                         else
                             NoResultsOrUsefulErrors
 
                     ctorSearch +++ implicitOpSearch
 
-                let resInfo, item, rest =
+                let resInfo, item =
                     match AtMostOneResult m innerSearch with
                     | Result _ as res -> ForceRaise res
                     | _ ->
