@@ -3,9 +3,7 @@
 namespace FSharp.Compiler.ConstraintSolver.ComponentTests
 
 open Xunit
-open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Compiler
-open FSharp.Compiler.SourceCodeServices
 
 module MemberConstraints =
     
@@ -18,3 +16,32 @@ module MemberConstraints =
         |> typecheck
         |> shouldFail
         |> withError (697, (2, 43, 2, 76), "Invalid constraint")
+
+    [<Fact>]
+    let ``we can overload operators on a type and not add all the extra jazz such as inlining and the ^ operator.``() =
+
+        FSharp """
+type Foo(x : int) =
+    member this.Val = x
+
+    static member (-->) ((src : Foo), (target : Foo)) = new Foo(src.Val + target.Val)
+    static member (-->) ((src : Foo), (target : int)) = new Foo(src.Val + target)
+
+    static member (+) ((src : Foo), (target : Foo)) = new Foo(src.Val + target.Val)
+    static member (+) ((src : Foo), (target : int)) = new Foo(src.Val + target)
+
+let x = Foo(3) --> 4
+let y = Foo(3) --> Foo(4)
+let x2 = Foo(3) + 4
+let y2 = Foo(3) + Foo(4)
+
+if x.Val <> 7 then failwith "x.Val <> 7"
+elif y.Val <> 7 then  failwith "y.Val <> 7"
+elif x2.Val <> 7 then  failwith "x2.Val <> 7"
+elif y2.Val <> 7 then  failwith "x.Val <> 7"
+else ()
+        """
+        |> asExe
+        |> compile
+        |> run
+        // OR |> compileAsExeAndRun

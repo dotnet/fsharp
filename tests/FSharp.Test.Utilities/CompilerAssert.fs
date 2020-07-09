@@ -620,6 +620,9 @@ let main argv = 0"""
     static member RunScript source expectedErrorMessages =
         CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
+    static member Run (exe: string) =
+        executeBuiltApp exe []
+
     static member ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"
         let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| sourceFileName |] }

@@ -122,11 +122,15 @@ module Compiler =
         | FS fs -> CompilationUnit.FS { fs with Options = options }
         | _ -> failwith "TODO: Implement where applicable."
 
-    let asLibrary (src: FSharpCompilationSource) : CompilationUnit =
-        CompilationUnit.FS { src with OutputType = CompileOutput.Library }
+    let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> CompilationUnit.FS { fs with OutputType = CompileOutput.Library }
+        | _ -> failwith "TODO: Implement where applicable."
 
-    let asExe (src: FSharpCompilationSource) : CompilationUnit =
-        CompilationUnit.FS { src with OutputType = CompileOutput.Exe }
+    let asExe (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> CompilationUnit.FS { fs with OutputType = CompileOutput.Exe }
+        | _ -> failwith "TODO: Implement where applicable."
 
     let ignoreWarnings (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -181,7 +185,7 @@ module Compiler =
                                   Errors   = errors }
         else
             Success { result with Warnings   = warnings;
-                              OutputPath = Some outputFilePath }
+                                  OutputPath = Some outputFilePath }
 
     let compile (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
@@ -232,15 +236,18 @@ module Compiler =
         | FS fs -> typecheckFSharp fs
         | _ -> failwith "TODO: Implement typeckeck for C# and IL if applicable."
 
-    let parse (_: CompilationUnit option) = failwith "TODO"
+    let run (cResult: CompilationResult ) : unit =
+        match cResult with
+        | Failure o -> failwith (sprintf "Compilatoin should be successfull in order to run the output.\n Errors: %A" (o.Errors @ o.Warnings))
+        | Success s ->
+            match s.OutputPath with
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
+            | Some p -> CompilerAssert.Run p
 
-    let execute (_: CompilationUnit option) = failwith "TODO"
+    let compileAndRun = compile >> run
 
-    let run (_: CompilationUnit option) = failwith "TODO"
-
-    let getIL (_: CompilationUnit option) = failwith "TODO"
-
-
+    let compileExeAndRun = asExe >> compileAndRun
+    
     [<AutoOpen>]
     // TODO: Reuse FluentAssertions' assertions here.
     module Assertions =
