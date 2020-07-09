@@ -1251,3 +1251,86 @@ let main _ =
             Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
         CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Opening an interface with an internal static method`` () =
+        let csharpSource =
+            """
+using System;
+using System.Runtime.CompilerServices;
+
+[assembly:InternalsVisibleTo("Test")]
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal static void M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+open type ITest
+
+[<EntryPoint>]
+let main _ =
+    M()
+    0
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl], name = "Test")
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Opening an interface with an internal static method - Error`` () =
+        let csharpSource =
+            """
+using System;
+
+namespace CSharpTest
+{
+    public interface ITest
+    {
+        internal static void M()
+        {
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+open System
+open CSharpTest
+
+open type ITest
+
+[<EntryPoint>]
+let main _ =
+    M()
+    0
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
+        |])
