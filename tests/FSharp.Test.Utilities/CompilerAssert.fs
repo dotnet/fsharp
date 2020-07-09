@@ -492,6 +492,27 @@ let main argv = 0"""
 
             Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
 
+    static member TypeCheckWithOptions options (source: string) =
+        lock gate <| fun () ->
+            let errors =
+                let parseResults, fileAnswer =
+                    checker.ParseAndCheckFileInProject(
+                        "test.fs",
+                        0,
+                        SourceText.ofString source,
+                        { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                    |> Async.RunSynchronously
+
+                if parseResults.Errors.Length > 0 then
+                    parseResults.Errors
+                else
+
+                    match fileAnswer with
+                    | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                    | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Errors
+
+            errors
+
     static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
         lock gate <| fun () ->
             let errors =
@@ -512,6 +533,7 @@ let main argv = 0"""
                     | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Errors
 
             assertErrors libAdjust false errors expectedTypeErrors
+
 
     static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
         CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust options 0 (source: string) expectedTypeErrors

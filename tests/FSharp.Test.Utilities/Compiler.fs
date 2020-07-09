@@ -3,18 +3,20 @@
 namespace FSharp.Test.Utilities
 
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Test.Utilities
+open FSharp.Test.Utilities.Assert
+open FSharp.Test.Utilities.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open FSharp.Test.Utilities.Assert
-open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
 open NUnit.Framework
+open System
 
 module Compiler =
 
     type SourceType =
         | Text of string
         | Path of string
+        | Baseline of (string * string)
 
     type CompilationUnit =
         | FS  of FSharpCompilationSource
@@ -41,6 +43,7 @@ module Compiler =
         { Source:     SourceType
           References: CompilationUnit list}
 
+    // TODO: Do we need separate types for Compilation/Typecheck/Run results?
     type CompilationOutput = { OutputPath:  string option
                                Adjust:      int
                                Errors:      FSharpErrorInfo list
@@ -57,6 +60,7 @@ module Compiler =
         match src with
         | Text t -> t
         | Path p -> System.IO.File.ReadAllText p
+        | Baseline (d, f) -> System.IO.File.ReadAllText (System.IO.Path.Combine(d, f))
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -86,6 +90,18 @@ module Compiler =
     let FSharp (source: string) : CompilationUnit =
         fsFromString source SourceKind.Fs |> CompilationUnit.FS
 
+    let baseline (dir: string, file: string) : CompilationUnit =
+        match (dir, file) with
+        | dir, _ when String.IsNullOrWhiteSpace dir -> failwith "Baseline tests directory cannot be null or empty."
+        | _, file when String.IsNullOrWhiteSpace file -> failwith "Baseline source file name cannot be null or empty."
+        | _ -> { Source         = Baseline (dir, file);
+                 Options        = defaultOptions;
+                 OutputType     = Library;
+                 SourceKind     = SourceKind.Fs;
+                 Name           = None;
+                 IgnoreWarnings = false;
+                 References     = [] } |> CompilationUnit.FS
+
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CompilationUnit.CS
 
@@ -93,7 +109,7 @@ module Compiler =
         match cUnit with
         | FS src -> CompilationUnit.FS { src with Name = Some name }
         | CS src -> CompilationUnit.CS { src with Name = Some name }
-        | IL _ -> failwith "TODO: Implement named IL"
+        | IL _ -> failwith "IL Compilation cannot be named."
 
     let withReferences (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -101,9 +117,10 @@ module Compiler =
         | CS cs -> CS { cs with References = cs.References @ references }
         | IL _ -> failwith "TODO: Support references for IL"
 
-    // TODO: C# and IL versions where applicable
-    let withOptions (options: string list) (src: FSharpCompilationSource) : CompilationUnit =
-        CompilationUnit.FS { src with Options = options }
+    let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> CompilationUnit.FS { fs with Options = options }
+        | _ -> failwith "TODO: Implement where applicable."
 
     let asLibrary (src: FSharpCompilationSource) : CompilationUnit =
         CompilationUnit.FS { src with OutputType = CompileOutput.Library }
@@ -171,10 +188,51 @@ module Compiler =
         | FS fs -> compileFSharp fs
         | _ -> failwith "TODO"
 
-    // TODO: Typecheck with baseline
-    let parse (_: CompilationUnit option) = failwith "TODO"
+    // TODO: Probably want to return a proper compilation result here as well to process it later.
+    let private typecheckFSharpWithBaseline (options: string list) (dir: string) (file: string) : CompilationResult =
+        // Since TypecheckWithErrorsAndOptionsAgainsBaseLine throws if doesn't match expected baseline,
+        // We return a successfull CompilationResult if it succeds.
+        CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine (Array.ofList options) dir file
 
-    let typecheck (_: CompilationUnit option) = failwith "TODO"
+        Success { OutputPath  = None;
+                  Adjust      = 0;
+                  Warnings    = [];
+                  Errors      = [] }
+
+    // TODO: Extract error handling to a separate function;
+    let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : CompilationResult =
+        let source = getSource fsSource.Source
+        let options = fsSource.Options |> Array.ofList
+
+        let (err: FSharpErrorInfo []) = CompilerAssert.TypeCheckWithOptions options source
+
+        let (errors, warnings) = err |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+                                     |> Array.partition  (fun e -> e.Severity = FSharpErrorSeverity.Error)
+                                     |> fun (f, s) -> List.ofArray f, List.ofArray s
+
+        let result = { OutputPath  = None;
+                       Adjust      = 0;
+                       Warnings    = warnings;
+                       Errors      = errors }
+
+        // Treat warnings as errors if "IgnoreWarnings" is false;
+        if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
+            Failure { result with Warnings = warnings;
+                                  Errors   = errors }
+        else
+            Success { result with Warnings   = warnings }
+
+    let private typecheckFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
+        match fsSource.Source with
+        | Baseline (f, d) -> typecheckFSharpWithBaseline fsSource.Options f d
+        | _ -> typecheckFSharpSource fsSource
+
+    let typecheck (cUnit: CompilationUnit) : CompilationResult =
+        match cUnit with
+        | FS fs -> typecheckFSharp fs
+        | _ -> failwith "TODO: Implement typeckeck for C# and IL if applicable."
+
+    let parse (_: CompilationUnit option) = failwith "TODO"
 
     let execute (_: CompilationUnit option) = failwith "TODO"
 
