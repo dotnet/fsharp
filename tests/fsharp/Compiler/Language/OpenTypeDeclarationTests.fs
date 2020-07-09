@@ -754,6 +754,14 @@ module FSharpTest
 
 open ILTest
 
+type C with
+
+    member _.X = obj ()
+
+type C with
+
+    member _.X() = obj ()
+
 let x1: int = C.X
 
 open type C
@@ -872,6 +880,14 @@ module FSharpTest
 
 open ILTest
 
+type C with
+
+    member _.X = obj ()
+
+type C with
+
+    member _.X() = obj ()
+
 let x1: int = C.X
 
 open type C
@@ -889,41 +905,327 @@ let x2: int = X
         CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
-    let ``C# with explicit implementation - Runs`` () =
+    let ``An assembly with a property, event, and field with the same name`` () =
+        let ilSource =
+            """
+.assembly il.dll
+{
+}
+.class public auto ansi abstract sealed beforefieldinit ILTest.C
+    extends [netstandard]System.Object
+{
+    .field public static class [netstandard]System.EventHandler E
+    .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+        01 00 00 00
+    )
+
+    .method public hidebysig specialname static 
+        void add_E (
+            class [netstandard]System.EventHandler 'value'
+        ) cil managed 
+    {
+        .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+            01 00 00 00
+        )
+
+        .maxstack 3
+        .locals init (
+            [0] class [netstandard]System.EventHandler,
+            [1] class [netstandard]System.EventHandler,
+            [2] class [netstandard]System.EventHandler
+        )
+
+        IL_0000: ldsfld class [netstandard]System.EventHandler ILTest.C::E
+        IL_0005: stloc.0
+        IL_0006: ldloc.0
+        IL_0007: stloc.1
+        IL_0008: ldloc.1
+        IL_0009: ldarg.0
+        IL_000a: call class [netstandard]System.Delegate [netstandard]System.Delegate::Combine(class [netstandard]System.Delegate, class [netstandard]System.Delegate)
+        IL_000f: castclass [netstandard]System.EventHandler
+        IL_0014: stloc.2
+        IL_0015: ldsflda class [netstandard]System.EventHandler ILTest.C::E
+        IL_001a: ldloc.2
+        IL_001b: ldloc.1
+        IL_001c: call !!0 [netstandard]System.Threading.Interlocked::CompareExchange<class [netstandard]System.EventHandler>(!!0&, !!0, !!0)
+        IL_0021: stloc.0
+        IL_0022: ldloc.0
+        IL_0023: ldloc.1
+        IL_0024: bne.un.s IL_0006
+        IL_0026: ret
+    }
+
+    .method public hidebysig specialname static 
+        void remove_E (
+            class [netstandard]System.EventHandler 'value'
+        ) cil managed 
+    {
+        .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+            01 00 00 00
+        )
+
+        .maxstack 3
+        .locals init (
+            [0] class [netstandard]System.EventHandler,
+            [1] class [netstandard]System.EventHandler,
+            [2] class [netstandard]System.EventHandler
+        )
+
+        IL_0000: ldsfld class [netstandard]System.EventHandler ILTest.C::E
+        IL_0005: stloc.0
+        IL_0006: ldloc.0
+        IL_0007: stloc.1
+        IL_0008: ldloc.1
+        IL_0009: ldarg.0
+        IL_000a: call class [netstandard]System.Delegate [netstandard]System.Delegate::Remove(class [netstandard]System.Delegate, class [netstandard]System.Delegate)
+        IL_000f: castclass [netstandard]System.EventHandler
+        IL_0014: stloc.2
+        IL_0015: ldsflda class [netstandard]System.EventHandler ILTest.C::E
+        IL_001a: ldloc.2
+        IL_001b: ldloc.1
+        IL_001c: call !!0 [netstandard]System.Threading.Interlocked::CompareExchange<class [netstandard]System.EventHandler>(!!0&, !!0, !!0)
+        IL_0021: stloc.0
+        IL_0022: ldloc.0
+        IL_0023: ldloc.1
+        IL_0024: bne.un.s IL_0006
+        IL_0026: ret
+    }
+
+    .event [netstandard]System.EventHandler X
+    {
+        .addon void ILTest.C::add_E(class [netstandard]System.EventHandler)
+        .removeon void ILTest.C::remove_E(class [netstandard]System.EventHandler)
+    }
+
+    .field public static int32 X
+
+    .field private static initonly string '<Y>k__BackingField'
+    .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+        01 00 00 00
+    )
+
+    .method public hidebysig specialname static 
+        string get_Y () cil managed 
+    {
+        .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+            01 00 00 00
+        )
+
+        .maxstack 8
+
+        IL_0000: ldsfld string ILTest.C::'<Y>k__BackingField'
+        IL_0005: ret
+    }
+
+    .property string X()
+    {
+        .get string ILTest.C::get_Y()
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open ILTest
+
+type C with
+
+    member _.X = obj ()
+
+type C with
+
+    member _.X() = obj ()
+
+let x1: string = C.X
+
+open type C
+
+let x2: string = X
+            """
+
+        let ilCmpl =
+            CompilationUtil.CreateILCompilation ilSource
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [ilCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``An assembly with a method, property, event, and field with the same name`` () =
+        let ilSource =
+            """
+.assembly il.dll
+{
+}
+.class public auto ansi abstract sealed beforefieldinit ILTest.C
+    extends [netstandard]System.Object
+{
+    .field public static class [netstandard]System.EventHandler E
+    .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+        01 00 00 00
+    )
+
+    .method public hidebysig specialname static 
+        void add_E (
+            class [netstandard]System.EventHandler 'value'
+        ) cil managed 
+    {
+        .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+            01 00 00 00
+        )
+
+        .maxstack 3
+        .locals init (
+            [0] class [netstandard]System.EventHandler,
+            [1] class [netstandard]System.EventHandler,
+            [2] class [netstandard]System.EventHandler
+        )
+
+        IL_0000: ldsfld class [netstandard]System.EventHandler ILTest.C::E
+        IL_0005: stloc.0
+        IL_0006: ldloc.0
+        IL_0007: stloc.1
+        IL_0008: ldloc.1
+        IL_0009: ldarg.0
+        IL_000a: call class [netstandard]System.Delegate [netstandard]System.Delegate::Combine(class [netstandard]System.Delegate, class [netstandard]System.Delegate)
+        IL_000f: castclass [netstandard]System.EventHandler
+        IL_0014: stloc.2
+        IL_0015: ldsflda class [netstandard]System.EventHandler ILTest.C::E
+        IL_001a: ldloc.2
+        IL_001b: ldloc.1
+        IL_001c: call !!0 [netstandard]System.Threading.Interlocked::CompareExchange<class [netstandard]System.EventHandler>(!!0&, !!0, !!0)
+        IL_0021: stloc.0
+        IL_0022: ldloc.0
+        IL_0023: ldloc.1
+        IL_0024: bne.un.s IL_0006
+        IL_0026: ret
+    }
+
+    .method public hidebysig specialname static 
+        void remove_E (
+            class [netstandard]System.EventHandler 'value'
+        ) cil managed 
+    {
+        .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+            01 00 00 00
+        )
+
+        .maxstack 3
+        .locals init (
+            [0] class [netstandard]System.EventHandler,
+            [1] class [netstandard]System.EventHandler,
+            [2] class [netstandard]System.EventHandler
+        )
+
+        IL_0000: ldsfld class [netstandard]System.EventHandler ILTest.C::E
+        IL_0005: stloc.0
+        IL_0006: ldloc.0
+        IL_0007: stloc.1
+        IL_0008: ldloc.1
+        IL_0009: ldarg.0
+        IL_000a: call class [netstandard]System.Delegate [netstandard]System.Delegate::Remove(class [netstandard]System.Delegate, class [netstandard]System.Delegate)
+        IL_000f: castclass [netstandard]System.EventHandler
+        IL_0014: stloc.2
+        IL_0015: ldsflda class [netstandard]System.EventHandler ILTest.C::E
+        IL_001a: ldloc.2
+        IL_001b: ldloc.1
+        IL_001c: call !!0 [netstandard]System.Threading.Interlocked::CompareExchange<class [netstandard]System.EventHandler>(!!0&, !!0, !!0)
+        IL_0021: stloc.0
+        IL_0022: ldloc.0
+        IL_0023: ldloc.1
+        IL_0024: bne.un.s IL_0006
+        IL_0026: ret
+    }
+
+    .event [netstandard]System.EventHandler X
+    {
+        .addon void ILTest.C::add_E(class [netstandard]System.EventHandler)
+        .removeon void ILTest.C::remove_E(class [netstandard]System.EventHandler)
+    }
+
+    .field public static int32 X
+
+    .field private static initonly string '<Y>k__BackingField'
+    .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+        01 00 00 00
+    )
+
+    .method public hidebysig specialname static 
+        string get_Y () cil managed 
+    {
+        .custom instance void [netstandard]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = (
+            01 00 00 00
+        )
+
+        .maxstack 8
+
+        IL_0000: ldsfld string ILTest.C::'<Y>k__BackingField'
+        IL_0005: ret
+    }
+
+    .property string X()
+    {
+        .get string ILTest.C::get_Y()
+    }
+
+    .method public hidebysig static 
+        float32 X () cil managed 
+    {
+        .maxstack 8
+
+        IL_0000: ldc.r4 0.0
+        IL_0005: ret
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+module FSharpTest
+
+open ILTest
+
+type C with
+
+    member _.X = obj ()
+
+type C with
+
+    member _.X() = obj ()
+
+let x1: float32 = C.X()
+
+open type C
+
+let x2: float32 = X()
+            """
+
+        let ilCmpl =
+            CompilationUtil.CreateILCompilation ilSource
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [ilCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Opening an interface with a static method`` () =
         let csharpSource =
             """
 using System;
 
 namespace CSharpTest
 {
-    public interface ITest1
+    public interface ITest
     {
-        void Method1()
+        public static void M()
         {
-            Console.Write("ITest1." + nameof(Method1));
         }
-
-        void Method2();
-    }
-
-    public interface ITest2 : ITest1
-    {
-        void ITest1.Method2()
-        {
-            Console.Write("ITest2" + nameof(Method2));
-        }
-
-        void Method3();
-    }
-
-    public interface ITest3 : ITest2
-    {
-        void ITest2.Method3()
-        {
-            Console.Write("ITest3" + nameof(Method3));
-        }
-
-        void Method4();
     }
 }
             """
@@ -933,28 +1235,11 @@ namespace CSharpTest
 open System
 open CSharpTest
 
-type Test () =
-
-    interface ITest3 with
-
-        member __.Method1 () = Console.Write("FSharp-Method1")
-
-        member __.Method2 () = Console.Write("FSharp-Method2")
-
-        member __.Method3 () = Console.Write("FSharp-Method3")
-
-        member __.Method4 () = Console.Write("FSharp-Method4")
+open type ITest
 
 [<EntryPoint>]
 let main _ =
-    let test = Test () :> ITest3
-    test.Method1 ()
-    Console.Write("-")
-    test.Method2 ()
-    Console.Write("-")
-    test.Method3 ()
-    Console.Write("-")
-    test.Method4 ()
+    M()
     0
             """
 
@@ -963,10 +1248,6 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:4.6"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
 
-        CompilerAssert.ExecutionHasOutput(fsCmpl, "FSharp-Method1-FSharp-Method2-FSharp-Method3-FSharp-Method4")
-
-    // TODO - wait for Will's integration of testing changes that makes this easlier
-    // [<Test>]
-    // let ``OpenStaticClassesTests - InternalsVisibleWhenHavingAnIVT - langversion:preview``() = ...
+        CompilerAssert.Compile(fsCmpl)

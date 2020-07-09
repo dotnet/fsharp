@@ -1061,16 +1061,6 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
                 ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None ad m ty
                 |> ChoosePropInfosForNameEnv g ty
 
-            // Methods
-            yield!
-                IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
-                |> ChooseMethInfosForNameEnv g ty
-
-            // Properties
-            yield!
-                IntrinsicPropInfosOfTypeInScope infoReader None ad PreferOverrides m ty
-                |> ChoosePropInfosForNameEnv g ty
-
             // Events
             yield!
                 infoReader.GetEventInfosOfType(None, ad, m, ty)
@@ -1080,6 +1070,16 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
             yield!
                 infoReader.GetILFieldInfosOfType(None, ad, m, ty)
                 |> ChooseILFieldInfosForNameEnv g ty
+
+            // Properties
+            yield!
+                IntrinsicPropInfosOfTypeInScope infoReader None ad PreferOverrides m ty
+                |> ChoosePropInfosForNameEnv g ty
+
+            // Methods
+            yield!
+                IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+                |> ChooseMethInfosForNameEnv g ty
         |]
 
     let nenv = { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
