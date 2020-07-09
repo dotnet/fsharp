@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
-        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <target state="translated">La característica "{0}" no está disponible en F# {1}. Use la versión {2} del lenguaje o una posterior.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotRuntimeSupported">
         <source>Feature '{0}' is not supported by target runtime.</source>
-        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <target state="translated">El entorno de ejecución de destino no admite la característica "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -54,17 +54,17 @@
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <target state="translated">No se pudo cargar el ensamblado del diseñador de proveedores de tipos "{0}" desde la carpeta "{1}" porque falta una dependencia o no se pudo cargar. Todas las dependencias del ensamblado del diseñador de proveedores de tipos deben encontrarse en la misma carpeta que el ensamblado. Se notificó la excepción: {2} - {3}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyException">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <target state="translated">No se pudo cargar el ensamblado del diseñador de proveedores de tipos "{0}" desde la carpeta "{1}". Se notificó la excepción: {2} - {3}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
+        <target state="translated">El atributo de ensamblado "{0}" hace referencia a un ensamblado de diseñador "{1}" que no se puede cargar o no existe. Se notificó la excepción: {2} - {3}.</target>
         <note />
       </trans-unit>
       <trans-unit id="fSharpBannerVersion">
@@ -74,72 +74,72 @@
       </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
-        <target state="new">applicative computation expressions</target>
+        <target state="translated">expresiones de cálculo aplicativas</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
-        <target state="new">default interface member consumption</target>
+        <target state="translated">consumo de miembros de interfaz predeterminados</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
-        <target state="new">dotless float32 literal</target>
+        <target state="translated">literal float32 sin punto</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
-        <target state="new">fixed-index slice 3d/4d</target>
+        <target state="translated">segmento de índice fijo 3d/4d</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
-        <target state="new">from-end slicing</target>
+        <target state="translated">segmentación desde el final</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
-        <target state="new">implicit yield</target>
+        <target state="translated">elemento yield implícito</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
-        <target state="new">nameof</target>
+        <target state="translated">nameof</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
-        <target state="new">nullable optional interop</target>
+        <target state="translated">interoperabilidad opcional que admite valores NULL</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenStaticClasses">
         <source>open static classes</source>
-        <target state="new">open static classes</target>
+        <target state="translated">abrir clases estáticas</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
-        <target state="new">package management</target>
+        <target state="translated">administración de paquetes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
-        <target state="new">whitespace relexation</target>
+        <target state="translated">relajación de espacio en blanco</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
-        <target state="new">single underscore pattern</target>
+        <target state="translated">patrón de subrayado simple</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
-        <target state="new">wild card in for loop</target>
+        <target state="translated">carácter comodín en bucle for</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
-        <target state="new">witness passing for trait constraints in F# quotations</target>
+        <target state="translated">paso de testigo para las restricciones de rasgos en las expresiones de código delimitadas de F#</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -234,7 +234,7 @@
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
-        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <target state="translated">El miembro de interfaz "{0}" no tiene una implementación más específica.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -349,7 +349,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "\{1 \}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -1184,7 +1184,7 @@
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
         <source>The named argument '{0}' has been assigned more than one value</source>
-        <target state="new">The named argument '{0}' has been assigned more than one value</target>
+        <target state="translated">Se ha asignado más de un valor al argumento con nombre "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -4399,17 +4399,17 @@
       </trans-unit>
       <trans-unit id="optsEmbedAllSource">
         <source>Embed all source files in the portable PDB file</source>
-        <target state="translated">Inserta todos los archivos de código fuente en el archivo PDB portátil.</target>
+        <target state="translated">Inserta todos los archivos de código fuente en el archivo PDB portable.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedSource">
         <source>Embed specific source files in the portable PDB file</source>
-        <target state="translated">Inserta archivos de código fuente específicos en el archivo PDB portátil</target>
+        <target state="translated">Inserta archivos de código fuente específicos en el archivo PDB portable</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSourceLink">
         <source>Source link information file to embed in the portable PDB file</source>
-        <target state="translated">Archivo de información de vínculos de origen para insertar en el archivo PDB portátil</target>
+        <target state="translated">Archivo de información de vínculos de origen para insertar en el archivo PDB portable</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
@@ -4424,7 +4424,7 @@
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
-        <target state="translated">El archivo de código fuente es demasiado grande para insertarlo en un archivo PDB portátil</target>
+        <target state="translated">El archivo de código fuente es demasiado grande para insertarlo en un archivo PDB portable</target>
         <note />
       </trans-unit>
       <trans-unit id="optsResource">
@@ -5759,7 +5759,7 @@
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
         <source>Static linking may not be used on an assembly referencing mscorlib (e.g. a .NET Framework assembly) when generating an assembly that references System.Runtime (e.g. a .NET Core or Portable assembly).</source>
-        <target state="translated">No se puede usar la vinculación estática en un ensamblado que haga referencia a mscorlib (por ejemplo, un ensamblado de .NET Framework) al generar un ensamblado que haga referencia a System.Runtime (por ejemplo, un ensamblado portátil o de .NET Core).</target>
+        <target state="translated">No se puede usar la vinculación estática en un ensamblado que haga referencia a mscorlib (por ejemplo, un ensamblado de .NET Framework) al generar un ensamblado que haga referencia a System.Runtime (por ejemplo, un ensamblado portable o de .NET Core).</target>
         <note />
       </trans-unit>
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
@@ -5889,7 +5889,7 @@
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
+        <target state="translated">El atributo de ensamblado "{0}" hace referencia a un ensamblado de diseñador "{1}" que no se puede cargar desde la ruta de acceso "{2}". Se notificó la excepción: {3} - {4}.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">
