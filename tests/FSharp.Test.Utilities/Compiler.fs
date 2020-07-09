@@ -238,7 +238,7 @@ module Compiler =
 
     let run (cResult: CompilationResult ) : unit =
         match cResult with
-        | Failure o -> failwith (sprintf "Compilatoin should be successfull in order to run the output.\n Errors: %A" (o.Errors @ o.Warnings))
+        | Failure o -> failwith (sprintf "Compilatoin should be successfull in order to run.\n Errors: %A" (o.Errors @ o.Warnings))
         | Success s ->
             match s.OutputPath with
             | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
