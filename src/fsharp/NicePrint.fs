@@ -1793,7 +1793,7 @@ module private TastDefinitionPrinting =
 
         let meths =
             GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
-            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+            |> List.filter (fun v -> not v.IsClassConstructor &&  shouldShow v.ArbitraryValRef)
 
         let iimplsLs =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
