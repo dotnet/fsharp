@@ -1343,15 +1343,15 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
 //-------------------------------------------------------------------------
 
 /// Convert a reference to a named type into a type that includes
-/// a fresh set of inference type variables for the type parameters of the union type.
+/// a fresh set of inference type variables for the type parameters.
 let FreshenTycon (ncenv: NameResolver) m (tcref: TyconRef) =
     let tinst = ncenv.InstantiationGenerator m (tcref.Typars m)
     let improvedTy = ncenv.g.decompileType tcref tinst
     improvedTy
 
-/// Convert a reference to a named nested type into a type that includes
-/// a fresh set of inference type variables for the type parameters and the given type arguments.
-let FreshenNestedTycon (ncenv: NameResolver) m (tcrefNested: TyconRef) (tinstDeclaring: TypeInst) =
+/// Convert a reference to a named type into a type that includes
+/// a set of declaring type variables and a fresh set of inference type variables for the type parameters.
+let FreshenTyconWithDeclaringTypeArgs (ncenv: NameResolver) m (tcrefNested: TyconRef) (tinstDeclaring: TypeInst) =
     let tps = ncenv.InstantiationGenerator m (tcrefNested.Typars m)
     let tinstNested = List.skip tinstDeclaring.Length tps
     let improvedTy = ncenv.g.decompileType tcrefNested (tinstDeclaring @ tinstNested)
@@ -2622,7 +2622,7 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
                 | None ->
                     (resInfo, FreshenTycon ncenv m tcref)
                 | Some tinst ->
-                    (resInfo, FreshenNestedTycon ncenv m tcref tinst))
+                    (resInfo, FreshenTyconWithDeclaringTypeArgs ncenv m tcref tinst))
         tys
             |> CollectAtMostOneResult (fun (resInfo, ty) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad ty)
             |> MapResults (fun (resInfo, item) -> (resInfo, item, []))
@@ -2634,7 +2634,7 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
                 | None ->
                     (resInfo, FreshenTycon ncenv m tcref)
                 | Some tinst ->
-                    (resInfo, FreshenNestedTycon ncenv m tcref tinst))
+                    (resInfo, FreshenTyconWithDeclaringTypeArgs ncenv m tcref tinst))
         success (tys |> List.map (fun (resInfo, ty) -> (resInfo, Item.Types(id.idText, [ty]), [])))
 
 /// Resolve F# "A.B.C" syntax in expressions
