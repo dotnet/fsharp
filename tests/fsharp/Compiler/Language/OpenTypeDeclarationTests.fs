@@ -1213,6 +1213,8 @@ let x2: float32 = X()
 
         CompilerAssert.Compile(fsCmpl)
 
+#if NETCOREAPP
+
     [<Test>]
     let ``Opening an interface with a static method`` () =
         let csharpSource =
@@ -1334,3 +1336,5 @@ let main _ =
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
         |])
+
+#endif
