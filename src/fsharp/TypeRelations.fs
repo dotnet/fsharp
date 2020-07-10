@@ -63,7 +63,7 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
     | TType_var _, _  
     | _, TType_var _ -> true
 
-    | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2 ->
+    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
