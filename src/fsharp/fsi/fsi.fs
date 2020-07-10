@@ -2291,10 +2291,7 @@ type internal FsiInteractionProcessor
                 | CtrlC                        -> istate,CtrlC                                    (* drop nextAction on CtrlC *)
 
     /// Execute a single parsed interaction which may contain multiple items to be executed
-    /// independently, because some are #directives. Called on the GUI/execute/main thread.
-    /// 
-    /// #directive comes through with other definitions as a SynModuleDecl.HashDirective.
-    /// We split these out for individual processing.
+    /// independently
     let executeParsedInteractions (ctok, tcConfig, istate, action, errorLogger: ErrorLogger, lastResult:option<FsiInteractionStepStatus>, cancellationToken: CancellationToken)  =
         let istate, completed = execParsedInteractions (ctok, tcConfig, istate, action, errorLogger, lastResult, cancellationToken)
         match completed with
