@@ -72,6 +72,11 @@ module TcResolutionsExtensions =
                     | ItemOccurence.Pattern _ -> Some()
                     | _ -> None
 
+                let (|OptionalArgumentAttribute|_|) ttype =
+                    match ttype with
+                    | TType.TType_app(tref, _, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
+                    | _ -> None
+
                 let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
                     if valRefEq g g.raise_vref vref ||
                         valRefEq g g.reraise_vref vref ||
@@ -109,7 +114,7 @@ module TcResolutionsExtensions =
                     protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
-                    let ty = generalizedTyconRef tyconRef
+                    let ty = generalizedTyconRef g tyconRef
                     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
                     isStructTy g underlyingTy
 
@@ -210,9 +215,15 @@ module TcResolutionsExtensions =
 
                     | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.ComputationExpression
-
-                    // Special case measures for struct types
-                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                    // types get colored as types when they occur in syntactic types or custom attributes
+                    // type variables get colored as types when they occur in syntactic types custom builders, custom operations get colored as keywords
+                    | Item.Types (_, [OptionalArgumentAttribute]), LegitTypeOccurence, _, _, _, _ -> ()
+                    | Item.CtorGroup(_, [MethInfo.FSMeth(_, OptionalArgumentAttribute, _, _)]), LegitTypeOccurence, _, _, _, _ -> ()
+                    | Item.Types(_, types), LegitTypeOccurence, _, _, _, m when types |> List.exists (isInterfaceTy g) -> 
+                        add m SemanticClassificationType.Interface
+                    | Item.Types(_, types), LegitTypeOccurence, _, _, _, m when types |> List.exists (isStructTy g) -> 
+                        add m SemanticClassificationType.ValueType
+                    | Item.Types(_, TType_app(tyconRef, (TType_measure _ :: _), _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
                         add m SemanticClassificationType.ValueType
 
                     | Item.Types (_, ty :: _), LegitTypeOccurence, _, _, _, m ->

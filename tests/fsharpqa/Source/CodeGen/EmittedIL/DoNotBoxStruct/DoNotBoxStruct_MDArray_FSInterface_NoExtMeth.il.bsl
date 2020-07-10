@@ -29,14 +29,18 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000000 Length: 0x00000268
+  // Offset: 0x00000000 Length: 0x0000027A
+}
+.mresource public FSharpSignatureDataB.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
+{
+  // Offset: 0x00000280 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000270 Length: 0x000000B0
+  // Offset: 0x00000290 Length: 0x000000B0
 }
 .module DoNotBoxStruct_MDArray_FSInterface_NoExtMeth.exe
-// MVID: {5EAD3E33-A67D-867A-A745-0383333EAD5E}
+// MVID: {5E172EEA-A67D-867A-A745-0383EA2E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

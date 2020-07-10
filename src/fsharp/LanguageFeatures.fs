@@ -33,6 +33,7 @@ type LanguageFeature =
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | InterfacesWithMultipleGenericInstantiation
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -68,6 +69,10 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.FromEndSlicing, previewVersion
             LanguageFeature.OpenStaticClasses, previewVersion
             LanguageFeature.PackageManagement, previewVersion
+            LanguageFeature.AndBang, previewVersion
+            LanguageFeature.NullnessChecking, languageVersion47 // TODO: currently always on because requires FSharp.Core build
+            LanguageFeature.NullableOptionalInterop, previewVersion
+            LanguageFeature.DefaultInterfaceMemberConsumption, previewVersion
             LanguageFeature.WitnessPassing, previewVersion
             LanguageFeature.InterfacesWithMultipleGenericInstantiation, previewVersion
             LanguageFeature.NameOf, previewVersion
@@ -137,6 +142,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()

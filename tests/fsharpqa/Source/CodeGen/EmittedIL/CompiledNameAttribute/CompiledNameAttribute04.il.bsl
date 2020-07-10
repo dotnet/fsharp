@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:7:0:0
 }
 .assembly CompiledNameAttribute04
 {
@@ -29,20 +29,28 @@
 }
 .mresource public FSharpSignatureData.CompiledNameAttribute04
 {
-  // Offset: 0x00000000 Length: 0x00000CE9
+  // Offset: 0x00000000 Length: 0x00000CD1
+}
+.mresource public FSharpSignatureDataB.CompiledNameAttribute04
+{
+  // Offset: 0x00000CD8 Length: 0x00000110
 }
 .mresource public FSharpOptimizationData.CompiledNameAttribute04
 {
-  // Offset: 0x00000CF0 Length: 0x000002CB
+  // Offset: 0x00000DF0 Length: 0x000002CB
+}
+.mresource public FSharpOptimizationDataB.CompiledNameAttribute04
+{
+  // Offset: 0x000010C0 Length: 0x0000004E
 }
 .module CompiledNameAttribute04.exe
-// MVID: {59B1923F-34DF-584F-A745-03833F92B159}
+// MVID: {5E172EE9-34DF-584F-A745-0383E92E175E}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01680000
+// Image base: 0x05A80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,7 +82,7 @@
       // Code size       9 (0x9)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute04.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute04.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
