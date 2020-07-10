@@ -2751,6 +2751,7 @@ type DisplayEnv =
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       shrinkOverloads: bool
+      printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout : (Val -> layout option) }
@@ -2783,6 +2784,7 @@ type DisplayEnv =
         shortConstraints = false
         useColonForReturnType = false
         shrinkOverloads = true
+        printVerboseSignatures = false
         g = tcGlobals
         contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None) }

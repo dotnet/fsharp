@@ -980,6 +980,7 @@ type DisplayEnv =
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       shrinkOverloads: bool
+      printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout:(Val -> layout option) }

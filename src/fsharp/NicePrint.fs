@@ -1754,16 +1754,25 @@ module private TastDefinitionPrinting =
     let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
         let g = denv.g
         let _, ty = generalizeTyconRef (mkLocalTyconRef tycon) 
-        let name = 
+        let start, name =
             let n = tycon.DisplayName
             if isStructTy g ty then
-                tagStruct n
+                if denv.printVerboseSignatures then
+                    Some "struct", tagStruct n
+                else
+                    None, tagStruct n
             elif isInterfaceTy g ty then
-                tagInterface n
+                if denv.printVerboseSignatures then
+                    Some "interface", tagInterface n
+                else
+                    None, tagInterface n
             elif isClassTy g ty then
-                tagClass n
+                if denv.printVerboseSignatures then
+                    (if simplified then None else Some "class"), tagClass n
+                else
+                    None, tagClass n
             else
-                tagUnknownType n
+                None, tagUnknownType n
         let name = mkNav tycon.DefinitionRange name
         let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
         let denv = denv.AddAccessibility tycon.Accessibility 
@@ -1772,6 +1781,7 @@ module private TastDefinitionPrinting =
             let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
             typewordL ^^ tpsL
 
+        let start = Option.map tagKeyword start
         let amap = infoReader.amap
         let sortKey (v: MethInfo) = 
             (not v.IsConstructor,
@@ -1922,6 +1932,10 @@ module private TastDefinitionPrinting =
             decls
             |> applyMaxMembers denv.maxMembers
             |> aboveListL
+            |> fun declsL ->
+                match start with
+                | Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end")
+                | None -> declsL
 
         let addMembersAsWithEnd reprL =
             if isNil decls then
