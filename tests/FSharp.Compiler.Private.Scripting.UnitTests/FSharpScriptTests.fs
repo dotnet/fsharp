@@ -168,11 +168,33 @@ printfn ""%A"" result
 
     [<Test>]
     member __.``Eval script with package manager invalid key``() =
-        use script = new FSharpScript()
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let result, _errors = script.Eval(@"#r ""nugt:FSharp.Data""")
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
+    [<Test>]
+    member __.``Eval script with invalid PackageName should fail immediately``() =
+        use output = new RedirectConsoleOutput()
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable found = 0
+        output.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then found <- found + 1)
+        let _result, _errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
+        Assert.True( (found = 1), "Expected to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+
+    [<Test>]
+    member __.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
+        use output = new RedirectConsoleOutput()
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable foundResolve = 0
+        output.OutputProduced.Add (fun line -> if line.Contains("Microsoft (R) Build Engine version") then foundResolve <- foundResolve + 1)
+        let _result, _errors =
+            script.Eval("""
+#r "nuget:FSharp.Really.Not.A.Package"
+#r "nuget:FSharp.Really.Not.Another.Package"
+                """)
+        Assert.True( (foundResolve = 1), (sprintf "Expected to see 'Microsoft (R) Build Engine version' resolve only onceactually resolve %d times" foundResolve))
 
     [<Test>]
     member __.``ML - use assembly with ref dependencies``() =
