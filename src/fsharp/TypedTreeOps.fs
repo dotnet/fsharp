@@ -894,9 +894,9 @@ let convertToTypeWithMetadataIfPossible g ty =
 
 let stripMeasuresFromTType g tt = 
     match tt with
-    | TType_app(a,b) ->
+    | TType_app(a,b,c) ->
         let b' = b |> List.filter (isMeasureTy g >> not)
-        TType_app(a, b')
+        TType_app(a, b',c)
     | _ -> tt
 
 //---------------------------------------------------------------------------
@@ -2975,7 +2975,7 @@ let tyconRefToFullName (tc:TyconRef) =
 
 let rec qualifiedInterfaceImplementationNameAux g (x:TType) : string =
     match stripMeasuresFromTType g (stripTyEqnsAndErase true g x) with
-    | TType_app (a,[]) -> tyconRefToFullName a
+    | TType_app (a,[],_) -> tyconRefToFullName a
     | TType_anon (a,b) ->
         let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
         sprintf "%s<%s>" (a.ILTypeRef.FullName) genericParameters
