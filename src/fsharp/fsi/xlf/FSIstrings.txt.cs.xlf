@@ -122,11 +122,6 @@
         <target state="translated">Adresář {0} neexistuje.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">Neplatná direktiva #{0} {1}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">Upozornění: řádek je příliš dlouhý, některé znaky se ignorují.\n</target>

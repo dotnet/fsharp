@@ -122,11 +122,6 @@
         <target state="translated">'{0}' 디렉터리가 없습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">잘못된 지시문 '#{0} {1}'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">경고: 줄이 너무 길어 일부 문자가 무시됩니다.\n</target>

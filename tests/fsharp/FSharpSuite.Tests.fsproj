@@ -33,6 +33,9 @@
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
     <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
@@ -50,6 +53,7 @@
     <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
     <Compile Include="Compiler\Language\TypeAttributeTests.fs" />
     <Compile Include="Compiler\Language\ByrefTests.fs" />
+    <Compile Include="Compiler\Language\InterfaceTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
     <Compile Include="Compiler\Language\OpenTypeDeclarationTests.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
@@ -68,6 +72,16 @@
     <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
     <Compile Include="Compiler\Libraries\Core\ExtraTopLevelOperators\DictionaryTests.fs" />
     <Compile Include="Compiler\Libraries\Core\NativeInterop\StackallocTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\AbsTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\CastTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\HashTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\PowTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\RoundTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\SignTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\StringTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Reflection\SprintfTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Reflection\PreComputedTupleConstructorTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
