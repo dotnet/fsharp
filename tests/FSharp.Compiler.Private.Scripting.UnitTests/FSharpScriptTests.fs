@@ -179,7 +179,12 @@ printfn ""%A"" result
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let mutable found = 0
-        output.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then found <- found + 1)
+        let outp = System.Collections.Generic.List<string>()
+        output.OutputProduced.Add(
+            fun line ->
+                if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then
+                    found <- found + 1
+                outp.Add(line))
         let _result, _errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
         Assert.True( (found = 1), "Expected to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
 
@@ -194,7 +199,7 @@ printfn ""%A"" result
 #r "nuget:FSharp.Really.Not.A.Package"
 #r "nuget:FSharp.Really.Not.Another.Package"
                 """)
-        Assert.True( (foundResolve = 1), (sprintf "Expected to see 'Microsoft (R) Build Engine version' resolve only onceactually resolve %d times" foundResolve))
+        Assert.True( (foundResolve = 1), (sprintf "Expected to see 'Microsoft (R) Build Engine version' only once actually resolved %d times" foundResolve))
 
     [<Test>]
     member __.``ML - use assembly with ref dependencies``() =
