@@ -1841,7 +1841,6 @@ module private TastDefinitionPrinting =
             else
                 ctors
                 |> List.map (fun ctor -> InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv ctor)
-                    
 
         let methLs = 
             meths 
@@ -1854,13 +1853,17 @@ module private TastDefinitionPrinting =
                     group
                     |> List.sortBy sortKey
                     |> List.map (fun methinfo -> ((not methinfo.IsConstructor, methinfo.IsInstance, methinfo.DisplayName, List.sum methinfo.NumArgs, methinfo.NumArgs.Length), InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv methinfo)))
+            |> List.sortBy fst
+            |> List.map snd
 
         let inline isDiscard (name: string) = name.StartsWith("_")
 
         let fieldLs =
-            infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
+            infoReader.GetILFieldInfosOfType (None, ad, m, ty)
             |> List.filter (fun fld -> not (isDiscard fld.FieldName))
             |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv amap m x)
+            |> List.sortBy fst
+            |> List.map snd
 
         let staticValsLs =
             if isRecdTy g ty then
@@ -1870,7 +1873,7 @@ module private TastDefinitionPrinting =
                 |> List.filter (fun f -> f.IsStatic && not (isDiscard f.Name))
                 |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv f)
 
-        let instanceValsLs = 
+        let instanceValsLs =
             if isRecdTy g ty then
                 []
             else
@@ -1878,17 +1881,17 @@ module private TastDefinitionPrinting =
                 |> List.filter (fun f -> not (isDiscard f.Name))
                 |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
     
-        let propLs = 
+        let propLs =
             props
             |> List.map (fun x -> (true, x.IsStatic, x.PropertyName, 0, 0), layoutPropInfo denv amap m x)
+            |> List.sortBy fst
+            |> List.map snd
 
         let eventLs = 
             events
             |> List.map (fun x -> (true, x.IsStatic, x.EventName, 0, 0), layoutEventInfo denv amap m x)
-
-        let membLs = (methLs @ fieldLs @ propLs @ eventLs) |> List.sortBy fst |> List.map snd
-
-        let membLs = membLs @ staticValsLs @ instanceValsLs
+            |> List.sortBy fst
+            |> List.map snd
 
         let nestedTypeLs =
             match tryTcrefOfAppTy g ty with
@@ -1927,7 +1930,7 @@ module private TastDefinitionPrinting =
 #endif
                 []
 
-        let decls = inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL
+        let decls = inherits @ iimplsLs @ ctorLs @ methLs @ fieldLs @ propLs @ eventLs @ instanceValsLs @ staticValsLs @ nestedTypeLs @ erasedL
         let declsL =
             decls
             |> applyMaxMembers denv.maxMembers
@@ -2000,9 +2003,15 @@ module private TastDefinitionPrinting =
                                 |> aboveListL
                                 |> Some
                             | _ ->
-                                if isNil decls then
+                                let allDecls = inherits @ iimplsLs @ ctorLs @ instanceValsLs @ methLs @ propLs @ eventLs @ staticValsLs
+                                if isNil allDecls then
                                     None
                                 else
+                                    let allDecls = applyMaxMembers denv.maxMembers allDecls
+                                    let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil allDecls | _ -> false
+                                    if emptyMeasure then None else 
+                                    let declsL = aboveListL allDecls
+                                    let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end") | None -> declsL
                                     Some declsL
 
                     | TAsmRepr _ -> 
@@ -2041,7 +2050,7 @@ module private TastDefinitionPrinting =
                     (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
 
         layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
-        #endif
+#endif
 
     // Layout: exception definition
     let layoutExnDefn denv (exnc: Entity) =
