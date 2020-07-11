@@ -156,24 +156,8 @@ module private PrintIL =
         let path = fullySplitILTypeRef tref
         layoutILTypeRefName denv path
 
-    /// this fixes up a name just like adjustILName but also handles F#
-    /// operators
-    let adjustILMethodName n =
-        let demangleOperatorNameIfNeeded s =
-            if IsMangledOpName s
-            then DemangleOperatorName s
-            else s
-        n |> Lexhelp.Keywords.QuoteIdentifierIfNeeded |> demangleOperatorNameIfNeeded 
-
-    let isStaticILEvent (e: ILEventDef) = 
-        e.AddMethod.CallingSignature.CallingConv.IsStatic || 
-        e.RemoveMethod.CallingSignature.CallingConv.IsStatic
-
     let layoutILArrayShape (ILArrayShape sh) = 
         SepL.leftBracket ^^ wordL (tagPunctuation (sh |> List.tail |> List.map (fun _ -> ",") |> String.concat "")) ^^ RightL.rightBracket // drop off one "," so that a n-dimensional array has n - 1 ","'s
-
-    let layoutILGenericParameterDefs (ps: ILGenericParameterDefs) = 
-        ps |> List.map (fun x -> "'" + x.Name |> (tagTypeParameter >> wordL))
 
     let paramsL (ps: layout list) : layout = 
         match ps with
@@ -224,115 +208,6 @@ module private PrintIL =
         | [x] -> x ^^ WordL.arrow ^^ res
         | _ -> sepListL WordL.star args ^^ WordL.arrow ^^ res
 
-    /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
-    //
-    // Note, this duplicates functionality in formatParamDataToBuffer
-    and layoutILParameter denv ilTyparSubst (p: ILParameter) =
-        let preL = 
-            let isParamArray = TryFindILAttribute denv.g.attrib_ParamArrayAttribute p.CustomAttrs
-            match isParamArray, p.Name, p.IsOptional with 
-            // Layout an optional argument 
-            | _, Some nm, true -> LeftL.questionMark ^^ sepL (tagParameter nm) ^^ SepL.colon
-            // Layout an unnamed argument 
-            | _, None, _ -> LeftL.colon
-            // Layout a named argument 
-            | true, Some nm, _ ->
-                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ wordL (tagParameter nm) ^^ SepL.colon
-            | false, Some nm, _ -> leftL (tagParameter nm) ^^ SepL.colon
-        preL ^^ (layoutILType denv ilTyparSubst p.Type)
- 
-
-    /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
-    and layoutILParameters denv ilTyparSubst cons (parameters: ILParameters, retType: ILType) =
-        // We need a special case for constructors (Their return types are reported as `void`, but this is
-        // incorrect; so if we're dealing with a constructor we require that the
-        // return type be passed along as the `cons` parameter.)
-        let res = 
-            match cons with
-            | Some className -> 
-                let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
-                layoutILTypeRefName denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
-            | None -> retType |> layoutILType denv ilTyparSubst
-        
-        match parameters with
-        | [] -> WordL.structUnit ^^ WordL.arrow ^^ res
-        | [x] -> layoutILParameter denv ilTyparSubst x ^^ WordL.arrow ^^ res
-        | args -> sepListL WordL.star (List.map (layoutILParameter denv ilTyparSubst) args) ^^ WordL.arrow ^^ res
-
-
-    /// Layout a method's signature using type-only-F#-style. No argument names are printed.
-    /// 
-    /// In the case that we've a constructor, we
-    /// pull off the class name from the `path`; naturally, it's the
-    /// most-deeply-nested element.
-    //
-    // For C# and provided members:
-    //          new: argType1 * ... * argTypeN -> retType
-    //          Method: argType1 * ... * argTypeN -> retType
-    //
-    let layoutILMethodDef denv ilTyparSubst className (m: ILMethodDef) =
-        let myParms = m.GenericParams |> layoutILGenericParameterDefs
-        let ilTyparSubst = ilTyparSubst @ myParms
-        let name = adjustILMethodName m.Name
-        let (nameL, isCons) = 
-            match () with
-            | _ when m.IsConstructor -> (WordL.keywordNew, Some className) // we need the unadjusted name here to be able to grab the number of generic parameters
-            | _ when m.IsStatic -> (WordL.keywordStatic ^^ WordL.keywordMember ^^ wordL (tagMethod name) ^^ (myParms |> paramsL), None)
-            | _ -> (WordL.keywordMember ^^ wordL (tagMethod name) ^^ (myParms |> paramsL), None)
-        let signatureL = (m.Parameters, m.Return.Type) |> layoutILParameters denv ilTyparSubst isCons
-        nameL ^^ WordL.colon ^^ signatureL
-
-    let layoutILFieldDef (denv: DisplayEnv) (ilTyparSubst: layout list) (f: ILFieldDef) =
-        let staticL = if f.IsStatic then WordL.keywordStatic else emptyL
-        let name = adjustILName f.Name
-        let nameL = wordL (tagField name)
-        let typL = layoutILType denv ilTyparSubst f.FieldType
-        staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL
-            
-    let layoutILEventDef denv ilTyparSubst (e: ILEventDef) =
-        let staticL = if isStaticILEvent e then WordL.keywordStatic else emptyL
-        let name = adjustILName e.Name
-        let nameL = wordL (tagEvent name)
-        let typL = 
-            match e.EventType with
-            | Some t -> layoutILType denv ilTyparSubst t
-            | _ -> emptyL
-        staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL
-
-    let layoutILPropertyDef denv ilTyparSubst (p: ILPropertyDef) =
-        let staticL = if p.CallingConv = ILThisConvention.Static then WordL.keywordStatic else emptyL
-        let name = adjustILName p.Name
-        let nameL = wordL (tagProperty name)
-            
-        let layoutGetterType (getterRef: ILMethodRef) =
-            if isNil getterRef.ArgTypes then
-                layoutILType denv ilTyparSubst getterRef.ReturnType
-            else
-                layoutILCallingSignature denv ilTyparSubst None getterRef.CallingSignature
-                
-        let layoutSetterType (setterRef: ILMethodRef) =
-            let argTypes = setterRef.ArgTypes
-            if isNil argTypes then
-                emptyL // shouldn't happen
-            else
-                let frontArgs, lastArg = List.frontAndBack argTypes
-                let argsL = frontArgs |> List.map (layoutILType denv ilTyparSubst) |> sepListL WordL.star 
-                argsL ^^ WordL.arrow ^^ (layoutILType denv ilTyparSubst lastArg)
-            
-        let typL = 
-            match p.GetMethod, p.SetMethod with
-            | None, None -> layoutILType denv ilTyparSubst p.PropertyType // shouldn't happen
-            | Some getterRef, _ -> layoutGetterType getterRef
-            | None, Some setterRef -> layoutSetterType setterRef
-                
-        let specGetSetL =
-            match p.GetMethod, p.SetMethod with
-            | None, None 
-            | Some _, None -> emptyL
-            | None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
-            | Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
-        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
-
     let layoutILFieldInit x =
         let textOpt = 
             match x with
@@ -373,61 +248,6 @@ module private PrintIL =
 
     let layoutILEnumDefParts nm litVal =
         WordL.bar ^^ wordL (tagEnum (adjustILName nm)) ^^ layoutILFieldInit litVal
-
-    let layoutILEnumDef (f: ILFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
-
-    // filtering methods for hiding things we oughtn't show
-    let isStaticILProperty (p: ILPropertyDef) = 
-        match p.GetMethod, p.SetMethod with
-        | Some getter, _ -> getter.CallingSignature.CallingConv.IsStatic
-        | None, Some setter -> setter.CallingSignature.CallingConv.IsStatic
-        | None, None -> true
-
-    let isPublicILMethod (m: ILMethodDef) = 
-        (m.Access = ILMemberAccess.Public)
-
-    let isPublicILEvent typeDef (e: ILEventDef) = 
-        try
-            isPublicILMethod(resolveILMethodRef typeDef e.AddMethod) &&
-            isPublicILMethod(resolveILMethodRef typeDef e.RemoveMethod)
-        with _ ->
-            false
-
-    let isPublicILProperty typeDef (m: ILPropertyDef) = 
-        try
-            match m.GetMethod with 
-            | Some ilMethRef -> isPublicILMethod (resolveILMethodRef typeDef ilMethRef)
-            | None -> 
-                match m.SetMethod with 
-                | None -> false
-                | Some ilMethRef -> isPublicILMethod (resolveILMethodRef typeDef ilMethRef)
-        // resolveILMethodRef is a possible point of failure if Abstract IL type equality checking fails 
-        // to link the method ref to a method def for some reason, e.g. some feature of IL type
-        // equality checking has not been implemented. Since this is just intellisense pretty printing code
-        // it is better to swallow the exception here, though we don't know of any
-        // specific cases where this happens
-        with _ -> 
-            false
-
-    let isPublicILCtor (m: ILMethodDef) = 
-        (m.Access = ILMemberAccess.Public && m.IsConstructor)
-
-    let isNotSpecialName (m: ILMethodDef) = 
-        not m.IsSpecialName
-
-    let isPublicILField (f: ILFieldDef) = 
-        (f.Access = ILMemberAccess.Public)
-
-    let isPublicILTypeDef (c: ILTypeDef) : bool =
-        match c.Access with
-        | ILTypeDefAccess.Public
-        | ILTypeDefAccess.Nested ILMemberAccess.Public -> true
-        | _ -> false
-
-    let isShowEnumField (f: ILFieldDef) : bool = f.Name <> "value__" // this appears to be the hard-coded underlying storage field
-    let noShow = set [ "System.Object" ; "Object"; "System.ValueType" ; "ValueType"; "obj" ] // hide certain 'obvious' base classes
-    let isShowBase (n: layout) : bool = 
-        not (noShow.Contains(showL n))
 
 module private PrintTypes = 
     // Note: We need nice printing of constants in order to print literals and attributes 
