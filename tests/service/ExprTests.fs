@@ -33,19 +33,22 @@ module internal Utils =
             if Directory.Exists tempPath then ()
             else Directory.CreateDirectory tempPath |> ignore
 
-    /// Returns the filename part of a temp file name created with Path.GetTempFileName().
+    /// Returns the filename part of a temp file name created with Path.GetTempFileName() 
+    /// and an added process id and thread id to ensure uniqueness between threads.
     let getTempFileName() =
         let tempFileName = Path.GetTempFileName()
         try
-            let tempFileName = Path.GetFileName(tempFileName)
-            tempFileName
+            let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
+            let procId, threadId = System.Diagnostics.Process.GetCurrentProcess().Id, System.Threading.Thread.CurrentThread.ManagedThreadId
+            String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
         finally
             try 
-                // since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up
+                // Since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up.
+                // This also prevents a system to run out of available randomized temp files (the pool is only 64k large).
                 File.Delete tempFileName
             with _ -> ()
 
-    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing.
+    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
     let cleanupTempFiles files =
         for fileName in files do 
             try
