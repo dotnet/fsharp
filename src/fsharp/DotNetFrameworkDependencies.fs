@@ -259,10 +259,23 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             if not (assemblies.ContainsKey(referenceName)) then
                 try
                     if File.Exists(path) then
-                        // System.Private.CoreLib doesn't load with reflection
-                        if referenceName = "System.Private.CoreLib" then
+                        match referenceName with
+                        | "System.Runtime.WindowsRuntime"
+                        | "System.Runtime.WindowsRuntime.UI.Xaml" ->
+                            // The Windows compatibility pack included in the runtime contains a reference to
+                            // System.Runtime.WindowsRuntime, but to properly use that type the runtime also needs a
+                            // reference to the Windows.md meta-package, which isn't referenced by default.  To avoid
+                            // a bug where types from `Windows, Version=255.255.255.255` can't be found we're going to
+                            // not default include this assembly.  It can still be manually referenced if it's needed
+                            // via the System.Runtime.WindowsRuntime NuGet package.
+                            //
+                            // In the future this branch can be removed because WinRT support is being removed from the
+                            // .NET 5 SDK (https://github.com/dotnet/runtime/pull/36715)
+                            ()
+                        | "System.Private.CoreLib" ->
+                            // System.Private.CoreLib doesn't load with reflection
                             assemblies.Add(referenceName, path)
-                        else
+                        | _ ->
                             try
                                 let asm = System.Reflection.Assembly.LoadFrom(path)
                                 assemblies.Add(referenceName, path)
