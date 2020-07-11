@@ -1,6 +1,6 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations #ReqNOMT 
-// <Expects id="FS0443" status="error" span="(8,6-8,7)">This type implements the same interface at different generic instantiations 'I_002\<string\>' and 'I_002\<char\>'\. This is not permitted in this version of F#\.</Expects>
-#light	
+// <Expects id="FS3350" status="error" span="(8,6-8,7)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 'preview' or greater.</Expects>
+#light
 
 let mutable res = true
 
@@ -11,13 +11,12 @@ type D() =
        member xxx.Home(i) = i
 
 if (D() :> I_003<int>).Home(5) <> 5 then
-            System.Console.WriteLine("D.Home failed")         
+            System.Console.WriteLine("D.Home failed")
             res <- false
 
 
 if (res = true) then
     exit 0
-    
-  
+
 exit 1
 

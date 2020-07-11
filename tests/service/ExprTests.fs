@@ -15,6 +15,8 @@ open System
 open System.IO
 open System.Text
 open System.Collections.Generic
+open System.Diagnostics
+open System.Threading
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
@@ -44,19 +46,22 @@ module internal Utils =
             if Directory.Exists tempPath then ()
             else Directory.CreateDirectory tempPath |> ignore
 
-    /// Returns the filename part of a temp file name created with Path.GetTempFileName().
+    /// Returns the filename part of a temp file name created with Path.GetTempFileName() 
+    /// and an added process id and thread id to ensure uniqueness between threads.
     let getTempFileName() =
         let tempFileName = Path.GetTempFileName()
         try
-            let tempFileName = Path.GetFileName(tempFileName)
-            tempFileName
+            let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
+            let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
+            String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
         finally
             try 
-                // since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up
+                // Since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up.
+                // This also prevents a system to run out of available randomized temp files (the pool is only 64k large).
                 File.Delete tempFileName
             with _ -> ()
 
-    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing.
+    /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
     let cleanupTempFiles files =
         for fileName in files do 
             try
@@ -1003,10 +1008,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
         let fileSource = excludedTests |> List.fold replace source
         File.WriteAllText(filePath, fileSource)
 
-        let args = [|
-            yield! mkProjectCommandLineArgsSilent (dllPath, [filePath])
-            yield @"-r:System.Numerics.dll"         // needed for some tests
-        |]
+        let args = mkProjectCommandLineArgsSilent (dllPath, [filePath])
 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFilePath, args)
 
