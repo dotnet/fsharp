@@ -122,11 +122,6 @@
         <target state="translated">'{0}' dizini yok</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">Geçersiz yönerge '#{0} {1}'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">Uyarı: satır çok uzun, bazı karakterler yok sayılıyor\n</target>
