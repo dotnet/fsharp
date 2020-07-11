@@ -46,7 +46,7 @@ module internal PrintUtilities =
         | x :: xs -> List.fold (^^) x xs 
 
     let suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty = 
-        isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr || ExistsHeadTypeInEntireHierarchy g amap m ty g.tcref_System_Attribute 
+        isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr
 
     let applyMaxMembers maxMembers (allDecls: _ list) = 
         match maxMembers with 
@@ -1490,14 +1490,12 @@ module private TastDefinitionPrinting =
             | Some(vr) ->
                 (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vr.Attribs)) &&
                 (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vr.Attribs))
+                
+        let isDiscard (name: string) = name.StartsWith("_")
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
             |> List.filter (fun v -> not v.IsClassConstructor && shouldShow v.ArbitraryValRef)
-
-        let meths =
-            GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
-            |> List.filter (fun v -> not v.IsClassConstructor &&  shouldShow v.ArbitraryValRef)
 
         let iimplsLs =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
@@ -1528,6 +1526,15 @@ module private TastDefinitionPrinting =
                                 yield e.RemoveMethod.DisplayName ]
             with _ -> Set.empty
 
+        let meths =
+            GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
+            |> List.filter (fun m ->
+                not m.IsClassConstructor &&
+                not m.IsConstructor &&
+                shouldShow m.ArbitraryValRef &&
+                not (impliedNames.Contains m.DisplayName) &&
+                not (m.DisplayName.Split('.') |> Array.exists (fun part -> isDiscard part)))
+
         let ctorLs =
             if denv.shrinkOverloads then
                 ctors 
@@ -1537,8 +1544,7 @@ module private TastDefinitionPrinting =
                 |> List.map (fun ctor -> InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv ctor)
 
         let methLs = 
-            meths 
-            |> List.filter (fun md -> not (impliedNames.Contains md.DisplayName) && not md.IsConstructor)
+            meths
             |> List.groupBy (fun md -> md.DisplayName)
             |> List.collect (fun (_, group) ->
                 if denv.shrinkOverloads then
@@ -1549,8 +1555,6 @@ module private TastDefinitionPrinting =
                     |> List.map (fun methinfo -> ((not methinfo.IsConstructor, methinfo.IsInstance, methinfo.DisplayName, List.sum methinfo.NumArgs, methinfo.NumArgs.Length), InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv methinfo)))
             |> List.sortBy fst
             |> List.map snd
-
-        let inline isDiscard (name: string) = name.StartsWith("_")
 
         let fieldLs =
             infoReader.GetILFieldInfosOfType (None, ad, m, ty)
@@ -1774,7 +1778,6 @@ module private TastDefinitionPrinting =
             let x = layoutTycon denv infoReader ad m false WordL.keywordType h
             let xs = List.map (layoutTycon denv infoReader ad m false (wordL (tagKeyword "and"))) t
             aboveListL (x :: xs)
-
 
 //--------------------------------------------------------------------------
 
