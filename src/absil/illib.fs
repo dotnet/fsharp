@@ -385,6 +385,11 @@ module List =
         mn 0 xs
     let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
 
+    let headAndTail l = 
+       match l with 
+       | [] -> failwith "headAndTail"
+       | h::t -> (h,t)
+
     // WARNING: not tail-recursive 
     let mapHeadTail fhead ftail = function
       | []    -> []

@@ -802,6 +802,12 @@ val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
 val isDimensionless : TcGlobals -> TType -> bool
 
+//---------------------------------------------------------------------------
+// TType modifications and comparisons
+//---------------------------------------------------------------------------
+
+val stripMeasuresFromTType : TcGlobals -> TType -> TType
+
 //-------------------------------------------------------------------------
 // Equivalence of types (up to substitution of type variables in the left-hand type)
 //------------------------------------------------------------------------- 
@@ -1014,6 +1020,8 @@ val ticksAndArgCountTextOfTyconRef : TyconRef -> string
 
 /// A unique qualified name for each type definition, used to qualify the names of interface implementation methods
 val qualifiedMangledNameOfTyconRef : TyconRef -> string -> string
+
+val qualifiedInterfaceImplementationName : TcGlobals -> TType -> string -> string
 
 val trimPathByDisplayEnv : DisplayEnv -> string list -> string
 
@@ -2279,7 +2287,11 @@ val (|EnumExpr|_|) : TcGlobals -> Expr -> Expr option
 val (|TypeOfExpr|_|) : TcGlobals -> Expr -> TType option
 
 val (|TypeDefOfExpr|_|) : TcGlobals -> Expr -> TType option
+
+val isNameOfValRef: TcGlobals -> ValRef -> bool
+
 val (|NameOfExpr|_|) : TcGlobals -> Expr -> TType option
+
 val (|SeqExpr|_|) : TcGlobals -> Expr -> unit option
 
 val EvalLiteralExprOrAttribArg: TcGlobals -> Expr -> Expr
