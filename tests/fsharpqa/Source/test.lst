@@ -31,7 +31,6 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
 CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
 CodeGen01,NoMT,CodeGen				CodeGen\Structure
 
-
 CompilerOptions01,NoMT				CompilerOptions\fsc\checked
 CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
@@ -266,8 +265,6 @@ Misc01			Libraries\Core\Operators
 Misc01			Libraries\Core\Reflection
 Misc01			Libraries\Core\Unchecked
 Misc01			Warnings
-Misc01			ErrorMessages\UnitGenericAbstractType
-Misc01			ErrorMessages\ConfusingTypeName
 
 Misc02			Libraries\Portable
 Misc02			Misc
