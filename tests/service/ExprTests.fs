@@ -995,10 +995,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
         let fileSource = excludedTests |> List.fold replace source
         File.WriteAllText(filePath, fileSource)
 
-        let args = [|
-            yield! mkProjectCommandLineArgsSilent (dllPath, [filePath])
-            yield @"-r:System.Numerics.dll"         // needed for some tests
-        |]
+        let args = mkProjectCommandLineArgsSilent (dllPath, [filePath])
 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFilePath, args)
 
