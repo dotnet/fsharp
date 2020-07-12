@@ -123,7 +123,7 @@ type UsingMSBuild() =
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = "type t = System.Runtime.CompilerServices.RuntimeHelpers(*M*)",
             marker = "(*M*)",
-            expectedExactOrder = ["GetObjectValue"; "GetHashCode"]
+            expectedExactOrder = ["GetHashCode"; "GetObjectValue"]
             )
     
     [<Test>]
@@ -269,8 +269,8 @@ type Async =
   static member CancelDefaultToken : unit -> unit
   static member Catch : computation:Async<'T> -> Async<Choice<'T,exn>>
   static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
-  static member FromBeginEnd : beginAction:(AsyncCallback * obj -> IAsyncResult) * endAction:(IAsyncResult -> 't) * ?cancelAction:(unit -> unit) -> Async<'T> + 3 overloads
-  static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCancelledException -> unit) -> unit) -> Async<'T>
+  static member FromBeginEnd : beginAction:(AsyncCallback * obj -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction:(unit -> unit) -> Async<'T> + 3 overloads
+  static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
@@ -2109,7 +2109,7 @@ query."
                "  static member CreateAnySchemeAccess : allowPort: int -> CodeConnectAccess";
                "  static member CreateOriginSchemeAccess : allowPort: int -> CodeConnectAccess";
                "  static member IsValidScheme : scheme: string -> bool";
-               "  static val AnyPoint : int";
+               "  static val AnyPort : int";
                "  static val AnyScheme : int";
                "  static val DefaultPort : int";
                "  static val NoPort : int";
