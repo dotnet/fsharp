@@ -123,7 +123,7 @@ type UsingMSBuild() =
         this.VerifyOrderOfNestedTypesInQuickInfo(
             source = "type t = System.Runtime.CompilerServices.RuntimeHelpers(*M*)",
             marker = "(*M*)",
-            expectedExactOrder = ["GetObjectValue"; "OffsetToStringData"]
+            expectedExactOrder = ["GetObjectValue"; "GetHashCode"]
             )
     
     [<Test>]
@@ -267,10 +267,10 @@ type Async =
   static member AwaitTask : task:Task<'T> -> Async<'T> + 1 overload
   static member AwaitWaitHandle : waitHandle:WaitHandle * ?millisecondsTimeout:int -> Async<bool>
   static member CancelDefaultToken : unit -> unit
-  static member CancellationToken : Async<CancellationToken>
   static member Catch : computation:Async<'T> -> Async<Choice<'T,exn>>
   static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
-  static member DefaultCancellationToken : CancellationToken
+  static member FromBeginEnd : beginAction:(AsyncCallback * obj -> IAsyncResult) * endAction:(IAsyncResult -> 't) * ?cancelAction:(unit -> unit) -> Async<'T> + 3 overloads
+  static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCancelledException -> unit) -> unit) -> Async<'T>
   ...
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
@@ -359,7 +359,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal", 
+         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  event Event1 : EventHandler", 
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
@@ -372,7 +372,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\nFull name: N.T",
+         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  event Event1 : EventHandler\n  Full name: N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
          
 
@@ -2106,13 +2106,13 @@ query."
                "  new : allowScheme: string * allowPort: int -> unit + 2 overloads";
                "  member Equals : o: obj -> bool";
                "  member GetHashCode : unit -> int";
-               "  member IsAnyScheme : bool";
-               "  member IsDefaultPort : bool";
-               "  member IsOriginPort : bool";
-               "  member IsOriginScheme : bool";
-               "  member Port : int";
-               "  member Scheme : string";
-               "  member StrPort : string";
+               "  static member CreateAnySchemeAccess : allowPort: int -> CodeConnectAccess";
+               "  static member CreateOriginSchemeAccess : allowPort: int -> CodeConnectAccess";
+               "  static member IsValidScheme : scheme: string -> bool";
+               "  static val AnyPoint : int";
+               "  static val AnyScheme : int";
+               "  static val DefaultPort : int";
+               "  static val NoPort : int";
                "  ...";
              ])
 
@@ -2154,13 +2154,13 @@ query."
                "  inherit Form";
                "  interface IDisposable";
                "  new : unit -> F1";
-               "  abstract member AAA : int";
+               "  val x: F1"
                "  member B : unit -> int";
-               "  member D : int";
                "  override ToString : unit -> string";
-               "  abstract member ZZZ : int";
                "  static member A : unit -> int";
                "  static member C : unit -> int";
+               "  abstract member AAA : int";
+               "  member D : int";
                "  ...";
              ])
 
@@ -2212,7 +2212,7 @@ query."
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "member X : int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "member Y : int")
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "type BitArray")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "member Count : int")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker2*)", "member Not : unit -> BitArray")
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker2*)" "get_Length"
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker2*)" "set_Length"
 
