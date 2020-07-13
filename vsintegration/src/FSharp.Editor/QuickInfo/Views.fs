@@ -51,7 +51,7 @@ module internal QuickInfoViewProvider =
 
     let provideContent
         (
-            imageId:ImageId,
+            imageId:ImageId option,
             description:#seq<Layout.TaggedText>,
             documentation:#seq<Layout.TaggedText>,
             navigation:QuickInfoNavigation
@@ -92,9 +92,11 @@ module internal QuickInfoViewProvider =
             flushContainer()
             ContainerElement(ContainerElementStyle.Stacked, finalCollection |> Seq.map box)
 
-        ContainerElement(ContainerElementStyle.Stacked,
-            ContainerElement(ContainerElementStyle.Wrapped, 
-                ImageElement(imageId), 
-                buildContainerElement description),
-            buildContainerElement documentation
-        )
+        let innerElement =
+            match imageId with
+            | Some imageId ->
+                ContainerElement(ContainerElementStyle.Wrapped, ImageElement(imageId), buildContainerElement description)
+            | None ->
+                ContainerElement(ContainerElementStyle.Wrapped, buildContainerElement description)
+
+        ContainerElement(ContainerElementStyle.Stacked, innerElement, buildContainerElement documentation)
