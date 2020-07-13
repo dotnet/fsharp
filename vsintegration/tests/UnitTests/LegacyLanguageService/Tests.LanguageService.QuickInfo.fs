@@ -372,13 +372,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-"""type T =
-  new : unit -> T
-  static member M : unit -> int []
-  static member StaticProp : decimal
-  event Event1 : EventHandler
-  Full name: N.T
-""",
+         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  event Event1 : EventHandler",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
          
 
