@@ -254,6 +254,12 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.ExtensionMethod
                             else
                                 add m SemanticClassificationType.Method
+<<<<<<< HEAD
+=======
+
+                    | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m ->
+                        add m SemanticClassificationType.ComputationExpression
+>>>>>>> 82291b017... Fix classification for unresolved/impossible-to-construct constructors
 
                     // Special case measures for struct types
                     | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
