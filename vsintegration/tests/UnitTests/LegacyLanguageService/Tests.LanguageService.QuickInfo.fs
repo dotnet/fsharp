@@ -372,8 +372,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-"""
-type T =
+"""type T =
   new : unit -> T
   static member M : unit -> int []
   static member StaticProp : decimal
