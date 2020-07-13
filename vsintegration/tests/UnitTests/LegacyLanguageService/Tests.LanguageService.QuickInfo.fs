@@ -372,7 +372,14 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  static member M : unit -> int []\n  static member StaticProp : decimal\n  event Event1 : EventHandler\n  Full name: N.T",
+"""
+type T =
+  new : unit -> T
+  static member M : unit -> int []
+  static member StaticProp : decimal
+  event Event1 : EventHandler
+  Full name: N.T
+""",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
          
 
@@ -2110,7 +2117,7 @@ query."
                "  static member CreateOriginSchemeAccess : allowPort: int -> CodeConnectAccess";
                "  static member IsValidScheme : scheme: string -> bool";
                "  static val AnyPort : int";
-               "  static val AnyScheme : int";
+               "  static val AnyScheme : string";
                "  static val DefaultPort : int";
                "  static val NoPort : int";
                "  ...";
