@@ -34,7 +34,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         match langVersion with
         | LangVersion.V47 -> "--langversion:4.7"
         | LangVersion.V50 -> "--langversion:5.0"
-        | LangVersion.Preview -> "--langversion:Preview"
+        | LangVersion.Preview -> "--langversion:preview"
         |]
 
     let argv = Array.append baseArgs additionalArgs

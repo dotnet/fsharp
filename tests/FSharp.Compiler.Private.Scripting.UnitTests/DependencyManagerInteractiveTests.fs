@@ -653,7 +653,11 @@ x |> Seq.iter(fun r ->
             """"""
             """  F# Interactive command line options:"""
             """"""
+#if NETCOREAPP
+            """      See 'testhost --help' for options"""
+#else
             """      See 'testhost.x86 --help' for options"""
+#endif
             """"""
             """"""
         |]
@@ -691,7 +695,11 @@ x |> Seq.iter(fun r ->
             """"""
             """  F# Interactive command line options:"""
             """"""
+#if NETCOREAPP
+            """      See 'testhost --help' for options"""
+#else
             """      See 'testhost.x86 --help' for options"""
+#endif
             """"""
             """"""
         |]
