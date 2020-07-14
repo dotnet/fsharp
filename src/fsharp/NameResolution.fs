@@ -441,23 +441,37 @@ type ResultCollectionSettings =
 /// during type checking.
 let NextExtensionMethodPriority() = uint64 (newStamp())
 
+/// Checks if the type is used for C# style extension members.
+let IsTyconRefUsedForCSharpStyleExtensionMembers g m (tcref: TyconRef) =
+    // Type must be non-generic and have 'Extension' attribute
+    isNil(tcref.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcref
+
+/// Checks if the type is used for C# style extension members.
+let IsTypeUsedForCSharpStyleExtensionMembers g m ty =
+    match tryTcrefOfAppTy g ty with
+    | ValueSome tcref -> IsTyconRefUsedForCSharpStyleExtensionMembers g m tcref
+    | _ -> false
+
+/// A 'plain' method is an extension method not interpreted as an extension method.
+let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclosingExtTy (minfo: MethInfo) =
+    // Method must be static, have 'Extension' attribute, must not be curried, must have at least one argument
+    isEnclosingExtTy &&
+    not minfo.IsInstance &&
+    not minfo.IsExtensionMember &&
+    (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
+    MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
+
 /// Get the info for all the .NET-style extension members listed as static members in the type.
 let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap: Import.ImportMap) m  (tcrefOfStaticClass: TyconRef) =
     let g = amap.g
-    // Type must be non-generic and have 'Extension' attribute
-    if isNil(tcrefOfStaticClass.Typars m) && TyconRefHasAttribute g m g.attrib_ExtensionAttribute tcrefOfStaticClass then
+
+    if IsTyconRefUsedForCSharpStyleExtensionMembers g m tcrefOfStaticClass then
         let pri = NextExtensionMethodPriority()
         let ty = generalizedTyconRef tcrefOfStaticClass
 
-        // Get the 'plain' methods, not interpreted as extension methods
         let minfos = GetImmediateIntrinsicMethInfosOfType (None, AccessorDomain.AccessibleFromSomeFSharpCode) g amap m ty
         [ for minfo in minfos do
-            // Method must be static, have 'Extension' attribute, must not be curried, must have at least one argument
-            if not minfo.IsInstance &&
-               not minfo.IsExtensionMember &&
-               (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
-               MethInfoHasAttribute g m g.attrib_ExtensionAttribute minfo
-            then
+            if IsMethInfoPlainCSharpStyleExtensionMember g m true minfo then
                 let ilExtMem = ILExtMem (tcrefOfStaticClass, minfo, pri)
 
                 // The results are indexed by the TyconRef of the first 'this' argument, if any.
@@ -1004,11 +1018,14 @@ let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, che
     GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, optFilter, staticResInfo, checkForGenerated, m) ty
     |> List.map (fun (tcref, tinst) -> MakeNestedType ncenv tinst m tcref)
 
-let ChooseMethInfosForNameEnv g ty (minfos: MethInfo list) =
+let ChooseMethInfosForNameEnv g m ty (minfos: MethInfo list) =
+    let isExtTy = IsTypeUsedForCSharpStyleExtensionMembers g m ty
+
     let methGroups =
         minfos
         |> List.filter (fun minfo ->
-            not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty)
+            not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty &&
+            not (IsMethInfoPlainCSharpStyleExtensionMember g m isExtTy minfo))
         |> List.groupBy (fun minfo -> minfo.LogicalName)
 
     seq {
@@ -1047,6 +1064,8 @@ let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
 let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)
 
+    let nenv = AddCSharpStyleExtensionMembersOfTypeToNameEnv amap m nenv ty
+
     // The order of items matter such as intrinsic members will always be favored over extension members of the same name.
     // Extension property members will always be favored over extenion methods of the same name.
     let items =
@@ -1054,7 +1073,7 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
             // Extension methods
             yield! 
                 ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None m ty
-                |> ChooseMethInfosForNameEnv g ty
+                |> ChooseMethInfosForNameEnv g m ty
 
             // Extension properties
             yield!
@@ -1079,7 +1098,7 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
             // Methods
             yield!
                 IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
-                |> ChooseMethInfosForNameEnv g ty
+                |> ChooseMethInfosForNameEnv g m ty
         |]
 
     let nenv = { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
@@ -1097,6 +1116,24 @@ and private AddTyconRefsWithTypeInstToNameEnv bulkAddMode ownDefinition g amap a
         if tinstDeclaring.IsEmpty then nenv
         else { nenv with eUnqualifiedTyconDeclaringTypeInsts = nenv.eUnqualifiedTyconDeclaringTypeInsts.Add tcref tinstDeclaring })
 
+and private AddCSharpStyleExtensionMembersOfTypeToNameEnv (amap: Import.ImportMap) m nenv ty =
+    match tryTcrefOfAppTy amap.g ty with
+    | ValueSome tcref ->
+        AddCSharpStyleExtensionMembersOfTyconRefToNameEnv amap m nenv tcref
+    | _ ->
+        nenv
+
+and private AddCSharpStyleExtensionMembersOfTyconRefToNameEnv amap m nenv (tcref: TyconRef) =
+    let eIndexedExtensionMembers, eUnindexedExtensionMembers =
+        let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m tcref
+        ((nenv.eIndexedExtensionMembers, nenv.eUnindexedExtensionMembers), ilStyleExtensionMeths) ||> List.fold (fun (tab1, tab2) extMemInfo ->
+            match extMemInfo with
+            | Choice1Of2 (tcref, extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
+            | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)
+    { nenv with
+        eIndexedExtensionMembers = eIndexedExtensionMembers
+        eUnindexedExtensionMembers = eUnindexedExtensionMembers } 
+
 /// Add any implied contents of a type definition to the environment.
 and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
 
@@ -1104,12 +1141,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
 
-    let eIndexedExtensionMembers, eUnindexedExtensionMembers =
-        let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m  tcref
-        ((nenv.eIndexedExtensionMembers, nenv.eUnindexedExtensionMembers), ilStyleExtensionMeths) ||> List.fold (fun (tab1, tab2) extMemInfo ->
-            match extMemInfo with
-            | Choice1Of2 (tcref, extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
-            | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)
+    let nenv = AddCSharpStyleExtensionMembersOfTyconRefToNameEnv amap m nenv tcref
 
     let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
     let eFieldLabels =
@@ -1165,9 +1197,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
         { nenv with
             eFieldLabels = eFieldLabels
             eUnqualifiedItems = eUnqualifiedItems
-            ePatItems = ePatItems
-            eIndexedExtensionMembers = eIndexedExtensionMembers
-            eUnindexedExtensionMembers = eUnindexedExtensionMembers }
+            ePatItems = ePatItems }
 
     let nenv = 
         if amap.g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&

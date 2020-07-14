@@ -668,6 +668,114 @@ let x = Equals(2.0, 3.0)
         |])
 
     [<Test>]
+    let ``Opened types do no allow unqualified access to C#-style extension methods - Error`` () =
+        let fsharpSource =
+            """
+open System.Runtime.CompilerServices
+
+module TestExtensions =
+    [<Extension>]
+    type IntExtensions =
+
+        [<Extension>]
+        static member Test(_: int) = ()
+
+open type TestExtensions.IntExtensions
+
+[<EntryPoint>]
+let main _ =
+    Test(1)
+    0
+            """
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (15, 5, 15, 9),
+                "The value or constructor 'Test' is not defined. Maybe you want one of the following:
+   Text
+   TestExtensions")
+        |])
+
+    [<Test>]
+    let ``Opened types do allow unqualified access to C#-style extension methods if type has no [<Extension>] attribute`` () =
+        let fsharpSource =
+            """
+open System.Runtime.CompilerServices
+
+module TestExtensions =
+    type IntExtensions =
+
+        [<Extension>]
+        static member Test(_: int) = ()
+
+open type TestExtensions.IntExtensions
+
+[<EntryPoint>]
+let main _ =
+    Test(1)
+    0
+            """
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Opened types do allow unqualified access to members with no [<Extension>] attribute`` () =
+        let fsharpSource =
+            """
+open System.Runtime.CompilerServices
+
+module TestExtensions =
+    [<Extension>]
+    type IntExtensions =
+
+        static member Test(_: int) = ()
+
+open type TestExtensions.IntExtensions
+
+[<EntryPoint>]
+let main _ =
+    Test(1)
+    0
+            """
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Opened types with C# style extension members are available for normal extension method lookup`` () =
+        let fsharpSource =
+            """
+open System.Runtime.CompilerServices
+
+module TestExtensions =
+    [<Extension>]
+    type IntExtensions =
+
+        [<Extension>]
+        static member Test(_: int) = ()
+
+open type TestExtensions.IntExtensions
+
+[<EntryPoint>]
+let main _ =
+    let x = 1
+    x.Test()
+    0
+            """
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
     let ``An assembly with an event and field with the same name, favor the field`` () =
         let ilSource =
             """
