@@ -103,22 +103,22 @@ module FSharpDependencyManager =
 type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
     /// Succeded?
-    member __.Success = success
+    member _.Success = success
 
     /// The resolution output log
-    member __.StdOut = stdOut
+    member _.StdOut = stdOut
 
     /// The resolution error log (* process stderror *)
-    member __.StdError = stdError
+    member _.StdError = stdError
 
     /// The resolution paths
-    member __.Resolutions = resolutions
+    member _.Resolutions = resolutions
 
     /// The source code file paths
-    member __.SourceFiles = sourceFiles
+    member _.SourceFiles = sourceFiles
 
     /// The roots to package directories
-    member __.Roots = roots
+    member _.Roots = roots
 
 [<DependencyManagerAttribute>] 
 type FSharpDependencyManager (outputDir:string option) =
@@ -159,11 +159,11 @@ type FSharpDependencyManager (outputDir:string option) =
 
     do if deleteAtExit then AppDomain.CurrentDomain.ProcessExit |> Event.add(fun _ -> deleteScripts () )
 
-    member __.Name = name
+    member _.Name = name
 
-    member __.Key = key
+    member _.Key = key
 
-    member __.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string, rid: string) : obj =
+    member _.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string, rid: string) : obj =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
