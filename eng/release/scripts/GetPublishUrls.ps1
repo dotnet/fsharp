@@ -8,6 +8,26 @@ param (
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
 
+function Invoke-WebRequestWithAccessToken([string] $uri, [string] $accessToken, [int] $retryCount = 5) {
+    Write-Host "Fetching content from $uri"
+    $base64 = [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes(":$accessToken"))
+    $headers = @{
+        Authorization = "Basic $base64"
+    }
+
+    for ($i = 0; $i -lt $retryCount; $i++) {
+        try {
+            return Invoke-WebRequest -Method Get -Uri $uri -Headers $headers -UseBasicParsing
+        }
+        catch {
+            Write-Host "Invoke-WebRequest failed: $_"
+            Start-Sleep -Seconds 1
+        }
+    }
+
+    throw "Unable to fetch $uri after $retryCount tries."
+}
+
 try {
     # build map of all *.vsman files to their `info.buildVersion` values
     $manifestVersionMap = @{}
@@ -21,17 +41,10 @@ try {
     # find all publish URLs
     $manifests = @()
     $seenManifests = @{}
-    $url = "https://dev.azure.com/dnceng/internal/_apis/build/builds/$buildId/logs?api-version=5.1"
-    $base64 = [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes(":$accessToken"))
-    $headers = @{
-        Authorization = "Basic $base64"
-    }
-    Write-Host "Fetching log from $url"
-    $json = Invoke-WebRequest -Method Get -Uri $url -Headers $headers -UseBasicParsing | ConvertFrom-Json
+    $json = Invoke-WebRequestWithAccessToken -uri "https://dev.azure.com/dnceng/internal/_apis/build/builds/$buildId/logs?api-version=5.1" -accessToken $accessToken | ConvertFrom-Json
     foreach ($l in $json.value) {
         $logUrl = $l.url
-        Write-Host "Fetching log from $logUrl"
-        $log = (Invoke-WebRequest -Method Get -Uri $logUrl -Headers $headers -UseBasicParsing).Content
+        $log = (Invoke-WebRequestWithAccessToken -uri $logUrl -accessToken $accessToken).Content
         If ($log -Match "(https://vsdrop\.corp\.microsoft\.com/[^\r\n;]+);([^\r\n]+)\r?\n") {
             $manifestShortUrl = $Matches[1]
             $manifestName = $Matches[2]
