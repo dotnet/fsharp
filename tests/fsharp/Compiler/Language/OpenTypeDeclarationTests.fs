@@ -652,6 +652,22 @@ let main _ =
         CompilerAssert.ExecutionHasOutput(fsCmpl, "M")
 
     [<Test>]
+    let ``Opened types do no allow unqualified access to their inherited type's members - Error`` () =
+        let fsharpSource =
+            """
+open type System.Math
+
+let x = Equals(2.0, 3.0)
+            """
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|])
+
+        CompilerAssert.CompileWithErrors(fsCmpl, [|
+            (FSharpErrorSeverity.Error, 39, (4, 9, 4, 15), "The value or constructor 'Equals' is not defined.")
+        |])
+
+    [<Test>]
     let ``An assembly with an event and field with the same name, favor the field`` () =
         let ilSource =
             """
