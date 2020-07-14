@@ -122,11 +122,6 @@
         <target state="translated">Le répertoire '{0}' n'existe pas</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">Directive non valide '#{0} {1}'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">Avertissement : ligne trop longue, certains caractères sont ignorés\n</target>

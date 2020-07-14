@@ -122,11 +122,6 @@
         <target state="translated">目录“{0}”不存在</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">无效的指令“#{0} {1}”</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">警告: 由于行太长，将忽略某些字符\n</target>
