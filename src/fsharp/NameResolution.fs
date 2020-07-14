@@ -453,9 +453,9 @@ let IsTypeUsedForCSharpStyleExtensionMembers g m ty =
     | _ -> false
 
 /// A 'plain' method is an extension method not interpreted as an extension method.
-let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclosingExtTy (minfo: MethInfo) =
+let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) =
     // Method must be static, have 'Extension' attribute, must not be curried, must have at least one argument
-    isEnclosingExtTy &&
+    isEnclExtTy &&
     not minfo.IsInstance &&
     not minfo.IsExtensionMember &&
     (match minfo.NumArgs with [x] when x >= 1 -> true | _ -> false) &&
