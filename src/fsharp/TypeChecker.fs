@@ -5420,25 +5420,22 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
-            match args with 
-            | SynArgPats.Pats [] 
-            | SynArgPats.NamePatPairs ([], _) -> 
-                let _, acc = tcArgPatterns ()
-                match getArgPatterns () with
-                | [] -> 
-                    TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv, names, takenNames) ty (mkSynPatVar vis id)
+            let _, acc = tcArgPatterns ()
+            match getArgPatterns () with
+            | [] -> TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv, names, takenNames) ty (mkSynPatVar vis id)
                 | _ ->
                     errorR (UndefinedName (0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
                     (fun _ -> TPat_error m), acc
                 
-            | SynArgPats.Pats [arg] 
+            | [arg] 
                 when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf && isNameof id ->
                 match TcNameOfExpr cenv env tpenv (convSynPatToSynExpr arg) with
                 | Expr.Const(c, m, _) -> (fun _ -> TPat_const (c, m)), (tpenv, names, takenNames)
                 | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
 
             | _ ->
-                error (UndefinedName(0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
+                errorR (UndefinedName (0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
+                (fun _ -> TPat_error m), acc
 
         | Item.ActivePatternCase (APElemRef (apinfo, vref, idx)) as item ->
             // Report information about the 'active recognizer' occurrence to IDE
