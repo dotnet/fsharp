@@ -1201,6 +1201,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
 
     let nenv = 
         if amap.g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
+           not isIL &&
            TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true then
             if tcref.Typars(m).Length > 0 then failwith "nope" // TODO proper error
             let ty = generalizedTyconRef tcref

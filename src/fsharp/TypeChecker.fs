@@ -374,7 +374,7 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
-/// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
+/// Adjust the TcEnv to account for opening the set of modules or namespaces implied by an `open` declaration
 let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
@@ -383,7 +383,7 @@ let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
     CallOpenDeclarationSink tcSink openDeclaration
     env
 
-/// Adjust the TcEnv to account for opening the set of modules, namespaces or types implied by an `open` declaration
+/// Adjust the TcEnv to account for opening a type implied by an `open type` declaration
 let OpenTypeContent tcSink g amap scopem env (typ: TType) openDeclaration =
     let env =
         { env with eNameResEnv = AddTypeContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv typ }
