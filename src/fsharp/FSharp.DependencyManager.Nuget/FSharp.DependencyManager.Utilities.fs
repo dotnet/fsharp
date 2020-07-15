@@ -209,10 +209,10 @@ module internal Utilities =
         let succeeded, stdOut, stdErr =
             if not (isRunningOnCoreClr) then
                 // The Desktop build uses "msbuild" to build
-                executeBuild msbuildExePath (arguments "") workingDir
+                executeBuild msbuildExePath (arguments "-v:quiet") workingDir
             else
                 // The coreclr uses "dotnet msbuild" to build
-                executeBuild dotnetHostPath (arguments "msbuild") workingDir
+                executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir
 
         let outputFile = projectPath + ".resolvedReferences.paths"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
