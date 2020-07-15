@@ -653,11 +653,11 @@ x |> Seq.iter(fun r ->
             """"""
             """  F# Interactive command line options:"""
             """"""
-#if NETCOREAPP
-            """      See 'testhost --help' for options"""
-#else
-            """      See 'testhost.x86 --help' for options"""
-#endif
+
+            // this is the end of the line each different platform has a different mechanism for starting fsi
+            // Actual output looks similar to: """      See 'testhost --help' for options"""
+            """--help' for options"""
+
             """"""
             """"""
         |]
@@ -665,10 +665,16 @@ x |> Seq.iter(fun r ->
         let mutable found = 0
         let lines = System.Collections.Generic.List()
         use sawExpectedOutput = new ManualResetEvent(false)
-        let verifyOutput line =
+        let verifyOutput (line: string) =
+            let compareLine (s: string) =
+                if s = "" then line = ""
+                else line.EndsWith(s)
             lines.Add(line)
-            if expected |> Array.contains line then found <- found + 1
-            if found = expected.Length then sawExpectedOutput.Set() |> ignore
+            match expected |> Array.tryFind(compareLine) with
+            | None -> ()
+            | Some t ->
+                found <- found + 1
+                if found = expected.Length then sawExpectedOutput.Set() |> ignore
 
         let text = "#help"
         use output = new RedirectConsoleOutput()
@@ -676,7 +682,7 @@ x |> Seq.iter(fun r ->
         let mutable found = 0
         output.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
-        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")
+        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
 
 
     [<Test>]
@@ -695,11 +701,11 @@ x |> Seq.iter(fun r ->
             """"""
             """  F# Interactive command line options:"""
             """"""
-#if NETCOREAPP
-            """      See 'testhost --help' for options"""
-#else
-            """      See 'testhost.x86 --help' for options"""
-#endif
+
+            // this is the end of the line each different platform has a different mechanism for starting fsi
+            // Actual output looks similar to: """      See 'testhost --help' for options"""
+            """--help' for options"""
+
             """"""
             """"""
         |]
@@ -707,15 +713,21 @@ x |> Seq.iter(fun r ->
         let mutable found = 0
         let lines = System.Collections.Generic.List()
         use sawExpectedOutput = new ManualResetEvent(false)
-        let verifyOutput line =
+        let verifyOutput (line: string) =
+            let compareLine (s: string) =
+                if s = "" then line = ""
+                else line.EndsWith(s)
             lines.Add(line)
-            if expected |> Array.contains line then found <- found + 1
-            if found = expected.Length then sawExpectedOutput.Set() |> ignore
+            match expected |> Array.tryFind(compareLine) with
+            | None -> ()
+            | Some t ->
+                found <- found + 1
+                if found = expected.Length then sawExpectedOutput.Set() |> ignore
 
         let text = "#help"
         use output = new RedirectConsoleOutput()
-        use script = new FSharpScript(quiet = false)
+        use script = new FSharpScript(quiet = false, langVersion = LangVersion.Preview)
         let mutable found = 0
         output.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
-        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")
+        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
