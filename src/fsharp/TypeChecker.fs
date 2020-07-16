@@ -361,7 +361,7 @@ let AddLocalExnDefnAndReport tcSink scopem env (exnc: Tycon) =
 /// Add a list of type definitions to TcEnv
 let AddLocalTyconRefs ownDefinition g amap m tcrefs env =
     if isNil tcrefs then env else
-    { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap env.eAccessRights m false env.eNameResEnv 0 tcrefs }
+    { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap env.eAccessRights m false env.eNameResEnv tcrefs }
 
 /// Add a list of type definitions to TcEnv
 let AddLocalTycons g amap m (tycons: Tycon list) env =
@@ -418,7 +418,7 @@ let AddNonLocalCcu g amap scopem env assemblyName (ccu: CcuThunk, internalsVisib
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
     let env =
         if isNil tcrefs then env else
-        { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.Yes false g amap env.eAccessRights scopem true env.eNameResEnv 0 tcrefs }
+        { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.Yes false g amap env.eAccessRights scopem true env.eNameResEnv tcrefs }
     env
 
 /// Adjust the TcEnv to account for a fully processed "namespace" declaration in this file
@@ -429,7 +429,7 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp: ModuleOrNamesp
     let tcrefs = mtyp.TypeAndExceptionDefinitions |> List.map mkLocalTyconRef
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
     let env = { env with
-                    eNameResEnv = if isNil tcrefs then env.eNameResEnv else AddTyconRefsToNameEnv BulkAdd.No false g amap env.eAccessRights scopem true env.eNameResEnv 0 tcrefs
+                    eNameResEnv = if isNil tcrefs then env.eNameResEnv else AddTyconRefsToNameEnv BulkAdd.No false g amap env.eAccessRights scopem true env.eNameResEnv tcrefs
                     eUngeneralizableItems = addFreeItemOfModuleTy mtyp env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
@@ -5131,7 +5131,7 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty t
     if not (isAppTy cenv.g ty) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
     match ty with 
     | TType_app(tcref, tinst) -> 
-        let pathTypeArgs = tinst |> List.takeWhile (not << isTyparTy cenv.g)
+        let pathTypeArgs = tinst |> List.takeWhile (fun ty -> not (isTyparTy cenv.g ty || isMeasureTy cenv.g ty))
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs 
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
 
@@ -9575,7 +9575,6 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
     
         match delayed with 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedDotLookup (longId, mLongId)) :: otherDelayed) ->
-
             // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs 
             // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args 
             // and replace them by 'tyargs' 

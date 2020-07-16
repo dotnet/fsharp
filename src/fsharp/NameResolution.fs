@@ -743,11 +743,11 @@ let GeneralizeUnionCaseRef (ucref: UnionCaseRef) =
 
 
 /// Add type definitions to the sub-table of the environment indexed by name and arity
-let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tinstDeclaringCount: int) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair, TyconRef>) =
+let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair, TyconRef>) =
     if tcrefs.Length = 0 then tab else
     let entries =
         tcrefs
-        |> Array.map (fun tcref -> Construct.KeyTyconByDemangledNameAndArity tcref.LogicalName (tcref.TyparsNoRange |> List.skip tinstDeclaringCount) tcref)
+        |> Array.map (fun tcref -> Construct.KeyTyconByDecodedName tcref.LogicalName tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
@@ -929,7 +929,7 @@ let LookupTypeNameInEntityHaveArity nm (staticResInfo: TypeNameResolutionStaticA
 let LookupTypeNameNoArity nm (byDemangledNameAndArity: LayeredMap<NameArityPair, _>) (byAccessNames: LayeredMultiMap<string, _>) =
     match TryDemangleGenericNameAndPos nm with
     | ValueSome pos ->
-        let demangled = DecodeGenericTypeName pos nm
+        let demangled = DecodeGenericTypeNameWithPos pos nm
         match byDemangledNameAndArity.TryGetValue demangled with
         | true, res -> [res]
         | _ ->
@@ -940,8 +940,8 @@ let LookupTypeNameNoArity nm (byDemangledNameAndArity: LayeredMap<NameArityPair,
         byAccessNames.[nm]
 
 /// Qualified lookup of type names in an entity
-let LookupTypeNameInEntityNoArity m nm (mtyp: ModuleOrNamespaceType) =
-    LookupTypeNameNoArity nm (mtyp.TypesByDemangledNameAndArity m) mtyp.TypesByAccessNames
+let LookupTypeNameInEntityNoArity _m nm (mtyp: ModuleOrNamespaceType) =
+    LookupTypeNameNoArity nm mtyp.TypesByDemangledNameAndArity mtyp.TypesByAccessNames
 
 /// Lookup a type name in an entity.
 let LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nm, staticResInfo: TypeNameResolutionStaticArgsInfo, modref: ModuleOrNamespaceRef) =
@@ -1120,7 +1120,7 @@ and private AddTyconRefsWithDeclaringTypeInstToNameEnv bulkAddMode ownDefinition
         ||> List.fold (fun nenv tcref ->
             if tinstDeclaring.IsEmpty then nenv
             else { nenv with eUnqualifiedTyconDeclaringTypeInsts = nenv.eUnqualifiedTyconDeclaringTypeInsts.Add tcref tinstDeclaring })
-    AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tinstDeclaring.Length tcrefs
+    AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
 
 and private AddCSharpStyleExtensionMembersOfTypeToNameEnv (amap: Import.ImportMap) m nenv ty =
     match tryTcrefOfAppTy amap.g ty with
@@ -1218,7 +1218,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
     nenv
 
 /// Add a set of type definitions to the name resolution environment
-and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tinstDeclaringCount tcrefs =
+and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs =
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap ad m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
@@ -1226,7 +1226,7 @@ and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tinstD
     { env with
         eFullyQualifiedTyconsByDemangledNameAndArity =
             if root then
-                AddTyconsByDemangledNameAndArity bulkAddMode tinstDeclaringCount tcrefs nenv.eFullyQualifiedTyconsByDemangledNameAndArity
+                AddTyconsByDemangledNameAndArity bulkAddMode tcrefs nenv.eFullyQualifiedTyconsByDemangledNameAndArity
             else
                 nenv.eFullyQualifiedTyconsByDemangledNameAndArity
         eFullyQualifiedTyconsByAccessNames =
@@ -1235,7 +1235,7 @@ and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tinstD
             else
                 nenv.eFullyQualifiedTyconsByAccessNames
         eTyconsByDemangledNameAndArity =
-            AddTyconsByDemangledNameAndArity bulkAddMode tinstDeclaringCount tcrefs nenv.eTyconsByDemangledNameAndArity
+            AddTyconsByDemangledNameAndArity bulkAddMode tcrefs nenv.eTyconsByDemangledNameAndArity
         eTyconsByAccessNames =
             AddTyconByAccessNames bulkAddMode tcrefs nenv.eTyconsByAccessNames }
 
@@ -1319,7 +1319,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
            let tcref = modref.NestedTyconRef tycon
            if IsEntityAccessible amap m ad tcref then Some tcref else None)
 
-    let nenv = (nenv, 0, tcrefs) |||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap ad m false
+    let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap ad m false
     let vrefs =
         mty.AllValsAndMembers.ToList()
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
@@ -1493,7 +1493,7 @@ let inline (+++) res1 query2 = AtMostOneResultQuery query2 res1
 let LookupTypeNameInEnvHaveArity fq nm numTyArgs (nenv: NameResolutionEnv) =
     let key =
         match TryDemangleGenericNameAndPos nm with
-        | ValueSome pos -> DecodeGenericTypeName pos nm
+        | ValueSome pos -> DecodeGenericTypeNameWithPos pos nm
         | _ -> NameArityPair(nm, numTyArgs)
 
     match nenv.TyconsByDemangledNameAndArity(fq).TryFind key with
@@ -3079,7 +3079,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInf
         | tcref :: _ -> success tcref
         | [] ->
             let suggestTypes (addToBuffer: string -> unit) =
-                for e in tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange do
+                for e in tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity do
                     addToBuffer e.Value.DisplayName
 
             raze (UndefinedName(depth, FSComp.SR.undefinedNameType, id, suggestTypes))
@@ -3099,7 +3099,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInf
             | _ :: _ -> tcrefs |> CollectAtMostOneResult (fun (resInfo, tcref) -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref id2 rest2)
             | [] ->
                 let suggestTypes (addToBuffer: string -> unit) =
-                    for e in tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange do
+                    for e in tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity do
                         addToBuffer e.Value.DisplayName
 
                 raze (UndefinedName(depth, FSComp.SR.undefinedNameType, id, suggestTypes))
@@ -3163,7 +3163,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv: NameRe
             | _ :: _ -> tcrefs |> CollectResults (fun tcref -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref id2 rest2)
             | [] ->
                 let suggestTypes (addToBuffer: string -> unit) =
-                    for e in modref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange do
+                    for e in modref.ModuleOrNamespaceType.TypesByDemangledNameAndArity do
                         addToBuffer e.Value.DisplayName
 
                 raze (UndefinedName(depth, FSComp.SR.undefinedNameType, id, suggestTypes))

@@ -230,7 +230,7 @@ val internal AddValRefToNameEnv                    : NameResolutionEnv -> ValRef
 val internal AddActivePatternResultTagsToNameEnv   : ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
 
 /// Add a list of type definitions to the name resolution environment 
-val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> tinstDeclaringCount: int -> TyconRef list -> NameResolutionEnv
+val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
 
 /// Add an F# exception definition to the name resolution environment 
 val internal AddExceptionDeclsToNameEnv            : BulkAdd -> NameResolutionEnv -> TyconRef -> NameResolutionEnv
