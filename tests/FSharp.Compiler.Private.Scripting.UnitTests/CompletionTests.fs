@@ -32,6 +32,17 @@ type CompletionTests() =
         } |> Async.StartAsTask :> Task
 
     [<Test>]
+    member _.``Completions from types that try to pull in Windows runtime extensions``() =
+        async {
+            use script = new FSharpScript()
+            script.Eval("open System") |> ignoreValue
+            script.Eval("let t = TimeSpan.FromHours(1.0)") |> ignoreValue
+            let! completions = script.GetCompletionItems("t.", 1, 2)
+            let matchingCompletions = completions |> Array.filter (fun d -> d.Name = "TotalHours")
+            Assert.AreEqual(1, matchingCompletions.Length)
+        } |> Async.StartAsTask :> Task
+
+    [<Test>]
     member _.``Static member completions``() =
         async {
             use script = new FSharpScript()

@@ -2,7 +2,7 @@
   <Import Project="..\netfx.props" />
   <Import Project="..\..\eng\Versions.props"/>   <!-- keep our test deps in line with the overall compiler -->
   <PropertyGroup>
-    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.1</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefaultFSharpPackageVersion>4.1.19</DefaultFSharpPackageVersion>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
@@ -67,7 +67,7 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ScriptOptionsTests.fs">
       <Link>ScriptOptionsTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
       <Link>Program.fs</Link>
     </Compile>
     <NoneSubstituteText Include="App.config">

@@ -2,10 +2,10 @@
 #if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx"
-#load "../FSharp.TestHelpers/TestFramework.fs"
+#load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
-module ``FSharp-Tests-Core``
+module FSharp.Tests.Core
 #endif
 
 open System
@@ -254,9 +254,20 @@ module CoreTests =
         begin
             use testOkFile = fileguard cfg "test.ok"
 
-            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+            fsc cfg "%s -o:test.exe -g --langversion:4.7" cfg.fsc_flags ["test.fsx"]
 
-            singleNegTest cfg "test"
+            singleVersionedNegTest cfg "4.7" "test"
+            exec cfg ("." ++ "test.exe") ""
+
+            testOkFile.CheckExists()
+        end
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsc cfg "%s -o:test.exe -g --langversion:5.0" cfg.fsc_flags ["test.fsx"]
+
+            singleVersionedNegTest cfg "5.0" "test"
 
             exec cfg ("." ++ "test.exe") ""
 
@@ -1813,6 +1824,16 @@ module CoreTests =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
+        
+        
+    [<Test>]
+    let ``property setter in method or constructor`` () =
+        let cfg = testConfig' "core/members/set-only-property"
+        csc cfg @"%s /target:library /out:cs.dll" cfg.csc_flags ["cs.cs"]
+        vbc cfg @"%s /target:library /out:vb.dll" cfg.vbc_flags ["vb.vb"]
+        fsc cfg @"%s /target:library /out:fs.dll" cfg.fsc_flags ["fs.fs"]
+        singleNegTest cfg "calls"
+
 #endif
 
 module VersionTests =
@@ -2203,6 +2224,15 @@ module TypecheckTests =
         let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos35.dll --warnaserror" cfg.fsc_flags ["pos35.fs"]
         peverify cfg "pos35.dll"
+
+    [<Test>]
+    let ``sigs pos36-srtp`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos36-srtp-lib.dll --warnaserror" cfg.fsc_flags ["pos36-srtp-lib.fs"]
+        fsc cfg "%s --target:exe -r:pos36-srtp-lib.dll -o:pos36-srtp-app.exe --warnaserror" cfg.fsc_flags ["pos36-srtp-app.fs"]
+        peverify cfg "pos36-srtp-lib.dll"
+        peverify cfg "pos36-srtp-app.exe"
+        exec cfg ("." ++ "pos36-srtp-app.exe") ""
 
     [<Test>]
     let ``sigs pos23`` () =

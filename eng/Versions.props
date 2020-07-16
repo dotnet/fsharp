@@ -12,9 +12,9 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
-    <FSLanguageVersion>4.7</FSLanguageVersion>
+    <FSLanguageVersion>5.0</FSLanguageVersion>
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
-    <FSCorePackageVersion>$(FSCoreMajorVersion).3</FSCorePackageVersion>
+    <FSCorePackageVersion>$(FSCoreMajorVersion).0</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
     <!-- The current published nuget package -->
@@ -23,14 +23,14 @@
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <FSPackageMajorVersion>10.10</FSPackageMajorVersion>
+    <FSPackageMajorVersion>11.0</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>6</VSMinorVersion>
+    <VSMinorVersion>7</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -176,7 +176,7 @@
     <MicrosoftNetCompilersVersion>2.7.0</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreILDAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILAsmVersion>
-    <MicrosoftNETTestSdkVersion>15.8.0</MicrosoftNETTestSdkVersion>
+    <MicrosoftNETTestSdkVersion>16.6.1</MicrosoftNETTestSdkVersion>
     <MicrosoftWin32RegistryVersion>4.3.0</MicrosoftWin32RegistryVersion>
     <NewtonsoftJsonVersion>9.0.1</NewtonsoftJsonVersion>
     <NUnitVersion>3.11.0</NUnitVersion>
@@ -186,5 +186,7 @@
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
     <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
     <StreamJsonRpcVersion>2.0.187</StreamJsonRpcVersion>
+    <XUnitVersion>2.4.1</XUnitVersion>
+    <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
   </PropertyGroup>
 </Project>

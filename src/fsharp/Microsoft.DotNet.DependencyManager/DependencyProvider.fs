@@ -128,37 +128,37 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     static member MakeResultFromObject(result: obj) = {
         new IResolveDependenciesResult with
             /// Succeded?
-            member __.Success =
+            member _.Success =
                 match getInstanceProperty<bool> (result.GetType()) "Success" with
                 | None -> false
                 | Some p -> p.GetValue(result) :?> bool
 
             /// The resolution output log
-            member __.StdOut =
+            member _.StdOut =
                 match getInstanceProperty<string array> (result.GetType()) "StdOut" with
                 | None -> Array.empty<string>
                 | Some p -> p.GetValue(result) :?> string array
 
             /// The resolution error log (* process stderror *)
-            member __.StdError =
+            member _.StdError =
                 match getInstanceProperty<string array> (result.GetType()) "StdError" with
                 | None -> Array.empty<string>
                 | Some p -> p.GetValue(result) :?> string array
 
             /// The resolution paths
-            member __.Resolutions =
+            member _.Resolutions =
                 match getInstanceProperty<string seq> (result.GetType()) "Resolutions" with
                 | None -> Seq.empty<string>
                 | Some p -> p.GetValue(result) :?> string seq
 
             /// The source code file paths
-            member __.SourceFiles =
+            member _.SourceFiles =
                 match getInstanceProperty<string seq> (result.GetType()) "SourceFiles" with
                 | None -> Seq.empty<string>
                 | Some p -> p.GetValue(result) :?> string seq
 
             /// The roots to package directories
-            member __.Roots =
+            member _.Roots =
                 match getInstanceProperty<string seq> (result.GetType()) "Roots" with
                 | None -> Seq.empty<string>
                 | Some p -> p.GetValue(result) :?> string seq
@@ -167,32 +167,32 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
     static member MakeResultFromFields(success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) = {
         new IResolveDependenciesResult with
             /// Succeded?
-            member __.Success = success
+            member _.Success = success
 
             /// The resolution output log
-            member __.StdOut = stdOut
+            member _.StdOut = stdOut
 
             /// The resolution error log (* process stderror *)
-            member __.StdError = stdError
+            member _.StdError = stdError
 
             /// The resolution paths
-            member __.Resolutions = resolutions
+            member _.Resolutions = resolutions
 
             /// The source code file paths
-            member __.SourceFiles = sourceFiles
+            member _.SourceFiles = sourceFiles
 
             /// The roots to package directories
-            member __.Roots = roots
+            member _.Roots = roots
         }
 
 
     interface IDependencyManagerProvider with
 
         /// Name of dependency Manager
-        member __.Name = instance |> nameProperty
+        member _.Name = instance |> nameProperty
 
         /// Key of dependency Manager: used for #r "key: ... "   E.g nuget
-        member __.Key = instance |> keyProperty
+        member _.Key = instance |> keyProperty
 
         /// Resolve the dependencies for the given arguments
         member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid): IResolveDependenciesResult =
@@ -302,7 +302,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         new DependencyProvider(Unchecked.defaultof<AssemblyResolutionProbe>, nativeProbingRoots)
 
     /// Returns a formatted error message for the host to present
-    member __.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
+    member _.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
         let registeredKeys = String.Join(", ", RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError |> Seq.map (fun kv -> kv.Value.Key))
         let searchPaths = assemblySearchPaths.Force()
         DependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
@@ -330,12 +330,12 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             null, Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Remove the dependency mager with the specified key
-    member __.RemoveDependencyManagerKey(packageManagerKey:string, path:string): string =
+    member _.RemoveDependencyManagerKey(packageManagerKey:string, path:string): string =
 
         path.Substring(packageManagerKey.Length + 1).Trim()
 
     /// Fetch a dependencymanager that supports a specific key
-    member __.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
+    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
 
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -350,7 +350,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             Unchecked.defaultof<IDependencyManagerProvider>
 
     /// Resolve reference for a list of package manager lines
-    member __.Resolve (packageManager:IDependencyManagerProvider,
+    member _.Resolve (packageManager:IDependencyManagerProvider,
                        scriptExt: string,
                        packageManagerTextLines: string seq,
                        reportError: ResolvingErrorReport,
@@ -376,7 +376,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
     interface IDisposable with
 
-        member __.Dispose() =
+        member _.Dispose() =
 
             // Unregister everything
             registeredDependencyManagers <- None

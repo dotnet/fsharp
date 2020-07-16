@@ -2,6 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
+  <Import Project="..\..\eng\Versions.props" />
   <PropertyGroup>
     <TargetFrameworks>$(FcsTargetNetFxFramework);netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -18,6 +19,7 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
   <PropertyGroup>
     <Summary>The F# compiler as library. For editors, for tools, for scripting. For you.</Summary>
@@ -28,6 +30,8 @@
     <PackageProjectUrl>https://github.com/fsharp/FSharp.Compiler.Service</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
@@ -721,6 +725,7 @@
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
     <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />

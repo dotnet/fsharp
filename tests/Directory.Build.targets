@@ -3,9 +3,13 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
   <ItemGroup Condition="'$(UnitTestType)' == 'nunit'">
-    <!-- <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkVersion)" /> -->
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
     <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
+    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UnitTestType)' == 'xunit'">
+    <PackageReference Include="xunit" Version="$(XUnitVersion)" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitVersion)" />
     <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
   </ItemGroup>
 

@@ -10,6 +10,7 @@
   <!-- directory locations -->
   <PropertyGroup>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
+    <FSharpTestsRoot>$(RepoRoot)tests</FSharpTestsRoot>
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
