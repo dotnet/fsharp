@@ -417,15 +417,22 @@ open type CSharpTest.Test<byte>
 module Test2 =
 
     let x = NestedTest()
-    let xb = x.B()
+    let xb : byte = x.B()
 
     let y = NestedTest<int>()
-    let ya = y.A()
+    let ya : byte = y.A()
 
     let x1 = new NestedTest()
-    let x1b = x.B()
+    let x1b : byte = x1.B()
 
+    let y1 = new NestedTest<int>()
+    let y1a : byte = y1.A()
 
+    let x2 : NestedTest = new NestedTest()
+    let x2b : byte = x2.B()
+
+    let y2 : NestedTest<int> = new NestedTest<int>()
+    let y2a : byte = y2.A()
             """
 
         let csCmpl =

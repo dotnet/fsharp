@@ -743,11 +743,11 @@ let GeneralizeUnionCaseRef (ucref: UnionCaseRef) =
 
 
 /// Add type definitions to the sub-table of the environment indexed by name and arity
-let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair, TyconRef>) =
+let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tinstDeclaringCount: int) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair, TyconRef>) =
     if tcrefs.Length = 0 then tab else
     let entries =
         tcrefs
-        |> Array.map (fun tcref -> Construct.KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
+        |> Array.map (fun tcref -> Construct.KeyTyconByDemangledNameAndArity tcref.LogicalName (tcref.TyparsNoRange |> List.skip tinstDeclaringCount) tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
@@ -1105,15 +1105,22 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
     AddNestedTypesOfTypeToNameEnv infoReader amap ad m nenv ty
     
 and private AddNestedTypesOfTypeToNameEnv infoReader (amap: Import.ImportMap) ad m nenv ty =
-    GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
-    |> AddTyconRefsWithDeclaringTypeInstToNameEnv BulkAdd.No false amap.g amap ad m false nenv
+    let tinst, tcrefs = GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
+    let tcrefGroup =
+        tcrefs
+        |> List.groupBy (fun tcref -> tcref.LogicalName)
+
+    (nenv, tcrefGroup)
+    ||> List.fold (fun nenv (_, tcrefs) ->
+        AddTyconRefsWithDeclaringTypeInstToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv (tinst, tcrefs))
 
 and private AddTyconRefsWithDeclaringTypeInstToNameEnv bulkAddMode ownDefinition g amap ad m root nenv (tinstDeclaring: TypeInst, tcrefs: TyconRef list) =
-    let nenv = AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
-    (nenv, tcrefs)
-    ||> List.fold (fun nenv tcref ->
-        if tinstDeclaring.IsEmpty then nenv
-        else { nenv with eUnqualifiedTyconDeclaringTypeInsts = nenv.eUnqualifiedTyconDeclaringTypeInsts.Add tcref tinstDeclaring })
+    let nenv =
+        (nenv, tcrefs)
+        ||> List.fold (fun nenv tcref ->
+            if tinstDeclaring.IsEmpty then nenv
+            else { nenv with eUnqualifiedTyconDeclaringTypeInsts = nenv.eUnqualifiedTyconDeclaringTypeInsts.Add tcref tinstDeclaring })
+    AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tinstDeclaring.Length tcrefs
 
 and private AddCSharpStyleExtensionMembersOfTypeToNameEnv (amap: Import.ImportMap) m nenv ty =
     match tryTcrefOfAppTy amap.g ty with
@@ -1211,7 +1218,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
     nenv
 
 /// Add a set of type definitions to the name resolution environment
-and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs =
+and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tinstDeclaringCount tcrefs =
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap ad m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
@@ -1219,7 +1226,7 @@ and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
     { env with
         eFullyQualifiedTyconsByDemangledNameAndArity =
             if root then
-                AddTyconsByDemangledNameAndArity bulkAddMode tcrefs nenv.eFullyQualifiedTyconsByDemangledNameAndArity
+                AddTyconsByDemangledNameAndArity bulkAddMode tinstDeclaringCount tcrefs nenv.eFullyQualifiedTyconsByDemangledNameAndArity
             else
                 nenv.eFullyQualifiedTyconsByDemangledNameAndArity
         eFullyQualifiedTyconsByAccessNames =
@@ -1228,7 +1235,7 @@ and AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
             else
                 nenv.eFullyQualifiedTyconsByAccessNames
         eTyconsByDemangledNameAndArity =
-            AddTyconsByDemangledNameAndArity bulkAddMode tcrefs nenv.eTyconsByDemangledNameAndArity
+            AddTyconsByDemangledNameAndArity bulkAddMode tinstDeclaringCount tcrefs nenv.eTyconsByDemangledNameAndArity
         eTyconsByAccessNames =
             AddTyconByAccessNames bulkAddMode tcrefs nenv.eTyconsByAccessNames }
 
@@ -1312,7 +1319,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
            let tcref = modref.NestedTyconRef tycon
            if IsEntityAccessible amap m ad tcref then Some tcref else None)
 
-    let nenv = (nenv, tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap ad m false
+    let nenv = (nenv, 0, tcrefs) |||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap ad m false
     let vrefs =
         mty.AllValsAndMembers.ToList()
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
