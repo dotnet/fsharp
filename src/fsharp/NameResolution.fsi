@@ -160,8 +160,8 @@ type NameResolutionEnv =
       /// Values and Data Tags available by unqualified name 
       eUnqualifiedItems: LayeredMap<string,Item>
 
-      /// Type arguments that are associated with an unqualified type item
-      eUnqualifiedTyconDeclaringTypeInsts: TyconRefMap<TypeInst>
+      /// Enclosing type instantiations that are associated with an unqualified type item
+      eUnqualifiedEnclosingTypeInsts: TyconRefMap<TypeInst>
 
       /// Data Tags and Active Pattern Tags available by unqualified name 
       ePatItems: NameMap<Item>
@@ -286,6 +286,7 @@ type TypeNameResolutionInfo =
   | TypeNameResolutionInfo of TypeNameResolutionFlag * TypeNameResolutionStaticArgsInfo
   static member Default : TypeNameResolutionInfo
   static member ResolveToTypeRefs : TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
+  member NumStaticArgs : int
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess; Struct>]
@@ -550,8 +551,8 @@ val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResol
 /// Resolve a long identifier to a type definition
 val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
 
-/// Resolve a long identifier to a type definition with declaring type instantiations.
-val internal ResolveTypeLongIdentAndDeclaringTypeInst : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TypeInst * TyconRef>
+/// Resolve a long identifier to a type definition with enclosing type instantiations.
+val internal ResolveTypeLongIdentAndEnclosingTypeInst : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TypeInst * TyconRef>
 
 /// Resolve a long identifier to a field
 val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> Ident list -> FieldResolution list

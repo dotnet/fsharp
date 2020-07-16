@@ -334,8 +334,8 @@ type NameResolutionEnv =
       /// Values, functions, methods and other items available by unqualified name
       eUnqualifiedItems: UnqualifiedItems
 
-      /// Type instantiations that are associated with an unqualified type item
-      eUnqualifiedTyconDeclaringTypeInsts: TyconRefMap<TypeInst>
+      /// Enclosing type instantiations that are associated with an unqualified type item
+      eUnqualifiedEnclosingTypeInsts: TyconRefMap<TypeInst>
 
       /// Data Tags and Active Pattern Tags available by unqualified name
       ePatItems: NameMap<Item>
@@ -395,7 +395,7 @@ type NameResolutionEnv =
           eFullyQualifiedModulesAndNamespaces = Map.empty
           eFieldLabels = Map.empty
           eUnqualifiedItems = LayeredMap.Empty
-          eUnqualifiedTyconDeclaringTypeInsts = TyconRefMap.Empty
+          eUnqualifiedEnclosingTypeInsts = TyconRefMap.Empty
           ePatItems = Map.empty
           eTyconsByAccessNames = LayeredMultiMap.Empty
           eTyconsByDemangledNameAndArity = LayeredMap.Empty
@@ -833,6 +833,7 @@ type TypeNameResolutionInfo =
     member x.StaticArgsInfo = match x with TypeNameResolutionInfo(_, staticResInfo) -> staticResInfo
     member x.ResolutionFlag = match x with TypeNameResolutionInfo(flag, _) -> flag
     member x.DropStaticArgsInfo = match x with TypeNameResolutionInfo(flag2, _) -> TypeNameResolutionInfo(flag2, TypeNameResolutionStaticArgsInfo.Indefinite)
+    member x.NumStaticArgs = x.StaticArgsInfo.NumStaticArgs
 
 /// A flag which indicates if direct references to generated provided types are allowed. Normally these
 /// are disallowed.
@@ -1112,14 +1113,14 @@ and private AddNestedTypesOfTypeToNameEnv infoReader (amap: Import.ImportMap) ad
 
     (nenv, tcrefGroup)
     ||> List.fold (fun nenv (_, tcrefs) ->
-        AddTyconRefsWithDeclaringTypeInstToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv (tinst, tcrefs))
+        AddTyconRefsWithEnclosingTypeInstToNameEnv BulkAdd.Yes false amap.g amap ad m false nenv (tinst, tcrefs))
 
-and private AddTyconRefsWithDeclaringTypeInstToNameEnv bulkAddMode ownDefinition g amap ad m root nenv (tinstDeclaring: TypeInst, tcrefs: TyconRef list) =
+and private AddTyconRefsWithEnclosingTypeInstToNameEnv bulkAddMode ownDefinition g amap ad m root nenv (tinstEnclosing: TypeInst, tcrefs: TyconRef list) =
     let nenv =
         (nenv, tcrefs)
         ||> List.fold (fun nenv tcref ->
-            if tinstDeclaring.IsEmpty then nenv
-            else { nenv with eUnqualifiedTyconDeclaringTypeInsts = nenv.eUnqualifiedTyconDeclaringTypeInsts.Add tcref tinstDeclaring })
+            if tinstEnclosing.IsEmpty then nenv
+            else { nenv with eUnqualifiedEnclosingTypeInsts = nenv.eUnqualifiedEnclosingTypeInsts.Add tcref tinstEnclosing })
     AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
 
 and private AddCSharpStyleExtensionMembersOfTypeToNameEnv (amap: Import.ImportMap) m nenv ty =
@@ -1387,11 +1388,11 @@ let FreshenTycon (ncenv: NameResolver) m (tcref: TyconRef) =
     improvedTy
 
 /// Convert a reference to a named type into a type that includes
-/// a set of declaring type arguments and a fresh set of inference type variables for the type parameters.
-let FreshenTyconWithDeclaringTypeInst (ncenv: NameResolver) m (tcrefNested: TyconRef) (tinstDeclaring: TypeInst) =
-    let tps = ncenv.InstantiationGenerator m (tcrefNested.Typars m)
-    let tinstNested = List.skip tinstDeclaring.Length tps
-    let improvedTy = ncenv.g.decompileType tcrefNested (tinstDeclaring @ tinstNested)
+/// a set of enclosing type instantiations and a fresh set of inference type variables for the type parameters.
+let FreshenTyconWithEnclosingTypeInst (ncenv: NameResolver) m (tinstEnclosing: TypeInst) (tcref: TyconRef) =
+    let tps = ncenv.InstantiationGenerator m (tcref.Typars m)
+    let tinst = List.skip tinstEnclosing.Length tps
+    let improvedTy = ncenv.g.decompileType tcref (tinstEnclosing @ tinst)
     improvedTy
 
 /// Convert a reference to a union case into a UnionCaseInfo that includes
@@ -2075,7 +2076,7 @@ let CheckAllTyparsInferrable amap m item =
 /// ultimately calls ResolutionInfo.Method to record it for
 /// later use by Visual Studio.
 type ResolutionInfo =
-    | ResolutionInfo of (*entityPath, reversed*)(range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit) * tinstDeclaring: TypeInst
+    | ResolutionInfo of (*entityPath, reversed*)(range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit) * tinstEnclosing: TypeInst
 
     static member SendEntityPathToSink(sink, ncenv: NameResolver, nenv, occ, ad, ResolutionInfo(entityPath, warnings, _), typarChecker) =
         entityPath |> List.iter (fun (m, eref: EntityRef) ->
@@ -2093,20 +2094,20 @@ type ResolutionInfo =
         ResolutionInfo([], (fun _ -> ()), [])
 
     member x.AddEntity info =
-        let (ResolutionInfo(entityPath, warnings, tinstDeclaring)) = x
-        ResolutionInfo(info :: entityPath, warnings, tinstDeclaring)
+        let (ResolutionInfo(entityPath, warnings, tinstEnclosing)) = x
+        ResolutionInfo(info :: entityPath, warnings, tinstEnclosing)
 
     member x.AddWarning f =
-        let (ResolutionInfo(entityPath, warnings, tinstDeclaring)) = x
-        ResolutionInfo(entityPath, (fun typarChecker -> f typarChecker; warnings typarChecker), tinstDeclaring)
+        let (ResolutionInfo(entityPath, warnings, tinstEnclosing)) = x
+        ResolutionInfo(entityPath, (fun typarChecker -> f typarChecker; warnings typarChecker), tinstEnclosing)
 
-    member x.AddDeclaringTypeInst tinst =
-        let (ResolutionInfo(entityPath, warnings, tinstDeclaring)) = x
-        ResolutionInfo(entityPath, warnings, tinstDeclaring @ tinst)
+    member x.WithEnclosingTypeInst tinstEnclosing =
+        let (ResolutionInfo(entityPath, warnings, _)) = x
+        ResolutionInfo(entityPath, warnings, tinstEnclosing)
 
-    member x.DeclaringTypeInst =
+    member x.EnclosingTypeInst =
         match x with
-        | ResolutionInfo(tinstDeclaring=tinstDeclaring) -> tinstDeclaring
+        | ResolutionInfo(tinstEnclosing=tinstEnclosing) -> tinstEnclosing
 
 /// Resolve ambiguities between types overloaded by generic arity, based on number of type arguments.
 /// Also check that we're not returning direct references to generated provided types.
@@ -2140,8 +2141,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
                 // no explicit type instantiation
                 typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo &&
                 // some type arguments required on all types (note sorted by typar count above)
-                not (List.isEmpty (tcref.Typars m)) &&
-                ((tcref.Typars m).Length - resInfo.DeclaringTypeInst.Length) > 0 &&
+                ((tcref.Typars m).Length - resInfo.EnclosingTypeInst.Length) > 0 &&
                 // plausible types have different arities
                 (tcrefs |> Seq.distinctBy (fun (_, tcref) -> tcref.Typars(m).Length) |> Seq.length > 1)  ->
             [ for (resInfo, tcref) in tcrefs do
@@ -2661,24 +2661,25 @@ let ChooseUnqualifiedTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident
     let tcrefs = 
         tcrefs 
         |> List.map (fun tcref -> 
-            match nenv.eUnqualifiedTyconDeclaringTypeInsts.TryFind tcref with
+            match nenv.eUnqualifiedEnclosingTypeInsts.TryFind tcref with
             | None ->
                 (resInfo, tcref)
             | Some tinst ->
-                (resInfo.AddDeclaringTypeInst tinst, tcref))
+                (resInfo.WithEnclosingTypeInst tinst, tcref))
         |> List.filter (fun (resInfo, tcref) ->
             typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
-            typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length - resInfo.DeclaringTypeInst.Length)
+            typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length - resInfo.EnclosingTypeInst.Length)
+
     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
 
     let tys = 
         tcrefs 
         |> List.map (fun (resInfo, tcref) -> 
-            match resInfo.DeclaringTypeInst with
+            match resInfo.EnclosingTypeInst with
             | [] ->
                 (resInfo, FreshenTycon ncenv m tcref)
-            | tinstDeclaring ->
-                (resInfo, FreshenTyconWithDeclaringTypeInst ncenv m tcref tinstDeclaring))
+            | tinstEnclosing ->
+                (resInfo, FreshenTyconWithEnclosingTypeInst ncenv m tinstEnclosing tcref))
 
     match typeNameResInfo.ResolutionFlag with
     | ResolveTypeNamesToCtors ->
@@ -3187,8 +3188,8 @@ let rec ResolveTypeLongIdentPrim sink (ncenv: NameResolver) occurence first full
                 let resInfo =
                     match fullyQualified with
                     | OpenQualified ->
-                        match nenv.eUnqualifiedTyconDeclaringTypeInsts.TryFind res with
-                        | Some tinst -> ResolutionInfo.Empty.AddDeclaringTypeInst tinst
+                        match nenv.eUnqualifiedEnclosingTypeInsts.TryFind res with
+                        | Some tinst -> ResolutionInfo.Empty.WithEnclosingTypeInst tinst
                         | _ -> ResolutionInfo.Empty
                     | _ ->
                         ResolutionInfo.Empty
@@ -3285,9 +3286,9 @@ let ResolveTypeLongIdent sink ncenv occurence fullyQualified nenv ad lid staticR
     let res = ResolveTypeLongIdentAux sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk
     (res |?> snd)
 
-let ResolveTypeLongIdentAndDeclaringTypeInst sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk =
+let ResolveTypeLongIdentAndEnclosingTypeInst sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk =
     let res = ResolveTypeLongIdentAux sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk
-    (res |?> fun (resInfo, tcref) -> (resInfo.DeclaringTypeInst, tcref))
+    (res |?> fun (resInfo, tcref) -> (resInfo.EnclosingTypeInst, tcref))
 
 //-------------------------------------------------------------------------
 // Resolve F#/IL "." syntax in records etc.
