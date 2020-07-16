@@ -370,15 +370,13 @@ module Test =
     let ``Open generic type and use nested types as unqualified`` () =
         let csharpSource =
             """
-using System;
-
 namespace CSharpTest
 {
-    public static class Test<T>
+    public class Test<T>
     {
         public class NestedTest
         {
-            public T A()
+            public T B()
             {
                 return default(T);
             }
@@ -386,11 +384,15 @@ namespace CSharpTest
 
         public class NestedTest<U>
         {
-            public U B()
+            public T A()
             {
-                return default(U);
+                return default(T);
             }
         }
+    }
+
+    public class Test
+    {
     }
 }
             """
@@ -400,14 +402,30 @@ namespace CSharpTest
 namespace FSharpTest
 
 open System
-open type CSharpTest.Test<byte>
 
 module Test =
-    let x = NestedTest<byte, int>()
+
+    let x : CSharpTest.Test<byte>.NestedTest = CSharpTest.Test<byte>.NestedTest()
+    let y : CSharpTest.Test<byte>.NestedTest<float> = CSharpTest.Test<byte>.NestedTest<float>()
+
+    let t1 = CSharpTest.Test()
+
+    let t2 = CSharpTest.Test<int>()
+
+open type CSharpTest.Test<byte>
+
+module Test2 =
+
+    let x = NestedTest()
     let xb = x.B()
 
-    let y = NestedTest<byte>()
+    let y = NestedTest<int>()
     let ya = y.A()
+
+    let x1 = new NestedTest()
+    let x1b = x.B()
+
+
             """
 
         let csCmpl =
@@ -416,6 +434,23 @@ module Test =
 
         let fsCmpl =
             Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
+    let ``Open generic type and use nested types as unqualified 2`` () =
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open type System.Collections.Generic.List<int>
+
+module Test =
+    let e2 = new Enumerator()
+            """
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|])
 
         CompilerAssert.Compile(fsCmpl)
 

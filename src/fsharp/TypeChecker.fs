@@ -4659,7 +4659,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
     | SynType.LongIdent(LongIdentWithDots(tc, _) as lidwd) -> 
         let m = lidwd.Range
         let ad = env.eAccessRights
-        let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
+        let tinstDeclaring, tcref = ForceRaise(ResolveTypeLongIdentAndDeclaringTypeInst cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
         match optKind, tcref.TypeOrMeasureKind with
         | Some TyparKind.Type, TyparKind.Measure ->
             error(Error(FSComp.SR.tcExpectedTypeNotUnitOfMeasure(), m)) 
@@ -4670,7 +4670,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
         | _, TyparKind.Measure ->
             TType_measure (Measure.Con tcref), tpenv
         | _, TyparKind.Type ->
-            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref [] []
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinstDeclaring []
 
     | SynType.App (StripParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, postfix, m) -> 
         let ad = env.eAccessRights
@@ -5131,7 +5131,7 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty t
     if not (isAppTy cenv.g ty) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
     match ty with 
     | TType_app(tcref, tinst) -> 
-        let pathTypeArgs = List.truncate (max (tinst.Length - tcref.Typars(mWholeTypeApp).Length) 0) tinst
+        let pathTypeArgs = tinst |> List.takeWhile (not << isTyparTy cenv.g)
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs 
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
 
@@ -9584,7 +9584,8 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             // Report information about the whole expression including type arguments to VS
             let item = Item.Types(nm, [ty])
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
-            TcItemThen cenv overallTy env tpenv (ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId IgnoreOverrides true) otherDelayed
+            let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
+            TcItemThen cenv overallTy env tpenv (ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true) otherDelayed
             
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: _delayed') ->
             // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
@@ -10044,7 +10045,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     if isTyparTy cenv.g objExprTy then 
         ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css env.DisplayEnv mExprAndLongId (freeInTypeLeftToRight cenv.g false objExprTy)
     
-    let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId findFlag false
+    let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId TypeNameResolutionInfo.Default findFlag false
     let mExprAndItem = unionRanges mObjExpr mItem
     let delayed = delayRest rest mExprAndItem delayed
 
