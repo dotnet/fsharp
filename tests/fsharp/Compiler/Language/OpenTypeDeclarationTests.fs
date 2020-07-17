@@ -462,6 +462,98 @@ module Test =
         CompilerAssert.Compile(fsCmpl)
 
     [<Test>]
+    let ``Open generic type and use nested types as unqualified 3`` () =
+        let csharpSource =
+            """
+namespace CSharpTest
+{
+    public class Test<T>
+    {
+        public class NestedTest
+        {
+            public class NestedNestedTest
+            {
+                public T A()
+                {
+                    return default(T);
+                }
+            }
+
+            public class NestedNestedTest<U>
+            {
+                public U B()
+                {
+                    return default(U);
+                }
+            }
+        }
+
+        public class NestedTest<U>
+        {
+            public class NestedNestedTest
+            {
+                public U C()
+                {
+                    return default(U);
+                }
+            }
+
+            public class NestedNestedTest<R>
+            {
+                public R D()
+                {
+                    return default(R);
+                }
+            }
+        }
+    }
+}
+            """
+
+        let fsharpSource =
+            """
+namespace FSharpTest
+
+open System
+
+module Test =
+
+//    let a : CSharpTest.Test<byte>.NestedTest = CSharpTest.Test<byte>.NestedTest()
+  //  let b : CSharpTest.Test<byte>.NestedTest<float> = CSharpTest.Test<byte>.NestedTest<float>()
+
+    let c : CSharpTest.Test<byte>.NestedTest.NestedNestedTest = CSharpTest.Test<byte>.NestedTest.NestedNestedTest()
+//    let d : CSharpTest.Test<byte>.NestedTest.NestedNestedTest<float> = CSharpTest.Test<byte>.NestedTest.NestedNestedTest<float>()
+
+//    let e : CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest = CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest()
+//    let f : CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest<int> = CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest<int>()
+
+//open type CSharpTest.Test<byte>
+
+//module Test2 =
+
+//    let a : NestedTest.NestedNestedTest = NestedTest.NestedNestedTest()
+//    let aa : byte = x.A()
+
+//    let b : NestedTest.NestedNestedTest<float> = NestedTest.NestedNestedTest<float>()
+//    let bb : float = b.B()
+
+//    let c : NestedTest<float>.NestedNestedTest = NestedTest<float>.NestedNestedTest()
+//    let cc : float = c.C()
+
+//    let d : NestedTest<float>.NestedNestedTest<int> = NestedTest<float>.NestedNestedTest<int>()
+//    let dd : int = d.D()
+            """
+
+        let csCmpl =
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            |> CompilationReference.Create
+
+        let fsCmpl =
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+
+        CompilerAssert.Compile(fsCmpl)
+
+    [<Test>]
     let ``Using the 'open' declaration on a possible type identifier - Error`` () =
         let csharpSource =
             """

@@ -2458,10 +2458,10 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
     let nestedSearchAccessible =
         match rest with
         | [] ->
-            let tinstDeclaring, tcrefsNested = GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, Some nm, typeNameResInfo.StaticArgsInfo, true, m) ty
+            let tinstEnclosing, tcrefsNested = GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, Some nm, typeNameResInfo.StaticArgsInfo, true, m) ty
             let tcrefsNested = tcrefsNested |> List.map (fun tcrefNested -> (resInfo, tcrefNested))
             let tcrefsNested = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefsNested, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
-            let nestedTypes = tcrefsNested |> List.map (fun (_, tcrefNested) -> MakeNestedType ncenv tinstDeclaring m tcrefNested)
+            let nestedTypes = tcrefsNested |> List.map (fun (_, tcrefNested) -> MakeNestedType ncenv tinstEnclosing m tcrefNested)
             if isNil nestedTypes then
                 NoResultsOrUsefulErrors
             else
@@ -3099,7 +3099,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv: NameResolver) (typeNameResInf
             let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, id.idRange, ad, id.idText, TypeNameResolutionStaticArgsInfo.Indefinite, tcref)
             if isNil tcrefs then NoResultsOrUsefulErrors else
             let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo, tcref))
-            let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo.DropStaticArgsInfo, genOk, m)
+            let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, genOk, m)
             match tcrefs with
             | _ :: _ -> tcrefs |> CollectAtMostOneResult (fun (resInfo, tcref) -> ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad resInfo genOk (depth+1) m tcref id2 rest2)
             | [] ->

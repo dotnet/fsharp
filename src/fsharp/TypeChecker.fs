@@ -9584,7 +9584,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) num
             let item = Item.Types(nm, [ty])
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
-            TcItemThen cenv overallTy env tpenv (ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true) (argsOfAppTy cenv.g ty).Length otherDelayed
+            TcItemThen cenv overallTy env tpenv (ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true) typeNameResInfo.NumStaticArgs otherDelayed
             
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: _delayed') ->
             // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
