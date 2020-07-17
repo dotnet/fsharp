@@ -2657,19 +2657,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
 
 /// An identifier has resolved to a type name in an expression (corresponding to one or more TyconRefs).
 /// Return either a set of constructors (later refined by overload resolution), or a set of TyconRefs.
-let ChooseUnqualifiedTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameResInfo: TypeNameResolutionInfo, resInfo: ResolutionInfo, tcrefs) =
-    let tcrefs = 
-        tcrefs 
-        |> List.map (fun tcref -> 
-            match nenv.eUnqualifiedEnclosingTypeInsts.TryFind tcref with
-            | None ->
-                (resInfo, tcref)
-            | Some tinst ->
-                (resInfo.WithEnclosingTypeInst tinst, tcref))
-        |> List.filter (fun (resInfo, tcref) ->
-            typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
-            typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length - resInfo.EnclosingTypeInst.Length)
-
+let ChooseUnqualifiedTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameResInfo: TypeNameResolutionInfo, tcrefs) =
     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
 
     let tys = 
@@ -2689,11 +2677,23 @@ let ChooseUnqualifiedTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident
     | ResolveTypeNamesToTypeRefs ->
         success (tys |> List.map (fun (resInfo, ty) -> (resInfo, Item.Types(id.idText, [ty]))))
 
+/// Resolves the given tycons as if they used in an unqualified environment.
+/// For each tycon, return resolution info that could contain enclosing type instantations.
+let ResolveUnqualifiedTyconRefs nenv tcrefs =
+    let resInfo = ResolutionInfo.Empty
+
+    tcrefs 
+    |> List.map (fun tcref -> 
+        match nenv.eUnqualifiedEnclosingTypeInsts.TryFind tcref with
+        | None ->
+            (resInfo, tcref)
+        | Some tinst ->
+            (resInfo.WithEnclosingTypeInst tinst, tcref))
+
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers
 /// that may represent further actions, e.g. further lookups.
 let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified m ad nenv (typeNameResInfo: TypeNameResolutionInfo) (id: Ident) (rest: Ident list) isOpenDecl =
-    let resInfo = ResolutionInfo.Empty
     let canSuggestThisItem (item:Item) =
         // All items can be suggested except nameof when it comes from FSharp.Core.dll and the nameof feature is not enabled
         match item with
@@ -2721,14 +2721,16 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                 // The name is a type name and it has not been clobbered by some other name
                 | true, Item.UnqualifiedType tcrefs ->
 
-                    //// Do not use type names from the environment if an explicit type instantiation is
-                    //// given and the number of type parameters do not match
-                    //let tcrefs =
-                    //    tcrefs |> List.filter (fun tcref ->
-                    //        typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
-                    //        typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length)
+                    // Do not use type names from the environment if an explicit type instantiation is
+                    // given and the number of type parameters do not match
+                    let tcrefs =
+                        tcrefs 
+                        |> ResolveUnqualifiedTyconRefs nenv
+                        |> List.filter (fun (resInfo, tcref) ->
+                            typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
+                            typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length - resInfo.EnclosingTypeInst.Length)
 
-                    let search = ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
+                    let search = ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
                     match AtMostOneResult m search with
                     | Result _ as res ->
                         let resInfo, item = ForceRaise res
@@ -2756,12 +2758,14 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                 let innerSearch =
                     // Check if it's a type name, e.g. a constructor call or a type instantiation
                     let ctorSearch =
-                        let tcrefs = LookupTypeNameInEnvMaybeHaveArity fullyQualified id.idText typeNameResInfo nenv
-                        ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
+                        let tcrefs = 
+                            LookupTypeNameInEnvMaybeHaveArity fullyQualified id.idText typeNameResInfo nenv
+                            |> ResolveUnqualifiedTyconRefs nenv
+                        ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
 
                     let implicitOpSearch() =
                         if IsMangledOpName id.idText then
-                            success [(resInfo, Item.ImplicitOp(id, ref None))]
+                            success [(ResolutionInfo.Empty, Item.ImplicitOp(id, ref None))]
                         else
                             NoResultsOrUsefulErrors
 
@@ -2835,7 +2839,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                   if isNil tcrefs then NoResultsOrUsefulErrors else
                   match rest with
                   | id2 :: rest2 ->
-                    let tcrefs = tcrefs |> List.map (fun tcref -> (resInfo, tcref))
+                    let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
                     let tcrefs =
                        let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.Indefinite)
                        CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
@@ -2852,7 +2856,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                           match nenv.eUnqualifiedItems.TryGetValue id.idText with
                           | true, Item.UnqualifiedType _
                           | false, _ -> NoResultsOrUsefulErrors
-                          | true, res -> OneSuccess (resInfo, FreshenUnqualifiedItem ncenv m res, rest)
+                          | true, res -> OneSuccess (ResolutionInfo.Empty, FreshenUnqualifiedItem ncenv m res, rest)
 
                   moduleSearch ad () +++ tyconSearch ad +++ envSearch
 
