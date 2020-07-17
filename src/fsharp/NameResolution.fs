@@ -2383,6 +2383,12 @@ let GetRecordLabelsForType g nenv ty =
           result.Add k |> ignore
     result
 
+let ResolveNestedTypes (ncenv: NameResolver) (resInfo: ResolutionInfo) ad nm (typeNameResInfo: TypeNameResolutionInfo) m ty =
+    let tinstEnclosing, tcrefsNested = GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, Some nm, typeNameResInfo.StaticArgsInfo, true, m) ty
+    let tcrefsNested = tcrefsNested |> List.map (fun tcrefNested -> (resInfo, tcrefNested))
+    let tcrefsNested = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefsNested, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
+    tcrefsNested |> List.map (fun (_, tcrefNested) -> MakeNestedType ncenv tinstEnclosing m tcrefNested)
+
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
 let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInfo: ResolutionInfo) depth m ad (id: Ident) (rest: Ident list) findFlag (typeNameResInfo: TypeNameResolutionInfo) ty =
@@ -2458,10 +2464,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
     let nestedSearchAccessible =
         match rest with
         | [] ->
-            let tinstEnclosing, tcrefsNested = GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, Some nm, typeNameResInfo.StaticArgsInfo, true, m) ty
-            let tcrefsNested = tcrefsNested |> List.map (fun tcrefNested -> (resInfo, tcrefNested))
-            let tcrefsNested = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefsNested, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
-            let nestedTypes = tcrefsNested |> List.map (fun (_, tcrefNested) -> MakeNestedType ncenv tinstEnclosing m tcrefNested)
+            let nestedTypes = ResolveNestedTypes ncenv resInfo ad nm typeNameResInfo m ty
             if isNil nestedTypes then
                 NoResultsOrUsefulErrors
             else
@@ -2473,7 +2476,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 | ResolveTypeNamesToTypeRefs ->
                     OneSuccess (resInfo, Item.Types (nm, nestedTypes), rest)
         | id2 :: rest2 ->
-            let nestedTypes = GetNestedTypesOfType (ad, ncenv, Some nm, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
+            let nestedTypes = ResolveNestedTypes ncenv resInfo ad nm (TypeNameResolutionInfo.ResolveToTypeRefs TypeNameResolutionStaticArgsInfo.Indefinite) m ty
             ResolveLongIdentInNestedTypes ncenv nenv lookupKind resInfo (depth+1) id m ad id2 rest2 findFlag typeNameResInfo nestedTypes
 
     match nestedSearchAccessible with
@@ -2536,12 +2539,17 @@ let ResolveLongIdentInType sink ncenv nenv lookupKind m ad id findFlag typeNameR
     ResolutionInfo.SendEntityPathToSink (sink, ncenv, nenv, ItemOccurence.UseInType, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
     item, rest
 
-let private ResolveLongIdentInTyconRef (ncenv: NameResolver) nenv lookupKind resInfo depth m ad id rest typeNameResInfo tcref =
+let private ResolveLongIdentInTyconRef (ncenv: NameResolver) nenv lookupKind (resInfo: ResolutionInfo) depth m ad id rest typeNameResInfo tcref =
 #if !NO_EXTENSIONTYPING
     // No dotting through type generators to get to a member!
     CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
 #endif
-    let ty = FreshenTycon ncenv m tcref
+    let ty = 
+        match resInfo.EnclosingTypeInst with
+        | [] ->
+            FreshenTycon ncenv m tcref
+        | tinstEnclosing ->
+            FreshenTyconWithEnclosingTypeInst ncenv m tinstEnclosing tcref
     ty |> ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id rest IgnoreOverrides typeNameResInfo
 
 let private ResolveLongIdentInTyconRefs atMostOne (ncenv: NameResolver) nenv lookupKind depth m ad id rest typeNameResInfo idRange tcrefs =
@@ -2657,7 +2665,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
 
 /// An identifier has resolved to a type name in an expression (corresponding to one or more TyconRefs).
 /// Return either a set of constructors (later refined by overload resolution), or a set of TyconRefs.
-let ChooseUnqualifiedTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameResInfo: TypeNameResolutionInfo, tcrefs) =
+let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameResInfo: TypeNameResolutionInfo, tcrefs) =
     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
 
     let tys = 
@@ -2730,7 +2738,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo ||
                             typeNameResInfo.StaticArgsInfo.NumStaticArgs = tcref.Typars(m).Length - resInfo.EnclosingTypeInst.Length)
 
-                    let search = ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
+                    let search = ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
                     match AtMostOneResult m search with
                     | Result _ as res ->
                         let resInfo, item = ForceRaise res
@@ -2761,7 +2769,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         let tcrefs = 
                             LookupTypeNameInEnvMaybeHaveArity fullyQualified id.idText typeNameResInfo nenv
                             |> ResolveUnqualifiedTyconRefs nenv
-                        ChooseUnqualifiedTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
+                        ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
 
                     let implicitOpSearch() =
                         if IsMangledOpName id.idText then
@@ -2836,12 +2844,17 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               // This seems strange since we would expect in the vast majority of cases tcrefs is empty here.
               let tyconSearch ad () =
                   let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
+
                   if isNil tcrefs then NoResultsOrUsefulErrors else
                   match rest with
                   | id2 :: rest2 ->
-                    let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty, tcref))
+                    let tcrefs = 
+                        tcrefs 
+                        |> ResolveUnqualifiedTyconRefs nenv
+                        |> List.filter (fun (resInfo, tcref) ->
+                            typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo &&
+                            tcref.Typars(m).Length - resInfo.EnclosingTypeInst.Length = 0)
                     let tcrefs =
-                       let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.Indefinite)
                        CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
                     ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Expr 1 m ad id2 rest2 typeNameResInfo id.idRange tcrefs
                   | _ ->
