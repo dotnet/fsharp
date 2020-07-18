@@ -3791,10 +3791,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("FailurePattern")>]
         let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<System.Exception>) then Some error.Message else None
 
-        [<CompiledName("Not")>]
-        let inline not (value: bool) = (# "ceq" value false : bool #)
-           
-
         let inline (<) x y = GenericLessThan x y
         let inline (>) x y = GenericGreaterThan x y
         let inline (>=) x y = GenericGreaterOrEqual x y
@@ -4742,6 +4738,9 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Identity")>]
         let id x = x
+
+        [<CompiledName("Not")>]
+        let inline not (value: bool) = match value with true -> false | _ -> true
 
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.
