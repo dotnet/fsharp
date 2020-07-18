@@ -2158,7 +2158,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
                 let resInfo = resInfo.AddWarning (fun _typarChecker -> errorR(Error(FSComp.SR.nrTypeInstantiationNeededToDisambiguateTypesWithSameName(tcref.DisplayName, tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m)))
                 yield (resInfo, tcref) ]
 
-        | [(resInfo, tcref)] when  typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo && not (List.isEmpty (tcref.Typars m)) && typeNameResInfo.ResolutionFlag = ResolveTypeNamesToTypeRefs ->
+        | [(resInfo, tcref)] when  typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo && ((tcref.Typars m).Length - resInfo.EnclosingTypeInst.Length) > 0 && typeNameResInfo.ResolutionFlag = ResolveTypeNamesToTypeRefs ->
             let resInfo =
                 resInfo.AddWarning (fun (ResultTyparChecker typarChecker) ->
                     if not (typarChecker()) then
@@ -2556,10 +2556,8 @@ let private ResolveLongIdentInTyconRef (ncenv: NameResolver) nenv lookupKind (re
 #endif
     let ty = 
         match resInfo.EnclosingTypeInst with
-        | [] ->
-            FreshenTycon ncenv m tcref
-        | tinstEnclosing ->
-            FreshenTyconWithEnclosingTypeInst ncenv m tinstEnclosing tcref
+        | [] -> FreshenTycon ncenv m tcref
+        | tinstEnclosing -> FreshenTyconWithEnclosingTypeInst ncenv m tinstEnclosing tcref
     ty |> ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id rest IgnoreOverrides typeNameResInfo
 
 let private ResolveLongIdentInTyconRefs atMostOne (ncenv: NameResolver) nenv lookupKind depth m ad id rest typeNameResInfo idRange tcrefs =
@@ -2610,7 +2608,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
             | id2 :: rest2 ->
 
                 let tcrefs =
-                    let typeNameResInfo = TypeNameResolutionInfo (ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.Indefinite)
+                    let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
                     CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
 
                 ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Expr (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs
@@ -2695,7 +2693,7 @@ let ChooseTyconRefInExpr (ncenv: NameResolver, m, ad, nenv, id: Ident, typeNameR
     | ResolveTypeNamesToTypeRefs ->
         success (tys |> List.map (fun (resInfo, ty) -> (resInfo, Item.Types(id.idText, [ty]))))
 
-/// Resolves the given tycons as if they used in an unqualified environment.
+/// Resolves the given tycons.
 /// For each tycon, return resolution info that could contain enclosing type instantations.
 let ResolveUnqualifiedTyconRefs nenv tcrefs =
     let resInfo = ResolutionInfo.Empty
@@ -2860,6 +2858,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                   | id2 :: rest2 ->
                     let tcrefs = ResolveUnqualifiedTyconRefs nenv tcrefs
                     let tcrefs =
+                       let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
                        CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
                     ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Expr 1 m ad id2 rest2 typeNameResInfo id.idRange tcrefs
                   | _ ->
