@@ -516,32 +516,52 @@ namespace FSharpTest
 
 open System
 
-//module Test =
+module Test =
 
-//    let a : CSharpTest.Test<byte>.NestedTest = CSharpTest.Test<byte>.NestedTest()
-//    let b : CSharpTest.Test<byte>.NestedTest<float> = CSharpTest.Test<byte>.NestedTest<float>()
+    let a : CSharpTest.Test<byte>.NestedTest = CSharpTest.Test<byte>.NestedTest()
+    let b : CSharpTest.Test<byte>.NestedTest<float> = CSharpTest.Test<byte>.NestedTest<float>()
 
-//    let c : CSharpTest.Test<byte>.NestedTest.NestedNestedTest = CSharpTest.Test<byte>.NestedTest.NestedNestedTest()
-//    let d : CSharpTest.Test<byte>.NestedTest.NestedNestedTest<float> = CSharpTest.Test<byte>.NestedTest.NestedNestedTest<float>()
+    let c : CSharpTest.Test<byte>.NestedTest.NestedNestedTest = CSharpTest.Test<byte>.NestedTest.NestedNestedTest()
+    let d : CSharpTest.Test<byte>.NestedTest.NestedNestedTest<float> = CSharpTest.Test<byte>.NestedTest.NestedNestedTest<float>()
 
-//    let e : CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest = CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest()
-//    let f : CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest<int> = CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest<int>()
+    let e : CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest = CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest()
+    let f : CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest<int> = CSharpTest.Test<byte>.NestedTest<float>.NestedNestedTest<int>()
 
 open type CSharpTest.Test<byte>
 
 module Test2 =
 
- //   let a = NestedTest.NestedNestedTest()
-   // let aa : byte = a.A()
+    let a : NestedTest.NestedNestedTest = NestedTest.NestedNestedTest()
+    let aa : byte = a.A()
 
     let b : NestedTest.NestedNestedTest<float> = NestedTest.NestedNestedTest<float>()
     let bb : float = b.B()
 
-    //let c : NestedTest<float>.NestedNestedTest = NestedTest<float>.NestedNestedTest()
-    //let cc : float = c.C()
+    let c : NestedTest<float>.NestedNestedTest = NestedTest<float>.NestedNestedTest()
+    let cc : float = c.C()
 
-    //let d : NestedTest<float>.NestedNestedTest<int> = NestedTest<float>.NestedNestedTest<int>()
-    //let dd : int = d.D()
+    let d : NestedTest<float>.NestedNestedTest<int> = NestedTest<float>.NestedNestedTest<int>()
+    let dd : int = d.D()
+
+open type NestedTest
+
+module Test3 =
+
+    let a : NestedNestedTest = NestedNestedTest()
+    let aa : byte = a.A()
+
+    let b : NestedNestedTest<float> = NestedNestedTest<float>()
+    let bb : float = b.B()
+
+open type NestedTest<float>
+
+module Test4 =
+
+    let c : NestedNestedTest = NestedNestedTest()
+    let cc : float = c.C()
+
+    let d : NestedNestedTest<int> = NestedNestedTest<int>()
+    let dd : int = d.D()
             """
 
         let csCmpl =
