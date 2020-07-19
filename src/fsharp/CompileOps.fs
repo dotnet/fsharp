@@ -2104,17 +2104,24 @@ type PackageManagerLine =
         static member AddLineWithKey (packageKey: string) (lt:LType) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
             let path = PackageManagerLine.StripDependencyManagerKey packageKey line
             let map =
-                packageManagerLines
-                |> Map.map(fun key lines ->
-                    if key = packageKey then
-                        lines |> List.append [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
-                    else
-                        lines)
+                let mutable found = false
+                let result =
+                    packageManagerLines
+                    |> Map.map(fun key lines ->
+                        if key = packageKey then
+                            found <- true
+                            lines |> List.append [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
+                        else
+                            lines)
+                if found then
+                    result
+                else
+                    result.Add(packageKey, [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
             map
 
         static member RemoveUnprocessedLines (packageKey: string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
             let map =
-                packageManagerLines 
+                packageManagerLines
                 |> Map.map(fun key lines ->
                     if key = packageKey then
                         lines |> List.filter(fun line -> line.LineStatus=LStatus.Processed)
