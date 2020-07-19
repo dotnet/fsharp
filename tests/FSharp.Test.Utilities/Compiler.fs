@@ -10,10 +10,12 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open NUnit.Framework
 open System
+open System.Collections.Immutable
+open System.IO
 
 module Compiler =
 
-    type SourceType =
+    type TestType =
         | Text of string
         | Path of string
         | Baseline of (string * string)
@@ -24,39 +26,48 @@ module Compiler =
         | IL  of ILCompilationSource
 
     and FSharpCompilationSource =
-        { Source:         SourceType
+        { Source:         TestType
           Options:        string list
           OutputType:     CompileOutput
           SourceKind:     SourceKind
-          Name      :     string option
+          Name:           string option
           IgnoreWarnings: bool
           References:     CompilationUnit list }
 
     and CSharpCompilationSource =
-        { Source:          SourceType
+        { Source:          TestType
           LangVersion:     CSharpLanguageVersion
           TargetFramework: TargetFramework
           Name:            string option
           References:      CompilationUnit list }
 
     and ILCompilationSource =
-        { Source:     SourceType
+        { Source:     TestType
           References: CompilationUnit list}
 
-    // TODO: Do we need separate types for Compilation/Typecheck/Run results?
-    type CompilationOutput = { OutputPath:  string option
-                               Adjust:      int
-                               Errors:      FSharpErrorInfo list
-                               Warnings:    FSharpErrorInfo list }
+    type ErrorSeverity = Error | Warning
+
+    type ErrorInfo = { Severity:           ErrorSeverity
+                       ErrorNumber:        int
+                       StartLineAlternate: int
+                       StartColumn:        int
+                       EndLineAlternate:   int
+                       EndColumn:          int
+                       Message:            string }
+
+    type Output = { OutputPath: string option
+                    Adjust:     int
+                    Errors:     ErrorInfo list
+                    Warnings:   ErrorInfo list }
 
     type CompilationResult =
-        | Success of CompilationOutput
-        | Failure of CompilationOutput
+        | Success of Output
+        | Failure of Output
 
     let private defaultOptions : string list = []
 
     // Not very safe version of reading stuff from file, but we want to fail fast for now if anything goes wrong.
-    let private getSource (src: SourceType) : string =
+    let private getSource (src: TestType) : string =
         match src with
         | Text t -> t
         | Path p -> System.IO.File.ReadAllText p
@@ -82,13 +93,26 @@ module Compiler =
                  Name            = None;
                  References      = [] }
 
-    let private fromFile (_: string) : CompilationUnit = failwith "TODO"
+    let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : (ErrorInfo list * ErrorInfo list) =
+        let toErrorInfo (e: FSharpErrorInfo) : ErrorInfo =
+            { Severity           = if e.Severity = FSharpErrorSeverity.Warning then Warning else Error;
+              ErrorNumber        = e.ErrorNumber;
+              StartLineAlternate = e.StartLineAlternate;
+              StartColumn        = e.StartColumn;
+              EndLineAlternate   = e.EndLineAlternate;
+              EndColumn          = e.EndColumn;
+              Message            = e.Message }
+
+        errors |> List.ofArray
+               |> List.map toErrorInfo
+               |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+               |> List.partition  (fun e -> e.Severity = Error)
 
     let Fsx (source: string) : CompilationUnit =
-        fsFromString source SourceKind.Fsx |> CompilationUnit.FS
+        fsFromString source Fsx |> FS
 
     let FSharp (source: string) : CompilationUnit =
-        fsFromString source SourceKind.Fs |> CompilationUnit.FS
+        fsFromString source Fs |> FS
 
     let baseline (dir: string, file: string) : CompilationUnit =
         match (dir, file) with
@@ -97,44 +121,44 @@ module Compiler =
         | _ -> { Source         = Baseline (dir, file);
                  Options        = defaultOptions;
                  OutputType     = Library;
-                 SourceKind     = SourceKind.Fs;
+                 SourceKind     = Fs;
                  Name           = None;
                  IgnoreWarnings = false;
-                 References     = [] } |> CompilationUnit.FS
+                 References     = [] } |> FS
 
     let CSharp (source: string) : CompilationUnit =
-        csFromString source |> CompilationUnit.CS
+        csFromString source |> CS
 
     let withName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS src -> CompilationUnit.FS { src with Name = Some name }
-        | CS src -> CompilationUnit.CS { src with Name = Some name }
+        | FS src -> FS { src with Name = Some name }
+        | CS src -> CS { src with Name = Some name }
         | IL _ -> failwith "IL Compilation cannot be named."
 
     let withReferences (references: CompilationUnit list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with References = fs.References @ references }
         | CS cs -> CS { cs with References = cs.References @ references }
-        | IL _ -> failwith "TODO: Support references for IL"
+        | IL _ -> failwith "References are not supported in IL"
 
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> CompilationUnit.FS { fs with Options = options }
-        | _ -> failwith "TODO: Implement where applicable."
+        | FS fs -> FS { fs with Options = options }
+        | _ -> failwith "withOptions is only supported n F#"
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> CompilationUnit.FS { fs with OutputType = CompileOutput.Library }
+        | FS fs -> FS { fs with OutputType = CompileOutput.Library }
         | _ -> failwith "TODO: Implement where applicable."
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> CompilationUnit.FS { fs with OutputType = CompileOutput.Exe }
+        | FS fs -> FS { fs with OutputType = CompileOutput.Exe }
         | _ -> failwith "TODO: Implement where applicable."
 
     let ignoreWarnings (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> CompilationUnit.FS { fs with IgnoreWarnings = true }
+        | FS fs -> FS { fs with IgnoreWarnings = true }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
     let private processReferences (references: CompilationUnit list) =
@@ -149,9 +173,10 @@ module Compiler =
                     let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
-                    let source = getSource cs.Source
                     // TODO: reference support for C#, convert CompilationReference to MetadataReference
+                    let source = getSource cs.Source
                     let name = if Option.isSome cs.Name then cs.Name.Value else null
+                    // TODO: Move to internal 'compileCSharp' and wrap into the TestCompilation
                     let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, name = name) |> CompilationReference.Create
                     loop (cmpl::acc) xs
                 | IL _ -> failwith "TODO: Process references for IL"
@@ -170,9 +195,7 @@ module Compiler =
 
         let ((err: FSharpErrorInfo[], outputFilePath: string), _) = CompilerAssert.CompileRaw(compilation)
 
-        let (errors, warnings) = err |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
-                                     |> Array.partition  (fun e -> e.Severity = FSharpErrorSeverity.Error)
-                                     |> fun (f, s) -> f |> List.ofArray, s |> List.ofArray
+        let (errors, warnings) = err |> fromFSharpErrorInfo
 
         let result = { OutputPath  = None;
                        Adjust      = 0;
@@ -187,15 +210,58 @@ module Compiler =
             Success { result with Warnings   = warnings;
                                   OutputPath = Some outputFilePath }
 
+    let private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
+
+        let source = getSource csSource.Source
+        let name = if Option.isSome csSource.Name then csSource.Name.Value else Guid.NewGuid().ToString ()
+
+        // TODO: Process references (and convert CompilationReference -> MetadataReference)
+        let additionalReferences = ImmutableArray.Empty
+        let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
+
+        // TODO: Remove once moved reference processing to this function instead of CompilationUtil
+        let lv =
+          match csSource.LangVersion with
+            | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
+            | _ -> LanguageVersion.Default
+
+        let cmpl =
+          CSharpCompilation.Create(
+            name,
+            [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
+            references.As<MetadataReference>().AddRange additionalReferences,
+            CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
+
+        let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Path.GetRandomFileName())
+
+        Directory.CreateDirectory(outputPath) |> ignore
+
+        let filename = cmpl.AssemblyName
+        let output = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
+
+        let cmplResult = cmpl.Emit (output)
+
+        let result = { OutputPath  = None;
+                       Adjust      = 0;
+                       Warnings    = [];
+                       Errors      = [] }
+
+        if cmplResult.Success then
+            Success { result with OutputPath  = Some output }
+        else
+            cmplResult.Diagnostics |> printfn "%A"
+            Failure result
+
+
     let compile (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs -> compileFSharp fs
+        | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
 
-    // TODO: Probably want to return a proper compilation result here as well to process it later.
     let private typecheckFSharpWithBaseline (options: string list) (dir: string) (file: string) : CompilationResult =
         // Since TypecheckWithErrorsAndOptionsAgainsBaseLine throws if doesn't match expected baseline,
-        // We return a successfull CompilationResult if it succeds.
+        // We return a successfull CompilationResult if it succeeds.
         CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine (Array.ofList options) dir file
 
         Success { OutputPath  = None;
@@ -203,16 +269,13 @@ module Compiler =
                   Warnings    = [];
                   Errors      = [] }
 
-    // TODO: Extract error handling to a separate function;
     let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = getSource fsSource.Source
         let options = fsSource.Options |> Array.ofList
 
         let (err: FSharpErrorInfo []) = CompilerAssert.TypeCheckWithOptions options source
 
-        let (errors, warnings) = err |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
-                                     |> Array.partition  (fun e -> e.Severity = FSharpErrorSeverity.Error)
-                                     |> fun (f, s) -> List.ofArray f, List.ofArray s
+        let (errors, warnings) = err |> fromFSharpErrorInfo
 
         let result = { OutputPath  = None;
                        Adjust      = 0;
@@ -234,11 +297,11 @@ module Compiler =
     let typecheck (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs -> typecheckFSharp fs
-        | _ -> failwith "TODO: Implement typeckeck for C# and IL if applicable."
+        | _ -> failwith "Typecheck only supports F#"
 
     let run (cResult: CompilationResult ) : unit =
         match cResult with
-        | Failure o -> failwith (sprintf "Compilatoin should be successfull in order to run.\n Errors: %A" (o.Errors @ o.Warnings))
+        | Failure o -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (o.Errors @ o.Warnings))
         | Success s ->
             match s.OutputPath with
             | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
@@ -247,38 +310,40 @@ module Compiler =
     let compileAndRun = compile >> run
 
     let compileExeAndRun = asExe >> compileAndRun
-    
-    [<AutoOpen>]
-    // TODO: Reuse FluentAssertions' assertions here.
-    module Assertions =
 
-        let private getErrorInfo (info: FSharpErrorInfo) : string =
+    [<AutoOpen>]
+    module Assertions =
+        let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A %A" info.Severity info.ErrorNumber info.Message
 
-        // TODO: Better error messages.
-        // TODO: Should probably generalize/dedupicate asserts
-        let private assertErrorsLength (source: FSharpErrorInfo list) (expected: int list) : unit =
+        let inline private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
             if (List.length source) <> (List.length expected) then
                 failwith (sprintf "Expected list of issues differ from compilation result:\nExpected:\n %A\nActual:\n %A" expected (List.map getErrorInfo source))
             ()
 
-        let private assertErrorNumber (source: FSharpErrorInfo list) (expected: int list) : unit =
+        let private assertErrorMessages (source: ErrorInfo list) (expected: string list) : unit =
             for exp in expected do
-                if not (List.exists (fun (el: FSharpErrorInfo) -> el.ErrorNumber = exp) source) then
-                    failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll messages:\n%A" exp (List.map getErrorInfo source))
+                if not (List.exists (fun (el: ErrorInfo) -> el.Message = exp) source) then
+                    failwith (sprintf "Mismatch in error message, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
             assertErrorsLength source expected
 
-        let private assertErrors (what: string) libAdjust (source: FSharpErrorInfo list) (expected: (int * (int * int * int * int) * string) list) : unit =
+        let private assertErrorNumbers (source: ErrorInfo list) (expected: int list) : unit =
+            for exp in expected do
+                if not (List.exists (fun (el: ErrorInfo) -> el.ErrorNumber = exp) source) then
+                    failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
+            assertErrorsLength source expected
+
+        let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: (int * (int * int * int * int) * string) list) : unit =
             let errors =
                 source
-                |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
                 |> List.map (fun info -> (info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
 
             let inline checkEqual k a b =
                 if a <> b then
                     Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" what k a b errors)
 
-            checkEqual "Errors"  expected.Length errors.Length
+            // TODO: Check all "categories", collect all results and print alltogether.
+            checkEqual "Errors count"  expected.Length errors.Length
 
             List.zip errors expected
             |> List.iter (fun (actualError, expectedError) ->
@@ -297,18 +362,43 @@ module Compiler =
         let shouldSucceed (result: CompilationResult) : CompilationResult =
             match result with
             | Success _ -> result
-            | Failure _ -> failwith "Compilation failed (expected: Success)."
+            | Failure r ->
+                let message = sprintf "Compilation failed (expected to succeed).\n All errors:\n%A" (r.Errors @ r.Warnings)
+                failwith message
 
         let shouldFail (result: CompilationResult) : CompilationResult =
             match result with
-            | Failure _ -> result
             | Success _ -> failwith "Compilation succeded (expected: Failure)."
+            | Failure _ -> result
+
+        let withMessages (messages: string list) (result: CompilationResult) : CompilationResult =
+             match result with
+             | Success r | Failure r -> assertErrorMessages (r.Warnings @ r.Errors) messages
+             result
+
+        let withMessage (message: string) (result: CompilationResult) : CompilationResult =
+            withMessages [message] result
+
+        let withErrorMessages (messages: string list) (result: CompilationResult) : CompilationResult =
+            match result with
+            | Success r | Failure r -> assertErrorMessages r.Errors messages
+            result
+
+        let withErrorMessage (message: string) (result: CompilationResult) : CompilationResult =
+            withErrorMessages [message] result
+
+        let withWarningMessages (messages: string list) (result: CompilationResult) : CompilationResult =
+            match result with
+            | Success r | Failure r -> assertErrorMessages r.Warnings messages
+            result
+
+        let withWarningMessage (message: string) (result: CompilationResult) : CompilationResult =
+            withWarningMessages [message] result
 
         let withWarnings (expectedWarnings: (int * (int * int * int * int) * string) list) (result: CompilationResult) : CompilationResult =
             match result with
             | Success r | Failure r ->
                 assertErrors "Warnings" r.Adjust r.Warnings expectedWarnings
-
             result
 
         let withWarning (expectedWarning: (int * (int * int * int * int) * string)) (result: CompilationResult) : CompilationResult =
@@ -317,15 +407,16 @@ module Compiler =
         let withWarningCodes (expectedWarnings: int list) (result: CompilationResult) : CompilationResult =
             match result with
             | Success r | Failure r ->
-                assertErrorNumber r.Warnings expectedWarnings
-
+                assertErrorNumbers r.Warnings expectedWarnings
             result
+
+        let withWarningCode (expectedWarning: int) (result: CompilationResult) : CompilationResult =
+           withWarningCodes [expectedWarning] result
 
         let withErrors (expectedErrors: (int * (int * int * int * int) * string) list) (result: CompilationResult) : CompilationResult =
             match result with
             | Success r | Failure r ->
                 assertErrors "Errors" r.Adjust r.Errors expectedErrors
-
             result
 
         let withError (expectedError: (int * (int * int * int * int) * string)) (result: CompilationResult) : CompilationResult =
@@ -334,6 +425,10 @@ module Compiler =
         let withErrorCodes (expectedErrors: int list) (result: CompilationResult) : CompilationResult =
             match result with
             | Success r | Failure r ->
-                assertErrorNumber r.Errors expectedErrors
-
+                assertErrorNumbers r.Errors expectedErrors
             result
+
+        let withErrorCode (expectedError: int) (result: CompilationResult) : CompilationResult =
+            withErrorCodes [expectedError] result
+
+        let withRange = ignore

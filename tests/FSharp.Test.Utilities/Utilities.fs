@@ -39,7 +39,7 @@ module Utilities =
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Console).GetReference(display = "System.Console.dll (netcoreapp 3.0 ref)")
 
     [<RequireQualifiedAccess>]
-    module private TargetFrameworkUtil =
+    module internal TargetFrameworkUtil =
 
         open TestReferences
 
@@ -60,8 +60,6 @@ module Utilities =
         | None = 0x0
         | InternalsVisibleTo = 0x1
 
-    // TODO: this and Compilation.Compile needs to be merged for sake of consistency.
-    // TODO: After merging, add new type of FSharp compilation.
     [<RequireQualifiedAccess>]
     type TestCompilation =
         | CSharp of CSharpCompilation
