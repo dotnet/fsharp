@@ -70,16 +70,6 @@ module Extensions =
         member x.TryGetMembersFunctionsAndValues = 
             try x.MembersFunctionsAndValues with _ -> [||] :> _
 
-    let inline private isNotWhiteSpaceOrLetter (sp: ReadOnlySpan<char>) =
-        let mutable res = true
-        let mutable idx = 0
-
-        while res = false do
-            if sp.[idx] = ' ' || Char.IsLetter sp.[idx] then
-                res <- false
-
-        res
-
     type FSharpMemberOrFunctionOrValue with
         // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307). 
         member x.FullTypeSafe = Option.attempt (fun _ -> x.FullType)
