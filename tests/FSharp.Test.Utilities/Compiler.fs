@@ -192,9 +192,7 @@ module Compiler =
                     let source = getSource cs.Source
                     let name = if Option.isSome cs.Name then cs.Name.Value else null
                     let metadataReferences = List.map asMetadataReference refs
-                    metadataReferences |> ignore
-                    // additionalReferences = ImmutableArray.CreateRange metadataReferences,
-                    let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, name = name)
+                    let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
                             |> CompilationReference.Create
                     loop (cmpl::acc) xs
                 | IL _ -> failwith "TODO: Process references for IL"
