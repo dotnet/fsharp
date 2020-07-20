@@ -471,12 +471,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             try
                 let methInfo = ty.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
                 methInfo.DeclaringType = typeof<System.Object>
-            with e -> false
-        /// If "str" ends with "ending" then remove it from "str", otherwise no change.
-        let trimEnding (ending:string) (str:string) =
-          if str.EndsWith(ending,StringComparison.Ordinal) then 
-              str.Substring(0,str.Length - ending.Length) 
-          else str
+            with _ -> false
 
         let catchExn f = try Choice1Of2 (f ()) with e -> Choice2Of2 e
 

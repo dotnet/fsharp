@@ -70,10 +70,15 @@ module Extensions =
         member x.TryGetMembersFunctionsAndValues = 
             try x.MembersFunctionsAndValues with _ -> [||] :> _
 
-    let isOperator (name: string) =
-        name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") && name.Length > 4
-            && name.Substring (2, name.Length - 4) 
-               |> String.forall (fun c -> c <> ' ' && not (Char.IsLetter c))
+    let inline private isNotWhiteSpaceOrLetter (sp: ReadOnlySpan<char>) =
+        let mutable res = true
+        let mutable idx = 0
+
+        while res = false do
+            if sp.[idx] = ' ' || Char.IsLetter sp.[idx] then
+                res <- false
+
+        res
 
     type FSharpMemberOrFunctionOrValue with
         // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307). 
@@ -92,7 +97,7 @@ module Extensions =
 
         member x.TryGetFullCompiledOperatorNameIdents() : Idents option =
             // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
-            if isOperator x.DisplayName && x.DisplayName <> x.CompiledName then
+            if PrettyNaming.IsOperatorName x.DisplayName && x.DisplayName <> x.CompiledName then
                 x.DeclaringEntity
                 |> Option.bind (fun e -> e.TryGetFullName())
                 |> Option.map (fun enclosingEntityFullName -> 
