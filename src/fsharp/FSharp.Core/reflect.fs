@@ -166,9 +166,9 @@ module internal Impl =
                         let nm = minfo.Name
                         // chop "get_" or  "New" off the front
                         let nm =
-                            if not (isListType typ) && not (isOptionType typ) then
-                                if   nm.Length > 4 && nm.[0..3] = "get_" then nm.[4..]
-                                elif nm.Length > 3 && nm.[0..2] = "New" then nm.[3..]
+                            if not (isListType typ) && not (isOptionType typ) && nm.Length > 3 then
+                                if   nm.StartsWith ("get_", StringComparison.Ordinal) then nm.[4..]
+                                elif nm.StartsWith ("New", StringComparison.Ordinal) then nm.[3..]
                                 else nm
                             else nm
                         Some (n, nm)
