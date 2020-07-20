@@ -44,10 +44,12 @@ type Bicycle(manufacturer: string) =
 
         let app =
             CSharp """
+using Interop.FS;
 public class BicycleShop {
     public Bicycle[] cycles;
 }
         """ |> withReferences [FSLib]
+
         app
         |> compile
         |> shouldSucceed

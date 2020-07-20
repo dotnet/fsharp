@@ -161,7 +161,22 @@ module Compiler =
         | FS fs -> FS { fs with IgnoreWarnings = true }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
-    let private processReferences (references: CompilationUnit list) =
+    let rec private asMetadataReference reference =
+        match reference with
+        | CompilationReference (cmpl, _) ->
+            let result = compileFSharpCompilation cmpl false
+            match result with
+            | Failure f ->
+                let message = sprintf "Compilation failed (expected to succeed).\n All errors:\n%A" (f.Errors @ f.Warnings)
+                failwith message
+            | Success s ->
+                match s.OutputPath with
+                    | None -> failwith "Compilation didn't produce any output!"
+                    | Some p -> p |> MetadataReference.CreateFromFile
+        | _ -> failwith "Conversion isn't possible"
+
+    and private processReferences (references: CompilationUnit list) =
+
         let rec loop acc = function
             | [] -> List.rev acc
             | x::xs ->
@@ -173,25 +188,19 @@ module Compiler =
                     let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
-                    // TODO: reference support for C#, convert CompilationReference to MetadataReference
+                    let refs = loop [] cs.References
                     let source = getSource cs.Source
                     let name = if Option.isSome cs.Name then cs.Name.Value else null
-                    // TODO: Move to internal 'compileCSharp' and wrap into the TestCompilation
-                    let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, name = name) |> CompilationReference.Create
+                    let metadataReferences = List.map asMetadataReference refs
+                    metadataReferences |> ignore
+                    // additionalReferences = ImmutableArray.CreateRange metadataReferences,
+                    let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, name = name)
+                            |> CompilationReference.Create
                     loop (cmpl::acc) xs
                 | IL _ -> failwith "TODO: Process references for IL"
         loop [] references
 
-    let private compileFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
-
-        let source = getSource fsSource.Source
-        let sourceKind = fsSource.SourceKind
-        let output = fsSource.OutputType
-        let options = fsSource.Options |> Array.ofList
-
-        let references = processReferences fsSource.References
-
-        let compilation = Compilation.Create(source, sourceKind, output, options, references)
+    and private compileFSharpCompilation compilation ignoreWarnings : CompilationResult =
 
         let ((err: FSharpErrorInfo[], outputFilePath: string), _) = CompilerAssert.CompileRaw(compilation)
 
@@ -203,43 +212,36 @@ module Compiler =
                        Errors      = errors }
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
-        if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
+        if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
             Failure { result with Warnings = warnings;
                                   Errors   = errors }
         else
             Success { result with Warnings   = warnings;
                                   OutputPath = Some outputFilePath }
 
-    let private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
+    and private compileFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
 
-        let source = getSource csSource.Source
-        let name = if Option.isSome csSource.Name then csSource.Name.Value else Guid.NewGuid().ToString ()
+        let source = getSource fsSource.Source
+        let sourceKind = fsSource.SourceKind
+        let output = fsSource.OutputType
+        let options = fsSource.Options |> Array.ofList
 
-        // TODO: Process references (and convert CompilationReference -> MetadataReference)
-        let additionalReferences = ImmutableArray.Empty
-        let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
+        let references = processReferences fsSource.References
 
-        // TODO: Remove once moved reference processing to this function instead of CompilationUtil
-        let lv =
-          match csSource.LangVersion with
-            | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-            | _ -> LanguageVersion.Default
+        let compilation = Compilation.Create(source, sourceKind, output, options, references)
 
-        let cmpl =
-          CSharpCompilation.Create(
-            name,
-            [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
-            references.As<MetadataReference>().AddRange additionalReferences,
-            CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
+        compileFSharpCompilation compilation fsSource.IgnoreWarnings
+
+    and private compileCSharpCompilation (compilation: CSharpCompilation) : CompilationResult =
 
         let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Path.GetRandomFileName())
 
         Directory.CreateDirectory(outputPath) |> ignore
 
-        let filename = cmpl.AssemblyName
+        let filename = compilation.AssemblyName
         let output = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
 
-        let cmplResult = cmpl.Emit (output)
+        let cmplResult = compilation.Emit (output)
 
         let result = { OutputPath  = None;
                        Adjust      = 0;
@@ -252,8 +254,33 @@ module Compiler =
             cmplResult.Diagnostics |> printfn "%A"
             Failure result
 
+    and private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
 
-    let compile (cUnit: CompilationUnit) : CompilationResult =
+        let source = getSource csSource.Source
+        let name = if Option.isSome csSource.Name then csSource.Name.Value else Guid.NewGuid().ToString ()
+
+        let additionalReferences =
+            match processReferences csSource.References with
+            | [] -> ImmutableArray.Empty
+            | r  -> (List.map asMetadataReference r).ToImmutableArray().As<MetadataReference>()
+
+        let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
+
+        let lv =
+          match csSource.LangVersion with
+            | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
+            | _ -> LanguageVersion.Default
+
+        let cmpl =
+          CSharpCompilation.Create(
+            name,
+            [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
+            references.As<MetadataReference>().AddRange additionalReferences,
+            CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
+
+        cmpl |> compileCSharpCompilation
+
+    and compile (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs -> compileFSharp fs
         | CS cs -> compileCSharp cs
