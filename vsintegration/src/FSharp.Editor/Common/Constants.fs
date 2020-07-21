@@ -32,6 +32,10 @@ module internal FSharpConstants =
     let FSharpContentTypeName = "F#"
 
     [<Literal>]
+    /// ".fs"
+    let FSharpFileExtension = ".fs"
+
+    [<Literal>]
     /// "F# Signature Help"
     let FSharpSignatureHelpContentTypeName = "F# Signature Help"
     
@@ -42,6 +46,10 @@ module internal FSharpConstants =
     [<Literal>]
     /// "FSharp"
     let FSharpLanguageLongName = "FSharp"
+
+    [<Literal>]
+    /// "F# Miscellaneous Files"
+    let FSharpMiscellaneousFilesName = "F# Miscellaneous Files"
 
 [<RequireQualifiedAccess>]
 module internal FSharpProviderConstants =

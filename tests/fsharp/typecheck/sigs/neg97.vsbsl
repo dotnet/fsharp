@@ -23,6 +23,4 @@ neg97.fs(36,20,36,32): typecheck error FS0064: This construct causes code to be 
 
 neg97.fs(36,12,36,14): typecheck error FS0663: This type parameter has been used in a way that constrains it to always be 'string'
 
-neg97.fs(42,20,42,22): typecheck error FS0039: The type parameter 'T is not defined. Maybe you want one of the following:
-
-   'U
+neg97.fs(42,20,42,22): typecheck error FS0039: The type parameter 'T is not defined.

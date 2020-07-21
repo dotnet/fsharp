@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="it" original="../Strings.resx">
     <body>
@@ -40,6 +40,11 @@
       <trans-unit id="Completion_Lists">
         <source>Completion Lists</source>
         <target state="translated">Elenchi di completamento</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Diagnostics">
+        <source>Diagnostics</source>
+        <target state="translated">Diagnostica</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -102,6 +107,11 @@
         <target state="translated">Sottolineatura _continua</target>
         <note />
       </trans-unit>
+      <trans-unit id="Text_hover">
+        <source>Text hover</source>
+        <target state="translated">Passaggio del puntatore sul testo</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Rimuovi istruzioni OPEN inutilizzate</target>
@@ -109,7 +119,7 @@
       </trans-unit>
       <trans-unit id="Unused_declaration_code_fix">
         <source>Analyze and suggest fixes for unused values</source>
-        <target state="translated">Analizar y sugerir correcciones para valores no utilizados</target>
+        <target state="translated">Analizza e suggerisci correzioni per valori inutilizzati</target>
         <note />
       </trans-unit>
       <trans-unit id="Block_Structure">
@@ -164,27 +174,32 @@
       </trans-unit>
       <trans-unit id="Enter_key_always">
         <source>Always add new line on enter</source>
-        <target state="new">Always add new line on enter</target>
+        <target state="translated">Aggiungi sempre una nuova riga dopo INVIO</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_never">
         <source>Never add new line on enter</source>
-        <target state="new">Never add new line on enter</target>
+        <target state="translated">Non aggiungere mai una nuova riga dopo INVIO</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_only">
         <source>Only add new line on enter after end of fully typed word</source>
-        <target state="new">Only add new line on enter after end of fully typed word</target>
+        <target state="translated">Aggiungi una nuova riga dopo INVIO solo alla fine della parola digitata</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_Key_Rule">
         <source>Enter key behavior</source>
-        <target state="new">Enter key behavior</target>
+        <target state="translated">Comportamento del tasto INVIO</target>
         <note />
       </trans-unit>
       <trans-unit id="Format_on_paste">
         <source>Re-format indentation on paste</source>
-        <target state="new">Re-format indentation on paste</target>
+        <target state="translated">Riformatta rientro dopo operazione Incolla</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Suggest_names_for_errors_code_fix">
+        <source>Suggest names for unresolved identifiers</source>
+        <target state="translated">Suggerisci nomi per gli identificatori non risolti</target>
         <note />
       </trans-unit>
     </body>

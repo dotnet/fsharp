@@ -1,6 +1,6 @@
-    Copyright (c) Microsoft Corporation.  All Rights Reserved.  
+    Copyright (c) Microsoft Corporation.  All Rights Reserved.
     See License.txt in the project root for license information.
-    
+
 ## About the release notes
 
 We deliver F# and F# tools for Visual Studio and .NET Core releases. These can include bug fixes, new tooling features, new compiler features, performance improvements, infrastructure improvements, and new language versions. The most recent release of F# or any F# component will be at the top of this document.
@@ -33,7 +33,7 @@ You can find all tracked VS 15.9 items in the [15.9 milestone](https://github.co
 ### F# OSS Build
 
 * Feature (#5027) - Set VisualFSharpFull as the default startup project, by [Robert Jeppesen](https://github.com/rojepp).
-    
+
 ## Visual Studio 15.8.5
 
 * Fix (#5504) - Internal MSBuild Error when building non-.NET SDK projects with MSBuild parallelism
@@ -244,7 +244,7 @@ Includes commits up to `dd8252eb8d20aaedf7b1c7576cd2a8a82d24f587`
 * Other new APIs
   * `Option.filter`, `Option.toObj`, `Option.ofObj`, `Option.toNullable`, `Option.ofNullable`
   * `String.filter`
-  * `Checked.int8`, `Checked.uint8` 
+  * `Checked.int8`, `Checked.uint8`
   * `Async.AwaitTask` (non-generic)
   * `WebClient.AsyncDownloadFile`, `WebClient.AsyncDownloadData`
   * `tryUnbox`, `isNull`
@@ -427,7 +427,7 @@ Includes commits up to `3385e58aabc91368c8e1f551650ba48705aaa285`
 * Bugfix: Errors when attempting to add reference to .NET core library
 * Bugfix: Crash in `FSComp.SR.RunStartupValidation()`
 
-[4.0.0]: http://fsharp.org
+[4.0.0]: https://fsharp.org
 [3.1.2]: http://blogs.msdn.com/b/fsharpteam/archive/2014/08/20/announcing-the-release-of-visual-f-tools-3-1-2.aspx
 [3.1.1]: http://blogs.msdn.com/b/fsharpteam/archive/2014/01/22/announcing-visual-f-3-1-1-and-support-for-desktop-express.aspx
 

@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Printer for the abstract syntax.
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
+module internal FSharp.Compiler.AbstractIL.ILAsciiWriter 
 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal 
 open System.IO
 
 #if DEBUG

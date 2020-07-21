@@ -1,8 +1,8 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../bin/v4.5/CSharp_Analysis.dll"
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -12,14 +12,8 @@ module FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
 
 open NUnit.Framework
 open FsUnit
-open System
 open System.IO
-open System.Collections.Generic
-
-open Microsoft.FSharp.Compiler
-open FSharp.Compiler.Service.Tests
-open Microsoft.FSharp.Compiler.SourceCodeServices
-
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) = 
@@ -61,7 +55,7 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
     results, assemblies
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test that csharp references are recognized as such`` () = 
@@ -99,7 +93,7 @@ let ``Test that csharp references are recognized as such`` () =
     members.["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test that symbols of csharp inner classes/enums are reported`` () = 
@@ -122,7 +116,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
             "member StaticMember"; "NestedEnumClass"|]
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Ctor test`` () =
@@ -158,7 +152,7 @@ let getEntitiesUses source =
     |> List.ofSeq
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Different types with the same short name equality check`` () =
@@ -178,7 +172,7 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Different namespaces with the same short name equality check`` () =

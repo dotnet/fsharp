@@ -1,6 +1,6 @@
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -9,9 +9,9 @@ module Tests.Service.StructureTests
 
 open System.IO
 open NUnit.Framework
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Structure
 open FSharp.Compiler.Service.Tests.Common
 open System.Text
 
@@ -40,19 +40,22 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
 
     let getRange (r: range) = (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
 
-    let tree = parseSource source
+    let ast = parseSourceCode(fileName, source)
     try
-        let actual =
-            Structure.getOutliningRanges lines tree
-            |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
-            |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
-            |> Seq.sort
-            |> List.ofSeq
-        let expected = List.sort expectedRanges
-        if actual <> expected then
-            failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
+        match ast with
+        | Some tree ->
+            let actual =
+                Structure.getOutliningRanges lines tree
+                |> Seq.filter (fun sr -> sr.Range.StartLine <> sr.Range.EndLine)
+                |> Seq.map (fun sr -> getRange sr.Range, getRange sr.CollapseRange)
+                |> Seq.sort
+                |> List.ofSeq
+            let expected = List.sort expectedRanges
+            if actual <> expected then
+                failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
+        | None -> failwithf "Expected there to be a parse tree for source:\n%s" source
     with _ ->
-        printfn "AST:\n%+A" tree
+        printfn "AST:\n%+A" ast
         reraise()
 
 [<Test>]
@@ -63,8 +66,13 @@ let ``nested module``() =
     """
 module MyModule =
     ()
+
+[<Foo>]
+module Module =
+    ()
 """
-    => [ (2, 0, 3, 6), (2, 15, 3, 6) ]
+    => [ (2, 0, 3, 6), (2, 15, 3, 6)
+         (5, 0, 7, 6), (6, 13, 7, 6) ]
 
 [<Test>]
 let ``module with multiline function``() =
@@ -103,17 +111,17 @@ type Color =
     => [ (2, 5, 9, 55), (2, 11, 9, 55)
          (3, 4, 5, 10), (3, 4, 5, 10)
          (7, 4, 9, 55), (7, 25, 9, 55)
-         (8, 15, 9, 55), (8, 27, 9, 55)
+         (8, 8, 9, 55), (8, 27, 9, 55)
          (8, 15, 9, 55), (8, 27, 9, 55) ]
 
 [<Test>]
 let ``record with interface``() =
     """
 type Color =
-    { Red: int
-        Green: int
-        Blue: int 
-    }
+    { Red:
+          int
+      mutable Blue:
+          int }
 
     interface IDisposable with
         member __.Dispose() =
@@ -121,10 +129,11 @@ type Color =
 """
     =>
     [ (2, 5, 10, 55), (2, 11, 10, 55)
-      (3, 4, 4, 14), (3, 4, 4, 14)
+      (3, 4, 6, 15), (3, 4, 6, 15)
       (3, 6, 4, 13), (3, 6, 4, 13)
+      (5, 6, 6, 13), (5, 6, 6, 13)
       (8, 4, 10, 55), (8, 25, 10, 55)
-      (9, 15, 10, 55), (9, 27, 10, 55)
+      (9, 8, 10, 55), (9, 27, 10, 55)
       (9, 15, 10, 55), (9, 27, 10, 55) ]
 
 [<Test>]
@@ -178,13 +187,13 @@ module MyModule =       // 2
          (7, 9, 15, 59), (7, 15, 15, 59)
          (8, 8, 11, 9), (8, 8, 11, 9)
          (13, 8, 15, 59), (13, 29, 15, 59)
-         (14, 19, 15, 59), (14, 31, 15, 59)
+         (14, 12, 15, 59), (14, 31, 15, 59)
          (14, 19, 15, 59), (14, 31, 15, 59)
          (17, 4, 27, 63), (17, 24, 27, 63)
          (19, 13, 27, 63), (19, 25, 27, 63)
          (20, 12, 23, 13), (20, 12, 23, 13)
          (25, 12, 27, 63), (25, 33, 27, 63)
-         (26, 23, 27, 63), (26, 35, 27, 63)
+         (26, 16, 27, 63), (26, 35, 27, 63)
          (26, 23, 27, 63), (26, 35, 27, 63) ]
 
     
@@ -604,3 +613,65 @@ module NestedModule =
 """
     => [ (4, 0, 5, 15), (4, 13, 5, 15)
          (9, 0, 10, 15), (9, 19, 10, 15) ]
+
+[<Test>]
+let ``Member val`` () =
+    """
+type T() =
+    member val field1 =
+        ()
+
+    [<CompiledName("Field2")>]
+    member val field2 =
+        ()
+
+    static member val field3 =
+        ()
+
+    [<CompiledName("Field4")>]
+    static member val field4 =
+        ()
+"""
+    => [ (2, 5, 15, 10), (2, 7, 15, 10)
+         (3, 4, 4, 10), (3, 4, 4, 10)
+         (6, 4, 8, 10), (6, 4, 8, 10)
+         (10, 4, 11, 10), (10, 4, 11, 10)
+         (13, 4, 15, 10), (13, 4, 15, 10) ]
+
+[<Test>]
+let ``Secondary constructors`` () =
+    """
+type T() =
+    new () =
+        T ()
+
+    internal new () =
+        T ()
+
+    [<Foo>]
+    new () =
+        T ()
+"""
+    => [ (2, 5, 11, 12), (2, 7, 11, 12)
+         (3, 4, 4, 12), (3, 7, 4, 12)
+         (3, 4, 4, 12), (4, 8, 4, 12)
+         (6, 4, 7, 12), (6, 16, 7, 12)
+         (6, 4, 7, 12), (7, 8, 7, 12)
+         (9, 4, 11, 12), (10, 7, 11, 12)
+         (9, 4, 11, 12), (11, 8, 11, 12) ]
+
+
+[<Test>]
+let ``Abstract members`` () =
+    """
+type T() =
+    abstract Foo:
+        int
+    
+    [<Foo>]
+    abstract Foo:
+        int
+"""
+    => [ (2, 5, 8, 11), (2, 7, 8, 11)
+         (3, 4, 4, 11), (4, 8, 4, 11)
+         (6, 4, 8, 11), (8, 8, 8, 11) ]

@@ -23,13 +23,13 @@ namespace Microsoft.FSharp.Collections
 
       let cast (e : IEnumerator) : IEnumerator<'T> =
           { new IEnumerator<'T> with
-                member x.Current = unbox<'T> e.Current
+                member __.Current = unbox<'T> e.Current
             interface IEnumerator with
-                member x.Current = unbox<'T> e.Current :> obj
-                member x.MoveNext() = e.MoveNext()
-                member x.Reset() = noReset()
+                member __.Current = unbox<'T> e.Current :> obj
+                member __.MoveNext() = e.MoveNext()
+                member __.Reset() = noReset()
             interface System.IDisposable with
-                member x.Dispose() =
+                member __.Dispose() =
                     match e with
                     | :? System.IDisposable as e -> e.Dispose()
                     | _ -> ()   }
@@ -39,20 +39,20 @@ namespace Microsoft.FSharp.Collections
       type EmptyEnumerator<'T>() =
           let mutable started = false
           interface IEnumerator<'T> with
-                member x.Current =
+                member __.Current =
                   check started
                   (alreadyFinished() : 'T)
 
           interface System.Collections.IEnumerator with
-              member x.Current =
+              member __.Current =
                   check started
                   (alreadyFinished() : obj)
-              member x.MoveNext() =
+              member __.MoveNext() =
                   if not started then started <- true
                   false
-              member x.Reset() = noReset()
+              member __.Reset() = noReset()
           interface System.IDisposable with
-                member x.Dispose() = ()
+                member __.Dispose() = ()
                 
       let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
@@ -60,64 +60,64 @@ namespace Microsoft.FSharp.Collections
       type EmptyEnumerable<'T> =
             | EmptyEnumerable
             interface IEnumerable<'T> with
-                member x.GetEnumerator() = Empty<'T>()
+                member __.GetEnumerator() = Empty<'T>()
             interface IEnumerable with
-                member x.GetEnumerator() = (Empty<'T>() :> IEnumerator)
+                member __.GetEnumerator() = (Empty<'T>() :> IEnumerator)
 
       let readAndClear r =
           lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)
 
       let generateWhileSome openf compute closef : IEnumerator<'U> =
-          let started = ref false
-          let curr = ref None
+          let mutable started = false
+          let mutable curr = None
           let state = ref (Some(openf()))
           let getCurr() =
-              check !started
-              match !curr with None -> alreadyFinished() | Some x -> x
-          let start() = if not !started then (started := true)
+              check started
+              match curr with None -> alreadyFinished() | Some x -> x
+          let start() = if not started then (started <- true)
 
           let dispose() = readAndClear state |> Option.iter closef
-          let finish() = (try dispose() finally curr := None)
+          let finish() = try dispose() finally curr <- None
           {  new IEnumerator<'U> with
-                 member x.Current = getCurr()
+                 member __.Current = getCurr()
              interface IEnumerator with
-                 member x.Current = box (getCurr())
-                 member x.MoveNext() =
+                 member __.Current = box (getCurr())
+                 member __.MoveNext() =
                      start()
                      match !state with
                      | None -> false (* we started, then reached the end, then got another MoveNext *)
                      | Some s ->
                          match (try compute s with e -> finish(); reraise()) with
                          | None -> finish(); false
-                         | Some _ as x -> curr := x; true
+                         | Some _ as x -> curr <- x; true
 
-                 member x.Reset() = noReset()
+                 member __.Reset() = noReset()
              interface System.IDisposable with
-                 member x.Dispose() = dispose() }
+                 member __.Dispose() = dispose() }
 
       [<Sealed>]
       type Singleton<'T>(v:'T) =
           let mutable started = false
           interface IEnumerator<'T> with
-                member x.Current = v
+                member __.Current = v
           interface IEnumerator with
-              member x.Current = box v
-              member x.MoveNext() = if started then false else (started <- true; true)
-              member x.Reset() = noReset()
+              member __.Current = box v
+              member __.MoveNext() = if started then false else (started <- true; true)
+              member __.Reset() = noReset()
           interface System.IDisposable with
-              member x.Dispose() = ()
+              member __.Dispose() = ()
 
       let Singleton x = (new Singleton<'T>(x) :> IEnumerator<'T>)
 
       let EnumerateThenFinally f (e : IEnumerator<'T>) =
           { new IEnumerator<'T> with
-                member x.Current = e.Current
+                member __.Current = e.Current
             interface IEnumerator with
-                member x.Current = (e :> IEnumerator).Current
-                member x.MoveNext() = e.MoveNext()
-                member x.Reset() = noReset()
+                member __.Current = (e :> IEnumerator).Current
+                member __.MoveNext() = e.MoveNext()
+                member __.Reset() = noReset()
             interface System.IDisposable with
-                member x.Dispose() =
+                member __.Dispose() =
                     try
                         e.Dispose()
                     finally
@@ -125,15 +125,14 @@ namespace Microsoft.FSharp.Collections
           }
 
       let inline checkNonNull argName arg =
-            match box arg with
-            | null -> nullArg argName
-            | _ -> ()
+          if isNull arg then
+              nullArg argName
 
       let mkSeq f =
             { new IEnumerable<'U> with
-                member x.GetEnumerator() = f()
+                member __.GetEnumerator() = f()
               interface IEnumerable with
-                member x.GetEnumerator() = (f() :> IEnumerator) }
+                member __.GetEnumerator() = (f() :> IEnumerator) }
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
@@ -188,7 +187,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         [<Sealed>]
         type FinallyEnumerable<'T>(compensation: unit -> unit, restf: unit -> seq<'T>) =
             interface IEnumerable<'T> with
-                member x.GetEnumerator() =
+                member __.GetEnumerator() =
                     try
                         let ie = restf().GetEnumerator()
                         match ie with
@@ -216,7 +215,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             [<DefaultValue(false)>] // false = unchecked
             val mutable private currElement : 'T
 
-            member x.Finish() =
+            member __.Finish() =
                 finished <- true
                 try
                     match currInnerEnum with
@@ -239,7 +238,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                         let rec iter comps =
                             match comps with
                             |   [] -> ()
-                            |   h::t ->
+                            |   h :: t ->
                                     try h() finally iter t
                         try
                             compensations |> List.rev |> iter
@@ -251,7 +250,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 if finished then IEnumerator.alreadyFinished() else x.currElement
 
             interface IFinallyEnumerator with
-                member x.AppendFinallyAction(f) =
+                member __.AppendFinallyAction(f) =
                     compensations <- f :: compensations
 
             interface IEnumerator<'T> with
@@ -261,7 +260,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 member x.Current = box (x.GetCurrent())
 
                 member x.MoveNext() =
-                   if not started then (started <- true)
+                   if not started then started <- true
                    if finished then false
                    else
                       let rec takeInner () =
@@ -292,7 +291,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                             takeOuter()
                       takeInner ()
 
-                member x.Reset() = IEnumerator.noReset()
+                member __.Reset() = IEnumerator.noReset()
 
             interface System.IDisposable with
                 member x.Dispose() =
@@ -307,14 +306,14 @@ namespace Microsoft.FSharp.Core.CompilerServices
             mkSeq (fun () -> new ConcatEnumerator<_,_>(sources) :> IEnumerator<'T>)
 
         let EnumerateWhile (guard: unit -> bool) (source: seq<'T>) : seq<'T> =
-            let started = ref false
-            let curr = ref None
+            let mutable started = false
+            let mutable curr = None
             let getCurr() =
-                IEnumerator.check !started
-                match !curr with None -> IEnumerator.alreadyFinished() | Some x -> x
-            let start() = if not !started then (started := true)
+                IEnumerator.check started
+                match curr with None -> IEnumerator.alreadyFinished() | Some x -> x
+            let start() = if not started then (started <- true)
 
-            let finish() = (curr := None)
+            let finish() = (curr <- None)
             mkConcatSeq
                (mkSeq (fun () ->
                     { new IEnumerator<_> with
@@ -325,7 +324,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                                start()
                                let keepGoing = (try guard() with e -> finish (); reraise ()) in
                                if keepGoing then
-                                   curr := Some(source); true
+                                   curr <- Some(source); true
                                else
                                    finish(); false
                           member x.Reset() = IEnumerator.noReset()
@@ -403,4 +402,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
             //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
             member x.MoveNext() = x.MoveNextImpl()
 
-            member x.Reset() = raise <| new System.NotSupportedException()
+            member __.Reset() = raise <| new System.NotSupportedException()

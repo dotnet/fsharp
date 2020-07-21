@@ -1,18 +1,17 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions to import .NET binary metadata as TAST objects
-module internal Microsoft.FSharp.Compiler.Import
+module internal FSharp.Compiler.Import
 
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 #endif
-
-
 
 /// Represents an interface to some of the functionality of TcImports, for loading assemblies 
 /// and accessing information about generated provided assemblies.
@@ -30,7 +29,6 @@ type AssemblyLoader =
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
 #endif
-
 
 /// Represents a context used for converting AbstractIL .NET and provided types to F# internal compiler data structures.
 /// Also cache the conversion of AbstractIL ILTypeRef nodes, based on hashes of these.
@@ -61,7 +59,6 @@ val internal ImportILType : ImportMap -> range -> TType list -> ILType -> TType
 val internal CanImportILType : ImportMap -> range -> ILType -> bool
 
 #if !NO_EXTENSIONTYPING
-
 /// Import a provided type as an F# type.
 val internal ImportProvidedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TType
 

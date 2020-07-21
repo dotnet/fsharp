@@ -3,7 +3,7 @@
 [<NUnit.Framework.Category "Collections.Seq">]
 [<NUnit.Framework.Category "Collections.List">]
 [<NUnit.Framework.Category "Collections.Array">]
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.CollectionModulesConsistency
+module FSharp.Core.UnitTests.Collections.CollectionModulesConsistency
 
 open System
 open System.Collections.Generic
@@ -1217,12 +1217,14 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
 let ``unfold is consistent`` () =
     smallerSizeCheck unfold<int,int>
 
+#if EXPENSIVE
 [<Test; Category("Expensive"); Explicit>]
 let ``unfold is consistent full`` () =
     smallerSizeCheck unfold<int,int>
     smallerSizeCheck unfold<string,string>
     smallerSizeCheck unfold<float,int>
     smallerSizeCheck unfold<float,string>
+#endif
 
 let unzip<'a when 'a : equality> (xs:('a*'a) []) =       
     // no seq version

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Build
+namespace FSharp.Build
 
 open System
 open System.Diagnostics
@@ -10,10 +10,6 @@ open System.Reflection
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
 
 //There are a lot of flags on fsi.exe.
 //For now, not all of them are represented in the "Fsi class" object model.
@@ -33,6 +29,7 @@ type public Fsi () as this =
     let mutable disabledWarnings : string = null
     let mutable dotnetFsiCompilerPath : string = null
     let mutable fsiExec = false
+    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize = true
     let mutable otherFlags : string = null
@@ -71,6 +68,7 @@ type public Fsi () as this =
 
         builder.AppendSwitchIfNotNull("--codepage:", codePage)
 
+        builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         if noFramework then builder.AppendSwitch("--noframework")
 
         if defineConstants <> null then
@@ -170,6 +168,10 @@ type public Fsi () as this =
     member fsi.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
+
+    member fsc.LangVersion
+        with get() = langVersion
+        and set(s) = langVersion <- s
 
     // --noframework
     member fsi.NoFramework
@@ -320,7 +322,7 @@ type public Fsi () as this =
 
     override fsi.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()
-        builder.GetCapturedArguments() |> Seq.fold(fun acc f -> acc + f + Environment.NewLine) ""
+        builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
     // expose this to internal components (for nunit testing)
     member internal fsi.InternalGenerateCommandLineCommands() =

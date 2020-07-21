@@ -1,20 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Lib
+module internal FSharp.Compiler.Lib
 
 open System.IO
 open System.Collections.Generic
+open System.Runtime.InteropServices
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 
 /// is this the developer-debug build? 
 let debug = false 
 let verbose = false
-let progress = ref false 
-let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
+let mutable progress = false 
+let mutable tracking = false // intended to be a general hook to control diagnostic output when tracking down bugs
 
 let condition s = 
     try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
@@ -22,15 +22,6 @@ let condition s =
 let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
-
-type SaveAndRestoreConsoleEncoding () =
-    let savedOut = System.Console.Out
-
-    interface System.IDisposable with
-        member this.Dispose() = 
-            try 
-                System.Console.SetOut(savedOut)
-            with _ -> ()
 
 //-------------------------------------------------------------------------
 // Library: bits
@@ -54,7 +45,7 @@ module Bits =
 
 module Filename = 
     let fullpath cwd nm = 
-        let p = if FileSystem.IsPathRootedShim(nm) then nm else Path.Combine(cwd,nm)
+        let p = if FileSystem.IsPathRootedShim(nm) then nm else Path.Combine(cwd, nm)
         try FileSystem.GetFullPathShim(p) with 
         | :? System.ArgumentException 
         | :? System.ArgumentNullException 
@@ -83,7 +74,7 @@ module Int64 =
 module Pair = 
     let order (compare1: IComparer<'T1>, compare2: IComparer<'T2>) =
         { new IComparer<'T1 * 'T2> with 
-             member __.Compare((a1,a2),(aa1,aa2)) =
+             member __.Compare((a1, a2), (aa1, aa2)) =
                   let res1 = compare1.Compare (a1, aa1)
                   if res1 <> 0 then res1 else compare2.Compare (a2, aa2) }
 
@@ -107,48 +98,48 @@ module Check =
     
     /// Throw <c>System.InvalidOperationException()</c> if argument is <c>None</c>.
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
-    let NotNone argname (arg:'T option) : 'T = 
+    let NotNone argName (arg:'T option) : 'T = 
         match arg with 
-        | None -> raise (new System.InvalidOperationException(argname))
+        | None -> raise (new System.InvalidOperationException(argName))
         | Some x -> x
 
     /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
-    let ArgumentNotNull arg argname = 
+    let ArgumentNotNull arg argName = 
         match box(arg) with 
-        | null -> raise (new System.ArgumentNullException(argname))
+        | null -> raise (new System.ArgumentNullException(argName))
         | _ -> ()
        
         
     /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
-    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argname = 
-        ArgumentNotNull arr argname
+    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName = 
+        ArgumentNotNull arr argName
         if (0 = arr.Length) then
-            raise (new System.ArgumentOutOfRangeException(argname))
+            raise (new System.ArgumentOutOfRangeException(argName))
 
     /// Throw <c>System.ArgumentNullException()</c> if string argument is <c>null</c>.
     /// Throw <c>System.ArgumentOutOfRangeException()</c> is string argument is empty.
-    let StringArgumentNotNullOrEmpty (s:string) argname = 
-        ArgumentNotNull s argname
+    let StringArgumentNotNullOrEmpty (s:string) argName = 
+        ArgumentNotNull s argName
         if s.Length = 0 then
-            raise (new System.ArgumentNullException(argname))
+            raise (new System.ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library 
 //------------------------------------------------------------------------
 
-type IntMap<'T> = Zmap<int,'T>
+type IntMap<'T> = Zmap<int, 'T>
 module IntMap = 
     let empty () = Zmap.empty Int32.order
 
     let add k v (t:IntMap<'T>) = Zmap.add k v t
     let find k (t:IntMap<'T>) = Zmap.find k t
     let tryFind k (t:IntMap<'T>) = Zmap.tryFind k t
-    let remove  k (t:IntMap<'T>) = Zmap.remove k t
-    let mem     k (t:IntMap<'T>)  = Zmap.mem k t
-    let iter    f (t:IntMap<'T>)  = Zmap.iter f t
-    let map     f (t:IntMap<'T>)  = Zmap.map f t 
-    let fold    f (t:IntMap<'T>)  z = Zmap.fold f t z
+    let remove k (t:IntMap<'T>) = Zmap.remove k t
+    let mem k (t:IntMap<'T>) = Zmap.mem k t
+    let iter f (t:IntMap<'T>) = Zmap.iter f t
+    let map f (t:IntMap<'T>) = Zmap.map f t 
+    let fold f (t:IntMap<'T>) z = Zmap.fold f t z
 
 
 //-------------------------------------------------------------------------
@@ -163,7 +154,7 @@ module ListAssoc =
     let rec find f x l = 
       match l with 
       | [] -> notFound()
-      | (x',y)::t -> if f x x' then y else find f x t
+      | (x2, y) :: t -> if f x x2 then y else find f x t
 
     /// Treat a list of key-value pairs as a lookup collection.
     /// This function looks up a value based on a match from the supplied
@@ -171,7 +162,7 @@ module ListAssoc =
     let rec tryFind (f:'key->'key->bool) (x:'key) (l:('key*'value) list) : 'value option = 
         match l with 
         | [] -> None
-        | (x',y)::t -> if f x x' then Some y else tryFind f x t
+        | (x2, y) :: t -> if f x x2 then Some y else tryFind f x t
 
 //-------------------------------------------------------------------------
 // Library: lists as generalized sets
@@ -181,7 +172,7 @@ module ListSet =
     let inline contains f x l = List.exists (f x) l
 
     (* NOTE: O(n)! *)
-    let insert f x l = if contains f x l then l else x::l
+    let insert f x l = if contains f x l then l else x :: l
 
     let unionFavourRight f l1 l2 = 
         match l1, l2 with 
@@ -193,37 +184,37 @@ module ListSet =
     let rec private findIndexAux eq x l n =
         match l with
         | [] -> notFound()
-        | (h::t) -> if eq h x then n else findIndexAux eq x t (n+1)
+        | (h :: t) -> if eq h x then n else findIndexAux eq x t (n+1)
 
     let findIndex eq x l = findIndexAux eq x l 0
 
     let rec remove f x l = 
         match l with 
-        | (h::t) -> if f x h then t else h:: remove f x t
+        | (h :: t) -> if f x h then t else h :: remove f x t
         | [] -> []
 
     (* NOTE: quadratic! *)
     let rec subtract f l1 l2 = 
       match l2 with 
-      | (h::t) -> subtract f (remove (fun y2 y1 ->  f y1 y2) h l1) t
+      | (h :: t) -> subtract f (remove (fun y2 y1 -> f y1 y2) h l1) t
       | [] -> l1
 
     let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
     (* nb. preserve orders here: f must be applied to elements of l1 then elements of l2*)
-    let isSupersetOf f l1 l2 = List.forall (fun x2 -> contains (fun y2 y1 ->  f y1 y2) x2 l1) l2
+    let isSupersetOf f l1 l2 = List.forall (fun x2 -> contains (fun y2 y1 -> f y1 y2) x2 l1) l2
     let equals f l1 l2 = isSubsetOf f l1 l2 && isSupersetOf f l1 l2
 
     let unionFavourLeft f l1 l2 = 
-        match l1,l2 with 
-        | _,[] -> l1 
-        | [],_ -> l2 
+        match l1, l2 with 
+        | _, [] -> l1 
+        | [], _ -> l2 
         | _ -> l1 @ (subtract f l2 l1)
 
 
     (* NOTE: not tail recursive! *)
     let rec intersect f l1 l2 = 
         match l2 with 
-        | (h::t) -> if contains f h l1 then h::intersect f l1 t else intersect f l1 t
+        | (h :: t) -> if contains f h l1 then h :: intersect f l1 t else intersect f l1 t
         | [] -> []
 
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
@@ -234,15 +225,15 @@ module ListSet =
         | [] -> false
         | [_] -> false
         | [x; y] -> f x y
-        | x::rest ->
+        | x :: rest ->
             let rec loop acc l =
                 match l with
                 | [] -> false
-                | x::rest ->
+                | x :: rest ->
                     if contains f x acc then
                         true 
                     else
-                        loop (x::acc) rest
+                        loop (x :: acc) rest
 
             loop [x] rest
 
@@ -250,61 +241,56 @@ module ListSet =
 // Library: pairs
 //------------------------------------------------------------------------
 
-let mapFoldFst f s (x,y) =  let x',s = f s x in  (x',y),s
-let mapFoldSnd f s (x,y) =  let y',s = f s y in  (x,y'),s
-let pair a b = a,b      
+let mapFoldFst f s (x, y) = let x2, s = f s x in (x2, y), s
+let mapFoldSnd f s (x, y) = let y2, s = f s y in (x, y2), s
+let pair a b = a, b 
 
-let p13 (x,_y,_z) = x
-let p23 (_x,y,_z) = y
-let p33 (_x,_y,z) = z
+let p13 (x, _y, _z) = x
+let p23 (_x, y, _z) = y
+let p33 (_x, _y, z) = z
 
-let map1Of2 f (a1,a2)       = (f a1,a2)
-let map2Of2 f (a1,a2)       = (a1,f a2)
-let map1Of3 f (a1,a2,a3)     = (f a1,a2,a3)
-let map2Of3 f (a1,a2,a3)     = (a1,f a2,a3)
-let map3Of3 f (a1,a2,a3)     = (a1,a2,f a3)
-let map3Of4 f (a1,a2,a3,a4)     = (a1,a2,f a3,a4)
-let map4Of4 f (a1,a2,a3,a4)   = (a1,a2,a3,f a4)
-let map5Of5 f (a1,a2,a3,a4,a5) = (a1,a2,a3,a4,f a5)
-let map6Of6 f (a1,a2,a3,a4,a5,a6) = (a1,a2,a3,a4,a5,f a6)
-let foldPair (f1,f2)    acc (a1,a2)         = f2 (f1 acc a1) a2
-let fold1Of2 f1    acc (a1,_a2)         = f1 acc a1
-let foldTriple (f1,f2,f3) acc (a1,a2,a3)      = f3 (f2 (f1 acc a1) a2) a3
-let foldQuadruple (f1,f2,f3,f4) acc (a1,a2,a3,a4)      = f4 (f3 (f2 (f1 acc a1) a2) a3) a4
-let mapPair (f1,f2)    (a1,a2)     = (f1 a1, f2 a2)
-let mapTriple (f1,f2,f3) (a1,a2,a3)  = (f1 a1, f2 a2, f3 a3)
-let mapQuadruple (f1,f2,f3,f4) (a1,a2,a3,a4)  = (f1 a1, f2 a2, f3 a3, f4 a4)
-let fmap2Of2 f z (a1,a2)       = let z,a2 = f z a2 in z,(a1,a2)
-
-module List = 
-    let noRepeats xOrder xs =
-        let s = Zset.addList   xs (Zset.empty xOrder) // build set 
-        Zset.elements s          // get elements... no repeats
+let map1Of2 f (a1, a2) = (f a1, a2)
+let map2Of2 f (a1, a2) = (a1, f a2)
+let map1Of3 f (a1, a2, a3) = (f a1, a2, a3)
+let map2Of3 f (a1, a2, a3) = (a1, f a2, a3)
+let map3Of3 f (a1, a2, a3) = (a1, a2, f a3)
+let map3Of4 f (a1, a2, a3, a4) = (a1, a2, f a3, a4)
+let map4Of4 f (a1, a2, a3, a4) = (a1, a2, a3, f a4)
+let map5Of5 f (a1, a2, a3, a4, a5) = (a1, a2, a3, a4, f a5)
+let map6Of6 f (a1, a2, a3, a4, a5, a6) = (a1, a2, a3, a4, a5, f a6)
+let foldPair (f1, f2) acc (a1, a2) = f2 (f1 acc a1) a2
+let fold1Of2 f1 acc (a1, _a2) = f1 acc a1
+let foldTriple (f1, f2, f3) acc (a1, a2, a3) = f3 (f2 (f1 acc a1) a2) a3
+let foldQuadruple (f1, f2, f3, f4) acc (a1, a2, a3, a4) = f4 (f3 (f2 (f1 acc a1) a2) a3) a4
+let mapPair (f1, f2) (a1, a2) = (f1 a1, f2 a2)
+let mapTriple (f1, f2, f3) (a1, a2, a3) = (f1 a1, f2 a2, f3 a3)
+let mapQuadruple (f1, f2, f3, f4) (a1, a2, a3, a4) = (f1 a1, f2 a2, f3 a3, f4 a4)
+let fmap2Of2 f z (a1, a2) = let z, a2 = f z a2 in z, (a1, a2)
 
 //---------------------------------------------------------------------------
 // Zmap rebinds
 //------------------------------------------------------------------------- 
 
 module Zmap = 
-    let force  k   mp           = match Zmap.tryFind k mp with Some x -> x | None -> failwith "Zmap.force: lookup failed"
+    let force k mp = match Zmap.tryFind k mp with Some x -> x | None -> failwith "Zmap.force: lookup failed"
 
     let mapKey key f mp =
       match f (Zmap.tryFind key mp) with
-      | Some fx -> Zmap.add key fx mp       
-      | None    -> Zmap.remove key mp
+      | Some fx -> Zmap.add key fx mp
+      | None -> Zmap.remove key mp
 
 //---------------------------------------------------------------------------
 // Zset
 //------------------------------------------------------------------------- 
 
 module Zset =
-    let ofList order xs = Zset.addList   xs (Zset.empty order)
+    let ofList order xs = Zset.addList xs (Zset.empty order)
 
     // CLEANUP NOTE: move to Zset?
     let rec fixpoint f (s as s0) =
         let s = f s
-        if Zset.equal s s0 then s0           (* fixed *)
-                           else fixpoint f s (* iterate *)
+        if Zset.equal s s0 then s0 (* fixed *)
+        else fixpoint f s (* iterate *)
 
 //---------------------------------------------------------------------------
 // Misc
@@ -322,19 +308,12 @@ let bufs f =
     f buf 
     buf.ToString()
 
-let buff (os: TextWriter) f x = 
+// writing to output stream via a string buffer.
+let writeViaBuffer (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
     f buf x 
     os.Write(buf.ToString())
 
-// Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
-let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
-    let buf = System.Text.StringBuilder 100 
-    f buf x
-    let text = buf.ToString()
-    let text = text.Replace("\n",System.Environment.NewLine)
-    os.Write text
-        
 //---------------------------------------------------------------------------
 // Imperative Graphs 
 //---------------------------------------------------------------------------
@@ -346,19 +325,19 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
           nodes: 'Data list,
           edges: ('Data * 'Data) list) =
 
-    let edges = edges |> List.map (fun (v1,v2) -> nodeIdentity v1, nodeIdentity v2)
+    let edges = edges |> List.map (fun (v1, v2) -> nodeIdentity v1, nodeIdentity v2)
     let nodes = nodes |> List.map (fun d -> nodeIdentity d, { nodeId = nodeIdentity d; nodeData=d; nodeNeighbours=[] }) 
     let tab = Map.ofList nodes 
     let nodes = List.map snd nodes
     do for node in nodes do 
-        node.nodeNeighbours <- edges |>  List.filter (fun (x,_y) -> x = node.nodeId) |> List.map (fun (_,nodeId) -> tab.[nodeId])
+        node.nodeNeighbours <- edges |> List.filter (fun (x, _y) -> x = node.nodeId) |> List.map (fun (_, nodeId) -> tab.[nodeId])
 
     member g.GetNodeData nodeId = tab.[nodeId].nodeData
 
     member g.IterateCycles f = 
         let rec trace path node = 
             if List.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
-            else List.iter (trace (node.nodeData::path)) node.nodeNeighbours
+            else List.iter (trace (node.nodeData :: path)) node.nodeNeighbours
         List.iter (fun node -> trace [] node) nodes 
 
 //---------------------------------------------------------------------------
@@ -378,7 +357,7 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 type NonNullSlot<'T> = 'T
 let nullableSlotEmpty() = Unchecked.defaultof<'T>
 let nullableSlotFull x = x
-//#endif    
+//#endif
 
 //---------------------------------------------------------------------------
 // Caches, mainly for free variables
@@ -387,23 +366,38 @@ let nullableSlotFull x = x
 type cache<'T> = { mutable cacheVal: 'T NonNullSlot }
 let newCache() = { cacheVal = nullableSlotEmpty() }
 
-let inline cached cache resf = 
+let inline cached cache resF = 
     match box cache.cacheVal with 
     | null -> 
-        let res = resf() 
+        let res = resF() 
         cache.cacheVal <- nullableSlotFull res 
         res
     | _ -> 
         cache.cacheVal
 
+let inline cacheOptByref (cache: byref<'T option>) f = 
+    match cache with 
+    | Some v -> v
+    | None -> 
+       let res = f()
+       cache <- Some res
+       res
+
+// REVIEW: this is only used because we want to mutate a record field,
+// and because you cannot take a byref<_> of such a thing directly,
+// we cannot use 'cacheOptByref'. If that is changed, this can be removed.
 let inline cacheOptRef cache f = 
-    match !cache with 
+    match !cache with
     | Some v -> v
     | None -> 
        let res = f()
        cache := Some res
        res 
 
+let inline tryGetCacheValue cache =
+    match box cache.cacheVal with
+    | null -> ValueNone
+    | _ -> ValueSome cache.cacheVal
 
 #if DUMPER
 type Dumper(x:obj) =
@@ -422,17 +416,17 @@ module internal AsyncUtil =
 
     /// Represents the reified result of an asynchronous computation.
     [<NoEquality; NoComparison>]
-    type AsyncResult<'T>  =
-        |   AsyncOk of 'T
-        |   AsyncException of exn
-        |   AsyncCanceled of OperationCanceledException
+    type AsyncResult<'T> =
+        | AsyncOk of 'T
+        | AsyncException of exn
+        | AsyncCanceled of OperationCanceledException
 
         static member Commit(res:AsyncResult<'T>) =
-            Async.FromContinuations (fun (cont,econt,ccont) ->
+            Async.FromContinuations (fun (cont, eCont, cCont) ->
                     match res with
                     | AsyncOk v -> cont v
-                    | AsyncException exn -> econt exn
-                    | AsyncCanceled exn -> ccont exn)
+                    | AsyncException exn -> eCont exn
+                    | AsyncCanceled exn -> cCont exn)
 
     /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
     [<Sealed>]
@@ -450,15 +444,15 @@ module internal AsyncUtil =
         member x.RegisterResult (res:AsyncResult<'T>) =
             let grabbedConts =
                 lock syncRoot (fun () ->
-                    if result.IsSome then  
+                    if result.IsSome then
                         []
                     else
                         result <- Some res
                         // Invoke continuations in FIFO order
-                        // Continuations that Async.FromContinuations provide do QUWI/SynchContext.Post,
-                        // so the order is not overly relevant but still.                        
+                        // Continuations that Async.FromContinuations provide do QUWI/SyncContext.Post,
+                        // so the order is not overly relevant but still. 
                         List.rev savedConts)
-            let postOrQueue (sc:SynchronizationContext,cont) =
+            let postOrQueue (sc:SynchronizationContext, cont) =
                 match sc with
                 |   null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
                 |   sc -> sc.Post((fun _ -> cont res), state=null)
@@ -466,7 +460,7 @@ module internal AsyncUtil =
             // Run continuations outside the lock
             match grabbedConts with
             |   [] -> ()
-            |   [(sc,cont) as c] -> 
+            |   [(sc, cont) as c] -> 
                     if SynchronizationContext.Current = sc then
                         cont res
                     else
@@ -476,7 +470,7 @@ module internal AsyncUtil =
 
         /// Get the reified result.
         member private x.AsyncPrimitiveResult =
-            Async.FromContinuations(fun (cont,_,_) ->
+            Async.FromContinuations(fun (cont, _, _) ->
                 let grabbedResult =
                     lock syncRoot (fun () ->
                         match result with
@@ -485,7 +479,7 @@ module internal AsyncUtil =
                         | None ->
                             // Otherwise save the continuation and call it in RegisterResult
                             let sc = SynchronizationContext.Current
-                            savedConts <- (sc,cont)::savedConts
+                            savedConts <- (sc, cont) :: savedConts
                             None)
                 // Run the action outside the lock
                 match grabbedResult with
@@ -513,24 +507,19 @@ module UnmanagedProcessExecutionOptions =
 
     [<DllImport("kernel32.dll")>]
     extern bool private HeapSetInformation( 
-        UIntPtr _HeapHandle, 
-        UInt32  _HeapInformationClass, 
-        UIntPtr _HeapInformation, 
+        UIntPtr _HeapHandle,
+        UInt32 _HeapInformationClass,
+        UIntPtr _HeapInformation,
         UIntPtr _HeapInformationLength)
 
     [<DllImport("kernel32.dll")>]
     extern UInt32 private GetLastError()
 
     // Translation of C# from http://swikb/v1/DisplayOnlineDoc.aspx?entryID=826 and copy in bug://5018
-#if !FX_NO_SECURITY_PERMISSIONS
-    [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert,UnmanagedCode = true)>] 
-#endif
+    [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert, UnmanagedCode = true)>] 
     let EnableHeapTerminationOnCorruption() =
-#if FX_NO_HEAPTERMINATION
-        ()
-#else
-        if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
-            System.Environment.Version.Major < 3) then         // and CLR not 3.0 or higher 
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&  System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher
+            System.Environment.Version.Major < 3) then // and CLR not 3.0 or higher 
             // "The flag HeapSetInformation sets is available in Windows XP SP3 and later.
             //  The data structure used for heap information is available on earlier versions of Windows.
             //  The call will either return TRUE (found and set the flag) or false (flag not found).
@@ -542,10 +531,37 @@ module UnmanagedProcessExecutionOptions =
             // See also:
             //  http://blogs.msdn.com/michael_howard/archive/2008/02/18/faq-about-heapsetinformation-in-windows-vista-and-heap-based-buffer-overruns.aspx
             let HeapEnableTerminationOnCorruption = 1u : uint32
-            if not (HeapSetInformation(GetProcessHeap(),HeapEnableTerminationOnCorruption,UIntPtr.Zero,UIntPtr.Zero)) then
+            if not (HeapSetInformation(GetProcessHeap(), HeapEnableTerminationOnCorruption, UIntPtr.Zero, UIntPtr.Zero)) then
                   raise (System.Security.SecurityException( 
                             "Unable to enable unmanaged process execution option TerminationOnCorruption. " + 
                             "HeapSetInformation() returned FALSE; LastError = 0x" + 
-                            GetLastError().ToString("X").PadLeft(8,'0') + "."))
-#endif
+                            GetLastError().ToString("X").PadLeft(8, '0') + "."))
 
+[<RequireQualifiedAccess>]
+module StackGuard =
+
+    open System.Runtime.CompilerServices
+
+    [<Literal>] 
+    let private MaxUncheckedRecursionDepth = 20
+
+    let EnsureSufficientExecutionStack recursionDepth =
+        if recursionDepth > MaxUncheckedRecursionDepth then
+            RuntimeHelpers.EnsureSufficientExecutionStack ()
+
+[<RequireQualifiedAccess>] 
+type MaybeLazy<'T> =
+    | Strict of 'T
+    | Lazy of Lazy<'T>
+
+    member this.Value: 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Value
+
+    member this.Force() : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Force()
+
+let inline vsnd ((_, y): struct('T * 'T)) = y

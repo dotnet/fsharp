@@ -7,9 +7,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
 open System.Text.RegularExpressions
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Layout
+open FSharp.Compiler.Layout.TaggedTextOps
 
 type internal ITaggedTextCollector_DEPRECATED =
     abstract Add: text: TaggedText -> unit
@@ -148,7 +148,7 @@ module internal XmlDocumentation =
                     addSeparatorIfNecessary add
                     if showText then 
                         let AppendOverload (item :FSharpToolTipElementData<_>) = 
-                            if not(Microsoft.FSharp.Compiler.Layout.isEmptyL item.MainDescription) then
+                            if not(FSharp.Compiler.Layout.isEmptyL item.MainDescription) then
                                 if not textCollector.IsEmpty then textCollector.Add Literals.lineBreak
                                 renderL (taggedTextListR textCollector.Add) item.MainDescription |> ignore
 

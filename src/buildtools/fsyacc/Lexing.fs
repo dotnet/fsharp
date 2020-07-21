@@ -324,7 +324,7 @@ namespace Microsoft.FSharp.Text.Lexing
         let numUnicodeCategories = 30 
         let numLowUnicodeChars = 128 
         let numSpecificUnicodeChars = (trans.[0].Length - 1 - numLowUnicodeChars - numUnicodeCategories)/2
-        let lookupUnicodeCharacters (state,inp) = 
+        let lookupUnicodeCharacters (state,inp: char) = 
             let inpAsInt = int inp
             // Is it a fast ASCII character?
             if inpAsInt < numLowUnicodeChars then 

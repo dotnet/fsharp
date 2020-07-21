@@ -380,7 +380,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="action">The function to apply to elements from the input list.</param>
         /// <param name="list">The input list.</param>
         [<CompiledName("Iterate")>]
-        val iter: action:('T -> unit) -> list:'T list -> unit
+        val inline iter: action:('T -> unit) -> list:'T list -> unit
 
         /// <summary>Applies the given function to two collections simultaneously. The
         /// collections must have identical size.</summary>
@@ -395,7 +395,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="action">The function to apply to the elements of the list along with their index.</param>
         /// <param name="list">The input list.</param>
         [<CompiledName("IterateIndexed")>]
-        val iteri: action:(int -> 'T -> unit) -> list:'T list -> unit
+        val inline iteri: action:(int -> 'T -> unit) -> list:'T list -> unit
 
         /// <summary>Applies the given function to two collections simultaneously. The
         /// collections must have identical size. The integer passed to the

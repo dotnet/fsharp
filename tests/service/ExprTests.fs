@@ -1,8 +1,7 @@
 ﻿
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.ProjectCracker.dll"
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -15,9 +14,7 @@ open FsUnit
 open System
 open System.IO
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Service
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
@@ -49,10 +46,14 @@ module internal Utils =
         | BasicPatterns.NewRecord(v,args) -> 
             let fields = v.TypeDefinition.FSharpFields
             "{" + ((fields, args) ||> Seq.map2 (fun f a -> f.Name + " = " + printExpr 0 a) |> String.concat "; ") + "}" 
+        | BasicPatterns.NewAnonRecord(v,args) -> 
+            let fields = v.AnonRecordTypeDetails.SortedFieldNames 
+            "{" + ((fields, args) ||> Seq.map2 (fun f a -> f+ " = " + printExpr 0 a) |> String.concat "; ") + "}" 
         | BasicPatterns.NewTuple(v,args) -> printTupledArgs args 
         | BasicPatterns.NewUnionCase(ty,uc,args) -> uc.CompiledName + printTupledArgs args 
         | BasicPatterns.Quote(e1) -> "quote" + printTupledArgs [e1]
         | BasicPatterns.FSharpFieldGet(obj, ty,f) -> printObjOpt obj + f.Name 
+        | BasicPatterns.AnonRecordGet(obj, ty, n) -> printExpr 0 obj + "." + ty.AnonRecordTypeDetails.SortedFieldNames.[n]
         | BasicPatterns.FSharpFieldSet(obj, ty,f,arg) -> printObjOpt obj + f.Name + " <- " + printExpr 0 arg
         | BasicPatterns.Sequential(e1,e2) -> "(" + printExpr 0 e1 + "; " + printExpr 0 e2 + ")"
         | BasicPatterns.ThisValue _ -> "this"
@@ -278,7 +279,6 @@ module internal Utils =
 // This project is a smoke test for a whole range of standard and obscure expressions
 
 module internal Project1 = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
@@ -535,6 +535,8 @@ module LetLambda =
 
 let letLambdaRes = [ 1, 2 ] |> List.map (fun (a, b) -> LetLambda.f a b) 
 
+let anonRecd = {| X = 1; Y = 2 |}
+let anonRecdGet = (anonRecd.X, anonRecd.Y)
 
     """
     File.WriteAllText(fileName1, fileSource1)
@@ -557,6 +559,17 @@ let testHashUIntPtr (x:unativeint) = hash x
 let testHashString (x:string) = hash x
 let testTypeOf (x:'T) = typeof<'T>
 
+let inline mutableVar x =
+    if x > 0 then
+        let mutable acc = x
+        acc <- x
+
+let inline mutableConst () =
+    let mutable acc = ()
+    acc <- ()
+
+let testMutableVar = mutableVar 1
+let testMutableConst = mutableConst ()
     """
 
     File.WriteAllText(fileName2, fileSource2)
@@ -624,8 +637,11 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 
 """
 
-//<@ let x = Some(3) in x.IsSome @>
 [<Test>]
+// FCS Has a problem with these tests because of FSharp Core versions.
+#if !COMPILER_SERVICE_AS_DLL
+[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
+#endif
 let ``Test Unoptimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
@@ -698,7 +714,7 @@ let ``Test Unoptimized Declarations Project1`` () =
         "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
         "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (m.Method(7,8),fun tupledArg -> let arg00: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg01: Microsoft.FSharp.Core.int = tupledArg.Item1 in fun tupledArg -> let arg10: Microsoft.FSharp.Core.int = tupledArg.Item0 in let arg11: Microsoft.FSharp.Core.int = tupledArg.Item1 in m.CurriedMethod(arg00,arg01,arg10,arg11) (9,10) (11,12)) @ (110,8--110,9)";
         "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (x,y) @ (122,70--122,75)";
-        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress,false,ILArrayShapeFIX,!0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
+        "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress, false, ILArrayShapeFIX, !0)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
         "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
         "let testFunctionThatUsesStructs2(unitVar0) = let dt1: System.DateTime = DateTime.get_Now () in let mutable dt2: System.DateTime = DateTime.get_Now () in let dt3: System.TimeSpan = Operators.op_Subtraction<System.DateTime,System.DateTime,System.TimeSpan> (dt1,dt2) in let dt4: System.DateTime = dt1.AddDays(3) in let dt5: Microsoft.FSharp.Core.int = dt1.get_Millisecond() in let dt6: Microsoft.FSharp.Core.byref<System.DateTime> = &dt2 in let dt7: System.TimeSpan = Operators.op_Subtraction<System.DateTime,System.DateTime,System.TimeSpan> (dt6,dt4) in dt7 @ (142,7--142,10)";
         "let testFunctionThatUsesWhileLoop(unitVar0) = let mutable x: Microsoft.FSharp.Core.int = 1 in (while Operators.op_LessThan<Microsoft.FSharp.Core.int> (x,100) do x <- Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,1) done; x) @ (152,15--152,16)";
@@ -732,7 +748,9 @@ let ``Test Unoptimized Declarations Project1`` () =
         "type LetLambda";
         "let f = ((); fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b)) @ (246,8--247,24)";
         "let letLambdaRes = Operators.op_PipeRight<(Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int) Microsoft.FSharp.Collections.list,Microsoft.FSharp.Core.int Microsoft.FSharp.Collections.list> (Cons((1,2),Empty()),let mapping: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int = fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b in fun list -> ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (mapping,list)) @ (249,19--249,71)";
-      ]
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)";
+        "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
+        ]
 
     let expected2 = [
         "type N"; "type IntAbbrev"; "let bool2 = False @ (6,12--6,17)";
@@ -745,6 +763,10 @@ let ``Test Unoptimized Declarations Project1`` () =
         "let testHashUIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.unativeint> (x) @ (14,37--14,43)";
         "let testHashString(x) = Operators.Hash<Microsoft.FSharp.Core.string> (x) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
+        "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
+        "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
+        "let testMutableVar = N.mutableVar (1) @ (28,21--28,33)";
+        "let testMutableConst = N.mutableConst (()) @ (29,23--29,38)";
       ]
 
     printDeclarations None (List.ofSeq file1.Declarations) 
@@ -761,9 +783,10 @@ let ``Test Unoptimized Declarations Project1`` () =
 
 
 [<Test>]
-//#if NETCOREAPP2_0
-//[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-//#endif
+// FCS Has a problem with these tests because of FSharp Core versions
+#if !COMPILER_SERVICE_AS_DLL
+[<Ignore("SKIPPED: FSharp.Core nuget package needs to be updated before this test can be re-enabled")>]
+#endif
 let ``Test Optimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
@@ -870,6 +893,8 @@ let ``Test Optimized Declarations Project1`` () =
         "type LetLambda";
         "let f = fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b) @ (247,8--247,24)";
         "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)";
+        "let anonRecd = {X = 1; Y = 2} @ (251,15--251,33)"
+        "let anonRecdGet = (M.anonRecd ().X,M.anonRecd ().Y) @ (252,19--252,41)"
       ]
 
     let expected2 = [
@@ -881,8 +906,12 @@ let ``Test Optimized Declarations Project1`` () =
         "let testHashUInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (x,32))) @ (12,32--12,38)";
         "let testHashIntPtr(x) = Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.nativeint> (x)) @ (13,35--13,41)";
         "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (14,37--14,43)";
-        "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else Operators.Hash<Microsoft.FSharp.Core.string> (x)) @ (16,32--16,38)";
+        "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else x.GetHashCode()) @ (16,32--16,38)";
         "let testTypeOf(x) = Operators.TypeOf<'T> () @ (17,24--17,30)";
+        "let mutableVar(x) = (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (20,4--22,16)";
+        "let mutableConst(unitVar0) = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (25,16--25,19)";
+        "let testMutableVar = let x: Microsoft.FSharp.Core.int = 1 in (if Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (x,0) then let mutable acc: Microsoft.FSharp.Core.int = x in acc <- x else ()) @ (28,21--28,33)";
+        "let testMutableConst = let mutable acc: Microsoft.FSharp.Core.unit = () in acc <- () @ (29,23--29,38)";
       ]
 
     // printFSharpDecls "" file2.Declarations |> Seq.iter (printfn "%s")
@@ -938,22 +967,22 @@ let ``Test Operator Declarations for Byte`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsByte";
-        "let testByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.byte> (e1,e2) @ (4,64--4,72)";
-        "let testByteNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.byte> (e1,e2) @ (5,64--5,73)";
-        "let testByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (6,64--6,72)";
-        "let testByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.byte> (e1,e2) @ (7,64--7,73)";
-        "let testByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (8,64--8,72)";
-        "let testByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.byte> (e1,e2) @ (9,64--9,73)";
-        "let testByteAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (11,56--11,64)";
-        "let testByteSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (12,56--12,64)";
+        "let testByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.byte> (e1,e2) @ (4,63--4,72)";
+        "let testByteNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.byte> (e1,e2) @ (5,63--5,73)";
+        "let testByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (6,63--6,72)";
+        "let testByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.byte> (e1,e2) @ (7,63--7,73)";
+        "let testByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (8,63--8,72)";
+        "let testByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.byte> (e1,e2) @ (9,63--9,73)";
+        "let testByteAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (11,55--11,64)";
+        "let testByteSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (12,55--12,64)";
         "let testByteMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (13,55--13,64)";
-        "let testByteDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (14,56--14,64)";
-        "let testByteModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (15,56--15,64)";
-        "let testByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.byte> (e1,e2) @ (16,56--16,66)";
-        "let testByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (17,56--17,66)";
-        "let testByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (18,56--18,66)";
-        "let testByteShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.byte> (e1,e2) @ (19,55--19,65)";
-        "let testByteShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.byte> (e1,e2) @ (20,55--20,65)";
+        "let testByteDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (14,55--14,64)";
+        "let testByteModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (15,55--15,64)";
+        "let testByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.byte> (e1,e2) @ (16,55--16,66)";
+        "let testByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (17,55--17,66)";
+        "let testByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (18,55--18,66)";
+        "let testByteShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.byte> (e1,e2) @ (19,54--19,65)";
+        "let testByteShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.byte> (e1,e2) @ (20,54--20,65)";
         "let testByteAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (24,53--24,70)";
         "let testByteSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (25,53--25,70)";
         "let testByteMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2) @ (26,53--26,70)";
@@ -988,22 +1017,22 @@ let ``Test Operator Declarations for Byte`` () =
 
     let expectedOptimized = [
         "type OperatorTestsByte";
-        "let testByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.byte> (e1,e2) @ (4,64--4,72)";
-        "let testByteNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.byte> (e1,e2),False) @ (5,64--5,73)";
-        "let testByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (6,64--6,72)";
-        "let testByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.byte> (e1,e2),False) @ (7,64--7,73)";
-        "let testByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (8,64--8,72)";
-        "let testByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.byte> (e1,e2),False) @ (9,64--9,73)";
-        "let testByteAdditionOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Addition<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (11,56--11,64)";
-        "let testByteSubtractionOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Subtraction<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (12,56--12,64)";
+        "let testByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.byte> (e1,e2) @ (4,63--4,72)";
+        "let testByteNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.byte> (e1,e2),False) @ (5,63--5,73)";
+        "let testByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (6,63--6,72)";
+        "let testByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.byte> (e1,e2),False) @ (7,63--7,73)";
+        "let testByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.byte> (e1,e2) @ (8,63--8,72)";
+        "let testByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.byte> (e1,e2),False) @ (9,63--9,73)";
+        "let testByteAdditionOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Addition<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (11,55--11,64)";
+        "let testByteSubtractionOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Subtraction<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (12,55--12,64)";
         "let testByteMultiplyOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Multiply<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (13,55--13,64)";
-        "let testByteDivisionOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Division<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (14,56--14,64)";
-        "let testByteModulusOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Modulus<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (15,56--15,64)";
-        "let testByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.byte> (e1,e2) @ (16,56--16,66)";
-        "let testByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (17,56--17,66)";
-        "let testByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (18,56--18,66)";
-        "let testByteShiftLeftOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_LeftShift<Microsoft.FSharp.Core.byte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (19,55--19,65)";
-        "let testByteShiftRightOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_RightShift<Microsoft.FSharp.Core.byte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (20,55--20,65)";
+        "let testByteDivisionOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Division<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (14,55--14,64)";
+        "let testByteModulusOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_Modulus<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (15,55--15,64)";
+        "let testByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.byte> (e1,e2) @ (16,55--16,66)";
+        "let testByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (17,55--17,66)";
+        "let testByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.byte> (e1,e2) @ (18,55--18,66)";
+        "let testByteShiftLeftOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_LeftShift<Microsoft.FSharp.Core.byte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (19,54--19,65)";
+        "let testByteShiftRightOperator(e1) (e2) = Operators.ToByte<Microsoft.FSharp.Core.uint32> (Operators.op_RightShift<Microsoft.FSharp.Core.byte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (20,54--20,65)";
         "let testByteAdditionChecked(e1) (e2) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (Checked.op_Addition<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (24,53--24,70)";
         "let testByteSubtractionChecked(e1) (e2) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (Checked.op_Subtraction<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (25,53--25,70)";
         "let testByteMultiplyChecked(e1) (e2) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (Checked.op_Multiply<Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte,Microsoft.FSharp.Core.byte> (e1,e2)) @ (26,53--26,70)";
@@ -1033,8 +1062,12 @@ let ``Test Operator Declarations for Byte`` () =
         "let testByteToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.byte> (e1)) @ (53,43--53,51)";
         "let testByteToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,43--54,53)";
         "let testByteToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.byte> (e1) @ (55,43--55,50)";
+#if DEBUG
+        @"let testByteToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.byte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
+#else
         "let testByteToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.byte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
-      ]
+#endif
+    ]
 
     testOperators "Byte" "byte" excludedTests expectedUnoptimized expectedOptimized
 
@@ -1045,22 +1078,23 @@ let ``Test Operator Declarations for SByte`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsSByte";
-        "let testSByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (4,67--4,75)";
-        "let testSByteNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (5,67--5,76)";
-        "let testSByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (6,67--6,75)";
-        "let testSByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (7,67--7,76)";
-        "let testSByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (8,67--8,75)";
-        "let testSByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (9,67--9,76)";
-        "let testSByteAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (11,59--11,67)"; "let testSByteSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (12,59--12,67)";
+        "let testSByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (4,66--4,75)";
+        "let testSByteNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (5,66--5,76)";
+        "let testSByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (6,66--6,75)";
+        "let testSByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (7,66--7,76)";
+        "let testSByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (8,66--8,75)";
+        "let testSByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (9,66--9,76)";
+        "let testSByteAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (11,58--11,67)";
+        "let testSByteSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (12,58--12,67)";
         "let testSByteMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (13,58--13,67)";
-        "let testSByteDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (14,59--14,67)";
-        "let testSByteModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (15,59--15,67)";
-        "let testSByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (16,59--16,69)";
-        "let testSByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (17,59--17,69)";
-        "let testSByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (18,59--18,69)";
-        "let testSByteShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (19,57--19,67)";
-        "let testSByteShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (20,57--20,67)";
-        "let testSByteUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.sbyte> (e1) @ (22,46--22,52)";
+        "let testSByteDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (14,58--14,67)";
+        "let testSByteModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (15,58--15,67)";
+        "let testSByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (16,58--16,69)";
+        "let testSByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (17,58--17,69)";
+        "let testSByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (18,58--18,69)";
+        "let testSByteShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (19,56--19,67)";
+        "let testSByteShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (20,56--20,67)";
+        "let testSByteUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.sbyte> (e1) @ (22,45--22,52)";
         "let testSByteAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (24,56--24,73)";
         "let testSByteSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (25,56--25,73)";
         "let testSByteMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2) @ (26,56--26,73)";
@@ -1096,23 +1130,23 @@ let ``Test Operator Declarations for SByte`` () =
 
     let expectedOptimized = [
         "type OperatorTestsSByte";
-        "let testSByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (4,67--4,75)";
-        "let testSByteNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.sbyte> (e1,e2),False) @ (5,67--5,76)";
-        "let testSByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (6,67--6,75)";
-        "let testSByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.sbyte> (e1,e2),False) @ (7,67--7,76)";
-        "let testSByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (8,67--8,75)";
-        "let testSByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.sbyte> (e1,e2),False) @ (9,67--9,76)";
-        "let testSByteAdditionOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (11,59--11,67)";
-        "let testSByteSubtractionOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Subtraction<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (12,59--12,67)";
+        "let testSByteEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (4,66--4,75)";
+        "let testSByteNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.sbyte> (e1,e2),False) @ (5,66--5,76)";
+        "let testSByteLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (6,66--6,75)";
+        "let testSByteLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.sbyte> (e1,e2),False) @ (7,66--7,76)";
+        "let testSByteGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (8,66--8,75)";
+        "let testSByteGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.sbyte> (e1,e2),False) @ (9,66--9,76)";
+        "let testSByteAdditionOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (11,58--11,67)";
+        "let testSByteSubtractionOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Subtraction<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (12,58--12,67)";
         "let testSByteMultiplyOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Multiply<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (13,58--13,67)";
-        "let testSByteDivisionOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Division<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (14,59--14,67)";
-        "let testSByteModulusOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Modulus<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (15,59--15,67)";
-        "let testSByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (16,59--16,69)";
-        "let testSByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (17,59--17,69)";
-        "let testSByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (18,59--18,69)";
-        "let testSByteShiftLeftOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_LeftShift<Microsoft.FSharp.Core.sbyte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (19,57--19,67)";
-        "let testSByteShiftRightOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_RightShift<Microsoft.FSharp.Core.sbyte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (20,57--20,67)";
-        "let testSByteUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.sbyte> (e1) @ (22,46--22,52)";
+        "let testSByteDivisionOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Division<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (14,58--14,67)";
+        "let testSByteModulusOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_Modulus<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (15,58--15,67)";
+        "let testSByteBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (16,58--16,69)";
+        "let testSByteBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (17,58--17,69)";
+        "let testSByteBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.sbyte> (e1,e2) @ (18,58--18,69)";
+        "let testSByteShiftLeftOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_LeftShift<Microsoft.FSharp.Core.sbyte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (19,56--19,67)";
+        "let testSByteShiftRightOperator(e1) (e2) = Operators.ToSByte<Microsoft.FSharp.Core.int32> (Operators.op_RightShift<Microsoft.FSharp.Core.sbyte> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,7))) @ (20,56--20,67)";
+        "let testSByteUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.sbyte> (e1) @ (22,45--22,52)";
         "let testSByteAdditionChecked(e1) (e2) = Checked.ToSByte<Microsoft.FSharp.Core.int32> (Checked.op_Addition<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (24,56--24,73)";
         "let testSByteSubtractionChecked(e1) (e2) = Checked.ToSByte<Microsoft.FSharp.Core.int32> (Checked.op_Subtraction<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (25,56--25,73)";
         "let testSByteMultiplyChecked(e1) (e2) = Checked.ToSByte<Microsoft.FSharp.Core.int32> (Checked.op_Multiply<Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte,Microsoft.FSharp.Core.sbyte> (e1,e2)) @ (26,56--26,73)";
@@ -1143,8 +1177,12 @@ let ``Test Operator Declarations for SByte`` () =
         "let testSByteToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.sbyte> (e1) @ (53,45--53,53)";
         "let testSByteToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testSByteToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.sbyte> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testSByteToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.sbyte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#else
         "let testSByteToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.sbyte> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
-      ]
+#endif
+    ]
 
     testOperators "SByte" "sbyte" excludedTests expectedUnoptimized expectedOptimized
 
@@ -1154,23 +1192,23 @@ let ``Test Operator Declarations for Int16`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsInt16";
-        "let testInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int16> (e1,e2) @ (4,67--4,75)";
-        "let testInt16NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int16> (e1,e2) @ (5,67--5,76)";
-        "let testInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (6,67--6,75)";
-        "let testInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int16> (e1,e2) @ (7,67--7,76)";
-        "let testInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (8,67--8,75)";
-        "let testInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int16> (e1,e2) @ (9,67--9,76)";
-        "let testInt16AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (11,59--11,67)";
-        "let testInt16SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (12,59--12,67)";
+        "let testInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int16> (e1,e2) @ (4,66--4,75)";
+        "let testInt16NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int16> (e1,e2) @ (5,66--5,76)";
+        "let testInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (6,66--6,75)";
+        "let testInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int16> (e1,e2) @ (7,66--7,76)";
+        "let testInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (8,66--8,75)";
+        "let testInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int16> (e1,e2) @ (9,66--9,76)";
+        "let testInt16AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (11,58--11,67)";
+        "let testInt16SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (12,58--12,67)";
         "let testInt16MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (13,58--13,67)";
-        "let testInt16DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (14,59--14,67)";
-        "let testInt16ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (15,59--15,67)";
-        "let testInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int16> (e1,e2) @ (16,59--16,69)";
-        "let testInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (17,59--17,69)";
-        "let testInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (18,59--18,69)";
-        "let testInt16ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int16> (e1,e2) @ (19,57--19,67)";
-        "let testInt16ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int16> (e1,e2) @ (20,57--20,67)";
-        "let testInt16UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int16> (e1) @ (22,46--22,52)";
+        "let testInt16DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (14,58--14,67)";
+        "let testInt16ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (15,58--15,67)";
+        "let testInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int16> (e1,e2) @ (16,58--16,69)";
+        "let testInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (17,58--17,69)";
+        "let testInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (18,58--18,69)";
+        "let testInt16ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int16> (e1,e2) @ (19,56--19,67)";
+        "let testInt16ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int16> (e1,e2) @ (20,56--20,67)";
+        "let testInt16UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int16> (e1) @ (22,45--22,52)";
         "let testInt16AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (24,56--24,73)";
         "let testInt16SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (25,56--25,73)";
         "let testInt16MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2) @ (26,56--26,73)";
@@ -1206,23 +1244,23 @@ let ``Test Operator Declarations for Int16`` () =
 
     let expectedOptimized = [
         "type OperatorTestsInt16";
-        "let testInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int16> (e1,e2) @ (4,67--4,75)";
-        "let testInt16NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int16> (e1,e2),False) @ (5,67--5,76)";
-        "let testInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (6,67--6,75)";
-        "let testInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int16> (e1,e2),False) @ (7,67--7,76)";
-        "let testInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (8,67--8,75)";
-        "let testInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int16> (e1,e2),False) @ (9,67--9,76)";
-        "let testInt16AdditionOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (11,59--11,67)";
-        "let testInt16SubtractionOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Subtraction<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (12,59--12,67)";
+        "let testInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int16> (e1,e2) @ (4,66--4,75)";
+        "let testInt16NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int16> (e1,e2),False) @ (5,66--5,76)";
+        "let testInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (6,66--6,75)";
+        "let testInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int16> (e1,e2),False) @ (7,66--7,76)";
+        "let testInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int16> (e1,e2) @ (8,66--8,75)";
+        "let testInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int16> (e1,e2),False) @ (9,66--9,76)";
+        "let testInt16AdditionOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (11,58--11,67)";
+        "let testInt16SubtractionOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Subtraction<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (12,58--12,67)";
         "let testInt16MultiplyOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Multiply<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (13,58--13,67)";
-        "let testInt16DivisionOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Division<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (14,59--14,67)";
-        "let testInt16ModulusOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Modulus<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (15,59--15,67)";
-        "let testInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int16> (e1,e2) @ (16,59--16,69)";
-        "let testInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (17,59--17,69)";
-        "let testInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (18,59--18,69)";
-        "let testInt16ShiftLeftOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_LeftShift<Microsoft.FSharp.Core.int16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (19,57--19,67)";
-        "let testInt16ShiftRightOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_RightShift<Microsoft.FSharp.Core.int16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (20,57--20,67)";
-        "let testInt16UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int16> (e1) @ (22,46--22,52)";
+        "let testInt16DivisionOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Division<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (14,58--14,67)";
+        "let testInt16ModulusOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_Modulus<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (15,58--15,67)";
+        "let testInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int16> (e1,e2) @ (16,58--16,69)";
+        "let testInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (17,58--17,69)";
+        "let testInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int16> (e1,e2) @ (18,58--18,69)";
+        "let testInt16ShiftLeftOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_LeftShift<Microsoft.FSharp.Core.int16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (19,56--19,67)";
+        "let testInt16ShiftRightOperator(e1) (e2) = Operators.ToInt16<Microsoft.FSharp.Core.int32> (Operators.op_RightShift<Microsoft.FSharp.Core.int16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (20,56--20,67)";
+        "let testInt16UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int16> (e1) @ (22,45--22,52)";
         "let testInt16AdditionChecked(e1) (e2) = Checked.ToInt16<Microsoft.FSharp.Core.int32> (Checked.op_Addition<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (24,56--24,73)";
         "let testInt16SubtractionChecked(e1) (e2) = Checked.ToInt16<Microsoft.FSharp.Core.int32> (Checked.op_Subtraction<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (25,56--25,73)";
         "let testInt16MultiplyChecked(e1) (e2) = Checked.ToInt16<Microsoft.FSharp.Core.int32> (Checked.op_Multiply<Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16,Microsoft.FSharp.Core.int16> (e1,e2)) @ (26,56--26,73)";
@@ -1253,7 +1291,11 @@ let ``Test Operator Declarations for Int16`` () =
         "let testInt16ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int16> (e1) @ (53,45--53,53)";
         "let testInt16ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt16ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int16> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt16ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#else
         "let testInt16ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int16" "int16" excludedTests expectedUnoptimized expectedOptimized
@@ -1267,22 +1309,22 @@ let ``Test Operator Declarations for UInt16`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsUInt16";
-        "let testUInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint16> (e1,e2) @ (4,70--4,78)";
-        "let testUInt16NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.uint16> (e1,e2) @ (5,70--5,79)";
-        "let testUInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (6,70--6,78)";
-        "let testUInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.uint16> (e1,e2) @ (7,70--7,79)";
-        "let testUInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (8,70--8,78)";
-        "let testUInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.uint16> (e1,e2) @ (9,70--9,79)";
-        "let testUInt16AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (11,62--11,70)";
-        "let testUInt16SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (12,62--12,70)";
+        "let testUInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint16> (e1,e2) @ (4,69--4,78)";
+        "let testUInt16NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.uint16> (e1,e2) @ (5,69--5,79)";
+        "let testUInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (6,69--6,78)";
+        "let testUInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.uint16> (e1,e2) @ (7,69--7,79)";
+        "let testUInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (8,69--8,78)";
+        "let testUInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.uint16> (e1,e2) @ (9,69--9,79)";
+        "let testUInt16AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (11,61--11,70)";
+        "let testUInt16SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (12,61--12,70)";
         "let testUInt16MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (13,61--13,70)";
-        "let testUInt16DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (14,62--14,70)";
-        "let testUInt16ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (15,62--15,70)";
-        "let testUInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint16> (e1,e2) @ (16,62--16,72)";
-        "let testUInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (17,62--17,72)";
-        "let testUInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (18,62--18,72)";
-        "let testUInt16ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint16> (e1,e2) @ (19,59--19,69)";
-        "let testUInt16ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint16> (e1,e2) @ (20,59--20,69)";
+        "let testUInt16DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (14,61--14,70)";
+        "let testUInt16ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (15,61--15,70)";
+        "let testUInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint16> (e1,e2) @ (16,61--16,72)";
+        "let testUInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (17,61--17,72)";
+        "let testUInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (18,61--18,72)";
+        "let testUInt16ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint16> (e1,e2) @ (19,58--19,69)";
+        "let testUInt16ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint16> (e1,e2) @ (20,58--20,69)";
         "let testUInt16AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (24,59--24,76)";
         "let testUInt16SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (25,59--25,76)";
         "let testUInt16MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2) @ (26,59--26,76)";
@@ -1317,22 +1359,22 @@ let ``Test Operator Declarations for UInt16`` () =
 
     let expectedOptimized = [
         "type OperatorTestsUInt16";
-        "let testUInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint16> (e1,e2) @ (4,70--4,78)";
-        "let testUInt16NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.uint16> (e1,e2),False) @ (5,70--5,79)";
-        "let testUInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (6,70--6,78)";
-        "let testUInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.uint16> (e1,e2),False) @ (7,70--7,79)";
-        "let testUInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (8,70--8,78)";
-        "let testUInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.uint16> (e1,e2),False) @ (9,70--9,79)";
-        "let testUInt16AdditionOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Addition<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (11,62--11,70)";
-        "let testUInt16SubtractionOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Subtraction<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (12,62--12,70)";
+        "let testUInt16EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint16> (e1,e2) @ (4,69--4,78)";
+        "let testUInt16NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.uint16> (e1,e2),False) @ (5,69--5,79)";
+        "let testUInt16LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (6,69--6,78)";
+        "let testUInt16LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.uint16> (e1,e2),False) @ (7,69--7,79)";
+        "let testUInt16GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint16> (e1,e2) @ (8,69--8,78)";
+        "let testUInt16GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.uint16> (e1,e2),False) @ (9,69--9,79)";
+        "let testUInt16AdditionOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Addition<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (11,61--11,70)";
+        "let testUInt16SubtractionOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Subtraction<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (12,61--12,70)";
         "let testUInt16MultiplyOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Multiply<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (13,61--13,70)";
-        "let testUInt16DivisionOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Division<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (14,62--14,70)";
-        "let testUInt16ModulusOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Modulus<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (15,62--15,70)";
-        "let testUInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint16> (e1,e2) @ (16,62--16,72)";
-        "let testUInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (17,62--17,72)";
-        "let testUInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (18,62--18,72)";
-        "let testUInt16ShiftLeftOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_LeftShift<Microsoft.FSharp.Core.uint16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (19,59--19,69)";
-        "let testUInt16ShiftRightOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_RightShift<Microsoft.FSharp.Core.uint16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (20,59--20,69)";
+        "let testUInt16DivisionOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Division<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (14,61--14,70)";
+        "let testUInt16ModulusOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_Modulus<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (15,61--15,70)";
+        "let testUInt16BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint16> (e1,e2) @ (16,61--16,72)";
+        "let testUInt16BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (17,61--17,72)";
+        "let testUInt16BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint16> (e1,e2) @ (18,61--18,72)";
+        "let testUInt16ShiftLeftOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_LeftShift<Microsoft.FSharp.Core.uint16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (19,58--19,69)";
+        "let testUInt16ShiftRightOperator(e1) (e2) = Operators.ToUInt16<Microsoft.FSharp.Core.uint32> (Operators.op_RightShift<Microsoft.FSharp.Core.uint16> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,15))) @ (20,58--20,69)";
         "let testUInt16AdditionChecked(e1) (e2) = Checked.ToUInt16<Microsoft.FSharp.Core.uint32> (Checked.op_Addition<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (24,59--24,76)";
         "let testUInt16SubtractionChecked(e1) (e2) = Checked.ToUInt16<Microsoft.FSharp.Core.uint32> (Checked.op_Subtraction<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (25,59--25,76)";
         "let testUInt16MultiplyChecked(e1) (e2) = Checked.ToUInt16<Microsoft.FSharp.Core.uint32> (Checked.op_Multiply<Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16,Microsoft.FSharp.Core.uint16> (e1,e2)) @ (26,59--26,76)";
@@ -1362,7 +1404,11 @@ let ``Test Operator Declarations for UInt16`` () =
         "let testUInt16ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint16> (e1)) @ (53,47--53,55)";
         "let testUInt16ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt16ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint16> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt16ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt16ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint16> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt16" "uint16" excludedTests expectedUnoptimized expectedOptimized
@@ -1373,23 +1419,23 @@ let ``Test Operator Declarations for Int`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsInt";
-        "let testIntEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int> (e1,e2) @ (4,61--4,69)";
-        "let testIntNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int> (e1,e2) @ (5,61--5,70)";
-        "let testIntLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int> (e1,e2) @ (6,61--6,69)";
-        "let testIntLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int> (e1,e2) @ (7,61--7,70)";
-        "let testIntGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (e1,e2) @ (8,61--8,69)";
-        "let testIntGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int> (e1,e2) @ (9,61--9,70)";
-        "let testIntAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (11,53--11,61)";
-        "let testIntSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (12,53--12,61)";
+        "let testIntEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int> (e1,e2) @ (4,60--4,69)";
+        "let testIntNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int> (e1,e2) @ (5,60--5,70)";
+        "let testIntLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int> (e1,e2) @ (6,60--6,69)";
+        "let testIntLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int> (e1,e2) @ (7,60--7,70)";
+        "let testIntGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (e1,e2) @ (8,60--8,69)";
+        "let testIntGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int> (e1,e2) @ (9,60--9,70)";
+        "let testIntAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (11,52--11,61)";
+        "let testIntSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (12,52--12,61)";
         "let testIntMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (13,52--13,61)";
-        "let testIntDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (14,53--14,61)";
-        "let testIntModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (15,53--15,61)";
-        "let testIntBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e1,e2) @ (16,53--16,63)";
-        "let testIntBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (e1,e2) @ (17,53--17,63)";
-        "let testIntBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (e1,e2) @ (18,53--18,63)";
-        "let testIntShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int> (e1,e2) @ (19,53--19,63)";
-        "let testIntShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int> (e1,e2) @ (20,53--20,63)";
-        "let testIntUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (e1) @ (22,42--22,48)";
+        "let testIntDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (14,52--14,61)";
+        "let testIntModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (15,52--15,61)";
+        "let testIntBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e1,e2) @ (16,52--16,63)";
+        "let testIntBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (e1,e2) @ (17,52--17,63)";
+        "let testIntBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (e1,e2) @ (18,52--18,63)";
+        "let testIntShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int> (e1,e2) @ (19,52--19,63)";
+        "let testIntShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int> (e1,e2) @ (20,52--20,63)";
+        "let testIntUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (e1) @ (22,41--22,48)";
         "let testIntAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (24,50--24,67)";
         "let testIntSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (25,50--25,67)";
         "let testIntMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (26,50--26,67)";
@@ -1425,23 +1471,23 @@ let ``Test Operator Declarations for Int`` () =
 
     let expectedOptimized = [
         "type OperatorTestsInt";
-        "let testIntEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int> (e1,e2) @ (4,61--4,69)";
-        "let testIntNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int> (e1,e2),False) @ (5,61--5,70)";
-        "let testIntLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int> (e1,e2) @ (6,61--6,69)";
-        "let testIntLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (e1,e2),False) @ (7,61--7,70)";
-        "let testIntGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (e1,e2) @ (8,61--8,69)";
-        "let testIntGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int> (e1,e2),False) @ (9,61--9,70)";
-        "let testIntAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (11,53--11,61)";
-        "let testIntSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (12,53--12,61)";
+        "let testIntEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int> (e1,e2) @ (4,60--4,69)";
+        "let testIntNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int> (e1,e2),False) @ (5,60--5,70)";
+        "let testIntLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int> (e1,e2) @ (6,60--6,69)";
+        "let testIntLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (e1,e2),False) @ (7,60--7,70)";
+        "let testIntGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int> (e1,e2) @ (8,60--8,69)";
+        "let testIntGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int> (e1,e2),False) @ (9,60--9,70)";
+        "let testIntAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (11,52--11,61)";
+        "let testIntSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (12,52--12,61)";
         "let testIntMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (13,52--13,61)";
-        "let testIntDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (14,53--14,61)";
-        "let testIntModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (15,53--15,61)";
-        "let testIntBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e1,e2) @ (16,53--16,63)";
-        "let testIntBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (e1,e2) @ (17,53--17,63)";
-        "let testIntBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (e1,e2) @ (18,53--18,63)";
-        "let testIntShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (19,53--19,63)";
-        "let testIntShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (20,53--20,63)";
-        "let testIntUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (e1) @ (22,42--22,48)";
+        "let testIntDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (14,52--14,61)";
+        "let testIntModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (15,52--15,61)";
+        "let testIntBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e1,e2) @ (16,52--16,63)";
+        "let testIntBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (e1,e2) @ (17,52--17,63)";
+        "let testIntBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (e1,e2) @ (18,52--18,63)";
+        "let testIntShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (19,52--19,63)";
+        "let testIntShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (20,52--20,63)";
+        "let testIntUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (e1) @ (22,41--22,48)";
         "let testIntAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (24,50--24,67)";
         "let testIntSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (25,50--25,67)";
         "let testIntMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (26,50--26,67)";
@@ -1472,7 +1518,11 @@ let ``Test Operator Declarations for Int`` () =
         "let testIntToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (53,41--53,49)";
         "let testIntToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,41--54,51)";
         "let testIntToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int> (e1) @ (55,41--55,48)";
+#if DEBUG
+        @"let testIntToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,41--56,50)"
+#else
         "let testIntToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,41--56,50)";
+#endif
       ]
 
     testOperators "Int" "int" excludedTests expectedUnoptimized expectedOptimized
@@ -1483,23 +1533,23 @@ let ``Test Operator Declarations for Int32`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsInt32";
-        "let testInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int32> (e1,e2) @ (4,67--4,75)";
-        "let testInt32NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int32> (e1,e2) @ (5,67--5,76)";
-        "let testInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (6,67--6,75)";
-        "let testInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int32> (e1,e2) @ (7,67--7,76)";
-        "let testInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (8,67--8,75)";
-        "let testInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int32> (e1,e2) @ (9,67--9,76)";
-        "let testInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (11,59--11,67)";
-        "let testInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (12,59--12,67)";
+        "let testInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int32> (e1,e2) @ (4,66--4,75)";
+        "let testInt32NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int32> (e1,e2) @ (5,66--5,76)";
+        "let testInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (6,66--6,75)";
+        "let testInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int32> (e1,e2) @ (7,66--7,76)";
+        "let testInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (8,66--8,75)";
+        "let testInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int32> (e1,e2) @ (9,66--9,76)";
+        "let testInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (11,58--11,67)";
+        "let testInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (12,58--12,67)";
         "let testInt32MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (13,58--13,67)";
-        "let testInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (14,59--14,67)";
-        "let testInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (15,59--15,67)";
-        "let testInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int32> (e1,e2) @ (16,59--16,69)";
-        "let testInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (17,59--17,69)";
-        "let testInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (18,59--18,69)";
-        "let testInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int32> (e1,e2) @ (19,57--19,67)";
-        "let testInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int32> (e1,e2) @ (20,57--20,67)";
-        "let testInt32UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int32> (e1) @ (22,46--22,52)";
+        "let testInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (14,58--14,67)";
+        "let testInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (15,58--15,67)";
+        "let testInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int32> (e1,e2) @ (16,58--16,69)";
+        "let testInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (17,58--17,69)";
+        "let testInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (18,58--18,69)";
+        "let testInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int32> (e1,e2) @ (19,56--19,67)";
+        "let testInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int32> (e1,e2) @ (20,56--20,67)";
+        "let testInt32UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int32> (e1) @ (22,45--22,52)";
         "let testInt32AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (24,56--24,73)";
         "let testInt32SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (25,56--25,73)";
         "let testInt32MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (26,56--26,73)";
@@ -1535,23 +1585,23 @@ let ``Test Operator Declarations for Int32`` () =
 
     let expectedOptimized = [
         "type OperatorTestsInt32";
-        "let testInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int32> (e1,e2) @ (4,67--4,75)";
-        "let testInt32NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int32> (e1,e2),False) @ (5,67--5,76)";
-        "let testInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (6,67--6,75)";
-        "let testInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int32> (e1,e2),False) @ (7,67--7,76)";
-        "let testInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (8,67--8,75)";
-        "let testInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int32> (e1,e2),False) @ (9,67--9,76)";
-        "let testInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (11,59--11,67)";
-        "let testInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (12,59--12,67)";
+        "let testInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int32> (e1,e2) @ (4,66--4,75)";
+        "let testInt32NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int32> (e1,e2),False) @ (5,66--5,76)";
+        "let testInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (6,66--6,75)";
+        "let testInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int32> (e1,e2),False) @ (7,66--7,76)";
+        "let testInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int32> (e1,e2) @ (8,66--8,75)";
+        "let testInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int32> (e1,e2),False) @ (9,66--9,76)";
+        "let testInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (11,58--11,67)";
+        "let testInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (12,58--12,67)";
         "let testInt32MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (13,58--13,67)";
-        "let testInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (14,59--14,67)";
-        "let testInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (15,59--15,67)";
-        "let testInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int32> (e1,e2) @ (16,59--16,69)";
-        "let testInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (17,59--17,69)";
-        "let testInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (18,59--18,69)";
-        "let testInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (19,57--19,67)";
-        "let testInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (20,57--20,67)";
-        "let testInt32UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int32> (e1) @ (22,46--22,52)";
+        "let testInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (14,58--14,67)";
+        "let testInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (15,58--15,67)";
+        "let testInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int32> (e1,e2) @ (16,58--16,69)";
+        "let testInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (17,58--17,69)";
+        "let testInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int32> (e1,e2) @ (18,58--18,69)";
+        "let testInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (19,56--19,67)";
+        "let testInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (20,56--20,67)";
+        "let testInt32UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int32> (e1) @ (22,45--22,52)";
         "let testInt32AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (24,56--24,73)";
         "let testInt32SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (25,56--25,73)";
         "let testInt32MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (e1,e2) @ (26,56--26,73)";
@@ -1582,7 +1632,11 @@ let ``Test Operator Declarations for Int32`` () =
         "let testInt32ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int32> (e1) @ (53,45--53,53)";
         "let testInt32ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt32ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int32> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt32ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)"
+#else
         "let testInt32ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int32" "int32" excludedTests expectedUnoptimized expectedOptimized
@@ -1596,22 +1650,22 @@ let ``Test Operator Declarations for UInt32`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsUInt32";
-        "let testUInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint32> (e1,e2) @ (4,70--4,78)";
-        "let testUInt32NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.uint32> (e1,e2) @ (5,70--5,79)";
-        "let testUInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (6,70--6,78)";
-        "let testUInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.uint32> (e1,e2) @ (7,70--7,79)";
-        "let testUInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (8,70--8,78)";
-        "let testUInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.uint32> (e1,e2) @ (9,70--9,79)";
-        "let testUInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (11,62--11,70)";
-        "let testUInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (12,62--12,70)";
+        "let testUInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint32> (e1,e2) @ (4,69--4,78)";
+        "let testUInt32NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.uint32> (e1,e2) @ (5,69--5,79)";
+        "let testUInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (6,69--6,78)";
+        "let testUInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.uint32> (e1,e2) @ (7,69--7,79)";
+        "let testUInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (8,69--8,78)";
+        "let testUInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.uint32> (e1,e2) @ (9,69--9,79)";
+        "let testUInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (11,61--11,70)";
+        "let testUInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (12,61--12,70)";
         "let testUInt32MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (13,61--13,70)";
-        "let testUInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (14,62--14,70)";
-        "let testUInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (15,62--15,70)";
-        "let testUInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint32> (e1,e2) @ (16,62--16,72)";
-        "let testUInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (17,62--17,72)";
-        "let testUInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (18,62--18,72)";
-        "let testUInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint32> (e1,e2) @ (19,59--19,69)";
-        "let testUInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint32> (e1,e2) @ (20,59--20,69)";
+        "let testUInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (14,61--14,70)";
+        "let testUInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (15,61--15,70)";
+        "let testUInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint32> (e1,e2) @ (16,61--16,72)";
+        "let testUInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (17,61--17,72)";
+        "let testUInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (18,61--18,72)";
+        "let testUInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint32> (e1,e2) @ (19,58--19,69)";
+        "let testUInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint32> (e1,e2) @ (20,58--20,69)";
         "let testUInt32AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (24,59--24,76)";
         "let testUInt32SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (25,59--25,76)";
         "let testUInt32MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (26,59--26,76)";
@@ -1646,22 +1700,22 @@ let ``Test Operator Declarations for UInt32`` () =
 
     let expectedOptimized = [
         "type OperatorTestsUInt32";
-        "let testUInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint32> (e1,e2) @ (4,70--4,78)";
-        "let testUInt32NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.uint32> (e1,e2),False) @ (5,70--5,79)";
-        "let testUInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (6,70--6,78)";
-        "let testUInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.uint32> (e1,e2),False) @ (7,70--7,79)";
-        "let testUInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (8,70--8,78)";
-        "let testUInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.uint32> (e1,e2),False) @ (9,70--9,79)";
-        "let testUInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (11,62--11,70)";
-        "let testUInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (12,62--12,70)";
+        "let testUInt32EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint32> (e1,e2) @ (4,69--4,78)";
+        "let testUInt32NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.uint32> (e1,e2),False) @ (5,69--5,79)";
+        "let testUInt32LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (6,69--6,78)";
+        "let testUInt32LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.uint32> (e1,e2),False) @ (7,69--7,79)";
+        "let testUInt32GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint32> (e1,e2) @ (8,69--8,78)";
+        "let testUInt32GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.uint32> (e1,e2),False) @ (9,69--9,79)";
+        "let testUInt32AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (11,61--11,70)";
+        "let testUInt32SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (12,61--12,70)";
         "let testUInt32MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (13,61--13,70)";
-        "let testUInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (14,62--14,70)";
-        "let testUInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (15,62--15,70)";
-        "let testUInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint32> (e1,e2) @ (16,62--16,72)";
-        "let testUInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (17,62--17,72)";
-        "let testUInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (18,62--18,72)";
-        "let testUInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (19,59--19,69)";
-        "let testUInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (20,59--20,69)";
+        "let testUInt32DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (14,61--14,70)";
+        "let testUInt32ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (15,61--15,70)";
+        "let testUInt32BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint32> (e1,e2) @ (16,61--16,72)";
+        "let testUInt32BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (17,61--17,72)";
+        "let testUInt32BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint32> (e1,e2) @ (18,61--18,72)";
+        "let testUInt32ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (19,58--19,69)";
+        "let testUInt32ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint32> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (20,58--20,69)";
         "let testUInt32AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (24,59--24,76)";
         "let testUInt32SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (25,59--25,76)";
         "let testUInt32MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint32> (e1,e2) @ (26,59--26,76)";
@@ -1691,7 +1745,11 @@ let ``Test Operator Declarations for UInt32`` () =
         "let testUInt32ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint32> (e1)) @ (53,47--53,55)";
         "let testUInt32ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt32ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint32> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt32ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt32ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt32" "uint32" excludedTests expectedUnoptimized expectedOptimized
@@ -1702,23 +1760,23 @@ let ``Test Operator Declarations for Int64`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsInt64";
-        "let testInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int64> (e1,e2) @ (4,67--4,75)";
-        "let testInt64NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int64> (e1,e2) @ (5,67--5,76)";
-        "let testInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (6,67--6,75)";
-        "let testInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int64> (e1,e2) @ (7,67--7,76)";
-        "let testInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (8,67--8,75)";
-        "let testInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int64> (e1,e2) @ (9,67--9,76)";
-        "let testInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (11,59--11,67)";
-        "let testInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (12,59--12,67)";
+        "let testInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int64> (e1,e2) @ (4,66--4,75)";
+        "let testInt64NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.int64> (e1,e2) @ (5,66--5,76)";
+        "let testInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (6,66--6,75)";
+        "let testInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.int64> (e1,e2) @ (7,66--7,76)";
+        "let testInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (8,66--8,75)";
+        "let testInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.int64> (e1,e2) @ (9,66--9,76)";
+        "let testInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (11,58--11,67)";
+        "let testInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (12,58--12,67)";
         "let testInt64MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (13,58--13,67)";
-        "let testInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (14,59--14,67)";
-        "let testInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (15,59--15,67)";
-        "let testInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int64> (e1,e2) @ (16,59--16,69)";
-        "let testInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (17,59--17,69)";
-        "let testInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (18,59--18,69)";
-        "let testInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int64> (e1,e2) @ (19,57--19,67)";
-        "let testInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int64> (e1,e2) @ (20,57--20,67)";
-        "let testInt64UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int64> (e1) @ (22,46--22,52)";
+        "let testInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (14,58--14,67)";
+        "let testInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (15,58--15,67)";
+        "let testInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int64> (e1,e2) @ (16,58--16,69)";
+        "let testInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (17,58--17,69)";
+        "let testInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (18,58--18,69)";
+        "let testInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int64> (e1,e2) @ (19,56--19,67)";
+        "let testInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int64> (e1,e2) @ (20,56--20,67)";
+        "let testInt64UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int64> (e1) @ (22,45--22,52)";
         "let testInt64AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (24,56--24,73)";
         "let testInt64SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (25,56--25,73)";
         "let testInt64MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (26,56--26,73)";
@@ -1754,23 +1812,23 @@ let ``Test Operator Declarations for Int64`` () =
 
     let expectedOptimized = [
         "type OperatorTestsInt64";
-        "let testInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int64> (e1,e2) @ (4,67--4,75)";
-        "let testInt64NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int64> (e1,e2),False) @ (5,67--5,76)";
-        "let testInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (6,67--6,75)";
-        "let testInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int64> (e1,e2),False) @ (7,67--7,76)";
-        "let testInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (8,67--8,75)";
-        "let testInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int64> (e1,e2),False) @ (9,67--9,76)";
-        "let testInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (11,59--11,67)";
-        "let testInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (12,59--12,67)";
+        "let testInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.int64> (e1,e2) @ (4,66--4,75)";
+        "let testInt64NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.int64> (e1,e2),False) @ (5,66--5,76)";
+        "let testInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (6,66--6,75)";
+        "let testInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.int64> (e1,e2),False) @ (7,66--7,76)";
+        "let testInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.int64> (e1,e2) @ (8,66--8,75)";
+        "let testInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.int64> (e1,e2),False) @ (9,66--9,76)";
+        "let testInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (11,58--11,67)";
+        "let testInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (12,58--12,67)";
         "let testInt64MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (13,58--13,67)";
-        "let testInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (14,59--14,67)";
-        "let testInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (15,59--15,67)";
-        "let testInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int64> (e1,e2) @ (16,59--16,69)";
-        "let testInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (17,59--17,69)";
-        "let testInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (18,59--18,69)";
-        "let testInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (19,57--19,67)";
-        "let testInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (20,57--20,67)";
-        "let testInt64UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int64> (e1) @ (22,46--22,52)";
+        "let testInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (14,58--14,67)";
+        "let testInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (15,58--15,67)";
+        "let testInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int64> (e1,e2) @ (16,58--16,69)";
+        "let testInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (17,58--17,69)";
+        "let testInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int64> (e1,e2) @ (18,58--18,69)";
+        "let testInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (19,56--19,67)";
+        "let testInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (20,56--20,67)";
+        "let testInt64UnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int64> (e1) @ (22,45--22,52)";
         "let testInt64AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (24,56--24,73)";
         "let testInt64SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (25,56--25,73)";
         "let testInt64MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64,Microsoft.FSharp.Core.int64> (e1,e2) @ (26,56--26,73)";
@@ -1801,7 +1859,11 @@ let ``Test Operator Declarations for Int64`` () =
         "let testInt64ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int64> (e1) @ (53,45--53,53)";
         "let testInt64ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,45--54,55)";
         "let testInt64ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.int64> (e1) @ (55,45--55,52)";
+#if DEBUG
+        @"let testInt64ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)"
+#else
         "let testInt64ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,45--56,54)";
+#endif
       ]
 
     testOperators "Int64" "int64" excludedTests expectedUnoptimized expectedOptimized
@@ -1815,22 +1877,22 @@ let ``Test Operator Declarations for UInt64`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsUInt64";
-        "let testUInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint64> (e1,e2) @ (4,70--4,78)";
-        "let testUInt64NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.uint64> (e1,e2) @ (5,70--5,79)";
-        "let testUInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (6,70--6,78)";
-        "let testUInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.uint64> (e1,e2) @ (7,70--7,79)";
-        "let testUInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (8,70--8,78)";
-        "let testUInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.uint64> (e1,e2) @ (9,70--9,79)";
-        "let testUInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (11,62--11,70)";
-        "let testUInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (12,62--12,70)";
+        "let testUInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint64> (e1,e2) @ (4,69--4,78)";
+        "let testUInt64NotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.uint64> (e1,e2) @ (5,69--5,79)";
+        "let testUInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (6,69--6,78)";
+        "let testUInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.uint64> (e1,e2) @ (7,69--7,79)";
+        "let testUInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (8,69--8,78)";
+        "let testUInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.uint64> (e1,e2) @ (9,69--9,79)";
+        "let testUInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (11,61--11,70)";
+        "let testUInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (12,61--12,70)";
         "let testUInt64MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (13,61--13,70)";
-        "let testUInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (14,62--14,70)";
-        "let testUInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (15,62--15,70)";
-        "let testUInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint64> (e1,e2) @ (16,62--16,72)";
-        "let testUInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (17,62--17,72)";
-        "let testUInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (18,62--18,72)";
-        "let testUInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint64> (e1,e2) @ (19,59--19,69)";
-        "let testUInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (e1,e2) @ (20,59--20,69)";
+        "let testUInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (14,61--14,70)";
+        "let testUInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (15,61--15,70)";
+        "let testUInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint64> (e1,e2) @ (16,61--16,72)";
+        "let testUInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (17,61--17,72)";
+        "let testUInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (18,61--18,72)";
+        "let testUInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint64> (e1,e2) @ (19,58--19,69)";
+        "let testUInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (e1,e2) @ (20,58--20,69)";
         "let testUInt64AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (24,59--24,76)";
         "let testUInt64SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (25,59--25,76)";
         "let testUInt64MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (26,59--26,76)";
@@ -1865,22 +1927,22 @@ let ``Test Operator Declarations for UInt64`` () =
 
     let expectedOptimized = [
         "type OperatorTestsUInt64";
-        "let testUInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint64> (e1,e2) @ (4,70--4,78)";
-        "let testUInt64NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.uint64> (e1,e2),False) @ (5,70--5,79)";
-        "let testUInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (6,70--6,78)";
-        "let testUInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.uint64> (e1,e2),False) @ (7,70--7,79)";
-        "let testUInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (8,70--8,78)";
-        "let testUInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.uint64> (e1,e2),False) @ (9,70--9,79)";
-        "let testUInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (11,62--11,70)";
-        "let testUInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (12,62--12,70)";
+        "let testUInt64EqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.uint64> (e1,e2) @ (4,69--4,78)";
+        "let testUInt64NotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.uint64> (e1,e2),False) @ (5,69--5,79)";
+        "let testUInt64LessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (6,69--6,78)";
+        "let testUInt64LessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.uint64> (e1,e2),False) @ (7,69--7,79)";
+        "let testUInt64GreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.uint64> (e1,e2) @ (8,69--8,78)";
+        "let testUInt64GreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.uint64> (e1,e2),False) @ (9,69--9,79)";
+        "let testUInt64AdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (11,61--11,70)";
+        "let testUInt64SubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (12,61--12,70)";
         "let testUInt64MultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (13,61--13,70)";
-        "let testUInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (14,62--14,70)";
-        "let testUInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (15,62--15,70)";
-        "let testUInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint64> (e1,e2) @ (16,62--16,72)";
-        "let testUInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (17,62--17,72)";
-        "let testUInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (18,62--18,72)";
-        "let testUInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (19,59--19,69)";
-        "let testUInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (20,59--20,69)";
+        "let testUInt64DivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (14,61--14,70)";
+        "let testUInt64ModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (15,61--15,70)";
+        "let testUInt64BitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.uint64> (e1,e2) @ (16,61--16,72)";
+        "let testUInt64BitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (17,61--17,72)";
+        "let testUInt64BitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.uint64> (e1,e2) @ (18,61--18,72)";
+        "let testUInt64ShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.uint64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (19,58--19,69)";
+        "let testUInt64ShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,63)) @ (20,58--20,69)";
         "let testUInt64AdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (24,59--24,76)";
         "let testUInt64SubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (25,59--25,76)";
         "let testUInt64MultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64,Microsoft.FSharp.Core.uint64> (e1,e2) @ (26,59--26,76)";
@@ -1910,7 +1972,11 @@ let ``Test Operator Declarations for UInt64`` () =
         "let testUInt64ToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.uint64> (e1)) @ (53,47--53,55)";
         "let testUInt64ToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,47--54,57)";
         "let testUInt64ToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.uint64> (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testUInt64ToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testUInt64ToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.uint64> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "UInt64" "uint64" excludedTests expectedUnoptimized expectedOptimized
@@ -1921,23 +1987,23 @@ let ``Test Operator Declarations for IntPtr`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsIntPtr";
-        "let testIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (4,76--4,84)";
-        "let testIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (5,76--5,85)";
-        "let testIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (6,76--6,84)";
-        "let testIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (7,76--7,85)";
-        "let testIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (8,76--8,84)";
-        "let testIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (9,76--9,85)";
-        "let testIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (11,68--11,76)";
-        "let testIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (12,68--12,76)";
+        "let testIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (4,75--4,84)";
+        "let testIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (5,75--5,85)";
+        "let testIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (6,75--6,84)";
+        "let testIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (7,75--7,85)";
+        "let testIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (8,75--8,84)";
+        "let testIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (9,75--9,85)";
+        "let testIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (11,67--11,76)";
+        "let testIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (12,67--12,76)";
         "let testIntPtrMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (13,67--13,76)";
-        "let testIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (14,68--14,76)";
-        "let testIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (15,68--15,76)";
-        "let testIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (16,68--16,78)";
-        "let testIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (17,68--17,78)";
-        "let testIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (18,68--18,78)";
-        "let testIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (19,62--19,72)";
-        "let testIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (20,62--20,72)";
-        "let testIntPtrUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.nativeint> (e1) @ (22,51--22,57)";
+        "let testIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (14,67--14,76)";
+        "let testIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (15,67--15,76)";
+        "let testIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (16,67--16,78)";
+        "let testIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (17,67--17,78)";
+        "let testIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (18,67--18,78)";
+        "let testIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (19,61--19,72)";
+        "let testIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (20,61--20,72)";
+        "let testIntPtrUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.nativeint> (e1) @ (22,50--22,57)";
         "let testIntPtrAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (24,65--24,82)";
         "let testIntPtrSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (25,65--25,82)";
         "let testIntPtrMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (26,65--26,82)";
@@ -1973,23 +2039,23 @@ let ``Test Operator Declarations for IntPtr`` () =
 
     let expectedOptimized = [
         "type OperatorTestsIntPtr";
-        "let testIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (4,76--4,84)";
-        "let testIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.nativeint> (e1,e2),False) @ (5,76--5,85)";
-        "let testIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (6,76--6,84)";
-        "let testIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.nativeint> (e1,e2),False) @ (7,76--7,85)";
-        "let testIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (8,76--8,84)";
-        "let testIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.nativeint> (e1,e2),False) @ (9,76--9,85)";
-        "let testIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (11,68--11,76)";
-        "let testIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (12,68--12,76)";
+        "let testIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (4,75--4,84)";
+        "let testIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.nativeint> (e1,e2),False) @ (5,75--5,85)";
+        "let testIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (6,75--6,84)";
+        "let testIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.nativeint> (e1,e2),False) @ (7,75--7,85)";
+        "let testIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (8,75--8,84)";
+        "let testIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.nativeint> (e1,e2),False) @ (9,75--9,85)";
+        "let testIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (11,67--11,76)";
+        "let testIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (12,67--12,76)";
         "let testIntPtrMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (13,67--13,76)";
-        "let testIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (14,68--14,76)";
-        "let testIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (15,68--15,76)";
-        "let testIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (16,68--16,78)";
-        "let testIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (17,68--17,78)";
-        "let testIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (18,68--18,78)";
-        "let testIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (19,62--19,72)";
-        "let testIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (20,62--20,72)";
-        "let testIntPtrUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.nativeint> (e1) @ (22,51--22,57)";
+        "let testIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (14,67--14,76)";
+        "let testIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (15,67--15,76)";
+        "let testIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (16,67--16,78)";
+        "let testIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (17,67--17,78)";
+        "let testIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (18,67--18,78)";
+        "let testIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (19,61--19,72)";
+        "let testIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.nativeint> (e1,e2) @ (20,61--20,72)";
+        "let testIntPtrUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.nativeint> (e1) @ (22,50--22,57)";
         "let testIntPtrAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (24,65--24,82)";
         "let testIntPtrSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (25,65--25,82)";
         "let testIntPtrMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint,Microsoft.FSharp.Core.nativeint> (e1,e2) @ (26,65--26,82)";
@@ -2020,7 +2086,11 @@ let ``Test Operator Declarations for IntPtr`` () =
         "let testIntPtrToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.nativeint> (e1) @ (53,50--53,58)";
         "let testIntPtrToDecimalOperator(e1) = Convert.ToDecimal (Operators.ToInt64<Microsoft.FSharp.Core.nativeint> (e1)) @ (54,50--54,60)";
         "let testIntPtrToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.nativeint> (e1) @ (55,50--55,57)";
+#if DEBUG
+        @"let testIntPtrToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.nativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,50--56,59)"
+#else
         "let testIntPtrToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.nativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,50--56,59)";
+#endif
       ]
 
     testOperators "IntPtr" "nativeint" excludedTests expectedUnoptimized expectedOptimized
@@ -2034,22 +2104,22 @@ let ``Test Operator Declarations for UIntPtr`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsUIntPtr";
-        "let testUIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (4,79--4,87)";
-        "let testUIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (5,79--5,88)";
-        "let testUIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (6,79--6,87)";
-        "let testUIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (7,79--7,88)";
-        "let testUIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (8,79--8,87)";
-        "let testUIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (9,79--9,88)";
-        "let testUIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (11,71--11,79)";
-        "let testUIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (12,71--12,79)";
+        "let testUIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (4,78--4,87)";
+        "let testUIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (5,78--5,88)";
+        "let testUIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (6,78--6,87)";
+        "let testUIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (7,78--7,88)";
+        "let testUIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (8,78--8,87)";
+        "let testUIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (9,78--9,88)";
+        "let testUIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (11,70--11,79)";
+        "let testUIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (12,70--12,79)";
         "let testUIntPtrMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (13,70--13,79)";
-        "let testUIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (14,71--14,79)";
-        "let testUIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (15,71--15,79)";
-        "let testUIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (16,71--16,81)";
-        "let testUIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (17,71--17,81)";
-        "let testUIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (18,71--18,81)";
-        "let testUIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (19,64--19,74)";
-        "let testUIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (20,64--20,74)";
+        "let testUIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (14,70--14,79)";
+        "let testUIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (15,70--15,79)";
+        "let testUIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (16,70--16,81)";
+        "let testUIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (17,70--17,81)";
+        "let testUIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (18,70--18,81)";
+        "let testUIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (19,63--19,74)";
+        "let testUIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (20,63--20,74)";
         "let testUIntPtrAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (24,68--24,85)";
         "let testUIntPtrSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (25,68--25,85)";
         "let testUIntPtrMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (26,68--26,85)";
@@ -2084,22 +2154,22 @@ let ``Test Operator Declarations for UIntPtr`` () =
 
     let expectedOptimized = [
         "type OperatorTestsUIntPtr";
-        "let testUIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (4,79--4,87)";
-        "let testUIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.unativeint> (e1,e2),False) @ (5,79--5,88)";
-        "let testUIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (6,79--6,87)";
-        "let testUIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.unativeint> (e1,e2),False) @ (7,79--7,88)";
-        "let testUIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (8,79--8,87)";
-        "let testUIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.unativeint> (e1,e2),False) @ (9,79--9,88)";
-        "let testUIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (11,71--11,79)";
-        "let testUIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (12,71--12,79)";
+        "let testUIntPtrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (4,78--4,87)";
+        "let testUIntPtrNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.unativeint> (e1,e2),False) @ (5,78--5,88)";
+        "let testUIntPtrLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (6,78--6,87)";
+        "let testUIntPtrLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.unativeint> (e1,e2),False) @ (7,78--7,88)";
+        "let testUIntPtrGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (8,78--8,87)";
+        "let testUIntPtrGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.unativeint> (e1,e2),False) @ (9,78--9,88)";
+        "let testUIntPtrAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (11,70--11,79)";
+        "let testUIntPtrSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (12,70--12,79)";
         "let testUIntPtrMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (13,70--13,79)";
-        "let testUIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (14,71--14,79)";
-        "let testUIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (15,71--15,79)";
-        "let testUIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (16,71--16,81)";
-        "let testUIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (17,71--17,81)";
-        "let testUIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (18,71--18,81)";
-        "let testUIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (19,64--19,74)";
-        "let testUIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (20,64--20,74)";
+        "let testUIntPtrDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (14,70--14,79)";
+        "let testUIntPtrModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (15,70--15,79)";
+        "let testUIntPtrBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (16,70--16,81)";
+        "let testUIntPtrBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (17,70--17,81)";
+        "let testUIntPtrBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (18,70--18,81)";
+        "let testUIntPtrShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (19,63--19,74)";
+        "let testUIntPtrShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.unativeint> (e1,e2) @ (20,63--20,74)";
         "let testUIntPtrAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (24,68--24,85)";
         "let testUIntPtrSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (25,68--25,85)";
         "let testUIntPtrMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint,Microsoft.FSharp.Core.unativeint> (e1,e2) @ (26,68--26,85)";
@@ -2129,7 +2199,11 @@ let ``Test Operator Declarations for UIntPtr`` () =
         "let testUIntPtrToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.unativeint> (e1)) @ (53,52--53,60)";
         "let testUIntPtrToDecimalOperator(e1) = Convert.ToDecimal (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (e1)) @ (54,52--54,62)";
         "let testUIntPtrToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.unativeint> (e1) @ (55,52--55,59)";
+#if DEBUG
+        @"let testUIntPtrToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.unativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,52--56,61)"
+#else
         "let testUIntPtrToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.unativeint> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,52--56,61)";
+#endif
       ]
 
     testOperators "UIntPtr" "unativeint" excludedTests expectedUnoptimized expectedOptimized
@@ -2146,18 +2220,18 @@ let ``Test Operator Declarations for Single`` () =
 
     let expectedUnoptimized = [
         "type OperatorTestsSingle";
-        "let testSingleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float32> (e1,e2) @ (4,72--4,80)";
-        "let testSingleNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.float32> (e1,e2) @ (5,72--5,81)";
-        "let testSingleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (6,72--6,80)";
-        "let testSingleLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.float32> (e1,e2) @ (7,72--7,81)";
-        "let testSingleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (8,72--8,80)";
-        "let testSingleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.float32> (e1,e2) @ (9,72--9,81)";
-        "let testSingleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (11,64--11,72)";
-        "let testSingleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (12,64--12,72)";
+        "let testSingleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float32> (e1,e2) @ (4,71--4,80)";
+        "let testSingleNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.float32> (e1,e2) @ (5,71--5,81)";
+        "let testSingleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (6,71--6,80)";
+        "let testSingleLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.float32> (e1,e2) @ (7,71--7,81)";
+        "let testSingleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (8,71--8,80)";
+        "let testSingleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.float32> (e1,e2) @ (9,71--9,81)";
+        "let testSingleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (11,63--11,72)";
+        "let testSingleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (12,63--12,72)";
         "let testSingleMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (13,63--13,72)";
-        "let testSingleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (14,64--14,72)";
-        "let testSingleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (15,64--15,72)";
-        "let testSingleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float32> (e1) @ (22,49--22,55)";
+        "let testSingleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (14,63--14,72)";
+        "let testSingleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (15,63--15,72)";
+        "let testSingleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float32> (e1) @ (22,48--22,55)";
         "let testSingleAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (24,61--24,78)";
         "let testSingleSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (25,61--25,78)";
         "let testSingleMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (26,61--26,78)";
@@ -2193,18 +2267,18 @@ let ``Test Operator Declarations for Single`` () =
 
     let expectedOptimized = [
         "type OperatorTestsSingle";
-        "let testSingleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float32> (e1,e2) @ (4,72--4,80)";
-        "let testSingleNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.float32> (e1,e2),False) @ (5,72--5,81)";
-        "let testSingleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (6,72--6,80)";
-        "let testSingleLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.float32> (e1,e2),False) @ (7,72--7,81)";
-        "let testSingleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (8,72--8,80)";
-        "let testSingleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.float32> (e1,e2),False) @ (9,72--9,81)";
-        "let testSingleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (11,64--11,72)";
-        "let testSingleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (12,64--12,72)";
+        "let testSingleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float32> (e1,e2) @ (4,71--4,80)";
+        "let testSingleNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.float32> (e1,e2),False) @ (5,71--5,81)";
+        "let testSingleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (6,71--6,80)";
+        "let testSingleLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.float32> (e1,e2),False) @ (7,71--7,81)";
+        "let testSingleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float32> (e1,e2) @ (8,71--8,80)";
+        "let testSingleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.float32> (e1,e2),False) @ (9,71--9,81)";
+        "let testSingleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (11,63--11,72)";
+        "let testSingleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (12,63--12,72)";
         "let testSingleMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (13,63--13,72)";
-        "let testSingleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (14,64--14,72)";
-        "let testSingleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (15,64--15,72)";
-        "let testSingleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float32> (e1) @ (22,49--22,55)";
+        "let testSingleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (14,63--14,72)";
+        "let testSingleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (15,63--15,72)";
+        "let testSingleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float32> (e1) @ (22,48--22,55)";
         "let testSingleAdditionChecked(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (24,61--24,78)";
         "let testSingleSubtractionChecked(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (25,61--25,78)";
         "let testSingleMultiplyChecked(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32,Microsoft.FSharp.Core.float32> (e1,e2) @ (26,61--26,78)";
@@ -2235,7 +2309,11 @@ let ``Test Operator Declarations for Single`` () =
         "let testSingleToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float32> (e1) @ (53,48--53,56)";
         "let testSingleToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,48--54,58)";
         "let testSingleToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.float32> (e1) @ (55,48--55,55)";
+#if DEBUG
+        @"let testSingleToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,48--56,57)"
+#else
         "let testSingleToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float32> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,48--56,57)";
+#endif
       ]
 
     testOperators "Single" "float32" excludedTests expectedUnoptimized expectedOptimized
@@ -2252,18 +2330,18 @@ let ``Test Operator Declarations for Double`` () =
     
     let expectedUnoptimized = [
         "type OperatorTestsDouble";
-        "let testDoubleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float> (e1,e2) @ (4,68--4,76)";
-        "let testDoubleNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.float> (e1,e2) @ (5,68--5,77)";
-        "let testDoubleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float> (e1,e2) @ (6,68--6,76)";
-        "let testDoubleLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.float> (e1,e2) @ (7,68--7,77)";
-        "let testDoubleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float> (e1,e2) @ (8,68--8,76)";
-        "let testDoubleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.float> (e1,e2) @ (9,68--9,77)";
-        "let testDoubleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (11,60--11,68)";
-        "let testDoubleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (12,60--12,68)";
+        "let testDoubleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float> (e1,e2) @ (4,67--4,76)";
+        "let testDoubleNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.float> (e1,e2) @ (5,67--5,77)";
+        "let testDoubleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float> (e1,e2) @ (6,67--6,76)";
+        "let testDoubleLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.float> (e1,e2) @ (7,67--7,77)";
+        "let testDoubleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float> (e1,e2) @ (8,67--8,76)";
+        "let testDoubleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.float> (e1,e2) @ (9,67--9,77)";
+        "let testDoubleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (11,59--11,68)";
+        "let testDoubleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (12,59--12,68)";
         "let testDoubleMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (13,59--13,68)";
-        "let testDoubleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (14,60--14,68)";
-        "let testDoubleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (15,60--15,68)";
-        "let testDoubleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float> (e1) @ (22,47--22,53)";
+        "let testDoubleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (14,59--14,68)";
+        "let testDoubleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (15,59--15,68)";
+        "let testDoubleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float> (e1) @ (22,46--22,53)";
         "let testDoubleAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (24,57--24,74)";
         "let testDoubleSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (25,57--25,74)";
         "let testDoubleMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (26,57--26,74)";
@@ -2299,18 +2377,18 @@ let ``Test Operator Declarations for Double`` () =
 
     let expectedOptimized = [
         "type OperatorTestsDouble";
-        "let testDoubleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float> (e1,e2) @ (4,68--4,76)";
-        "let testDoubleNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.float> (e1,e2),False) @ (5,68--5,77)";
-        "let testDoubleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float> (e1,e2) @ (6,68--6,76)";
-        "let testDoubleLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.float> (e1,e2),False) @ (7,68--7,77)";
-        "let testDoubleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float> (e1,e2) @ (8,68--8,76)";
-        "let testDoubleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.float> (e1,e2),False) @ (9,68--9,77)";
-        "let testDoubleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (11,60--11,68)";
-        "let testDoubleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (12,60--12,68)";
+        "let testDoubleEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.float> (e1,e2) @ (4,67--4,76)";
+        "let testDoubleNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.float> (e1,e2),False) @ (5,67--5,77)";
+        "let testDoubleLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.float> (e1,e2) @ (6,67--6,76)";
+        "let testDoubleLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.float> (e1,e2),False) @ (7,67--7,77)";
+        "let testDoubleGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.float> (e1,e2) @ (8,67--8,76)";
+        "let testDoubleGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.float> (e1,e2),False) @ (9,67--9,77)";
+        "let testDoubleAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (11,59--11,68)";
+        "let testDoubleSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (12,59--12,68)";
         "let testDoubleMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (13,59--13,68)";
-        "let testDoubleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (14,60--14,68)";
-        "let testDoubleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (15,60--15,68)";
-        "let testDoubleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float> (e1) @ (22,47--22,53)";
+        "let testDoubleDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (14,59--14,68)";
+        "let testDoubleModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (15,59--15,68)";
+        "let testDoubleUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.float> (e1) @ (22,46--22,53)";
         "let testDoubleAdditionChecked(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (24,57--24,74)";
         "let testDoubleSubtractionChecked(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (25,57--25,74)";
         "let testDoubleMultiplyChecked(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float,Microsoft.FSharp.Core.float> (e1,e2) @ (26,57--26,74)";
@@ -2341,7 +2419,11 @@ let ``Test Operator Declarations for Double`` () =
         "let testDoubleToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (e1) @ (53,46--53,54)";
         "let testDoubleToDecimalOperator(e1) = Convert.ToDecimal (e1) @ (54,46--54,56)";
         "let testDoubleToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.float> (e1) @ (55,46--55,53)";
+#if DEBUG
+        @"let testDoubleToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,46--56,55)"
+#else
         "let testDoubleToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.float> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,46--56,55)";
+#endif
       ]
 
     testOperators "Double" "float" excludedTests expectedUnoptimized expectedOptimized
@@ -2366,17 +2448,17 @@ let ``Test Operator Declarations for Decimal`` () =
 
     let expectedUnoptimized = [
         "type OperatorTestsDecimal";
-        "let testDecimalEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.decimal> (e1,e2) @ (4,73--4,81)";
-        "let testDecimalNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.decimal> (e1,e2) @ (5,73--5,82)";
-        "let testDecimalLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.decimal> (e1,e2) @ (6,73--6,81)";
-        "let testDecimalLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.decimal> (e1,e2) @ (7,73--7,82)";
-        "let testDecimalGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.decimal> (e1,e2) @ (8,73--8,81)";
-        "let testDecimalGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.decimal> (e1,e2) @ (9,73--9,82)";
-        "let testDecimalAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (11,65--11,73)";
-        "let testDecimalSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (12,65--12,73)";
+        "let testDecimalEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.decimal> (e1,e2) @ (4,72--4,81)";
+        "let testDecimalNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.decimal> (e1,e2) @ (5,72--5,82)";
+        "let testDecimalLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.decimal> (e1,e2) @ (6,72--6,81)";
+        "let testDecimalLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.decimal> (e1,e2) @ (7,72--7,82)";
+        "let testDecimalGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.decimal> (e1,e2) @ (8,72--8,81)";
+        "let testDecimalGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.decimal> (e1,e2) @ (9,72--9,82)";
+        "let testDecimalAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (11,64--11,73)";
+        "let testDecimalSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (12,64--12,73)";
         "let testDecimalMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (13,64--13,73)";
-        "let testDecimalDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (14,65--14,73)";
-        "let testDecimalModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (15,65--15,73)";
+        "let testDecimalDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (14,64--14,73)";
+        "let testDecimalModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (15,64--15,73)";
         "let testDecimalAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal,Microsoft.FSharp.Core.decimal> (e1,e2) @ (24,62--24,79)";
         "let testDecimalToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.decimal> (e1) @ (29,49--29,64)";
         "let testDecimalToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.decimal> (e1) @ (30,49--30,65)";
@@ -2405,17 +2487,17 @@ let ``Test Operator Declarations for Decimal`` () =
 
     let expectedOptimized = [
         "type OperatorTestsDecimal";
-        "let testDecimalEqualsOperator(e1) (e2) = Decimal.op_Equality (e1,e2) @ (4,73--4,81)";
-        "let testDecimalNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Decimal.op_Equality (e1,e2),False) @ (5,73--5,82)";
-        "let testDecimalLessThanOperator(e1) (e2) = Decimal.op_LessThan (e1,e2) @ (6,73--6,81)";
-        "let testDecimalLessThanOrEqualsOperator(e1) (e2) = Decimal.op_LessThanOrEqual (e1,e2) @ (7,73--7,82)";
-        "let testDecimalGreaterThanOperator(e1) (e2) = Decimal.op_GreaterThan (e1,e2) @ (8,73--8,81)";
-        "let testDecimalGreaterThanOrEqualsOperator(e1) (e2) = Decimal.op_GreaterThanOrEqual (e1,e2) @ (9,73--9,82)";
-        "let testDecimalAdditionOperator(e1) (e2) = Decimal.op_Addition (e1,e2) @ (11,65--11,73)";
-        "let testDecimalSubtractionOperator(e1) (e2) = Decimal.op_Subtraction (e1,e2) @ (12,65--12,73)";
+        "let testDecimalEqualsOperator(e1) (e2) = Decimal.op_Equality (e1,e2) @ (4,72--4,81)";
+        "let testDecimalNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Decimal.op_Equality (e1,e2),False) @ (5,72--5,82)";
+        "let testDecimalLessThanOperator(e1) (e2) = Decimal.op_LessThan (e1,e2) @ (6,72--6,81)";
+        "let testDecimalLessThanOrEqualsOperator(e1) (e2) = Decimal.op_LessThanOrEqual (e1,e2) @ (7,72--7,82)";
+        "let testDecimalGreaterThanOperator(e1) (e2) = Decimal.op_GreaterThan (e1,e2) @ (8,72--8,81)";
+        "let testDecimalGreaterThanOrEqualsOperator(e1) (e2) = Decimal.op_GreaterThanOrEqual (e1,e2) @ (9,72--9,82)";
+        "let testDecimalAdditionOperator(e1) (e2) = Decimal.op_Addition (e1,e2) @ (11,64--11,73)";
+        "let testDecimalSubtractionOperator(e1) (e2) = Decimal.op_Subtraction (e1,e2) @ (12,64--12,73)";
         "let testDecimalMultiplyOperator(e1) (e2) = Decimal.op_Multiply (e1,e2) @ (13,64--13,73)";
-        "let testDecimalDivisionOperator(e1) (e2) = Decimal.op_Division (e1,e2) @ (14,65--14,73)";
-        "let testDecimalModulusOperator(e1) (e2) = Decimal.op_Modulus (e1,e2) @ (15,65--15,73)";
+        "let testDecimalDivisionOperator(e1) (e2) = Decimal.op_Division (e1,e2) @ (14,64--14,73)";
+        "let testDecimalModulusOperator(e1) (e2) = Decimal.op_Modulus (e1,e2) @ (15,64--15,73)";
         "let testDecimalAdditionChecked(e1) (e2) = Decimal.op_Addition (e1,e2) @ (24,62--24,79)";
         "let testDecimalToByteChecked(e1) = Decimal.op_Explicit (e1) @ (29,49--29,64)";
         "let testDecimalToSByteChecked(e1) = Decimal.op_Explicit (e1) @ (30,49--30,65)";
@@ -2439,7 +2521,11 @@ let ``Test Operator Declarations for Decimal`` () =
         "let testDecimalToDoubleOperator(e1) = Convert.ToDouble (e1) @ (53,49--53,57)";
         "let testDecimalToDecimalOperator(e1) = e1 @ (54,57--54,59)";
         "let testDecimalToCharOperator(e1) = Decimal.op_Explicit (e1) @ (55,49--55,56)";
+#if DEBUG
+        @"let testDecimalToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.decimal> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,49--56,58)"
+#else
         "let testDecimalToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.decimal> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,49--56,58)";
+#endif
       ]
 
     testOperators "Decimal" "decimal" excludedTests expectedUnoptimized expectedOptimized
@@ -2465,13 +2551,13 @@ let ``Test Operator Declarations for Char`` () =
 
     let expectedUnoptimized = [
         "type OperatorTestsChar";
-        "let testCharEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.char> (e1,e2) @ (4,64--4,72)";
-        "let testCharNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.char> (e1,e2) @ (5,64--5,73)";
-        "let testCharLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.char> (e1,e2) @ (6,64--6,72)";
-        "let testCharLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.char> (e1,e2) @ (7,64--7,73)";
-        "let testCharGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.char> (e1,e2) @ (8,64--8,72)";
-        "let testCharGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.char> (e1,e2) @ (9,64--9,73)";
-        "let testCharAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char> (e1,e2) @ (11,56--11,64)";
+        "let testCharEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.char> (e1,e2) @ (4,63--4,72)";
+        "let testCharNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.char> (e1,e2) @ (5,63--5,73)";
+        "let testCharLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.char> (e1,e2) @ (6,63--6,72)";
+        "let testCharLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.char> (e1,e2) @ (7,63--7,73)";
+        "let testCharGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.char> (e1,e2) @ (8,63--8,72)";
+        "let testCharGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.char> (e1,e2) @ (9,63--9,73)";
+        "let testCharAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char> (e1,e2) @ (11,55--11,64)";
         "let testCharAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char> (e1,e2) @ (24,53--24,70)";
         "let testCharToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.char> (e1) @ (29,43--29,58)";
         "let testCharToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.char> (e1) @ (30,43--30,59)";
@@ -2503,13 +2589,13 @@ let ``Test Operator Declarations for Char`` () =
 
     let expectedOptimized = [
         "type OperatorTestsChar";
-        "let testCharEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.char> (e1,e2) @ (4,64--4,72)";
-        "let testCharNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.char> (e1,e2),False) @ (5,64--5,73)";
-        "let testCharLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.char> (e1,e2) @ (6,64--6,72)";
-        "let testCharLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.char> (e1,e2),False) @ (7,64--7,73)";
-        "let testCharGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.char> (e1,e2) @ (8,64--8,72)";
-        "let testCharGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.char> (e1,e2),False) @ (9,64--9,73)";
-        "let testCharAdditionOperator(e1) (e2) = Operators.ToChar<Microsoft.FSharp.Core.uint32> (Operators.op_Addition<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char> (e1,e2)) @ (11,56--11,64)";
+        "let testCharEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.char> (e1,e2) @ (4,63--4,72)";
+        "let testCharNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_Equality<Microsoft.FSharp.Core.char> (e1,e2),False) @ (5,63--5,73)";
+        "let testCharLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.char> (e1,e2) @ (6,63--6,72)";
+        "let testCharLessThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_GreaterThan<Microsoft.FSharp.Core.char> (e1,e2),False) @ (7,63--7,73)";
+        "let testCharGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.char> (e1,e2) @ (8,63--8,72)";
+        "let testCharGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (Operators.op_LessThan<Microsoft.FSharp.Core.char> (e1,e2),False) @ (9,63--9,73)";
+        "let testCharAdditionOperator(e1) (e2) = Operators.ToChar<Microsoft.FSharp.Core.uint32> (Operators.op_Addition<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char> (e1,e2)) @ (11,55--11,64)";
         "let testCharAdditionChecked(e1) (e2) = Operators.ToChar<Microsoft.FSharp.Core.uint32> (Checked.op_Addition<Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char,Microsoft.FSharp.Core.char> (e1,e2)) @ (24,53--24,70)";
         "let testCharToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.char> (e1) @ (29,43--29,58)";
         "let testCharToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.char> (e1) @ (30,43--30,59)";
@@ -2536,7 +2622,11 @@ let ``Test Operator Declarations for Char`` () =
         "let testCharToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.char> (e1)) @ (52,43--52,53)";
         "let testCharToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.char> (e1)) @ (53,43--53,51)";
         "let testCharToCharOperator(e1) = Operators.ToChar<Microsoft.FSharp.Core.char> (e1) @ (55,43--55,50)";
+#if DEBUG
+        @"let testCharToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.char> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)"
+#else
         "let testCharToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.char> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,43--56,52)";
+#endif
       ]
 
     testOperators "Char" "char" excludedTests expectedUnoptimized expectedOptimized
@@ -2565,13 +2655,13 @@ let ``Test Operator Declarations for String`` () =
 
     let expectedUnoptimized = [
         "type OperatorTestsString";
-        "let testStringEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,e2) @ (4,70--4,78)";
-        "let testStringNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.string> (e1,e2) @ (5,70--5,79)";
-        "let testStringLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.string> (e1,e2) @ (6,70--6,78)";
-        "let testStringLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.string> (e1,e2) @ (7,70--7,79)";
-        "let testStringGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.string> (e1,e2) @ (8,70--8,78)";
-        "let testStringGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.string> (e1,e2) @ (9,70--9,79)";
-        "let testStringAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.string,Microsoft.FSharp.Core.string,Microsoft.FSharp.Core.string> (e1,e2) @ (11,62--11,70)";
+        "let testStringEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,e2) @ (4,69--4,78)";
+        "let testStringNotEqualsOperator(e1) (e2) = Operators.op_Inequality<Microsoft.FSharp.Core.string> (e1,e2) @ (5,69--5,79)";
+        "let testStringLessThanOperator(e1) (e2) = Operators.op_LessThan<Microsoft.FSharp.Core.string> (e1,e2) @ (6,69--6,78)";
+        "let testStringLessThanOrEqualsOperator(e1) (e2) = Operators.op_LessThanOrEqual<Microsoft.FSharp.Core.string> (e1,e2) @ (7,69--7,79)";
+        "let testStringGreaterThanOperator(e1) (e2) = Operators.op_GreaterThan<Microsoft.FSharp.Core.string> (e1,e2) @ (8,69--8,78)";
+        "let testStringGreaterThanOrEqualsOperator(e1) (e2) = Operators.op_GreaterThanOrEqual<Microsoft.FSharp.Core.string> (e1,e2) @ (9,69--9,79)";
+        "let testStringAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.string,Microsoft.FSharp.Core.string,Microsoft.FSharp.Core.string> (e1,e2) @ (11,61--11,70)";
         "let testStringAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.string,Microsoft.FSharp.Core.string,Microsoft.FSharp.Core.string> (e1,e2) @ (24,59--24,76)";
         "let testStringToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.string> (e1) @ (29,47--29,62)";
         "let testStringToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.string> (e1) @ (30,47--30,63)";
@@ -2600,13 +2690,13 @@ let ``Test Operator Declarations for String`` () =
 
     let expectedOptimized = [
         "type OperatorTestsString";
-        "let testStringEqualsOperator(e1) (e2) = String.Equals (e1,e2) @ (4,70--4,78)";
-        "let testStringNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (String.Equals (e1,e2),False) @ (5,70--5,79)";
-        "let testStringLessThanOperator(e1) (e2) = HashCompare.GenericLessThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (6,70--6,78)";
-        "let testStringLessThanOrEqualsOperator(e1) (e2) = HashCompare.GenericLessOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (7,70--7,79)";
-        "let testStringGreaterThanOperator(e1) (e2) = HashCompare.GenericGreaterThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (8,70--8,78)";
-        "let testStringGreaterThanOrEqualsOperator(e1) (e2) = HashCompare.GenericGreaterOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (9,70--9,79)";
-        "let testStringAdditionOperator(e1) (e2) = String.Concat (e1,e2) @ (11,62--11,70)";
+        "let testStringEqualsOperator(e1) (e2) = String.Equals (e1,e2) @ (4,69--4,78)";
+        "let testStringNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (String.Equals (e1,e2),False) @ (5,69--5,79)";
+        "let testStringLessThanOperator(e1) (e2) = HashCompare.GenericLessThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (6,69--6,78)";
+        "let testStringLessThanOrEqualsOperator(e1) (e2) = HashCompare.GenericLessOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (7,69--7,79)";
+        "let testStringGreaterThanOperator(e1) (e2) = HashCompare.GenericGreaterThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (8,69--8,78)";
+        "let testStringGreaterThanOrEqualsOperator(e1) (e2) = HashCompare.GenericGreaterOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (9,69--9,79)";
+        "let testStringAdditionOperator(e1) (e2) = String.Concat (e1,e2) @ (11,61--11,70)";
         "let testStringAdditionChecked(e1) (e2) = String.Concat (e1,e2) @ (24,59--24,76)";
         "let testStringToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (LanguagePrimitives.ParseUInt32 (e1)) @ (29,47--29,62)";
         "let testStringToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.int> (LanguagePrimitives.ParseInt32 (e1)) @ (30,47--30,63)";
@@ -2630,7 +2720,11 @@ let ``Test Operator Declarations for String`` () =
         "let testStringToDoubleOperator(e1) = Double.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (53,47--53,55)";
         "let testStringToDecimalOperator(e1) = Decimal.Parse (e1,167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (54,47--54,57)";
         "let testStringToCharOperator(e1) = Char.Parse (e1) @ (55,47--55,54)";
+#if DEBUG
+        @"let testStringToStringOperator(e1) = let nullStr: Microsoft.FSharp.Core.string = """" in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.string> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)"
+#else
         "let testStringToStringOperator(e1) = let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.string> (e1) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... @ (56,47--56,56)";
+#endif
       ]
 
     testOperators "String" "string" excludedTests expectedUnoptimized expectedOptimized
@@ -2640,7 +2734,6 @@ let ``Test Operator Declarations for String`` () =
 // This big list expression was causing us trouble
 
 module internal ProjectStressBigExpressions = 
-    open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
@@ -2866,315 +2959,4 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 
-#if NOT_YET_ENABLED
-
-#if !NO_PROJECTCRACKER && !NETCOREAPP2_0
-
-[<Test>]
-let ``Check use of type provider that provides calls to F# code`` () = 
-    let config = 
-#if DEBUG
-        ["Configuration", "Debug"]
-#else
-        ["Configuration", "Release"]
-#endif
-    let options =
-        ProjectCracker.GetProjectOptionsFromProjectFile (Path.Combine(Path.Combine(Path.Combine(__SOURCE_DIRECTORY__, "data"),"TestProject"),"TestProject.fsproj"), config)
-
-    let res =
-        options
-        |> exprChecker.ParseAndCheckProject 
-        |> Async.RunSynchronously
-
-    Assert.AreEqual ([||], res.Errors, sprintf "Should not be errors, but: %A" res.Errors)
-                                                                                       
-    let results = 
-        [ for f in res.AssemblyContents.ImplementationFiles do
-               for d in f.Declarations do 
-                    for line in d |> printDeclaration None do 
-                        yield line ]    
-    
-    results |> List.iter (printfn "%s")
-
-    results |> shouldEqual
-      ["type TestProject"; "type AssemblyInfo"; "type TestProject"; "type T";
-       """type Class1""";
-       """member .ctor(unitVar0) = (new Object(); ()) @ (5,5--5,11)""";
-       """member get_X1(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothing () @ (6,21--6,36)"""
-       """member get_X2(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGeneric<Microsoft.FSharp.Core.int> (3) @ (7,21--7,43)"""
-       """member get_X3(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingOneArg (3) @ (8,21--8,42)"""
-       """member get_X4(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothing () @ (9,21--9,41)"""
-       """member get_X5(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingGeneric<Microsoft.FSharp.Core.int> (3) @ (10,21--10,48)"""
-       """member get_X6(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingOneArg (3) @ (11,21--11,47)"""
-       """member get_X7(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingTwoArg (new C(),3) @ (12,21--12,47)"""
-       """member get_X8(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothing() @ (13,21--13,49)"""
-       """member get_X9(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothingGeneric<Microsoft.FSharp.Core.int>(3) @ (14,21--14,56)"""
-       """member get_X10(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothingOneArg(3) @ (15,22--15,56)"""
-       """member get_X11(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().InstanceDoNothingTwoArg(new C(),3) @ (16,22--16,56)"""
-       """member get_X12(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in G`1<Microsoft.FSharp.Core.int>.DoNothing () @ (17,22--17,49)"""
-       """member get_X13(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in G`1<Microsoft.FSharp.Core.int>.DoNothingOneArg (3) @ (18,22--18,55)"""
-       """member get_X14(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in G`1<Microsoft.FSharp.Core.int>.DoNothingTwoArg (new C(),3) @ (19,22--19,55)"""
-       """member get_X15(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let matchValue: Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.int> = FSharpOption`1<Microsoft.FSharp.Core.int>.Some (1) in (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue.Tag,1) then let x: Microsoft.FSharp.Core.int = matchValue.get_Value() in x else 0) @ (20,22--20,54)"""
-       """member get_X16(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let matchValue: Microsoft.FSharp.Core.Choice<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.obj> = Choice1Of2(1) in (if Operators.op_Equality<Microsoft.FSharp.Core.int> (matchValue.Tag,0) then 1 else 0) @ (21,22--21,54)"""
-       """member get_X17(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let r: TestTP.Helper.R = {A = 1; B = 0} in (r.B <- 1; r.A) @ (22,22--22,60)"""
-       """member get_X18(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingTwoArg (3,4) @ (23,22--23,43)"""
-       """member get_X19(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingTwoArgCurried (3,4) @ (24,22--24,50)"""
-       """member get_X21(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (fun arg00 -> fun arg10 -> C.DoNothingTwoArgCurried (arg00,arg10)<TestTP.Helper.C> new C())<Microsoft.FSharp.Core.int> 3 @ (25,22--25,55)"""
-       """member get_X23(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (let objectArg: TestTP.Helper.C = new C() in fun arg00 -> fun arg10 -> objectArg.InstanceDoNothingTwoArgCurried(arg00,arg10)<TestTP.Helper.C> new C())<Microsoft.FSharp.Core.int> 3 @ (26,22--26,63)"""
-       """member get_X24(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGenericWithConstraint<Microsoft.FSharp.Core.int> (3) @ (27,22--27,58)"""
-       """member get_X25(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGenericWithTypeConstraint<Microsoft.FSharp.Collections.List<Microsoft.FSharp.Core.int>,Microsoft.FSharp.Core.int> (FSharpList`1<Microsoft.FSharp.Core.int>.Cons (3,FSharpList`1<Microsoft.FSharp.Core.int>.get_Empty ())) @ (28,22--28,62)"""
-       """member get_X26(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.doNothingGenericWithTypeConstraint<Microsoft.FSharp.Collections.List<Microsoft.FSharp.Core.int>,Microsoft.FSharp.Core.int> (FSharpList`1<Microsoft.FSharp.Core.int>.Cons (3,FSharpList`1<Microsoft.FSharp.Core.int>.get_Empty ())) @ (29,22--29,62)"""
-       """member get_X27(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Helper.DoNothingReally () @ (30,22--30,53)"""
-       """member get_X28(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).Method("x") :> Microsoft.FSharp.Core.Unit @ (31,22--31,40)"""
-       """member get_X29(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (new CSharpClass(0).Method2("x"),new CSharpClass(0).Method2("empty")) :> Microsoft.FSharp.Core.Unit @ (32,22--32,53)"""
-       """member get_X30(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).Method3([|"x"; "y"|]) :> Microsoft.FSharp.Core.Unit @ (33,22--33,50)"""
-       """member get_X31(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).GenericMethod<Microsoft.FSharp.Core.int>(2) @ (34,22--34,47)"""
-       """member get_X32(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).GenericMethod2<Microsoft.FSharp.Core.obj>(new Object()) @ (35,22--35,61)"""
-       """member get_X33(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new CSharpClass(0).GenericMethod3<Microsoft.FSharp.Core.int>(3) @ (36,22--36,65)"""
-       """member get_X34(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in C.DoNothingReally () @ (37,22--37,58)"""
-       """member get_X35(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().DoNothingReallyInst() @ (38,22--38,66)"""
-       """member get_X36(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (new CSharpClass(0) :> FSharp.Compiler.Service.Tests.ICSharpExplicitInterface).ExplicitMethod("x") :> Microsoft.FSharp.Core.Unit @ (39,22--39,62)"""
-       """member get_X37(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (new C() :> TestTP.Helper.I).DoNothing() @ (40,22--40,46)"""
-       """member get_X38(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in new C().VirtualDoNothing() @ (41,22--41,45)"""
-       """member get_X39(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let t: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int = (1,2,3) in let i: Microsoft.FSharp.Core.int = t.Item1 in i @ (42,22--42,51)"""
-       """member get_X40(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (moduleValue <- 1; moduleValue) @ (43,22--43,39)"""
-       """member get_X41(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let x: TestTP.Helper.C = new C() in (x.set_Property(1); x.get_Property()) @ (44,22--44,41)"""
-       """member get_X42(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in let x: TestTP.Helper.C = new C() in (x.set_AutoProperty(1); x.get_AutoProperty()) @ (45,22--45,45)"""
-       """member get_X43(this) (unitVar1) = let this: Microsoft.FSharp.Core.obj = ("My internal state" :> Microsoft.FSharp.Core.obj) :> ErasedWithConstructor.Provided.MyType in (C.set_StaticAutoProperty (1); C.get_StaticAutoProperty ()) @ (46,22--46,51)"""
-      ]
-
-    let members = 
-        [ for f in res.AssemblyContents.ImplementationFiles do yield! printMembersOfDeclatations f.Declarations ]
-
-    members |> List.iter (printfn "%s")
-
-    members |> shouldEqual 
-      [
-       ".ctor: Microsoft.FSharp.Core.unit -> TestProject.Class1"
-       ".ctor: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X1: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X2: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGeneric<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X3: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X4: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X5: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingGeneric<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X6: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X7: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingTwoArg: TestTP.Helper.C * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X8: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X9: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothingGeneric<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X10: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X11: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "InstanceDoNothingTwoArg: TestTP.Helper.C * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X12: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X13: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingOneArg: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X14: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingTwoArg: TestTP.Helper.C * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X15: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "Some: 'T -> 'T Microsoft.FSharp.Core.option"
-       "op_Equality<'T when 'T : equality>: 'T -> 'T -> Microsoft.FSharp.Core.bool"
-       "matchValue: Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.int>"
-       "matchValue: Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.int>"
-       "get_Value: Microsoft.FSharp.Core.unit -> 'T"
-       "x: Microsoft.FSharp.Core.int"
-       "get_X16: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "op_Equality<'T when 'T : equality>: 'T -> 'T -> Microsoft.FSharp.Core.bool"
-       "matchValue: Microsoft.FSharp.Core.Choice<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.obj>"
-       "get_X17: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "r: TestTP.Helper.R"
-       "r: TestTP.Helper.R"
-       "get_X18: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingTwoArg: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X19: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingTwoArgCurried: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_X21: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingTwoArgCurried: TestTP.Helper.C -> Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "arg00: TestTP.Helper.C"
-       "arg10: Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X23: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "objectArg: TestTP.Helper.C"
-       "InstanceDoNothingTwoArgCurried: TestTP.Helper.C -> Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "arg00: TestTP.Helper.C"
-       "arg10: Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "get_X24: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGenericWithConstraint<'T when 'T : equality>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X25: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGenericWithTypeConstraint<'T, _ when 'T :> Microsoft.FSharp.Collections.seq<'a>>: 'T -> Microsoft.FSharp.Core.unit"
-       "Cons: 'T * 'T Microsoft.FSharp.Collections.list -> 'T Microsoft.FSharp.Collections.list"
-       "get_Empty: Microsoft.FSharp.Core.unit -> 'T Microsoft.FSharp.Collections.list"
-       "get_X26: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "doNothingGenericWithTypeConstraint<'T, _ when 'T :> Microsoft.FSharp.Collections.seq<'a>>: 'T -> Microsoft.FSharp.Core.unit"
-       "Cons: 'T * 'T Microsoft.FSharp.Collections.list -> 'T Microsoft.FSharp.Collections.list"
-       "get_Empty: Microsoft.FSharp.Core.unit -> 'T Microsoft.FSharp.Collections.list"
-       "get_X27: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingReally: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X28: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       "get_X29: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "op_Addition<^T1, ^T2, ^T3>:  ^T1 ->  ^T2 ->  ^T3"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method2: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method2: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       "get_X30: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "Method3: Microsoft.FSharp.Core.string Microsoft.FSharp.Core.[] -> Microsoft.FSharp.Core.int"
-       "get_X31: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "GenericMethod<'T>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X32: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "GenericMethod2<'T when 'T : class>: 'T -> Microsoft.FSharp.Core.unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X33: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "GenericMethod3<'T when 'T :> System.IComparable<'T>>: 'T -> Microsoft.FSharp.Core.unit"
-       "get_X34: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       "DoNothingReally: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X35: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "DoNothingReallyInst: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X36: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "ExplicitMethod: Microsoft.FSharp.Core.string -> Microsoft.FSharp.Core.int"
-       "get_X37: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "DoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X38: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.Unit"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "VirtualDoNothing: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.unit"
-       "get_X39: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "t: Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int"
-       "i: Microsoft.FSharp.Core.int"
-       "get_X40: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "moduleValue: Microsoft.FSharp.Core.int"
-       "moduleValue: Microsoft.FSharp.Core.int"
-       "get_X41: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "x: TestTP.Helper.C"
-       "set_Property: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "x: TestTP.Helper.C"
-       "get_Property: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "get_X42: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       ".ctor: Microsoft.FSharp.Core.unit -> TestTP.Helper.C"
-       "x: TestTP.Helper.C"
-       "set_AutoProperty: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "x: TestTP.Helper.C"
-       "get_AutoProperty: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "get_X43: TestProject.Class1 -> Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-       "set_StaticAutoProperty: Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.unit"
-       "get_StaticAutoProperty: Microsoft.FSharp.Core.unit -> Microsoft.FSharp.Core.int"
-      ]
-
-#endif
-#endif
-
-
-#if SELF_HOST_STRESS
-   
-
-[<Test>]
-let ``Test Declarations selfhost`` () =
-    let projectFile = __SOURCE_DIRECTORY__ + @"/FSharp.Compiler.Service.Tests.fsproj"
-    // Check with Configuration = Release
-    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
-    
-    wholeProjectResults.Errors.Length |> shouldEqual 0 
-
-    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 13
-
-    let textOfAll = [ for file in wholeProjectResults.AssemblyContents.ImplementationFiles -> Array.ofSeq (printDeclarations None (List.ofSeq file.Declarations))   ]
-
-    ()
-
-
-[<Test>]
-let ``Test Declarations selfhost whole compiler`` () =
-    
-    Directory.SetCurrentDirectory(__SOURCE_DIRECTORY__ +  @"/../../src/fsharp/FSharp.Compiler.Service")
-    let projectFile = __SOURCE_DIRECTORY__ + @"/../../src/fsharp/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj"
-
-    //let v = FSharpProjectFileInfo.Parse(projectFile, [("Configuration", "Debug"); ("NoFsSrGenTask", "true")],enableLogging=true)
-    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug"); ("NoFsSrGenTask", "true")])
-
-    // For subsets of the compiler:
-    //let options = { options with OtherOptions = options.OtherOptions.[0..51] }
-
-    //for x in options.OtherOptions do printfn "%s" x
-
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
-    
-    (wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
-
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for s in printDeclaration None d do 
-              () //printfn "%s" s
-
-    // Very Quick (1 sec - expressions are computed on demand)
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for s in exprsOfDecl d do 
-              () 
-
-    // Quickish (~4.5 seconds for all of FSharp.Compiler.Service.dll)
-    #time "on"
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for (e,m) in exprsOfDecl d do 
-              // This forces the computation of the expression
-              match e with
-              | BasicPatterns.Const _ -> () //printfn "%s" s
-              | _ -> () //printfn "%s" s
-
-[<Test>]
-let ``Test Declarations selfhost FSharp.Core`` () =
-    
-    Directory.SetCurrentDirectory(__SOURCE_DIRECTORY__ +  @"/../../../fsharp/src/fsharp/FSharp.Core")
-    let projectFile = __SOURCE_DIRECTORY__ + @"/../../../fsharp/src/fsharp/FSharp.Core/FSharp.Core.fsproj"
-
-    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
-
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
-    
-    //(wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
-
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for s in printDeclaration (Some (HashSet [])) d do 
-              printfn "%s" s
-
-    #time "on"
-
-    for file in (wholeProjectResults.AssemblyContents.ImplementationFiles |> List.toArray) do
-        for d in file.Declarations do 
-           for (e,m) in exprsOfDecl d do 
-              // This forces the computation of the expression
-              match e with
-              | BasicPatterns.Const _ -> () 
-              | _ -> () 
-
-#endif
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="es" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="PPG_DebugTitle">
         <source>Debug</source>
-        <target state="translated">depurar</target>
+        <target state="translated">Depurar</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_DeployTitle">
@@ -315,7 +315,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">F&amp;ormulario de inicio:</target>
+        <target state="translated">&amp;Formulario de inicio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -365,7 +365,7 @@ Seleccione una ruta de acceso de carpeta válida.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Error">
         <source>Error</source>
-        <target state="translated">Fehler</target>
+        <target state="translated">Error</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_OptionStrict_Custom">
@@ -614,7 +614,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_PermCalcFailedCaption">
         <source>Error</source>
-        <target state="translated">Fehler</target>
+        <target state="translated">Error</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityAdvancedPage_Title">
@@ -784,7 +784,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">Escriba la &amp;contraseña para abrir el archivo {0}</target>
+        <target state="translated">Escriba la &amp;contraseña para abrir archivo {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
@@ -950,7 +950,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PropPage_ReferenceNotFound">
         <source>&lt;The system cannot find the reference specified&gt;</source>
-        <target state="translated">&lt;El sistema no encuentra la referencia especificada&gt;</target>
+        <target state="translated">&lt;El sistema no puede encontrar la referencia especificada&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceTitle">
@@ -985,7 +985,7 @@ Error:</target>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">La dirección base debe ser un número hexadecimal con 8 dígitos o menos, por ejemplo, &amp;H11000000.</target>
+        <target state="translated">La dirección base debe ser un número hexadecimal con 8 dígitos o menos; por ejemplo, &amp;H11000000.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1828,9 +1828,8 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="needs-review-translation">{0} x {1}</target>
+        <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -1894,7 +1893,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_ExistingFile">
         <source>&amp;Existing File...</source>
-        <target state="translated">Archivo &amp;existente...</target>
+        <target state="translated">&amp;Archivo existente...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_String">
@@ -1904,32 +1903,32 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image">
         <source>New &amp;Image</source>
-        <target state="translated">Nueva i&amp;magen</target>
+        <target state="translated">Nueva &amp;imagen</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_PNG">
         <source>&amp;PNG Image...</source>
-        <target state="translated">Imagen &amp;PNG...</target>
+        <target state="translated">&amp;Imagen PNG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_BMP">
         <source>&amp;BMP Image...</source>
-        <target state="translated">Imagen &amp;BMP...</target>
+        <target state="translated">&amp;Imagen BMP...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_GIF">
         <source>&amp;GIF Image...</source>
-        <target state="translated">Imagen &amp;GIF...</target>
+        <target state="translated">&amp;Imagen GIF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_JPEG">
         <source>&amp;JPEG Image...</source>
-        <target state="translated">Imagen &amp;JPEG...</target>
+        <target state="translated">&amp;Imagen JPEG...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Image_TIFF">
         <source>&amp;TIFF Image...</source>
-        <target state="translated">Imagen &amp;TIFF...</target>
+        <target state="translated">&amp;Imagen TIFF...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
@@ -1939,7 +1938,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
         <source>New &amp;Text File...</source>
-        <target state="translated">Nuevo archivo de te&amp;xto...</target>
+        <target state="translated">Nuevo &amp;archivo de texto...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Type_BMP">
@@ -2507,12 +2506,12 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="SD_MNU_AddSettingText">
         <source>&amp;Add Setting</source>
-        <target state="translated">&amp;Agregar valor de configuración</target>
+        <target state="translated">&amp;Agregar ajuste</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">&amp;Quitar valor de configuración</target>
+        <target state="translated">Quit&amp;ar ajuste</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2665,7 +2664,7 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Application_RootNamespaceJSharp">
         <source>Default pac&amp;kage:</source>
-        <target state="translated">Paq&amp;uete predeterminado:</target>
+        <target state="translated">Pa&amp;quete predeterminado:</target>
         <note>J# Specific String for Root Namespace</note>
       </trans-unit>
       <trans-unit id="RSE_AccessModifier_Custom">
@@ -2715,12 +2714,12 @@ El nuevo valor del archivo app.config es '{1}'
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">&amp;Objeto de inicio:</target>
+        <target state="translated">Objeto de &amp;inicio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">&amp;URI de inicio:</target>
+        <target state="translated">URI de &amp;inicio:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">

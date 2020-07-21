@@ -1,7 +1,7 @@
 // #Conformance #LexicalAnalysis #Constants 
 // Number type specifier are not case sensitive
 // Bin
-//<Expects Status=success></Expects>
+//<Expects status="success"></Expects>
 #light
 
 let x1 = 0B1

@@ -71,22 +71,184 @@ let _ = test "structunion394b36" (Lib.NestedStructUnionsTests.testPattern3mut(u2
 
 // F# option implicit converter tests
 
-let testFsOpt() =
-    let testOpt (t : 'T option) =
-        test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
+module TestConsumeOptionalParameter = 
+    let testFsOpt() =
+        let testOpt (t : 'T option) =
+            test (sprintf "fsimplicitconv (%A)" t) (ApiWrapper.ConsumeOptionalParam<'T>(t) = t)
 
-    testOpt(Option<int>.None)
-    testOpt(Some 42)
+        testOpt(Option<int>.None)
+        testOpt(Some 42)
 
-    // check that implicit conversion of optionals does 
-    // differentiate between 'null' and 'Some null'
-    testOpt(Option<string>.None)
-    testOpt(Option<string>.Some null)
-    testOpt(Some "")
-    testOpt(Some "test")
+        // check that implicit conversion of optionals does 
+        // differentiate between 'null' and 'Some null'
+        testOpt(Option<string>.None)
+        testOpt(Option<string>.Some null)
+        testOpt(Some "")
+        testOpt(Some "test")
 
-testFsOpt()
+    testFsOpt()
 
+module TestConsumeCSharpOptionalParameter = 
+    open System
+    open CSharpOptionalParameters
+    check "csoptional23982f31" (SomeClass.MethodTakingOptionals()) 11
+    check "csoptional23982f32" (SomeClass.MethodTakingOptionals(x = 6)) 14
+    check "csoptional23982f33" (SomeClass.MethodTakingOptionals(y = "aaaaaa")) 14
+    check "csoptional23982f34" (SomeClass.MethodTakingOptionals(d = 8.0)) 14
+
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?x = Some 6)) 14
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?y = Some "aaaaaa")) 14
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?d = Some 8.0)) 14
+    
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?x = None)) 11
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?y = None)) 11
+    check "csoptional23982f3a" (SomeClass.MethodTakingOptionals(?d = None)) 11
+
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f35" (let f = SomeClass.MethodTakingOptionals in ((f : unit -> int) ())) 11
+
+    check "csoptional23982f41" (SomeClass.MethodTakingNullableOptionalsWithDefaults()) 11
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14 // can provide non-nullable 
+    check "csoptional23982f43" (SomeClass.MethodTakingNullableOptionalsWithDefaults(y = "aaaaaa")) 14
+    // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
+    check "csoptional23982f42" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = Nullable 6)) 14 // can provide nullable for legacy
+    check "csoptional23982f44" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = Nullable 8.0)) 14 // can provide nullable for legacy
+    
+    check "csoptional23982f431" (SomeClass.MethodTakingNullableOptionalsWithDefaults(x = 6)) 14
+    check "csoptional23982f442" (SomeClass.MethodTakingNullableOptionalsWithDefaults(d = 8.0)) 14
+
+    // When a C# argument has a default value and is nullable (without a default), using ?x to provide an argument takes type option
+    check "csoptional23982f435" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?x = Some 6)) 14
+    check "csoptional23982f446" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?d = Some 8.0)) 14
+
+    check "csoptional23982f43E" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?x = None)) -92
+    check "csoptional23982f44R" (SomeClass.MethodTakingNullableOptionalsWithDefaults(?d = None)) 6
+
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f45" (let f = SomeClass.MethodTakingNullableOptionalsWithDefaults in ((f : unit -> int) ())) 11
+
+    check "csoptional23982f51" (SomeClass.MethodTakingNullableOptionals()) -3
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4 // can provide nullable for legacy
+    check "csoptional23982f53" (SomeClass.MethodTakingNullableOptionals(y = "aaaaaa")) 4
+    check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6 
+    // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
+    check "csoptional23982f52" (SomeClass.MethodTakingNullableOptionals(x = Nullable 6)) 4 // can provide nullable for legacy
+    check "csoptional23982f54" (SomeClass.MethodTakingNullableOptionals(d = Nullable 8.0)) 6 // can provide nullable for legacy
+
+    check "csoptional23982f523" (SomeClass.MethodTakingNullableOptionals(x = 6)) 4
+    check "csoptional23982f544" (SomeClass.MethodTakingNullableOptionals(d = 8.0)) 6
+    
+    // When a C# argument has a default value and is nullable (without a default), using ?x to provide an argument takes type option
+    check "csoptional23982f527" (SomeClass.MethodTakingNullableOptionals(?x = Some 6)) 4
+    check "csoptional23982f548" (SomeClass.MethodTakingNullableOptionals(?d = Some 8.0)) 6
+
+    check "csoptional23982f52T" (SomeClass.MethodTakingNullableOptionals(?x = None)) -3
+    check "csoptional23982f54Y" (SomeClass.MethodTakingNullableOptionals(?d = None)) -3
+
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f55" (let f = SomeClass.MethodTakingNullableOptionals in ((f : unit -> int) ())) -3
+
+#if LANGVERSION_PREVIEW
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", 8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", Nullable 8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", Nullable ())) 11
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable (), "aaaaaa", 8.0)) 13
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable 6, "aaaaaa", 8.0)) 20
+
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", d=8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", d=Nullable 8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, "aaaaaa", d=Nullable ())) 11
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable (), "aaaaaa", d=8.0)) 13
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable 6, "aaaaaa", d=8.0)) 20
+
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, y="aaaaaa", d=8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, y="aaaaaa", d=Nullable 8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, y="aaaaaa", d=Nullable ())) 11
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable (), y="aaaaaa", d=8.0)) 13
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0)) 20
+
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, y="aaaaaa", d=8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, y="aaaaaa", d=Nullable 8.0)) 20
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(6, y="aaaaaa", d=Nullable ())) 11
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable (), y="aaaaaa", d=8.0)) 13
+    check "acsoptional23982f51" (SomeClass.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0)) 20
+
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "acsoptional23982f55" (let f = SomeClass.MethodTakingNullables in ((f : Nullable<int> * string * Nullable<double> -> int) (Nullable 1,"aaaa",Nullable 3.0))) 8
+#endif
+
+// This tests overloaded variaitons of the methods, where the overloads vary by type but not nullability
+//
+// The CHECK_ERRORS cases are not execpted to compile
+module TestConsumeCSharpOptionalParameterOverloads = 
+    open System
+    open CSharpOptionalParameters
+
+    check "csoptional23982f34o" (SomeClass.OverloadedMethodTakingOptionals(d = 8.0)) 14
+
+#if LANGVERSION_PREVIEW
+    check "csoptional23982f3ao" (SomeClass.OverloadedMethodTakingOptionals(?d = Some 8.0)) 14
+    
+    check "csoptional23982f42o" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(x = 6)) 14 // can provide non-nullable 
+
+    // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
+    check "csoptional23982f42o" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(x = Nullable 6)) 14 // can provide nullable for legacy
+
+    check "csoptional23982f431o" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(x = 6)) 14
+
+    // When a C# argument has a default value and is nullable (without a default), using ?x to provide an argument takes type option
+    check "csoptional23982f435o" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x = Some 6)) 14
+
+    check "csoptional23982f52o" (SomeClass.OverloadedMethodTakingNullableOptionals(x = 6)) 4 // can provide nullable for legacy
+
+    // See https://github.com/fsharp/fslang-suggestions/issues/774#issuecomment-516423841
+    check "csoptional23982f52o" (SomeClass.OverloadedMethodTakingNullableOptionals(x = Nullable 6)) 4 // can provide nullable for legacy
+
+    check "csoptional23982f523o" (SomeClass.OverloadedMethodTakingNullableOptionals(x = 6)) 4
+    
+    check "csoptional23982f52o1" (SomeClass.OverloadedMethodTakingNullables(6, "aaaaaa", 8.0)) 20 // can provide non-nullable
+    check "csoptional23982f52o2" (SomeClass.OverloadedMethodTakingNullables(Nullable(6), "aaaaaa", 8.0)) 20 // can provide nullable 
+    check "csoptional23982f52o3" (SomeClass.OverloadedMethodTakingNullables(Nullable(6), "aaaaaa", Nullable(8.0))) 20 // can provide nullable 
+
+#endif
+
+#if CHECK_ERRORS
+    // in these cases there's not enough information to resolve the overload
+    check "csoptional23982f31o" (SomeClass.OverloadedMethodTakingOptionals()) 11
+    check "csoptional23982f32o" (SomeClass.OverloadedMethodTakingOptionals(x = 6)) 14
+    check "csoptional23982f33o" (SomeClass.OverloadedMethodTakingOptionals(y = "aaaaaa")) 14
+    check "csoptional23982f3ao" (SomeClass.OverloadedMethodTakingOptionals(?x = Some 6)) 14
+    check "csoptional23982f3ao" (SomeClass.OverloadedMethodTakingOptionals(?y = Some "aaaaaa")) 14
+    check "csoptional23982f3ao" (SomeClass.OverloadedMethodTakingOptionals(?x = None)) 11
+    check "csoptional23982f3ao" (SomeClass.OverloadedMethodTakingOptionals(?y = None)) 11
+    check "csoptional23982f3ao" (SomeClass.OverloadedMethodTakingOptionals(?d = None)) 11
+
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f35o" (let f = SomeClass.OverloadedMethodTakingOptionals in ((f : unit -> int) ())) 11
+
+    check "csoptional23982f41ox" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults()) 11
+    check "csoptional23982f43ox" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(y = "aaaaaa")) 14
+    check "csoptional23982f44ox" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(d = Nullable 8.0)) 14 // can provide nullable for legacy
+    check "csoptional23982f442ox" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(d = 8.0)) 14
+    check "csoptional23982f446ox" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?d = Some 8.0)) 14
+    check "csoptional23982f43Eox" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?x = None)) -92
+    check "csoptional23982f44Rox" (SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults(?d = None)) 6
+    // Check the type inferred for an un-annotated first-class use of the method
+    check "csoptional23982f45ox" (let f = SomeClass.OverloadedMethodTakingNullableOptionalsWithDefaults in ((f : unit -> int) ())) 11
+
+    check "csoptional23982f51o" (SomeClass.OverloadedMethodTakingNullableOptionals()) -3
+    check "csoptional23982f53o" (SomeClass.OverloadedMethodTakingNullableOptionals(y = "aaaaaa")) 4
+    check "soptional23982f54o" (SomeClass.OverloadedMethodTakingNullableOptionals(d = 8.0)) 6 
+    check "csoptional23982f54o" (SomeClass.OverloadedMethodTakingNullableOptionals(d = Nullable 8.0)) 6 // can provide nullable for legacy
+    check "csoptional23982f544o" (SomeClass.OverloadedMethodTakingNullableOptionals(d = 8.0)) 6
+    check "csoptional23982f548o" (SomeClass.OverloadedMethodTakingNullableOptionals(?d = Some 8.0)) 6
+    check "csoptional23982f52To" (SomeClass.OverloadedMethodTakingNullableOptionals(?x = None)) -3
+    check "csoptional23982f54Yo" (SomeClass.OverloadedMethodTakingNullableOptionals(?d = None)) -3
+    check "csoptional23982f55o" (let f = SomeClass.OverloadedMethodTakingNullableOptionals in ((f : unit -> int) ())) -3
+
+    check "dcsoptional23982f544o" (SomeClass.OverloadedMethodTakingNullables(x= Nullable(), "aaaa" d = Nullable())) 6
+    check "dcsoptional23982f55o" (let (f: Nullable<_> * string * Nullable<_> -> int) = SomeClass.OverloadedMethodTakingNullables in f  (Nullable(), "aaa", Nullable())) -3
+#endif
 
 module NestedStructPatternMatchingAcrossAssemblyBoundaries = 
     open Lib.NestedStructUnionsTests
@@ -179,7 +341,87 @@ let ToFSharpFunc() =
     test "vkejhwew904" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f4)(3)("a")(6uy)(7y)  =  FSharpFuncTests.ApiWrapper.f4.Invoke(3, "a", 6uy, 7y))
     test "vkejhwew905" (FuncConvert.FromFunc(FSharpFuncTests.ApiWrapper.f5)(3)("a")(6uy)(7y)(7s)  =  FSharpFuncTests.ApiWrapper.f5.Invoke(3, "a", 6uy, 7y, 7s))
 
+module TestStructs =
+    open StructTests
+
+    let someFunc (s: NonReadOnlyStruct) = 
+        s.M(456)
+        s.X
+
+    let someByrefFunc (s: byref<NonReadOnlyStruct>) = 
+        s.M(456)
+        s.X
+
+    let someInrefFunc (s: inref<NonReadOnlyStruct>) = 
+        s.M(456)
+        s.X
+
+    let someFuncReturn (s: NonReadOnlyStruct) =
+        s.X
+
+    let someInrefFuncReturn (s: inref<NonReadOnlyStruct>) =
+        s.X
+
+    let test1 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen1" s.X 0
+        s.M(123)
+        check "hdlcjiklhen2" s.X 123
+        check "hdlcjiklhen3" (someFunc s) 456
+        check "hdlcjiklhen4" s.X 123
+
+
+    let test2 () =
+        let mutable s = NonReadOnlyStruct()
+        check "hdlcjiklhen5" s.X 0
+        s.M(123)
+        check "hdlcjiklhen6" s.X 123
+        check "hdlcjiklhen7" (someByrefFunc &s) 456
+        check "hdlcjiklhen8" s.X 456
+
+
+    let test3 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen9" s.X 0
+        s.M(123)
+        check "hdlcjiklhen10" s.X 123
+        check "hdlcjiklhen11" (someInrefFunc &s) 123
+        check "hdlcjiklhen12" s.X 123
+
+    let test4 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen13" s.X 0
+        s.M(123)
+        check "hdlcjiklhen14" s.X 123
+        check "hdlcjiklhen15" (someFuncReturn s) 0 // Technically a bug today, but test is to verify current behavior.
+        check "hdlcjiklhen16" s.X 123
+
+    let test5 () =
+        let s = NonReadOnlyStruct()
+        check "hdlcjiklhen17" s.X 0
+        s.M(123)
+        check "hdlcjiklhen18" s.X 123
+        check "hdlcjiklhen19" (someInrefFuncReturn &s) 123
+        check "hdlcjiklhen20" s.X 123
+
+TestStructs.test1 ()
+TestStructs.test2 ()
+TestStructs.test3 () 
+TestStructs.test4 () 
+TestStructs.test5 () 
+
 #endif
+
+module TestConsumeCSharpOptionalParameterOverloads_ByNullability = 
+    open System
+    open CSharpOptionalParameters
+    check "cenwceoweioij1" (SomeClass.SimpleOverload()) 203
+    check "cenwceoweioij2" (SomeClass.SimpleOverload(6)) 206
+    check "cenwceoweioij3" (SomeClass.SimpleOverload(x=6)) 206
+    check "cenwceoweioij4" (SomeClass.SimpleOverload(Nullable(6))) 6
+    check "cenwceoweioij5" (SomeClass.SimpleOverload(Nullable())) 100
+    check "cenwceoweioij4" (SomeClass.SimpleOverload(x=Nullable(6))) 6
+    check "cenwceoweioij5" (SomeClass.SimpleOverload(x=Nullable())) 100
 
 #if TESTS_AS_APP
 let RUN() = !failures

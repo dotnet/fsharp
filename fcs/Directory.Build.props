@@ -1,4 +1,13 @@
 <Project>
+
+  <PropertyGroup>
+    <RestoreSources>
+      $(RestoreSources);
+      https://api.nuget.org/v3/index.json;
+      https://dotnet.myget.org/F/fsharp/api/v3/index.json;
+    </RestoreSources>
+  </PropertyGroup>
+
   <PropertyGroup>
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
@@ -7,19 +16,22 @@
     <ArtifactsDir>$(MSBuildThisFileDirectory)..\artifacts</ArtifactsDir>
     <ArtifactsBinDir>$(ArtifactsDir)\bin</ArtifactsBinDir>
     <ArtifactsObjDir>$(ArtifactsDir)\obj</ArtifactsObjDir>
-    <OutputPath>$(ArtifactsBinDir)\fcs</OutputPath>
-    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs</IntermediateOutputPath>
+    <OutputPath>$(ArtifactsBinDir)\fcs\$(Configuration)</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsObjDir)\fcs\$(Configuration)</IntermediateOutputPath>
+    <DisableCompilerRedirection>true</DisableCompilerRedirection>
   </PropertyGroup>
 
   <!-- SDK targets override -->
   <PropertyGroup>
-    <ProtoOutputPath>$(ArtifactsBinDir)\FSharp.Build\Proto\net46</ProtoOutputPath>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="Exists('$(ProtoOutputPath)')">
-    <FSharpTargetsPath>$(ProtoOutputPath)\Microsoft.FSharp.Targets</FSharpTargetsPath>
-    <FSharpPropsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
-    <FSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
-    <FSharpOverridesTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+    <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..\src</FSharpSourcesRoot>
+    <VersionPrefix>22.0.3</VersionPrefix>
+    <OtherFlags>--version:$(VersionPrefix)</OtherFlags>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>    
+    <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
+    <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
+    <ToolsetFsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</ToolsetFsiToolPath>
+    <ToolsetFsiToolExe>fsi.exe</ToolsetFsiToolExe>
+    <FcsFSharpCorePkgVersion>4.6.2</FcsFSharpCorePkgVersion>
+    <FcsTargetNetFxFramework>net461</FcsTargetNetFxFramework>
   </PropertyGroup>
 </Project>

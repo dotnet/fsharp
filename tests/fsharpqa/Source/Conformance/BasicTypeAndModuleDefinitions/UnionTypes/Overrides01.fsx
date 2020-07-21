@@ -1,6 +1,6 @@
 // #Conformance #TypesAndModules #Unions 
 // DU may include overrides
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 [<CustomEquality>]
 [<NoComparison>]

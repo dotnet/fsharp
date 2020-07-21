@@ -6,14 +6,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Projects Include="src\buildtools\buildtools.proj" />
     <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj">
-      <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net46</AdditionalProperties>
-      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
+      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp3.1</AdditionalProperties>
     </Projects>
     <Projects Include="src\fsharp\fsc\fsc.fsproj">
-      <AdditionalProperties Condition="'$(OS)' != 'Unix'">TargetFramework=net46</AdditionalProperties>
-      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp2.1</AdditionalProperties>
+      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp3.1</AdditionalProperties>
+    </Projects>
+    <Projects Include="src\fsharp\fsi\fsi.fsproj">
+      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp3.1</AdditionalProperties>
     </Projects>
   </ItemGroup>
 
@@ -23,6 +23,10 @@
 
   <Target Name="Rebuild">
     <MSBuild Projects="@(Projects)" Targets="Rebuild" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+  </Target>
+
+  <Target Name="Publish">
+    <MSBuild Projects="@(Projects)" Targets="Publish" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Clean">

@@ -25,13 +25,13 @@ module Test =
 
     let testAccess = (KindB1.data1.X, KindB1.data3.X)
 
-    check "coijoiwcnkwle2"  (sprintf "%A"  KindB1.data1) "{X = 1;}"
+    check "coijoiwcnkwle2"  (sprintf "%A"  KindB1.data1) "{ X = 1 }"
 
 module Tests2 = 
 
     let testAccess = (KindB2.data1.X, KindB2.data3.X, KindB2.data3.Y)
     
-    check "coijoiwcnkwle3"  (sprintf "%A"  KindB2.data1) "{X = 1;}"
+    check "coijoiwcnkwle3"  (sprintf "%A"  KindB2.data1) "{ X = 1 }"
     
     let _ = (KindB2.data1 = KindB2.data1)
 
@@ -49,7 +49,7 @@ module CrossAssemblyTest =
         check "vrknvio1" (SampleAPI.SampleFunction {| A=1; B = "abc" |}) 4 // note, this is creating an instance of an anonymous record from another assembly.
         check "vrknvio2" (SampleAPI.SampleFunctionAcceptingList [ {| A=1; B = "abc" |}; {| A=2; B = "def" |} ]) [4; 5] // note, this is creating an instance of an anonymous record from another assembly.
         check "vrknvio3" (let d = SampleAPI.SampleFunctionReturningAnonRecd() in d.A + d.B.Length) 4 
-        check "vrknvio4" (let d = SampleAPIStruct.SampleFunctionReturningAnonRecd() in d.ToString().Replace("\n","").Replace("\r","")) """{A = 1; B = "abc";}"""
+        check "vrknvio4" (let d = SampleAPIStruct.SampleFunctionReturningAnonRecd() in d.ToString()) ("{ A = 1\n  " + """B = "abc" }""")
     tests()
 
 module CrossAssemblyTestStruct = 
@@ -66,6 +66,18 @@ module CrossAssemblyTestTupleStruct =
         check "svrknvio3" (match SampleAPITupleStruct.SampleFunctionReturningStructTuple() with (x,y) -> x + y.Length) 4 
         check "svrknvio4" (let res = SampleAPITupleStruct.SampleFunctionReturningStructTuple() in match res with (x,y) -> x + y.Length) 4 
     tests()
+
+module TypeNotGeneratedBug = 
+    
+    let foo (_: obj) = ()
+    
+    let bar() = foo {| ThisIsUniqueToThisTest6353 = 1 |}
+    
+module FeasibleEqualityNotImplemented = 
+    type R = {| number: int |}
+    let e = Event< R>()
+    e.Trigger {|number = 3|}
+    e.Publish.Add (printfn "%A")    // error
 
 #if TESTS_AS_APP
 let RUN() = !failures

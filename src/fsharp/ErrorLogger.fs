@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public Microsoft.FSharp.Compiler.ErrorLogger
+module public FSharp.Compiler.ErrorLogger
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler 
+open FSharp.Compiler.Range
+open FSharp.Compiler.Features
 open System
 
 //------------------------------------------------------------------------
@@ -46,9 +47,9 @@ let rec findOriginalException err =
     | WrappedError(err, _)  -> findOriginalException err
     | _ -> err
 
-type Suggestions = unit -> Collections.Generic.HashSet<string>
+type Suggestions = (string -> unit) -> unit
 
-let NoSuggestions : Suggestions = fun () -> Collections.Generic.HashSet()
+let NoSuggestions : Suggestions = ignore
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option with
@@ -88,10 +89,10 @@ exception Deprecated of string * range
 exception Experimental of string * range
 exception PossibleUnverifiableCode of range
 
-exception UnresolvedReferenceNoRange of (*assemblyname*) string 
-exception UnresolvedReferenceError of (*assemblyname*) string * range
-exception UnresolvedPathReferenceNoRange of (*assemblyname*) string * (*path*) string
-exception UnresolvedPathReference of (*assemblyname*) string * (*path*) string * range
+exception UnresolvedReferenceNoRange of (*assemblyName*) string 
+exception UnresolvedReferenceError of (*assemblyName*) string * range
+exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string
+exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
 
 
 
@@ -125,14 +126,14 @@ let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  =
 
 // Attach a range if this is a range dual exception.
 let rec AttachRange m (exn:exn) = 
-    if m = range0 then exn
+    if Range.equals m range0 then exn
     else 
         match exn with
         // Strip TargetInvocationException wrappers
         | :? System.Reflection.TargetInvocationException -> AttachRange m exn.InnerException
-        | UnresolvedReferenceNoRange(a) -> UnresolvedReferenceError(a, m)
+        | UnresolvedReferenceNoRange a -> UnresolvedReferenceError(a, m)
         | UnresolvedPathReferenceNoRange(a, p) -> UnresolvedPathReference(a, p, m)
-        | Failure(msg) -> InternalError(msg + " (Failure)", m)
+        | Failure msg -> InternalError(msg + " (Failure)", m)
         | :? System.ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
         | notARangeDual -> notARangeDual
 
@@ -146,9 +147,9 @@ type Exiter =
 
 let QuitProcessExiter =  
     { new Exiter with  
-        member __.Exit(n) =                     
+        member __.Exit n =                     
             try  
-                System.Environment.Exit(n) 
+                System.Environment.Exit n 
             with _ ->  
                 ()             
             FSComp.SR.elSysEnvExitDidntExit()
@@ -197,7 +198,7 @@ type PhasedDiagnostic =
 
     /// Construct a phased error
     static member Create(exn:exn, phase:BuildPhase) : PhasedDiagnostic =
-        // FUTURE: renable this assert, which has historically triggered in some compiler service scenarios
+        // FUTURE: reenable this assert, which has historically triggered in some compiler service scenarios
         // System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
 
@@ -281,7 +282,7 @@ let DiscardErrorsLogger =
 
 let AssertFalseErrorLogger =
     { new ErrorLogger("AssertFalseErrorLogger") with 
-            // TODO: renable these asserts in the compiler service
+            // TODO: reenable these asserts in the compiler service
             member x.DiagnosticSink(phasedError, isError) = (* assert false; *) ()
             member x.ErrorCount = (* assert false; *) 0 
     }
@@ -313,7 +314,7 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
-            // FUTURE: renable these asserts, which have historically fired in some compiler service scernaios
+            // FUTURE: reenable these asserts, which have historically fired in some compiler service scenarios
             | null -> (* assert false; *) BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
@@ -330,23 +331,27 @@ type internal CompileThreadStatic =
 module ErrorLoggerExtensions = 
     open System.Reflection
 
+    // Dev15.0 shipped with a bug in diasymreader in the portable pdb symbol reader which causes an AV
+    // This uses a simple heuristic to detect it (the vsversion is < 16.0)
+    let tryAndDetectDev15 =
+        let vsVersion = Environment.GetEnvironmentVariable("VisualStudioVersion")
+        match Double.TryParse vsVersion with
+        | true, v -> v < 16.0
+        | _ -> false
+
     /// Instruct the exception not to reset itself when thrown again.
-    let PreserveStackTrace(exn) =
-        try 
-            let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
-            preserveStackTrace.Invoke(exn, null) |> ignore
+    let PreserveStackTrace exn =
+        try
+            if not tryAndDetectDev15 then
+                let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
+                preserveStackTrace.Invoke(exn, null) |> ignore
         with _ ->
            // This is probably only the mono case.
            System.Diagnostics.Debug.Assert(false, "Could not preserve stack trace for watson exception.")
            ()
 
-
     /// Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
-#if FX_REDUCED_EXCEPTIONS
-        ignore exn
-        ()
-#else
         match  exn with 
         // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
         | :? System.Reflection.TargetInvocationException -> ()
@@ -355,10 +360,9 @@ module ErrorLoggerExtensions =
         | :? System.UnauthorizedAccessException -> ()
         | Failure _ // This gives reports for compiler INTERNAL ERRORs
         | :? System.SystemException ->
-            PreserveStackTrace(exn)
+            PreserveStackTrace exn
             raise exn
         | _ -> ()
-#endif
 
     type ErrorLogger with  
 
@@ -371,7 +375,7 @@ module ErrorLoggerExtensions =
             match exn with 
             | StopProcessing 
             | ReportedError _ -> 
-                PreserveStackTrace(exn)
+                PreserveStackTrace exn
                 raise exn 
             | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, CompileThreadStatic.BuildPhase), true)
 
@@ -379,7 +383,7 @@ module ErrorLoggerExtensions =
             match exn with 
             | StopProcessing 
             | ReportedError _ -> 
-                PreserveStackTrace(exn)
+                PreserveStackTrace exn
                 raise exn 
             | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, CompileThreadStatic.BuildPhase), false)
 
@@ -387,27 +391,24 @@ module ErrorLoggerExtensions =
             x.ErrorR exn
             raise (ReportedError (Some exn))
 
-        member x.SimulateError   (ph:PhasedDiagnostic) = 
+        member x.SimulateError   (ph: PhasedDiagnostic) = 
             x.DiagnosticSink (ph, true)
             raise (ReportedError (Some ph.Exception))
 
-        member x.ErrorRecovery (exn:exn) (m:range) =
+        member x.ErrorRecovery (exn: exn) (m: range) =
             // Never throws ReportedError.
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
-#if FX_REDUCED_EXCEPTIONS
-#else
             | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException), _) ->  ()
-#endif
             | ReportedError _  | WrappedError(ReportedError _, _)  -> ()
             | StopProcessing | WrappedError(StopProcessing, _) -> 
-                PreserveStackTrace(exn)
+                PreserveStackTrace exn
                 raise exn
             | _ ->
                 try  
                     x.ErrorR (AttachRange m exn) // may raise exceptions, e.g. an fsi error sink raises StopProcessing.
-                    ReraiseIfWatsonable(exn)
+                    ReraiseIfWatsonable exn
                 with
                 | ReportedError _ | WrappedError(ReportedError _, _)  -> ()
 
@@ -441,8 +442,8 @@ let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
 let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #ErrorLogger) =
     let oldErrorLogger = CompileThreadStatic.ErrorLogger
     let newErrorLogger = errorLoggerTransformer oldErrorLogger
-    let newInstalled = ref true
-    let newIsInstalled() = if !newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
+    let mutable newInstalled = true
+    let newIsInstalled() = if newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
                              member __.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member __.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
@@ -452,10 +453,10 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     { new System.IDisposable with 
          member __.Dispose() =
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
-            newInstalled := false }
+            newInstalled <- false }
 
 let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPhase <- phase
-let SetThreadErrorLoggerNoUnwind(errorLogger)     = CompileThreadStatic.ErrorLogger <- errorLogger
+let SetThreadErrorLoggerNoUnwind errorLogger     = CompileThreadStatic.ErrorLogger <- errorLogger
 
 // Global functions are still used by parser and TAST ops.
 
@@ -486,8 +487,8 @@ let deprecatedWithError s m = errorR(Deprecated(s, m))
 
 // Note: global state, but only for compiling FSharp.Core.dll
 let mutable reportLibraryOnlyFeatures = true
-let libraryOnlyError m = if reportLibraryOnlyFeatures then errorR(LibraryUseOnly(m))
-let libraryOnlyWarning m = if reportLibraryOnlyFeatures then warning(LibraryUseOnly(m))
+let libraryOnlyError m = if reportLibraryOnlyFeatures then errorR(LibraryUseOnly m)
+let libraryOnlyWarning m = if reportLibraryOnlyFeatures then warning(LibraryUseOnly m)
 let deprecatedOperator m = deprecatedWithError (FSComp.SR.elDeprecatedOperator()) m
 let mlCompatWarning s m = warning(UserCompilerMessage(FSComp.SR.mlCompatMessage s, 62, m))
 
@@ -498,10 +499,10 @@ let suppressErrorReporting f =
             { new ErrorLogger("suppressErrorReporting") with 
                 member __.DiagnosticSink(_phasedError, _isError) = ()
                 member __.ErrorCount = 0 }
-        SetThreadErrorLoggerNoUnwind(errorLogger)
+        SetThreadErrorLoggerNoUnwind errorLogger
         f()
     finally
-        SetThreadErrorLoggerNoUnwind(errorLogger)
+        SetThreadErrorLoggerNoUnwind errorLogger
 
 let conditionallySuppressErrorReporting cond f = if cond then suppressErrorReporting f else f()
 
@@ -561,7 +562,7 @@ let MapD f xs =
     let rec loop acc xs = 
         match xs with
         | [] -> ResultD (List.rev acc) 
-        | h :: t -> f h ++ (fun x -> loop (x::acc) t)
+        | h :: t -> f h ++ (fun x -> loop (x :: acc) t)
 
     loop [] xs
 
@@ -573,8 +574,8 @@ type TrackErrorsBuilder() =
     member x.Combine(expr1, expr2) = expr1 ++ expr2
     member x.While(gd, k) = WhileD gd k
     member x.Zero()  = CompleteD
-    member x.Delay(fn) = fun () -> fn ()
-    member x.Run(fn) = fn ()
+    member x.Delay fn = fun () -> fn ()
+    member x.Run fn = fn ()
 
 let trackErrors = TrackErrorsBuilder()
     
@@ -593,7 +594,7 @@ let IterateIdxD f xs =
 let rec Iterate2D f xs ys = 
     match xs, ys with 
     | [], [] -> CompleteD 
-    | h1 :: t1, h2::t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2) 
+    | h1 :: t1, h2 :: t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2) 
     | _ -> failwith "Iterate2D"
 
 /// Keep the warnings, propagate the error to the exception continuation.
@@ -606,7 +607,7 @@ let TryD f g =
         }
     | res -> res
 
-let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
+let rec RepeatWhileD nDeep body = body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep+1) body else CompleteD) 
 let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
 
 
@@ -637,15 +638,15 @@ let NormalizeErrorString (text : string) =
             match text.[i] with
             | '\r' when i + 1 < text.Length && text.[i + 1] = '\n' ->
                 // handle \r\n sequence - replace it with one single space
-                buf.Append(stringThatIsAProxyForANewlineInFlatErrors) |> ignore
+                buf.Append stringThatIsAProxyForANewlineInFlatErrors |> ignore
                 2
             | '\n' | '\r' ->
-                buf.Append(stringThatIsAProxyForANewlineInFlatErrors) |> ignore
+                buf.Append stringThatIsAProxyForANewlineInFlatErrors |> ignore
                 1
             | c ->
                 // handle remaining chars: control - replace with space, others - keep unchanged
-                let c = if Char.IsControl(c) then ' ' else c
-                buf.Append(c) |> ignore
+                let c = if Char.IsControl c then ' ' else c
+                buf.Append c |> ignore
                 1
         i <- i + delta
     buf.ToString()
@@ -668,3 +669,32 @@ type public FSharpErrorSeverityOptions =
           WarnAsError = []
           WarnAsWarn = []
         }
+
+
+// See https://github.com/Microsoft/visualfsharp/issues/6417, if a compile of the FSharp.Compiler.Services.dll or other compiler
+// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try adding
+// this back in.
+// let dummyMethodFOrBug6417A() = () 
+// let dummyMethodFOrBug6417B() = () 
+
+let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    if not (langVersion.SupportsFeature langFeature) then
+        let featureStr = langVersion.GetFeatureString langFeature
+        let currentVersionStr = langVersion.SpecifiedVersionString
+        let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+        Some (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+    else
+        None
+
+let internal tryLanguageFeatureError langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> error (e)
+    | None -> ()
+
+let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> errorR e
+    | None -> ()
+
+let internal tryLanguageFeatureErrorOption langVersion langFeature m =
+    tryLanguageFeatureErrorAux langVersion langFeature m 

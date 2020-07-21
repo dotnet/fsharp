@@ -35,7 +35,7 @@ module Scripting =
             0
 
 #if INTERACTIVE
-    let argv = Microsoft.FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray
+    let argv = FSharp.Compiler.Interactive.Settings.fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray
 
     let getCmdLineArgOptional (switchName: string) =
         argv |> Array.filter(fun t -> t.StartsWith(switchName)) |> Array.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Array.tryHead 
@@ -172,7 +172,7 @@ module Scripting =
 
     let redirectToLog () = redirectTo System.Console.Out
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
     let defaultPlatform = 
         match Environment.OSVersion.Platform, Environment.Is64BitOperatingSystem with 
         | PlatformID.MacOSX, true -> "osx.10.11-x64"

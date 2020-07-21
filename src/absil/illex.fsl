@@ -2,18 +2,18 @@
 
 {
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiLexer 
+module internal FSharp.Compiler.AbstractIL.Internal.AsciiLexer 
 
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL 
+open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
+open FSharp.Compiler.AbstractIL.Internal.AsciiParser 
+open FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
 
 let lexeme (lexbuf : LexBuffer<char>) = new System.String(lexbuf.Lexeme)
@@ -70,7 +70,6 @@ let kwdInstrTable =
     addTable (fun i -> INSTR_I32_I32 i) Int32Int32Instrs;
     addTable (fun i -> INSTR_I8 i) Int64Instrs;
     addTable (fun i -> INSTR_R i) DoubleInstrs;
-    addTable (fun i -> INSTR_METHOD i) MethodSpecInstrs;
     addTable (fun i -> INSTR_TYPE i) TypeInstrs;
     addTable (fun i -> INSTR_INT_TYPE i) IntTypeInstrs;
     addTable (fun i -> INSTR_VALUETYPE i) ValueTypeInstrs;

@@ -1,17 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 module Structure =
+
     /// Set of visitor utilities, designed for the express purpose of fetching ranges
     /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
     module Range =
+
         /// Create a range starting at the end of r1 and finishing at the end of r2
         let endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End r2.End
 
@@ -34,7 +37,6 @@ module Structure =
             let modend = mkPos r.EndLine (r.EndColumn+m)
             mkFileIndexRange r.FileIndex r.Start modend
 
-
         /// Produce a new range by adding modStart to the StartColumn of `r`
         /// and subtracting modEnd from the EndColumn of `r`
         let modBoth modStart modEnd (r:range) =
@@ -45,16 +47,16 @@ module Structure =
     let longIdentRange (longId:LongIdent) =
         match longId with 
         | [] -> range0
-        | head::_ -> Range.startToEnd head.idRange (List.last longId).idRange
+        | head :: _ -> Range.startToEnd head.idRange (List.last longId).idRange
 
-    /// Caclulate the range of the provided type arguments (<'a,...,'z>) 
+    /// Calculate the range of the provided type arguments (<'a, ..., 'z>) 
     /// or return the range `other` when `typeArgs` = []
     let rangeOfTypeArgsElse other (typeArgs:SynTyparDecl list) =
         match typeArgs with
         | [] -> other
         | ls ->
             ls
-            |> List.map (fun (TyparDecl (_,typarg)) -> typarg.Range)
+            |> List.map (fun (TyparDecl (_, typarg)) -> typarg.Range)
             |> List.reduce unionRanges
 
     let rangeOfSynPatsElse other (synPats:SynSimplePat list) =
@@ -77,7 +79,7 @@ module Structure =
         | Below
         | Same
 
-    /// Tag to identify the constuct that can be stored alongside its associated ranges
+    /// Tag to identify the construct that can be stored alongside its associated ranges
     [<RequireQualifiedAccess>]
     type Scope =
         | Open
@@ -127,6 +129,7 @@ module Structure =
         | UnionDefn
         | Comment
         | XmlDocComment
+
         override self.ToString() = 
             match self with
             | Open                -> "Open"
@@ -177,7 +180,7 @@ module Structure =
             | Comment             -> "Comment"
             | XmlDocComment       -> "XmlDocComment"
 
-    /// Stores the range for a construct, the sub-range that should be collapsed for outlinging,
+    /// Stores the range for a construct, the sub-range that should be collapsed for outlining,
     /// a tag for the construct type, and a tag for the collapse style
     [<NoComparison>]
     type ScopeRange = 
@@ -204,7 +207,7 @@ module Structure =
     let getOutliningRanges (sourceLines: string[]) (parsedInput: ParsedInput) =
         let acc = ResizeArray()
 
-        /// Validation function to ensure that ranges yielded for outlinging span 2 or more lines
+        /// Validation function to ensure that ranges yielded for outlining span 2 or more lines
         let inline rcheck scope collapse (fullRange: range) (collapseRange: range) = 
             if fullRange.StartLine <> fullRange.EndLine then 
                 acc.Add { Scope = scope
@@ -218,70 +221,78 @@ module Structure =
 
         let rec parseExpr expression =
             match expression with
-            | SynExpr.Upcast (e,_,_)
-            | SynExpr.Downcast (e,_,_)
-            | SynExpr.AddressOf(_,e,_,_)
-            | SynExpr.InferredDowncast (e,_)
-            | SynExpr.InferredUpcast (e,_)
-            | SynExpr.DotGet (e,_,_,_)
-            | SynExpr.Do (e,_)
-            | SynExpr.Typed (e,_,_)
-            | SynExpr.DotIndexedGet (e,_,_,_) -> 
+            | SynExpr.Upcast (e, _, _)
+            | SynExpr.Downcast (e, _, _)
+            | SynExpr.AddressOf (_, e, _, _)
+            | SynExpr.InferredDowncast (e, _)
+            | SynExpr.InferredUpcast (e, _)
+            | SynExpr.DotGet (e, _, _, _)
+            | SynExpr.Do (e, _)
+            | SynExpr.Typed (e, _, _)
+            | SynExpr.DotIndexedGet (e, _, _, _) -> 
                 parseExpr e
-            | SynExpr.Set (e1,e2,_)
-            | SynExpr.DotSet (e1,_,e2,_)
-            | SynExpr.DotIndexedSet (e1,_,e2,_,_,_) -> 
+            | SynExpr.Set (e1, e2, _)
+            | SynExpr.DotSet (e1, _, e2, _)
+            | SynExpr.DotIndexedSet (e1, _, e2, _, _, _) -> 
                 parseExpr e1
                 parseExpr e2
-            | SynExpr.New (_,_,expr,r) ->
+            | SynExpr.New (_, _, expr, r) ->
                 rcheck Scope.New Collapse.Below r expr.Range
                 parseExpr expr
-            | SynExpr.YieldOrReturn (_,e,r) ->
+            | SynExpr.YieldOrReturn (_, e, r) ->
                 rcheck Scope.YieldOrReturn Collapse.Below r r
                 parseExpr e
-            | SynExpr.YieldOrReturnFrom (_,e,r) ->
+            | SynExpr.YieldOrReturnFrom (_, e, r) ->
                 rcheck Scope.YieldOrReturnBang Collapse.Below r r
                 parseExpr e
-            | SynExpr.DoBang (e,r) ->
+            | SynExpr.DoBang (e, r) ->
                 rcheck Scope.Do Collapse.Below r <| Range.modStart 3 r
                 parseExpr e
-            | SynExpr.LetOrUseBang (_,_,_,pat,e1,e2,_) ->
-                // for `let!` or `use!` the pattern begins at the end of the keyword so that
-                // this scope can be used without adjustment if there is no `=` on the same line
-                // if there is an `=` the range will be adjusted during the tooltip creation
-                let r = Range.endToEnd pat.Range e1.Range
-                rcheck Scope.LetOrUseBang Collapse.Below r r
-                parseExpr e1
-                parseExpr e2
-            | SynExpr.For (_,_,_,_,_,e,r)
-            | SynExpr.ForEach (_,_,_,_,_,e,r) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, eLet, es, eBody, _) ->
+                [
+                    yield eLet
+                    for (_,_,_,_,eAndBang,_) in es do 
+                        yield eAndBang
+                ]
+                |> List.iter (fun e ->
+                    // for `let!`, `use!` or `and!` the pattern begins at the end of the
+                    // keyword so that this scope can be used without adjustment if there is no `=`
+                    // on the same line. If there is an `=` the range will be adjusted during the
+                    // tooltip creation
+                    let r = Range.endToEnd pat.Range e.Range
+                    rcheck Scope.LetOrUseBang Collapse.Below r r
+                    parseExpr e
+                )
+                parseExpr eBody
+            | SynExpr.For (_, _, _, _, _, e, r)
+            | SynExpr.ForEach (_, _, _, _, _, e, r) ->
                 rcheck Scope.For Collapse.Below r r
                 parseExpr e
-            | SynExpr.LetOrUse (_,_,bindings, body, _) ->
+            | SynExpr.LetOrUse (_, _, bindings, body, _) ->
                 parseBindings bindings
                 parseExpr body
-            | SynExpr.Match (seqPointAtBinding,_expr,clauses,r)
+            | SynExpr.Match (seqPointAtBinding, _expr, clauses, r)
             | SynExpr.MatchBang (seqPointAtBinding, _expr, clauses, r) ->
                 match seqPointAtBinding with
-                | SequencePointAtBinding sr ->
+                | DebugPointAtBinding sr ->
                     let collapse = Range.endToEnd sr r
                     rcheck Scope.Match Collapse.Same r collapse
                 | _ -> ()
                 List.iter parseMatchClause clauses
-            | SynExpr.MatchLambda (_,caseRange,clauses,matchSeqPoint,r) ->
+            | SynExpr.MatchLambda (_, caseRange, clauses, matchSeqPoint, r) ->
                 let caseRange =
                     match matchSeqPoint with
-                    | SequencePointAtBinding r -> r
+                    | DebugPointAtBinding r -> r
                     | _ -> caseRange
                 let collapse = Range.endToEnd caseRange r
                 rcheck Scope.MatchLambda Collapse.Same r collapse
                 List.iter parseMatchClause clauses
-            | SynExpr.App (atomicFlag,isInfix,funcExpr,argExpr,r) ->
+            | SynExpr.App (atomicFlag, isInfix, funcExpr, argExpr, r) ->
                 // seq exprs, custom operators, etc
                 if ExprAtomicFlag.NonAtomic=atomicFlag && (not isInfix)
                    && (function SynExpr.Ident _    -> true  | _ -> false) funcExpr
                    && (function SynExpr.CompExpr _ -> false | _ -> true ) argExpr then
-                   // if the argExrp is a computation expression another match will handle the outlining
+                   // if the argExpr is a computation expression another match will handle the outlining
                    // these cases must be removed to prevent creating unnecessary tags for the same scope
                     let collapse = Range.endToEnd funcExpr.Range r
                     rcheck Scope.SpecialFunc Collapse.Below r collapse
@@ -291,17 +302,17 @@ module Structure =
                         rcheck Scope.CompExpr Collapse.Same r <| Range.modBoth 1 1 collapse
                 parseExpr argExpr
                 parseExpr funcExpr
-            | SynExpr.Sequential (_,_,e1,e2,_) ->
+            | SynExpr.Sequential (_, _, e1, e2, _) ->
                 parseExpr e1
                 parseExpr e2
-            | SynExpr.ArrayOrListOfSeqExpr (isArray,e,r) ->
+            | SynExpr.ArrayOrListOfSeqExpr (isArray, e, r) ->
                 rcheck  Scope.ArrayOrList Collapse.Same r <| Range.modBoth (if isArray then 2 else 1) (if isArray then 2 else 1) r
                 parseExpr e
-            | SynExpr.CompExpr (_arrayOrList,_,e,_r) as _c ->
+            | SynExpr.CompExpr (_arrayOrList, _, e, _r) as _c ->
                 parseExpr e
-            | SynExpr.ObjExpr (_,argOpt,bindings,extraImpls,newRange,wholeRange) as _objExpr ->
+            | SynExpr.ObjExpr (_, argOpt, bindings, extraImpls, newRange, wholeRange) as _objExpr ->
                 match argOpt with
-                | Some (args,_) ->
+                | Some (args, _) ->
                     let collapse = Range.endToEnd args.Range wholeRange
                     rcheck Scope.ObjExpr Collapse.Below wholeRange collapse
                 | None ->
@@ -309,9 +320,9 @@ module Structure =
                     rcheck Scope.ObjExpr Collapse.Below wholeRange collapse
                 parseBindings bindings
                 parseExprInterfaces extraImpls
-            | SynExpr.TryWith (e,_,matchClauses,_,wholeRange,tryPoint,withPoint) ->
+            | SynExpr.TryWith (e, _, matchClauses, _, wholeRange, tryPoint, withPoint) ->
                 match tryPoint, withPoint with
-                | SequencePointAtTry tryRange,  SequencePointAtWith withRange ->
+                | DebugPointAtTry.Yes tryRange,  DebugPointAtWith.Yes withRange ->
                     let fullrange = Range.startToEnd tryRange wholeRange
                     let collapse = Range.endToEnd tryRange wholeRange
                     let collapseTry = Range.endToStart tryRange withRange
@@ -324,9 +335,9 @@ module Structure =
                 | _ -> ()
                 parseExpr e
                 List.iter parseMatchClause matchClauses
-            | SynExpr.TryFinally (tryExpr,finallyExpr,r,tryPoint,finallyPoint) ->
+            | SynExpr.TryFinally (tryExpr, finallyExpr, r, tryPoint, finallyPoint) ->
                 match tryPoint, finallyPoint with
-                | SequencePointAtTry tryRange, SequencePointAtFinally finallyRange ->
+                | DebugPointAtTry.Yes tryRange, DebugPointAtFinally.Yes finallyRange ->
                     let collapse = Range.endToEnd tryRange finallyExpr.Range
                     let fullrange = Range.startToEnd tryRange finallyExpr.Range
                     let collapseFinally = Range.endToEnd finallyRange r
@@ -336,9 +347,9 @@ module Structure =
                 | _ -> ()
                 parseExpr tryExpr
                 parseExpr finallyExpr
-            | SynExpr.IfThenElse (ifExpr,thenExpr,elseExprOpt,spIfToThen,_,ifToThenRange,r) ->
+            | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
                 match spIfToThen with
-                | SequencePointAtBinding rt ->
+                | DebugPointAtBinding rt ->
                     // Outline the entire IfThenElse
                     let fullrange = Range.startToEnd rt r
                     let collapse = Range.endToEnd  ifExpr.Range r
@@ -362,40 +373,40 @@ module Structure =
                         // a suitable approach is determined
                         parseExpr elseExpr
                 | None -> ()
-            | SynExpr.While (_,_,e,r) ->
+            | SynExpr.While (_, _, e, r) ->
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
-            | SynExpr.Lambda (_,_,pats,e,r) ->
+            | SynExpr.Lambda (_, _, pats, e, r) ->
                 match pats with
-                | SynSimplePats.SimplePats (_,pr)
-                | SynSimplePats.Typed (_,_,pr) ->
+                | SynSimplePats.SimplePats (_, pr)
+                | SynSimplePats.Typed (_, _, pr) ->
                     rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pr r)
                 parseExpr e
-            | SynExpr.Lazy (e,r) ->
+            | SynExpr.Lazy (e, r) ->
                 rcheck Scope.SpecialFunc Collapse.Below r r
                 parseExpr e
-            | SynExpr.Quote (_,isRaw,e,_,r) ->
+            | SynExpr.Quote (_, isRaw, e, _, r) ->
                 // subtract columns so the @@> or @> is not collapsed
                 rcheck Scope.Quote Collapse.Same r (Range.modBoth (if isRaw then 3 else 2) (if isRaw then 3 else 2) r)
                 parseExpr e
             | SynExpr.Tuple (_, es, _, r) ->
                 rcheck Scope.Tuple Collapse.Same r r
                 List.iter parseExpr es
-            | SynExpr.Paren (e,_,_,_) ->
+            | SynExpr.Paren (e, _, _, _) ->
                 parseExpr e
-            | SynExpr.Record (recCtor,recCopy,recordFields,r) ->
+            | SynExpr.Record (recCtor, recCopy, recordFields, r) ->
                 match recCtor with
-                | Some (_,ctorArgs,_,_,_) -> parseExpr ctorArgs
+                | Some (_, ctorArgs, _, _, _) -> parseExpr ctorArgs
                 | _ -> ()
                 match recCopy with
-                | Some (e,_) -> parseExpr e
+                | Some (e, _) -> parseExpr e
                 | _ -> ()
-                recordFields |> List.choose (fun (_,e,_) -> e) |> List.iter parseExpr
+                recordFields |> List.choose (fun (_, e, _) -> e) |> List.iter parseExpr
                 // exclude the opening `{` and closing `}` of the record from collapsing
                 rcheck Scope.Record Collapse.Same r <| Range.modBoth 1 1 r
             | _ -> ()
 
-        and parseMatchClause (SynMatchClause.Clause(synPat,_,e,_r,_) as clause) =
+        and parseMatchClause (SynMatchClause.Clause(synPat, _, e, _r, _) as clause) =
             let rec getLastPat = function
                 | SynPat.Or(_, pat, _) -> getLastPat pat
                 | x -> x
@@ -405,7 +416,7 @@ module Structure =
             rcheck Scope.MatchClause Collapse.Same e.Range collapse
             parseExpr e
 
-        and parseAttributes (attrs: SynAttributes) =
+        and parseAttributes (Attributes attrs) =
             let attrListRange() =
                 if not (List.isEmpty attrs) then
                     let range = Range.startToEnd (attrs.[0].Range) (attrs.[attrs.Length-1].ArgExpr.Range)
@@ -426,7 +437,7 @@ module Structure =
                 for attr in attrs do
                     parseExpr attr.ArgExpr
 
-        and parseBinding (SynBinding.Binding (_,kind,_,_,attrs,_,SynValData(memberFlags,_,_),_,_,expr,br,_) as binding) =
+        and parseBinding (SynBinding.Binding (_, kind, _, _, attrs, _, SynValData(memberFlags, _, _), _, _, expr, br, _) as binding) =
             match kind with
             | NormalBinding ->
                 let collapse = Range.endToEnd binding.RangeOfBindingSansRhs binding.RangeOfBindingAndRhs
@@ -447,7 +458,7 @@ module Structure =
 
         and parseBindings sqs = for bind in sqs do parseBinding bind
 
-        and parseExprInterface (InterfaceImpl(synType,bindings,range)) =
+        and parseExprInterface (InterfaceImpl(synType, bindings, range)) =
             let collapse = Range.endToEnd synType.Range range |> Range.modEnd -1
             rcheck Scope.Interface Collapse.Below range collapse
             parseBindings bindings
@@ -456,12 +467,12 @@ module Structure =
 
         and parseSynMemberDefn (objectModelRange: range) d =
             match d with
-            | SynMemberDefn.Member(SynBinding.Binding (attrs=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding,_) ->
+            | SynMemberDefn.Member(SynBinding.Binding (attributes=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding, _) ->
                match valData with
-               | SynValData (Some { MemberKind=MemberKind.Constructor },_,_) ->
+               | SynValData (Some { MemberKind=MemberKind.Constructor }, _, _) ->
                   let collapse = Range.endToEnd synPat.Range d.Range
                   rcheck Scope.New Collapse.Below d.Range collapse
-               | SynValData (Some { MemberKind=MemberKind.PropertyGet | MemberKind.PropertySet },_,_) ->
+               | SynValData (Some { MemberKind=MemberKind.PropertyGet | MemberKind.PropertySet }, _, _) ->
                   let range = 
                     mkRange 
                         d.Range.FileName 
@@ -480,7 +491,7 @@ module Structure =
                   rcheck Scope.Member Collapse.Below d.Range collapse
                parseAttributes attrs
                parseBinding binding
-            | SynMemberDefn.LetBindings (bindings,_,_,_) ->
+            | SynMemberDefn.LetBindings (bindings, _, _, _) ->
                 parseBindings bindings
             | SynMemberDefn.Interface (tp, iMembers, r) ->
                 rcheck Scope.Interface Collapse.Below d.Range (Range.endToEnd tp.Range d.Range)
@@ -508,23 +519,23 @@ module Structure =
         *)
         and parseSimpleRepr simple =
             match simple with
-            | SynTypeDefnSimpleRepr.Enum (cases,_er) ->
+            | SynTypeDefnSimpleRepr.Enum (cases, _er) ->
                 for EnumCase (attrs, _, _, _, cr) in cases do
                     rcheck Scope.EnumCase Collapse.Below cr cr
                     parseAttributes attrs
-            | SynTypeDefnSimpleRepr.Record (_,fields,rr) ->
+            | SynTypeDefnSimpleRepr.Record (_, fields, rr) ->
                 rcheck Scope.RecordDefn Collapse.Same rr rr 
-                for Field (attrs,_,_,_,_,_,_,fr) in fields do
+                for Field (attrs, _, _, _, _, _, _, fr) in fields do
                     rcheck Scope.RecordField Collapse.Below fr fr
                     parseAttributes attrs
-            | SynTypeDefnSimpleRepr.Union (_,cases,ur) ->
+            | SynTypeDefnSimpleRepr.Union (_, cases, ur) ->
                 rcheck Scope.UnionDefn Collapse.Same ur ur
-                for UnionCase (attrs,_,_,_,_,cr) in cases do
+                for UnionCase (attrs, _, _, _, _, cr) in cases do
                     rcheck Scope.UnionCase Collapse.Below cr cr
                     parseAttributes attrs
             | _ -> ()
 
-        and parseTypeDefn (TypeDefn(ComponentInfo(_,typeArgs,_,_,_,_,_,r), objectModel, members, fullrange)) = 
+        and parseTypeDefn (TypeDefn(ComponentInfo(_, typeArgs, _, _, _, _, _, r), objectModel, members, fullrange)) = 
            let typeArgsRange = rangeOfTypeArgsElse r typeArgs
            let collapse = Range.endToEnd (Range.modEnd 1 typeArgsRange) fullrange
            match objectModel with
@@ -543,18 +554,18 @@ module Structure =
                List.iter (parseSynMemberDefn r) members
            | SynTypeDefnRepr.Exception _ -> ()
 
-        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecls) =
+        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecl list) =
             let groupConsecutiveDecls input =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ 
                         when r.StartLine = last.EndLine + 1 || 
                              sourceLines.[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectRanges (ranges: range list) =
@@ -580,23 +591,23 @@ module Structure =
         let collectHashDirectives =
              getConsecutiveModuleDecls(
                 function
-                | SynModuleDecl.HashDirective (ParsedHashDirective (directive, _, _),r) ->
+                | SynModuleDecl.HashDirective (ParsedHashDirective (directive, _, _), r) ->
                     let prefixLength = "#".Length + directive.Length + " ".Length
                     Some (mkRange "" (mkPos r.StartLine prefixLength) r.End)
                 | _ -> None) Scope.HashDirective
 
         let rec parseDeclaration (decl: SynModuleDecl) =
             match decl with
-            | SynModuleDecl.Let (_,bindings,r) ->
+            | SynModuleDecl.Let (_, bindings, r) ->
                 for binding in bindings do
                     let collapse = Range.endToEnd binding.RangeOfBindingSansRhs r
                     rcheck Scope.LetOrUse Collapse.Below r collapse
                 parseBindings bindings
-            | SynModuleDecl.Types (types,_r) ->
+            | SynModuleDecl.Types (types, _r) ->
                 for t in types do
                     parseTypeDefn t
             // Fold the attributes above a module
-            | SynModuleDecl.NestedModule (ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_,_) ->                
+            | SynModuleDecl.NestedModule (ComponentInfo (attrs, _, _, _, _, _, _, cmpRange), _, decls, _, _) ->                
                 // Outline the full scope of the module
                 let r = Range.endToEnd cmpRange decl.Range
                 rcheck Scope.Module Collapse.Below decl.Range r
@@ -604,13 +615,13 @@ module Structure =
                 parseAttributes attrs
                 collectOpens decls
                 List.iter parseDeclaration decls
-            | SynModuleDecl.DoExpr (_,e,_) ->
+            | SynModuleDecl.DoExpr (_, e, _) ->
                 parseExpr e
-            | SynModuleDecl.Attributes (attrs,_) ->
+            | SynModuleDecl.Attributes (attrs, _) ->
                 parseAttributes attrs
             | _ -> ()
 
-        let parseModuleOrNamespace (SynModuleOrNamespace (longId,_,kind,decls,_,attribs,_,r)) =
+        let parseModuleOrNamespace (SynModuleOrNamespace (longId, _, kind, decls, _, attribs, _, r)) =
             parseAttributes attribs
             let idRange = longIdentRange longId
             let fullrange = Range.startToEnd idRange r  
@@ -624,7 +635,7 @@ module Structure =
             collectOpens decls
             List.iter parseDeclaration decls
 
-        /// Determine if a line is a single line or xml docummentation comment
+        /// Determine if a line is a single line or xml documentation comment
         let (|Comment|_|) (line: string) =
             if line.StartsWithOrdinal("///") then Some XmlDoc
             elif line.StartsWithOrdinal("//") then Some SingleLine
@@ -708,36 +719,36 @@ module Structure =
             match typeSigs with
             | [] -> range
             | ls ->
-                let (TypeDefnSig(_,_,memberSigs,r)) = List.last ls
+                let (TypeDefnSig(_, _, memberSigs, r)) = List.last ls
                 lastMemberSigRangeElse r memberSigs
 
-        let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecls) =
+        let lastModuleSigDeclRangeElse range (sigDecls:SynModuleSigDecl list) =
             match sigDecls with
             | [] -> range
             | ls -> 
                 match List.last ls with
-                | SynModuleSigDecl.Types (typeSigs,r) -> lastTypeDefnSigRangeElse r typeSigs
-                | SynModuleSigDecl.Val (ValSpfn(range=r),_) -> r
-                | SynModuleSigDecl.Exception(_,r) -> r
-                | SynModuleSigDecl.Open(_,r) -> r
-                | SynModuleSigDecl.ModuleAbbrev(_,_,r) -> r
+                | SynModuleSigDecl.Types (typeSigs, r) -> lastTypeDefnSigRangeElse r typeSigs
+                | SynModuleSigDecl.Val (ValSpfn(range=r), _) -> r
+                | SynModuleSigDecl.Exception(_, r) -> r
+                | SynModuleSigDecl.Open(_, r) -> r
+                | SynModuleSigDecl.ModuleAbbrev(_, _, r) -> r
                 | _ -> range
 
         let rec parseSynMemberDefnSig = function
-            | SynMemberSig.Member(valSigs,_,r) ->
+            | SynMemberSig.Member(valSigs, _, r) ->
                 let collapse = Range.endToEnd valSigs.RangeOfId r
                 rcheck Scope.Member Collapse.Below r collapse
-            | SynMemberSig.ValField(Field(attrs,_,_,_,_,_,_,fr),fullrange) ->
+            | SynMemberSig.ValField(Field(attrs, _, _, _, _, _, _, fr), fullrange) ->
                 let collapse = Range.endToEnd fr fullrange
                 rcheck Scope.Val Collapse.Below fullrange collapse
                 parseAttributes attrs
-            | SynMemberSig.Interface(tp,r) ->
+            | SynMemberSig.Interface(tp, r) ->
                 rcheck Scope.Interface Collapse.Below r (Range.endToEnd tp.Range r)
             | SynMemberSig.NestedType (typeDefSig, _r) ->
                 parseTypeDefnSig typeDefSig
             | _ -> ()
 
-        and parseTypeDefnSig (TypeDefnSig (ComponentInfo(attribs,typeArgs,_,longId,_,_,_,r) as __, objectModel, memberSigs, _)) = 
+        and parseTypeDefnSig (TypeDefnSig (ComponentInfo(attribs, typeArgs, _, longId, _, _, _, r) as __, objectModel, memberSigs, _)) = 
             parseAttributes attribs
 
             let makeRanges memberSigs =
@@ -750,37 +761,37 @@ module Structure =
             List.iter parseSynMemberDefnSig memberSigs
 
             match objectModel with
-            // matches against a type declaration with <'T,...> and (args,...)
+            // matches against a type declaration with <'T, ...> and (args, ...)
             | SynTypeDefnSigRepr.ObjectModel
                 (TyconUnspecified, objMembers, _) ->
                     List.iter parseSynMemberDefnSig objMembers
-                    let fullrange,collapse = makeRanges objMembers
+                    let fullrange, collapse = makeRanges objMembers
                     rcheck Scope.Type Collapse.Below fullrange collapse
             | SynTypeDefnSigRepr.ObjectModel (TyconAugmentation, objMembers, _) ->
-                    let fullrange,collapse = makeRanges objMembers
+                    let fullrange, collapse = makeRanges objMembers
                     rcheck Scope.TypeExtension Collapse.Below fullrange collapse
                     List.iter parseSynMemberDefnSig objMembers
             | SynTypeDefnSigRepr.ObjectModel (_, objMembers, _) ->
-                    let fullrange,collapse = makeRanges objMembers
+                    let fullrange, collapse = makeRanges objMembers
                     rcheck Scope.Type Collapse.Below fullrange collapse
                     List.iter parseSynMemberDefnSig objMembers
                 // visit the members of a type extension
             | SynTypeDefnSigRepr.Simple (simpleRepr, _) ->
-                let fullrange,collapse = makeRanges memberSigs
+                let fullrange, collapse = makeRanges memberSigs
                 rcheck Scope.Type Collapse.Below fullrange collapse
                 parseSimpleRepr simpleRepr
             | SynTypeDefnSigRepr.Exception _ -> ()
 
-        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecls) =
+        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecl list) =
             let groupConsecutiveSigDecls input =
                 let rec loop (input: range list) (res: range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
-                    | [], _ -> List.rev (currentBulk::res)
+                    | [], _ -> List.rev (currentBulk :: res)
                     | r :: rest, [] -> loop rest res [r]
                     | r :: rest, last :: _ when r.StartLine = last.EndLine + 1 ->
-                        loop rest res (r::currentBulk)
-                    | r :: rest, _ -> loop rest (currentBulk::res) [r]
+                        loop rest res (r :: currentBulk)
+                    | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
             let selectSigRanges (ranges: range list) =
@@ -801,7 +812,7 @@ module Structure =
             |> List.choose selectSigRanges
             |> acc.AddRange
 
-        let collectSigHashDirectives (decls: SynModuleSigDecls) =
+        let collectSigHashDirectives (decls: SynModuleSigDecl list) =
             decls
             |> getConsecutiveSigModuleDecls(
                 function
@@ -810,18 +821,18 @@ module Structure =
                     Some (mkRange "" (mkPos r.StartLine prefixLength) r.End)
                 | _ -> None) Scope.HashDirective
 
-        let collectSigOpens = getConsecutiveSigModuleDecls (function SynModuleSigDecl.Open (_,r) -> Some r | _ -> None) Scope.Open
+        let collectSigOpens = getConsecutiveSigModuleDecls (function SynModuleSigDecl.Open (_, r) -> Some r | _ -> None) Scope.Open
 
         let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
             match decl with
-            | SynModuleSigDecl.Val ((ValSpfn(attrs,ident,_,_,_,_,_,_,_,_,valrange)),r) ->
+            | SynModuleSigDecl.Val ((ValSpfn(attrs, ident, _, _, _, _, _, _, _, _, valrange)), r) ->
                 let collapse = Range.endToEnd ident.idRange valrange
                 rcheck Scope.Val Collapse.Below r collapse
                 parseAttributes attrs
-            | SynModuleSigDecl.Types (typeSigs,_) ->
+            | SynModuleSigDecl.Types (typeSigs, _) ->
                 List.iter parseTypeDefnSig typeSigs
             // Fold the attributes above a module
-            | SynModuleSigDecl.NestedModule (ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_,decls,moduleRange) ->
+            | SynModuleSigDecl.NestedModule (ComponentInfo (attrs, _, _, _, _, _, _, cmpRange), _, decls, moduleRange) ->
                 let rangeEnd = lastModuleSigDeclRangeElse moduleRange decls
                 // Outline the full scope of the module
                 let collapse = Range.endToEnd cmpRange rangeEnd
@@ -833,7 +844,7 @@ module Structure =
                 List.iter parseModuleSigDeclaration decls
             | _ -> ()
 
-        let parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId,_,kind,decls,_,attribs,_,r)) =
+        let parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId, _, kind, decls, _, attribs, _, r)) =
             parseAttributes attribs
             let rangeEnd = lastModuleSigDeclRangeElse r decls
             let idrange = longIdentRange longId

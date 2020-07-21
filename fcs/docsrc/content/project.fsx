@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../bin/v4.5/"
+#I "../../../artifacts/bin/fcs/net461"
 (**
 Compiler Services: Project Analysis
 ==================================
@@ -23,11 +23,11 @@ of `InteractiveChecker`:
 *)
 // Reference F# compiler API
 #r "FSharp.Compiler.Service.dll"
-#r "FSharp.Compiler.Service.ProjectCracker.dll"
 
 open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
@@ -220,7 +220,7 @@ in the project are still read from disk, unless you are using the [FileSystem AP
 *)
 
 let parseResults1, checkAnswer1 = 
-    checker.ParseAndCheckFileInProject(Inputs.fileName1, 0, Inputs.fileSource1, projectOptions) 
+    checker.ParseAndCheckFileInProject(Inputs.fileName1, 0, SourceText.ofString Inputs.fileSource1, projectOptions)
     |> Async.RunSynchronously
 
 let checkResults1 = 
@@ -229,7 +229,7 @@ let checkResults1 =
     | _ -> failwith "unexpected aborted"
 
 let parseResults2, checkAnswer2 = 
-    checker.ParseAndCheckFileInProject(Inputs.fileName2, 0, Inputs.fileSource2, projectOptions)
+    checker.ParseAndCheckFileInProject(Inputs.fileName2, 0, SourceText.ofString Inputs.fileSource2, projectOptions)
     |> Async.RunSynchronously
 
 let checkResults2 = 
@@ -304,56 +304,6 @@ correctly and then analyze each project in turn.
   still be required on disk.
 
 *)
-
-(**
-Cracking a project file
------------------------------
-
-F# projects normally use the '.fsproj' project file format.
-A project cracking facility is provided as a separate NuGet package:
-FSharp.Compiler.Service.ProjectCracker. This NuGet package contains a
-library FSharp.Compiler.Service.ProjectCracker.dll, which should be
-referenced by your application directly, and an executable
-FSharp.Compiler.Service.ProjectCrackerTool.exe, which should be copied
-into the output folder of your application by the build process. If
-you install using Paket or NuGet, then this will be configured for you
-automatically. If not, you should reference the provided `.targets`
-file manually in your application. This can be found in the NuGet
-package at `build/net45/FSharp.Compiler.Service.ProjectCrackerTool.targets`.
-
-The reason for this split is so that the analysis of an F# project
-file is performed out of process, in order that the necessary assembly
-binding redirects can be applied without requiring the caller to
-arrange this. In this way MSBuild versions from 4 up to 14 can be
-accommodated transparently.
-
-In this example we get the project options for one of the
-project files in the F# Compiler Service project itself - you should also be able to use this technique
-for any project that builds cleanly using the command line tools 'xbuild' or 'msbuild'.
-
-
-*)
-
-let projectFile  = __SOURCE_DIRECTORY__ + @"/../../src/fsharp/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj"
-
-ProjectCracker.GetProjectOptionsFromProjectFile(projectFile)
-
-
-(**
-
-You can also request RELEASE mode and set other build configuration parameters:
-
-*)
-
-ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Release")])
-
-(**
-
-For debugging purposes it is also possible to obtain a detailed log from the assembly resolution process.
-
-*)
-
-let options, logs = ProjectCracker.GetProjectOptionsFromProjectFileLogged(projectFile, [("Configuration", "Release")])
 
 (**
 Summary

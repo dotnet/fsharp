@@ -1,138 +1,40 @@
 // #Conformance #Interop #PInvoke #Structs 
 
+#if TESTS_AS_APP
+module Core_csext
+#endif
 
 #nowarn "9"
 open System
 open System.Runtime.InteropServices
-open System.Windows.Forms
 open System.Drawing
 
+let failures = ref []
 
-[<DllImport("cards.dll")>]
-let cdtInit((width: IntPtr), (height: IntPtr)) : unit = ()
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
 
-let pinned (obj: obj) f = 
-  let gch = GCHandle.Alloc(obj,GCHandleType.Pinned) in 
-  try f(gch.AddrOfPinnedObject())
-  finally
-    gch.Free()
+// We currently build targeting netcoreapp3_1, and will continue to do so through this VS cycle
+// We will use this api to see if we are running on a netcore which supports pinvoke / refemit
+let definePInvokeMethod =
+    typeof<System.Reflection.Emit.TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
+        typeof<string>
+        typeof<string>
+        typeof<string>
+        typeof<System.Reflection.MethodAttributes>
+        typeof<System.Reflection.CallingConventions>
+        typeof<Type>
+        typeof<Type[]>
+        typeof<Type[]>
+        typeof<Type[]>
+        typeof<Type[][]>
+        typeof<Type[][]>
+        typeof<System.Runtime.InteropServices.CallingConvention>
+        typeof<System.Runtime.InteropServices.CharSet> |])
 
-//The following types from the System namespace are blittable types: 
-//
-//System.Byte 
-//System.SByte 
-//System.Int16 
-//System.UInt16 
-//System.Int32 
-//System.UInt32 
-//System.Int64 
-//System.IntPtr 
-//System.UIntPtr 
-//The following complex types are also blittable types: 
-//One-dimensional arrays of blittable types, such as an array of integers. 
-//Formatted value types that contain only blittable types (and classes if they are marshaled as formatted types). 
-
-//
-// assert ((typeof<'a>) == (typeof<int>)  or
-//         (typeof<'a>) == (typeof<int64>)  or
-// etc.           
-
-type PinBox<'a> = 
-    { v : obj }
-    static member Create(x) = { v  = box(x) }
-    member x.Value = (unbox x.v : 'a)
-    member x.Pin(f) = pinned(x.v) f
-
-let card_init () =
-  let width = PinBox<_>.Create(300) in
-  let height = PinBox<_>.Create(400) in
-  width.Pin (fun widthAddress -> 
-    height.Pin (fun heightAddress -> 
-      cdtInit (widthAddress, heightAddress)));
-  Printf.printf "width = %d\n" width.Value;
-  Printf.printf "height = %d\n" height.Value;
-  ()
-
-do card_init()
-
-let asciiz (pBytes: nativeptr<sbyte>) = new System.String(pBytes)
- 
-#nowarn "0044";;
-#nowarn "0051";;
-
-open System
-open System.Runtime.InteropServices
-open Microsoft.FSharp.NativeInterop
-
-type voidptr = System.IntPtr
-
-//int (*derivs)(double, double [], double [], void *), 
-type DerivsFunction = delegate of double * double nativeptr * double nativeptr * voidptr -> int
-
-//int (*outputFn)(double, double*, void*) );
-type OutputFunction = delegate of double * double nativeptr * voidptr -> int
-
-[<DllImport("PopDyn.dll")>]
-// Wrap the C function with the following signature:
-//
-extern int SolveODE2(double *ystart, int nvar, double x1, double x2, double eps, double h1,
-                     double hmin, double hmax, int *nok, int *nbad, double dx, void *info, 
-                     DerivsFunction derivs, 
-                     OutputFunction outputFn);
-module Array = 
-    let inline pinObjUnscoped (obj: obj) =  GCHandle.Alloc(obj,GCHandleType.Pinned) 
-
-    let inline pinObj (obj: obj) f = 
-        let gch = pinObjUnscoped obj 
-        try f gch
-        finally
-            gch.Free()
-    
-    [<NoDynamicInvocation>]
-    let inline pin (arr: 'T []) (f : nativeptr<'T> -> 'U) = 
-        pinObj (box arr) (fun _ -> f (&&arr.[0]))
-    
-
-type NativeArray<'T when 'T : unmanaged>(ptr : nativeptr<'T>, len: int) =
-    member x.Ptr = ptr
-    [<NoDynamicInvocation>]
-    member inline x.Item 
-       with get n = NativePtr.get x.Ptr n
-       and  set n v = NativePtr.set x.Ptr n v
-    member x.Length = len
-// Provide a nicer wrapper for use from F# code.  This takes an F# array as input,
-// and when the callbacks happen wraps up the returned native arrays in the 
-// F# NativeArray thin wrapper which lets you use nice syntax arr.[n] for getting and
-// setting values of these arrays.
-let solveODE ystart (x1,x2,eps,h1,hmin,hmax) (nok,nbad) dx derivs outputFn = 
-    Array.pin ystart (fun ystartAddr -> 
-        let nvar = Array.length ystart in
-        let mutable nok = nok in 
-        let mutable nbad = nbad in 
-        let info = 0n in 
-        let derivsF  = new DerivsFunction(fun  x arr1 arr2 _ -> derivs x (new NativeArray<_>(arr1,nvar)) (new NativeArray<_>(arr2,nvar))) in 
-        let outputFnF = new OutputFunction(fun x pY _ -> outputFn x) in 
-        SolveODE2(ystartAddr,nvar,x1,x2,eps,h1,hmin,hmax,&&nok,&&nbad,dx,info,derivsF,outputFnF))
-
-let example1() = 
-  solveODE 
-     // initial values
-     [| 1.0; 2.0 |] 
-     // settings
-     (1.0,2.0,0.0001,1.0,1.0,1.0) 
-     // nok,nbad
-     (10,20) 
-     // dx
-     0.05 
-     // Compute the derivatives.  Note outp and inp are both NativeArrays, passed to us from C.
-     // So there is no bounds checking on these assignments - be careful!  
-     // If it turns out that these arrays are of static known size then we can do better here. 
-     (fun x inp outp -> 
-         outp.[0] <- inp.[0] + 0.05; 1) 
-     // output
-     (fun v -> printf "v = %G\n" v; 5)
-
-
+let enablePInvokeOnCoreClr = definePInvokeMethod <> null
 
 module GetSystemTimeTest = 
     open System
@@ -154,16 +56,18 @@ module GetSystemTimeTest =
     [<DllImport("kernel32.dll")>]
     extern void GetSystemTime([<MarshalAs(UnmanagedType.LPStruct)>] MySystemTime ct);
 
-    do 
-          let sysTime = new MySystemTime()
-          GetSystemTime(sysTime);
-          printf "The System time is %d/%d/%d %d:%d:%d\n" 
-                            (int32 sysTime.wDay)
-                            (int32 sysTime.wMonth )
-                            (int32 sysTime.wYear )
-                            (int32 sysTime.wHour )
-                            (int32 sysTime.wMinute )
-                            (int32 sysTime.wSecond)
+    let doTime () = 
+        let sysTime = new MySystemTime()
+        GetSystemTime(sysTime);
+        printf "The System time is %d/%d/%d %d:%d:%d\n" 
+               (int32 sysTime.wDay)
+               (int32 sysTime.wMonth )
+               (int32 sysTime.wYear )
+               (int32 sysTime.wHour )
+               (int32 sysTime.wMinute )
+               (int32 sysTime.wSecond)
+
+    do if enablePInvokeOnCoreClr then doTime () 
 
 
 module MemoryStatusTest = 
@@ -193,16 +97,14 @@ module MemoryStatusTest =
     end
 
     [<DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)>]
-    extern [<MarshalAs(UnmanagedType.Bool)>] bool 
-          GlobalMemoryStatusEx( [<In; Out>] MEMORYSTATUSEX lpBuffer);
+    extern [<MarshalAs(UnmanagedType.Bool)>] bool GlobalMemoryStatusEx( [<In; Out>] MEMORYSTATUSEX lpBuffer);
 
     let main() =
         let mex = new MEMORYSTATUSEX()
         GlobalMemoryStatusEx(mex) |> ignore
         printf "%A\n" mex
 
-    main()
-
+    if enablePInvokeOnCoreClr then main()
 
 module MemoryStatusTest2 = 
     open System
@@ -239,5 +141,24 @@ module MemoryStatusTest2 =
         GlobalMemoryStatusEx(&& mex) |> ignore
         printf "%A\n" mex
 
-    main()
+    if enablePInvokeOnCoreClr then main()
+
+(*--------------------*)  
+
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | messages ->
+      printfn "%A" messages
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+
+
 

@@ -9,7 +9,7 @@
 //    3. connect the configuration to the global state programmer-settable settings in FSharp.Compiler.Interactive.Settings.dll 
 //    4. implement shadow copy of references
 
-module internal Sample.Microsoft.FSharp.Compiler.Interactive.Main
+module internal Sample.FSharp.Compiler.Interactive.Main
 
 open System
 open System.Globalization
@@ -21,28 +21,18 @@ open System.Runtime.CompilerServices
 open System.Windows.Forms
 #endif
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Interactive.Shell
-open Microsoft.FSharp.Compiler.Interactive
-open Microsoft.FSharp.Compiler.Interactive.Shell.Settings
-
-#if FX_RESHAPED_REFLECTION
-open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.Interactive.Shell.Settings
 
 #nowarn "55"
 #nowarn "40" // let rec on value 'fsiConfig'
 
 
-
 // Hardbinding dependencies should we NGEN fsi.exe
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
 [<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
-#endif
-
 // Standard attributes
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]  
@@ -50,14 +40,12 @@ do()
 
 
 /// Set the current ui culture for the current thread.
-#if FX_LCIDFROMCODEPAGE
 let internal SetCurrentUICultureForThread (lcid : int option) =
     let culture = Thread.CurrentThread.CurrentUICulture
     match lcid with
     | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
     | None -> ()
     { new IDisposable with member x.Dispose() = Thread.CurrentThread.CurrentUICulture <- culture }
-#endif
 
 let callStaticMethod (ty:Type) name args =
     ty.InvokeMember(name, (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, null, Array.ofList args,Globalization.CultureInfo.InvariantCulture)
@@ -77,13 +65,13 @@ type WinFormsEventLoop() =
     do mainForm.DoCreateHandle()
     let mutable lcid = None
     // Set the default thread exception handler
-    let restart = ref false
+    let mutable restart = false
     member __.LCID with get () = lcid and set v = lcid <- v
     interface IEventLoop with
          member x.Run() =  
-             restart := false
+             restart <- false
              Application.Run()
-             !restart
+             restart
          member x.Invoke (f: unit -> 'T) : 'T =   
             if not mainForm.InvokeRequired then 
                 f() 
@@ -91,7 +79,7 @@ type WinFormsEventLoop() =
 
                 // Workaround: Mono's Control.Invoke returns a null result.  Hence avoid the problem by 
                 // transferring the resulting state using a mutable location.
-                let mainFormInvokeResultHolder = ref None
+                let mutable mainFormInvokeResultHolder = None
 
                 // Actually, Mono's Control.Invoke isn't even blocking (or wasn't on 1.1.15)!  So use a signal to indicate completion.
                 // Indeed, we should probably do this anyway with a timeout so we can report progress from 
@@ -105,12 +93,8 @@ type WinFormsEventLoop() =
                                            try 
                                               // When we get called back, someone may jack our culture
                                               // So we must reset our UI culture every time
-#if FX_LCIDFROMCODEPAGE
                                               use _scope = SetCurrentUICultureForThread lcid
-#else
-                                              ignore lcid
-#endif
-                                              mainFormInvokeResultHolder := Some(f ())
+                                              mainFormInvokeResultHolder <- Some(f ())
                                            finally 
                                               doneSignal.Set() |> ignore)) |> ignore
 
@@ -119,9 +103,9 @@ type WinFormsEventLoop() =
                     () // if !progress then fprintf outWriter "." outWriter.Flush()
 
                 //if !progress then fprintfn outWriter "RunCodeOnWinFormsMainThread: Got completion signal, res = %b" (Option.isSome !mainFormInvokeResultHolder)
-                !mainFormInvokeResultHolder |> Option.get
+                mainFormInvokeResultHolder |> Option.get
 
-         member x.ScheduleRestart()  =   restart := true; Application.Exit()  
+         member x.ScheduleRestart() = restart <- true; Application.Exit()  
 
 /// Try to set the unhandled exception mode of System.Windows.Forms
 let internal TrySetUnhandledExceptionMode() =  
@@ -164,20 +148,16 @@ let evaluateSession(argv: string[]) =
         Console.ReadKey() |> ignore
 #endif
 
-#if !FX_REDUCED_CONSOLE
     // When VFSI is running, set the input/output encoding to UTF8.
     // Otherwise, unicode gets lost during redirection.
     // It is required only under Net4.5 or above (with unicode console feature).
     if argv |> Array.exists (fun x -> x.Contains "fsi-server") then
         Console.InputEncoding <- System.Text.Encoding.UTF8 
         Console.OutputEncoding <- System.Text.Encoding.UTF8
-#else
-    ignore argv
-#endif
 
     try
         // Create the console reader
-        let console = new Microsoft.FSharp.Compiler.Interactive.ReadLineConsole()
+        let console = new FSharp.Compiler.Interactive.ReadLineConsole()
 
         // Define the function we pass to the FsiEvaluationSession
         let getConsoleReadLine (probeToSeeIfConsoleWorks) = 
@@ -202,7 +182,7 @@ let evaluateSession(argv: string[]) =
 //#if USE_FSharp_Compiler_Interactive_Settings
         let fsiObjOpt = 
             let defaultFSharpBinariesDir =
-#if FX_RESHAPED_REFLECTION
+#if FX_NO_APP_DOMAINS
                 System.AppContext.BaseDirectory
 #else
                 System.AppDomain.CurrentDomain.BaseDirectory
@@ -213,8 +193,8 @@ let evaluateSession(argv: string[]) =
             if isNull fsiAssembly then 
                 None
             else
-                let fsiTy = fsiAssembly.GetType("Microsoft.FSharp.Compiler.Interactive.Settings")
-                if isNull fsiAssembly then failwith "failed to find type Microsoft.FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
+                let fsiTy = fsiAssembly.GetType("FSharp.Compiler.Interactive.Settings")
+                if isNull fsiAssembly then failwith "failed to find type FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
                 Some (callStaticMethod fsiTy "get_fsi" [  ])
  
         let fsiConfig0 = 
@@ -240,7 +220,7 @@ let evaluateSession(argv: string[]) =
 #if CROSS_PLATFORM_COMPILER
             SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
 #else
-            MSBuildReferenceResolver.Resolver
+            LegacyMSBuildReferenceResolver.getResolver()
 #endif
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
@@ -317,20 +297,24 @@ let evaluateSession(argv: string[]) =
         fsiSession.Run() 
         0
     with 
-    | Microsoft.FSharp.Compiler.ErrorLogger.StopProcessingExn _ -> 1
-    | Microsoft.FSharp.Compiler.ErrorLogger.ReportedError _ -> 1
+    | FSharp.Compiler.ErrorLogger.StopProcessingExn _ -> 1
+    | FSharp.Compiler.ErrorLogger.ReportedError _ -> 1
     | e -> eprintf "Exception by fsi.exe:\n%+A\n" e; 1
 
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]    
-#if !FX_NO_LOADER_OPTIMIZATION
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
-#endif
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
-    use e = new SaveAndRestoreConsoleEncoding()
+    let savedOut = Console.Out
+    use __ =
+        { new IDisposable with
+            member __.Dispose() =
+                try 
+                    Console.SetOut(savedOut)
+                with _ -> ()}
 
 #if !FX_NO_APP_DOMAINS
     let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")

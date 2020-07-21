@@ -56,9 +56,9 @@ module ExtraTopLevelOperators =
             member s.Keys = 
                 let keys = t.Keys
                 { new ICollection<'Key> with 
-                      member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-                      member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-                      member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
+                      member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+                      member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+                      member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
                       member s.Contains(x) = t.ContainsKey (makeSafeKey x)
                       member s.CopyTo(arr,i) =
                           let mutable n = 0 
@@ -93,9 +93,9 @@ module ExtraTopLevelOperators =
             member __.ContainsKey k = t.ContainsKey (makeSafeKey k)
 
         interface ICollection<KeyValuePair<'Key, 'T>> with 
-            member s.Add(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-            member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-            member s.Remove(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
+            member s.Add(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+            member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+            member s.Remove(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
             member s.Contains(KeyValue(k,v)) = ICollection_Contains t (KeyValuePair<_,_>(makeSafeKey k,v))
             member s.CopyTo(arr,i) = 
                 let mutable n = 0 
@@ -166,21 +166,13 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs:seq<'Key*'T>) : IDictionary<'Key,'T> =
-#if FX_RESHAPED_REFLECTION
-        if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
         if typeof<'Key>.IsValueType
-#endif
             then dictValueType keyValuePairs :> _
             else dictRefType   keyValuePairs :> _
 
     [<CompiledName("CreateReadOnlyDictionary")>]
     let readOnlyDict (keyValuePairs:seq<'Key*'T>) : IReadOnlyDictionary<'Key,'T> =
-#if FX_RESHAPED_REFLECTION
-        if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
         if typeof<'Key>.IsValueType
-#endif
             then dictValueType keyValuePairs :> _
             else dictRefType   keyValuePairs :> _
 
@@ -204,11 +196,11 @@ module ExtraTopLevelOperators =
             for j in 0..(n-1) do    
                 res.[0,j] <- firstRowArr.[j]
             for i in 1..(m-1) do
-              checkNonNullInvalidArg "rows" (SR.GetString(SR.nullsNotAllowedInArray)) rowsArr.[i]
-              let rowiArr = getArray rowsArr.[i]
-              if rowiArr.Length <> n then invalidArg "vals" (SR.GetString(SR.arraysHadDifferentLengths))
-              for j in 0..(n-1) do
-                res.[i,j] <- rowiArr.[j]
+                checkNonNullInvalidArg "rows" (SR.GetString(SR.nullsNotAllowedInArray)) rowsArr.[i]
+                let rowiArr = getArray rowsArr.[i]
+                if rowiArr.Length <> n then invalidArg "vals" (SR.GetString(SR.arraysHadDifferentLengths))
+                for j in 0..(n-1) do
+                    res.[i,j] <- rowiArr.[j]
             res
 
     // --------------------------------------------------------------------
@@ -227,7 +219,6 @@ module ExtraTopLevelOperators =
     [<CompiledName("PrintFormatLineToTextWriter")>]
     let fprintfn (textWriter:TextWriter) format = Printf.fprintfn textWriter format 
     
-#if !FX_NO_SYSTEM_CONSOLE
     [<CompiledName("PrintFormat")>]
     let printf format = Printf.printf      format 
 
@@ -239,7 +230,6 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format = Printf.eprintfn    format 
-#endif
 
     [<CompiledName("FailWith")>]
     let failwith s = raise (Failure s)
@@ -285,7 +275,6 @@ module ExtraTopLevelOperators =
     [<CompiledName("LazyPattern")>]
     let (|Lazy|) (input:Lazy<_>) = input.Force()
 
-
     let query = Microsoft.FSharp.Linq.QueryBuilder()
 
 
@@ -296,7 +285,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System.Linq.Expressions
     open System.Collections.Generic
     open Microsoft.FSharp.Core
-
 
     /// <summary>Represents the product of two measure expressions when returned as a generic argument of a provided type.</summary>
     [<Sealed>]

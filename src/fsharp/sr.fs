@@ -1,23 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler 
+namespace FSharp.Compiler 
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Reflection
-    open System.Globalization
-    open System.IO
-    open System.Text
-    open System.Reflection 
 
     module internal SR =
-#if FX_RESHAPED_REFLECTION
-        open System.Reflection
-        type private TypeInThisAssembly = class end
-        let private resources = lazy (new System.Resources.ResourceManager("fsstrings", typeof<TypeInThisAssembly>.GetTypeInfo().Assembly))
-#else
         let private resources = lazy (new System.Resources.ResourceManager("fsstrings", System.Reflection.Assembly.GetExecutingAssembly()))
-#endif
 
         let GetString(name:string) =
             let s = resources.Force().GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
@@ -30,14 +19,6 @@ namespace Microsoft.FSharp.Compiler
     module internal DiagnosticMessage =
 
         open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-        open Microsoft.FSharp.Reflection
-        open System.Reflection
-        open Internal.Utilities.StructuredFormat
-
-#if FX_RESHAPED_REFLECTION
-        open PrimReflectionAdapters
-        open ReflectionAdapters
-#endif
 
         let mkFunctionValue (tys: System.Type[]) (impl:obj->obj) = 
             FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
@@ -68,7 +49,7 @@ namespace Microsoft.FSharp.Compiler
             | '%' -> go args ty (i+1) 
             | 'd'
             | 'f'
-            | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n::args) rty (i+1))
+            | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n :: args) rty (i+1))
             | _ -> failwith "bad format specifier"
 
         // newlines and tabs get converted to strings when read from a resource file

@@ -232,8 +232,31 @@ module SomeRandomOperatorConstraints = begin
 
     let f2 x : float = x * x 
     let f3 x (y:float) = x * y
+
     //let neg4 x (y:System.DateTime) = x + y
+
+    // This example resolves the type of "y" to "TimeSpam". It checks that a single "+" overload between 
+    // two different types DateTime and TimeSpan get resolved via 
+    // via weak SRTP resolution using a DateTime constraint alone.
     let f5 (x:DateTime) y = x + y
+
+    // This example checks a use of TimeSpan/DateTime overloads
+    let f5b (x:DateTime) (y:DateTime) = (x - y) 
+
+
+    // This example checks a use of TimeSpan/DateTime overloads
+    let f5b2 (x:DateTime) (y:TimeSpan) = (x - y) 
+
+    // This example coincidentally checks that the return type is not taken into account before the list of method overloads
+    // is prepared in SRTP resolution.  That is the type of (a - b) is immediately known (and we can use it for
+    // dot-notation name resolution of .TotalSeconds) _immediately_ that the types of a and b are
+    // known and _prior_ to generalization.
+    let f5c (x: DateTime) (y:DateTime) = 
+        (x  - y).TotalSeconds |> int
+
+    let f5c2 (x: DateTime) (y:TimeSpan) = 
+        (x  - y).Second |> int
+
     let f6 (x:int64) y = x + y
     let f7 x y : int64 = x + y
     let f8 x = Seq.reduce (+) x
@@ -1363,12 +1386,10 @@ module CoercivePipingTest =
     check "clwcweki" (f8 3) (box 3)
     check "clwcweki" (f9 3) (box 3)
 
-#if !FX_RESHAPED_REFLECTION
     // this was the actual repro
     let f (info: System.Reflection.MethodInfo) = 
       System.Attribute.GetCustomAttribute(info, typeof<ReflectedDefinitionAttribute>)
       :?> ReflectedDefinitionAttribute
-#endif
 
 module Test_Dev10_Bug_917383 = 
 
@@ -1705,7 +1726,6 @@ module InliningOnSubTypes1 =
     do check "clkewlijwlkw" (f()) (13, 17) 
 
 
-#if !FX_RESHAPED_REFLECTION
 module StructUnionSingleCase = 
     [<Struct>]
     type S = S
@@ -1733,7 +1753,6 @@ module StructUnionSingleCase =
 
     do check "wekew0ewek5" (typeof<S3>.IsValueType) true
     do check "wekew0ewek5b" (typeof<S3>.BaseType) typeof<System.ValueType>
-#endif
 
 // See https://github.com/Microsoft/visualfsharp/issues/238
 module GenericPropertyConstraintSolvedByRecord = 
@@ -1743,6 +1762,51 @@ module GenericPropertyConstraintSolvedByRecord =
     let inline print_foo_memb x = box (^a : (member foo : 'b) x)
 
     let v = print_foo_memb { foo=1 } 
+
+
+/// In this case, the presence of the Method(obj) overload meant overload resolution was being applied and resolving to that
+/// overload, even before the full signature of the trait constraint was known.
+module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown =
+    type X =
+        static member Method (a: obj) = 1
+        static member Method (a: int) = 2
+        static member Method (a: int64) = 3
+
+
+    let inline Test< ^t, ^a when ^t: (static member Method: ^a -> int)> (value: ^a) =
+        ( ^t: (static member Method: ^a -> int)(value))
+
+    let inline Test2< ^t> a = Test<X, ^t> a
+
+    // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
+    // The result should be 2.  
+    // This test has been added to pin down current behaviour pending a future bug fix.
+    check "slvde0vver90u1" (Test2<int> 0) 1
+    check "slvde0vver90u2" (Test2<int64> 0L) 1
+
+/// In this case, the presence of the "Equals" method on System.Object was causing method overloading to be resolved too
+/// early, when ^t was not yet known.  The underlying problem was that we were proceeding with weak resolution
+/// even for a single-support-type trait constraint.
+module MethodOverloadingForTraitConstraintsWhereSomeMethodsComeFromObjectTypeIsNotDeterminedTooEarly =
+    type Test() =
+         member __.Equals (_: Test) = true
+
+    //let inline Equals(a: obj) (b: ^t) =
+    //    match a with
+    //    | :? ^t as x -> (^t: (member Equals: ^t -> bool) (b, x))
+    //    | _-> false
+
+    let a  = Test()
+    let b  = Test()
+
+    // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
+    //
+    // The result should be true.  
+    //
+    // This test should be added to pin down current behaviour pending a future bug fix.
+    //
+    // However the code generated fails peverify.exe so even the pin-down test has been removed for now.
+    //check "cewjewcwec09ew" (Equals a b) false
 
 module SRTPFix = 
 

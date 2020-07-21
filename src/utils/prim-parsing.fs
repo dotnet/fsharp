@@ -4,11 +4,10 @@
 
 namespace  Internal.Utilities.Text.Parsing
 
-open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 
 open System
-open System.Collections.Generic
+open System.Buffers
 
 exception RecoverableParseError
 exception Accept of obj
@@ -133,11 +132,7 @@ module internal Implementation =
     //-------------------------------------------------------------------------
     // Read the tables written by FSYACC.  
 
-    type AssocTable(elemTab:uint16[], offsetTab:uint16[]) =
-        let cacheSize = 7919 // the 1000'th prime
-        // Use a simpler hash table with faster lookup, but only one
-        // hash bucket per key.
-        let cache = Array.zeroCreate<int> (cacheSize * 2)
+    type AssocTable(elemTab: uint16[], offsetTab: uint16[], cache: int[], cacheSize: int) =
 
         member t.ReadAssoc (minElemNum,maxElemNum,defaultValueOfAssoc,keyToFind) =     
             // do a binary chop on the table 
@@ -236,8 +231,21 @@ module internal Implementation =
         let ruleValues    = (Array.zeroCreate 100 : obj[])              
         let lhsPos        = (Array.zeroCreate 2 : Position[])                                            
         let reductions = tables.reductions
-        let actionTable = new AssocTable(tables.actionTableElements, tables.actionTableRowOffsets)
-        let gotoTable = new AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets)
+        let cacheSize = 7919 // the 1000'th prime
+        // Use a simpler hash table with faster lookup, but only one
+        // hash bucket per key.
+        let actionTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
+        let gotoTableCache = ArrayPool<int>.Shared.Rent(cacheSize * 2)
+        // Clear the arrays since ArrayPool does not
+        Array.Clear(actionTableCache, 0, actionTableCache.Length)
+        Array.Clear(gotoTableCache, 0, gotoTableCache.Length)
+        use _cacheDisposal = 
+            { new IDisposable with 
+                member _.Dispose() = 
+                    ArrayPool<int>.Shared.Return actionTableCache
+                    ArrayPool<int>.Shared.Return gotoTableCache }
+        let actionTable = AssocTable(tables.actionTableElements, tables.actionTableRowOffsets, actionTableCache, cacheSize)
+        let gotoTable = AssocTable(tables.gotos, tables.sparseGotoTableRowOffsets, gotoTableCache, cacheSize)
         let stateToProdIdxsTable = new IdxToIdxListTable(tables.stateToProdIdxsTableElements, tables.stateToProdIdxsTableRowOffsets)
 
         let parseState =                                                                                            
@@ -341,7 +349,7 @@ module internal Implementation =
                     if errorSuppressionCountDown > 0 then 
                         errorSuppressionCountDown <- errorSuppressionCountDown - 1
 #if DEBUG
-                        if Flags.debug then Console.WriteLine("shifting, reduced errorRecoverylevel to {0}\n", errorSuppressionCountDown)
+                        if Flags.debug then Console.WriteLine("shifting, reduced errorRecoveryLevel to {0}\n", errorSuppressionCountDown)
 #endif
                     let nextState = actionValue action                                     
                     if not haveLookahead then failwith "shift on end of input!"
@@ -361,38 +369,49 @@ module internal Implementation =
 #if DEBUG
                     if Flags.debug then Console.Write("reduce popping {0} values/states, lookahead {1}", n, report haveLookahead lookaheadToken)
 #endif
-                    for i = 0 to n - 1 do                                                                             
+                    // For every range to reduce merge it
+                    for i = 0 to n - 1 do
                         if valueStack.IsEmpty then failwith "empty symbol stack"
-                        let topVal = valueStack.Peep()
+                        let topVal = valueStack.Peep()                                  // Grab topVal
                         valueStack.Pop()
                         stateStack.Pop()
-                        ruleValues.[(n-i)-1] <- topVal.value  
-                        ruleStartPoss.[(n-i)-1] <- topVal.startPos  
-                        ruleEndPoss.[(n-i)-1] <- topVal.endPos  
-                        if i = 0 then lhsPos.[1] <- topVal.endPos                                     
-                        if i = n - 1 then lhsPos.[0] <- topVal.startPos
 
-                    // Use the lookahead token to populate the locations if the rhs is empty                        
-                    if n = 0 then 
+                        let ruleIndex = (n-i)-1
+                        ruleValues.[ruleIndex] <- topVal.value
+                        ruleStartPoss.[ruleIndex] <- topVal.startPos
+                        ruleEndPoss.[ruleIndex] <- topVal.endPos
+
+                        if i = 0 then
+                            // Initial range
+                            lhsPos.[0] <- topVal.startPos
+                            lhsPos.[1] <- topVal.endPos
+                        elif topVal.startPos.FileIndex = lhsPos.[1].FileIndex && topVal.startPos.Line <= lhsPos.[1].Line then
+                            // Reduce range if same file as the initial end point
+                            lhsPos.[0] <- topVal.startPos
+
+                    // Use the lookahead token to populate the locations if the rhs is empty
+                    if n = 0 then
                         if haveLookahead then 
-                           lhsPos.[0] <- lookaheadStartPos                                                                     
-                           lhsPos.[1] <- lookaheadEndPos                                                                       
+                           lhsPos.[0] <- lookaheadStartPos
+                           lhsPos.[1] <- lookaheadEndPos
                         else 
                            lhsPos.[0] <- lexbuf.StartPos
                            lhsPos.[1] <- lexbuf.EndPos
-                    try                                                                                               
-                          // printf "reduce %d\n" prod                                                       
-                        let redResult = reduction parseState                                                          
-                        valueStack.Push(ValueInfo(redResult, lhsPos.[0], lhsPos.[1]))
+                    try
+                          // printf "reduce %d\n" prod
+                        let redResult = reduction parseState
+                        let valueInfo = ValueInfo(redResult, lhsPos.[0], lhsPos.[1])
+                        valueStack.Push(valueInfo)
                         let currState = stateStack.Peep()
                         let newGotoState = gotoTable.Read(int tables.productionToNonTerminalTable.[prod], currState)
                         stateStack.Push(newGotoState)
+
 #if DEBUG
                         if Flags.debug then Console.WriteLine(" goto state {0}", newGotoState)
 #endif
-                    with                                                                                              
-                    | Accept res ->                                                                            
-                          finished <- true                                                                             
+                    with
+                    | Accept res ->
+                          finished <- true
                           valueStack.Push(ValueInfo(res, lhsPos.[0], lhsPos.[1])) 
                     | RecoverableParseError ->
 #if DEBUG

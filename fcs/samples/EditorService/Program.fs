@@ -1,13 +1,12 @@
 ﻿// Open the namespace with InteractiveChecker type
-open System
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.QuickParse
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.QuickParse
 
 // Create an interactive checker instance (ignore notifications)
 let checker = FSharpChecker.Create()
 
 let parseWithTypeInfo (file, input) = 
+    let input = FSharp.Compiler.Text.SourceText.ofString input
     let checkOptions, _errors = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
     let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(checkOptions)
     let untypedRes = checker.ParseFile(file, input, parsingOptions) |> Async.RunSynchronously

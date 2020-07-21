@@ -228,4 +228,13 @@
   <data name="Format_on_paste" xml:space="preserve">
     <value>Re-format indentation on paste</value>
   </data>
+  <data name="Suggest_names_for_errors_code_fix" xml:space="preserve">
+    <value>Suggest names for unresolved identifiers</value>
+  </data>
+  <data name="Text_hover" xml:space="preserve">
+    <value>Text hover</value>
+  </data>
+  <data name="Diagnostics" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
 </root>

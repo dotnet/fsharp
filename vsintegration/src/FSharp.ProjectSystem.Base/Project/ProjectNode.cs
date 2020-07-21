@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
+using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections;
@@ -2156,7 +2156,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 BuildEngine.OnlyLogCriticalEvents = engineLogOnlyCritical;
             }
         }
-        internal virtual void BuildAsync(uint vsopts, ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target, MSBuildCoda coda)
+        internal virtual void Build(uint vsopts, ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target, MSBuildCoda coda)
         {
             bool engineLogOnlyCritical = BuildPrelude(output);
             MSBuildCoda fullCoda = (res,instance) =>

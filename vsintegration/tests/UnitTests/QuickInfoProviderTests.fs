@@ -42,7 +42,7 @@ module QuickInfoProviderTests =
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 let filePath = "C:\\test.fs"
 

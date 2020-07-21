@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../Microsoft.VisualStudio.Package.Project.resx">
     <body>
@@ -627,7 +627,7 @@
       </trans-unit>
       <trans-unit id="ProjectLocationNotTrusted">
         <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
-        <target state="translated">專案位置不受信任:{0}{0}{1}{0}{0}執行應用程式時若嘗試執行需要完全信任的動作，可能會產生安全性例外狀況。{0}{0}按一下 [確定]5D; 以忽略並繼續。</target>
+        <target state="translated">專案位置不受信任:{0}{0}{1}{0}{0}執行應用程式時若嘗試執行需要完全信任的動作，可能會產生安全性例外狀況。{0}{0}按一下 [確定] 以忽略並繼續。</target>
         <note />
       </trans-unit>
       <trans-unit id="BuildEventError">
@@ -792,7 +792,7 @@
       </trans-unit>
       <trans-unit id="Path">
         <source>Path</source>
-        <target state="translated">PATH</target>
+        <target state="translated">路徑</target>
         <note />
       </trans-unit>
       <trans-unit id="PathDescription">

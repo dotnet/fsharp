@@ -9,6 +9,7 @@ open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Navigation
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Text
@@ -18,7 +19,7 @@ open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 
 [<AllowNullLiteral>]
-type internal FSharpNavigableSymbol(item: INavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
+type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
     interface INavigableSymbol with
         member __.Navigate(_: INavigableRelationship) =
             gtd.NavigateToItem(item, statusBar)
@@ -54,6 +55,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     try
                         // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
                         gtdTask.Wait()
+                        statusBar.Clear()
 
                         if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
                             let navigableItem, range = gtdTask.Result.Value

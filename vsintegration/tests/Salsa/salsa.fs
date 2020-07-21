@@ -25,8 +25,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open Microsoft.Build.Framework
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.Build.Evaluation
 
@@ -637,7 +637,7 @@ module internal Salsa =
 //                Append(sprintf "       <AllowCrossTargeting>true</AllowCrossTargeting>")
 //                Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" targetFrameworkVersion)
 //            else
-            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.6.1")
+            Append(sprintf "       <TargetFrameworkVersion>%s</TargetFrameworkVersion>" "4.7.2")
             Append "        <NoWarn>"
             for disabledWarning in disabledWarnings do
                 Append (sprintf "            %s;" disabledWarning)                            
@@ -1101,7 +1101,7 @@ module internal Salsa =
             
             member file.GetFileName() = filename
             member file.GetProjectOptionsOfScript() = 
-                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, file.CombinedLines, System.DateTime(2000,1,1), [| |]) 
+                project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, false, System.DateTime(2000,1,1), [| |]) 
                 |> Async.RunSynchronously
                 |> fst // drop diagnostics
                  
@@ -1113,7 +1113,7 @@ module internal Salsa =
             member file.OnIdle() =
                 while file.Source.NeedsVisualRefresh do
                     file.OnIdleTypeCheck()
-            member file.CombinedLines =
+            member file.CombinedLines : string =
                 if combinedLines = null then 
                     combinedLines<-String.Join("\n",lines)
                 combinedLines   
@@ -1443,16 +1443,16 @@ module internal Salsa =
             let documentationProvider = 
                 { new IDocumentationBuilder_DEPRECATED with
                     override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
-                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText processedXml)
-                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.tagText processedXml)
+                        appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
                     override doc.AppendDocumentation(appendTo,filename:string,signature:string, showExceptions, showReturns, paramName) = 
-                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Filename:%s]" filename))
-                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
-                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Signature:%s]" signature))
-                        appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Filename:%s]" filename))
+                        appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                        appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[Signature:%s]" signature))
+                        appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
                         if paramName.IsSome then
-                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[ParamName: %s]" paramName.Value))
-                            appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
+                            appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.tagText (sprintf "[ParamName: %s]" paramName.Value))
+                            appendTo.Add(FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
                 } 
 
             let sp2 = 

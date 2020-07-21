@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.FSharp.Compiler
+namespace FSharp.Compiler
 
 open System.Diagnostics.Tracing
 open System
@@ -11,6 +11,8 @@ type LogCompilerFunctionId =
     | Service_IncrementalBuildersCache_BuildingNewCache = 3
     | Service_IncrementalBuildersCache_GettingCache = 4
     | CompileOps_TypeCheckOneInputAndFinishEventually = 5
+    | IncrementalBuild_CreateItemKeyStoreAndSemanticClassification = 6
+    | IncrementalBuild_TypeCheck = 7
     
 /// This is for ETW tracing across FSharp.Compiler.
 [<Sealed;EventSource(Name = "FSharpCompiler")>]

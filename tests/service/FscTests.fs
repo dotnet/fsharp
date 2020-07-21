@@ -1,7 +1,7 @@
 
 #if INTERACTIVE
-#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
+#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
@@ -13,16 +13,12 @@ open System
 open System.Diagnostics
 open System.IO
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Service.Tests.Common
 
 open NUnit.Framework
-
-#if FX_RESHAPED_REFLECTION
-open ReflectionAdapters
-#endif
 
 exception 
    VerificationException of (*assembly:*)string * (*errorCode:*)int * (*output:*)string
@@ -41,14 +37,14 @@ type PEVerifier () =
     static let runsOnMono = try System.Type.GetType("Mono.Runtime") <> null with _ -> false
 
     let verifierInfo =
-#if NETCOREAPP2_0
+#if NETCOREAPP
         None
 #else           
         if runsOnMono then
             Some ("pedump", "--verify all")
         else
             let peverifyPath configuration =
-                Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "PEVerify", configuration, "net46", "PEVerify.exe")
+                Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "artifacts", "bin", "PEVerify", configuration, "net472", "PEVerify.exe")
             let peverify =
                 if File.Exists(peverifyPath "Debug") then peverifyPath "Debug"
                 else peverifyPath "Release"
@@ -96,7 +92,7 @@ let checker = FSharpChecker.Create()
 /// Ensures the default FSharp.Core referenced by the F# compiler service (if none is 
 /// provided explicitly) is available in the output directory.
 let ensureDefaultFSharpCoreAvailable tmpDir  =
-#if NETCOREAPP2_0
+#if NETCOREAPP
     ignore tmpDir
 #else
     // FSharp.Compiler.Service references FSharp.Core 4.3.0.0 by default.  That's wrong? But the output won't verify
@@ -248,7 +244,7 @@ let ``5. Compile from AST with explicit assembly reference`` () =
     let code = """
 module Bar
 
-    open Microsoft.FSharp.Compiler.SourceCodeServices
+    open FSharp.Compiler.SourceCodeServices
 
     let f x = (x,x)
 
@@ -367,9 +363,9 @@ let x = 3 + 4
 
 [<Test>]
 let ``Check read of mscorlib`` () =
-    let options = Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.mkDefault  Microsoft.FSharp.Compiler.AbstractIL.IL.EcmaILGlobals
+    let options = FSharp.Compiler.AbstractIL.ILBinaryReader.mkDefault  FSharp.Compiler.AbstractIL.IL.EcmaILGlobals
     let options = { options with optimizeForMemory=true}
-    let reader = Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes "C:\\Program Files (x86)\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.5\\mscorlib.dll" options
+    let reader = FSharp.Compiler.AbstractIL.ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes "C:\\Program Files (x86)\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.5\\mscorlib.dll" options
     let greg = reader.ILModuleDef.TypeDefs.FindByName "System.Globalization.GregorianCalendar"
     for attr in greg.CustomAttrs.AsList do 
         printfn "%A" attr.Method

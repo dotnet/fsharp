@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../Microsoft.VisualStudio.Editors.Designer.resx">
     <body>
@@ -315,7 +315,7 @@ Wählen Sie einen gültigen Ordnerpfad aus.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupFormLabelText">
         <source>Startup f&amp;orm:</source>
-        <target state="translated">Startf&amp;ormular:</target>
+        <target state="translated">&amp;Startformular:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
@@ -355,7 +355,7 @@ Wählen Sie einen gültigen Ordnerpfad aus.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_None">
         <source>None</source>
-        <target state="translated">NONE</target>
+        <target state="translated">Keine</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_Notification_Warning">
@@ -452,7 +452,7 @@ Wenn diese Einstellung geändert wird, werden die Einstellungen in allen Konfigu
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_Calculate">
         <source>&amp;Calculate Permissions</source>
-        <target state="translated">Bere&amp;chtigungen berechnen</target>
+        <target state="translated">&amp;Berechtigungen berechnen</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_MgdStatus_Stopped">
@@ -784,12 +784,12 @@ Fehler:</target>
       </trans-unit>
       <trans-unit id="PPG_Signing_OpenExistingKeyPasswordPrompt">
         <source>Enter &amp;password to open file {0}</source>
-        <target state="translated">&amp;Kennwort zum Öffnen der Datei "{0}" eingeben</target>
+        <target state="translated">&amp;Kennwort eingeben, um Datei zu öffnen {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_CreateNewKeyPasswordPrompt">
         <source>Enter &amp;password for new file {0}</source>
-        <target state="translated">&amp;Kennwort für die neue Datei "{0}" eingeben</target>
+        <target state="translated">&amp;Kennwort für neue Datei {0} eingeben</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Signing_ProjectAlreadyContainsFile">
@@ -875,7 +875,7 @@ Fehler:</target>
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Static">
         <source>Static</source>
-        <target state="translated">Static</target>
+        <target state="translated">Statisch</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_UrlBehavior_Dynamic">
@@ -950,7 +950,7 @@ Fehler:</target>
       </trans-unit>
       <trans-unit id="PropPage_ReferenceNotFound">
         <source>&lt;The system cannot find the reference specified&gt;</source>
-        <target state="translated">&lt;Angegebener Verweis wurde nicht gefunden&gt;</target>
+        <target state="translated">&lt;System kann den angegebenen Verweis nicht finden&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceTitle">
@@ -985,7 +985,7 @@ Fehler:</target>
       </trans-unit>
       <trans-unit id="PPG_InvalidHexString">
         <source>Base address must be a hexadecimal number with less than or equal to 8 digits, for example, &amp;H11000000.</source>
-        <target state="translated">Die Basisadresse muss eine Hexadezimalzahl mit höchstens 8 Ziffern sein, z.B. &amp;H11000000.</target>
+        <target state="translated">Die Basisadresse muss eine hexadezimale Zahl mit 8 oder weniger Ziffern sein, z.B. "&amp;H11000000".</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_NeedResFile">
@@ -1828,9 +1828,8 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_GraphicSizeFormat">
         <source>{0} x {1}</source>
-        <target state="needs-review-translation">{0} x {1}</target>
+        <target state="translated">{0} x {1}</target>
         <note>Format string for showing a graphic's size
-
 #  {0} = width (as an integer)
 #  {1} = height (as an integer)
 #Example, for a bitmap of width=123, height = 456, the English version of this string would be "123x456"</note>
@@ -1879,7 +1878,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add">
         <source>&amp;Add</source>
-        <target state="translated">&amp;Hinzufügen</target>
+        <target state="translated">Hinz&amp;ufügen</target>
         <note>Add, Delete and Views button text in the main ToolStrip</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Remove">
@@ -1934,7 +1933,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_Icon">
         <source>New I&amp;con...</source>
-        <target state="translated">Neues S&amp;ymbol...</target>
+        <target state="translated">Neues &amp;Symbol...</target>
         <note>Menu items under the "Add" button</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Add_TextFile">
@@ -2108,7 +2107,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_List">
         <source>&amp;List</source>
-        <target state="translated">&amp;Auflisten</target>
+        <target state="translated">&amp;Liste</target>
         <note>Resource editor listview view styles (like changing the view style of a folder in Windows XP)</note>
       </trans-unit>
       <trans-unit id="RSE_Btn_Views_Details">
@@ -2148,12 +2147,12 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Dlg_ReplaceExistingFile">
         <source>The file '{0}' already exists.  Do you want to replace it?</source>
-        <target state="translated">Die Datei "{0}" ist bereits vorhanden.  Möchten Sie sie ersetzen?</target>
+        <target state="translated">Die Datei "{0}" ist bereits vorhanden. Möchten Sie sie ersetzen?</target>
         <note>{0} = full file path and name</note>
       </trans-unit>
       <trans-unit id="RSE_Dlg_ReplaceExistingFiles">
         <source>The following files already exist.  Do you want to replace them?</source>
-        <target state="translated">Die folgenden Dateien sind bereits vorhanden.  Möchten Sie sie ersetzen?</target>
+        <target state="translated">Die folgenden Dateien sind bereits vorhanden. Möchten Sie sie ersetzen?</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Dlg_ExportMultiple">
@@ -2512,7 +2511,7 @@ Möchten Sie den Wert in der SETTINGS-Datei aktualisieren?</target>
       </trans-unit>
       <trans-unit id="SD_MNU_RemoveSettingText">
         <source>R&amp;emove Setting</source>
-        <target state="translated">E&amp;instellung entfernen</target>
+        <target state="translated">&amp;Einstellung entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_FullDescriptionText">
@@ -2665,7 +2664,7 @@ Möchten Sie den Wert in der SETTINGS-Datei aktualisieren?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_RootNamespaceJSharp">
         <source>Default pac&amp;kage:</source>
-        <target state="translated">Standardpa&amp;ket:</target>
+        <target state="translated">&amp;Standardpaket:</target>
         <note>J# Specific String for Root Namespace</note>
       </trans-unit>
       <trans-unit id="RSE_AccessModifier_Custom">
@@ -2715,12 +2714,12 @@ Möchten Sie den Wert in der SETTINGS-Datei aktualisieren?</target>
       </trans-unit>
       <trans-unit id="PPG_Application_StartupObjectLabelText">
         <source>Startup &amp;object:</source>
-        <target state="translated">Start&amp;objekt:</target>
+        <target state="translated">&amp;Startobjekt:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_StartupUriLabelText">
         <source>Startup &amp;URI:</source>
-        <target state="translated">Start-&amp;URI:</target>
+        <target state="translated">&amp;Start-URI:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_WPFApp_AppXamlOpenInUnsupportedEditor">

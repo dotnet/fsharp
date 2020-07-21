@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../FSCore.resx">
     <body>
@@ -705,6 +705,11 @@
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
         <target state="translated">Dies ist kein gültiger Abfrageausdruck. Das Konstrukt "{0}" wurde in einer Abfrage verwendet, wird jedoch vom F#-to-LINQ-Abfragekonvertierungsprogramm nicht erkannt. Überprüfen Sie die Spezifikation zulässiger Abfragen, und entfernen Sie unter Umständen einige Operationen aus dem Abfrageausdruck.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">maxDegreeOfParallelism muss positiv sein, lautete jedoch "{0}".</target>
         <note />
       </trans-unit>
     </body>

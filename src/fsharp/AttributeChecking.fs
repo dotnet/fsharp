@@ -2,22 +2,23 @@
 
 /// Logic associated with checking "ObsoleteAttribute" and other attributes 
 /// on items from name resolution
-module internal Microsoft.FSharp.Compiler.AttributeChecking
+module internal FSharp.Compiler.AttributeChecking
 
+open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TcGlobals
+open FSharp.Compiler 
+open FSharp.Compiler.Range
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Infos
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
+open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
@@ -52,7 +53,7 @@ let rec private evalILAttribElem e =
 
 let rec private evalFSharpAttribArg g e = 
     match e with
-    | Expr.Const(c, _, _) -> 
+    | Expr.Const (c, _, _) -> 
         match c with 
         | Const.Bool b -> box b
         | Const.SByte i  -> box i
@@ -246,7 +247,6 @@ let MethInfoHasAttribute g m attribSpec minfo  =
         |> Option.isSome
 
 
-
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
@@ -265,11 +265,19 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     | _ -> 
         CompleteD
 
+let langVersionPrefix = "--langversion:preview"
+
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let CheckFSharpAttributes g attribs m = 
-    if isNil attribs then CompleteD 
-    else 
+let CheckFSharpAttributes (g:TcGlobals) attribs m =
+    let isExperimentalAttributeDisabled (s:string) =
+        if g.compilingFslib then
+            true
+        else
+            g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
+
+    if isNil attribs then CompleteD
+    else
         (match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
             WarnD(ObsoleteWarning(s, m))
@@ -283,28 +291,30 @@ let CheckFSharpAttributes g attribs m =
         | None -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) -> 
+        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
             let msg = UserCompilerMessage(s, n, m)
             let isError = 
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
             if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
-                 
         | _ -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) -> 
-            WarnD(Experimental(s, m))
-        | Some _ -> 
+        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
+            if isExperimentalAttributeDisabled s then
+                CompleteD
+            else
+                WarnD(Experimental(s, m))
+        | Some _ ->
             WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
-        | _ ->  
+        | _ ->
             CompleteD
-        ) ++ (fun () -> 
+        ) ++ (fun () ->
 
         match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
         | Some _ -> 
@@ -513,7 +523,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
         match attr.TyconRef.TryDeref with
         | ValueSome _ -> 
             let tcs = tcref.Stamp
-            match casmap.TryGetValue(tcs) with
+            match casmap.TryGetValue tcs with
             | true, c -> c
             | _ ->
                 let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])

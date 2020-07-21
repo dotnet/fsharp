@@ -1343,7 +1343,7 @@ type UsingMSBuild()  =
     member this.GetCompleteIdTest tolerate (s : string)(exp : string option) : unit =
       let n = s.IndexOf '$'
       let s = s.Remove (n, 1)
-      match (Microsoft.FSharp.Compiler.QuickParse.GetCompleteIdentifierIsland tolerate s n, exp) with
+      match (FSharp.Compiler.QuickParse.GetCompleteIdentifierIsland tolerate s n, exp) with
       | (Some (s1, _, _), Some s2) -> 
         printfn "%s" "Received result, as expected."
         Assert.AreEqual (s1, s2)

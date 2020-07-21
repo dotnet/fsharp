@@ -2,7 +2,7 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.CodeAnalysisExtensions
 
 open Microsoft.CodeAnalysis
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.Range
 open System.IO
 
 type Project with
@@ -46,6 +46,14 @@ type Solution with
         // otherwise Roslyn does not find documents.
         self.GetDocumentIdsWithFilePath (Path.GetFullPath filePath)
         |> Seq.tryHead |> Option.map (fun docId -> self.GetDocument docId)
+
+    /// Try to find the documentId corresponding to the provided filepath and ProjectId within this solution  
+    member self.TryGetDocumentFromPath(filePath, projId: ProjectId) =
+       // It's crucial to normalize file path here (specificaly, remove relative parts),
+       // otherwise Roslyn does not find documents.
+       self.GetDocumentIdsWithFilePath (Path.GetFullPath filePath)
+       |> Seq.filter (fun x -> x.ProjectId = projId)
+       |> Seq.tryHead |> Option.map (fun docId -> self.GetDocument docId)
 
 
     /// Try to get a project inside the solution using the project's id

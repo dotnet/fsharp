@@ -4,8 +4,8 @@ module Tests.ServiceAnalysis.UnusedOpens
 
 open System
 open NUnit.Framework
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 open FsUnit
 
 let private filePath = "C:\\test.fs"
@@ -29,7 +29,7 @@ let private checker = FSharpChecker.Create()
 let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int * (*end column*)int)) list) =
     let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, source, projectOptions) |> Async.RunSynchronously
+    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
     
     let checkFileResults =
         match checkFileAnswer with

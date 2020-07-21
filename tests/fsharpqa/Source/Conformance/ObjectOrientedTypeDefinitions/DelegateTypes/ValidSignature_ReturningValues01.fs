@@ -1,7 +1,7 @@
 // #Conformance #ObjectOrientedTypes #Delegates 
 // Delegate returning a function value
 // Declaration is in the form: typ -> (typ -> ... -> typ -> typ)
-//<Expects status=success></Expects>
+//<Expects status="success"></Expects>
 
 // Non-generic
 type DelegateReturningAFunctionValue = delegate of int -> (string -> int)

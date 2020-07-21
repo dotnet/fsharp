@@ -1,8 +1,8 @@
 module Tests.Service.TreeVisitorTests
 
 open FSharp.Compiler.Service.Tests.Common
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices.AstTraversal
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.AstTraversal
 open NUnit.Framework
 
 [<Test>]
@@ -13,7 +13,10 @@ let ``Visit type test`` () =
             member x.VisitType(_, _) = Some () }
 
     let source = "123 :? int"
-    let parseTree = parseSource source
+    let parseTree =
+        match parseSourceCode("C:\\test.fs", source) with
+        | None -> failwith "No parse tree"
+        | Some parseTree -> parseTree
 
     Traverse(mkPos 1 11, parseTree, visitor)
     |> Option.defaultWith (fun _ -> failwith "Did not visit type")

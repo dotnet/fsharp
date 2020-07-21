@@ -4026,7 +4026,7 @@ namespace ProviderImplementation.ProvidedTypes.AssemblyReader
             // Emit compressed untagged integer
             member buf.EmitZUntaggedIndex big idx = 
                 if big then buf.EmitInt32 idx
-                elif idx > 0xffff then failwith "EmitZUntaggedIndex: too big for small address or simple index"
+                elif idx > 0xffff then failwithf "EmitZUntaggedIndex: too big for small address or simple index, idx = %d, big = %A, stack = %s" idx big ((new System.Diagnostics.StackTrace()).ToString()) 
                 else buf.EmitInt32AsUInt16 idx
 
             // Emit compressed tagged integer
@@ -12373,7 +12373,7 @@ namespace ProviderImplementation.ProvidedTypes
 
         let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk, 0, chunk.Length)  
 
-        let writeBinaryAndReportMappings (outfile, 
+        let writeBinaryAndReportMappings (outfile: string,
                                           ilg: ILGlobals, pdbfile: string option, (* signer: ILStrongNameSigner option, *) portablePDB, embeddedPDB, 
                                           embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
             let isDll = modul.IsDLL
@@ -12495,7 +12495,7 @@ namespace ProviderImplementation.ProvidedTypes
                   let pdbOpt =
                     match portablePDB with
                     | true  -> 
-                        let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
+                        let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData
                         if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                         else Some (pdbStream)
                     | _ -> None

@@ -1,17 +1,16 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
-  </PropertyGroup>
-  <Import Project="..\fcs.props" />
   <Import Project="..\netfx.props" />
   <Import Project="..\..\src\buildtools\buildtools.targets" />
- <PropertyGroup>
-    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+  <Import Project="..\..\eng\Versions.props" />
+  <PropertyGroup>
+    <TargetFrameworks>$(FcsTargetNetFxFramework);netstandard2.0</TargetFrameworks>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
+    <DefineConstants>$(DefineConstants);LOCALIZATION_FSCOMP</DefineConstants>
     <FsLexOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsLexOutputFolder>
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
@@ -20,34 +19,39 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
   <PropertyGroup>
     <Summary>The F# compiler as library. For editors, for tools, for scripting. For you.</Summary>
     <Description>The F# compiler services package contains a custom build of the F# compiler that exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Authors>Microsoft Corporation; F# community contributors</Authors>
-    <PackageLicenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/fsharp/FSharp.Compiler.Service</PackageProjectUrl>
-    <PackageIconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</PackageIconUrl>
+    <PackageIcon>logo.png</PackageIcon>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\misc\logo.png" Pack="true" Visible="false" PackagePath="" />
     <Compile Include="..\FSharp.Compiler.Service\AssemblyInfo.fs">
       <Link>AssemblyInfo/AssemblyInfo.fs</Link>
     </Compile>
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
       <Link>FSComp.txt</Link>
+    </EmbeddedText>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\Microsoft.DotNet.DependencyManager\DependencyManager.txt">
+      <Link>DependencyManager.txt</Link>
     </EmbeddedText>
     <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -57,11 +61,11 @@
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
     <FsYacc Include="$(FSharpSourcesRoot)\absil\ilpars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.AbstractIL.Internal.AsciiParser --open FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ilpars.fsy</Link>
     </FsYacc>
     <FsYacc Include="$(FSharpSourcesRoot)\fsharp\pars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.Parser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>pars.fsy</Link>
     </FsYacc>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fsi">
@@ -69,9 +73,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fs">
       <Link>Logger.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/utils/reshapedreflection.fs">
-      <Link>Reshaped/reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/sformat.fsi">
       <Link>ErrorText/sformat.fsi</Link>
@@ -85,6 +86,12 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/sr.fs">
       <Link>ErrorText/sr.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fsi">
+      <Link>Driver\LanguageFeatures.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LanguageFeatures.fs">
+      <Link>Driver\LanguageFeatures.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/prim-lexing.fsi">
       <Link>LexYaccRuntime/prim-lexing.fsi</Link>
     </Compile>
@@ -96,6 +103,12 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/prim-parsing.fs">
       <Link>LexYaccRuntime/prim-parsing.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/utils/PathMap.fsi">
+      <Link>Utilities/PathMap.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/utils/PathMap.fs">
+      <Link>Utilities/PathMap.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/ResizeArray.fsi">
       <Link>Utilities/ResizeArray.fsi</Link>
@@ -154,6 +167,9 @@
     <Compile Include="$(FSharpSourcesRoot)/absil/bytes.fs">
       <Link>Utilities/bytes.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/XmlAdapters.fs">
+      <Link>Utilities\XmlAdapters.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/lib.fs">
       <Link>Utilities/lib.fs</Link>
     </Compile>
@@ -180,9 +196,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ErrorResolutionHints.fs">
       <Link>ErrorLogging/ErrorResolutionHints.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/ReferenceResolver.fs">
-      <Link>ReferenceResolution/ReferenceResolver.fs</Link>
     </Compile>
     <FsLex Include="$(FSharpSourcesRoot)\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -225,6 +238,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)/absil/ilnativeres.fsi">
+      <Link>AbsIL/ilnativeres.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/absil/ilnativeres.fs">
+      <Link>AbsIL/ilnativeres.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/absil/ilsupp.fsi">
       <Link>AbsIL/ilsupp.fsi</Link>
     </Compile>
@@ -264,6 +283,15 @@
     <Compile Include="$(FSharpSourcesRoot)/absil/ilreflect.fs">
       <Link>AbsIL/ilreflect.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\utils\reshapedmsbuild.fs">
+      <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/ReferenceResolver.fs">
+      <Link>ReferenceResolution/ReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\SimulatedMSBuildReferenceResolver.fs">
+      <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/CompilerLocationUtils.fs">
       <Link>CompilerLocation/CompilerLocationUtils.fs</Link>
     </Compile>
@@ -294,7 +322,7 @@
       <Link>ParserAndUntypedAST/pplex.fsl</Link>
     </FsLex>
     <FsYacc Include="$(FSharpSourcesRoot)\fsharp\pppars.fsy">
-      <OtherFlags>--module Microsoft.FSharp.Compiler.PPParser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>--module FSharp.Compiler.PPParser --open FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST/pppars.fsy</Link>
     </FsYacc>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/UnicodeLexing.fsi">
@@ -309,8 +337,17 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/layout.fs">
       <Link>ParserAndUntypedAST/layout.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/ast.fs">
-      <Link>ParserAndUntypedAST/ast.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/XmlDoc.fs">
+      <Link>ParserAndUntypedAST/XmlDoc.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/SyntaxTree.fs">
+      <Link>ParserAndUntypedAST/SyntaxTree.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/SyntaxTreeOps.fs">
+      <Link>ParserAndUntypedAST/SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/ParseHelpers.fs">
+      <Link>ParserAndUntypedAST/ParseHelpers.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pppars.fs">
       <Link>ParserAndUntypedAST/pppars.fs</Link>
@@ -334,40 +371,46 @@
       <Link>ParserAndUntypedAST/LexFilter.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tainted.fsi">
-      <Link>TypedAST/tainted.fsi</Link>
+      <Link>TypedTree/tainted.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/tainted.fs">
-      <Link>TypedAST/tainted.fs</Link>
+      <Link>TypedTree/tainted.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ExtensionTyping.fsi">
-      <Link>TypedAST/ExtensionTyping.fsi</Link>
+      <Link>TypedTree/ExtensionTyping.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ExtensionTyping.fs">
-      <Link>TypedAST/ExtensionTyping.fs</Link>
+      <Link>TypedTree/ExtensionTyping.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fsi">
-      <Link>TypedAST/QuotationPickler.fsi</Link>
+      <Link>TypedTree/QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/QuotationPickler.fs">
-      <Link>TypedAST/QuotationPickler.fs</Link>
+      <Link>TypedTree/QuotationPickler.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/tast.fs">
-      <Link>TypedAST/tast.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/CompilerGlobalState.fs">
+      <Link>TypedTree/CompilerGlobalState.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTree.fs">
+      <Link>TypedTree/TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeBasics.fs">
+      <Link>TypedTree/TypedTreeBasics.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/TcGlobals.fs">
-      <Link>TypedAST/TcGlobals.fs</Link>
+      <Link>TypedTree/TcGlobals.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fsi">
-      <Link>TypedAST/TastOps.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeOps.fsi">
+      <Link>TypedTree/TypedTreeOps.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastOps.fs">
-      <Link>TypedAST/TastOps.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreeOps.fs">
+      <Link>TypedTree/TypedTreeOps.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fsi">
-      <Link>TypedAST/TastPickle.fsi</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreePickle.fsi">
+      <Link>TypedTree/TypedTreePickle.fsi</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TastPickle.fs">
-      <Link>TypedAST/TastPickle.fs</Link>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypedTreePickle.fs">
+      <Link>TypedTree/TypedTreePickle.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/import.fsi">
       <Link>Logic/import.fsi</Link>
@@ -383,6 +426,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/AttributeChecking.fs">
       <Link>Logic/AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypeRelations.fs">
+      <Link>Logic/TypeRelations.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InfoReader.fs">
       <Link>Logic/InfoReader.fs</Link>
@@ -401,9 +447,6 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/NameResolution.fs">
       <Link>Logic/NameResolution.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)/fsharp/TypeRelations.fs">
-      <Link>Logic/TypeRelations.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/SignatureConformance.fs">
       <Link>Logic/SignatureConformance.fs</Link>
@@ -431,6 +474,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CheckFormatStrings.fs">
       <Link>Logic/CheckFormatStrings.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fsi">
+      <Link>Logic/FindUnsolved.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/FindUnsolved.fs">
       <Link>Logic/FindUnsolved.fs</Link>
@@ -471,8 +517,14 @@
     <Compile Include="$(FSharpSourcesRoot)/fsharp/InnerLambdasToTopLevelFuncs.fs">
       <Link>Optimize/InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fsi">
+      <Link>Optimize/LowerCallsAndSeqs.fsi</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/LowerCallsAndSeqs.fs">
       <Link>Optimize/LowerCallsAndSeqs.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fsi">
+      <Link>Optimize/autobox.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/autobox.fs">
       <Link>Optimize/autobox.fs</Link>
@@ -482,6 +534,27 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/IlxGen.fs">
       <Link>CodeGen/IlxGen.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/DotNetFrameworkDependencies.fs">
+      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fsi">
+      <Link>Driver\AssemblyResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fs">
+      <Link>Driver\AssemblyResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fsi">
+      <Link>Driver\NativeDllResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fs">
+      <Link>Driver\NativeDllResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/DependencyProvider.fsi">
+      <Link>Driver/DependencyProvider.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Microsoft.DotNet.DependencyManager/DependencyProvider.fs">
+      <Link>Driver/DependencyProvider.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/CompileOps.fsi">
       <Link>Driver/CompileOps.fsi</Link>
@@ -525,17 +598,29 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fs">
       <Link>Symbols/SymbolPatterns.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fsi">
-      <Link>Service/IncrementalBuild.fsi</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fs">
-      <Link>Service/IncrementalBuild.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\Reactor.fsi">
       <Link>Service/Reactor.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\Reactor.fs">
       <Link>Service/Reactor.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\SemanticClassification.fsi">
+      <Link>Service/SemanticClassification.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\SemanticClassification.fs">
+      <Link>Service/SemanticClassification.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ItemKey.fsi">
+      <Link>Service/ItemKey.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ItemKey.fs">
+      <Link>Service/ItemKey.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fsi">
+      <Link>Service/IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\IncrementalBuild.fs">
+      <Link>Service/IncrementalBuild.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
@@ -567,12 +652,6 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceUntypedParse.fs">
       <Link>Service/ServiceUntypedParse.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
-    </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\SimulatedMSBuildReferenceResolver.fs">
-      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceDeclarationLists.fsi">
       <Link>Service/ServiceDeclarationLists.fsi</Link>
     </Compile>
@@ -597,11 +676,17 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
-	<Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fsi">
       <Link>Service/QuickParse.fsi</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\QuickParse.fs">
       <Link>Service/QuickParse.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\FSharpCheckerResults.fsi">
+      <Link>Service/FSharpCheckerResults.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\FSharpCheckerResults.fs">
+      <Link>Service/FSharpCheckerResults.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\service.fsi">
       <Link>Service/service.fsi</Link>
@@ -635,20 +720,19 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.5.2" />
+    <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="System.Reflection.Metadata" Version="1.6.0" />
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Data.SqlClient" Version="4.3.0" />
-    <PackageReference Include="System.Diagnostics.Process" Version="4.1.0" />
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="4.0.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.0.0" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+  <ItemGroup Condition="'$(TargetFramework)' == '$(FcsTargetNetFxFramework)'">
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
