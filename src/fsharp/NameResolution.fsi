@@ -286,7 +286,6 @@ type TypeNameResolutionInfo =
   | TypeNameResolutionInfo of TypeNameResolutionFlag * TypeNameResolutionStaticArgsInfo
   static member Default : TypeNameResolutionInfo
   static member ResolveToTypeRefs : TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
-  member NumStaticArgs : int
 
 /// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess; Struct>]

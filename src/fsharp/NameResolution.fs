@@ -833,7 +833,6 @@ type TypeNameResolutionInfo =
     member x.StaticArgsInfo = match x with TypeNameResolutionInfo(_, staticResInfo) -> staticResInfo
     member x.ResolutionFlag = match x with TypeNameResolutionInfo(flag, _) -> flag
     member x.DropStaticArgsInfo = match x with TypeNameResolutionInfo(flag2, _) -> TypeNameResolutionInfo(flag2, TypeNameResolutionStaticArgsInfo.Indefinite)
-    member x.NumStaticArgs = x.StaticArgsInfo.NumStaticArgs
 
 /// A flag which indicates if direct references to generated provided types are allowed. Normally these
 /// are disallowed.
