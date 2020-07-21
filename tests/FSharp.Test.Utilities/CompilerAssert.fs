@@ -90,7 +90,7 @@ type CompilerAssert private () =
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseFSharpPreview>true</UseFSharpPreview>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
@@ -405,10 +405,10 @@ let main argv = 0"""
                         """
 {
     "runtimeOptions": {
-        "tfm": "netcoreapp3.1",
+        "tfm": "netcoreapp3.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "3.1.0"
+            "version": "3.0.0"
         }
     }
 }

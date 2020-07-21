@@ -53,3 +53,23 @@ public class BicycleShop {
         app
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Instantiate F# type from C# fails without import`` () =
+        let FSLib =
+            FSharp """
+namespace Interop.FS
+type Bicycle(manufacturer: string) =
+    member this.Manufactirer = manufacturer
+        """ |> withName "FSLib"
+
+        let app =
+            CSharp """
+public class BicycleShop {
+    public Bicycle[] cycles;
+}
+        """ |> withReferences [FSLib]
+
+        app
+        |> compile
+        |> shouldFail
