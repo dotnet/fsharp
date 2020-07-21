@@ -94,15 +94,15 @@ let raiseParseErrorAt m s =
 let checkEndOfFileError t = 
   match t with 
   | LexCont.IfDefSkip(_, _, m)                      -> reportParseErrorAt m (FSComp.SR.parsEofInHashIf())
-  | LexCont.String (_, m)                          -> reportParseErrorAt m (FSComp.SR.parsEofInString())
-  | LexCont.TripleQuoteString (_, m)               -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
-  | LexCont.VerbatimString (_, m)                  -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
+  | LexCont.String (_, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInString())
+  | LexCont.String (_, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
+  | LexCont.String (_, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
   | LexCont.Comment (_, _, m)                       -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
   | LexCont.SingleLineComment (_, _, m)             -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
-  | LexCont.StringInComment (_, _, m)               -> reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
-  | LexCont.VerbatimStringInComment (_, _, m)       -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
-  | LexCont.TripleQuoteStringInComment (_, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
-  | LexCont.MLOnly (_, m)                          -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
+  | LexCont.StringInComment (_, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
+  | LexCont.StringInComment (_, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
+  | LexCont.StringInComment (_, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
+  | LexCont.MLOnly (_, m)                           -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
   | LexCont.EndLine(LexerEndlineContinuation.Skip(_, _, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective())
   | LexCont.EndLine(LexerEndlineContinuation.Token(stack))
   | LexCont.Token(stack) -> 
@@ -157,6 +157,10 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 %token <byte[]> BYTEARRAY
 %token <string> STRING 
+%token <string> INTERP_STRING_BEGIN_END
+%token <string> INTERP_STRING_BEGIN_PART 
+%token <string> INTERP_STRING_PART 
+%token <string> INTERP_STRING_END 
 %token <string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
 %token <string> INFIX_STAR_STAR_OP 
@@ -382,6 +386,7 @@ let rangeOfLongIdent(lid:LongIdent) =
  */
 %nonassoc prec_atompat_pathop
 %nonassoc INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NATIVEINT UNATIVEINT IEEE32 IEEE64 CHAR KEYWORD_STRING STRING BYTEARRAY BIGNUM DECIMAL
+%nonassoc INTERP_STRING_BEGIN INTERP_STRING_PART INTERP_STRING_END
 %nonassoc LPAREN LBRACE LBRACK_BAR 
 %nonassoc TRUE FALSE UNDERSCORE NULL
 
@@ -446,7 +451,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %right COLON_EQUALS 
 %nonassoc pat_tuple expr_tuple
 %left COMMA
-%nonassoc slice_expr  /* matrix.[e COMMA e] has higher precedence than "e COMMA e" */
+%nonassoc slice_expr /* matrix.[e COMMA e] has higher precedence than "e COMMA e" */
+%nonassoc interpolation_fill /* "...{3,N4}..." .NET style fill has higher precedence than "e COMMA e" */
 %nonassoc DOT_DOT /* for matrix.[1..2, 3..4] the ".." has higher precedence than expression "2 COMMA 3" */
 %nonassoc slice_comma  /* for matrix.[1..2, 3..4] the ", " has higher precedence than ".." */
 %nonassoc paren_pat_colon
@@ -4151,7 +4157,7 @@ rangeDeclExpr:
       if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
       $2, true }
 
-/* the start et of atomicExprAfterType must not overlap with the valid postfix tokens of the type syntax, e.g. new List<T>(...) */
+/* the start of atomicExprAfterType must not overlap with the valid postfix tokens of the type syntax, e.g. new List<T>(...) */
 atomicExprAfterType:
   | constant 
       { SynExpr.Const ($1, $1.Range (lhs parseState)) }
@@ -4164,6 +4170,9 @@ atomicExprAfterType:
 
   | braceBarExpr 
       { $1 }
+
+  | interpolatedString
+      { SynExpr.InterpolatedString($1, rhs parseState 1) }
 
   | NULL 
       { SynExpr.Null (lhs parseState) } 
@@ -5437,11 +5446,35 @@ colonOrEquals:
   | COLON { mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState); }
   | EQUALS { } 
 
-/* A literal string or a string fromm a keyword like __SOURCE_FILE__ */
+/* A literal string or a string from a keyword like __SOURCE_FILE__ */
 stringOrKeywordString:
   | STRING { $1 }
   | KEYWORD_STRING { $1 }
 
+interpolatedStringHole:
+  | declExpr
+     { ($1, None) }
+
+  | declExpr COLON ident %prec interpolation_fill
+     { ($1, Some $3) }
+
+interpolatedStringParts:
+  | INTERP_STRING_END
+     { [ Choice1Of2 $1 ] }
+
+  | INTERP_STRING_PART interpolatedStringHole interpolatedStringParts
+     { Choice1Of2 $1 :: Choice2Of2 $2 :: $3 }
+
+/* INTERP_STRING_BEGIN_END */
+/* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_END */
+/* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
+interpolatedString:
+  | INTERP_STRING_BEGIN_PART interpolatedStringHole interpolatedStringParts
+    { Choice1Of2 $1 :: Choice2Of2 $2 :: $3 }
+
+  | INTERP_STRING_BEGIN_END
+    { [ Choice1Of2 $1 ] }
+  
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }
   | HIGH_PRECEDENCE_PAREN_APP { }
