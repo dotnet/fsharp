@@ -9575,7 +9575,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, pathTypeArgs, afterR
         match delayed with 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedDotLookup (longId, mLongId)) :: otherDelayed) ->
             // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs 
-            // is a fresh instantiation for tcref. TcNestedTypeApplicatioen will chop off precisely #genericTyargs args 
+            // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args 
             // and replace them by 'tyargs' 
             let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty pathTypeArgs tyargs
 

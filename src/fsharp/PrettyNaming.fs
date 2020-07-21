@@ -512,19 +512,15 @@ let TryDemangleGenericNameAndPos (n: string) =
     else
         ValueNone
 
-type NameArityPair = NameArityPair of string * int with
-
-    member x.Arity =
-        match x with
-        | NameArityPair(_, arity) -> arity
-
-let DecodeGenericTypeNameWithPos pos (mangledName: string) =
-    let res = mangledName.Substring(0, pos)
-    let num = mangledName.Substring(pos+1, mangledName.Length - pos - 1)
-    NameArityPair(res, int32 num)
+type NameArityPair = NameArityPair of string * int
 
 let DemangleGenericTypeNameWithPos pos (mangledName: string) =
     mangledName.Substring(0, pos)
+
+let DecodeGenericTypeNameWithPos pos (mangledName: string) =
+    let res = DemangleGenericTypeNameWithPos pos mangledName
+    let num = mangledName.Substring(pos+1, mangledName.Length - pos - 1)
+    NameArityPair(res, int32 num)
 
 let DemangleGenericTypeName (mangledName: string) =
     match TryDemangleGenericNameAndPos mangledName with
