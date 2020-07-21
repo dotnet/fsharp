@@ -1347,15 +1347,15 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
 //    open M1
 //
 // The list contains [M1b; M1a]
-and AddEntitiesContentsToNameEnv g amap ad m root nenv modrefs =
-   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddEntityContentsToNameEnv g amap ad m root acc modref)
+and AddModuleOrNamespaceRefsContentsToNameEnv g amap ad m root nenv modrefs =
+   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceRefContentsToNameEnv g amap ad m root acc modref)
 
 and AddTypeContentsToNameEnv g amap ad m nenv (typ: TType) =
     assert (isAppTy g typ)
     assert not (tcrefOfAppTy g typ).IsModuleOrNamespace
     AddContentOfTypeToNameEnv g amap ad m nenv typ
 
-and AddEntityContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
+and AddModuleOrNamespaceRefContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
     assert modref.IsModuleOrNamespace 
     AddModuleOrNamespaceContentsToNameEnv g amap ad m root nenv modref
 

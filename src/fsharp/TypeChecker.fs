@@ -375,10 +375,10 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
     env
 
 /// Adjust the TcEnv to account for opening the set of modules or namespaces implied by an `open` declaration
-let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
+let OpenModuleOrNamespaceRefs tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
-        { env with eNameResEnv = AddEntitiesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
+        { env with eNameResEnv = AddModuleOrNamespaceRefsContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
@@ -661,7 +661,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
                 let modrefs = List.map p23 modrefs
                 let openTarget = SynOpenDeclTarget.ModuleOrNamespace(enclosingNamespacePathToOpen, scopem)
                 let openDecl = OpenDeclaration.Create (openTarget, modrefs, [], scopem, true)
-                OpenEntities tcSink g amap scopem false env modrefs openDecl
+                OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
         | _ -> env
 
@@ -13013,7 +13013,7 @@ let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) =
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
     let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace (longId, m), modrefs, [], scopem, false)
-    let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
+    let env = OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
     env    
 
 let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
@@ -17937,7 +17937,7 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     | ValueSome _ -> 
         let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
         let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
-        OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+        OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible) = 
