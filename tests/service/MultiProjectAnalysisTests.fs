@@ -142,7 +142,7 @@ let ``Test multi project 1 whole project errors`` () =
         printfn "multi project 1 error: <<<%s>>>" e.Message
 
     wholeProjectResults .Errors.Length |> shouldEqual 0
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual 6
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual 7
 
 [<Test>]
 let ``Test multi project 1 basic`` () = 
@@ -335,7 +335,7 @@ let ``Test ManyProjectsStressTest whole project errors`` () =
         printfn "ManyProjectsStressTest error: <<<%s>>>" e.Message
 
     wholeProjectResults .Errors.Length |> shouldEqual 0
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual (ManyProjectsStressTest.numProjectsForStressTest + 4)
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual (ManyProjectsStressTest.numProjectsForStressTest + 5)
 
 [<Test>]
 let ``Test ManyProjectsStressTest basic`` () = 
