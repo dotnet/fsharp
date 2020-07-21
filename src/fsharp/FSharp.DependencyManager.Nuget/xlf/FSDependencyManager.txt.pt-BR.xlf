@@ -7,9 +7,19 @@
         <target state="translated">PackageManager não pode referenciar o pacote do sistema '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="highestVersion">
+        <source>with the highest version</source>
+        <target state="new">with the highest version</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="loadNugetPackage">
+        <source>Load Nuget Package</source>
+        <target state="new">Load Nuget Package</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notUsed">
-        <source>Not used.</source>
-        <target state="translated">Não usado.</target>
+        <source>Not used</source>
+        <target state="needs-review-translation">Não usado.</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
@@ -20,6 +30,11 @@
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">Não é possível aplicar o número do argumento implícito {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="version">
+        <source>version</source>
+        <target state="new">version</target>
         <note />
       </trans-unit>
     </body>
