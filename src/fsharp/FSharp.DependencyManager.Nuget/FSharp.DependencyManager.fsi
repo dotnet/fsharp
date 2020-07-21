@@ -36,4 +36,6 @@ type FSharpDependencyManager =
 
     member Key:string
 
+    member HelpMessages:string[]
+
     member ResolveDependencies: scriptExt:string * packageManagerTextLines:string seq * tfm: string * rid: string -> obj

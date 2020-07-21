@@ -288,7 +288,6 @@ namespace Microsoft.FSharp.Control
         /// <param name="dueTime">The amount of time to sleep.</param>
         /// <returns>An asynchronous computation that will sleep for the given time.</returns>
         /// <exception cref="System.ArgumentOutOfRangeException">Thrown when the due time is negative.</exception>
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         static member Sleep: dueTime:TimeSpan -> Async<unit>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
