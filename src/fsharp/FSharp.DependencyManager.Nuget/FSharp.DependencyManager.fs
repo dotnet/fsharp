@@ -163,6 +163,11 @@ type FSharpDependencyManager (outputDir:string option) =
 
     member _.Key = key
 
+    member _.HelpMessages = [|
+        sprintf """    #r "nuget:FSharp.Data, 3.1.2";;   // %s 'FSharp.Data' %s '3.1.2'""" (SR.loadNugetPackage()) (SR.version())
+        sprintf """    #r "nuget:FSharp.Data";;          // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
+        |]
+
     member _.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string, rid: string) : obj =
 
         let scriptExt, poundRprefix  =
