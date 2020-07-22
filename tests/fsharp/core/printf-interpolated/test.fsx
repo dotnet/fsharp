@@ -4,8 +4,6 @@
 module Core_printf_interp
 #endif
 
-#light
-
 open Printf
 
 let failures = ref []

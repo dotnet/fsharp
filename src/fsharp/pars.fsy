@@ -5451,7 +5451,7 @@ stringOrKeywordString:
   | STRING { $1 }
   | KEYWORD_STRING { $1 }
 
-interpolatedStringHole:
+interpolatedStringFill:
   | declExpr
      { ($1, None) }
 
@@ -5462,14 +5462,14 @@ interpolatedStringParts:
   | INTERP_STRING_END
      { [ Choice1Of2 $1 ] }
 
-  | INTERP_STRING_PART interpolatedStringHole interpolatedStringParts
+  | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
      { Choice1Of2 $1 :: Choice2Of2 $2 :: $3 }
 
 /* INTERP_STRING_BEGIN_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
 interpolatedString:
-  | INTERP_STRING_BEGIN_PART interpolatedStringHole interpolatedStringParts
+  | INTERP_STRING_BEGIN_PART interpolatedStringFill interpolatedStringParts
     { Choice1Of2 $1 :: Choice2Of2 $2 :: $3 }
 
   | INTERP_STRING_BEGIN_END

@@ -228,13 +228,13 @@ module public AstTraversal =
                 
                 | SynExpr.AnonRecd (_isStruct, copyOpt, synExprList, _range) -> 
                     [   match copyOpt with
-                        | Some(origExpr, (withRange, _)) -> 
-                            yield dive origExpr origExpr.Range traverseSynExpr 
+                        | Some(expr, (withRange, _)) -> 
+                            yield dive expr expr.Range traverseSynExpr 
                             yield dive () withRange (fun () ->
                                 if posGeq pos withRange.End then 
                                     // special case: caret is after WITH
                                     // { x with $ }
-                                    visitor.VisitRecordField (path, Some origExpr, None) 
+                                    visitor.VisitRecordField (path, Some expr, None) 
                                 else
                                     None
                             )
