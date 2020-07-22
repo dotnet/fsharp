@@ -308,12 +308,10 @@ module internal TokenClassifications =
         | LINE_COMMENT _ ->
             (FSharpTokenColorKind.Comment, FSharpTokenCharKind.LineComment, FSharpTokenTriggerClass.None)
 
-        | STRING_TEXT _ ->
-            (FSharpTokenColorKind.String, FSharpTokenCharKind.String, FSharpTokenTriggerClass.None)
-
         | KEYWORD_STRING _ ->
            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
+        | STRING_TEXT _
         | INTERP_STRING_BEGIN_END _
         | INTERP_STRING_BEGIN_PART _
         | INTERP_STRING_PART _
@@ -372,6 +370,12 @@ module internal LexerStateEncoding =
       | STRING_TEXT s
       | EOF s -> s
 
+      // These all indicate the production of a string part or string after a sequence
+      // of STRING_TEXT
+      | INTERP_STRING_BEGIN_PART _
+      | INTERP_STRING_PART _
+      | INTERP_STRING_BEGIN_END _
+      | INTERP_STRING_END _
       | BYTEARRAY _
       | STRING _ -> LexCont.Token(prevLexcont.LexerIfdefStack)
 

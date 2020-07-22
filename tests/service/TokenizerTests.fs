@@ -87,61 +87,54 @@ let ``Tokenizer test 2``() =
            ("EQUALS", "="); ("WHITESPACE", " "); ("STRING_TEXT", "$\"");
            ("INTERP_STRING_BEGIN_END", "\"")]);
          (2,
-          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello1");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1"); ("WHITESPACE", " ");
+           ("EQUALS", "="); ("WHITESPACE", " "); ("STRING_TEXT", "$\"");
            ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
-           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", "  ")]);
+           ("INTERP_STRING_BEGIN_END", "\""); ("WHITESPACE", "  ")]);
          (3,
-          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello2");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello2"); ("WHITESPACE", " ");
+           ("EQUALS", "="); ("WHITESPACE", " "); ("STRING_TEXT", "$\"");
            ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
-           ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "1");
-           ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
+           ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("INT32", "1");
+           ("PLUS_MINUS_OP", "+"); ("INT32", "1"); ("STRING_TEXT", "}");
            ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}");
-           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", " ")]);
+           ("INTERP_STRING_PART", "{"); ("INT32", "2"); ("STRING_TEXT", "}");
+           ("INTERP_STRING_END", "\""); ("WHITESPACE", " ")]);
          (4,
-          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello0v");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
-           ("INTERP_STRING_BEGIN_END", "\"")]);
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello0v");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "@$\""); ("INTERP_STRING_BEGIN_END", "\"")]);
          (5,
-          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello1v");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
-           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
-           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", "  ")]);
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1v");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "@$\""); ("STRING_TEXT", "Hello"); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "world"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("WHITESPACE", "  ")]);
          (6,
-          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello2v");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
-           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
-           ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "1");
-           ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}");
-           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", " ")]);
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello2v");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "@$\""); ("STRING_TEXT", "Hello"); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "world"); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{"); ("INT32", "1"); ("PLUS_MINUS_OP", "+");
+           ("INT32", "1"); ("STRING_TEXT", "}"); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "="); ("STRING_TEXT", " "); ("INTERP_STRING_PART", "{");
+           ("INT32", "2"); ("STRING_TEXT", "}"); ("INTERP_STRING_END", "\"");
+           ("WHITESPACE", " ")]);
          (7,
-          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello1t");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
-           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"");
-           ("STRING_TEXT", "abc"); ("INTERP_STRING_BEGIN_END", "\"");
-           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"")]);
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1t");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "@$\""); ("STRING_TEXT", "\"\""); ("STRING_TEXT", "abc");
+           ("STRING_TEXT", "\"\""); ("INTERP_STRING_BEGIN_END", "\"")]);
          (8,
-          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello2t");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
-           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"");
-           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
-           ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "1");
-           ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-           ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}");
-           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"");
-           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", " ")])]
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello2t");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "@$\""); ("STRING_TEXT", "\"\""); ("STRING_TEXT", "Hello");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "world"); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{"); ("INT32", "1"); ("PLUS_MINUS_OP", "+");
+           ("INT32", "1"); ("STRING_TEXT", "}"); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "="); ("STRING_TEXT", " "); ("INTERP_STRING_PART", "{");
+           ("INT32", "2"); ("STRING_TEXT", "}"); ("STRING_TEXT", "\"\"");
+           ("INTERP_STRING_END", "\""); ("WHITESPACE", " ")])]
   
     if actual <> expected then 
         printfn "actual   = %A" actual
