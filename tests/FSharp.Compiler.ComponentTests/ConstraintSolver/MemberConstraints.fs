@@ -15,7 +15,7 @@ module MemberConstraints =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withSingle (Error 697, Line 2, Col 43, Line 2, Col 76, "Invalid constraint")
+        |> withSingleDiagnostic (Error 697, Line 2, Col 43, Line 2, Col 76, "Invalid constraint")
 
     [<Fact>]
     let ``we can overload operators on a type and not add all the extra jazz such as inlining and the ^ operator.``() =

@@ -16,7 +16,7 @@ module ``Test Compiler Directives`` =
         """ |> ignoreWarnings
             |> compile
             |> shouldSucceed
-            |> withSingle (Warning 213, Line 2, Col 1, Line 2, Col 6, "'' is not a valid assembly name")
+            |> withSingleDiagnostic (Warning 213, Line 2, Col 1, Line 2, Col 6, "'' is not a valid assembly name")
 
     [<Fact>]
     let ``#r "    " is invalid`` () =
@@ -24,4 +24,4 @@ module ``Test Compiler Directives`` =
 #r "    "
         """ |> compile
             |> shouldFail
-            |> withSingle (Warning 213, Line 2, Col 1, Line 2, Col 10, "'' is not a valid assembly name")
+            |> withSingleDiagnostic (Warning 213, Line 2, Col 1, Line 2, Col 10, "'' is not a valid assembly name")

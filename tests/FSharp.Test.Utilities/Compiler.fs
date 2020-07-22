@@ -50,19 +50,22 @@ module Compiler =
     type Line = Line of int
     type Col = Col of int
 
-    type Range = { StartLine:   int
-                   StartColumn: int
-                   EndLine:     int
-                   EndColumn:   int }
+    type Range =
+          { StartLine:   int
+            StartColumn: int
+            EndLine:     int
+            EndColumn:   int }
 
-    type ErrorInfo = { Error:   ErrorType
-                       Range:   Range
-                       Message: string }
+    type ErrorInfo =
+        { Error:   ErrorType
+          Range:   Range
+          Message: string }
 
-    type Output = { OutputPath: string option
-                    Adjust:     int
-                    Errors:     ErrorInfo list
-                    Warnings:   ErrorInfo list }
+    type Output =
+        { OutputPath: string option
+          Adjust:     int
+          Errors:     ErrorInfo list
+          Warnings:   ErrorInfo list }
 
     type CompilationResult =
         | Success of Output
@@ -80,22 +83,24 @@ module Compiler =
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
         | null -> failwith "Source cannot be null"
-        | _ -> { Source         = Text source;
-                 Options        = defaultOptions;
-                 OutputType     = Library;
-                 SourceKind     = kind;
-                 Name           = None;
-                 IgnoreWarnings = false;
-                 References     = [] }
+        | _ ->
+            { Source         = Text source
+              Options        = defaultOptions
+              OutputType     = Library
+              SourceKind     = kind
+              Name           = None
+              IgnoreWarnings = false
+              References     = [] }
 
     let private csFromString (source: string) : CSharpCompilationSource =
         match source with
         | null -> failwith "Source cannot be null"
-        | _ -> { Source          = Text source;
-                 LangVersion     = CSharpLanguageVersion.CSharp8;
-                 TargetFramework = TargetFramework.NetCoreApp30;
-                 Name            = None;
-                 References      = [] }
+        | _ ->
+            { Source          = Text source
+              LangVersion     = CSharpLanguageVersion.CSharp8
+              TargetFramework = TargetFramework.NetCoreApp30
+              Name            = None
+              References      = [] }
 
     let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : (ErrorInfo list * ErrorInfo list) =
         let toErrorInfo (e: FSharpErrorInfo) : ErrorInfo =
@@ -104,23 +109,25 @@ module Compiler =
 
             let error = if severity = FSharpErrorSeverity.Warning then Warning errorNumber else Error errorNumber
 
-            { Error   = error;
-              Range   = { StartLine   = e.StartLineAlternate;
-                          StartColumn = e.StartColumn;
-                          EndLine     = e.EndLineAlternate;
-                          EndColumn   = e.EndColumn }
+            { Error   = error
+              Range   =
+                  { StartLine   = e.StartLineAlternate
+                    StartColumn = e.StartColumn
+                    EndLine     = e.EndLineAlternate
+                    EndColumn   = e.EndColumn }
               Message = e.Message }
 
-        errors |> List.ofArray
-               |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
-               |> List.map toErrorInfo
-               |> List.partition  (fun e -> match e.Error with Error _ -> true | _ -> false)
+        errors
+        |> List.ofArray
+        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
+        |> List.map toErrorInfo
+        |> List.partition  (fun e -> match e.Error with Error _ -> true | _ -> false)
 
     let private adjustRange (range: Range) (adjust: int) : Range =
         { range with
-                StartLine   = range.StartLine   - adjust;
-                StartColumn = range.StartColumn + 1;
-                EndLine     = range.EndLine     - adjust;
+                StartLine   = range.StartLine   - adjust
+                StartColumn = range.StartColumn + 1
+                EndLine     = range.EndLine     - adjust
                 EndColumn   = range.EndColumn   + 1 }
 
     let Fsx (source: string) : CompilationUnit =
@@ -219,17 +226,18 @@ module Compiler =
 
         let (errors, warnings) = err |> fromFSharpErrorInfo
 
-        let result = { OutputPath  = None;
-                       Adjust      = 0;
-                       Warnings    = warnings;
-                       Errors      = errors }
+        let result =
+            { OutputPath  = None
+              Adjust      = 0
+              Warnings    = warnings
+              Errors      = errors }
 
-        // Treat warnings as errors if "IgnoreWarnings" is false;
+        // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
-            Failure { result with Warnings = warnings;
+            Failure { result with Warnings = warnings
                                   Errors   = errors }
         else
-            Success { result with Warnings   = warnings;
+            Success { result with Warnings   = warnings
                                   OutputPath = Some outputFilePath }
 
     and private compileFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
@@ -256,15 +264,15 @@ module Compiler =
 
         let cmplResult = compilation.Emit (output)
 
-        let result = { OutputPath  = None;
-                       Adjust      = 0;
-                       Warnings    = [];
-                       Errors      = [] }
+        let result =
+            { OutputPath  = None
+              Adjust      = 0
+              Warnings    = []
+              Errors      = [] }
 
         if cmplResult.Success then
             Success { result with OutputPath  = Some output }
         else
-            cmplResult.Diagnostics |> printfn "%A"
             Failure result
 
     and private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
@@ -425,23 +433,23 @@ module Compiler =
         let withResult (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
             withResults [expectedResult] result
 
-        let with' (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
+        let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
             let (expectedResults: ErrorInfo list) =
                 expected |>
                 List.map(
                     fun e ->
                       let (error, (Line startLine), (Col startCol), (Line endLine), (Col endCol), message) = e
-                      { Error = error;
-                        Range = {
-                            StartLine   = startLine;
-                            StartColumn = startCol;
-                            EndLine     = endLine;
-                            EndColumn   = endCol };
+                      { Error = error
+                        Range =
+                            { StartLine   = startLine
+                              StartColumn = startCol
+                              EndLine     = endLine
+                              EndColumn   = endCol }
                         Message     = message })
             withResults expectedResults result
 
-        let withSingle (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
-            with' [expected] result
+        let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
+            withDiagnostics [expected] result
 
         let withErrors (expectedErrors: ErrorInfo list) (result: CompilationResult) : CompilationResult =
             assertResultsCategory "Errors" (fun r -> r.Errors) expectedErrors result
