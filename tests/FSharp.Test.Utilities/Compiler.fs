@@ -140,13 +140,14 @@ module Compiler =
         match (dir, file) with
         | dir, _ when String.IsNullOrWhiteSpace dir -> failwith "Baseline tests directory cannot be null or empty."
         | _, file when String.IsNullOrWhiteSpace file -> failwith "Baseline source file name cannot be null or empty."
-        | _ -> { Source         = Baseline (dir, file);
-                 Options        = defaultOptions;
-                 OutputType     = Library;
-                 SourceKind     = Fs;
-                 Name           = None;
-                 IgnoreWarnings = false;
-                 References     = [] } |> FS
+        | _ ->
+            { Source         = Baseline (dir, file)
+              Options        = defaultOptions
+              OutputType     = Library
+              SourceKind     = Fs
+              Name           = None
+              IgnoreWarnings = false
+              References     = [] } |> FS
 
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CS
@@ -312,10 +313,11 @@ module Compiler =
         // We return a successfull CompilationResult if it succeeds.
         CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine (Array.ofList options) dir file
 
-        Success { OutputPath  = None;
-                  Adjust      = 0;
-                  Warnings    = [];
-                  Errors      = [] }
+        Success
+            { OutputPath  = None
+              Adjust      = 0
+              Warnings    = []
+              Errors      = [] }
 
     let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = getSource fsSource.Source
@@ -325,14 +327,15 @@ module Compiler =
 
         let (errors, warnings) = err |> fromFSharpErrorInfo
 
-        let result = { OutputPath  = None;
-                       Adjust      = 0;
-                       Warnings    = warnings;
-                       Errors      = errors }
+        let result =
+            { OutputPath  = None
+              Adjust      = 0
+              Warnings    = warnings
+              Errors      = errors }
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
-            Failure { result with Warnings = warnings;
+            Failure { result with Warnings = warnings
                                   Errors   = errors }
         else
             Success { result with Warnings   = warnings }
