@@ -2020,6 +2020,18 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | _ -> false
 
     member x.IsComputationExpressionMethod =
+        let isNameN (methodName: string) (methodKind: string) =
+            if methodName.StartsWith(methodKind) then
+                let (didParse, _) = System.Int32.TryParse(methodName.[methodKind.Length..])
+                didParse
+            else
+                false
+        let isBindNReturn (methodName: string) =
+            if methodName.StartsWith("Bind") && methodName.EndsWith("Return") then
+                let (didParse, _) = System.Int32.TryParse(methodName.[4..^6])
+                didParse
+            else
+                false
         x.CompiledName = "Bind"
         || x.CompiledName = "Return"
         || x.CompiledName = "ReturnFrom"
@@ -2032,6 +2044,9 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         || x.CompiledName = "Using"
         || x.CompiledName = "BindReturn"
         || x.CompiledName = "MergeSources"
+        || isNameN x.CompiledName "Bind"
+        || isNameN x.CompiledName "MergeSources"
+        || isBindNReturn x.CompiledName
 
     override x.Equals(other: obj) =
         box x === other ||
