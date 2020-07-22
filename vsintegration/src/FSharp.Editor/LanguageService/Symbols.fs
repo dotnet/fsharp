@@ -84,7 +84,7 @@ type FSharpMemberOrFunctionOrValue with
     member x.IsOperatorOrActivePattern =
         let name = x.DisplayName
         if name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
-        then name.Substring (2, name.Length - 4) |> String.forall (fun c -> c <> ' ')
+        then name.IndexOf(' ', 2, name.Length - 4) = -1
         else false
         
 
