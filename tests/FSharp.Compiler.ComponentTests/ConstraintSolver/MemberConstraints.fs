@@ -6,7 +6,7 @@ open Xunit
 open FSharp.Test.Utilities.Compiler
 
 module MemberConstraints =
-    
+
     [<Fact>]
     let ``Invalid member constraint with ErrorRanges``() = // Regression test for FSharp1.0:2262
         FSharp """
@@ -15,7 +15,7 @@ module MemberConstraints =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail
-        |> withError (697, (2, 43, 2, 76), "Invalid constraint")
+        |> withSingle (Error 697, Line 2, Col 43, Line 2, Col 76, "Invalid constraint")
 
     [<Fact>]
     let ``we can overload operators on a type and not add all the extra jazz such as inlining and the ^ operator.``() =

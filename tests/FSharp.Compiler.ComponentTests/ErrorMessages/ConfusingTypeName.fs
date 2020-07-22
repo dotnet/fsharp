@@ -49,13 +49,17 @@ let otherB = OtherAMaker.makeOtherB<int>()
 printfn "%A %A" (b.GetType().AssemblyQualifiedName) (otherB.GetType().AssemblyQualifiedName)
 printfn "%A" (b = otherB)
         """ |> withReferences [csLibA; csLibB; fsLibC; fsLibD]
-        
+
         app
         |> compile
         |> shouldFail
-        |> withErrors [
-            (1, (6, 19, 6, 25), ("This expression was expected to have type\n    'A (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'A (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))
-            (1, (11, 19, 11, 25), ("This expression was expected to have type\n    'B<Microsoft.FSharp.Core.int> (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'B<Microsoft.FSharp.Core.int> (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    "))]
+        |> with' [
+            (Warning 686, Line 8, Col 9, Line 8, Col 21, "The method or function 'makeB' should not be given explicit type argument(s) because it does not declare its type parameters explicitly")
+            (Warning 686, Line 9, Col 14, Line 9, Col 36, "The method or function 'makeOtherB' should not be given explicit type argument(s) because it does not declare its type parameters explicitly")
+            (Error 1, Line 6, Col 19, Line 6, Col 25, "This expression was expected to have type\n    'A (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'A (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    ")
+            (Error 1, Line 11, Col 19, Line 11, Col 25, "This expression was expected to have type\n    'B<Microsoft.FSharp.Core.int> (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'B<Microsoft.FSharp.Core.int> (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    ")
+
+        ]
 
 
     [<Fact>]
@@ -91,7 +95,7 @@ let makeOtherB () = B<_>()
         let fsLibDCmpl =
             Compilation.Create(fsLibD, Fs, Library, cmplRefs = [csLibBCmpl], name = "libD")
             |> CompilationReference.CreateFSharp
-        
+
         let app = """
 module ConfusingTypeName
 let a = AMaker.makeA()

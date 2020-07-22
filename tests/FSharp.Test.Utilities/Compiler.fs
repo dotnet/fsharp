@@ -425,7 +425,7 @@ module Compiler =
         let withResult (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
             withResults [expectedResult] result
 
-        let with' (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) =
+        let with' (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
             let (expectedResults: ErrorInfo list) =
                 expected |>
                 List.map(
@@ -439,6 +439,9 @@ module Compiler =
                             EndColumn   = endCol };
                         Message     = message })
             withResults expectedResults result
+
+        let withSingle (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
+            with' [expected] result
 
         let withErrors (expectedErrors: ErrorInfo list) (result: CompilationResult) : CompilationResult =
             assertResultsCategory "Errors" (fun r -> r.Errors) expectedErrors result
