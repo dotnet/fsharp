@@ -305,10 +305,11 @@ module UnusedDeclarations =
         | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass || e.IsNamespace -> false
 
         // FCS returns inconsistent results for override members; we're skipping these symbols.
-        | :? FSharpMemberOrFunctionOrValue as f when 
-                f.IsOverrideOrExplicitInterfaceImplementation ||
-                f.IsBaseValue ||
-                f.IsConstructor -> false
+        | :? FSharpMemberOrFunctionOrValue as f when
+            f.IsComputationExpressionMethod ||
+            f.IsOverrideOrExplicitInterfaceImplementation ||
+            f.IsBaseValue ||
+            f.IsConstructor -> false
 
         // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
         | :? FSharpParameter -> false
@@ -317,7 +318,7 @@ module UnusedDeclarations =
     let getUnusedDeclarationRanges (symbolsUses: FSharpSymbolUse[]) (isScript: bool) =
         let definitions =
             symbolsUses
-            |> Array.filter (fun su -> 
+            |> Array.filter (fun su ->
                 su.IsFromDefinition && 
                 su.Symbol.DeclarationLocation.IsSome && 
                 (isScript || su.IsPrivateToFile) && 

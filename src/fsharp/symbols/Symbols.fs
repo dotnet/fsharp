@@ -2019,6 +2019,20 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
         | _ -> false
 
+    member x.IsComputationExpressionMethod =
+        x.CompiledName = "Bind"
+        || x.CompiledName = "Return"
+        || x.CompiledName = "ReturnFrom"
+        || x.CompiledName = "Combine"
+        || x.CompiledName = "Delay"
+        || x.CompiledName = "Zero"
+        || x.CompiledName = "TryWith"
+        || x.CompiledName = "TryFinally"
+        || x.CompiledName = "For"
+        || x.CompiledName = "Using"
+        || x.CompiledName = "BindReturn"
+        || x.CompiledName = "MergeSources"
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
