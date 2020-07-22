@@ -45,15 +45,19 @@ module Compiler =
         { Source:     TestType
           References: CompilationUnit list}
 
-    type ErrorSeverity = Error | Warning
+    type ErrorType = Error of int | Warning of int
 
-    type ErrorInfo = { Severity:           ErrorSeverity
-                       ErrorNumber:        int
-                       StartLineAlternate: int
-                       StartColumn:        int
-                       EndLineAlternate:   int
-                       EndColumn:          int
-                       Message:            string }
+    type Line = Line of int
+    type Col = Col of int
+
+    type Range = { StartLine:   int
+                   StartColumn: int
+                   EndLine:     int
+                   EndColumn:   int }
+
+    type ErrorInfo = { Error:   ErrorType
+                       Range:   Range
+                       Message: string }
 
     type Output = { OutputPath: string option
                     Adjust:     int
@@ -95,18 +99,29 @@ module Compiler =
 
     let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : (ErrorInfo list * ErrorInfo list) =
         let toErrorInfo (e: FSharpErrorInfo) : ErrorInfo =
-            { Severity           = if e.Severity = FSharpErrorSeverity.Warning then Warning else Error;
-              ErrorNumber        = e.ErrorNumber;
-              StartLineAlternate = e.StartLineAlternate;
-              StartColumn        = e.StartColumn;
-              EndLineAlternate   = e.EndLineAlternate;
-              EndColumn          = e.EndColumn;
-              Message            = e.Message }
+            let errorNumber = e.ErrorNumber
+            let severity = e.Severity
+
+            let error = if severity = FSharpErrorSeverity.Warning then Warning errorNumber else Error errorNumber
+
+            { Error   = error;
+              Range   = { StartLine   = e.StartLineAlternate;
+                          StartColumn = e.StartColumn;
+                          EndLine     = e.EndLineAlternate;
+                          EndColumn   = e.EndColumn }
+              Message = e.Message }
 
         errors |> List.ofArray
-               |> List.map toErrorInfo
                |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
-               |> List.partition  (fun e -> e.Severity = Error)
+               |> List.map toErrorInfo
+               |> List.partition  (fun e -> match e.Error with Error _ -> true | _ -> false)
+
+    let private adjustRange (range: Range) (adjust: int) : Range =
+        { range with
+                StartLine   = range.StartLine   - adjust;
+                StartColumn = range.StartColumn + 1;
+                EndLine     = range.EndLine     - adjust;
+                EndColumn   = range.EndColumn   + 1 }
 
     let Fsx (source: string) : CompilationUnit =
         fsFromString source Fsx |> FS
@@ -338,8 +353,12 @@ module Compiler =
 
     [<AutoOpen>]
     module Assertions =
+        let private getErrorNumber (error: ErrorType) : int =
+            match error with
+            | Error e | Warning e -> e
+
         let private getErrorInfo (info: ErrorInfo) : string =
-            sprintf "%A %A %A" info.Severity info.ErrorNumber info.Message
+            sprintf "%A %A" info.Error info.Message
 
         let inline private assertErrorsLength (source: ErrorInfo list) (expected: 'a list) : unit =
             if (List.length source) <> (List.length expected) then
@@ -354,29 +373,27 @@ module Compiler =
 
         let private assertErrorNumbers (source: ErrorInfo list) (expected: int list) : unit =
             for exp in expected do
-                if not (List.exists (fun (el: ErrorInfo) -> el.ErrorNumber = exp) source) then
+                if not (List.exists (fun (el: ErrorInfo) -> (getErrorNumber el.Error) = exp) source) then
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
             assertErrorsLength source expected
 
-        let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: (int * (int * int * int * int) * string) list) : unit =
-            let errors =
-                source
-                |> List.map (fun info -> (info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
+        let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
+            let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
 
             let inline checkEqual k a b =
-                if a <> b then
-                    Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" what k a b errors)
+             if a <> b then
+                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" what k a b errors)
 
             // TODO: Check all "categories", collect all results and print alltogether.
             checkEqual "Errors count"  expected.Length errors.Length
 
             List.zip errors expected
             |> List.iter (fun (actualError, expectedError) ->
-                           let (expectedErrorNumber, expectedErrorRange, expectedErrorMsg) = expectedError
-                           let (actualErrorNumber, actualErrorRange, actualErrorMsg) = actualError
-                           checkEqual "ErrorNumber" expectedErrorNumber actualErrorNumber
-                           checkEqual "ErrorRange" expectedErrorRange actualErrorRange
-                           checkEqual "Message" expectedErrorMsg actualErrorMsg)
+                           let { Error = actualError; Range = actualRange; Message = actualMessage } = actualError
+                           let { Error = expectedError; Range = expectedRange; Message = expectedMessage } = expectedError
+                           checkEqual "Error" expectedError actualError
+                           checkEqual "ErrorRange" expectedRange actualRange
+                           checkEqual "Message" expectedMessage actualMessage)
             ()
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
@@ -393,67 +410,85 @@ module Compiler =
 
         let shouldFail (result: CompilationResult) : CompilationResult =
             match result with
-            | Success _ -> failwith "Compilation succeded (expected: Failure)."
+            | Success _ -> failwith "Compilation was \"Success\" (expected: \"Failure\")."
             | Failure _ -> result
 
+        let private assertResultsCategory (what: string) (selector: Output -> ErrorInfo list) (expected: ErrorInfo list) (result: CompilationResult) : CompilationResult =
+            match result with
+             | Success r | Failure r ->
+                assertErrors what r.Adjust (selector r) expected
+            result
+
+        let withResults (expectedResults: ErrorInfo list) result : CompilationResult =
+            assertResultsCategory "Results" (fun r -> r.Warnings @ r.Errors) expectedResults result
+
+        let withResult (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
+            withResults [expectedResult] result
+
+        let with' (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) =
+            let (expectedResults: ErrorInfo list) =
+                expected |>
+                List.map(
+                    fun e ->
+                      let (error, (Line startLine), (Col startCol), (Line endLine), (Col endCol), message) = e
+                      { Error = error;
+                        Range = {
+                            StartLine   = startLine;
+                            StartColumn = startCol;
+                            EndLine     = endLine;
+                            EndColumn   = endCol };
+                        Message     = message })
+            withResults expectedResults result
+
+        let withErrors (expectedErrors: ErrorInfo list) (result: CompilationResult) : CompilationResult =
+            assertResultsCategory "Errors" (fun r -> r.Errors) expectedErrors result
+
+        let withError (expectedError: ErrorInfo) (result: CompilationResult) : CompilationResult =
+            withErrors [expectedError] result
+
+        let checkCodes (expected: int list) (selector: Output -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
+            match result with
+            | Success r | Failure r ->
+                assertErrorNumbers (selector r) expected
+            result
+
+        let withErrorCodes (expectedCodes: int list) (result: CompilationResult) : CompilationResult =
+            checkCodes expectedCodes (fun r -> r.Errors) result
+
+        let withErrorCode (expectedCode: int) (result: CompilationResult) : CompilationResult =
+            withErrorCodes [expectedCode] result
+
+        let withWarnings (expectedWarnings: ErrorInfo list) (result: CompilationResult) : CompilationResult =
+            assertResultsCategory "Warnings" (fun r -> r.Warnings) expectedWarnings result
+
+        let withWarning (expectedWarning: ErrorInfo) (result: CompilationResult) : CompilationResult =
+            withWarnings [expectedWarning] result
+
+        let withWarningCodes (expectedCodes: int list) (result: CompilationResult) : CompilationResult =
+            checkCodes expectedCodes (fun r -> r.Warnings) result
+
+        let withWarningCode (expectedCode: int) (result: CompilationResult) : CompilationResult =
+            withWarningCodes [expectedCode] result
+
+        let private checkErrorMessages (messages: string list) (selector: Output -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
+            match result with
+            | Success r | Failure r -> assertErrorMessages (selector r) messages
+            result
+
         let withMessages (messages: string list) (result: CompilationResult) : CompilationResult =
-             match result with
-             | Success r | Failure r -> assertErrorMessages (r.Warnings @ r.Errors) messages
-             result
+             checkErrorMessages messages (fun r -> r.Warnings @ r.Errors) result
 
         let withMessage (message: string) (result: CompilationResult) : CompilationResult =
             withMessages [message] result
 
         let withErrorMessages (messages: string list) (result: CompilationResult) : CompilationResult =
-            match result with
-            | Success r | Failure r -> assertErrorMessages r.Errors messages
-            result
+            checkErrorMessages messages (fun r -> r.Errors) result
 
         let withErrorMessage (message: string) (result: CompilationResult) : CompilationResult =
             withErrorMessages [message] result
 
         let withWarningMessages (messages: string list) (result: CompilationResult) : CompilationResult =
-            match result with
-            | Success r | Failure r -> assertErrorMessages r.Warnings messages
-            result
+            checkErrorMessages messages (fun r -> r.Warnings) result
 
         let withWarningMessage (message: string) (result: CompilationResult) : CompilationResult =
             withWarningMessages [message] result
-
-        let withWarnings (expectedWarnings: (int * (int * int * int * int) * string) list) (result: CompilationResult) : CompilationResult =
-            match result with
-            | Success r | Failure r ->
-                assertErrors "Warnings" r.Adjust r.Warnings expectedWarnings
-            result
-
-        let withWarning (expectedWarning: (int * (int * int * int * int) * string)) (result: CompilationResult) : CompilationResult =
-            withWarnings [expectedWarning] result
-
-        let withWarningCodes (expectedWarnings: int list) (result: CompilationResult) : CompilationResult =
-            match result with
-            | Success r | Failure r ->
-                assertErrorNumbers r.Warnings expectedWarnings
-            result
-
-        let withWarningCode (expectedWarning: int) (result: CompilationResult) : CompilationResult =
-           withWarningCodes [expectedWarning] result
-
-        let withErrors (expectedErrors: (int * (int * int * int * int) * string) list) (result: CompilationResult) : CompilationResult =
-            match result with
-            | Success r | Failure r ->
-                assertErrors "Errors" r.Adjust r.Errors expectedErrors
-            result
-
-        let withError (expectedError: (int * (int * int * int * int) * string)) (result: CompilationResult) : CompilationResult =
-            withErrors [expectedError] result
-
-        let withErrorCodes (expectedErrors: int list) (result: CompilationResult) : CompilationResult =
-            match result with
-            | Success r | Failure r ->
-                assertErrorNumbers r.Errors expectedErrors
-            result
-
-        let withErrorCode (expectedError: int) (result: CompilationResult) : CompilationResult =
-            withErrorCodes [expectedError] result
-
-        let withRange = ignore
