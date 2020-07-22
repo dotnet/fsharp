@@ -14,7 +14,7 @@ module StringInterpolationTests =
         CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |]
             """
 let check msg a b = 
-    if a = b then printfn "%s succeeded" msg else failwithf "%s failed, expected %A, got %A" msg b a
+    if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 
 check "vcewweh1" $"this is 2" "this is 2"
 
@@ -27,7 +27,9 @@ check "vcewweh4" $"this is {1} + {1+1}"  "this is 1 + 2"
 check "vcewweh5" $"this is {1}"  "this is 1"
 
 check "vcewweh6" $"123{456}789{012}345"  "12345678912345"
+
 check "vcewweh7" $"this is {1} {2} {3} {4} {5} {6} {7}"  "this is 1 2 3 4 5 6 7"
+
 check "vcewweh8" $"this is {7} {6} {5} {4} {3} {2} {1}"  "this is 7 6 5 4 3 2 1"
 
 check "vcewweh9" $"{1}

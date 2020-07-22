@@ -86,7 +86,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                if acc |> List.forall (fun (p, _) -> p = None) then // without positional specifiers
                    acc |> List.map snd |> List.rev
                else  
-                   raise (Failure (FSComp.SR.forPositionalSpecifiersNotPermitted()))
+                   failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
            argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
           appendToDotnetFormatString (fmt.[i..i+1])
@@ -98,65 +98,65 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
               let startCol = relCol
               let relCol = relCol+1
               let i = i+1 
-              if i >= len then raise (Failure (FSComp.SR.forMissingFormatSpecifier()))
+              if i >= len then failwithf "%s" <| FSComp.SR.forMissingFormatSpecifier()
               let info = newInfo()
 
               let rec flags i =
-                if i >= len then raise (Failure (FSComp.SR.forMissingFormatSpecifier()))
+                if i >= len then failwithf "%s" <| FSComp.SR.forMissingFormatSpecifier()
                 match fmt.[i] with
                 | '-' -> 
-                    if info.leftJustify then raise (Failure (FSComp.SR.forFlagSetTwice("-")))
+                    if info.leftJustify then failwithf "%s" <| FSComp.SR.forFlagSetTwice("-")
                     info.leftJustify <- true
                     flags(i+1)
                 | '+' -> 
-                    if info.numPrefixIfPos <> None then raise (Failure (FSComp.SR.forPrefixFlagSpacePlusSetTwice()))
+                    if info.numPrefixIfPos <> None then failwithf "%s" <| FSComp.SR.forPrefixFlagSpacePlusSetTwice()
                     info.numPrefixIfPos <- Some '+'
                     flags(i+1)
                 | '0' -> 
-                    if info.addZeros then raise (Failure (FSComp.SR.forFlagSetTwice("0")))
+                    if info.addZeros then failwithf "%s" <| FSComp.SR.forFlagSetTwice("0")
                     info.addZeros <- true
                     flags(i+1)
                 | ' ' -> 
-                    if info.numPrefixIfPos <> None then raise (Failure (FSComp.SR.forPrefixFlagSpacePlusSetTwice()))
+                    if info.numPrefixIfPos <> None then failwithf "%s" <| FSComp.SR.forPrefixFlagSpacePlusSetTwice()
                     info.numPrefixIfPos <- Some ' '
                     flags(i+1)
-                | '#' -> raise (Failure (FSComp.SR.forHashSpecifierIsInvalid() ))
+                | '#' -> failwithf "%s" <| FSComp.SR.forHashSpecifierIsInvalid()
                 | _ -> i
 
               let rec digitsPrecision i = 
-                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
+                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> digitsPrecision (i+1)
                 | _ -> i 
 
               let precision i = 
-                if i >= len then raise (Failure (FSComp.SR.forBadWidth()))
+                if i >= len then failwithf "%s" <| FSComp.SR.forBadWidth()
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> info.precision <- true; false,digitsPrecision (i+1)
                 | '*' -> info.precision <- true; true,(i+1)
-                | _ -> raise (Failure (FSComp.SR.forPrecisionMissingAfterDot()))
+                | _ -> failwithf "%s" <| FSComp.SR.forPrecisionMissingAfterDot()
 
               let optionalDotAndPrecision i = 
-                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
+                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
                 | '.' -> precision (i+1)
                 | _ -> false,i
 
               let rec digitsWidthAndPrecision n i = 
-                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
+                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> digitsWidthAndPrecision (n*10 + int c - int '0') (i+1)
                 | _ -> Some n, optionalDotAndPrecision i
 
               let widthAndPrecision i = 
-                if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
+                if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                 match fmt.[i] with
                 | c when System.Char.IsDigit c -> false,digitsWidthAndPrecision 0 i
                 | '*' -> true, (None, optionalDotAndPrecision (i+1))
                 | _ -> false, (None, optionalDotAndPrecision i)
 
               let rec digitsPosition n i =
-                  if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
+                  if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
                   match fmt.[i] with
                   | c when System.Char.IsDigit c -> digitsPosition (n*10 + int c - int '0') (i+1)
                   | '$' -> Some n, i+1
@@ -181,21 +181,21 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
               let widthArg,(widthValue, (precisionArg,i)) = widthAndPrecision i 
               let relCol = relCol + i - oldI
 
-              if i >= len then raise (Failure (FSComp.SR.forBadPrecision()))
+              if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
 
               let acc = if precisionArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc 
 
               let acc = if widthArg then (Option.map ((+)1) posi, g.int_ty) :: acc else acc 
 
               let checkNoPrecision c =
-                  if info.precision then raise (Failure (FSComp.SR.forFormatDoesntSupportPrecision(c.ToString())))
+                  if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(c.ToString())
 
               let checkNoZeroFlag c =
-                  if info.addZeros then raise (Failure (FSComp.SR.forDoesNotSupportZeroFlag(c.ToString())))
+                  if info.addZeros then failwithf "%s" <| FSComp.SR.forDoesNotSupportZeroFlag(c.ToString())
 
               let checkNoNumericPrefix c =
                   match info.numPrefixIfPos with 
-                  | Some n -> raise (Failure (FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), n.ToString())))
+                  | Some n -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(c.ToString(), n.ToString())
                   | None -> ()
 
               let checkOtherFlags c = 
@@ -210,12 +210,12 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                           let i = i + 2
                           if i+1 < len && fmt.[i] = '('  && fmt.[i+1] = ')' then 
                               if isFormattableString then 
-                                  raise (Failure (FSComp.SR.forFormatInvalidForInterpolated4()))
+                                  failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated4()
                               i + 2
                           else 
-                              raise (Failure (FSComp.SR.forFormatInvalidForInterpolated2()))
+                              failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated2()
                       else
-                          raise (Failure (FSComp.SR.forFormatInvalidForInterpolated()))
+                          failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated()
                   else i
 
               // Implicitly typed holes in interpolated strings are translated to '... %P(...)...' in the
@@ -224,7 +224,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   if i < len && fmt.[i] = '(' then 
                       let i2 = fmt.IndexOf(")", i+1)
                       if i2 = -1 then 
-                          raise (Failure (FSComp.SR.forFormatInvalidForInterpolated3()))
+                          failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated3()
                       else 
                           let dotnetAlignment = match widthValue with None -> "" | Some w -> "," + (if info.leftJustify then "-" else "") + string w
                           let dotnetNumberFormat = match fmt.[i+1..i2-1] with "" -> "" | s -> ":" + s
@@ -232,7 +232,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                           dotnetFormatStringInterpolationHoleCount <- dotnetFormatStringInterpolationHoleCount + 1
                           i2+1
                   else
-                      raise (Failure (FSComp.SR.forFormatInvalidForInterpolated3()))
+                      failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated3()
 
               let collectSpecifierLocation relLine relCol numStdArgs = 
                   let numArgsForSpecifier =
@@ -257,13 +257,13 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   parseLoop acc (i+1, relLine, relCol+1) 
 
               | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') ->
-                  if info.precision then raise (Failure (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())))
+                  if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
                   collectSpecifierLocation relLine relCol 1
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i, relLine, relCol+1)
 
               | ('l' | 'L') ->
-                  if info.precision then raise (Failure (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())))
+                  if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
                   let relCol = relCol+1
                   let i = i+1
                   
@@ -271,16 +271,16 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   if i >= len then 
                       raise (Failure (FSComp.SR.forBadFormatSpecifier()))
                   // Always error for %l and %Lx
-                  raise (Failure (FSComp.SR.forLIsUnnecessary()))
+                  failwithf "%s" <| FSComp.SR.forLIsUnnecessary()
                   match fmt.[i] with
                   | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') -> 
                       collectSpecifierLocation relLine relCol 1
                       let i = skipPossibleInterpolationHole (i+1)
                       parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i, relLine, relCol+1)
-                  | _ -> raise (Failure (FSComp.SR.forBadFormatSpecifier()))
+                  | _ -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifier()
 
               | ('h' | 'H') ->
-                  raise (Failure (FSComp.SR.forHIsUnnecessary()))
+                  failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
 
               | 'M' ->
                   collectSpecifierLocation relLine relCol 1
@@ -331,7 +331,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                       let xty = NewInferenceType ()
                       percentATys.Add(xty)
                       parseLoop ((posi, xty) :: acc)  (i, relLine, relCol+1)
-                  | Some n -> raise (Failure (FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString())))
+                  | Some n -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString())
 
               | 'a' ->
                   checkOtherFlags ch
@@ -347,7 +347,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((posi, printerArgTy --> printerResidueTy) :: acc)  (i, relLine, relCol+1)
 
-              | c -> raise (Failure (FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)))
+              | c -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)
           
           | '\n' ->
               appendToDotnetFormatString fmt.[i..i]

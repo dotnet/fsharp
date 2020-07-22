@@ -9295,7 +9295,7 @@ func4000()
 func5000()
 func6000()
 func7000()
-//func8000()
+func8000()
 #endif
 
 #if TESTS_AS_APP
