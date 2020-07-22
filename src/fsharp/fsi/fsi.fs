@@ -1458,14 +1458,6 @@ type internal FsiDynamicCompiler
             match packageManagerLines with
             | [] -> istate
             | {LineType=_; LineStatus=_; Line=_; Range=m} :: _ ->
-                let reportError =
-                    let report errorType err msg =
-                        let error = err, msg
-                        match errorType with
-                        | ErrorReportType.Warning -> warning(Error(error, m))
-                        | ErrorReportType.Error -> errorR(Error(error, m))
-                    ResolvingErrorReport (report)
-
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
                 match tcConfigB.dependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
