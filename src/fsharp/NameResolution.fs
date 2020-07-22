@@ -2393,7 +2393,7 @@ let GetRecordLabelsForType g nenv ty =
     result
 
 /// Get the nested types of the given type and check the nested types based on the type name resolution info.
-let CheckForNestedTypesOfType (ncenv: NameResolver) (resInfo: ResolutionInfo) ad nm (typeNameResInfo: TypeNameResolutionInfo) m ty =
+let CheckNestedTypesOfType (ncenv: NameResolver) (resInfo: ResolutionInfo) ad nm (typeNameResInfo: TypeNameResolutionInfo) m ty =
     let tinstEnclosing, tcrefsNested = GetNestedTyconRefsOfType ncenv.InfoReader ncenv.amap (ad, Some nm, typeNameResInfo.StaticArgsInfo, true, m) ty
     let tcrefsNested = tcrefsNested |> List.map (fun tcrefNested -> (resInfo, tcrefNested))
     let tcrefsNested = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefsNested, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
@@ -2474,7 +2474,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
     let nestedSearchAccessible =
         match rest with
         | [] ->
-            let nestedTypes = CheckForNestedTypesOfType ncenv resInfo ad nm typeNameResInfo m ty
+            let nestedTypes = CheckNestedTypesOfType ncenv resInfo ad nm typeNameResInfo m ty
             if isNil nestedTypes then
                 NoResultsOrUsefulErrors
             else
@@ -2486,7 +2486,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 | ResolveTypeNamesToTypeRefs ->
                     OneSuccess (resInfo, Item.Types (nm, nestedTypes), rest)
         | id2 :: rest2 ->
-            let nestedTypes = CheckForNestedTypesOfType ncenv resInfo ad nm (TypeNameResolutionInfo.ResolveToTypeRefs TypeNameResolutionStaticArgsInfo.Indefinite) m ty
+            let nestedTypes = CheckNestedTypesOfType ncenv resInfo ad nm (TypeNameResolutionInfo.ResolveToTypeRefs TypeNameResolutionStaticArgsInfo.Indefinite) m ty
             ResolveLongIdentInNestedTypes ncenv nenv lookupKind resInfo (depth+1) id m ad id2 rest2 findFlag typeNameResInfo nestedTypes
 
     match nestedSearchAccessible with
