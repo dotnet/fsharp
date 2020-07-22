@@ -2,4 +2,7 @@
 cantReferenceSystemPackage,"PackageManager can not reference the System Package '%s'"
 requiresAValue,"%s requires a value"
 unableToApplyImplicitArgument,"Unable to apply implicit argument number %d"
-notUsed,"Not used."
+notUsed,"Not used"
+loadNugetPackage,"Load Nuget Package"
+version,"version"
+highestVersion,"with the highest version"

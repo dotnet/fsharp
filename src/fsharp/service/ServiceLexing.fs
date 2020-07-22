@@ -32,6 +32,10 @@ module FSharpTokenTag =
 
     let IDENT = tagOfToken (IDENT "a")
     let STRING = tagOfToken (STRING "a")
+    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END "a")
+    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART "a")
+    let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART "a")
+    let INTERP_STRING_END = tagOfToken (INTERP_STRING_END "a")
     let LPAREN = tagOfToken LPAREN
     let RPAREN = tagOfToken RPAREN
     let LBRACK = tagOfToken LBRACK
@@ -732,23 +736,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     // If we're using token from cache, we don't move forward with lexing
                     if isCached then lexcontInitial else LexerStateEncoding.computeNextLexState token lexcontInitial
 
-                let tokenTag =
-                    // Tokenization just reports repeated STRING_TEXT then STRING for each part of an interpolated string
-                    match token with 
-                    | INTERP_STRING_BEGIN_END _
-                    | INTERP_STRING_BEGIN_PART _
-                    | INTERP_STRING_PART _
-                    | INTERP_STRING_END _ -> FSharpTokenTag.STRING
-                    | _ -> tagOfToken token
+                let tokenTag = tagOfToken token
 
-                let tokenName =
-                    // Tokenization just reports repeated STRING_TEXT then STRING for each part of an interpolated string
-                    match token with 
-                    | INTERP_STRING_BEGIN_END _
-                    | INTERP_STRING_BEGIN_PART _
-                    | INTERP_STRING_PART _
-                    | INTERP_STRING_END _ -> token_to_string (STRING "")
-                    | _ -> token_to_string token
+                let tokenName = token_to_string token
 
                 let fullMatchedLength = lexbuf.EndPos.AbsoluteOffset - lexbuf.StartPos.AbsoluteOffset
 

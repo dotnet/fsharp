@@ -86,8 +86,16 @@ module FSharpTokenTag =
     val String : int
     /// Indicates the token is an identifier (synonym for FSharpTokenTag.Identifier)
     val IDENT : int
-    /// Indicates the token is an string (synonym for FSharpTokenTag.String)
+    /// Indicates the token is a string (synonym for FSharpTokenTag.String)
     val STRING : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_BEGIN_END : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_BEGIN_PART : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_PART : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_END : int
     /// Indicates the token is a `(`
     val LPAREN : int
     /// Indicates the token is a `)`

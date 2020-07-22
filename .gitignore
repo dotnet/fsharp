@@ -136,3 +136,7 @@ msbuild.binlog
 /tests/fsharp/core/fsfromfsviacs/compilation.errors.output.txt
 Session.vim
 coc-settings.json
+*ncrunch*.user
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
