@@ -134,5 +134,9 @@ msbuild.binlog
 /tests/fsharp/regression/5531/compilation.output.test.txt
 /tests/fsharp/core/fsfromfsviacs/compilation.langversion.old.output.txt
 /tests/fsharp/core/fsfromfsviacs/compilation.errors.output.txt
+*ncrunch*.user
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
 Session.vim
 coc-settings.json
