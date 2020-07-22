@@ -74,7 +74,10 @@
     <Compile Include="..\..\..\tests\service\ProjectAnalysisTests.fs">
       <Link>CompilerService\ProjectAnalysisTests.fs</Link>
     </Compile>
-<!-- TODO:  Fix this test
+    <Compile Include="..\..\..\tests\service\TokenizerTests.fs">
+      <Link>CompilerService\TokenizerTests.fs</Link>
+    </Compile>
+    <!-- TODO:  Fix this test
     <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
     </Compile>

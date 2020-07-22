@@ -64,26 +64,84 @@ let ``Tokenizer test 2``() =
     let tokenizedLines = 
       tokenizeLines
         [| "// Tests tokenizing string interpolation"
-           "let hello = $\"Hello world {1+1} = {2}\" " |]
+           "let hello0 = $\"\""
+           "let hello1 = $\"Hello world\"  "
+           "let hello2 = $\"Hello world {1+1} = {2}\" "
+           "let hello0v = @$\"\""
+           "let hello1v = @$\"Hello world\"  "
+           "let hello2v = @$\"Hello world {1+1} = {2}\" " 
+           "let hello1t = @$\"\"\"abc\"\"\""
+           "let hello2t = @$\"\"\"Hello world {1+1} = {2}\"\"\" " |]
 
     let actual = 
         [ for lineNo, lineToks in tokenizedLines do
             yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
     let expected = 
-      [(0,
-        [("LINE_COMMENT", "//"); ("LINE_COMMENT", " "); ("LINE_COMMENT", "Tests");
-         ("LINE_COMMENT", " "); ("LINE_COMMENT", "tokenizing"); ("LINE_COMMENT", " ");
-         ("LINE_COMMENT", "string"); ("LINE_COMMENT", " ");
-         ("LINE_COMMENT", "interpolation")]);
-       (1,
-        [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello"); ("WHITESPACE", " ");
-         ("EQUALS", "="); ("WHITESPACE", " "); ("STRING_TEXT", "$\"");
-         ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
-         ("STRING_TEXT", " "); ("STRING", "{"); ("STRING_TEXT", "1");
-         ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
-         ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
-         ("STRING", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}"); ("STRING", "\"");
-         ("STRING_TEXT", " ")])]
+        [(0,
+          [("LINE_COMMENT", "//"); ("LINE_COMMENT", " "); ("LINE_COMMENT", "Tests");
+           ("LINE_COMMENT", " "); ("LINE_COMMENT", "tokenizing"); ("LINE_COMMENT", " ");
+           ("LINE_COMMENT", "string"); ("LINE_COMMENT", " ");
+           ("LINE_COMMENT", "interpolation")]);
+         (1,
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello0"); ("WHITESPACE", " ");
+           ("EQUALS", "="); ("WHITESPACE", " "); ("STRING_TEXT", "$\"");
+           ("INTERP_STRING_BEGIN_END", "\"")]);
+         (2,
+          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello1");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
+           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", "  ")]);
+         (3,
+          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello2");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
+           ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "1");
+           ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}");
+           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", " ")]);
+         (4,
+          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello0v");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("INTERP_STRING_BEGIN_END", "\"")]);
+         (5,
+          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello1v");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
+           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", "  ")]);
+         (6,
+          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello2v");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
+           ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "1");
+           ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}");
+           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", " ")]);
+         (7,
+          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello1t");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"");
+           ("STRING_TEXT", "abc"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"")]);
+         (8,
+          [("STRING_TEXT", "let"); ("STRING_TEXT", " "); ("STRING_TEXT", "hello2t");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("STRING_TEXT", "@"); ("STRING_TEXT", "$"); ("INTERP_STRING_BEGIN_END", "\"");
+           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"");
+           ("STRING_TEXT", "Hello"); ("STRING_TEXT", " "); ("STRING_TEXT", "world");
+           ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "1");
+           ("STRING_TEXT", "+"); ("STRING_TEXT", "1"); ("STRING_TEXT", "}");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "="); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "2"); ("STRING_TEXT", "}");
+           ("INTERP_STRING_BEGIN_END", "\""); ("INTERP_STRING_BEGIN_END", "\"");
+           ("INTERP_STRING_BEGIN_END", "\""); ("STRING_TEXT", " ")])]
   
     if actual <> expected then 
         printfn "actual   = %A" actual
