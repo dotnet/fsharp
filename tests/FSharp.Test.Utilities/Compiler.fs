@@ -43,7 +43,7 @@ module Compiler =
 
     and ILCompilationSource =
         { Source:     TestType
-          References: CompilationUnit list}
+          References: CompilationUnit list  }
 
     type ErrorType = Error of int | Warning of int
 
