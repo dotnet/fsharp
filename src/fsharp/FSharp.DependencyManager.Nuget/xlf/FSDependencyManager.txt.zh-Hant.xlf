@@ -7,9 +7,19 @@
         <target state="translated">PackageManager 無法參考系統套件 '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="highestVersion">
+        <source>with the highest version</source>
+        <target state="new">with the highest version</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="loadNugetPackage">
+        <source>Load Nuget Package</source>
+        <target state="new">Load Nuget Package</target>
+        <note />
+      </trans-unit>
       <trans-unit id="notUsed">
-        <source>Not used.</source>
-        <target state="translated">沒有使用。</target>
+        <source>Not used</source>
+        <target state="needs-review-translation">沒有使用。</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
@@ -20,6 +30,11 @@
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">無法套用隱含引數號碼 {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="version">
+        <source>version</source>
+        <target state="new">version</target>
         <note />
       </trans-unit>
     </body>

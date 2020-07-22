@@ -7,16 +7,38 @@ open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 
-type FSharpScript(?additionalArgs: string[]) =
+[<RequireQualifiedAccess>]
+type LangVersion =
+    | V47
+    | V50
+    | Preview
+
+type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
 
     let additionalArgs = defaultArg additionalArgs [||]
+    let quiet = defaultArg quiet true
+    let langVersion = defaultArg langVersion LangVersion.Preview
+  
     let config = FsiEvaluationSession.GetDefaultConfiguration()
+
     let computedProfile =
         // If we are being executed on the desktop framework (we can tell because the assembly containing int is mscorlib) then profile must be mscorlib otherwise use netcore
         if typeof<int>.Assembly.GetName().Name = "mscorlib" then "mscorlib"
         else "netcore"
-    let baseArgs = [| typeof<FSharpScript>.Assembly.Location; "--noninteractive"; "--targetprofile:" + computedProfile; "--quiet" |]
+
+    let baseArgs = [|
+        typeof<FSharpScript>.Assembly.Location;
+        "--noninteractive";
+        "--targetprofile:" + computedProfile
+        if quiet then "--quiet"
+        match langVersion with
+        | LangVersion.V47 -> "--langversion:4.7"
+        | LangVersion.V50 -> "--langversion:5.0"
+        | LangVersion.Preview -> "--langversion:preview"
+        |]
+
     let argv = Array.append baseArgs additionalArgs
+
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member __.ValueBound = fsi.ValueBound

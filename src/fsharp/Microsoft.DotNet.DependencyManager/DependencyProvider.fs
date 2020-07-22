@@ -21,6 +21,8 @@ module ReflectionHelper =
 
     let keyPropertyName = "Key"
 
+    let helpMessagesPropertyName = "HelpMessages"
+
     let arrEmpty = Array.empty<string>
 
     let seqEmpty = Seq.empty<string>
@@ -42,12 +44,12 @@ module ReflectionHelper =
             let property = theType.GetProperty(propertyName, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, Unchecked.defaultof<Binder>, typeof<'treturn>, Array.empty, Array.empty)
             if isNull property then
                 None
-            elif not (property.GetGetMethod().IsStatic)
-                 && property.GetIndexParameters() = Array.empty
-            then
-                Some property
             else
-                None
+                let getMethod = property.GetGetMethod()
+                if not (isNull getMethod) && not (getMethod.IsStatic) then
+                    Some property
+                else
+                    None
         with | _ -> None
 
     let getInstanceMethod<'treturn> (theType: Type) (parameterTypes: Type array) methodName =
@@ -105,25 +107,43 @@ type IResolveDependenciesResult =
 type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
+    abstract HelpMessages: string[]
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string * rid: string -> IResolveDependenciesResult
 
-type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo option, resolveDepsEx: MethodInfo option,outputDir: string option) =
-    let instance = Activator.CreateInstance(theType, [|outputDir :> obj|])
+type ReflectionDependencyManagerProvider(theType: Type, 
+        nameProperty: PropertyInfo,
+        keyProperty: PropertyInfo,
+        helpMessagesProperty: PropertyInfo option,
+        resolveDeps: MethodInfo option,
+        resolveDepsEx: MethodInfo option,
+        outputDir: string option) =
+
+    let instance = Activator.CreateInstance(theType, [| outputDir :> obj |])
     let nameProperty = nameProperty.GetValue >> string
     let keyProperty = keyProperty.GetValue >> string
+    let helpMessagesProperty =
+        let toStringArray(o:obj) = o :?> string[]
+        match helpMessagesProperty with
+        | Some helpMessagesProperty -> helpMessagesProperty.GetValue >> toStringArray
+        | None -> fun _ -> Array.empty<string>
 
     static member InstanceMaker (theType: System.Type, outputDir: string option) =
         match getAttributeNamed theType dependencyManagerAttributeName,
               getInstanceProperty<string> theType namePropertyName,
-              getInstanceProperty<string> theType keyPropertyName
+              getInstanceProperty<string> theType keyPropertyName,
+              getInstanceProperty<string[]> theType helpMessagesPropertyName
               with
-        | None, _, _
-        | _, None, _
-        | _, _, None -> None
-        | Some _, Some nameProperty, Some keyProperty ->
+        | None, _, _, _
+        | _, None, _, _
+        | _, _, None, _ -> None
+        | Some _, Some nameProperty, Some keyProperty, None ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
+            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
+        | Some _, Some nameProperty, Some keyProperty, Some helpMessagesProperty ->
+            let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
+            let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
+            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
 
     static member MakeResultFromObject(result: obj) = {
         new IResolveDependenciesResult with
@@ -193,6 +213,9 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 
         /// Key of dependency Manager: used for #r "key: ... "   E.g nuget
         member _.Key = instance |> keyProperty
+
+        /// Key of dependency Manager: used for #help
+        member _.HelpMessages = instance |> helpMessagesProperty
 
         /// Resolve the dependencies for the given arguments
         member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid): IResolveDependenciesResult =
@@ -301,6 +324,13 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
     new (nativeProbingRoots: NativeResolutionProbe) =
         new DependencyProvider(Unchecked.defaultof<AssemblyResolutionProbe>, nativeProbingRoots)
 
+    /// Returns a formatted help messages for registered dependencymanagers for the host to present
+    member _.GetRegisteredDependencyManagerHelpText (compilerTools, outputDir, errorReport) = [|
+            let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) errorReport
+            for kvp in managers do
+                let dm = kvp.Value
+                yield! dm.HelpMessages
+        |]
     /// Returns a formatted error message for the host to present
     member _.CreatePackageManagerUnknownError (compilerTools: string seq, outputDir: string, packageManagerKey: string, reportError: ResolvingErrorReport) =
         let registeredKeys = String.Join(", ", RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError |> Seq.map (fun kv -> kv.Value.Key))
