@@ -1457,7 +1457,7 @@ type internal FsiDynamicCompiler
             let packageManagerKey, packageManagerLines = kv.Key, kv.Value
             match packageManagerLines with
             | [] -> istate
-            | {LineType=_; LineStatus=_; Line=_; Range=m} :: _ ->
+            | { LineType=_; LineStatus=_; Line=_; Range=m } :: _ ->
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
                 match tcConfigB.dependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with

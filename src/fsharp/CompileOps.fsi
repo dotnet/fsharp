@@ -268,11 +268,10 @@ type PackageManagerLine =
       Line: string
       Range: range }
 
-    with
-        static member AddLineWithKey: string -> LType -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
-        static member RemoveUnprocessedLines: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
-        static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
-        static member StripDependencyManagerKey: string -> string -> string
+    static member AddLineWithKey: string -> LType -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member RemoveUnprocessedLines: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member StripDependencyManagerKey: string -> string -> string
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =

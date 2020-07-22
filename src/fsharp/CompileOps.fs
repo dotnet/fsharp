@@ -2100,47 +2100,46 @@ type PackageManagerLine =
       Line: string
       Range: range }
 
-    with
-        static member AddLineWithKey (packageKey: string) (lt:LType) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
-            let path = PackageManagerLine.StripDependencyManagerKey packageKey line
-            let map =
-                let mutable found = false
-                let result =
-                    packageManagerLines
-                    |> Map.map(fun key lines ->
-                        if key = packageKey then
-                            found <- true
-                            lines |> List.append [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
-                        else
-                            lines)
-                if found then
-                    result
-                else
-                    result.Add(packageKey, [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
-            map
-
-        static member RemoveUnprocessedLines (packageKey: string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
-            let map =
+    static member AddLineWithKey (packageKey: string) (lt:LType) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
+        let path = PackageManagerLine.StripDependencyManagerKey packageKey line
+        let map =
+            let mutable found = false
+            let result =
                 packageManagerLines
                 |> Map.map(fun key lines ->
                     if key = packageKey then
-                        lines |> List.filter(fun line -> line.LineStatus=LStatus.Processed)
+                        found <- true
+                        lines |> List.append [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
                     else
                         lines)
-            map
+            if found then
+                result
+            else
+                result.Add(packageKey, [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
+        map
 
-        static member SetLinesAsProcessed (packageKey:string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
-            let map =
-                packageManagerLines 
-                |> Map.map(fun key lines ->
-                    if key = packageKey then
-                        lines |> List.map(fun line -> {line with LineStatus = LStatus.Processed;})
-                    else
-                        lines)
-            map
+    static member RemoveUnprocessedLines (packageKey: string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
+        let map =
+            packageManagerLines
+            |> Map.map(fun key lines ->
+                if key = packageKey then
+                    lines |> List.filter(fun line -> line.LineStatus=LStatus.Processed)
+                else
+                    lines)
+        map
 
-        static member StripDependencyManagerKey (packageKey: string) (line: string): string =
-            line.Substring(packageKey.Length + 1).Trim()
+    static member SetLinesAsProcessed (packageKey:string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
+        let map =
+            packageManagerLines 
+            |> Map.map(fun key lines ->
+                if key = packageKey then
+                    lines |> List.map(fun line -> {line with LineStatus = LStatus.Processed;})
+                else
+                    lines)
+        map
+
+    static member StripDependencyManagerKey (packageKey: string) (line: string): string =
+        line.Substring(packageKey.Length + 1).Trim()
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -5383,7 +5382,7 @@ module ScriptPreprocessClosure =
                     let packageManagerKey, packageManagerLines = kv.Key, kv.Value
                     match packageManagerLines with
                     | [] -> ()
-                    | {LineType=_; LineStatus=_; Line=_; Range=m} :: _ ->
+                    | { LineType=_; LineStatus=_; Line=_; Range=m } :: _ ->
                         let reportError =
                             let report errorType err msg =
                                 let error = err, msg
