@@ -13,7 +13,7 @@ open System
 open System.Collections.Immutable
 open System.IO
 
-module Compiler =
+module rec Compiler =
 
     type TestType =
         | Text of string
@@ -25,7 +25,7 @@ module Compiler =
         | CS  of CSharpCompilationSource
         | IL  of ILCompilationSource
 
-    and FSharpCompilationSource =
+    type FSharpCompilationSource =
         { Source:         TestType
           Options:        string list
           OutputType:     CompileOutput
@@ -34,14 +34,14 @@ module Compiler =
           IgnoreWarnings: bool
           References:     CompilationUnit list }
 
-    and CSharpCompilationSource =
+    type CSharpCompilationSource =
         { Source:          TestType
           LangVersion:     CSharpLanguageVersion
           TargetFramework: TargetFramework
           Name:            string option
           References:      CompilationUnit list }
 
-    and ILCompilationSource =
+    type ILCompilationSource =
         { Source:     TestType
           References: CompilationUnit list  }
 
@@ -131,10 +131,10 @@ module Compiler =
                 EndColumn   = range.EndColumn   + 1 }
 
     let Fsx (source: string) : CompilationUnit =
-        fsFromString source Fsx |> FS
+        fsFromString source SourceKind.Fsx |> FS
 
     let FSharp (source: string) : CompilationUnit =
-        fsFromString source Fs |> FS
+        fsFromString source SourceKind.Fs |> FS
 
     let baseline (dir: string, file: string) : CompilationUnit =
         match (dir, file) with
@@ -198,7 +198,7 @@ module Compiler =
                     | Some p -> p |> MetadataReference.CreateFromFile
         | _ -> failwith "Conversion isn't possible"
 
-    and private processReferences (references: CompilationUnit list) =
+    let private processReferences (references: CompilationUnit list) =
 
         let rec loop acc = function
             | [] -> List.rev acc
@@ -221,7 +221,7 @@ module Compiler =
                 | IL _ -> failwith "TODO: Process references for IL"
         loop [] references
 
-    and private compileFSharpCompilation compilation ignoreWarnings : CompilationResult =
+    let private compileFSharpCompilation compilation ignoreWarnings : CompilationResult =
 
         let ((err: FSharpErrorInfo[], outputFilePath: string), _) = CompilerAssert.CompileRaw(compilation)
 
@@ -241,7 +241,7 @@ module Compiler =
             Success { result with Warnings   = warnings
                                   OutputPath = Some outputFilePath }
 
-    and private compileFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
+    let private compileFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
 
         let source = getSource fsSource.Source
         let sourceKind = fsSource.SourceKind
@@ -254,7 +254,7 @@ module Compiler =
 
         compileFSharpCompilation compilation fsSource.IgnoreWarnings
 
-    and private compileCSharpCompilation (compilation: CSharpCompilation) : CompilationResult =
+    let private compileCSharpCompilation (compilation: CSharpCompilation) : CompilationResult =
 
         let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Path.GetRandomFileName())
 
@@ -276,7 +276,7 @@ module Compiler =
         else
             Failure result
 
-    and private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
+    let private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
 
         let source = getSource csSource.Source
         let name = if Option.isSome csSource.Name then csSource.Name.Value else Guid.NewGuid().ToString ()
@@ -302,7 +302,7 @@ module Compiler =
 
         cmpl |> compileCSharpCompilation
 
-    and compile (cUnit: CompilationUnit) : CompilationResult =
+    let compile (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with
         | FS fs -> compileFSharp fs
         | CS cs -> compileCSharp cs
