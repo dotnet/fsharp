@@ -37,8 +37,6 @@
     <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
     <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
-    <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
-    <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
