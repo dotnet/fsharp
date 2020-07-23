@@ -2086,6 +2086,61 @@ type CcuLoadFailureAction =
     | RaiseError
     | ReturnNone
 
+type LType =
+    | Resolution
+    | RestoreSource
+
+type LStatus =
+    | Unprocessed
+    | Processed
+
+type PackageManagerLine =
+    { LineType: LType
+      LineStatus: LStatus
+      Line: string
+      Range: range }
+
+    static member AddLineWithKey (packageKey: string) (lt:LType) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
+        let path = PackageManagerLine.StripDependencyManagerKey packageKey line
+        let map =
+            let mutable found = false
+            let result =
+                packageManagerLines
+                |> Map.map(fun key lines ->
+                    if key = packageKey then
+                        found <- true
+                        lines |> List.append [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
+                    else
+                        lines)
+            if found then
+                result
+            else
+                result.Add(packageKey, [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
+        map
+
+    static member RemoveUnprocessedLines (packageKey: string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
+        let map =
+            packageManagerLines
+            |> Map.map(fun key lines ->
+                if key = packageKey then
+                    lines |> List.filter(fun line -> line.LineStatus=LStatus.Processed)
+                else
+                    lines)
+        map
+
+    static member SetLinesAsProcessed (packageKey:string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
+        let map =
+            packageManagerLines 
+            |> Map.map(fun key lines ->
+                if key = packageKey then
+                    lines |> List.map(fun line -> {line with LineStatus = LStatus.Processed;})
+                else
+                    lines)
+        map
+
+    static member StripDependencyManagerKey (packageKey: string) (line: string): string =
+        line.Substring(packageKey.Length + 1).Trim()
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -2107,7 +2162,7 @@ type TcConfigBuilder =
       mutable loadedSources: (range * string * string) list
       mutable compilerToolPaths: string list
       mutable referencedDLLs: AssemblyReference list
-      mutable packageManagerLines: Map<string, (bool * string * range) list>
+      mutable packageManagerLines: Map<string, PackageManagerLine list>
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
       reduceMemoryUsage: ReduceMemoryFlag
@@ -2536,13 +2591,9 @@ type TcConfigBuilder =
         elif not (tcConfigB.referencedDLLs |> List.exists (fun ar2 -> Range.equals m ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m, path, projectReference)
-             
-    member tcConfigB.AddDependencyManagerText (packageManager:IDependencyManagerProvider, m, path:string) = 
-        let path = tcConfigB.dependencyProvider.RemoveDependencyManagerKey(packageManager.Key, path)
 
-        match tcConfigB.packageManagerLines |> Map.tryFind packageManager.Key with
-        | Some lines -> tcConfigB.packageManagerLines <- Map.add packageManager.Key (lines ++ (false, path, m)) tcConfigB.packageManagerLines
-        | _ -> tcConfigB.packageManagerLines <- Map.add packageManager.Key [false, path, m] tcConfigB.packageManagerLines
+    member tcConfigB.AddDependencyManagerText (packageManager: IDependencyManagerProvider, lt, m, path: string) =
+        tcConfigB.packageManagerLines <- PackageManagerLine.AddLineWithKey packageManager.Key lt path m tcConfigB.packageManagerLines
 
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (Range.equals ar.Range m) || ar.Text <> path)
@@ -5002,7 +5053,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
-      packageRequireF: 'state -> IDependencyManagerProvider * range * string -> 'state,
+      packageRequireF: 'state -> IDependencyManagerProvider * LType * range * string -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder, inp, pathOfMetaCommandSource, state0) =
 
@@ -5051,7 +5102,7 @@ let ProcessMetaCommandsFromInput
                     match dm with
                     | _, dependencyManager when not(isNull dependencyManager) ->
                         if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                            packageRequireF state (dependencyManager, m, path)
+                            packageRequireF state (dependencyManager, LType.Resolution, m, path)
                         else
                             errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                             state
@@ -5143,7 +5194,7 @@ let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaComm
     let tcConfigB = tcConfig.CloneOfOriginalBuilder 
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
     let addReferencedAssemblyByPath = fun () (_m,_s) -> ()
-    let addDependencyManagerText = fun () (_prefix,_m,_s) -> ()
+    let addDependencyManagerText = fun () (_prefix, _lt, _m, _s) -> ()
     let addLoadedSource = fun () (_m,_s) -> ()
     ProcessMetaCommandsFromInput (addNoWarn, addReferencedAssemblyByPath, addDependencyManagerText, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
@@ -5153,7 +5204,7 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     let tcConfigB = tcConfig.CloneOfOriginalBuilder 
     let getWarningNumber = fun () _ -> () 
     let addReferencedAssemblyByPath = fun () (m,s) -> tcConfigB.AddReferencedAssemblyByPath(m,s)
-    let addDependencyManagerText = fun () (packageManager, m,s) -> tcConfigB.AddDependencyManagerText(packageManager,m,s)
+    let addDependencyManagerText = fun () (packageManager, lt, m,s) -> tcConfigB.AddDependencyManagerText(packageManager, lt, m, s)
     let addLoadedSource = fun () (m,s) -> tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
     ProcessMetaCommandsFromInput (getWarningNumber, addReferencedAssemblyByPath, addDependencyManagerText, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
@@ -5303,7 +5354,7 @@ module ScriptPreprocessClosure =
         let mutable nowarns = [] 
         let getWarningNumber = fun () (m, s) -> nowarns <- (s, m) :: nowarns
         let addReferencedAssemblyByPath = fun () (m, s) -> tcConfigB.AddReferencedAssemblyByPath(m, s)
-        let addDependencyManagerText = fun () (packageManagerPrefix,m,s) -> tcConfigB.AddDependencyManagerText(packageManagerPrefix,m,s)
+        let addDependencyManagerText = fun () (packageManagerPrefix, lt, m, s) -> tcConfigB.AddDependencyManagerText(packageManagerPrefix, lt, m, s)
         let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
         try 
             ProcessMetaCommandsFromInput (getWarningNumber, addReferencedAssemblyByPath, addDependencyManagerText, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
@@ -5331,7 +5382,7 @@ module ScriptPreprocessClosure =
                     let packageManagerKey, packageManagerLines = kv.Key, kv.Value
                     match packageManagerLines with
                     | [] -> ()
-                    | (_, _, m)::_ ->
+                    | { LineType=_; LineStatus=_; Line=_; Range=m } :: _ ->
                         let reportError =
                             let report errorType err msg =
                                 let error = err, msg
@@ -5349,8 +5400,7 @@ module ScriptPreprocessClosure =
                                 errorR(Error(tcConfig.dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
 
                             | dependencyManager ->
-                                let inline snd3 (_, b, _) = b
-                                let packageManagerTextLines = packageManagerLines |> List.map snd3
+                                let packageManagerTextLines = packageManagerLines |> List.map(fun l -> l.Line)
                                 let result = tcConfig.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
                                 match result.Success with
                                 | true ->
@@ -5359,7 +5409,7 @@ module ScriptPreprocessClosure =
                                         let tcConfigB = tcConfig.CloneOfOriginalBuilder
                                         for folder in result.Roots do 
                                             tcConfigB.AddIncludePath(m, folder, "")
-                                        tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.map(fun (_, p, m) -> true, p, m))
+                                        tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
                                         tcConfig <- TcConfig.Create(tcConfigB, validate=false)
                                     for script in result.SourceFiles do
                                         let scriptText = File.ReadAllText script
@@ -5371,7 +5421,7 @@ module ScriptPreprocessClosure =
                                     // Resolution produced errors update packagerManagerLines entries to note these failure
                                     // failed resolutions will no longer be considered
                                     let tcConfigB = tcConfig.CloneOfOriginalBuilder
-                                    tcConfigB.packageManagerLines <- tcConfigB.packageManagerLines |> Map.map(fun _ l -> l |> List.filter(fun (tried, _, _) -> tried))
+                                    tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines 
                                     tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
 

@@ -785,7 +785,7 @@ module internal Tokenizer =
         let text = sourceText.GetSubText(span).ToString()
         // backticked ident
         if text.EndsWith "``" then
-            match text.[..text.Length - 3].LastIndexOf "``" with
+            match text.LastIndexOf("``", text.Length - 3, text.Length - 2) with
             | -1 | 0 -> span
             | index -> TextSpan(span.Start + index, text.Length - index)
         else 
@@ -798,9 +798,9 @@ module internal Tokenizer =
         
         let isDoubleBacktickIdent (s: string) =
             let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
-            if s.StartsWith(doubleBackTickDelimiter) && s.EndsWith(doubleBackTickDelimiter) && s.Length > doubledDelimiter then
-                let inner = s.Substring(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
-                not (inner.Contains(doubleBackTickDelimiter))
+            if s.Length > doubledDelimiter && s.StartsWith(doubleBackTickDelimiter, StringComparison.Ordinal) && s.EndsWith(doubleBackTickDelimiter, StringComparison.Ordinal) then
+                let inner = s.AsSpan(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
+                not (inner.Contains(doubleBackTickDelimiter.AsSpan(), StringComparison.Ordinal))
             else false
         
         let isIdentifier (ident: string) =

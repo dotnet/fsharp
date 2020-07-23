@@ -13,6 +13,7 @@ open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Primitives.Basics
+open System.Linq.Expressions
 
 module internal ReflectionUtils =
 
@@ -62,6 +63,19 @@ module internal Impl =
         match getInstancePropertyInfo(typ, propName, bindingFlags) with
         | null -> None
         | prop -> Some(fun (obj: obj) -> prop.GetValue (obj, instancePropertyFlags ||| bindingFlags, null, null, null))
+
+    let compilePropGetterFunc (prop: PropertyInfo) =
+        let param = Expression.Parameter (typeof<obj>, "param")
+        
+        let expr =
+            Expression.Lambda<Func<obj, obj>> (
+                Expression.Convert (
+                    Expression.Property (
+                        Expression.Convert (param, prop.DeclaringType),
+                        prop),
+                    typeof<obj>),
+                param)
+        expr.Compile ()
 
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
@@ -166,9 +180,9 @@ module internal Impl =
                         let nm = minfo.Name
                         // chop "get_" or  "New" off the front
                         let nm =
-                            if not (isListType typ) && not (isOptionType typ) then
-                                if   nm.Length > 4 && nm.[0..3] = "get_" then nm.[4..]
-                                elif nm.Length > 3 && nm.[0..2] = "New" then nm.[3..]
+                            if not (isListType typ) && not (isOptionType typ) && nm.Length > 3 then
+                                if   nm.StartsWith ("get_", StringComparison.Ordinal) then nm.[4..]
+                                elif nm.StartsWith ("New", StringComparison.Ordinal) then nm.[3..]
                                 else nm
                             else nm
                         Some (n, nm)
@@ -585,6 +599,10 @@ module internal Impl =
         let props = fieldPropsOfRecordType(typ, bindingFlags)
         (fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, null)))
 
+    let getRecordReaderFromFuncs(typ: Type, bindingFlags) =
+        let props = fieldPropsOfRecordType(typ, bindingFlags) |> Array.map compilePropGetterFunc
+        (fun (obj: obj) -> props |> Array.map (fun prop -> prop.Invoke obj))
+
     let getRecordConstructorMethod(typ: Type, bindingFlags) =
         let props = fieldPropsOfRecordType(typ, bindingFlags)
         let ctor = typ.GetConstructor(BindingFlags.Instance ||| bindingFlags, null, props |> Array.map (fun p -> p.PropertyType), null)
@@ -806,7 +824,7 @@ type FSharpValue =
     static member PreComputeRecordReader(recordType: Type, ?bindingFlags) : (obj -> obj[]) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         checkRecordType ("recordType", recordType, bindingFlags)
-        getRecordReader (recordType, bindingFlags)
+        getRecordReaderFromFuncs (recordType, bindingFlags)
 
     static member PreComputeRecordConstructor(recordType: Type, ?bindingFlags) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
