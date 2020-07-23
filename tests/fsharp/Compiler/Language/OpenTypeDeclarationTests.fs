@@ -1616,3 +1616,21 @@ let main _ =
         |])
 
 #endif
+
+    [<Test>]
+    let ``Open contents of type provider`` () =
+        let typeProviderDir = FSharp.Tests.Core.getTestsDirectory "typeProviders\helloWorld"
+
+        let providerFsx =
+            sprintf """
+module FSharpTest
+
+#load @"%s"
+
+//type Doot = FSharp.HelloWorld.HelloWorldType
+            """ (typeProviderDir ++ "provider.fsx")
+
+        let providerCmpl =
+            Compilation.Create(providerFsx, Fsx, Library, options = [|"--langversion:preview"|])
+
+        CompilerAssert.Compile(providerCmpl)
