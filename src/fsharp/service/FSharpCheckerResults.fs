@@ -1480,7 +1480,12 @@ module internal ParseAndCheckFile =
                 | (LPAREN, RPAREN)
                 | (LPAREN, RPAREN_IS_HERE)
                 | (LBRACE, RBRACE)
+                | (LBRACE_BAR, BAR_RBRACE)
                 | (LBRACE, RBRACE_IS_HERE)
+                | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _)
+                | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _)
+                | (INTERP_STRING_PART _, INTERP_STRING_PART _)
+                | (INTERP_STRING_PART _, INTERP_STRING_END _)
                 | (SIG, END)
                 | (STRUCT, END)
                 | (LBRACK_BAR, BAR_RBRACK)
@@ -1489,13 +1494,49 @@ module internal ParseAndCheckFile =
                 | (BEGIN, END) -> true
                 | (LQUOTE q1, RQUOTE q2) -> q1 = q2
                 | _ -> false
+
             let rec matchBraces stack =
                 match lexfun lexbuf, stack with
-                | tok2, ((tok1, m1) :: stack') when parenTokensBalance tok1 tok2 ->
-                    matchingBraces.Add(m1, lexbuf.LexemeRange)
-                    matchBraces stack'
-                | ((LPAREN | LBRACE | LBRACK | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
+                | tok2, ((tok1, m1) :: stackAfterMatch) when parenTokensBalance tok1 tok2 ->
+                    let m2 = lexbuf.LexemeRange
+
+                    // For INTERP_STRING_PART and INTERP_STRING_END grab the one character
+                    // range that corresponds to the "}" at the start of the token
+                    let m2Start =
+                        match tok2 with 
+                        | INTERP_STRING_PART _
+                        | INTERP_STRING_END _ -> 
+                           Range.mkFileIndexRange m2.FileIndex m2.Start (mkPos m2.Start.Line (m2.Start.Column+1))
+                        | _ -> m2
+
+                    matchingBraces.Add(m1, m2Start)
+
+                    // INTERP_STRING_PART corresponds to both "} ... {" i.e. both the completion
+                    // of a match and the start of a potential new one.
+                    let stackAfterMatch = 
+                        match tok2 with 
+                        | INTERP_STRING_PART _ -> 
+                           let m2End = Range.mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column-1) 0)) m2.End
+                           (tok2, m2End) :: stackAfterMatch
+                        | _ -> stackAfterMatch
+
+                    matchBraces stackAfterMatch
+
+                | ((LPAREN | LBRACE | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
                      matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+
+                // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
+                //
+                // INTERP_STRING_PART corresponds to "} ... {" in the middle of an interpolated string (in
+                //   this case it msut not have matched something on the stack, e.g. an incomplete '[' in the
+                //   interpolation expression)
+                //
+                // Either way we start a new potential match at the last character
+                | ((INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _) as tok), _ ->
+                     let m = lexbuf.LexemeRange
+                     let m2 = Range.mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column-1) 0)) m.End
+                     matchBraces ((tok, m2) :: stack)
+
                 | (EOF _ | LEX_FAILURE _), _ -> ()
                 | _ -> matchBraces stack
             matchBraces [])

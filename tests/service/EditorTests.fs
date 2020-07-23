@@ -1372,3 +1372,52 @@ let ``Inherit ctor arg recovery`` () =
         let x = this
     """
     assertHasSymbolUsages ["x"] checkResults
+
+[<Test>]
+let ``Brace matching smoke test`` () = 
+    let input = 
+      """
+let x1 = { contents = 1 }
+let x2 = {| contents = 1 |}
+let x3 = [ 1 ]
+let x4 = [| 1 |]
+let x5 = $"abc{1}def"
+"""
+    let file = "/home/user/Test.fsx"
+    let braces = matchBraces(file, input) 
+
+    braces
+    |> Array.map (fun (r1,r2) -> 
+        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn), 
+        (r2.StartLine, r2.StartColumn, r2.EndLine, r2.EndColumn))
+    |> shouldEqual
+         [|((2, 9, 2, 10), (2, 24, 2, 25));
+           ((3, 9, 3, 11), (3, 25, 3, 27));
+           ((4, 9, 4, 10), (4, 13, 4, 14));
+           ((5, 9, 5, 11), (5, 14, 5, 16));
+           ((6, 8, 6, 15), (6, 16, 6, 17))|]
+     
+
+[<Test>]
+let ``Brace matching in interpolated strings`` () = 
+    let input = 
+      "
+let x5 = $\"abc{1}def\"
+let x6 = $\"abc{1}def{2}hij\"
+let x7 = $\"\"\"abc{1}def{2}hij\"\"\"
+let x8 = $\"\"\"abc{  {contents=1} }def{2}hij\"\"\"
+"
+    let file = "/home/user/Test.fsx"
+    let braces = matchBraces(file, input) 
+
+    braces
+    |> Array.map (fun (r1,r2) -> 
+        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn), 
+        (r2.StartLine, r2.StartColumn, r2.EndLine, r2.EndColumn))
+    |> shouldEqual
+        [|((2, 14, 2, 15), (2, 16, 2, 17)); ((3, 14, 3, 15), (3, 16, 3, 17));
+          ((3, 20, 3, 21), (3, 22, 3, 23)); ((4, 16, 4, 17), (4, 18, 4, 19));
+          ((4, 22, 4, 23), (4, 24, 4, 25)); ((5, 19, 5, 20), (5, 30, 5, 31));
+          ((5, 16, 5, 17), (5, 32, 5, 33)); ((5, 36, 5, 37), (5, 38, 5, 39))|]
+         
+
