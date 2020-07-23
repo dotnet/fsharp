@@ -12,7 +12,6 @@ open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
         
-#if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
@@ -927,4 +926,3 @@ module InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
-#endif
