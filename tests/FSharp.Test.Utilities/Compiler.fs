@@ -199,7 +199,6 @@ module rec Compiler =
         | _ -> failwith "Conversion isn't possible"
 
     let private processReferences (references: CompilationUnit list) =
-
         let rec loop acc = function
             | [] -> List.rev acc
             | x::xs ->
@@ -207,13 +206,13 @@ module rec Compiler =
                 | FS fs ->
                     let refs = loop [] fs.References
                     let source = getSource fs.Source
-                    let name = if Option.isSome fs.Name then fs.Name.Value else null
+                    let name = defaultArg fs.Name null
                     let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
                     let refs = loop [] cs.References
                     let source = getSource cs.Source
-                    let name = if Option.isSome cs.Name then cs.Name.Value else null
+                    let name = defaultArg cs.Name null
                     let metadataReferences = List.map asMetadataReference refs
                     let cmpl = CompilationUtil.CreateCSharpCompilation(source, cs.LangVersion, cs.TargetFramework, additionalReferences = metadataReferences.ToImmutableArray().As<MetadataReference>(), name = name)
                             |> CompilationReference.Create
@@ -279,7 +278,7 @@ module rec Compiler =
     let private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
 
         let source = getSource csSource.Source
-        let name = if Option.isSome csSource.Name then csSource.Name.Value else Guid.NewGuid().ToString ()
+        let name = defaultArg csSource.Name (Guid.NewGuid().ToString ())
 
         let additionalReferences =
             match processReferences csSource.References with
