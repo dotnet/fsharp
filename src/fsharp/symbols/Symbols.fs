@@ -2501,7 +2501,7 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
 [<Sealed>]
 type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modules: FSharpEntity list, types: FSharpType list, appliedScope: range, isOwnNamespace: bool) =
 
-    member __.Target= target
+    member __.Target = target
 
     member __.LongId = 
         match target with 
