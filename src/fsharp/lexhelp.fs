@@ -50,14 +50,16 @@ type LexResourceManager(?capacity: int) =
 
 /// Lexer parameters 
 type LexArgs =  
-    { defines: string list
-      mutable ifdefStack: LexerIfdefStack
+    {
+      defines: string list
       resourceManager: LexResourceManager
-      lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
+      pathMap: PathMap
+      mutable ifdefStack: LexerIfdefStack
+      mutable lightStatus : LightSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
-      pathMap: PathMap }
+    }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
 /// "\U000000E7", or "\UDEADBEEF" returning SurrogatePair, SingleChar, or Invalid, respectively
@@ -66,11 +68,11 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
+let mkLexargs (defines, lightStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
     { 
       defines = defines
       ifdefStack= ifdefStack
-      lightSyntaxStatus=lightSyntaxStatus
+      lightStatus=lightStatus
       resourceManager=resourceManager
       errorLogger=errorLogger
       applyLineDirectives=true
@@ -120,30 +122,30 @@ let stringBufferAsBytes (buf: ByteBuffer) =
     Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
 
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
 
-    member fin.Finish (buf: ByteBuffer) kind isPart =
+    member fin.Finish (buf: ByteBuffer) kind isPart cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isPart
+        f buf kind isPart cont
 
     static member Default =
-        LexerStringFinisher (fun buf kind isPart ->
+        LexerStringFinisher (fun buf kind isPart cont ->
             if kind.IsInterpolated then 
                 let s = stringBufferAsString buf
                 if kind.IsInterpolatedFirst then 
                     if isPart then 
-                        INTERP_STRING_BEGIN_PART s
+                        INTERP_STRING_BEGIN_PART (s, cont)
                     else
-                        INTERP_STRING_BEGIN_END s
+                        INTERP_STRING_BEGIN_END (s, cont)
                 else
                     if isPart then
-                        INTERP_STRING_PART s
+                        INTERP_STRING_PART (s, cont)
                     else
-                        INTERP_STRING_END s
+                        INTERP_STRING_END (s, cont)
             elif kind.IsByteString then 
-                BYTEARRAY (stringBufferAsBytes buf)
+                BYTEARRAY (stringBufferAsBytes buf, cont)
             else
-                STRING (stringBufferAsString buf)
+                STRING (stringBufferAsString buf, cont)
         ) 
 
 let addUnicodeString (buf: ByteBuffer) (x:string) =

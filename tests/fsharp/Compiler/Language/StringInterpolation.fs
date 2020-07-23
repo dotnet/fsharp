@@ -706,21 +706,44 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
   
     [<Test>]
     let ``String interpolation negative incomplete string`` () =
-        let code =    """
-
-let x1 = $"one %d{System.String.Empty} // incomplete string
-"""
+        let code =    """let x1 = $"one %d{System.String.Empty}"""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [||]
+            [|(FSharpErrorSeverity.Error, 10, (1, 1, 1, 39),
+               "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
+              (FSharpErrorSeverity.Error, 3379, (1, 38, 1, 39),
+               "Incomplete interpolated string begun at or before here")|]
   
     [<Test>]
     let ``String interpolation negative incomplete string fill`` () =
-        let code =    """
-
-let x1 = $"one %d{System.String.Empty // incomplete string fill
-"""
+        let code =    """let x1 = $"one %d{System.String.Empty"""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [||]
+            [|(FSharpErrorSeverity.Error, 10, (1, 1, 1, 38),
+               "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
+              (FSharpErrorSeverity.Error, 3378, (1, 18, 1, 19),
+               "Incomplete interpolated string expression fill begun at or before here")|]
   
+    [<Test>]
+    let ``String interpolation negative incomplete verbatim string`` () =
+        let code =    """let x1 = @$"one %d{System.String.Empty} """
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 10, (1, 1, 1, 41),
+               "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
+              (FSharpErrorSeverity.Error, 3380, (1, 39, 1, 40),
+               "Incomplete interpolated verbatim string begun at or before here")|]
+  
+    [<Test>]
+    let ``String interpolation negative incomplete triple quote string`` () =
+        let code = "let x1 = $\"\"\"one"
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Warning, 58, (1, 1, 1, 17),
+               "Possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this token further or using standard formatting conventions.");
+              (FSharpErrorSeverity.Warning, 58, (1, 17, 1, 17),
+               "Possible incorrect indentation: this token is offside of context started at position (1:1). Try indenting this token further or using standard formatting conventions.");
+              (FSharpErrorSeverity.Error, 10, (1, 1, 1, 17),
+               "Incomplete structured construct at or before this point in binding");
+              (FSharpErrorSeverity.Error, 3381, (1, 10, 1, 14),
+               "Incomplete interpolated triple-quote string begun at or before here")|]

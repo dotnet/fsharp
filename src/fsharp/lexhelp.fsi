@@ -14,6 +14,8 @@ open FSharp.Compiler.Range
 
 val stdinMockFilename: string
 
+/// Lexer args: status of #light processing.  Mutated when a #light
+/// directive is processed. This alters the behaviour of the lexfilter.
 [<Sealed>]
 type LightSyntaxStatus =
     new: initial:bool * warn: bool -> LightSyntaxStatus
@@ -26,15 +28,18 @@ type LightSyntaxStatus =
 type LexResourceManager =
     new: ?capacity: int -> LexResourceManager
 
+/// The context applicable to all lexing functions (tokens, strings etc.)
 type LexArgs =
-    { defines: string list
-      mutable ifdefStack: LexerIfdefStack
+    {
+      defines: string list
       resourceManager: LexResourceManager
-      lightSyntaxStatus: LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
+      pathMap: PathMap
+      mutable ifdefStack: LexerIfdefStack
+      mutable lightStatus : LightSyntaxStatus
       mutable stringNest: LexerInterpolatedStringNesting
-      pathMap: PathMap }
+    }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
@@ -50,9 +55,9 @@ val reusingLexbufForParsing: UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a
 val usingLexbufForParsing: UnicodeLexing.Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
 
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
     
-    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> isInterpolatedStringPart: bool -> token
+    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> isInterpolatedStringPart: bool -> cont: LexerContinuation -> token
 
     static member Default: LexerStringFinisher
 

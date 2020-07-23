@@ -1431,11 +1431,11 @@ module internal ParseAndCheckFile =
     let getLightSyntaxStatus fileName options =
         let lower = String.lowercase fileName
         let lightOnByDefault = List.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
-        let lightSyntaxStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
-        LightSyntaxStatus(lightSyntaxStatus, true)
+        let lightStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
+        LightSyntaxStatus(lightStatus, true)
 
     let createLexerFunction fileName options lexbuf (errHandler: ErrorHandler) =
-        let lightSyntaxStatus = getLightSyntaxStatus fileName options
+        let lightStatus = getLightSyntaxStatus fileName options
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
@@ -1446,10 +1446,10 @@ module internal ParseAndCheckFile =
         
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(defines, lightSyntaxStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
+        let lexargs = mkLexargs(defines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
-        let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
+        let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
     // Public callers are unable to answer LanguageVersion feature support questions.

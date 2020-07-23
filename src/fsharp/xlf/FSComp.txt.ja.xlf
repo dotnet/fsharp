@@ -237,14 +237,24 @@
         <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsNoEndOfInterpString">
-        <source>Incomplete interpolated string</source>
-        <target state="new">Incomplete interpolated string</target>
+      <trans-unit id="parsEofInInterpolatedString">
+        <source>Incomplete interpolated string begun at or before here</source>
+        <target state="new">Incomplete interpolated string begun at or before here</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsNoEndOfInterpStringFill">
-        <source>Incomplete interpolated string expression fill</source>
-        <target state="new">Incomplete interpolated string expression fill</target>
+      <trans-unit id="parsEofInInterpolatedStringFill">
+        <source>Incomplete interpolated string expression fill begun at or before here</source>
+        <target state="new">Incomplete interpolated string expression fill begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedTripleQuoteString">
+        <source>Incomplete interpolated triple-quote string begun at or before here</source>
+        <target state="new">Incomplete interpolated triple-quote string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedVerbatimString">
+        <source>Incomplete interpolated verbatim string begun at or before here</source>
+        <target state="new">Incomplete interpolated verbatim string begun at or before here</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">

@@ -170,7 +170,7 @@ type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
 /// the whitespace.
 [<RequireQualifiedAccess>]
 [<NoComparison; NoEquality>]
-type LexerWhitespaceContinuation =
+type LexerContinuation =
     | Token of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting
     | IfDefSkip of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
     | String of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * kind: LexerStringKind * range: range
@@ -179,6 +179,8 @@ type LexerWhitespaceContinuation =
     | StringInComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * int * range: range
     | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
     | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
+
+    static member Default = LexCont.Token([],[])
 
     member x.LexerIfdefStack =
         match x with
@@ -202,7 +204,7 @@ type LexerWhitespaceContinuation =
         | LexCont.EndLine (nesting=nesting)
         | LexCont.MLOnly (nesting=nesting) -> nesting
 
-and LexCont = LexerWhitespaceContinuation
+and LexCont = LexerContinuation
 
 //------------------------------------------------------------------------
 // Parse IL assembly code

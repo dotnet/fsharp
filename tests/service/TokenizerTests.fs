@@ -32,7 +32,7 @@ let tokenizeLines (lines:string[]) =
       yield n, parseLine(line, state, tokenizer) |> List.ofSeq ]
 
 [<Test>]
-let ``Tokenizer test 1``() =
+let ``Tokenizer test - simple let with string``() =
     let tokenizedLines = 
       tokenizeLines
         [| "// Sets the hello wrold variable"
@@ -60,7 +60,7 @@ let ``Tokenizer test 1``() =
         Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
 
 [<Test>]
-let ``Tokenizer test 2``() =
+let ``Tokenizer test 2 - single line non-nested string interpolation``() =
     let tokenizedLines = 
       tokenizeLines
         [| "// Tests tokenizing string interpolation"
@@ -126,7 +126,7 @@ let ``Tokenizer test 2``() =
 
 
 [<Test>]
-let ``Tokenizer test 3``() =
+let ``Tokenizer test - multiline non-nested string interpolation``() =
     let tokenizedLines = 
       tokenizeLines
         [| "let hello1t = $\"\"\"abc {1+"
@@ -139,8 +139,54 @@ let ``Tokenizer test 3``() =
         [(0,
           [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1t");
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
-           ("STRING_TEXT", "$\"\"\""); ("STRING_TEXT", "abc")]);
-         (1, [("STRING_TEXT", "def"); ("INTERP_STRING_BEGIN_END", "\"\"\"")])]
+           ("STRING_TEXT", "$\"\"\""); ("STRING_TEXT", "abc"); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{"); ("INT32", "1"); ("PLUS_MINUS_OP", "+")]);
+         (1,
+          [("WHITESPACE", " "); ("INT32", "1"); ("STRING_TEXT", "}");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])]
+  
+    if actual <> expected then 
+        printfn "actual   = %A" actual
+        printfn "expected = %A" expected
+        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+
+[<Test>]
+// checks nested '{' and nested single-quote strings
+let ``Tokenizer test - multi-line nested string interpolation``() =
+    let tokenizedLines = 
+      tokenizeLines
+        [| "let hello1t = $\"\"\"abc {\"a\" +               "
+           "                          {                     "
+           "                           contents = \"b\"     "
+           "                          }.contents            "
+           "                         } def\"\"\"" |]
+
+    let actual = 
+        [ for lineNo, lineToks in tokenizedLines do
+            yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
+    let expected = 
+        [(0,
+          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1t");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "$\"\"\""); ("STRING_TEXT", "abc"); ("STRING_TEXT", " ");
+           ("INTERP_STRING_BEGIN_PART", "{"); ("STRING_TEXT", "\""); ("STRING_TEXT", "a");
+           ("STRING", "\""); ("WHITESPACE", " "); ("PLUS_MINUS_OP", "+");
+           ("WHITESPACE", "               ")]);
+         (1,
+          [("WHITESPACE", "                          "); ("LBRACE", "{");
+           ("WHITESPACE", "                     ")]);
+         (2,
+          [("WHITESPACE", "                           "); ("IDENT", "contents");
+           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
+           ("STRING_TEXT", "\""); ("STRING_TEXT", "b"); ("STRING", "\"");
+           ("WHITESPACE", "     ")]);
+         (3,
+          [("WHITESPACE", "                          "); ("STRING_TEXT", "}");
+           ("STRING_TEXT", "."); ("STRING_TEXT", "contents");
+           ("STRING_TEXT", "            ")]);
+         (4,
+          [("STRING_TEXT", "                         "); ("STRING_TEXT", "}");
+           ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])]
   
     if actual <> expected then 
         printfn "actual   = %A" actual
