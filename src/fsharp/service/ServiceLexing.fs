@@ -427,9 +427,9 @@ module internal LexerStateEncoding =
 
     let encodeStringStyle kind =
         match kind with 
+        | LexerStringStyle.SingleQuote -> 0
         | LexerStringStyle.Verbatim -> 1
         | LexerStringStyle.TripleQuote -> 2
-        | LexerStringStyle.SingleQuote -> 3
 
     let decodeStringStyle kind =
         match kind with 
