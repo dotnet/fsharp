@@ -237,6 +237,16 @@
         <target state="translated">包管理功能需要语言版本 5.0，请使用 /langversion:preview</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsNoEndOfInterpString">
+        <source>Incomplete interpolated string</source>
+        <target state="new">Incomplete interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNoEndOfInterpStringFill">
+        <source>Incomplete interpolated string expression fill</source>
+        <target state="new">Incomplete interpolated string expression fill</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">成员定义中有意外的符号 "."。预期 "with"、"+" 或其他标记。</target>

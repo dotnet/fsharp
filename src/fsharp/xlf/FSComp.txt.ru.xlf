@@ -237,6 +237,16 @@
         <target state="translated">Для функции управления пакетами требуется версия языка 5.0, используйте параметр /langversion:preview</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsNoEndOfInterpString">
+        <source>Incomplete interpolated string</source>
+        <target state="new">Incomplete interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNoEndOfInterpStringFill">
+        <source>Incomplete interpolated string expression fill</source>
+        <target state="new">Incomplete interpolated string expression fill</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Неожиданный символ "." в определении члена. Ожидаемые инструкции: "with", "=" или другие токены.</target>

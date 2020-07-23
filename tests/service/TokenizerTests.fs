@@ -69,9 +69,7 @@ let ``Tokenizer test 2``() =
            "let hello2 = $\"Hello world {1+1} = {2}\" "
            "let hello0v = @$\"\""
            "let hello1v = @$\"Hello world\"  "
-           "let hello2v = @$\"Hello world {1+1} = {2}\" " 
-           "let hello1t = @$\"\"\"abc\"\"\""
-           "let hello2t = @$\"\"\"Hello world {1+1} = {2}\"\"\" " |]
+           "let hello2v = @$\"Hello world {1+1} = {2}\" " |]
 
     let actual = 
         [ for lineNo, lineToks in tokenizedLines do
@@ -119,22 +117,30 @@ let ``Tokenizer test 2``() =
            ("INT32", "1"); ("STRING_TEXT", "}"); ("STRING_TEXT", " ");
            ("STRING_TEXT", "="); ("STRING_TEXT", " "); ("INTERP_STRING_PART", "{");
            ("INT32", "2"); ("STRING_TEXT", "}"); ("INTERP_STRING_END", "\"");
-           ("WHITESPACE", " ")]);
-         (7,
+           ("WHITESPACE", " ")]);]
+  
+    if actual <> expected then 
+        printfn "actual   = %A" actual
+        printfn "expected = %A" expected
+        Assert.Fail(sprintf "actual and expected did not match,actual =\n%A\nexpected=\n%A\n" actual expected)
+
+
+[<Test>]
+let ``Tokenizer test 3``() =
+    let tokenizedLines = 
+      tokenizeLines
+        [| "let hello1t = $\"\"\"abc {1+"
+           " 1} def\"\"\"" |]
+
+    let actual = 
+        [ for lineNo, lineToks in tokenizedLines do
+            yield lineNo, [ for str, info in lineToks do yield info.TokenName, str ] ]
+    let expected = 
+        [(0,
           [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello1t");
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
-           ("STRING_TEXT", "@$\""); ("STRING_TEXT", "\"\""); ("STRING_TEXT", "abc");
-           ("STRING_TEXT", "\"\""); ("INTERP_STRING_BEGIN_END", "\"")]);
-         (8,
-          [("LET", "let"); ("WHITESPACE", " "); ("IDENT", "hello2t");
-           ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
-           ("STRING_TEXT", "@$\""); ("STRING_TEXT", "\"\""); ("STRING_TEXT", "Hello");
-           ("STRING_TEXT", " "); ("STRING_TEXT", "world"); ("STRING_TEXT", " ");
-           ("INTERP_STRING_BEGIN_PART", "{"); ("INT32", "1"); ("PLUS_MINUS_OP", "+");
-           ("INT32", "1"); ("STRING_TEXT", "}"); ("STRING_TEXT", " ");
-           ("STRING_TEXT", "="); ("STRING_TEXT", " "); ("INTERP_STRING_PART", "{");
-           ("INT32", "2"); ("STRING_TEXT", "}"); ("STRING_TEXT", "\"\"");
-           ("INTERP_STRING_END", "\""); ("WHITESPACE", " ")])]
+           ("STRING_TEXT", "$\"\"\""); ("STRING_TEXT", "abc")]);
+         (1, [("STRING_TEXT", "def"); ("INTERP_STRING_BEGIN_END", "\"\"\"")])]
   
     if actual <> expected then 
         printfn "actual   = %A" actual

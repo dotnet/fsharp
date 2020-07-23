@@ -26,16 +26,14 @@ type LightSyntaxStatus =
 type LexResourceManager =
     new: ?capacity: int -> LexResourceManager
 
-type lexargs =
+type LexArgs =
     { defines: string list
       mutable ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus: LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
-      /// The degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
-      /// Nesting counters and styles of outer interpolating strings are pushed on this stack.
-      mutable interpolatedStringNesting: (int* LexerStringStyle) list
+      mutable stringNest: LexerInterpolatedStringNesting
       pathMap: PathMap }
 
 type LongUnicodeLexResult =
@@ -45,7 +43,7 @@ type LongUnicodeLexResult =
 
 val resetLexbufPos: string -> UnicodeLexing.Lexbuf -> unit
 
-val mkLexargs: 'a * string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger * PathMap -> lexargs
+val mkLexargs: string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger * PathMap -> LexArgs
 
 val reusingLexbufForParsing: UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a 
 
@@ -92,9 +90,9 @@ exception IndentationProblem of string * Range.range
 
 module Keywords = 
 
-    val KeywordOrIdentifierToken: lexargs -> UnicodeLexing.Lexbuf -> string -> token
+    val KeywordOrIdentifierToken: LexArgs -> UnicodeLexing.Lexbuf -> string -> token
 
-    val IdentifierToken: lexargs -> UnicodeLexing.Lexbuf -> string -> token
+    val IdentifierToken: LexArgs -> UnicodeLexing.Lexbuf -> string -> token
 
     val DoesIdentifierNeedQuotation: string -> bool
 

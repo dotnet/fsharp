@@ -49,14 +49,14 @@ type LexResourceManager(?capacity: int) =
             res
 
 /// Lexer parameters 
-type lexargs =  
+type LexArgs =  
     { defines: string list
       mutable ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
       errorLogger: ErrorLogger
       applyLineDirectives: bool
-      mutable interpolatedStringNesting: (int* LexerStringStyle) list
+      mutable stringNest: LexerInterpolatedStringNesting
       pathMap: PathMap }
 
 /// possible results of lexing a long Unicode escape sequence in a string literal, e.g. "\U0001F47D",
@@ -66,7 +66,7 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
+let mkLexargs (defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger, pathMap:PathMap) =
     { 
       defines = defines
       ifdefStack= ifdefStack
@@ -74,7 +74,7 @@ let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStac
       resourceManager=resourceManager
       errorLogger=errorLogger
       applyLineDirectives=true
-      interpolatedStringNesting = []
+      stringNest = []
       pathMap=pathMap
     }
 

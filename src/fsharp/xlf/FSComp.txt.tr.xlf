@@ -237,6 +237,16 @@
         <target state="translated">Paket yönetimi özelliği dil sürümü 5.0 gerektiriyor, /langversion:preview kullanın</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsNoEndOfInterpString">
+        <source>Incomplete interpolated string</source>
+        <target state="new">Incomplete interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNoEndOfInterpStringFill">
+        <source>Incomplete interpolated string expression fill</source>
+        <target state="new">Incomplete interpolated string expression fill</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Üye tanımında '.' sembolü beklenmiyordu. 'with', '=' veya başka bir belirteç bekleniyordu.</target>

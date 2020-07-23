@@ -93,22 +93,26 @@ let raiseParseErrorAt m s =
 
 let checkEndOfFileError t = 
   match t with 
-  | LexCont.IfDefSkip(_, _, m)                      -> reportParseErrorAt m (FSComp.SR.parsEofInHashIf())
-  | LexCont.String (_, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInString())
-  | LexCont.String (_, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
-  | LexCont.String (_, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
-  | LexCont.Comment (_, _, m)                       -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
-  | LexCont.SingleLineComment (_, _, m)             -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
-  | LexCont.StringInComment (_, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
-  | LexCont.StringInComment (_, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
-  | LexCont.StringInComment (_, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
-  | LexCont.MLOnly (_, m)                           -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
-  | LexCont.EndLine(LexerEndlineContinuation.Skip(_, _, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective())
-  | LexCont.EndLine(LexerEndlineContinuation.Token(stack))
-  | LexCont.Token(stack) -> 
-      match stack with 
+  | LexCont.IfDefSkip(_, _, _, m)                      -> reportParseErrorAt m (FSComp.SR.parsEofInHashIf())
+  | LexCont.String (_, _, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInString())
+  | LexCont.String (_, _, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
+  | LexCont.String (_, _, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
+  | LexCont.Comment (_, _, _, m)                       -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
+  | LexCont.SingleLineComment (_, _, _, m)             -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
+  | LexCont.StringInComment (_, _, LexerStringStyle.SingleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
+  | LexCont.StringInComment (_, _, LexerStringStyle.Verbatim, _, m)    -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
+  | LexCont.StringInComment (_, _, LexerStringStyle.TripleQuote, _, m) -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
+  | LexCont.MLOnly (_, _, m)                           -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
+  | LexCont.EndLine(_, _, LexerEndlineContinuation.Skip(_, m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective())
+  | LexCont.EndLine(endifs, nesting, LexerEndlineContinuation.Token)
+  | LexCont.Token(endifs, nesting) -> 
+      match endifs with 
       | [] -> ()
       | (_, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsNoHashEndIfFound())
+      match nesting with 
+      | [] -> ()
+      | (1, _, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsNoEndOfInterpStringFill())
+      | (_, _, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsNoEndOfInterpString())
 
 type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
 

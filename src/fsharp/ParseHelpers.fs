@@ -116,6 +116,7 @@ type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
 
+/// Represents the active #if/#else blocks
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
 
 type LexerIfdefStack = LexerIfdefStackEntries
@@ -124,12 +125,8 @@ type LexerIfdefStack = LexerIfdefStackEntries
 /// it reaches end of line or eof. The options are to continue with 'token' function
 /// or to continue with 'skip' function.
 type LexerEndlineContinuation =
-    | Token of LexerIfdefStackEntries
-    | Skip of LexerIfdefStackEntries * int * range: range
-    member x.LexerIfdefStack =
-      match x with
-      | LexerEndlineContinuation.Token ifd
-      | LexerEndlineContinuation.Skip(ifd, _, _) -> ifd
+    | Token 
+    | Skip of int * range: range
 
 type LexerIfdefExpression =
     | IfdefAnd of LexerIfdefExpression*LexerIfdefExpression
@@ -163,6 +160,10 @@ type LexerStringKind =
     static member InterpolatedStringFirst = { IsByteString = false; IsInterpolated = true; IsInterpolatedFirst=true }
     static member InterpolatedStringPart = { IsByteString = false; IsInterpolated = true; IsInterpolatedFirst=false }
 
+/// Represents the degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
+/// Nesting counters and styles of outer interpolating strings are pushed on this stack.
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of
 /// a continuation for the lexer for continued processing after we've dealt with
@@ -170,14 +171,14 @@ type LexerStringKind =
 [<RequireQualifiedAccess>]
 [<NoComparison; NoEquality>]
 type LexerWhitespaceContinuation =
-    | Token of ifdef: LexerIfdefStackEntries
-    | IfDefSkip of ifdef: LexerIfdefStackEntries * int * range: range
-    | String of ifdef: LexerIfdefStackEntries * style: LexerStringStyle * kind: LexerStringKind * range: range
-    | Comment of ifdef: LexerIfdefStackEntries * int * range: range
-    | SingleLineComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | StringInComment of ifdef: LexerIfdefStackEntries * style: LexerStringStyle * int * range: range
-    | MLOnly of ifdef: LexerIfdefStackEntries * range: range
-    | EndLine of LexerEndlineContinuation
+    | Token of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting
+    | IfDefSkip of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
+    | String of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * kind: LexerStringKind * range: range
+    | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
+    | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
+    | StringInComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * int * range: range
+    | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
+    | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
 
     member x.LexerIfdefStack =
         match x with
@@ -187,8 +188,19 @@ type LexerWhitespaceContinuation =
         | LexCont.Comment (ifdef=ifd)
         | LexCont.SingleLineComment (ifdef=ifd)
         | LexCont.StringInComment (ifdef=ifd)
+        | LexCont.EndLine (ifdef=ifd)
         | LexCont.MLOnly (ifdef=ifd) -> ifd
-        | LexCont.EndLine endl -> endl.LexerIfdefStack
+
+    member x.LexerInterpStringNesting =
+        match x with
+        | LexCont.Token (nesting=nesting)
+        | LexCont.IfDefSkip (nesting=nesting)
+        | LexCont.String (nesting=nesting)
+        | LexCont.Comment (nesting=nesting)
+        | LexCont.SingleLineComment (nesting=nesting)
+        | LexCont.StringInComment (nesting=nesting)
+        | LexCont.EndLine (nesting=nesting)
+        | LexCont.MLOnly (nesting=nesting) -> nesting
 
 and LexCont = LexerWhitespaceContinuation
 

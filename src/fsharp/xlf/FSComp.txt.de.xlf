@@ -237,6 +237,16 @@
         <target state="translated">Für das Paketverwaltungsfeature ist Sprachversion 5.0 erforderlich. Verwenden Sie /langversion:preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsNoEndOfInterpString">
+        <source>Incomplete interpolated string</source>
+        <target state="new">Incomplete interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNoEndOfInterpStringFill">
+        <source>Incomplete interpolated string expression fill</source>
+        <target state="new">Incomplete interpolated string expression fill</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Unerwartetes Symbol "." in der Memberdefinition. Erwartet wurde "with", "=" oder ein anderes Token.</target>
