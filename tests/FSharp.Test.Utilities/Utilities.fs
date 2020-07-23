@@ -4,6 +4,7 @@ namespace FSharp.Test.Utilities
 
 open System
 open System.IO
+open System.Reflection
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -20,7 +21,6 @@ module Utilities =
         | NetCoreApp30
 
     module private TestReferences =
-
         [<RequireQualifiedAccess>]
         module NetStandard20 =
             let netStandard = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netstandard20.netstandard).GetReference(display = "netstandard.dll (netstandard 2.0 ref)")
@@ -38,8 +38,9 @@ module Utilities =
             let systemDynamicRuntimeRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Dynamic_Runtime).GetReference(display = "System.Dynamic.Runtime.dll (netcoreapp 3.0 ref)")
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(TestResources.NetFX.netcoreapp30.System_Console).GetReference(display = "System.Console.dll (netcoreapp 3.0 ref)")
 
+
     [<RequireQualifiedAccess>]
-    module private TargetFrameworkUtil =
+    module internal TargetFrameworkUtil =
 
         open TestReferences
 
@@ -60,8 +61,6 @@ module Utilities =
         | None = 0x0
         | InternalsVisibleTo = 0x1
 
-    // TODO: this and Compilation.Compile needs to be merged for sake of consistency.
-    // TODO: After merging, add new type of FSharp compilation.
     [<RequireQualifiedAccess>]
     type TestCompilation =
         | CSharp of CSharpCompilation

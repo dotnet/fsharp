@@ -1,18 +1,27 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ConstraintSolver.ComponentTests
 
-open NUnit.Framework
-open FSharp.Test.Utilities
-open FSharp.Compiler.SourceCodeServices
+open Xunit
+open FSharp.Test.Utilities.Compiler
 
-[<TestFixture>]
 module PrimitiveConstraints =
 
-    [<Test>]
+    [<Fact>]
+    /// Title: Type checking oddity
+    ///
+    /// This suggestion was resolved as by design,
+    /// so the test makes sure, we're emitting error message about 'not being a valid object construction expression'
+    let ``Invalid object constructor`` () = // Regression test for FSharp1.0:4189
+        baseline
+            ((__SOURCE_DIRECTORY__ ++ "../testables/"), "typecheck/constructors/neg_invalid_constructor.fs")
+            |> withOptions ["--test:ErrorRanges"]
+            |> typecheck
+
+
+    [<Fact>]
     let ``Test primitive : constraints``() =
-        CompilerAssert.CompileExeAndRun
-            """
+        FSharp"""
 #light
 
 type Foo(x : int) =
@@ -33,12 +42,12 @@ let b = new Bar(256)
 if test1 f <> 128       then failwith "test1 f <> 128"
 elif test2 b <> (-1, 256) then failwith "test2 b <> (-1, 256)"
 else ()
-"""
+        """
+        |> compileExeAndRun
 
-    [<Test>]
+    [<Fact>]
     let ``Test primitive :> constraints``() =
-        CompilerAssert.CompileExeAndRun
-            """
+        FSharp"""
 #light
 type Foo(x : int) =
     member   this.Value      = x
@@ -64,12 +73,12 @@ if test f <> (128, "Foo") then failwith "test f <> (128, 'Foo')"
 elif test b <> (-1, "Bar") then failwith "test b <> (-1, 'Bar')"
 elif test r <> (10, "Ram") then failwith "test r <> (10, 'Ram')"
 else ()
-"""
+        """
+        |> compileExeAndRun
 
-    [<Test>]
+    [<Fact>]
     let ``Test primitive : null constraint``() =
-        CompilerAssert.CompileExeAndRun
-            """
+        FSharp"""
 let inline isNull<'a when 'a : null> (x : 'a) =
     match x with
     | null -> "is null"
@@ -84,12 +93,5 @@ let runTest =
     with _ -> reraise()
 
 runTest
-"""
-
-    [<Test>]
-    /// Title: Type checking oddity
-    ///
-    /// This suggestion was resolved as by design,
-    /// so the test makes sure, we're emitting error message about 'not being a valid object construction expression'
-    let ``Invalid object constructor``() = // Regression test for FSharp1.0:4189
-        CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine [| "--test:ErrorRanges" |] (__SOURCE_DIRECTORY__ ++ "../../") "typecheck/constructors/neg_invalid_constructor.fs"
+        """
+        |> compileExeAndRun

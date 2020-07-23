@@ -37,6 +37,10 @@
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
+    <Compile Include="Language\CompilerDirectiveTests.fs" />
+    <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
+    <Compile Include="ConstraintSolver\MemberConstraints.fs" />
+    <Compile Include="Interop/SimpleInteropTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
