@@ -69,24 +69,49 @@
   <Target Name="BeforeResGen"
           Inputs="@(EmbeddedResource->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
           Outputs="@(EmbeddedResource->'$(IntermediateOutputPath)resources\%(Filename)%(Extension)')"
-          DependsOnTargets="CopyVsixResources"
           Condition="'$(Configuration)' != 'Proto' and '$(Language)'=='F#' and '$(DisableCompilerRedirection)' != 'true' ">
+
+    <MakeDir Directories="$(IntermediateOutputPath)" Condition="!Exists('$(IntermediateOutputPath)')" />
+    <MakeDir Directories="$(IntermediateOutputPath)resources\" Condition="!Exists('$(IntermediateOutputPath)resources\')" />
 
     <SubstituteText EmbeddedResources="@(EmbeddedResource)">
       <Output TaskParameter="CopiedFiles" ItemName="CopiedFiles" />
     </SubstituteText>
 
     <ItemGroup>
+      <IntermediateFiles Include="$(IntermediateOutputPath)\*.resx" />
+      <IntermediateResourcesFiles Include="$(IntermediateOutputPath)resources\*.resx" />
+    </ItemGroup>
+
+    <!-- IntermediateFiles Hashes -->
+    <GetFileHash Files="@(IntermediateFiles)">
+      <Output
+          TaskParameter="Items"
+          ItemName="IntermediateFilesHashes" />
+    </GetFileHash>
+
+    <Hash ItemsToHash="@(IntermediateFilesHashes->'%(FileHash)')">
+      <Output TaskParameter="HashResult" PropertyName="IntermediateFilesHash" />
+    </Hash>
+
+    <!-- CopiedFilesForHash Hashes -->
+    <GetFileHash Files="@(IntermediateResourceFilesForHash)">
+      <Output
+          TaskParameter="Items"
+          ItemName="IntermediateResourceFilesHashes" />
+    </GetFileHash>
+
+    <Hash ItemsToHash="@(IntermediateResourceFilesHashes->'%(FileHash)')">
+      <Output TaskParameter="HashResult" PropertyName="IntermediateResourceFilesHash" />
+    </Hash>
+
+    <!-- Update EmbeddedResources -->
+    <ItemGroup Condition="'$(IntermediateFilesHash)' != '$(IntermediateResourceFilesHash)'">
         <EmbeddedResource Remove="@(EmbeddedResource)"/>
         <EmbeddedResource Include="@(CopiedFiles)"/>
     </ItemGroup>
 
-    <MakeDir Directories="$(IntermediateOutputPath)" Condition="!Exists('$(IntermediateOutputPath)')" />
-    <MakeDir Directories="$(IntermediateOutputPath)resources\" Condition="!Exists('$(IntermediateOutputPath)resources\')" />
-  </Target>
-
-  <Target Name="CopyVsixResources">
-    <Copy SourceFiles="@(CopyVsixResources)" DestinationFolder="$(IntermediateOutputPath)\resources\Resources" />
+    <Copy SourceFiles="@(CopyVsixResources)" DestinationFolder="$(IntermediateOutputPath)\resources\Resources" Condition="'$(IntermediateFilesHash)' != '$(IntermediateResourceFilesHash)'" />
   </Target>
 
 </Project>
