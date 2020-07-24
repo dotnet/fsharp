@@ -6,6 +6,7 @@ open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
+open FSharp.Test.Utilities.Compiler
 
 [<TestFixture>]
 module OpenTypeDeclarationTests =
@@ -35,17 +36,20 @@ type NotAllowedToOpen() =
 
     [<Test>]
     let ``OpenSystemMathOnce - langversion:v4_6`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.6" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenSystemMathOnce =
 
                open type System.Math
-               let x = Min(1.0, 2.0)""")
-            [|
-                (FSharpErrorSeverity.Error, 3350, (22, 16, 22, 37), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (FSharpErrorSeverity.Error, 39, (23,24,23,27), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-            |]
+               let x = Min(1.0, 2.0)
+        """)
+        |> withOptions ["--langversion:4.6"]
+        |> typecheck
+        |> withDiagnostics
+            [
+                (Error 3350, Line 22, Col 16, Line 22, Col 37, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (Error 39, Line 23, Col 24, Line 23, Col 27, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
+            ]
+        |> ignore
 
     [<Test>]
     let ``OpenSystemMathOnce - langversion:preview`` () =
@@ -802,19 +806,18 @@ let main _ =
 
     [<Test>]
     let ``Opened types do no allow unqualified access to their inherited type's members - Error`` () =
-        let fsharpSource =
-            """
+        Fsx """
 open type System.Math
 
 let x = Equals(2.0, 3.0)
             """
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|])
-
-        CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 39, (4, 9, 4, 15), "The value or constructor 'Equals' is not defined.")
-        |])
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+               ( Error 39, Line 4, Col 9, Line 4, Col 15, "The value or constructor 'Equals' is not defined.")
+            ]
+        |> ignore
 
     [<Test>]
     let ``Opened types do no allow unqualified access to C#-style extension methods - Error`` () =
