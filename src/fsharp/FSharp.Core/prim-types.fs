@@ -3994,6 +3994,19 @@ namespace Microsoft.FSharp.Core
         [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~+) (value: ^T) : ^T =
              value
+             when ^T : int32      = value
+             when ^T : float      = value
+             when ^T : float32    = value
+             when ^T : int64      = value
+             when ^T : uint64     = value
+             when ^T : uint32     = value
+             when ^T : int16      = value
+             when ^T : uint16     = value
+             when ^T : nativeint  = value
+             when ^T : unativeint = value
+             when ^T : sbyte      = value
+             when ^T : byte       = value
+             when ^T : decimal    = value
              when ^T : ^T = (^T: (static member (~+) : ^T -> ^T) (value))
 
         [<NoDynamicInvocation(isLegacy=true)>]
