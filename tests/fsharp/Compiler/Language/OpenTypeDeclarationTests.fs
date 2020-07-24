@@ -40,8 +40,7 @@ type NotAllowedToOpen() =
 module OpenSystemMathOnce =
 
                open type System.Math
-               let x = Min(1.0, 2.0)
-        """)
+               let x = Min(1.0, 2.0)""")
         |> withOptions ["--langversion:4.6"]
         |> typecheck
         |> withDiagnostics
@@ -53,20 +52,19 @@ module OpenSystemMathOnce =
 
     [<Test>]
     let ``OpenSystemMathOnce - langversion:preview`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenSystemMathOnce =
 
                        open type System.Math
                        let x = Min(1.0, 2.0)""")
-            [| |]
+         |> withOptions ["--langversion:preview"]
+         |> typecheck
+         |> shouldSucceed
+         |> ignore
 
     [<Test>]
     let ``OpenSystemMathTwice - langversion:v4_6`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.6" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenSystemMathTwice = 
 
     open type System.Math
@@ -74,117 +72,132 @@ module OpenSystemMathTwice =
 
     open type System.Math
     let x2 = Min(2.0, 1.0)""")
-            [|
-                (FSharpErrorSeverity.Error, 3350, (22, 5, 22, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-                (FSharpErrorSeverity.Error, 3350, (25, 5, 25, 26), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (FSharpErrorSeverity.Error, 39, (26,14,26,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-            |]
+        |> withOptions ["--langversion:4.6"]
+        |> typecheck
+        |> withDiagnostics
+            [
+                (Error 3350, Line 22, Col 5, Line 22, Col 26, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (Error 39, Line 23, Col 13, Line 23, Col 16, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
+                (Error 3350, Line 25, Col 5, Line 25, Col 26, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (Error 39, Line 26, Col 14, Line 26, Col 17, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
+            ]
+        |> ignore
 
     [<Test>]
     let ``OpenSystemMathTwice - langversion:preview`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenSystemMathOnce =
 
                    open type System.Math
                    let x = Min(1.0, 2.0)""")
-            [| |]
+        |> withOptions ["--langversion:preview"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``OpenMyMathOnce - langversion:v4_6`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.6" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenMyMathOnce = 
 
     open type MyMath
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
-            [|
-                (FSharpErrorSeverity.Error, 3350, (22, 5, 22, 21), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (FSharpErrorSeverity.Error, 39, (23,13,23,16), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-                (FSharpErrorSeverity.Error, 39, (24,14,24,17), "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
-            |]
+        |> withOptions ["--langversion:4.6"]
+        |> typecheck
+        |> withDiagnostics
+            [
+                (Error 3350, Line 22, Col 5, Line 22, Col 21, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (Error 39, Line 23, Col 13, Line 23, Col 16, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
+                (Error 39, Line 24, Col 14, Line 24, Col 17, "The value or constructor 'Min' is not defined. Maybe you want one of the following:\r\n   min\r\n   sin")
+            ]
+        |> ignore
 
     [<Test>]
     let ``OpenMyMathOnce - langversion:preview`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenMyMathOnce = 
 
     open type MyMath
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
-            [| |]
+        |> withOptions ["--langversion:preview"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``DontOpenAutoMath - langversion:v4_6`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.6" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module DontOpenAutoMath = 
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-            [|
-                (FSharpErrorSeverity.Error, 39, (22,13,22,20), "The value or constructor 'AutoMin' is not defined.")
-                (FSharpErrorSeverity.Error, 39, (23,14,23,21), "The value or constructor 'AutoMin' is not defined.")
-            |]
+        |> withOptions ["--langversion:4.6"]
+        |> typecheck
+        |> withDiagnostics
+            [
+                (Error 39, Line 22, Col 13, Line 22, Col 20, "The value or constructor 'AutoMin' is not defined.")
+                (Error 39, Line 23, Col 14, Line 23, Col 21, "The value or constructor 'AutoMin' is not defined.")
+            ]
+        |> ignore
 
     [<Test>]
     let ``DontOpenAutoMath - langversion:preview`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module DontOpenAutoMath = 
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-            [| |]
+        |> withOptions ["--langversion:preview"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``OpenAutoMath - langversion:v4_6`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:4.6" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenAutoMath = 
     open type AutoOpenMyMath
     //open type NotAllowedToOpen
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-            [|
-                (FSharpErrorSeverity.Error, 3350, (21, 5, 21, 29), "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
-                (FSharpErrorSeverity.Error, 39, (24,13,24,20), "The value or constructor 'AutoMin' is not defined.")
-                (FSharpErrorSeverity.Error, 39, (25,14,25,21), "The value or constructor 'AutoMin' is not defined.")
-            |]
+        |> withOptions ["--langversion:4.6"]
+        |> typecheck
+        |> withDiagnostics
+            [
+                (Error 3350, Line 21, Col 5, Line 21, Col 29, "Feature 'open type declaration' is not available in F# 4.6. Please use language version " + targetVersion + " or greater.")
+                (Error 39, Line 24, Col 13, Line 24, Col 20, "The value or constructor 'AutoMin' is not defined.")
+                (Error 39, Line 25, Col 14, Line 25, Col 21, "The value or constructor 'AutoMin' is not defined.")
+            ]
+        |> ignore
 
     [<Test>]
     let ``OpenAutoMath - langversion:preview`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenAutoMath = 
     open type AutoOpenMyMath
     //open type NotAllowedToOpen
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-            [| |]
+        |> withOptions ["--langversion:preview"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``OpenAccessibleFields - langversion:preview`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
-            (baseModule + """
+        Fsx (baseModule + """
 module OpenAFieldFromMath =
     open type System.Math
     
     let pi = PI""")
-            [||]
+        |> withOptions ["--langversion:preview"]
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Open type and use nested types as unqualified`` () =
