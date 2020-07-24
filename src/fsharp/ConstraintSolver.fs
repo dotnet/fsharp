@@ -1030,7 +1030,7 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
 
     // Catch System.Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,...> = 'T1*'T2*'T3*'T4*'T5*'T6*'T7*...
     | TType_app (tc1, [a1;b1;c1;d1;e1;f1;g1;rest1]), TType_tuple (tupInfo, [a2;b2;c2;d2;e2;f2;g2;h2]) when IsEncodedTuple tupInfo g tc1 ->
-        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;rest1] [a2;b2;c2;d2;e2;f2;g2;TType_app (if evalTupInfoIsStruct tupInfo then g.struct_tuple1_tcr else g.ref_tuple1_tcr, [h2])]
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;rest1] [a2;b2;c2;d2;e2;f2;g2;TType_app ((if evalTupInfoIsStruct tupInfo then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [h2])]
     | TType_app (tc1, [a1;b1;c1;d1;e1;f1;g1;rest1]), TType_tuple (tupInfo, a2::b2::c2::d2::e2::f2::g2::rest2) when IsEncodedTuple tupInfo g tc1 ->
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;rest1] [a2;b2;c2;d2;e2;f2;g2;TType_tuple (tupInfo, rest2)]
 
