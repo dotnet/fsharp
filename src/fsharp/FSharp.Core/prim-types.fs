@@ -3993,7 +3993,7 @@ namespace Microsoft.FSharp.Core
         
         [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~+) (value: ^T) : ^T =
-             UnaryPlusDynamic<(^T)> value
+             value
              when ^T : ^T = (^T: (static member (~+) : ^T -> ^T) (value))
 
         [<NoDynamicInvocation(isLegacy=true)>]
