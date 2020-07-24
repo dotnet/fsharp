@@ -254,6 +254,25 @@ type VersionFlag =
     member GetVersionInfo: implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString: implicitIncludeDir:string -> string
 
+type LType =
+    | Resolution
+    | RestoreSource
+
+type LStatus =
+    | Unprocessed
+    | Processed
+
+type PackageManagerLine =
+    { LineType: LType
+      LineStatus: LStatus
+      Line: string
+      Range: range }
+
+    static member AddLineWithKey: string -> LType -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member RemoveUnprocessedLines: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member StripDependencyManagerKey: string -> string -> string
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -277,8 +296,7 @@ type TcConfigBuilder =
       mutable loadedSources: (range * string * string) list
       mutable compilerToolPaths: string  list
       mutable referencedDLLs: AssemblyReference  list
-      mutable packageManagerLines: Map<string, (bool * string * range) list>
-
+      mutable packageManagerLines: Map<string, PackageManagerLine list>
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
       reduceMemoryUsage: ReduceMemoryFlag
@@ -396,8 +414,7 @@ type TcConfigBuilder =
 
       mutable langVersion : LanguageVersion
 
-      mutable dependencyProvider : DependencyProvider
-
+      mutable dependencyProvider: DependencyProvider
     }
 
     static member Initial: TcConfigBuilder
@@ -694,7 +711,7 @@ val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: s
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * range * string -> 'T) * ('T -> range * string -> unit)) 
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * LType * range * string -> 'T) * ('T -> range * string -> unit))
     -> TcConfigBuilder * ParsedInput * string * 'T 
     -> 'T
 
