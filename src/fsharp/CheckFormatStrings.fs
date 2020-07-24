@@ -50,32 +50,51 @@ let newInfo () =
     precision      = false}
 
 let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt printerArgTy printerResidueTy = 
-    printfn "--------------------" 
-    printfn "context.IsSome = %b" context.IsSome
-    printfn "fmt  = <<<%s>>>" fmt
-    printfn "isInterpolated = %b" isInterpolated
-    printfn "fragRanges = %A" fragRanges
+
+    // As background: the F# compiler tokenizes strings on the assumption that the only thing you need from
+    // them is the actual corresponding text, e.g. of a string literal.  This means many different textual strings
+    // in the input file correspond to the 'fmt' string we have here.
+    //
+    // The problem with this is that when we go to colorize the format specifiers in string, we need to do
+    // that with respect to the original string source text in order to lay down accurate colorizations.
+    //
+    // One approach would be to change the F# lexer to also crack every string in a more structured way, recording
+    // both the original source text and the actual string literal.  However this would be invasive and possibly
+    // too expensive since the vast majority of strings don't need this treatment.
+    //
+    // So instead, for format strings alone - and only when processing in the IDE - we crack the "original"
+    // source of the string by going back and getting the format string from the input source file by using the
+    // relevant ranges
+    //
+    // For interpolated strings this may involve many fragments, e.g. 
+    //     $"abc %d{"
+    //     "} def %s{"
+    //     "} xyz"
+    // In this case we are given the range of each fragment.
+    //
+    // One annoying thing is that we must lop off the quotations, $, {, } symbols off the end of each string fragment.
+    // This information should probably be given to us by the lexer.
     let fmt, fragments = 
-        // In the foreground checking of the IDE we crack the string accurately
-        // by going back and getting the fragments of the format string from the original source.
-        //
-        // The offset is used to adjust ranges depending on whether input string is
-        // regular, verbatim or triple-quote etc.
+        //printfn "--------------------" 
+        //printfn "context.IsSome = %b" context.IsSome
+        //printfn "fmt  = <<<%s>>>" fmt
+        //printfn "isInterpolated = %b" isInterpolated
+        //printfn "fragRanges = %A" fragRanges
         match context with
         | Some context when fragRanges.Length > 0 ->
             let sourceText = context.SourceText
             //printfn "sourceText.IsSome = %b" sourceText.IsSome
             let lineStartPositions = context.LineStartPositions
-            printfn "lineStartPositions.Length = %d" lineStartPositions.Length
+            //printfn "lineStartPositions.Length = %d" lineStartPositions.Length
             let length = sourceText.Length
             let numFrags = fragRanges.Length
             let fmts =
              [ for i, fragRange in List.indexed fragRanges do
                 let m = fragRange
-                printfn "m.EndLine = %d" m.EndLine
-                if m.EndLine < lineStartPositions.Length then
+                //printfn "m.EndLine = %d" m.EndLine
+                if m.StartLine - 1 < lineStartPositions.Length && m.EndLine - 1 < lineStartPositions.Length then
                     let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
-                    let startIndex2 = if m.StartLine+1 < lineStartPositions.Length then lineStartPositions.[m.StartLine] else startIndex
+                    //let startIndex2 = if m.StartLine < lineStartPositions.Length then lineStartPositions.[m.StartLine] else startIndex
                     let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn
                     // Note, some extra """ text may be included at end of these snippets, meaning CheckFormatString in the IDE
                     // may be using a slightly false format string to colorize the %d markers.  This doesn't matter as there
@@ -84,11 +103,13 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                     // However we make an effort to remove these to keep the calls to GetSubStringText valid.  So
                     // we work out how much extra text there is at the end of the last line of the fragment,
                     // which may or may not be quote markers. If there's no flex, we don't trim the quote marks
-                    let endNextLineIndex = if m.EndLine + 1 < lineStartPositions.Length then lineStartPositions.[m.EndLine] else endIndex
+                    let endNextLineIndex = if m.EndLine < lineStartPositions.Length then lineStartPositions.[m.EndLine] else endIndex
                     let endIndexFlex = endNextLineIndex - endIndex
                     let mLength = endIndex - startIndex
-                    let sourceLineFromOffset = sourceText.GetSubTextString(startIndex, (startIndex2 - startIndex))
-                    printfn "i = %d, mLength = %d, endIndexFlex = %d, sourceLineFromOffset = <<<%s>>>" i mLength endIndexFlex sourceLineFromOffset
+
+                    //let sourceLineFromOffset = sourceText.GetSubTextString(startIndex, (startIndex2 - startIndex))
+                    //printfn "i = %d, mLength = %d, endIndexFlex = %d, sourceLineFromOffset = <<<%s>>>" i mLength endIndexFlex sourceLineFromOffset
+
                     if isInterpolated && i=0 && startIndex < length-4 && sourceText.SubTextEquals("$\"\"\"", startIndex) then
                         (4, sourceText.GetSubTextString(startIndex + 4, mLength - 4 - min endIndexFlex (if i = numFrags-1 then 3 else 1)), m)
                     elif not isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
@@ -107,13 +128,19 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                         (1, sourceText.GetSubTextString(startIndex + 1, mLength - 1 - min endIndexFlex 1), m)
                 else (1, fmt, m) ]
 
-            printfn "fmts = %A" fmts
+            //printfn "fmts = %A" fmts
 
-            let fmt = fmts |> List.map p23 |> String.concat "%P()" // this is only used on the IDE path
-            let fragments, _ = (0, fmts) ||> List.mapFold (fun i (offset, fmt, fragRange) -> (i, offset, fragRange), i + fmt.Length)
+            // Join the fragments with holes. Note this join is only used on the IDE path,
+            // the TypeChecker.fs does its own joining with the right alignments etc. substituted
+            // On the IDE path we don't do any checking of these in this file (some checking is
+            // done in TypeChecker.fs) so it's ok to join with just '%P()'.  
+            let fmt = fmts |> List.map p23 |> String.concat "%P()" 
+            let fragments, _ = 
+                (0, fmts) ||> List.mapFold (fun i (offset, fmt, fragRange) ->
+                    (i, offset, fragRange), i + fmt.Length + 4) // the '4' is the length of '%P()' joins
 
-            printfn "fmt2 = <<<%s>>>" fmt
-            printfn "fragments = %A" fragments
+            //printfn "fmt2 = <<<%s>>>" fmt
+            //printfn "fragments = %A" fragments
             fmt, fragments
         | _ -> 
             // Don't muck with the fmt when there is no source code context to go get the original
@@ -132,16 +159,17 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
     let mutable dotnetFormatStringInterpolationHoleCount = 0
     let percentATys = ResizeArray<_>()
 
-    // fragLine and fragCol track our location w.r.t. the marker for the start of this chunk
+    // fragLine, fragCol - track our location w.r.t. the marker for the start of this chunk
+    // 
     let rec parseLoop acc (i, fragLine, fragCol) fragments (m: range) = 
        
        // Check if we've moved into the next fragment.  Note this will always activate on
        // the first step, i.e. when i=0
        let (struct (fragLine, fragCol, fragments, m)) =
            match fragments with 
-           | (idx, fragOffset, fragRange)::rest when i >= idx  ->
-               printfn "i = %d, idx = %d, moving into next fragment at %A plus fragOffset %d" i idx fragRange fragOffset
-               struct (m.StartLine, m.StartColumn + fragOffset, rest, fragRange)
+           | (idx, fragOffset, fragRange: range)::rest when i >= idx  ->
+               //printfn "i = %d, idx = %d, moving into next fragment at %A plus fragOffset %d" i idx fragRange fragOffset
+               struct (fragRange.StartLine, fragRange.StartColumn + fragOffset, rest, fragRange)
 
            | _ -> struct (fragLine, fragCol, fragments, m)
 

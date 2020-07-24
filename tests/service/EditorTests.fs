@@ -544,6 +544,9 @@ let _ = List.map (fun x -> sprintf $@"%A{x}
 let _ = $"\n%-8.1e{1.0}+567"                  // line 16
 let _ = $@"%O{1}\n%-5s{s}"                    // line 17
 let _ = $"%%"                                 // line 18
+let s2 = $"abc %d{s.Length} and %d{s.Length}def" // line 19
+let s3 = $"abc %d{s.Length} 
+                and %d{s.Length}def"          // line 21
 """
 
     let file = "/home/user/Test.fsx"
@@ -556,7 +559,8 @@ let _ = $"%%"                                 // line 18
         [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
           (8, 11, 8, 14, 1); (10, 12, 10, 15, 1); (13, 12, 13, 15, 1);
           (14, 38, 14, 40, 1); (16, 12, 16, 18, 1); (17, 11, 17, 13, 1);
-          (17, 16, 17, 20, 1); (18, 10, 18, 12, 0)|]
+          (17, 18, 17, 22, 1); (18, 10, 18, 12, 0); (19, 15, 19, 17, 1);
+          (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
 
 [<Test>]
 let ``Printf specifiers for user-defined functions`` () = 
@@ -580,6 +584,23 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
                      (4, 82, 4, 84, 1); 
                      (4, 108, 4, 110, 1)|]
 
+[<Test>]
+let ``Printf specifiers for triple quote interpolated strings`` () = 
+    let input = 
+      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"  "
+
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
+
+    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
+    |> shouldEqual
+        [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
+          (8, 11, 8, 14, 1); (10, 12, 10, 15, 1); (13, 12, 13, 15, 1);
+          (14, 38, 14, 40, 1); (16, 12, 16, 18, 1); (17, 11, 17, 13, 1);
+          (17, 18, 17, 22, 1); (18, 10, 18, 12, 0); (19, 15, 19, 17, 1);
+          (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
 [<Test>]
 let ``should not report format specifiers for illformed format strings`` () = 
     let input = 
