@@ -1550,6 +1550,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                [vara], [ varaTy; v_int32_ty ], varaTy, [ arg0Ty ]
           | ("GenericZeroDynamic" | "GenericOneDynamic"), [], Some retTy -> 
                [vara], [ ], varaTy, [ retTy ]
+          | "UnaryPlusDynamic", [ arg0Ty ], Some retTy ->
+               [vara], [ arg0Ty ], varaTy, [ retTy ]
           | _ -> failwithf "unknown builtin witness '%s'" memberName
       let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, None, None, gtps, (List.map List.singleton argTys, retTy))
       vref, tinst
@@ -1601,11 +1603,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
         Some (g.array_set_info, [ety], argExprs)
     | "get_Item", [sty; _; _], _, [_; _] when isStringTy g sty -> 
         Some (g.getstring_info, [], argExprs)
-    | "op_UnaryPlus", [aty], _, [_] ->
-        // Call Operators.(~+)
-        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "op_UnaryPlus", None, None, [vara], ([[varaTy]], varaTy))
-        let tyargs = [aty]
-        Some (info, tyargs, argExprs)
     | _ ->
         None
 

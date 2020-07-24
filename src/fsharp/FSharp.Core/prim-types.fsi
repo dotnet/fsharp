@@ -1101,6 +1101,11 @@ namespace Microsoft.FSharp.Core
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val UnaryNegationDynamic : value:'T -> 'U
 
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the unary '~+' operator.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        val UnaryPlusDynamic : value:'T -> 'T
+
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '%' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]

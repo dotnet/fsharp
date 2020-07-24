@@ -26,10 +26,13 @@ let y : unit =
         ()
     | e ->
         failwithf "did not expect expression for 'y': %A" e
-let z : obj =
-    match f 1 with
+let z : unit =
+    match f 5 with
     | (CallWithWitnesses(_, methInfo, methInfoW, _, _) as e) when methInfo.Name = "op_UnaryPlus" && methInfoW.Name = "op_UnaryPlus$W" ->
-        eval e
+        if ((eval e) :?> int) = 5 then
+            ()
+        else
+            failwith "did not expect evaluation false"
     | e ->
         failwithf "did not expect expression for 'z': %A" e
         """

@@ -2634,6 +2634,8 @@ namespace Microsoft.FSharp.Core
             elif type2eq<'T, 'U, decimal> then convPrim<_,'U> (Decimal.op_UnaryNegation(convPrim<_,decimal> value))
             else UnaryOpDynamicImplTable<OpUnaryNegationInfo,'T,'U>.Invoke "op_UnaryNegation" value
 
+        let UnaryPlusDynamic<'T> (value: 'T) : 'T = value
+
         type OpCheckedAdditionInfo = class end
         let CheckedAdditionDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
             if type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "add.ovf" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
@@ -3993,20 +3995,7 @@ namespace Microsoft.FSharp.Core
         
         [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~+) (value: ^T) : ^T =
-             value
-             when ^T : int32      = value
-             when ^T : float      = value
-             when ^T : float32    = value
-             when ^T : int64      = value
-             when ^T : uint64     = value
-             when ^T : uint32     = value
-             when ^T : int16      = value
-             when ^T : uint16     = value
-             when ^T : nativeint  = value
-             when ^T : unativeint = value
-             when ^T : sbyte      = value
-             when ^T : byte       = value
-             when ^T : decimal    = value
+             UnaryPlusDynamic<(^T)> value
              when ^T : ^T = (^T: (static member (~+) : ^T -> ^T) (value))
 
         [<NoDynamicInvocation(isLegacy=true)>]
