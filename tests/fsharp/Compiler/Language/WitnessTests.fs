@@ -6,6 +6,8 @@ open NUnit.Framework
 open FSharp.Test.Utilities.Compiler
 open FSharp.Tests
 
+#if !NETCOREAPP
+
 [<TestFixture>]
 module WitnessTests =
 
@@ -21,5 +23,6 @@ module WitnessTests =
         |> compile
         |> shouldSucceed
         |> ignore
+#endif
         
 
