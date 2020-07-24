@@ -137,18 +137,18 @@ let ShouldTriggerCompletionAtCorrectMarkers() =
         ("System.", true)
         ("Console.", true) ]
 
-    for (marker: string, shouldBeTriggered: bool) in testCases do
-    let fileContents = """
+    for (marker, shouldBeTriggered) in testCases do
+      let fileContents = """
 let x = 1
 let y = 2
 System.Console.WriteLine(x + y)
 """
 
-    let caretPosition = fileContents.IndexOf(marker) + marker.Length
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
-    Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
+      let caretPosition = fileContents.IndexOf(marker) + marker.Length
+      let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+      let getInfo() = documentId, filePath, []
+      let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+      Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
 [<Test>]
 let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertionOrDeletion() = 
@@ -187,13 +187,27 @@ System.Console.WriteLine()
 let ShouldTriggerCompletionInInterpolatedString() =
     let fileContents = """
 
-let x = $\"  {System.Console.WriteLine()}\"
+let x = 1
+let y = 2
+let z = $"abc  {System.Console.WriteLine(x + y)} def"
 """
-    let caretPosition = fileContents.IndexOf("System.")
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
-    Assert.IsTrue(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should trigger")
+    let testCases = 
+       [
+        ("x", true)
+        ("y", true)
+        ("1", false)
+        ("2", false)
+        ("x +", false)
+        ("Console.Write", false)
+        ("System.", true)
+        ("Console.", true) ]
+
+    for (marker, shouldBeTriggered) in testCases do
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+        Assert.AreEqual(shouldBeTriggered, triggered, sprintf "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '%s'" marker) 
     
 [<Test>]
 let ShouldNotTriggerCompletionInExcludedCode() =

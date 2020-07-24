@@ -250,25 +250,24 @@ module internal PrintfImpl =
                 | StepString prefix ->
                     if not (String.IsNullOrEmpty prefix) then count <- count + 1
                 | StepLittleT(prefix) -> 
-                    if String.IsNullOrEmpty prefix then count <- count + 1
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
                     count <- count + 1
                 | StepLittleA(prefix) -> 
-                    if String.IsNullOrEmpty prefix then count <- count + 1
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
                     count <- count + 1
                 | StepStar1(prefix, _conv) -> 
-                    if String.IsNullOrEmpty prefix then count <- count + 1
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
                     count <- count + 1
                 | StepPercentStar1(prefix) ->
-                    if String.IsNullOrEmpty prefix then count <- count + 1
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
                     count <- count + 1
                 | StepStar2(prefix, _conv) -> 
-                    if String.IsNullOrEmpty prefix then count <- count + 1
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
                     count <- count + 1
                 | StepPercentStar2(prefix) -> 
-                    if String.IsNullOrEmpty prefix then count <- count + 1
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
                     count <- count + 1
             count
-            
 
     /// Abstracts generated printer from the details of particular environment: how to write text, how to produce results etc...
     [<AbstractClass>]

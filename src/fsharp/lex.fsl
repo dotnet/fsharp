@@ -795,7 +795,9 @@ rule token args skip = parse
          // Note, we do not update the 'm', any incomplete-interpolation error
          // will be reported w.r.t. the first '{'
          args.stringNest <- (counter + 1, style, m) :: rest
-       LBRACE
+       // To continue token-by-token lexing may involve picking up the new args.stringNes
+       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+       LBRACE cont
      }
 
  | "|" { BAR }
@@ -820,10 +822,12 @@ rule token args skip = parse
            // Note, we do not update the 'm', any incomplete-interpolation error
            // will be reported w.r.t. the first '{'
            args.stringNest <- (counter - 1, style, m) :: rest
-           RBRACE
+           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+           RBRACE cont
 
         | _ ->
-           RBRACE
+           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+           RBRACE cont
      }
 
  | "$" { DOLLAR }

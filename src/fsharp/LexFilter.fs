@@ -271,7 +271,7 @@ let rec isTypeContinuator token =
     //     end with                  <---          'end' HERE
     //       static member M() = 1
     //     end 
-    | RBRACE | WITH | BAR | AND | END -> true 
+    | RBRACE _ | WITH | BAR | AND | END -> true 
                              
     // The following arise during reprocessing of the inserted tokens when we hit a DONE 
     | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true 
@@ -340,7 +340,7 @@ let rec isSeqBlockElementContinuator token =
     //                  ...
     //              ), <------- NOTE RPAREN HERE
     //              Shortcut.CtrlO)
-    | END | AND | WITH | THEN | RPAREN | RBRACE | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ -> true 
+    | END | AND | WITH | THEN | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ -> true 
 
     // The following arise during reprocessing of the inserted tokens when we hit a DONE
     | ORIGHT_BLOCK_END | OBLOCKEND | ODECLEND -> true 
@@ -368,7 +368,7 @@ let isAtomicExprEndToken token =
     | UINT8 _ | UINT16 _ | UINT32 _ | UINT64 _ | UNATIVEINT _
     | DECIMAL _ | BIGNUM _ | STRING _ | BYTEARRAY _ | CHAR _ 
     | IEEE32 _ | IEEE64 _ 
-    | RPAREN | RBRACK | RBRACE | BAR_RBRACE | BAR_RBRACK | END 
+    | RPAREN | RBRACK | RBRACE _ | BAR_RBRACE | BAR_RBRACK | END 
     | NULL | FALSE | TRUE | UNDERSCORE -> true
     | _ -> false
     
@@ -378,7 +378,7 @@ let isAtomicExprEndToken token =
 let parenTokensBalance t1 t2 = 
     match t1, t2 with 
     | (LPAREN, RPAREN) 
-    | (LBRACE, RBRACE) 
+    | (LBRACE _, RBRACE _) 
     | (LBRACE_BAR, BAR_RBRACE) 
     | (LBRACK, RBRACK) 
     | (INTERFACE, END) 
@@ -655,7 +655,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     let detectJoinInCtxt stack =
         let rec check s = 
                match s with 
-               | CtxtParen(LBRACE, _) :: _ -> true
+               | CtxtParen(LBRACE _, _) :: _ -> true
                | (CtxtSeqBlock _ | CtxtDo _ | CtxtFor _) :: rest -> check rest
                | _ -> false
         match stack with 
@@ -711,9 +711,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             // 'f ...{' places no limit until we hit a CtxtLetDecl etc... 
             // 'f ...[' places no limit until we hit a CtxtLetDecl etc... 
             // 'f ...[|' places no limit until we hit a CtxtLetDecl etc... 
-            | _, (CtxtParen ((LBRACE | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest)
-            | _, (CtxtParen ((LBRACE | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
-            | _, (CtxtSeqBlock _ :: CtxtParen((LBRACE | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: rest)
+            | _, (CtxtParen ((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            | _, (CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
                       -> undentationLimit false rest
 
             // MAJOR PERMITTED UNDENTATION This is allowing:
@@ -791,8 +791,8 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             // 'if ... else ['       limited by 'if' 
             // 'if ... else [|'       limited by 'if' 
             | _, (CtxtParen ((SIG | STRUCT | BEGIN), _) :: CtxtSeqBlock _ :: (CtxtModuleBody (_, false) as limitCtxt) :: _)
-            | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE | LBRACE_BAR | LBRACK_BAR), _) :: CtxtSeqBlock _ :: CtxtThen _ :: (CtxtIf _ as limitCtxt) :: _)
-            | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE | LBRACE_BAR | LBRACK_BAR | LBRACK_LESS), _) :: CtxtSeqBlock _ :: CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _)
+            | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR), _) :: CtxtSeqBlock _ :: CtxtThen _ :: (CtxtIf _ as limitCtxt) :: _)
+            | _, (CtxtParen ((BEGIN | LPAREN | LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR | LBRACK_LESS), _) :: CtxtSeqBlock _ :: CtxtElse _ :: (CtxtIf _ as limitCtxt) :: _)
 
             // 'f ... ('  in seqblock     limited by 'f' 
             // 'f ... {'  in seqblock     limited by 'f'  NOTE: this is covered by the more generous case above 
@@ -818,7 +818,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
             // REVIEW: document these 
             | _, (CtxtSeqBlock _ :: CtxtParen((BEGIN | LPAREN | LBRACK | LBRACK_BAR), _) :: CtxtVanilla _ :: (CtxtSeqBlock _ as limitCtxt) :: _)
-            | (CtxtSeqBlock _), (CtxtParen ((BEGIN | LPAREN | LBRACE | LBRACE_BAR | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: ((CtxtTypeDefns _ | CtxtLetDecl _ | CtxtMemberBody _ | CtxtWithAsLet _) as limitCtxt) :: _)
+            | (CtxtSeqBlock _), (CtxtParen ((BEGIN | LPAREN | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR), _) :: CtxtSeqBlock _ :: ((CtxtTypeDefns _ | CtxtLetDecl _ | CtxtMemberBody _ | CtxtWithAsLet _) as limitCtxt) :: _)
                       -> PositionWithColumn(limitCtxt.StartPos, limitCtxt.StartCol + 1) 
 
             // Permitted inner-construct (e.g. "then" block and "else" block in overall 
@@ -1059,7 +1059,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // WITH balances except in the following contexts.... Phew - an overused keyword! 
         | WITH, ( ((CtxtMatch _ | CtxtException _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtTry _ | CtxtTypeDefns _ | CtxtMemberBody _) :: _)
                                 // This is the nasty record/object-expression case 
-                                | (CtxtSeqBlock _ :: CtxtParen((LBRACE | LBRACE_BAR), _) :: _) )
+                                | (CtxtSeqBlock _ :: CtxtParen((LBRACE _ | LBRACE_BAR), _) :: _) )
         | FINALLY, (CtxtTry _ :: _) -> 
             true
 
@@ -1183,7 +1183,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 false // no member currently on the stack, nothing to pop
             else
                 // there is a member context
-                if List.exists (function CtxtParen(LBRACE, _) -> true | _ -> false) ctxtStack then
+                if List.exists (function CtxtParen(LBRACE _, _) -> true | _ -> false) ctxtStack then
                     false  // an LBRACE could mean an object expression, and object expressions can have 'member' tokens in them, so do not pop, to be safe
                 elif List.count (function CtxtParen(LPAREN, _) -> true | _ -> false) ctxtStack >= 2 then
                     false  // static member constraints always are embedded in at least two LPARENS, so do not pop, to be safe
@@ -1229,7 +1229,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             | IN 
             | RPAREN
             | GREATER true 
-            | RBRACE 
+            | RBRACE _
             | BAR_RBRACE 
             | RBRACK 
             | BAR_RBRACK 
@@ -1271,7 +1271,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                 while not offsideStack.IsEmpty && (not(nextOuterMostInterestingContextIsNamespaceOrModule offsideStack)) &&
                                                     (match offsideStack.Head with 
                                                     // open-parens of sorts
-                                                    | CtxtParen((LPAREN|LBRACK|LBRACE|LBRACE_BAR|LBRACK_BAR), _) -> true
+                                                    | CtxtParen((LPAREN|LBRACK|LBRACE _ |LBRACE_BAR|LBRACK_BAR), _) -> true
                                                     // seq blocks
                                                     | CtxtSeqBlock _ -> true 
                                                     // vanillas
@@ -1370,7 +1370,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             hwTokenFetch useBlockRule
 
         // Balancing rule. Encountering a ')' or '}' balances with a '(' or '{', even if not offside 
-        | ((END | RPAREN | RBRACE | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true | INTERP_STRING_END _ | INTERP_STRING_PART _) as t2), (CtxtParen (t1, _) :: _) 
+        | ((END | RPAREN | RBRACE _ | BAR_RBRACE | RBRACK | BAR_RBRACK | RQUOTE _ | GREATER true | INTERP_STRING_END _ | INTERP_STRING_PART _) as t2), (CtxtParen (t1, _) :: _) 
                 when parenTokensBalance t1 t2 ->
             if debug then dprintf "RPAREN/RBRACE/BAR_RBRACE/RBRACK/BAR_RBRACK/RQUOTE/END at %a terminates CtxtParen()\n" outputPos tokenStartPos
             popCtxt()
@@ -1882,7 +1882,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         //  '{ id1 = 1
         //     M.id2 = ... ' ~~~> CtxtSeqBlock 
         | EQUALS, ((CtxtWithAsLet _) :: _)  // This detects 'with = '. 
-        | EQUALS, ((CtxtVanilla (_, true)) :: (CtxtSeqBlock _) :: (CtxtWithAsLet _ | CtxtParen((LBRACE | LBRACE_BAR), _)) :: _) ->  
+        | EQUALS, ((CtxtVanilla (_, true)) :: (CtxtSeqBlock _) :: (CtxtWithAsLet _ | CtxtParen((LBRACE _ | LBRACE_BAR), _)) :: _) ->  
             if debug then dprintf "CtxtLetDecl/CtxtWithAsLet: EQUALS, pushing CtxtSeqBlock\n"
             // We don't insert begin/end block tokens for single-line bindings since we can't properly distinguish single-line *)
             // record update expressions such as "{ t with gbuckets=Array.copy t.gbuckets; gcount=t.gcount }" *)
@@ -1909,7 +1909,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // $".... { ... }  ... { ....} " pushes a block context at first {
         // ~~~~~~~~
         //    ^---------INTERP_STRING_BEGIN_PART
-        | (BEGIN | LPAREN | SIG | LBRACE | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true | INTERP_STRING_BEGIN_PART _), _ ->
+        | (BEGIN | LPAREN | SIG | LBRACE _ | LBRACE_BAR | LBRACK | LBRACK_BAR | LQUOTE _ | LESS true | INTERP_STRING_BEGIN_PART _), _ ->
             if debug then dprintf "LPAREN etc., pushes CtxtParen, pushing CtxtSeqBlock, tokenStartPos = %a\n" outputPos tokenStartPos
             let pos = match token with
                       | INTERP_STRING_BEGIN_PART _ -> tokenTup.LexbufState.EndPos
@@ -1938,7 +1938,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                         // comprehension/match 
                         | (CtxtWhile _ | CtxtFor _ | CtxtWhen _ | CtxtMatchClauses _ | CtxtFun _) :: _ -> true 
                         // comprehension 
-                        | (CtxtSeqBlock _ :: CtxtParen ((LBRACK | LBRACE | LBRACE_BAR | LBRACK_BAR), _) :: _) -> true  
+                        | (CtxtSeqBlock _ :: CtxtParen ((LBRACK | LBRACE _ | LBRACE_BAR | LBRACK_BAR), _) :: _) -> true  
                         // comprehension 
                         | (CtxtSeqBlock _ :: (CtxtDo _ | CtxtWhile _ | CtxtFor _ | CtxtWhen _ | CtxtMatchClauses _ | CtxtTry _ | CtxtThen _ | CtxtElse _) :: _) -> true 
                         | _ -> false) ->
@@ -1989,11 +1989,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             returnToken tokenLexbufState token
 
         | WITH, (((CtxtException _ | CtxtTypeDefns _ | CtxtMemberHead _ | CtxtInterfaceHead _ | CtxtMemberBody _) as limCtxt) :: _) 
-        | WITH, ((CtxtSeqBlock _) as limCtxt :: CtxtParen((LBRACE | LBRACE_BAR), _) :: _) -> 
+        | WITH, ((CtxtSeqBlock _) as limCtxt :: CtxtParen((LBRACE _ | LBRACE_BAR), _) :: _) -> 
             let lookaheadTokenTup = peekNextTokenTup()
             let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
             match lookaheadTokenTup.Token with 
-            | RBRACE
+            | RBRACE _
             | IDENT _ 
             // The next clause detects the access annotations after the 'with' in:
             //    member  x.PublicGetSetProperty 
@@ -2388,7 +2388,7 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
         let rec loop() =
             let token = popNextToken()
             match token with
-            | RBRACE -> 
+            | RBRACE _ -> 
                 insertComingSoonTokens RBRACE_COMING_SOON RBRACE_IS_HERE
                 loop()
             | RPAREN -> 

@@ -41,8 +41,8 @@ module FSharpTokenTag =
     let RPAREN = tagOfToken RPAREN
     let LBRACK = tagOfToken LBRACK
     let RBRACK = tagOfToken RBRACK
-    let LBRACE = tagOfToken LBRACE
-    let RBRACE = tagOfToken RBRACE
+    let LBRACE = tagOfToken (LBRACE LexCont.Default)
+    let RBRACE = tagOfToken (RBRACE LexCont.Default)
     let LBRACK_LESS = tagOfToken LBRACK_LESS
     let GREATER_RBRACK = tagOfToken GREATER_RBRACK
     let LESS = tagOfToken (LESS true)
@@ -255,13 +255,13 @@ module internal TokenClassifications =
         | LBRACK_LESS ->
             (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None )
 
-        | LQUOTE _  | LBRACK  | LBRACE | LBRACK_BAR | LBRACE_BAR ->
+        | LQUOTE _  | LBRACK  | LBRACE _ | LBRACK_BAR | LBRACE_BAR ->
             (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces )
 
         | GREATER_RBRACK  | GREATER_BAR_RBRACK ->
             (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None )
 
-        | RQUOTE _  | RBRACK  | RBRACE | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK | BAR_RBRACE ->
+        | RQUOTE _  | RBRACK  | RBRACE _ | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK | BAR_RBRACE ->
             (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces )
 
         | PUBLIC | PRIVATE | INTERNAL | BASE | GLOBAL
@@ -378,6 +378,7 @@ module internal LexerStateEncoding =
       | INTERP_STRING_PART (_, cont)
       | INTERP_STRING_BEGIN_END (_, cont)
       | INTERP_STRING_END (_, cont)
+      | LBRACE cont
       | BYTEARRAY (_, cont)
       | STRING (_, cont) -> cont
       | _ -> prevLexcont
@@ -1220,7 +1221,7 @@ module Lexer =
             | SIG  -> FSharpSyntaxTokenKind.Sig 
             | BAR  -> FSharpSyntaxTokenKind.Bar 
             | RBRACK  -> FSharpSyntaxTokenKind.RightBracket 
-            | RBRACE  -> FSharpSyntaxTokenKind.RightBrace 
+            | RBRACE _ -> FSharpSyntaxTokenKind.RightBrace 
             | MINUS  -> FSharpSyntaxTokenKind.Minus 
             | DOLLAR  -> FSharpSyntaxTokenKind.Dollar 
             | BAR_RBRACK  -> FSharpSyntaxTokenKind.BarRightBracket 
@@ -1233,7 +1234,7 @@ module Lexer =
             | LBRACK_BAR  -> FSharpSyntaxTokenKind.LeftBracketBar 
             | LBRACE_BAR  -> FSharpSyntaxTokenKind.LeftBraceBar 
             | LBRACK_LESS  -> FSharpSyntaxTokenKind.LeftBracketLess 
-            | LBRACE  -> FSharpSyntaxTokenKind.LeftBrace 
+            | LBRACE _ -> FSharpSyntaxTokenKind.LeftBrace 
             | QMARK  -> FSharpSyntaxTokenKind.QuestionMark 
             | QMARK_QMARK  -> FSharpSyntaxTokenKind.QuestionMarkQuestionMark
             | DOT  -> FSharpSyntaxTokenKind.Dot 

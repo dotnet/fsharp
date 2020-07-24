@@ -1479,9 +1479,9 @@ module internal ParseAndCheckFile =
                 match t1, t2 with
                 | (LPAREN, RPAREN)
                 | (LPAREN, RPAREN_IS_HERE)
-                | (LBRACE, RBRACE)
+                | (LBRACE _, RBRACE _)
                 | (LBRACE_BAR, BAR_RBRACE)
-                | (LBRACE, RBRACE_IS_HERE)
+                | (LBRACE _, RBRACE_IS_HERE)
                 | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _)
                 | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _)
                 | (INTERP_STRING_PART _, INTERP_STRING_PART _)
@@ -1522,7 +1522,7 @@ module internal ParseAndCheckFile =
 
                     matchBraces stackAfterMatch
 
-                | ((LPAREN | LBRACE | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
+                | ((LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
                      matchBraces ((tok, lexbuf.LexemeRange) :: stack)
 
                 // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string

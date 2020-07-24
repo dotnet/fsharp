@@ -88,15 +88,16 @@ type BraceMatchingServiceTests()  =
 
     [<Test>]
     member this.BraceInInterpolatedStringSimple() = 
-        this.VerifyBraceMatch("let x = $\"abc{1}def\"", "abc{", "}def")
+        this.VerifyBraceMatch("let x = $\"abc{1}def\"", "{1", "}def")
 
     [<Test>]
     member this.BraceInInterpolatedStringTwoHoles() = 
-        this.VerifyBraceMatch("let x = $\"abc{1}def{2+3}hij\"", "def{", "}hij")
+        this.VerifyBraceMatch("let x = $\"abc{1}def{2+3}hij\"", "{2", "}hij")
 
     [<Test>]
     member this.BraceInInterpolatedStringNestedRecord() = 
-        this.VerifyBraceMatch("let x = $\"abc{ id{contents=3}.contents }\"", "id{", "}.contents")
+        this.VerifyBraceMatch("let x = $\"abc{ id{contents=3}.contents }\"", "{contents", "}.contents")
+        this.VerifyBraceMatch("let x = $\"abc{ id{contents=3}.contents }\"", "{ id", "}\"")
 
     [<TestCase("[start")>]
     [<TestCase("]end")>]
