@@ -1078,19 +1078,19 @@ and singleQuoteString sargs skip = parse
  | unicodeGraphLong
     { let (buf, _fin, m, kind, args) = sargs
       let hexChars = lexemeTrimLeft lexbuf 2
-      let tok = 
+      let result() = 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
           else singleQuoteString sargs skip lexbuf
       match unicodeGraphLong hexChars with
       | Invalid ->
-          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) tok
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result())
       | SingleChar(c) ->
           addUnicodeChar buf (int c)
-          tok
+          result()
       | SurrogatePair(hi, lo) -> 
           addUnicodeChar buf (int hi)
           addUnicodeChar buf (int lo)
-          tok }
+          result() }
      
  |  '"' 
     { let (buf, fin, _m, kind, args) = sargs 

@@ -168,7 +168,7 @@ let parseAndCheckFile fileName source options =
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
-let parseAndCheckScript (file, input) = 
+let parseAndCheckScriptWithOptions (file, input, opts) = 
 
 #if NETCOREAPP
     let dllName = Path.ChangeExtension(file, ".dll")
@@ -179,9 +179,10 @@ let parseAndCheckScript (file, input) =
 
 #else    
     let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
-    printfn "projectOptions = %A" projectOptions
+    //printfn "projectOptions = %A" projectOptions
 #endif
 
+    let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString input, projectOptions) |> Async.RunSynchronously
     
     // if parseResult.Errors.Length > 0 then
@@ -191,6 +192,8 @@ let parseAndCheckScript (file, input) =
     match typedRes with
     | FSharpCheckFileAnswer.Succeeded(res) -> parseResult, res
     | res -> failwithf "Parsing did not finish... (%A)" res
+
+let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
 
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))

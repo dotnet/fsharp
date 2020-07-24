@@ -7121,7 +7121,7 @@ and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
         let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
         
         let _argTys, atyRequired, etyRequired, _percentATys, specifierLocations, _dotnetFormatString =
-            try CheckFormatStrings.ParseFormatString m g false false formatStringCheckContext normalizedString bty cty dty
+            try CheckFormatStrings.ParseFormatString m [m] g false false formatStringCheckContext normalizedString bty cty dty
             with Failure errString -> error (Error(FSComp.SR.tcUnableToParseFormatString errString, m))
 
         match cenv.tcSink.CurrentSink with 
@@ -7140,18 +7140,24 @@ and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
         mkString g m fmtString, tpenv
 
 /// Check an interpolated string expression
-and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (SynExpr * Ident option) > list) =
+and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedStringPart list) =
     let g = cenv.g
 
     let synFillExprs =
         parts 
         |> List.choose (function
-            | Choice1Of2 _ -> None
-            | Choice2Of2 (fillExpr, _)  ->
+            | SynInterpolatedStringPart.String _ -> None
+            | SynInterpolatedStringPart.FillExpr (fillExpr, _)  ->
                 match fillExpr with 
                 // Detect "x" part of "...{x,3}..."
                 | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
                 | e -> Some e)
+
+    let stringFragmentRanges =
+        parts 
+        |> List.choose (function
+            | SynInterpolatedStringPart.String (_,m) -> Some m
+            | SynInterpolatedStringPart.FillExpr _  -> None)
 
     let printerTy = NewInferenceType ()
     let printerArgTy = NewInferenceType ()
@@ -7219,8 +7225,8 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
     let printfFormatString = 
         parts
         |> List.map (function 
-            | Choice1Of2 s -> s
-            | Choice2Of2 (fillExpr, format) -> 
+            | SynInterpolatedStringPart.String (s, _) -> s
+            | SynInterpolatedStringPart.FillExpr (fillExpr, format) -> 
                 let alignText = 
                     match fillExpr with 
                     // Validate and detect ",3" part of "...{x,3}..."
@@ -7234,9 +7240,21 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: Choice<string, (
         |> String.concat ""
 
     // Parse the format string to work out the phantom types and check for absence of '%' specifiers in FormattableString
-    let argTys, _printerTy, printerTupleTyRequired, percentATys, _specifierLocations, dotnetFormatString =
-        try CheckFormatStrings.ParseFormatString m g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
-        with Failure errString -> error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
+    let argTys, _printerTy, printerTupleTyRequired, percentATys, specifierLocations, dotnetFormatString =
+        let formatStringCheckContext =
+            match cenv.tcSink.CurrentSink with
+            | None -> None
+            | Some sink -> sink.FormatStringCheckContext
+        try 
+            CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString formatStringCheckContext printfFormatString printerArgTy printerResidueTy printerResultTy
+        with Failure errString -> 
+            error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
+
+    match cenv.tcSink.CurrentSink with 
+    | None -> () 
+    | Some sink -> 
+        for specifierLocation, numArgs in specifierLocations do
+            sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
 
     // Check the expressions filling the holes
     if argTys.Length <> synFillExprs.Length then 

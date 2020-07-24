@@ -214,8 +214,8 @@ module public AstTraversal =
                 | SynExpr.InterpolatedString (parts, _) -> 
                     [ for part in parts do
                           match part with
-                          | Choice1Of2 _ -> ()
-                          | Choice2Of2 (fillExpr, _) ->
+                          | SynInterpolatedStringPart.String _ -> ()
+                          | SynInterpolatedStringPart.FillExpr (fillExpr, _) ->
                               yield dive fillExpr fillExpr.Range traverseSynExpr ]
                     |> pick expr
 

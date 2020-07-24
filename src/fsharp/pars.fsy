@@ -5498,20 +5498,20 @@ interpolatedStringFill:
 
 interpolatedStringParts:
   | INTERP_STRING_END
-     { [ Choice1Of2 (fst $1) ] }
+     { [ SynInterpolatedStringPart.String (fst $1, rhs parseState 1) ] }
 
   | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
-     { Choice1Of2 (fst $1) :: Choice2Of2 $2 :: $3 }
+     { SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
 
 /* INTERP_STRING_BEGIN_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
 interpolatedString:
   | INTERP_STRING_BEGIN_PART interpolatedStringFill interpolatedStringParts
-    { Choice1Of2 (fst $1) :: Choice2Of2 $2 :: $3 }
+    { SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
 
   | INTERP_STRING_BEGIN_END
-    { [ Choice1Of2 (fst $1) ] }
+    { [ SynInterpolatedStringPart.String (fst $1, rhs parseState 1) ] }
   
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }

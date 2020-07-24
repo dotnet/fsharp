@@ -6,6 +6,7 @@ open System.Text
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
@@ -48,27 +49,78 @@ let newInfo () =
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt printerArgTy printerResidueTy = 
-    // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
-    // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
-    let (offset, fmt) = 
+let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt printerArgTy printerResidueTy = 
+    printfn "--------------------" 
+    printfn "context.IsSome = %b" context.IsSome
+    printfn "fmt  = <<<%s>>>" fmt
+    printfn "isInterpolated = %b" isInterpolated
+    printfn "fragRanges = %A" fragRanges
+    let fmt, fragments = 
+        // In the foreground checking of the IDE we crack the string accurately
+        // by going back and getting the fragments of the format string from the original source.
+        //
+        // The offset is used to adjust ranges depending on whether input string is
+        // regular, verbatim or triple-quote etc.
         match context with
-        | Some context ->
+        | Some context when fragRanges.Length > 0 ->
             let sourceText = context.SourceText
+            //printfn "sourceText.IsSome = %b" sourceText.IsSome
             let lineStartPositions = context.LineStartPositions
+            printfn "lineStartPositions.Length = %d" lineStartPositions.Length
             let length = sourceText.Length
-            if m.EndLine < lineStartPositions.Length then
-                let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
-                let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn - 1
-                if startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
-                    (3, sourceText.GetSubTextString(startIndex + 3, endIndex - startIndex))
-                elif startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
-                    (2, sourceText.GetSubTextString(startIndex + 2, endIndex + 1 - startIndex))
-                else (1, sourceText.GetSubTextString(startIndex + 1, endIndex - startIndex))
-            else (1, fmt)
-        | None -> (1, fmt)
+            let numFrags = fragRanges.Length
+            let fmts =
+             [ for i, fragRange in List.indexed fragRanges do
+                let m = fragRange
+                printfn "m.EndLine = %d" m.EndLine
+                if m.EndLine < lineStartPositions.Length then
+                    let startIndex = lineStartPositions.[m.StartLine-1] + m.StartColumn
+                    let startIndex2 = if m.StartLine+1 < lineStartPositions.Length then lineStartPositions.[m.StartLine] else startIndex
+                    let endIndex = lineStartPositions.[m.EndLine-1] + m.EndColumn
+                    // Note, some extra """ text may be included at end of these snippets, meaning CheckFormatString in the IDE
+                    // may be using a slightly false format string to colorize the %d markers.  This doesn't matter as there
+                    // won't be relevant %d in these sections
+                    //
+                    // However we make an effort to remove these to keep the calls to GetSubStringText valid.  So
+                    // we work out how much extra text there is at the end of the last line of the fragment,
+                    // which may or may not be quote markers. If there's no flex, we don't trim the quote marks
+                    let endNextLineIndex = if m.EndLine + 1 < lineStartPositions.Length then lineStartPositions.[m.EndLine] else endIndex
+                    let endIndexFlex = endNextLineIndex - endIndex
+                    let mLength = endIndex - startIndex
+                    let sourceLineFromOffset = sourceText.GetSubTextString(startIndex, (startIndex2 - startIndex))
+                    printfn "i = %d, mLength = %d, endIndexFlex = %d, sourceLineFromOffset = <<<%s>>>" i mLength endIndexFlex sourceLineFromOffset
+                    if isInterpolated && i=0 && startIndex < length-4 && sourceText.SubTextEquals("$\"\"\"", startIndex) then
+                        (4, sourceText.GetSubTextString(startIndex + 4, mLength - 4 - min endIndexFlex (if i = numFrags-1 then 3 else 1)), m)
+                    elif not isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("\"\"\"", startIndex) then
+                        (3, sourceText.GetSubTextString(startIndex + 3, mLength - min endIndexFlex (if i = numFrags-1 then 3 else 1)), m)
+                    elif isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("$@\"", startIndex) then
+                        (3, sourceText.GetSubTextString(startIndex + 3, mLength - 3 - min endIndexFlex 1), m)
+                    elif isInterpolated && i=0 && startIndex < length-3 && sourceText.SubTextEquals("@$\"", startIndex) then
+                        (3, sourceText.GetSubTextString(startIndex + 3, mLength - 3 - min endIndexFlex 1), m)
+                    elif not isInterpolated && i=0 && startIndex < length-2 && sourceText.SubTextEquals("@\"", startIndex) then
+                        (2, sourceText.GetSubTextString(startIndex + 2, mLength - 2 - min endIndexFlex 1), m)
+                    elif isInterpolated && i=0 && startIndex < length-2 && sourceText.SubTextEquals("$\"", startIndex) then
+                        (2, sourceText.GetSubTextString(startIndex + 2, mLength - 2 - min endIndexFlex 1), m)
+                    elif isInterpolated && i <> 0 && startIndex < length-1 && sourceText.SubTextEquals("}", startIndex) then
+                        (1, sourceText.GetSubTextString(startIndex + 1, mLength - 1 - min endIndexFlex 1), m)
+                    else
+                        (1, sourceText.GetSubTextString(startIndex + 1, mLength - 1 - min endIndexFlex 1), m)
+                else (1, fmt, m) ]
 
-    let len = String.length fmt
+            printfn "fmts = %A" fmts
+
+            let fmt = fmts |> List.map p23 |> String.concat "%P()" // this is only used on the IDE path
+            let fragments, _ = (0, fmts) ||> List.mapFold (fun i (offset, fmt, fragRange) -> (i, offset, fragRange), i + fmt.Length)
+
+            printfn "fmt2 = <<<%s>>>" fmt
+            printfn "fragments = %A" fragments
+            fmt, fragments
+        | _ -> 
+            // Don't muck with the fmt when there is no source code context to go get the original
+            // source code (i.e. when compiling or background checking)
+            fmt, [ (0, 1, m) ]
+
+    let len = fmt.Length
 
     let specifierLocations = ResizeArray()
 
@@ -80,7 +132,19 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
     let mutable dotnetFormatStringInterpolationHoleCount = 0
     let percentATys = ResizeArray<_>()
 
-    let rec parseLoop acc (i, relLine, relCol) = 
+    // fragLine and fragCol track our location w.r.t. the marker for the start of this chunk
+    let rec parseLoop acc (i, fragLine, fragCol) fragments (m: range) = 
+       
+       // Check if we've moved into the next fragment.  Note this will always activate on
+       // the first step, i.e. when i=0
+       let (struct (fragLine, fragCol, fragments, m)) =
+           match fragments with 
+           | (idx, fragOffset, fragRange)::rest when i >= idx  ->
+               printfn "i = %d, idx = %d, moving into next fragment at %A plus fragOffset %d" i idx fragRange fragOffset
+               struct (m.StartLine, m.StartColumn + fragOffset, rest, fragRange)
+
+           | _ -> struct (fragLine, fragCol, fragments, m)
+
        if i >= len then
            let argtys =
                if acc |> List.forall (fun (p, _) -> p = None) then // without positional specifiers
@@ -90,13 +154,13 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
            argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
           appendToDotnetFormatString (fmt.[i..i+1])
-          parseLoop acc (i+2, relLine, relCol+2)
+          parseLoop acc (i+2, fragLine, fragCol+2) fragments m
        else 
           let c = fmt.[i]
           match c with
           | '%' ->
-              let startCol = relCol
-              let relCol = relCol+1
+              let startFragCol = fragCol
+              let fragCol = fragCol+1
               let i = i+1 
               if i >= len then failwithf "%s" <| FSComp.SR.forMissingFormatSpecifier()
               let info = newInfo()
@@ -171,15 +235,15 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
               
               let oldI = i
               let posi, i = position i
-              let relCol = relCol + i - oldI
+              let fragCol = fragCol + i - oldI
 
               let oldI = i
               let i = flags i 
-              let relCol = relCol + i - oldI
+              let fragCol = fragCol + i - oldI
 
               let oldI = i
               let widthArg,(widthValue, (precisionArg,i)) = widthAndPrecision i 
-              let relCol = relCol + i - oldI
+              let fragCol = fragCol + i - oldI
 
               if i >= len then failwithf "%s" <| FSComp.SR.forBadPrecision()
 
@@ -234,37 +298,30 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   else
                       failwithf "%s" <| FSComp.SR.forFormatInvalidForInterpolated3()
 
-              let collectSpecifierLocation relLine relCol numStdArgs = 
+              let collectSpecifierLocation fragLine fragCol numStdArgs = 
                   let numArgsForSpecifier =
                     numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
-                  match relLine with
-                  | 0 ->
-                      specifierLocations.Add(
-                        (Range.mkFileIndexRange m.FileIndex 
-                                (Range.mkPos m.StartLine (startCol + offset)) 
-                                (Range.mkPos m.StartLine (relCol + offset + 1))), numArgsForSpecifier)
-                  | _ ->
-                      specifierLocations.Add(
-                        (Range.mkFileIndexRange m.FileIndex 
-                                (Range.mkPos (m.StartLine + relLine) startCol) 
-                                (Range.mkPos (m.StartLine + relLine) (relCol + 1))), numArgsForSpecifier)
+                  specifierLocations.Add(
+                      (Range.mkFileIndexRange m.FileIndex 
+                          (Range.mkPos fragLine startFragCol) 
+                          (Range.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
 
               let ch = fmt.[i]
               match ch with
               | '%' ->
-                  collectSpecifierLocation relLine relCol 0
+                  collectSpecifierLocation fragLine fragCol 0
                   appendToDotnetFormatString "%"
-                  parseLoop acc (i+1, relLine, relCol+1) 
+                  parseLoop acc (i+1, fragLine, fragCol+1) fragments m
 
               | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') ->
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i, relLine, relCol+1)
+                  parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments m
 
               | ('l' | 'L') ->
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
-                  let relCol = relCol+1
+                  let fragCol = fragCol+1
                   let i = i+1
                   
                   // "bad format specifier ... In F# code you can use %d, %x, %o or %u instead ..."
@@ -274,100 +331,101 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) isInterpolated isFormatta
                   failwithf "%s" <| FSComp.SR.forLIsUnnecessary()
                   match fmt.[i] with
                   | ('d' | 'i' | 'o' | 'u' | 'x' | 'X') -> 
-                      collectSpecifierLocation relLine relCol 1
+                      collectSpecifierLocation fragLine fragCol 1
                       let i = skipPossibleInterpolationHole (i+1)
-                      parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i, relLine, relCol+1)
+                      parseLoop ((posi, mkFlexibleIntFormatTypar g m) :: acc)  (i, fragLine, fragCol+1) fragments m
                   | _ -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifier()
 
               | ('h' | 'H') ->
                   failwithf "%s" <| FSComp.SR.forHIsUnnecessary()
 
               | 'M' ->
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i, relLine, relCol+1)
+                  parseLoop ((posi, mkFlexibleDecimalFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments m
 
               | ('f' | 'F' | 'e' | 'E' | 'g' | 'G') ->
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i, relLine, relCol+1)
+                  parseLoop ((posi, mkFlexibleFloatFormatTypar g m) :: acc) (i, fragLine, fragCol+1) fragments m
 
               | 'b' ->
                   checkOtherFlags ch
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, g.bool_ty)  :: acc) (i, relLine, relCol+1)
+                  parseLoop ((posi, g.bool_ty)  :: acc) (i, fragLine, fragCol+1) fragments m
 
               | 'c' ->
                   checkOtherFlags ch
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, g.char_ty)  :: acc) (i, relLine, relCol+1)
+                  parseLoop ((posi, g.char_ty)  :: acc) (i, fragLine, fragCol+1) fragments m
 
               | 's' ->
                   checkOtherFlags ch
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, g.string_ty)  :: acc) (i, relLine, relCol+1)
+                  parseLoop ((posi, g.string_ty)  :: acc) (i, fragLine, fragCol+1) fragments m
 
               | 'O' ->
                   checkOtherFlags ch
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, relLine, relCol+1)
+                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, fragLine, fragCol+1) fragments m
 
               // residue of hole "...{n}..." in interpolated strings become %P(...) 
               | 'P' when isInterpolated ->
                   checkOtherFlags ch
                   let i = requireAndSkipInterpolationHoleFormat (i+1)
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, relLine, relCol+1)
+                  // Note, the fragCol doesn't advance at all as these are magically inserted.  
+                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, fragLine, startFragCol) fragments m
 
               | 'A' ->
                   match info.numPrefixIfPos with
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
                   | Some '+' -> 
-                      collectSpecifierLocation relLine relCol 1
+                      collectSpecifierLocation fragLine fragCol 1
                       let i = skipPossibleInterpolationHole (i+1)
                       let xty = NewInferenceType ()
                       percentATys.Add(xty)
-                      parseLoop ((posi, xty) :: acc)  (i, relLine, relCol+1)
+                      parseLoop ((posi, xty) :: acc)  (i, fragLine, fragCol+1) fragments m
                   | Some n -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString())
 
               | 'a' ->
                   checkOtherFlags ch
                   let xty = NewInferenceType () 
                   let fty = printerArgTy --> (xty --> printerResidueTy)
-                  collectSpecifierLocation relLine relCol 2
+                  collectSpecifierLocation fragLine fragCol 2
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, relLine, relCol+1)
+                  parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, fragLine, fragCol+1) fragments m
 
               | 't' ->
                   checkOtherFlags ch
-                  collectSpecifierLocation relLine relCol 1
+                  collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, printerArgTy --> printerResidueTy) :: acc)  (i, relLine, relCol+1)
+                  parseLoop ((posi, printerArgTy --> printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments m
 
               | c -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)
           
           | '\n' ->
               appendToDotnetFormatString fmt.[i..i]
-              parseLoop acc (i+1, relLine+1, 0)   
+              parseLoop acc (i+1, fragLine+1, 0) fragments m
           | _ ->
               appendToDotnetFormatString fmt.[i..i]
-              parseLoop acc (i+1, relLine, relCol+1)
+              parseLoop acc (i+1, fragLine, fragCol+1) fragments m
            
-    let results = parseLoop [] (0, 0, m.StartColumn)
+    let results = parseLoop [] (0, 0, m.StartColumn) fragments m
     results, Seq.toList specifierLocations, dotnetFormatString.ToString(), percentATys.ToArray()
 
-let ParseFormatString m g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
-    let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
+let ParseFormatString m ms g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
+    let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m ms g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
     let printerTy = List.foldBack (-->) argTys printerResultTy
     let printerTupleTy = mkRefTupledTy g argTys
     argTys, printerTy, printerTupleTy, percentATys, specifierLocations, dotnetFormatString
 
 let TryCountFormatStringArguments m g isInterpolated fmt printerArgTy printerResidueTy =
     try
-        let argTys, _specifierLocations, _dotnetFormatString, _percentATys = parseFormatStringInternal m g isInterpolated false None fmt printerArgTy printerResidueTy
+        let argTys, _specifierLocations, _dotnetFormatString, _percentATys = parseFormatStringInternal m [] g isInterpolated false None fmt printerArgTy printerResidueTy
         Some argTys.Length
     with _ ->
         None

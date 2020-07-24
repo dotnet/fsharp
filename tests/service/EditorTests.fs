@@ -524,6 +524,41 @@ let _ = List.iter(printfn \"\"\"%-A
                      (7, 33, 7, 35,1 )|]
  
 [<Test>]
+let ``Printf specifiers for regular and verbatim interpolated strings`` () = 
+    let input = 
+      """let os = System.Text.StringBuilder() // line 1
+let _ = $"{0}"                                // line 2
+let _ = $"%A{0}"                              // line 3
+let _ = $"%7.1f{1.0}"                         // line 4
+let _ = $"%-8.1e{1.0}+567"                    // line 5
+let s = "value"                               // line 6
+let _ = $@"%-5s{s}"                           // line 7
+let _ = $@"%-A{-10}"                          // line 8
+let _ = @$"
+            %-O{-10}"                         // line 10
+let _ = $"
+
+            %-O{-10}"                         // line 13
+let _ = List.map (fun x -> sprintf $@"%A{x}
+                                      ")      // line 15
+let _ = $"\n%-8.1e{1.0}+567"                  // line 16
+let _ = $@"%O{1}\n%-5s{s}"                    // line 17
+let _ = $"%%"                                 // line 18
+"""
+
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
+
+    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
+    |> shouldEqual
+        [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
+          (8, 11, 8, 14, 1); (10, 12, 10, 15, 1); (13, 12, 13, 15, 1);
+          (14, 38, 14, 40, 1); (16, 12, 16, 18, 1); (17, 11, 17, 13, 1);
+          (17, 16, 17, 20, 1); (18, 10, 18, 12, 0)|]
+
+[<Test>]
 let ``Printf specifiers for user-defined functions`` () = 
     let input = 
       """

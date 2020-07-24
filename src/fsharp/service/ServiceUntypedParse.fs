@@ -210,7 +210,10 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                       yield! walkExpr false e
 
                   | SynExpr.InterpolatedString (parts, _) -> 
-                      yield! walkExprs [ for part in parts do match part with Choice1Of2 _ -> () | Choice2Of2 (fillExpr, _) -> yield fillExpr ]
+                      yield! walkExprs [ for part in parts do 
+                                            match part with 
+                                            | SynInterpolatedStringPart.String _ -> ()
+                                            | SynInterpolatedStringPart.FillExpr (fillExpr, _) -> yield fillExpr ]
 
                   | SynExpr.YieldOrReturn (_, e, _)
                   | SynExpr.YieldOrReturnFrom (_, e, _)
