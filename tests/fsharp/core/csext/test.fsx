@@ -314,6 +314,11 @@ module TupleSRTP =
     
     let areEqualT8 = System.Tuple<_,_,_,_,_,_,_,_>(1,2,3,4,5,6,7,System.Tuple<_>  (8)  ) = (1,2,3,4,5,6,7,8)
     let areEqualT9 = System.Tuple<_,_,_,_,_,_,_,_>(1,2,3,4,5,6,7,System.Tuple<_,_>(8,9)) = (1,2,3,4,5,6,7,8,9)
+    
+    let c8 = System.Tuple<int,int,int,int,int,int,int,System.Tuple<int>>(1,2,3,4,5,6,7,System.Tuple<int>(8))
+    let c9 = System.Tuple<int,int,int,int,int,int,int,System.Tuple<int,int>>(1,2,3,4,5,6,7,System.Tuple<int,int>(8,9))
+    
+    
 
 (*--------------------*)  
 
