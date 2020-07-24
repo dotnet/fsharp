@@ -127,6 +127,7 @@ module internal ToolLocationHelper =
     let dotNetFrameworkVersion47  = Version(4, 7)
     let dotNetFrameworkVersion471 = Version(4, 7, 1)
     let dotNetFrameworkVersion472 = Version(4, 7, 2)
+    let dotNetFrameworkVersion48  = Version(4, 8)
 
     // visual studio versions.
     let visualStudioVersion100 = new Version(10, 0);
@@ -222,6 +223,7 @@ module internal ToolLocationHelper =
         | TargetDotNetFrameworkVersion.Version47 -> dotNetFrameworkVersion47
         | TargetDotNetFrameworkVersion.Version471 -> dotNetFrameworkVersion471
         | TargetDotNetFrameworkVersion.Version472 -> dotNetFrameworkVersion472
+        | TargetDotNetFrameworkVersion.Version48 -> dotNetFrameworkVersion48
         | _ -> raise (getArgumentException version)
 
     let complusInstallRoot = Environment.GetEnvironmentVariable("COMPLUS_INSTALLROOT")
@@ -765,6 +767,7 @@ module internal ToolLocationHelper =
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion47  visualStudioVersion150     // v4.7
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion471 visualStudioVersion150     // v4.7.1
             CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion472 visualStudioVersion150     // v4.7.2
+            CreateDotNetFrameworkSpecForV4 dotNetFrameworkVersion48  visualStudioVersion150     // v4.8
         |]
         array.ToDictionary<DotNetFrameworkSpec, Version>(fun spec -> spec.Version)
 
