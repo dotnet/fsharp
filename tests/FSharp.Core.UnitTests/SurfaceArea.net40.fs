@@ -2797,6 +2797,7 @@ Microsoft.FSharp.Core.LanguagePrimitives: TResult LogicalNotDynamic[T,TResult](T
 Microsoft.FSharp.Core.LanguagePrimitives: TResult RightShiftDynamic[T1,T2,TResult](T1, T2)
 Microsoft.FSharp.Core.LanguagePrimitives: TResult SubtractionDynamic[T1,T2,TResult](T1, T2)
 Microsoft.FSharp.Core.LanguagePrimitives: TResult UnaryNegationDynamic[T,TResult](T)
+Microsoft.FSharp.Core.LanguagePrimitives: T UnaryPlusDynamic[T](T)
 Microsoft.FSharp.Core.Operators+Checked: Byte ToByte$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Byte], T)
 Microsoft.FSharp.Core.Operators+Checked: Char ToChar$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Char], T)
 Microsoft.FSharp.Core.Operators+Checked: Int16 ToInt16$W[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int16], T)
