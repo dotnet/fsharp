@@ -178,7 +178,7 @@ let ``Tokenizer test - multi-line nested string interpolation``() =
          (2,
           [("WHITESPACE", "                           "); ("IDENT", "contents");
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
-           ("STRING_TEXT", """); ("STRING_TEXT", "b"); ("STRING", """);
+           ("STRING_TEXT", "\""); ("STRING_TEXT", "b"); ("STRING", "\"");
            ("WHITESPACE", "     ")]);
          (3,
           [("WHITESPACE", "                          "); ("RBRACE", "}"); ("DOT", ".");
