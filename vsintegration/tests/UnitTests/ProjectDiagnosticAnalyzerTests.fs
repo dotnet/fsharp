@@ -5,7 +5,7 @@ open System
 open System.IO
 open System.Threading
 
-open FSharp.Compiler.Service.Tests.Common
+//open FSharp.Compiler.Service.Tests.Common
 
 open NUnit.Framework
 
@@ -20,15 +20,15 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 
-[<TestFixture>][<Category "Roslyn Services">]
-type ProjectDiagnosticAnalyzerTests()  =
+//[<TestFixture>][<Category "Roslyn Services">]
+//type ProjectDiagnosticAnalyzerTests()  =
 
-    let CreateProjectAndGetOptions(fileContents: string) =
-        let tempName = Path.GetTempFileName()
-        let fileName = Path.ChangeExtension(tempName, ".fs")
-        let projectName = Path.ChangeExtension(tempName, ".fsproj")
-        let dllName = Path.ChangeExtension(tempName, ".dll")
-        File.WriteAllText(fileName, fileContents)
+//    let CreateProjectAndGetOptions(fileContents: string) =
+//        let tempName = Path.GetTempFileName()
+//        let fileName = Path.ChangeExtension(tempName, ".fs")
+//        let projectName = Path.ChangeExtension(tempName, ".fsproj")
+//        let dllName = Path.ChangeExtension(tempName, ".dll")
+//        File.WriteAllText(fileName, fileContents)
 
-        let args = mkProjectCommandLineArgs (dllName, [fileName])
-        checker.GetProjectOptionsFromCommandLineArgs (projectName, args)
+//        let args = mkProjectCommandLineArgs (dllName, [fileName])
+//        checker.GetProjectOptionsFromCommandLineArgs (projectName, args)
