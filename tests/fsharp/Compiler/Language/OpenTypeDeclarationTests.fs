@@ -7,11 +7,6 @@ open NUnit.Framework
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
 
-(*
-    Tests in this file evaluate whether the language supports accessing functions on static classes using open
-    The feature was added in preview, the test cases ensure that the original errors are reproduced when the langversion:4.6 is specified
-*)
-
 [<TestFixture>]
 module OpenTypeDeclarationTests =
 
@@ -1616,21 +1611,3 @@ let main _ =
         |])
 
 #endif
-
-    [<Test>]
-    let ``Open contents of type provider`` () =
-        let typeProviderDir = FSharp.Tests.Core.getTestsDirectory "typeProviders\helloWorld"
-
-        let providerFsx =
-            sprintf """
-module FSharpTest
-
-#load @"%s"
-
-//type Doot = FSharp.HelloWorld.HelloWorldType
-            """ (typeProviderDir ++ "provider.fsx")
-
-        let providerCmpl =
-            Compilation.Create(providerFsx, Fsx, Library, options = [|"--langversion:preview"|])
-
-        CompilerAssert.Compile(providerCmpl)
