@@ -7240,13 +7240,25 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
         |> String.concat ""
 
     // Parse the format string to work out the phantom types and check for absence of '%' specifiers in FormattableString
-    let argTys, _printerTy, printerTupleTyRequired, percentATys, specifierLocations, dotnetFormatString =
-        let formatStringCheckContext =
-            match cenv.tcSink.CurrentSink with
-            | None -> None
-            | Some sink -> sink.FormatStringCheckContext
+    //
+    // If FormatStringCheckContext is set (i.e. we are doing foreground checking in the IDE)
+    // then we check the string twice, once to collect % positions and once to get errors.
+    // The process of getting % positions doesn't process the string in a semantically accurate way
+    // (but is enough to report % locations correctly), as it fetched the pieces from the 
+    // original source and this may include some additional characters,
+    // and also doesn't raise all necessary errors
+    match cenv.tcSink.CurrentSink with
+    | Some sink when sink.FormatStringCheckContext.IsSome -> 
         try 
-            CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString formatStringCheckContext printfFormatString printerArgTy printerResidueTy printerResultTy
+            CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString sink.FormatStringCheckContext printfFormatString printerArgTy printerResidueTy printerResultTy
+            |> ignore
+        with _err-> 
+            ()
+    | _ -> ()
+
+    let argTys, _printerTy, printerTupleTyRequired, percentATys, specifierLocations, dotnetFormatString =
+        try 
+            CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
         with Failure errString -> 
             error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
 
