@@ -1033,6 +1033,10 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;rest1] [a2;b2;c2;d2;e2;f2;g2;TType_app ((if evalTupInfoIsStruct tupInfo then g.struct_tuple1_tcr else g.ref_tuple1_tcr), [h2])]
     | TType_app (tc1, [a1;b1;c1;d1;e1;f1;g1;rest1]), TType_tuple (tupInfo, a2::b2::c2::d2::e2::f2::g2::rest2) when IsEncodedTuple tupInfo g tc1 ->
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;rest1] [a2;b2;c2;d2;e2;f2;g2;TType_tuple (tupInfo, rest2)]
+    | TType_tuple (tupInfo, [a1;b1;c1;d1;e1;f1;g1;h1]), TType_app (tc2, [a2;b2;c2;d2;e2;f2;g2;rest2]) when IsEncodedTuple tupInfo g tc2 ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;TType_app ((if evalTupInfoIsStruct tupInfo then g.struct_tuple2_tcr else g.ref_tuple2_tcr), [h1])] [a2;b2;c2;d2;e2;f2;g2;rest2]
+    | TType_tuple (tupInfo, a1::b1::c1::d1::e1::f1::g1::rest1), TType_app (tc2, [a2;b2;c2;d2;e2;f2;g2;rest2]) when IsEncodedTuple tupInfo g tc2 ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace None [a1;b1;c1;d1;e1;f1;g1;TType_tuple (tupInfo, rest1)] [a2;b2;c2;d2;e2;f2;g2;rest2]
 
     | TType_app (_, _), TType_app (_, _)   ->  localAbortD
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
