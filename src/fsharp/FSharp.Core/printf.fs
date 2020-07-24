@@ -943,7 +943,7 @@ module internal PrintfImpl =
     /// Parses format string and creates resulting step list and printer factory function.
     type FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt: string) =
     
-        let buildCaptureFunc (spec: FormatSpecifier, steps, argTys: Type[], retTy, nextInfo) = 
+        let buildCaptureFunc (spec: FormatSpecifier, allSteps, argTys: Type[], retTy, nextInfo) = 
             let (next:obj, nextCanCombine: bool, nextArgTys: Type[], nextRetTy, nextNextOpt) = nextInfo
             assert (argTys.Length > 0)
 
@@ -960,7 +960,7 @@ module internal PrintfImpl =
                 let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
                 let mi = mi.MakeGenericMethod([| argTys.[1]; retTy |])
                 let funcObj = mi.Invoke(null, [| next  |])
-                funcObj, false, argTys, retTy, Some next
+                funcObj, false, argTys, retTy, None
 
             | n1, n2 when nextCanCombine && n1 + n2 <= MAX_CAPTURE ->
                 // 'next' is thrown away on this path and replaced by a combined Capture
@@ -971,7 +971,7 @@ module internal PrintfImpl =
                     let captureMethName = "CaptureFinal" + string captureCount
                     let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
                     let mi = mi.MakeGenericMethod(combinedArgTys)
-                    let funcObj = mi.Invoke(null, [| steps |])
+                    let funcObj = mi.Invoke(null, [| allSteps |])
                     funcObj, true, combinedArgTys, nextRetTy, None
                 | Some nextNext ->
                     let captureMethName = "Capture" + string captureCount
@@ -1054,9 +1054,9 @@ module internal PrintfImpl =
                 (step :: steps)
             else
                 let i, spec = parseSpec i
-                let next, suffix = FormatString.findNextFormatSpecifier fmt i
+                let i, suffix = FormatString.findNextFormatSpecifier fmt i
                 let step = buildStep spec null prefix
-                parseStepsAux (step::steps) suffix next
+                parseStepsAux (step::steps) suffix i
 
         let parseSteps () =
             let i, prefix = FormatString.findNextFormatSpecifier fmt 0
@@ -1070,17 +1070,18 @@ module internal PrintfImpl =
             
             if i >= fmt.Length then 
                 let step = StepString(prefix)
-                let last = Specializations<'State, 'Residue, 'Result>.Final0(steps)
-                (step :: steps), (box last, true, [| |], funcTy, None)
+                let allSteps = (step :: steps)
+                let last = Specializations<'State, 'Residue, 'Result>.Final0(allSteps)
+                allSteps, (box last, true, [| |], funcTy, None)
             else
                 System.Diagnostics.Debug.Assert(fmt.[i] = '%', "s.[i] = '%'")
                 let i, spec = parseSpec i
-                let next, suffix = FormatString.findNextFormatSpecifier fmt i
+                let i, suffix = FormatString.findNextFormatSpecifier fmt i
                 let argTys, retTy =  extractCurriedArguments funcTy spec.ArgCount
                 let step = buildStep spec argTys prefix
-                let allSteps, next = parseAndCreateFuncFactoryAux (step::steps) suffix retTy next
-                let nextNew = buildCaptureFunc (spec, allSteps, argTys, retTy, next)
-                allSteps, nextNew
+                let allSteps, nextInfo = parseAndCreateFuncFactoryAux (step::steps) suffix retTy i
+                let nextInfoNew = buildCaptureFunc (spec, allSteps, argTys, retTy, nextInfo)
+                allSteps, nextInfoNew
 
         let parseAndCreateFuncFactory () =
             let funcTy = typeof<'Printer>

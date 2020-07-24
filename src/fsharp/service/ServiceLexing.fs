@@ -379,6 +379,7 @@ module internal LexerStateEncoding =
       | INTERP_STRING_BEGIN_END (_, cont)
       | INTERP_STRING_END (_, cont)
       | LBRACE cont
+      | RBRACE cont
       | BYTEARRAY (_, cont)
       | STRING (_, cont) -> cont
       | _ -> prevLexcont

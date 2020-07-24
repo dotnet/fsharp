@@ -178,14 +178,13 @@ let ``Tokenizer test - multi-line nested string interpolation``() =
          (2,
           [("WHITESPACE", "                           "); ("IDENT", "contents");
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " ");
-           ("STRING_TEXT", "\""); ("STRING_TEXT", "b"); ("STRING", "\"");
+           ("STRING_TEXT", """); ("STRING_TEXT", "b"); ("STRING", """);
            ("WHITESPACE", "     ")]);
          (3,
-          [("WHITESPACE", "                          "); ("STRING_TEXT", "}");
-           ("STRING_TEXT", "."); ("STRING_TEXT", "contents");
-           ("STRING_TEXT", "            ")]);
+          [("WHITESPACE", "                          "); ("RBRACE", "}"); ("DOT", ".");
+           ("IDENT", "contents"); ("WHITESPACE", "            ")]);
          (4,
-          [("STRING_TEXT", "                         "); ("STRING_TEXT", "}");
+          [("WHITESPACE", "                         "); ("STRING_TEXT", "}");
            ("STRING_TEXT", " "); ("STRING_TEXT", "def"); ("INTERP_STRING_END", "\"\"\"")])]
   
     if actual <> expected then 
@@ -208,8 +207,8 @@ let ``Tokenizer test - single-line nested string interpolation``() =
            ("STRING_TEXT", " "); ("INTERP_STRING_BEGIN_PART", "{"); ("WHITESPACE", " ");
            ("LBRACE", "{"); ("WHITESPACE", " "); ("IDENT", "contents");
            ("WHITESPACE", " "); ("EQUALS", "="); ("WHITESPACE", " "); ("INT32", "1");
-           ("WHITESPACE", " "); ("RBRACE", "}"); ("WHITESPACE", " "); ("RBRACE", "}");
-           ("STRING_TEXT", "\""); ("STRING_TEXT", "     ")])]
+           ("WHITESPACE", " "); ("RBRACE", "}"); ("WHITESPACE", " ");
+           ("STRING_TEXT", "}"); ("INTERP_STRING_END", "\""); ("WHITESPACE", "     ")])]
   
     if actual <> expected then 
         printfn "actual   = %A" actual
