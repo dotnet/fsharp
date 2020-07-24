@@ -64,6 +64,9 @@ module internal Impl =
         | null -> None
         | prop -> Some(fun (obj: obj) -> prop.GetValue (obj, instancePropertyFlags ||| bindingFlags, null, null, null))
 
+    //-----------------------------------------------------------------
+    // EXPRESSION TREE COMPILATION
+
     let compilePropGetterFunc (prop: PropertyInfo) =
         let param = Expression.Parameter (typeof<obj>, "param")
         
@@ -75,6 +78,47 @@ module internal Impl =
                         prop),
                     typeof<obj>),
                 param)
+        expr.Compile ()
+
+    let compileRecordReaderFunc (recordType, props: PropertyInfo[]) =
+        let param = Expression.Parameter (typeof<obj>, "param")
+        let typedParam = Expression.Variable recordType
+    
+        let expr =
+            Expression.Lambda<Func<obj, obj[]>> (
+                Expression.Block (
+                    [ typedParam ],
+                    Expression.Assign (typedParam, Expression.Convert (param, recordType)),
+                    Expression.NewArrayInit (typeof<obj>, [
+                        for prop in props ->
+                            Expression.Convert (Expression.Property (typedParam, prop), typeof<obj>) :> Expression
+                    ])
+                ),
+                param)
+        expr.Compile ()
+
+    let compileRecordConstructorFunc (ctorInfo: ConstructorInfo) =
+        let ctorParams = ctorInfo.GetParameters ()
+        let paramArray = Expression.Parameter (typeof<obj[]>, "paramArray")
+
+        let expr =
+            Expression.Lambda<Func<obj[], obj>> (
+                Expression.Convert (
+                    Expression.New (
+                        ctorInfo,
+                        [
+                            for paramIndex in 0 .. ctorParams.Length - 1 do
+                                let p = ctorParams.[paramIndex]
+
+                                Expression.Convert (
+                                    Expression.ArrayAccess (paramArray, Expression.Constant paramIndex),
+                                    p.ParameterType
+                                ) :> Expression
+                        ]
+                    ),
+                    typeof<obj>),
+                paramArray
+            )
         expr.Compile ()
 
     //-----------------------------------------------------------------
@@ -599,9 +643,9 @@ module internal Impl =
         let props = fieldPropsOfRecordType(typ, bindingFlags)
         (fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, null)))
 
-    let getRecordReaderFromFuncs(typ: Type, bindingFlags) =
-        let props = fieldPropsOfRecordType(typ, bindingFlags) |> Array.map compilePropGetterFunc
-        (fun (obj: obj) -> props |> Array.map (fun prop -> prop.Invoke obj))
+    let getRecordReaderCompiled(typ: Type, bindingFlags) =
+        let props = fieldPropsOfRecordType(typ, bindingFlags)
+        compileRecordReaderFunc(typ, props).Invoke
 
     let getRecordConstructorMethod(typ: Type, bindingFlags) =
         let props = fieldPropsOfRecordType(typ, bindingFlags)
@@ -615,6 +659,10 @@ module internal Impl =
         let ctor = getRecordConstructorMethod(typ, bindingFlags)
         (fun (args: obj[]) ->
             ctor.Invoke(BindingFlags.InvokeMethod  ||| BindingFlags.Instance ||| bindingFlags, null, args, null))
+
+    let getRecordConstructorCompiled(typ: Type, bindingFlags) =
+        let ctor = getRecordConstructorMethod(typ, bindingFlags)
+        compileRecordConstructorFunc(ctor).Invoke
 
     /// EXCEPTION DECOMPILATION
     // Check the base type - if it is also an F# type then
@@ -817,19 +865,19 @@ type FSharpValue =
             invalidArg "record" (SR.GetString (SR.objIsNotARecord))
         getRecordReader (typ, bindingFlags) record
 
-    static member PreComputeRecordFieldReader(info: PropertyInfo) =
+    static member PreComputeRecordFieldReader(info: PropertyInfo): obj -> obj =
         checkNonNull "info" info
-        (fun (obj: obj) -> info.GetValue (obj, null))
+        compilePropGetterFunc(info).Invoke
 
     static member PreComputeRecordReader(recordType: Type, ?bindingFlags) : (obj -> obj[]) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         checkRecordType ("recordType", recordType, bindingFlags)
-        getRecordReaderFromFuncs (recordType, bindingFlags)
+        getRecordReaderCompiled (recordType, bindingFlags)
 
     static member PreComputeRecordConstructor(recordType: Type, ?bindingFlags) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         checkRecordType ("recordType", recordType, bindingFlags)
-        getRecordConstructor (recordType, bindingFlags)
+        getRecordConstructorCompiled (recordType, bindingFlags)
 
     static member PreComputeRecordConstructorInfo(recordType: Type, ?bindingFlags) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
