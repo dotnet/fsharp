@@ -201,8 +201,8 @@ module OpenAFieldFromMath =
 
     [<Test>]
     let ``Open type and use nested types as unqualified`` () =
-        let csharpSource =
-            """
+        let csharp =
+            CSharp """
 using System;
 
 namespace CSharpTest
@@ -223,11 +223,9 @@ namespace CSharpTest
             }
         }
     }
-}
-            """
+}"""
 
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open type CSharpTest.Test
@@ -236,22 +234,17 @@ module Test =
     let x = NestedTest()
     let y = NestedTest<int>()
     let a = x.A()
-    let b = y.B()
-            """
-
-        let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-            |> CompilationReference.Create
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
-
-        CompilerAssert.Compile(fsCmpl)
+    let b = y.B()"""
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Open a type where the type declaration uses a type abbreviation as a qualifier to a real nested type`` () =
-        let csharpSource =
-            """
+        let csharp =
+            CSharp """
 using System;
 
 namespace CSharpTest
@@ -272,31 +265,24 @@ namespace CSharpTest
             }
         }
     }
-}
-            """
+}"""
 
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open System
 type Abbrev = CSharpTest.Test
-open type Abbrev.NestedTest
-            """
-
-        let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-            |> CompilationReference.Create
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
-
-        CompilerAssert.Compile(fsCmpl)
+open type Abbrev.NestedTest"""
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Open a type where the type declaration uses a type abbreviation`` () =
-        let csharpSource =
-            """
+        let csharp =
+            CSharp """
 using System;
 
 namespace CSharpTest
@@ -317,31 +303,24 @@ namespace CSharpTest
             }
         }
     }
-}
-            """
+}"""
 
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open System
 type Abbrev = CSharpTest.Test
-open type Abbrev
-            """
-
-        let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-            |> CompilationReference.Create
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
-
-        CompilerAssert.Compile(fsCmpl)
+open type Abbrev"""
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Open a nested type as qualified`` () =
-        let csharpSource =
-            """
+        let csharp =
+            CSharp """
 using System;
 
 namespace CSharpTest
@@ -355,33 +334,26 @@ namespace CSharpTest
             }
         }
     }
-}
-            """
+}"""
 
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open System
 open type CSharpTest.Test.NestedTest
 
 module Test =
-    let x = A()
-            """
-
-        let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-            |> CompilationReference.Create
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
-
-        CompilerAssert.Compile(fsCmpl)
+    let x = A()"""
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Open generic type and use nested types as unqualified`` () =
-        let csharpSource =
-            """
+        let csharp =
+            CSharp """
 namespace CSharpTest
 {
     public class Test<T>
@@ -406,11 +378,9 @@ namespace CSharpTest
     public class Test
     {
     }
-}
-            """
+}"""
 
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open System
@@ -444,39 +414,31 @@ module Test2 =
     let x2b : byte = x2.B()
 
     let y2 : NestedTest<int> = new NestedTest<int>()
-    let y2a : byte = y2.A()
-            """
-
-        let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-            |> CompilationReference.Create
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
-
-        CompilerAssert.Compile(fsCmpl)
+    let y2a : byte = y2.A()"""
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Open generic type and use nested types as unqualified 2`` () =
-        let fsharpSource =
-            """
+         FSharp """
 namespace FSharpTest
 
 open type System.Collections.Generic.List<int>
 
 module Test =
-    let e2 = new Enumerator()
-            """
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|])
-
-        CompilerAssert.Compile(fsCmpl)
+    let e2 = new Enumerator()"""
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Open generic type and use nested types as unqualified 3`` () =
-        let csharpSource =
-            """
+        let csharp =
+            CSharp """
 namespace CSharpTest
 {
     public class Test<T>
@@ -519,11 +481,9 @@ namespace CSharpTest
             }
         }
     }
-}
-            """
+}"""
 
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open System
@@ -573,22 +533,17 @@ module Test4 =
     let cc : float = c.C()
 
     let d : NestedNestedTest<int> = NestedNestedTest<int>()
-    let dd : int = d.D()
-            """
-
-        let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-            |> CompilationReference.Create
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
-
-        CompilerAssert.Compile(fsCmpl)
+    let dd : int = d.D()"""
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> shouldSucceed
+        |> ignore
 
     [<Test>]
     let ``Using the 'open' declaration on a possible type identifier - Error`` () =
-        let csharpSource =
-            """
+        let csharp =
+            CSharp """
 using System;
 
 namespace CSharpTest
@@ -602,80 +557,69 @@ namespace CSharpTest
 }
             """
 
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open System
 open CSharpTest.Test
 
 module Test =
-    let x = A()
-            """
-
-        let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
-            |> CompilationReference.Create
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
-
-        CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 39, (5, 17, 5, 21), "The namespace 'Test' is not defined.")
-            (FSharpErrorSeverity.Error, 39, (8, 13, 8, 14), "The value or constructor 'A' is not defined.")
-        |])
+    let x = A()"""
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 39, Line 5, Col 17, Line 5, Col 21, "The namespace 'Test' is not defined.")
+                (Error 39, Line 8, Col 13, Line 8, Col 14, "The value or constructor 'A' is not defined.")
+            ]
+        |> ignore
 
     [<Test>]
     let ``Open type declaration on a namespace - Error`` () =
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
-open type System
-            """
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|])
-
-        CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 39, (4, 11, 4, 17), "The type 'System' is not defined.")
-        |])
+open type System"""
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 39, Line 4, Col 11, Line 4, Col 17, "The type 'System' is not defined.")
+            ]
+        |> ignore
 
     [<Test>]
     let ``Open type declaration on a module - Error`` () =
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
-open type FSharp.Core.Option
-            """
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|])
-
-        CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 33, (4, 11, 4, 29), "The type 'Microsoft.FSharp.Core.Option<_>' expects 1 type argument(s) but is given 0")
-        |])
+open type FSharp.Core.Option"""
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 33, Line 4, Col 11, Line 4, Col 29, "The type 'Microsoft.FSharp.Core.Option<_>' expects 1 type argument(s) but is given 0")
+            ]
+        |> ignore
 
     [<Test>]
     let ``Open type declaration on a byref - Error`` () =
-        let fsharpSource =
-            """
+        FSharp """
 namespace FSharpTest
 
 open type byref<int>
 open type inref<int>
-open type outref<int>
-            """
-
-        let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|])
-
-        CompilerAssert.CompileWithErrors(fsCmpl, [|
-            (FSharpErrorSeverity.Error, 3252, (4, 11, 4, 21), "Byref types are not allowed in an open type declaration.")
-            (FSharpErrorSeverity.Error, 3252, (5, 11, 5, 21), "Byref types are not allowed in an open type declaration.")
-            (FSharpErrorSeverity.Error, 3252, (6, 11, 6, 22), "Byref types are not allowed in an open type declaration.")
-        |])
+open type outref<int>"""
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 3252, Line 4, Col 11, Line 4, Col 21, "Byref types are not allowed in an open type declaration.")
+                (Error 3252, Line 5, Col 11, Line 5, Col 21, "Byref types are not allowed in an open type declaration.")
+                (Error 3252, Line 6, Col 11, Line 6, Col 22, "Byref types are not allowed in an open type declaration.")
+            ]
+        |> ignore
 
     [<Test>]
     let ``Type extensions with static members are able to be accessed in an unqualified manner`` () =

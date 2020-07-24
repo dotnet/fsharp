@@ -285,7 +285,7 @@ let main argv = 0"""
                             | TestCompilationReference (cmpl) ->
                                 let filename =
                                  match cmpl with
-                                 | TestCompilation.CSharp c -> c.AssemblyName
+                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
                                  | _ -> Path.GetRandomFileName()
                                 let tmp = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
                                 disposals.Add({ new IDisposable with
