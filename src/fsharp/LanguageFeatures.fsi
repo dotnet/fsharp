@@ -19,6 +19,8 @@ type LanguageFeature =
     | AndBang
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
+    | WitnessPassing
+    | InterfacesWithMultipleGenericInstantiation
 
 /// LanguageVersion management
 type LanguageVersion =

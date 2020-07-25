@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 #if NETCOREAPP
 [<TestFixture>]

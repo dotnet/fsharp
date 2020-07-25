@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
@@ -176,7 +177,7 @@ printfn "%A" x14
             """
     [<Test>]
     let ``dotless float``() = 
-        CompilerAssert.CompileExeWithOptions [|"--langversion:preview"|]
+        CompilerAssert.CompileExeWithOptions [|"--langversion:5.0"|]
             """
 let x = 42f
 printfn "%A" x
@@ -192,7 +193,7 @@ printfn "%A" x
 
     [<Test>]
     let ``dotted floats should be equal to dotless floats``() = 
-        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:preview"|]
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:5.0"|]
             """
 if 1.0f <> 1f then failwith "1.0f <> 1f"
             """
@@ -213,14 +214,14 @@ if 1e1f <> 10.f then failwith "1e1f <> 10.f"
 
     [<Test>]
     let ``exponent dotted floats should be equal to dotless floats``() = 
-        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:preview"|]
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:5.0"|]
             """
 if 1.0e1f <> 10f then failwith "1.0e1f <> 10f" 
             """
 
     [<Test>]
     let ``exponent dotless floats should be equal to dotless floats``() = 
-        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:preview"|]
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:5.0"|]
             """
 if 1e1f <> 10f then failwith "1e1f <> 10f" 
             """

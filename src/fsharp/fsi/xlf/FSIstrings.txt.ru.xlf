@@ -122,11 +122,6 @@
         <target state="translated">Каталог "{0}" не существует</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">Недопустимая директива "#{0} {1}"</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">Предупреждение: слишком длинная строка, некоторые знаки игнорируются\n</target>

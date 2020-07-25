@@ -218,6 +218,43 @@ module MapTree =
                     mk l sk sv r'
             else rebalance l k2 v2 (remove comparer k r) 
 
+    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value option) (m: MapTree<'Key, 'Value>) =
+        match m with
+        | MapEmpty ->
+            match u None with
+            | None -> m
+            | Some v -> MapOne (k, v)
+        | MapOne (k2, v2) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0 then
+                match u None with
+                | None -> m
+                | Some v -> MapNode (k, v, MapEmpty, m, 2)
+            elif c = 0 then
+                match u (Some v2) with
+                | None -> MapEmpty
+                | Some v -> MapOne (k, v)
+            else
+                match u None with
+                | None -> m
+                | Some v -> MapNode (k, v, m, MapEmpty, 2)
+        | MapNode (k2, v2, l, r, h) ->
+            let c = comparer.Compare(k, k2)
+            if c < 0 then
+                rebalance (change comparer k u l) k2 v2 r
+            elif c = 0 then
+                match u (Some v2) with
+                | None ->
+                    match l, r with
+                    | MapEmpty, _ -> r
+                    | _, MapEmpty -> l
+                    | _ ->
+                        let sk, sv, r' = spliceOutSuccessor r
+                        mk l sk sv r'
+                | Some v -> MapNode (k, v, l, r, h)
+            else
+                rebalance l k2 v2 (change comparer k u r)
+
     let rec mem (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
         match m with 
         | MapEmpty -> false
@@ -512,6 +549,9 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
 #endif
         new Map<'Key, 'Value>(comparer, MapTree.add comparer key value tree)
 
+    member m.Change(key, f) : Map<'Key, 'Value> =
+        new Map<'Key, 'Value>(comparer, MapTree.change comparer key f tree)
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member m.IsEmpty = MapTree.isEmpty tree
 
@@ -728,6 +768,10 @@ module Map =
     [<CompiledName("Add")>]
     let add key value (table: Map<_, _>) =
         table.Add (key, value)
+
+    [<CompiledName("Change")>]
+    let change key f (table: Map<_, _>) =
+        table.Change (key, f)
 
     [<CompiledName("Find")>]
     let find key (table: Map<_, _>) =

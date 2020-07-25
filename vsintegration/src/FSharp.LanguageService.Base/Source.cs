@@ -2426,7 +2426,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
             if (this.currentParameter == -1)
             {
-                // a bit of a kludge; if they just backspaced over the last comma and there's no close parenthesis, the caret is just to the right of all the param
+                // a bit messy; if they just backspaced over the last comma and there's no close parenthesis, the caret is just to the right of all the param
                 // ranges, but we don't want to dismiss the tip.  so look just left of the caret and see if that would be inside the final param
                 if (methodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedBackspace
                     && ranges[ranges.Length - 1].GetSpan(wpfTextView.TextSnapshot).Contains(wpfTextView.Caret.Position.BufferPosition.Subtract(1)))

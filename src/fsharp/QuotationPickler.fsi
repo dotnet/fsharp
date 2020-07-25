@@ -47,7 +47,7 @@ type ModuleDefnData =
       IsProperty: bool }
 
 type MethodBaseData = 
-    | ModuleDefn of ModuleDefnData
+    | ModuleDefn of ModuleDefnData * (string * int) option
     | Method     of MethodData
     | Ctor       of CtorData
 
@@ -61,7 +61,8 @@ val mkLambda : VarData * ExprData -> ExprData
 val mkQuote  : ExprData -> ExprData 
 val mkQuoteRaw40  : ExprData -> ExprData  // only available for FSharp.Core 4.4.0.0+
 val mkCond   : ExprData * ExprData * ExprData -> ExprData 
-val mkModuleValueApp : NamedTypeData * string * bool * TypeData list * ExprData list list -> ExprData 
+val mkModuleValueApp : NamedTypeData * string * bool * TypeData list * ExprData list -> ExprData 
+val mkModuleValueWApp : NamedTypeData * string * bool * string * int * TypeData list * ExprData list -> ExprData 
 val mkLetRec : (VarData * ExprData) list * ExprData -> ExprData 
 val mkLet : (VarData * ExprData) * ExprData -> ExprData
 val mkRecdMk : NamedTypeData  * TypeData list * ExprData list -> ExprData
@@ -106,6 +107,8 @@ val mkFieldGet : NamedTypeData * string * TypeData list * ExprData list -> ExprD
 val mkFieldSet : NamedTypeData * string * TypeData list * ExprData list -> ExprData  
 val mkCtorCall : CtorData * TypeData list * ExprData list -> ExprData 
 val mkMethodCall : MethodData * TypeData list * ExprData list -> ExprData 
+val mkMethodCallW : MethodData * MethodData * int * TypeData list * ExprData list -> ExprData 
+
 val mkAttributedExpression : ExprData * ExprData -> ExprData 
 val pickle : (ExprData -> byte[]) 
 val isAttributedExpression : ExprData -> bool

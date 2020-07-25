@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -13,49 +13,32 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <UnitTestType>nunit</UnitTestType>
+    <NoWarn>3186</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\..\src\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
     </Compile>
-    <Compile Include="test-framework.fs" />
-    <Compile Include="..\FSharp.Compiler.UnitTests\NunitHelpers.fs">
-      <Link>NunitHelpers.fs</Link>
-    </Compile>
+    <Compile Include="NUnitHelpers.fs" />
     <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />
     <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
-    <Compile Include="Compiler\ILChecker.fs" />
-    <Compile Include="Compiler\Utilities.fs" />
-    <Compile Include="Compiler\CompilerAssert.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\TailCalls.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
-    <Compile Include="Compiler\ErrorMessages\ConstructorTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\ClassesTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\ElseBranchHasWrongTypeTests.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
+    <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
+    <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
-    <Compile Include="Compiler\ErrorMessages\MissingElseBranch.fs" />
-    <Compile Include="Compiler\ErrorMessages\UnitGenericAbstactType.fs" />
-    <Compile Include="Compiler\ErrorMessages\NameResolutionTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\TypeMismatchTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\UpcastDowncastTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\AssignmentErrorTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\SuggestionsTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\WrongSyntaxInForLoop.fs" />
-    <Compile Include="Compiler\ErrorMessages\WarnExpressionTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\DontSuggestTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\MissingExpressionTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\InvalidNumericLiteralTests.fs" />
-    <Compile Include="Compiler\ErrorMessages\ModuleAbbreviationTests.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
@@ -70,18 +53,35 @@
     <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
     <Compile Include="Compiler\Language\TypeAttributeTests.fs" />
     <Compile Include="Compiler\Language\ByrefTests.fs" />
+    <Compile Include="Compiler\Language\InterfaceTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
     <Compile Include="Compiler\Language\OpenStaticClasses.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
+    <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\CastToUnitsTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\ComparisonTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\StringFormatTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\IEnumerableTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\MapTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\CollectionTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Collections\ListTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\ExtraTopLevelOperators\DictionaryTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\NativeInterop\StackallocTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\AbsTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\CastTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\HashTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\PowTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\RoundTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\SignTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Operators\StringTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Reflection\SprintfTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Reflection\PreComputedTupleConstructorTests.fs" />
+    <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
 
@@ -92,6 +92,7 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

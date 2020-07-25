@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 [<TestFixture()>]
 module IndexerRegressionTests =

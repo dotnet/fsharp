@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp3.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <OutputType>Library</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
@@ -33,6 +33,13 @@
   <ItemGroup>
     <Compile Include="NUnitFrameworkShims.fs" />
     <Compile Include="LibraryTestFx.fs" />
+    <Compile Include="FSharp.Core\PrimTypes.fs" />
+    <Compile Include="FSharp.Core\ComparersRegression.fs" />
+    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" />
+    <Compile Include="FSharp.Core\RecordTypes.fs" />
+    <Compile Include="FSharp.Core\OperatorsModule1.fs" />
+    <Compile Include="FSharp.Core\OperatorsModule2.fs" />
+    <Compile Include="FSharp.Core\OperatorsModuleChecked.fs" />
 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
@@ -59,10 +66,6 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqMultipleIteration.fs" />
-    <Compile Include="FSharp.Core\PrimTypes.fs" />
-    <Compile Include="FSharp.Core\ComparersRegression.fs" />
-    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" />
-    <Compile Include="FSharp.Core\RecordTypes.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
@@ -87,9 +90,7 @@
     <Compile Include="SurfaceArea.net40.fs" Condition="$(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="**/*" Exclude="**/*.bak;Directory.Build.Props;Directory.Build.targets;FSharp.Core.UnitTests.fsproj" CopyToOutputDirectory="never" />
-  </ItemGroup>
+  <ItemGroup />
 
   <ItemGroup Condition="'$(BUILD_IN_FSHARP_REPOSITORY)' == 'true'">
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />

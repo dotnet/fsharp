@@ -152,11 +152,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "netcoreapp3.0"
+        $script:bootstrapTfm = "netcoreapp3.1"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "netcoreapp3.0") {
+    if ($bootstrapTfm -eq "netcoreapp3.1") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -178,7 +178,7 @@ function BuildSolution() {
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp3.0" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "netcoreapp3.1" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -264,7 +264,7 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
 }
 
 function BuildCompiler() {
-    if ($bootstrapTfm -eq "netcoreapp3.0") {
+    if ($bootstrapTfm -eq "netcoreapp3.1") {
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
         $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
@@ -277,14 +277,14 @@ function BuildCompiler() {
             $logFilePath = Join-Path $LogDir "fscBootstrapLog.binlog"
             $args += " /bl:$logFilePath"
         }
-        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
+        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
 
         if ($binaryLog) {
             $logFilePath = Join-Path $LogDir "fsiBootstrapLog.binlog"
             $args += " /bl:$logFilePath"
         }
-        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.0" + $argNoRestore + $argNoIncremental
+        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
         Exec-Console $dotnetExe $args
     }
 }
@@ -448,9 +448,10 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "netcoreapp3.0"
+    $coreclrTargetFramework = "netcoreapp3.1"
 
     if ($testDesktop -and -not $noVisualStudio) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
@@ -459,6 +460,7 @@ try {
     }
 
     if ($testCoreClr) {
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework

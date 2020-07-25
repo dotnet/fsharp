@@ -102,6 +102,11 @@
         <target state="new">implicit yield</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
+        <source>interfaces with multiple generic instantiation</source>
+        <target state="new">interfaces with multiple generic instantiation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="new">nameof</target>
@@ -137,6 +142,11 @@
         <target state="new">wild card in for loop</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureWitnessPassing">
+        <source>witness passing for trait constraints in F# quotations</source>
+        <target state="new">witness passing for trait constraints in F# quotations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> - {0}</target>
@@ -145,6 +155,11 @@
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
         <target state="translated">從結尾處切割需要語言版本 5.0，請使用 /langversion:preview。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -230,6 +245,16 @@
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
         <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceWithConcreteAndVariable">
+        <source>'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</source>
+        <target state="new">'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
+        <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
+        <target state="new">You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">

@@ -2703,7 +2703,7 @@ localBinding:
         let mRhs = expr.Range 
         let optReturnType = $4 
         let bindingBuilder, mBindLhs = $3 
-        let localBindingRange = unionRanges (rhs2 parseState 3 5) mRhs
+        let localBindingRange = unionRanges (rhs2 parseState 1 5) mRhs
         let localBindingBuilder = 
           (fun attrs vis mLetKwd -> 
             let mWhole = unionRanges mLetKwd mRhs
@@ -2712,7 +2712,7 @@ localBinding:
         localBindingRange, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  error
-      { let mWhole = rhs2 parseState 3 5 
+      { let mWhole = rhs2 parseState 1 5 
         let mRhs = rhs parseState 5
         let optReturnType = $4 
         let bindingBuilder, mBindLhs = $3 
@@ -2727,7 +2727,7 @@ localBinding:
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints recover
       { if not $5 then reportParseErrorAt (rhs parseState 5) (FSComp.SR.parsUnexpectedEndOfFileDefinition())
         let optReturnType = $4 
-        let mWhole = match optReturnType with None -> rhs parseState 3 | Some _ -> rhs2 parseState 3 4
+        let mWhole = rhs2 parseState 1 (match optReturnType with None -> 3 | _ -> 4)
         let mRhs = mWhole.EndRange  // zero-width range at end of last good token
         let bindingBuilder, mBindLhs = $3 
         let localBindingBuilder = 
@@ -4012,8 +4012,8 @@ atomicExpr:
   | GLOBAL
       { SynExpr.Ident (ident(MangledGlobalName, rhs parseState 1)), false }
 
-  | nameop
-      { SynExpr.Ident ($1), false }
+  | identExpr
+      { $1, false }
 
   | LBRACK listExprElements RBRACK 
       { $2 (lhs parseState) false, false }
@@ -4957,12 +4957,12 @@ atomType:
   | UNDERSCORE 
      { SynType.Anon (lhs parseState) }
 
-  | LPAREN typ rparen 
-     {  $2 }
+  | LPAREN typ rparen
+     { SynType.Paren ($2, lhs parseState) }
 
-  | LPAREN typ recover      
-     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
-       $2 }  
+  | LPAREN typ recover
+     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen ())
+       SynType.Paren ($2, lhs parseState) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
     { SynType.Tuple(true, (false, $3) :: $5, lhs parseState) }
@@ -5334,6 +5334,16 @@ pathOp:
 /* nameop is identOrOp not used as part of a path */
 nameop: 
   | identOrOp { $1 } 
+
+identExpr:
+  | ident
+     { SynExpr.Ident($1) }
+
+  | opName
+     { let m = lhs parseState
+       let mLparen = mkFileIndexRange m.FileIndex m.Start (mkPos m.StartLine (m.StartColumn + 1))
+       let mRparen = mkFileIndexRange m.FileIndex (mkPos m.EndLine (m.EndColumn - 1)) m.End
+       SynExpr.Paren(SynExpr.Ident($1), mLparen, Some mRparen, m) }
 
 topSeparator: 
   | SEMICOLON { } 

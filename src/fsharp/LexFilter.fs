@@ -1242,7 +1242,7 @@ type LexFilterImpl (lightSyntaxStatus: LightSyntaxStatus, compilingFsLib, lexer,
         // a TYPE or MODULE. So the lexfilter helps out by looking ahead for these tokens and (1) closing expression contexts and (2) inserting extra 'coming soon' tokens
         // that the expression rules in the FsYacc parser can 'shift' to make progress parsing the incomplete expressions, without using the 'recover' action.
         let insertComingSoonTokens(keywordName, comingSoon, isHere) =
-            // compiling the source for FSharp.Core.dll uses crazy syntax like 
+            // compiling the source for FSharp.Core.dll uses unconventional syntax like
             //     (# "unbox.any !0" type ('T) x : 'T #)
             // where the type keyword is used inside an expression, so we must exempt FSharp.Core from some extra failed-parse-diagnostics-recovery-processing of the 'type' keyword
             let mutable effectsToDo = []

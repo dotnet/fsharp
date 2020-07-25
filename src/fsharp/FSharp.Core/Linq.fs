@@ -396,7 +396,7 @@ module LeafExpressionConverter =
             | NullableGreaterEqNullableQ _ -> transBinOp inp env false args false Expression.GreaterThanOrEqual
             | NullableLessNullableQ _ -> transBinOp inp env false args false Expression.LessThan
             | NullableLessEqNullableQ _ -> transBinOp inp env false args false Expression.LessThanOrEqual
-
+            
             // Detect the F# quotation encoding of decimal literals
             | MakeDecimalQ (_, _, [Int32 lo; Int32 med; Int32 hi; Bool isNegative; Byte scale]) ->
                 Expression.Constant (new System.Decimal(lo, med, hi, isNegative, scale)) |> asExpr
@@ -414,33 +414,33 @@ module LeafExpressionConverter =
             | BitwiseOrQ _ -> transBinOp inp env false args false Expression.Or
             | BitwiseXorQ _ -> transBinOp inp env false args false Expression.ExclusiveOr
             | BitwiseNotQ (_, _, [x1]) -> Expression.Not(ConvExprToLinqInContext env x1) |> asExpr
-
-            | CheckedNeg (_, _, [x1]) -> Expression.NegateChecked(ConvExprToLinqInContext env x1) |> asExpr
+            
+            | CheckedNeg (_, _, [x1]) -> Expression.NegateChecked(ConvExprToLinqInContext env x1)                                |> asExpr
             | CheckedPlusQ _ -> transBinOp inp env false args false Expression.AddChecked
             | CheckedMinusQ _ -> transBinOp inp env false args false Expression.SubtractChecked
             | CheckedMultiplyQ _ -> transBinOp inp env false args false Expression.MultiplyChecked
-
+            
             | NullablePlusQ _ -> transBinOp inp env false args true Expression.Add
             | PlusNullableQ _ -> transBinOp inp env true args false Expression.Add
             | NullablePlusNullableQ _ -> transBinOp inp env false args false Expression.Add
-
+            
             | NullableMinusQ _ -> transBinOp inp env false args true Expression.Subtract
             | MinusNullableQ _ -> transBinOp inp env true args false Expression.Subtract
             | NullableMinusNullableQ _ -> transBinOp inp env false args false Expression.Subtract
-
+            
             | NullableMultiplyQ _ -> transBinOp inp env false args true Expression.Multiply
             | MultiplyNullableQ _ -> transBinOp inp env true args false Expression.Multiply
             | NullableMultiplyNullableQ _ -> transBinOp inp env false args false Expression.Multiply
-
+            
             | NullableDivideQ _ -> transBinOp inp env false args true Expression.Divide
             | DivideNullableQ _ -> transBinOp inp env true args false Expression.Divide
             | NullableDivideNullableQ _ -> transBinOp inp env false args false Expression.Divide
-
+            
             | NullableModuloQ _ -> transBinOp inp env false args true Expression.Modulo
             | ModuloNullableQ _ -> transBinOp inp env true args false Expression.Modulo
             | NullableModuloNullableQ _ -> transBinOp inp env false args false Expression.Modulo
 
-            | ConvNullableCharQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
+            | ConvNullableCharQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
             | ConvNullableDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<decimal>>) |> asExpr
             | ConvNullableFloatQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float>>) |> asExpr
             | ConvNullableDoubleQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<double>>) |> asExpr
@@ -496,10 +496,19 @@ module LeafExpressionConverter =
             // Throw away markers inserted to satisfy C#'s design where they pass an argument
             // or type T to an argument expecting Expression<T>.
             | ImplicitExpressionConversionHelperQ (_, [_], [x1]) -> ConvExprToLinqInContext env x1
+             
+            /// Use witnesses if they are available
+            | CallWithWitnesses (objArgOpt, _, minfo2, witnessArgs, args) -> 
+                let fullArgs = witnessArgs @ args
+                let replacementExpr =
+                    match objArgOpt with
+                    | None -> Expr.Call(minfo2, fullArgs)
+                    | Some objArg -> Expr.Call(objArg, minfo2, fullArgs)
+                ConvExprToLinqInContext env replacementExpr
 
-            | _ ->
-                let argsP = ConvExprsToLinq env args
-                Expression.Call(ConvObjArg env objOpt None, minfo, argsP) |> asExpr
+            | _ -> 
+                let argsP = ConvExprsToLinq env args 
+                Expression.Call(ConvObjArg env objOpt None, minfo, argsP) |> asExpr  
 
 #if !NO_CURRIED_FUNCTION_OPTIMIZATIONS
         // f x1 x2 x3 x4 --> InvokeFast4
@@ -650,12 +659,11 @@ module LeafExpressionConverter =
             let convType = lambdaTy.MakeGenericType tyargs
             let convDelegate = Expression.Lambda(convType, bodyP, [| vP |]) |> asExpr
             Expression.Call(typeof<FuncConvert>, "ToFSharpFunc", tyargs, [| convDelegate |]) |> asExpr
-
         | _ ->
             failConvert inp
 
     and failConvert inp =
-        raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%A\n-------------\n" inp))
+            raise (new NotSupportedException(Printf.sprintf "Could not convert the following F# Quotation to a LINQ Expression Tree\n--------\n%A\n-------------\n" inp))
 
     and transBinOp inp env addConvertLeft args addConvertRight (exprErasedConstructor : _ * _ -> _) =
         match args with 

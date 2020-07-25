@@ -168,11 +168,38 @@ printfn ""%A"" result
 
     [<Test>]
     member __.``Eval script with package manager invalid key``() =
-        use script = new FSharpScript()
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let result, _errors = script.Eval(@"#r ""nugt:FSharp.Data""")
         match result with
         | Ok(_) -> Assert.Fail("expected a failure")
         | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+
+    [<Test>]
+    member __.``Eval script with invalid PackageName should fail immediately``() =
+        use output = new RedirectConsoleOutput()
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable found = 0
+        let outp = System.Collections.Generic.List<string>()
+        output.OutputProduced.Add(
+            fun line ->
+                if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then
+                    found <- found + 1
+                outp.Add(line))
+        let _result, _errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
+        Assert.True( (found = 1), "Expected to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+
+    [<Test>]
+    member __.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
+        use output = new RedirectConsoleOutput()
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let mutable foundResolve = 0
+        output.OutputProduced.Add (fun line -> if line.Contains("Microsoft (R) Build Engine version") then foundResolve <- foundResolve + 1)
+        let _result, _errors =
+            script.Eval("""
+#r "nuget:FSharp.Really.Not.A.Package"
+#r "nuget:FSharp.Really.Not.Another.Package"
+                """)
+        Assert.True( (foundResolve = 1), (sprintf "Expected to see 'Microsoft (R) Build Engine version' only once actually resolved %d times" foundResolve))
 
     [<Test>]
     member __.``ML - use assembly with ref dependencies``() =
@@ -302,3 +329,27 @@ let x =
 "
         script.Eval(code) |> ignoreValue
         Assert.False(foundInner)
+
+    [<Test>]
+    member _.``Script with nuget package that yields out of order dependencies works correctly``() =
+        // regression test for: https://github.com/dotnet/fsharp/issues/9217
+
+        let code = """
+#r "nuget: FParsec,1.1.1"
+
+open FParsec
+
+let test p str =
+    match run p str with
+    | Success(result, _, _)   ->
+        printfn "Success: %A" result
+        true
+    | Failure(errorMsg, _, _) ->
+        printfn "Failure: %s" errorMsg
+        false
+test pfloat "1.234"
+"""
+        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+        let opt = script.Eval(code)  |> getValue
+        let value = opt.Value
+        Assert.AreEqual(true, value.ReflectionValue :?> bool)

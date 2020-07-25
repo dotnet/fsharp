@@ -96,6 +96,7 @@ let mkStandardProjectReferences () =
             [ yield sysLib "mscorlib"
               yield sysLib "System"
               yield sysLib "System.Core"
+              yield sysLib "System.Numerics"
               yield fsCoreDefaultReference() ]
 #endif              
 
@@ -367,6 +368,9 @@ let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults)
 
     for name in names do
         Assert.That(Set.contains name symbolNames, name)
+
+let getRangeCoords (r: range) =
+    (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)
 
 let coreLibAssemblyName =
 #if NETCOREAPP

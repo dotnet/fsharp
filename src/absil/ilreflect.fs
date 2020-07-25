@@ -325,9 +325,12 @@ type cenv =
 
 let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
     let assembly = 
-        match cenv.resolveAssemblyRef asmref with                     
+        match cenv.resolveAssemblyRef asmref with
         | Some (Choice1Of2 path) ->
-            FileSystem.AssemblyLoadFrom path              
+            // asmRef is a path but the runtime is smarter with assembly names so make one
+            let asmName = AssemblyName.GetAssemblyName(path)
+            asmName.CodeBase <- path
+            FileSystem.AssemblyLoad asmName
         | Some (Choice2Of2 assembly) ->
             assembly
         | None ->
@@ -358,8 +361,6 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
         | res -> res
     | ILScopeRef.PrimaryAssembly ->
         convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
-
-
 
 /// The (local) emitter env (state). Some of these fields are effectively global accumulators
 /// and could be placed as hash tables in the global environment.
@@ -1480,14 +1481,13 @@ let emitParameter cenv emEnv (defineParameter: int * ParameterAttributes * strin
 // buildMethodPass2
 //----------------------------------------------------------------------------
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
 
 let enablePInvoke = true
 
 #else
 
-// We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-// but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+// Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
 let definePInvokeMethod =
     typeof<TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
         typeof<string>
@@ -1540,13 +1540,12 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
 (* p.CharBestFit *)
 (* p.NoMangle *)
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
-        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCORE_APP3_0.
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
+        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCOREAPP3.
         // It has always been available in the desktop framework
         let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs)
 #else
-        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+        // Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
         let methB =
             System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod")   // Absolutely can't happen
             definePInvokeMethod.Invoke(typB,  [| mdef.Name; p.Where.Name; p.Name; attrs; cconv; rty; null; null; argtys; null; null; pcc; pcs |]) :?> MethodBuilder

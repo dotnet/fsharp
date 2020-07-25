@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.DependencyManager.UnitTests
+namespace FSharp.Compiler.Scripting.DependencyManager.UnitTests
 
 open System
 open System.Collections.Generic
@@ -12,8 +12,9 @@ open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
 open System.Runtime.InteropServices
 open NUnit.Framework
-
 open Microsoft.DotNet.DependencyManager
+open FSharp.Compiler.Scripting.UnitTests
+open System.Threading
 
 module Native =
     [<DllImport("NoneExistentDll")>]
@@ -266,7 +267,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
         let result =
             use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -363,7 +364,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -445,7 +446,7 @@ printfn ""%A"" result
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed")
 
@@ -502,7 +503,7 @@ x |> Seq.iter(fun r ->
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         // Expected: error FS3217: PackageManager can not reference the System Package 'FSharp.Core'
         Assert.IsFalse(result.Success, "resolve succeeded but should have failed")
@@ -528,7 +529,7 @@ x |> Seq.iter(fun r ->
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
-            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "netcoreapp3.0")
+            dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.IsTrue(result.Success, "resolve failed but should have succeeded")
 
@@ -636,3 +637,97 @@ x |> Seq.iter(fun r ->
 
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
         Assert.IsFalse (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
+
+
+    [<Test>]
+    member __.``Verify that #help produces help text for fsi + dependency manager``() =
+        let expected = [|
+            """  F# Interactive directives:"""
+            """"""
+            """    #r "file.dll";;                   // Reference (dynamically load) the given DLL"""
+            """    #I "path";;                       // Add the given search path for referenced DLLs"""
+            """    #load "file.fs" ...;;             // Load the given file(s) as if compiled and referenced"""
+            """    #time ["on"|"off"];;              // Toggle timing on/off"""
+            """    #help;;                           // Display help"""
+            """    #quit;;                           // Exit"""
+            """"""
+            """  F# Interactive command line options:"""
+            """"""
+
+            // this is the end of the line each different platform has a different mechanism for starting fsi
+            // Actual output looks similar to: """      See 'testhost --help' for options"""
+            """--help' for options"""
+
+            """"""
+            """"""
+        |]
+
+        let mutable found = 0
+        let lines = System.Collections.Generic.List()
+        use sawExpectedOutput = new ManualResetEvent(false)
+        let verifyOutput (line: string) =
+            let compareLine (s: string) =
+                if s = "" then line = ""
+                else line.EndsWith(s)
+            lines.Add(line)
+            match expected |> Array.tryFind(compareLine) with
+            | None -> ()
+            | Some t ->
+                found <- found + 1
+                if found = expected.Length then sawExpectedOutput.Set() |> ignore
+
+        let text = "#help"
+        use output = new RedirectConsoleOutput()
+        use script = new FSharpScript(quiet = false, langVersion = LangVersion.V47)
+        let mutable found = 0
+        output.OutputProduced.Add (fun line -> verifyOutput line)
+        let opt = script.Eval(text) |> getValue
+        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
+
+
+    [<Test>]
+    member __.``Verify that #help produces help text for fsi + dependency manager language version preview``() =
+        let expected = [|
+            """  F# Interactive directives:"""
+            """"""
+            """    #r "file.dll";;                   // Reference (dynamically load) the given DLL"""
+            """    #I "path";;                       // Add the given search path for referenced DLLs"""
+            """    #load "file.fs" ...;;             // Load the given file(s) as if compiled and referenced"""
+            """    #time ["on"|"off"];;              // Toggle timing on/off"""
+            """    #help;;                           // Display help"""
+            """    #r "nuget:FSharp.Data, 3.1.2";;   // Load Nuget Package 'FSharp.Data' version '3.1.2'"""
+            """    #r "nuget:FSharp.Data";;          // Load Nuget Package 'FSharp.Data' with the highest version"""
+            """    #quit;;                           // Exit"""
+            """"""
+            """  F# Interactive command line options:"""
+            """"""
+
+            // this is the end of the line each different platform has a different mechanism for starting fsi
+            // Actual output looks similar to: """      See 'testhost --help' for options"""
+            """--help' for options"""
+
+            """"""
+            """"""
+        |]
+
+        let mutable found = 0
+        let lines = System.Collections.Generic.List()
+        use sawExpectedOutput = new ManualResetEvent(false)
+        let verifyOutput (line: string) =
+            let compareLine (s: string) =
+                if s = "" then line = ""
+                else line.EndsWith(s)
+            lines.Add(line)
+            match expected |> Array.tryFind(compareLine) with
+            | None -> ()
+            | Some t ->
+                found <- found + 1
+                if found = expected.Length then sawExpectedOutput.Set() |> ignore
+
+        let text = "#help"
+        use output = new RedirectConsoleOutput()
+        use script = new FSharpScript(quiet = false, langVersion = LangVersion.Preview)
+        let mutable found = 0
+        output.OutputProduced.Add (fun line -> verifyOutput line)
+        let opt = script.Eval(text) |> getValue
+        Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)

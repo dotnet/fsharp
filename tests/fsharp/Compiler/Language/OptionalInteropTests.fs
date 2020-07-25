@@ -4,8 +4,9 @@ namespace FSharp.Compiler.UnitTests
 
 open System.Collections.Immutable
 open NUnit.Framework
+open FSharp.Test.Utilities
+open FSharp.Test.Utilities.Utilities
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.UnitTests.Utilities
 open Microsoft.CodeAnalysis
 
 [<TestFixture>]
@@ -42,5 +43,5 @@ Test.M(x = Some 1)
             CompilationUtil.CreateCSharpCompilation(csSrc, CSharpLanguageVersion.CSharp8, TargetFramework.NetStandard20, additionalReferences = ImmutableArray.CreateRange [fsharpCoreAssembly])
             |> CompilationReference.Create
 
-        let fs = Compilation.Create(fsSrc, SourceKind.Fsx, CompileOutput.Exe, options = [|"--langversion:preview"|], cmplRefs = [cs])
+        let fs = Compilation.Create(fsSrc, SourceKind.Fsx, CompileOutput.Exe, options = [|"--langversion:5.0"|], cmplRefs = [cs])
         CompilerAssert.Compile fs

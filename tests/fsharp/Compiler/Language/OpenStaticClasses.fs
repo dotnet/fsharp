@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
+open FSharp.Test.Utilities
 
 
 (*

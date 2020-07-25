@@ -33,8 +33,6 @@ open System.Reflection
 
 #nowarn "9"
 
-let primaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
-
 let checking = false  
 let logging = false
 let _ = if checking then dprintn "warning: ILBinaryReader.checking is on"
@@ -306,17 +304,17 @@ let sigptrGetDouble bytes sigptr =
 
 let sigptrGetZInt32 bytes sigptr = 
     let b0, sigptr = sigptrGetByte bytes sigptr
-    if b0 <= 0x7Fuy then int b0, sigptr
+    if b0 <= 0x7Fuy then struct (int b0, sigptr)
     elif b0 <= 0xBFuy then 
         let b0 = b0 &&& 0x7Fuy
         let b1, sigptr = sigptrGetByte bytes sigptr
-        (int b0 <<< 8) ||| int b1, sigptr
+        struct ((int b0 <<< 8) ||| int b1, sigptr)
     else 
         let b0 = b0 &&& 0x3Fuy
         let b1, sigptr = sigptrGetByte bytes sigptr
         let b2, sigptr = sigptrGetByte bytes sigptr
         let b3, sigptr = sigptrGetByte bytes sigptr
-        (int b0 <<< 24) ||| (int b1 <<< 16) ||| (int b2 <<< 8) ||| int b3, sigptr
+        struct ((int b0 <<< 24) ||| (int b1 <<< 16) ||| (int b2 <<< 8) ||| int b3, sigptr)
          
 let rec sigptrFoldAcc f n (bytes: byte[]) (sigptr: int) i acc = 
     if i < n then 
@@ -328,6 +326,14 @@ let rec sigptrFoldAcc f n (bytes: byte[]) (sigptr: int) i acc =
 let sigptrFold f n (bytes: byte[]) (sigptr: int) = 
     sigptrFoldAcc f n bytes sigptr 0 []
 
+let sigptrFoldStruct f n (bytes: byte[]) (sigptr: int) =
+    let rec sigptrFoldAcc f n (bytes: byte[]) (sigptr: int) i acc = 
+        if i < n then 
+            let struct (x, sp) = f bytes sigptr
+            sigptrFoldAcc f n bytes sp (i+1) (x :: acc)
+        else 
+            struct (List.rev acc, sigptr)
+    sigptrFoldAcc f n bytes sigptr 0 []
 
 let sigptrGetBytes n (bytes: byte[]) sigptr = 
     if checking && sigptr + n >= bytes.Length then 
@@ -1717,7 +1723,7 @@ and seekReadTypeDefOrRefAsTypeRef (ctxt: ILMetadataReader) (TaggedIndex(tag, idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRef ctxt idx
     | tag when tag = tdor_TypeSpec -> 
         dprintn ("type spec used where a type ref or def is required")
-        primaryAssemblyILGlobals.typ_Object.TypeRef
+        PrimaryAssemblyILGlobals.typ_Object.TypeRef
     | _ -> failwith "seekReadTypeDefOrRefAsTypeRef_readTypeDefOrRefOrSpec"
 
 and seekReadMethodRefParent (ctxt: ILMetadataReader) mdv numtypars (TaggedIndex(tag, idx)) =
@@ -1827,7 +1833,7 @@ and seekReadMethods (ctxt: ILMetadataReader) numtypars midx1 midx2 =
                      yield seekReadMethod ctxt mdv numtypars i |])
 
 and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr = 
-    let n, sigptr = sigptrGetZInt32 bytes sigptr
+    let struct (n, sigptr) = sigptrGetZInt32 bytes sigptr
     if (n &&& 0x01) = 0x0 then (* Type Def *)
         TaggedIndex(tdor_TypeDef, (n >>>& 2)), sigptr
     else (* Type Ref *)
@@ -1835,26 +1841,26 @@ and sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr =
 
 and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr = 
     let b0, sigptr = sigptrGetByte bytes sigptr
-    if b0 = et_OBJECT then primaryAssemblyILGlobals.typ_Object, sigptr
-    elif b0 = et_STRING then primaryAssemblyILGlobals.typ_String, sigptr
-    elif b0 = et_I1 then primaryAssemblyILGlobals.typ_SByte, sigptr
-    elif b0 = et_I2 then primaryAssemblyILGlobals.typ_Int16, sigptr
-    elif b0 = et_I4 then primaryAssemblyILGlobals.typ_Int32, sigptr
-    elif b0 = et_I8 then primaryAssemblyILGlobals.typ_Int64, sigptr
-    elif b0 = et_I then primaryAssemblyILGlobals.typ_IntPtr, sigptr
-    elif b0 = et_U1 then primaryAssemblyILGlobals.typ_Byte, sigptr
-    elif b0 = et_U2 then primaryAssemblyILGlobals.typ_UInt16, sigptr
-    elif b0 = et_U4 then primaryAssemblyILGlobals.typ_UInt32, sigptr
-    elif b0 = et_U8 then primaryAssemblyILGlobals.typ_UInt64, sigptr
-    elif b0 = et_U then primaryAssemblyILGlobals.typ_UIntPtr, sigptr
-    elif b0 = et_R4 then primaryAssemblyILGlobals.typ_Single, sigptr
-    elif b0 = et_R8 then primaryAssemblyILGlobals.typ_Double, sigptr
-    elif b0 = et_CHAR then primaryAssemblyILGlobals.typ_Char, sigptr
-    elif b0 = et_BOOLEAN then primaryAssemblyILGlobals.typ_Bool, sigptr
+    if b0 = et_OBJECT then PrimaryAssemblyILGlobals.typ_Object, sigptr
+    elif b0 = et_STRING then PrimaryAssemblyILGlobals.typ_String, sigptr
+    elif b0 = et_I1 then PrimaryAssemblyILGlobals.typ_SByte, sigptr
+    elif b0 = et_I2 then PrimaryAssemblyILGlobals.typ_Int16, sigptr
+    elif b0 = et_I4 then PrimaryAssemblyILGlobals.typ_Int32, sigptr
+    elif b0 = et_I8 then PrimaryAssemblyILGlobals.typ_Int64, sigptr
+    elif b0 = et_I then PrimaryAssemblyILGlobals.typ_IntPtr, sigptr
+    elif b0 = et_U1 then PrimaryAssemblyILGlobals.typ_Byte, sigptr
+    elif b0 = et_U2 then PrimaryAssemblyILGlobals.typ_UInt16, sigptr
+    elif b0 = et_U4 then PrimaryAssemblyILGlobals.typ_UInt32, sigptr
+    elif b0 = et_U8 then PrimaryAssemblyILGlobals.typ_UInt64, sigptr
+    elif b0 = et_U then PrimaryAssemblyILGlobals.typ_UIntPtr, sigptr
+    elif b0 = et_R4 then PrimaryAssemblyILGlobals.typ_Single, sigptr
+    elif b0 = et_R8 then PrimaryAssemblyILGlobals.typ_Double, sigptr
+    elif b0 = et_CHAR then PrimaryAssemblyILGlobals.typ_Char, sigptr
+    elif b0 = et_BOOLEAN then PrimaryAssemblyILGlobals.typ_Bool, sigptr
     elif b0 = et_WITH then 
         let b0, sigptr = sigptrGetByte bytes sigptr
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
-        let n, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (n, sigptr) = sigptrGetZInt32 bytes sigptr
         let argtys, sigptr = sigptrFold (sigptrGetTy ctxt numtypars) n bytes sigptr
         seekReadTypeDefOrRef ctxt numtypars (if b0 = et_CLASS then AsObject else AsValue) argtys tdorIdx, 
         sigptr
@@ -1866,10 +1872,10 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         seekReadTypeDefOrRef ctxt numtypars AsValue List.empty tdorIdx, sigptr
     elif b0 = et_VAR then 
-        let n, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (n, sigptr) = sigptrGetZInt32 bytes sigptr
         ILType.TypeVar (uint16 n), sigptr
     elif b0 = et_MVAR then 
-        let n, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (n, sigptr) = sigptrGetZInt32 bytes sigptr
         ILType.TypeVar (uint16 (n + numtypars)), sigptr
     elif b0 = et_BYREF then 
         let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
@@ -1882,11 +1888,11 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         mkILArr1DTy ty, sigptr
     elif b0 = et_ARRAY then
         let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
-        let rank, sigptr = sigptrGetZInt32 bytes sigptr
-        let numSized, sigptr = sigptrGetZInt32 bytes sigptr
-        let sizes, sigptr = sigptrFold sigptrGetZInt32 numSized bytes sigptr
-        let numLoBounded, sigptr = sigptrGetZInt32 bytes sigptr
-        let lobounds, sigptr = sigptrFold sigptrGetZInt32 numLoBounded bytes sigptr
+        let struct (rank, sigptr) = sigptrGetZInt32 bytes sigptr
+        let struct (numSized, sigptr) = sigptrGetZInt32 bytes sigptr
+        let struct (sizes, sigptr) = sigptrFoldStruct sigptrGetZInt32 numSized bytes sigptr
+        let struct (numLoBounded, sigptr) = sigptrGetZInt32 bytes sigptr
+        let struct (lobounds, sigptr) = sigptrFoldStruct sigptrGetZInt32 numLoBounded bytes sigptr
         let shape = 
             let dim i =
               (if i < numLoBounded then Some (List.item i lobounds) else None), 
@@ -1896,7 +1902,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         
     elif b0 = et_VOID then ILType.Void, sigptr
     elif b0 = et_TYPEDBYREF then 
-        primaryAssemblyILGlobals.typ_TypedReference, sigptr
+        PrimaryAssemblyILGlobals.typ_TypedReference, sigptr
     elif b0 = et_CMOD_REQD || b0 = et_CMOD_OPT then 
         let tdorIdx, sigptr = sigptrGetTypeDefOrRefOrSpecIdx bytes sigptr
         let ty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
@@ -1905,7 +1911,7 @@ and sigptrGetTy (ctxt: ILMetadataReader) numtypars bytes sigptr =
         let ccByte, sigptr = sigptrGetByte bytes sigptr
         let generic, cc = byteAsCallConv ccByte
         if generic then failwith "fptr sig may not be generic"
-        let numparams, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
         let retty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
         let argtys, sigptr = sigptrFold (sigptrGetTy ctxt numtypars) ( numparams) bytes sigptr
         let typ = 
@@ -1951,8 +1957,8 @@ and readBlobHeapAsMethodSigUncached ctxtH (BlobAsMethodSigIdx (numtypars, blobId
     let sigptr = 0
     let ccByte, sigptr = sigptrGetByte bytes sigptr
     let generic, cc = byteAsCallConv ccByte
-    let genarity, sigptr = if generic then sigptrGetZInt32 bytes sigptr else 0x0, sigptr
-    let numparams, sigptr = sigptrGetZInt32 bytes sigptr
+    let struct (genarity, sigptr) = if generic then sigptrGetZInt32 bytes sigptr else 0x0, sigptr
+    let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
     let retty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
     let (argtys, varargs), _sigptr = sigptrGetArgTys ctxt numparams numtypars bytes sigptr []
     generic, genarity, cc, retty, argtys, varargs
@@ -1986,7 +1992,7 @@ and readBlobHeapAsPropertySigUncached ctxtH (BlobAsPropSigIdx (numtypars, blobId
     let hasthis = byteAsHasThis ccByte
     let ccMaxked = (ccByte &&& 0x0Fuy)
     if ccMaxked <> e_IMAGE_CEE_CS_CALLCONV_PROPERTY then dprintn ("warning: property sig was "+string ccMaxked+" instead of CC_PROPERTY")
-    let numparams, sigptr = sigptrGetZInt32 bytes sigptr
+    let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
     let retty, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
     let argtys, _sigptr = sigptrFold (sigptrGetTy ctxt numtypars) ( numparams) bytes sigptr
     hasthis, retty, argtys
@@ -2000,7 +2006,7 @@ and readBlobHeapAsLocalsSigUncached ctxtH (BlobAsLocalSigIdx (numtypars, blobIdx
     let sigptr = 0
     let ccByte, sigptr = sigptrGetByte bytes sigptr
     if ccByte <> e_IMAGE_CEE_CS_CALLCONV_LOCAL_SIG then dprintn "warning: local sig was not CC_LOCAL"
-    let numlocals, sigptr = sigptrGetZInt32 bytes sigptr
+    let struct (numlocals, sigptr) = sigptrGetZInt32 bytes sigptr
     let localtys, _sigptr = sigptrFold (sigptrGetLocal ctxt numtypars) ( numlocals) bytes sigptr
     localtys
       
@@ -2053,7 +2059,7 @@ and seekReadMethodSpecAsMethodDataUncached ctxtH (MethodSpecAsMspecIdx (numtypar
         let sigptr = 0
         let ccByte, sigptr = sigptrGetByte bytes sigptr
         if ccByte <> e_IMAGE_CEE_CS_CALLCONV_GENERICINST then dprintn ("warning: method inst ILCallingConv was "+string ccByte+" instead of CC_GENERICINST")
-        let numgpars, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (numgpars, sigptr) = sigptrGetZInt32 bytes sigptr
         let argtys, _sigptr = sigptrFold (sigptrGetTy ctxt numtypars) numgpars bytes sigptr
         argtys
     VarArgMethodData(enclTy, cc, nm, argtys, varargs, retty, minst)
@@ -2952,39 +2958,39 @@ and sigptrGetILNativeType ctxt bytes sigptr =
     elif ntbyte = 0x0uy then ILNativeType.Empty, sigptr
     elif ntbyte = nt_CUSTOMMARSHALER then  
         // reading native type blob CM1, sigptr= "+string sigptr+ ", bytes.Length = "+string bytes.Length) 
-        let guidLen, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (guidLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM2, sigptr= "+string sigptr+", guidLen = "+string ( guidLen)) 
         let guid, sigptr = sigptrGetBytes ( guidLen) bytes sigptr
         // reading native type blob CM3, sigptr= "+string sigptr) 
-        let nativeTypeNameLen, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (nativeTypeNameLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM4, sigptr= "+string sigptr+", nativeTypeNameLen = "+string ( nativeTypeNameLen)) 
         let nativeTypeName, sigptr = sigptrGetString ( nativeTypeNameLen) bytes sigptr
         // reading native type blob CM4, sigptr= "+string sigptr+", nativeTypeName = "+nativeTypeName) 
         // reading native type blob CM5, sigptr= "+string sigptr) 
-        let custMarshallerNameLen, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (custMarshallerNameLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM6, sigptr= "+string sigptr+", custMarshallerNameLen = "+string ( custMarshallerNameLen)) 
         let custMarshallerName, sigptr = sigptrGetString ( custMarshallerNameLen) bytes sigptr
         // reading native type blob CM7, sigptr= "+string sigptr+", custMarshallerName = "+custMarshallerName) 
-        let cookieStringLen, sigptr = sigptrGetZInt32 bytes sigptr
+        let struct (cookieStringLen, sigptr) = sigptrGetZInt32 bytes sigptr
         // reading native type blob CM8, sigptr= "+string sigptr+", cookieStringLen = "+string ( cookieStringLen)) 
         let cookieString, sigptr = sigptrGetBytes ( cookieStringLen) bytes sigptr
         // reading native type blob CM9, sigptr= "+string sigptr) 
         ILNativeType.Custom (guid, nativeTypeName, custMarshallerName, cookieString), sigptr
     elif ntbyte = nt_FIXEDSYSSTRING then 
-      let i, sigptr = sigptrGetZInt32 bytes sigptr
+      let struct (i, sigptr) = sigptrGetZInt32 bytes sigptr
       ILNativeType.FixedSysString i, sigptr
     elif ntbyte = nt_FIXEDARRAY then 
-      let i, sigptr = sigptrGetZInt32 bytes sigptr
+      let struct (i, sigptr) = sigptrGetZInt32 bytes sigptr
       ILNativeType.FixedArray i, sigptr
     elif ntbyte = nt_SAFEARRAY then 
       (if sigptr >= bytes.Length then
          ILNativeType.SafeArray(ILNativeVariant.Empty, None), sigptr
        else 
-         let i, sigptr = sigptrGetZInt32 bytes sigptr
+         let struct (i, sigptr) = sigptrGetZInt32 bytes sigptr
          if sigptr >= bytes.Length then
            ILNativeType.SafeArray (int32AsILVariantType ctxt i, None), sigptr
          else 
-           let len, sigptr = sigptrGetZInt32 bytes sigptr
+           let struct (len, sigptr) = sigptrGetZInt32 bytes sigptr
            let s, sigptr = sigptrGetString ( len) bytes sigptr
            ILNativeType.SafeArray (int32AsILVariantType ctxt i, Some s), sigptr)
     elif ntbyte = nt_ARRAY then 
@@ -2992,7 +2998,7 @@ and sigptrGetILNativeType ctxt bytes sigptr =
          ILNativeType.Array(None, None), sigptr
        else 
          let nt, sigptr = 
-           let u, sigptr' = sigptrGetZInt32 bytes sigptr
+           let struct (u, sigptr') = sigptrGetZInt32 bytes sigptr
            if (u = int nt_MAX) then 
              ILNativeType.Empty, sigptr'
            else
@@ -3001,11 +3007,11 @@ and sigptrGetILNativeType ctxt bytes sigptr =
          if sigptr >= bytes.Length then
            ILNativeType.Array (Some nt, None), sigptr
          else
-           let pnum, sigptr = sigptrGetZInt32 bytes sigptr
+           let struct (pnum, sigptr) = sigptrGetZInt32 bytes sigptr
            if sigptr >= bytes.Length then
              ILNativeType.Array (Some nt, Some(pnum, None)), sigptr
            else 
-             let additive, sigptr = 
+             let struct (additive, sigptr) = 
                if sigptr >= bytes.Length then 0, sigptr
                else sigptrGetZInt32 bytes sigptr
              ILNativeType.Array (Some nt, Some(pnum, Some additive)), sigptr

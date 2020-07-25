@@ -118,7 +118,7 @@ module internal Utilities =
         //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
         //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
         // 3. We are loaded in-process to some other application ... Eg. try .net
-        //    See if the host is dotnet.exe ... from netcoreapp3.0 on this is fairly unlikely
+        //    See if the host is dotnet.exe ... from netcoreapp3.1 on this is fairly unlikely
         // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
         //
         if isRunningOnCoreClr then
@@ -126,13 +126,13 @@ module internal Utilities =
             | value when not (String.IsNullOrEmpty(value)) ->
                 Some value                           // Value set externally
             | _ ->
-                // Probe for netsdk install
+                // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
                 let dotnetLocation =
                     let dotnetApp =
                         let platform = Environment.OSVersion.Platform
                         if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
-                    let assemblyLocation = typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location
-                    Path.Combine(assemblyLocation, "../../..", dotnetApp)
+                    let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+                    Path.GetFullPath(Path.Combine(assemblyLocation, "../../..", dotnetApp))
 
                 if File.Exists(dotnetLocation) then
                     Some dotnetLocation
@@ -209,10 +209,10 @@ module internal Utilities =
         let succeeded, stdOut, stdErr =
             if not (isRunningOnCoreClr) then
                 // The Desktop build uses "msbuild" to build
-                executeBuild msbuildExePath (arguments "") workingDir
+                executeBuild msbuildExePath (arguments "-v:quiet") workingDir
             else
                 // The coreclr uses "dotnet msbuild" to build
-                executeBuild dotnetHostPath (arguments "msbuild") workingDir
+                executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir
 
         let outputFile = projectPath + ".resolvedReferences.paths"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
