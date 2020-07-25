@@ -750,8 +750,10 @@ rule token args skip = parse
  | "#light" anywhite* 
  | ("#indent" | "#light") anywhite+ "\"on\""
    { if args.lightSyntaxStatus.ExplicitlySet && args.lightSyntaxStatus.WarnOnMultipleTokens then 
-         warning(Error((0,"#light should only occur as the first non-comment text in an F# source file"),lexbuf.LexemeRange))
-     // TODO unreachable error above, I think? - brianmcn 
+         let s = lexeme lexbuf
+         warning(Error((0, sprintf "%s should only be set once in an F# source file." s), lexbuf.LexemeRange))
+         // TODO: where should this go? (abelb)
+         //warning(Error((0,"#light should only occur as the first non-comment text in an F# source file."), lexbuf.LexemeRange))
      args.lightSyntaxStatus.Status <- true 
      if not skip then (HASH_LIGHT (LexCont.Token args.ifdefStack)) else token args skip lexbuf } 
 
