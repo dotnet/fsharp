@@ -14,7 +14,6 @@
     <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
-    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
