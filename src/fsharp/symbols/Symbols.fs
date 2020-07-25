@@ -2028,7 +2028,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 false
         let isBindNReturn (methodName: string) =
             if methodName.StartsWith("Bind") && methodName.EndsWith("Return") then
-                let (didParse, _) = System.Int32.TryParse(methodName.[4..^6])
+                let (didParse, _) = System.Int32.TryParse(methodName.[4..methodName.Length-7]) // replace this disgusting mess with reverse indexing some time
                 didParse
             else
                 false
