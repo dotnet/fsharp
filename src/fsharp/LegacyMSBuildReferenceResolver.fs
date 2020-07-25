@@ -73,7 +73,10 @@ module LegacyMSBuildReferenceResolver
     [<Literal>]    
     let private Net472 = "v4.7.2"
 
-    let SupportedDesktopFrameworkVersions = [ Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
+    [<Literal>]    
+    let private Net48 = "v4.8"
+
+    let SupportedDesktopFrameworkVersions = [ Net48; Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
@@ -90,6 +93,7 @@ module LegacyMSBuildReferenceResolver
             | Net47 -> Some TargetDotNetFrameworkVersion.Version47
             | Net471 -> Some TargetDotNetFrameworkVersion.Version471
             | Net472 -> Some TargetDotNetFrameworkVersion.Version472
+            | Net48 -> Some TargetDotNetFrameworkVersion.Version48
 #endif
             | _ -> assert false; None
         match v with
@@ -116,7 +120,8 @@ module LegacyMSBuildReferenceResolver
             try
 // The Mono build still uses an ancient version of msbuild from around Dev 14
 #if MSBUILD_AT_LEAST_15
-                if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
+                if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48)) <> null then Net48
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)) <> null then Net471
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47)) <> null then Net47
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462)) <> null then Net462
