@@ -71,13 +71,19 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
-            if String.IsNullOrEmpty str then
+            let len = length str
+            if len = 0 then 
                 String.Empty
             else
-                let res = StringBuilder str.Length
+                let result = str.ToCharArray()
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
-                str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
-                res.ToString()
+
+                let mutable i = 0
+                while i < len do
+                    result.[i] <- f.Invoke(i, result.[i])
+                    i <- i + 1
+
+                new String(result)
 
         [<CompiledName("Filter")>]
         let filter (predicate: char -> bool) (str:string) =

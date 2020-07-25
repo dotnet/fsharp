@@ -99,11 +99,35 @@ type StringModule() =
 
     [<Test>]
     member this.MapI() =
-        let e1 = String.mapi (fun i c -> char(int c + i)) "foo"
-        Assert.AreEqual("fpq", e1)
+        let e1 = String.mapi (fun _ c -> c) "12345"
+        Assert.AreEqual("12345", e1)
 
-        let e2 = String.mapi (fun i c -> c) null 
-        Assert.AreEqual("", e2)
+        let e2 = String.mapi (fun _ c -> c + char 1) "1"
+        Assert.AreEqual("2", e2)
+
+        let e3 = String.mapi (fun _ c -> c + char 1) "AB"
+        Assert.AreEqual("BC", e3)
+
+        let e4 = String.mapi (fun i c -> char(int c + i)) "hello"
+        Assert.AreEqual("hfnos", e4)
+
+        let e5 = String.mapi (fun _ c -> c) null 
+        Assert.AreEqual("", e5)
+
+        let e6 = String.mapi (fun _ c -> c) String.Empty 
+        Assert.AreEqual("", e6)
+
+        let e7 = String.mapi (fun _ _ -> failwith "should not fail") null 
+        Assert.AreEqual("", e7)
+
+        let e8 = String.mapi (fun i _ -> if i = 1 then failwith "should not fail" else char i) "X" 
+        Assert.AreEqual("\u0000", e8)
+
+        // side-effect and "order of operation" test
+        let mutable x = 0
+        let e9 = String.mapi (fun i c -> x <- x + i; c + char x) "abcde"
+        Assert.AreEqual(x, 10)
+        Assert.AreEqual(e9, "acfjo")
 
     [<Test>]
     member this.Filter() =
