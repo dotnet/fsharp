@@ -103,6 +103,14 @@ type FSharpValueTests() =
     let discStructUnionCaseB = DiscStructUnionType.B(1)
     let discStructUnionCaseC = DiscStructUnionType.C(1.0, "stringparam")
     
+    let optionSome = Some(3)
+    let optionNone: int option = None
+
+    let voptionSome = ValueSome("stringparam")
+    let voptionNone: string voption = ValueNone
+
+    let list1 = [ 1; 2 ]
+    let list2: int list = []
     
     let fsharpDelegate1 = new FSharpDelegate(fun (x:int) -> "delegate1")
     let fsharpDelegate2 = new FSharpDelegate(fun (x:int) -> "delegate2")
@@ -738,6 +746,24 @@ type FSharpValueTests() =
         let (discUnionInfo, discvaluearray) = FSharpValue.GetUnionFields(discUnionRecCaseB, typeof<DiscUnionType<int>>)
         let discUnionReader = FSharpValue.PreComputeUnionReader(discUnionInfo)    
         Assert.AreEqual(discUnionReader(box(discUnionRecCaseB)) , [| box 1; box(Some(discUnionCaseB)) |])
+
+        // Option
+        let (optionCaseInfo, _) = FSharpValue.GetUnionFields(optionSome, typeof<int option>)
+        let optionReader = FSharpValue.PreComputeUnionReader(optionCaseInfo)
+        Assert.AreEqual(optionReader(box(optionSome)), [| box 3 |])
+
+        let (optionCaseInfo, _) = FSharpValue.GetUnionFields(optionNone, typeof<int option>)
+        let optionReader = FSharpValue.PreComputeUnionReader(optionCaseInfo)
+        Assert.AreEqual(optionReader(box(optionNone)), [| |])
+
+        // List
+        let (listCaseInfo, _) = FSharpValue.GetUnionFields(list1, typeof<int list>)
+        let listReader = FSharpValue.PreComputeUnionReader(listCaseInfo)
+        Assert.AreEqual(listReader(box(list1)), [| box 1; box [ 2 ] |])
+
+        let (listCaseInfo, _) = FSharpValue.GetUnionFields(list2, typeof<int list>)
+        let listReader = FSharpValue.PreComputeUnionReader(listCaseInfo)
+        Assert.AreEqual(listReader(box(list2)), [| |])
         
     [<Test>]
     member __.PreComputeStructUnionReader() =
@@ -751,6 +777,15 @@ type FSharpValueTests() =
         let (discUnionInfo, discvaluearray) = FSharpValue.GetUnionFields(discStructUnionCaseB, typeof<DiscStructUnionType<int>>)
         let discUnionReader = FSharpValue.PreComputeUnionReader(discUnionInfo)    
         Assert.AreEqual(discUnionReader(box(discStructUnionCaseB)) , [| box 1|])
+
+        // Value Option
+        let (voptionCaseInfo, _) = FSharpValue.GetUnionFields(voptionSome, typeof<string voption>)
+        let voptionReader = FSharpValue.PreComputeUnionReader(voptionCaseInfo)
+        Assert.AreEqual(voptionReader(box(voptionSome)), [| box "stringparam" |])
+
+        let (voptionCaseInfo, _) = FSharpValue.GetUnionFields(voptionNone, typeof<string voption>)
+        let voptionReader = FSharpValue.PreComputeUnionReader(voptionCaseInfo)
+        Assert.AreEqual(voptionReader(box(voptionNone)), [| |])
         
     [<Test>]
     member __.PreComputeUnionTagMemberInfo() =
@@ -790,6 +825,16 @@ type FSharpValueTests() =
         // DiscUnion
         let discUnionTagReader = FSharpValue.PreComputeUnionTagReader(typeof<DiscUnionType<int>>) 
         Assert.AreEqual(discUnionTagReader(box(discUnionCaseB)), 1)
+
+        // Option
+        let optionTagReader = FSharpValue.PreComputeUnionTagReader(typeof<int option>)
+        Assert.AreEqual(optionTagReader(box(optionSome)), 1)
+        Assert.AreEqual(optionTagReader(box(optionNone)), 0)
+
+        // Value Option
+        let voptionTagReader = FSharpValue.PreComputeUnionTagReader(typeof<string voption>)
+        Assert.AreEqual(voptionTagReader(box(voptionSome)), 1)
+        Assert.AreEqual(voptionTagReader(box(voptionNone)), 0)
         
          // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeUnionTagReader(null)|> ignore)
