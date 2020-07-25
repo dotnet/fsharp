@@ -1614,6 +1614,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
         Some (g.array_set_info, [ety], argExprs)
     | "get_Item", [sty; _; _], _, [_; _] when isStringTy g sty -> 
         Some (g.getstring_info, [], argExprs)
+    | "op_UnaryPlus", [aty], _, [_] ->
+        // Call Operators.id
+        let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "id", None, None, [vara], ([[varaTy]], varaTy))
+        let tyargs = [aty]
+        Some (info, tyargs, argExprs)
     | _ ->
         None
 

@@ -283,9 +283,6 @@
     <Compile Include="$(FSharpSourcesRoot)/absil/ilreflect.fs">
       <Link>AbsIL/ilreflect.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\utils\reshapedmsbuild.fs">
-      <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ReferenceResolver.fs">
       <Link>ReferenceResolution/ReferenceResolver.fs</Link>
     </Compile>

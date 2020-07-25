@@ -41,6 +41,8 @@
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\WitnessTests.fs" />
+    <Compile Include="Compiler\Language\CodeQuotationTests.fs" />
     <Compile Include="Compiler\Language\CompilerDirectiveTests.fs" />
     <Compile Include="Compiler\Language\DefaultInterfaceMemberTests.fs" />
     <Compile Include="Compiler\Language\OptionalInteropTests.fs" />
