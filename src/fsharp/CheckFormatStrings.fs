@@ -79,11 +79,13 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
     // The 'm' range passed as an input is however accurate and covers the whole string.
     ///
     let fmt, fragments = 
+
         //printfn "--------------------" 
         //printfn "context.IsSome = %b" context.IsSome
         //printfn "fmt  = <<<%s>>>" fmt
         //printfn "isInterpolated = %b" isInterpolated
         //printfn "fragRanges = %A" fragRanges
+
         match context with
         | Some context when fragRanges.Length > 0 ->
             let sourceText = context.SourceText
@@ -110,8 +112,8 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                     let endIndexFlex = endNextLineIndex - endIndex
                     let mLength = endIndex - startIndex
 
-                    let startIndex2 = if m.StartLine < lineStartPositions.Length then lineStartPositions.[m.StartLine] else startIndex
-                    let sourceLineFromOffset = sourceText.GetSubTextString(startIndex, (startIndex2 - startIndex))
+                    //let startIndex2 = if m.StartLine < lineStartPositions.Length then lineStartPositions.[m.StartLine] else startIndex
+                    //let sourceLineFromOffset = sourceText.GetSubTextString(startIndex, (startIndex2 - startIndex))
                     //printfn "i = %d, mLength = %d, endIndexFlex = %d, sourceLineFromOffset = <<<%s>>>" i mLength endIndexFlex sourceLineFromOffset
 
                     if isInterpolated && i=0 && startIndex < length-4 && sourceText.SubTextEquals("$\"\"\"", startIndex) then
