@@ -7250,23 +7250,19 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
     match cenv.tcSink.CurrentSink with
     | Some sink when sink.FormatStringCheckContext.IsSome -> 
         try 
-            CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString sink.FormatStringCheckContext printfFormatString printerArgTy printerResidueTy printerResultTy
-            |> ignore
+            let _argTys, _printerTy, _printerTupleTyRequired, _percentATys, specifierLocations, _dotnetFormatString =
+                CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString sink.FormatStringCheckContext printfFormatString printerArgTy printerResidueTy printerResultTy
+            for specifierLocation, numArgs in specifierLocations do
+                sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
         with _err-> 
             ()
     | _ -> ()
 
-    let argTys, _printerTy, printerTupleTyRequired, percentATys, specifierLocations, dotnetFormatString =
+    let argTys, _printerTy, printerTupleTyRequired, percentATys, _specifierLocations, dotnetFormatString =
         try 
             CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
         with Failure errString -> 
             error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
-
-    match cenv.tcSink.CurrentSink with 
-    | None -> () 
-    | Some sink -> 
-        for specifierLocation, numArgs in specifierLocations do
-            sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
 
     // Check the expressions filling the holes
     if argTys.Length <> synFillExprs.Length then 
