@@ -524,6 +524,29 @@ let _ = List.iter(printfn \"\"\"%-A
                      (7, 33, 7, 35,1 )|]
  
 [<Test>]
+let ``Printf specifiers for user-defined functions`` () = 
+    let input = 
+      """
+let debug msg = Printf.kprintf System.Diagnostics.Debug.WriteLine msg
+let _ = debug "Message: %i - %O" 1 "Ok"
+let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A and %A.\nResulting exception: %A" "1" "2" "3" "4"
+"""
+
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+
+    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    |> Array.map (fun (range, numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
+    |> shouldEqual [|(3, 24, 3, 26, 1); 
+                     (3, 29, 3, 31, 1);
+                     (4, 58, 4, 60, 1); 
+                     (4, 75, 4, 77, 1); 
+                     (4, 82, 4, 84, 1); 
+                     (4, 108, 4, 110, 1)|]
+
+#if ASSUME_PREVIEW_FSHARP_CORE
+[<Test>]
 let ``Printf specifiers for regular and verbatim interpolated strings`` () = 
     let input = 
       """let os = System.Text.StringBuilder() // line 1
@@ -563,28 +586,6 @@ let s3 = $"abc %d{s.Length}
           (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
 
 [<Test>]
-let ``Printf specifiers for user-defined functions`` () = 
-    let input = 
-      """
-let debug msg = Printf.kprintf System.Diagnostics.Debug.WriteLine msg
-let _ = debug "Message: %i - %O" 1 "Ok"
-let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A and %A.\nResulting exception: %A" "1" "2" "3" "4"
-"""
-
-    let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
-
-    typeCheckResults.Errors |> shouldEqual [||]
-    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
-    |> Array.map (fun (range, numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
-    |> shouldEqual [|(3, 24, 3, 26, 1); 
-                     (3, 29, 3, 31, 1);
-                     (4, 58, 4, 60, 1); 
-                     (4, 75, 4, 77, 1); 
-                     (4, 82, 4, 84, 1); 
-                     (4, 108, 4, 110, 1)|]
-
-[<Test>]
 let ``Printf specifiers for triple quote interpolated strings`` () = 
     let input = 
       "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"  "
@@ -597,6 +598,8 @@ let ``Printf specifiers for triple quote interpolated strings`` () =
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
         [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)|]
+#endif // ASSUME_PREVIEW_FSHARP_CORE
+
 
 [<Test>]
 let ``should not report format specifiers for illformed format strings`` () = 

@@ -7,6 +7,7 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
     <UnitTestType>xunit</UnitTestType>
     <NoWarn>$(NoWarn);3186;1104</NoWarn>
   </PropertyGroup>
