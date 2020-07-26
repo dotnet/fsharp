@@ -30,20 +30,42 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
 open FSharp.Compiler.SyntaxTree
 
+module Ranges =
+    /// Whether valid as signed int8 when a minus sign is prepended, compares true to 0x80
+    let isInt8BadMax x = 1 <<< 7 = x
+
+    /// Whether valid as signed int16 when a minus sign is prepended, compares true to 0x8000
+    let isInt16BadMax x = 1 <<< 15 = x
+
+    /// Whether valid as signed int32 when a minus sign is prepended, compares as string against "2147483648".
+    let isInt32BadMax s = string(1UL <<< 31) = s
+
+    /// Whether valid as signed int64 when a minus sign is prepended, compares as string against "9223372036854775808".
+    let isInt64BadMax s = string(1UL <<< 63) = s
+
+    /// Whether valid as signed nativeint when a minus sign is prepended
+    let isNativeIntBadMax x = 1UL <<< 63 = x
+
+/// Get string from lexbuf
 let lexeme (lexbuf : UnicodeLexing.Lexbuf) = UnicodeLexing.Lexbuf.LexemeString lexbuf
 
+/// Trim n chars from both side of a string
 let trimBoth (s:string) n m = s.Substring(n, s.Length - (n+m))
 
+/// Trim n chars from both sides of lexbuf, return string
 let lexemeTrimBoth   lexbuf n m = trimBoth (lexeme lexbuf) n m
 
+/// Trim n chars from the right of lexbuf, return string
 let lexemeTrimRight  lexbuf n = lexemeTrimBoth lexbuf 0 n
 
+/// Trim n chars from the left of lexbuf, return string
 let lexemeTrimLeft   lexbuf n = lexemeTrimBoth lexbuf n 0
 
+/// Throw a lexing error with a message
 let fail args (lexbuf:UnicodeLexing.Lexbuf) msg dflt =
      let m = lexbuf.LexemeRange
      args.errorLogger.ErrorR(Error(msg,m))
-     dflt        
+     dflt
 
 //--------------------------
 // Integer parsing
@@ -313,64 +335,64 @@ rule token args skip = parse
 
  | int8 
      { let n = lexemeTrimRightToInt32 args lexbuf 1
-       if n > 0x80 || n < -0x80 then fail args lexbuf (FSComp.SR.lexOutsideEightBitSigned()) (INT8(0y,false))
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       else if n = 0x80 then INT8(sbyte(-0x80), true (* 'true' = 'bad'*) )
-       else INT8(sbyte n,false) }
+       if Ranges.isInt8BadMax n then INT8(SByte.MinValue, true (* 'true' = 'bad'*) )
+       else if n > int SByte.MaxValue || n < int SByte.MinValue then fail args lexbuf (FSComp.SR.lexOutsideEightBitSigned()) (INT8(0y, false))
+       else INT8(sbyte n, false)  }
 
  | xint8 
      { let n = lexemeTrimRightToInt32 args lexbuf 1
-       if n > 0xFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitSignedHex()) (INT8(0y,false))
-       else INT8(sbyte(byte(n)),false) }
+       if n > int Byte.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitSignedHex()) (INT8(0y, false))
+       else INT8(sbyte(byte(n)), false) }
 
  | uint8
      { let n = lexemeTrimRightToInt32 args lexbuf 2
-       if n > 0xFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitUnsigned()) (UINT8(0uy))
-       else UINT8(byte n) }
+       if n > int Byte.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitUnsigned()) (UINT8(0uy))
+       else UINT8(byte n)  }
 
  | int16 
      { let n = lexemeTrimRightToInt32 args lexbuf 1
-       if n > 0x8000 || n < -0x8000 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s,false))
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       else if n = 0x8000 then INT16(-0x8000s,true)
-       else INT16(int16 n,false) }
+       if Ranges.isInt16BadMax n then INT16(Int16.MinValue, true (* 'true' = 'bad'*) )
+       else if n > int Int16.MaxValue || n < int Int16.MinValue then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s, false))
+       else INT16(int16 n, false)  }
 
  | xint16 
      { let n = lexemeTrimRightToInt32 args lexbuf 1
-       if n > 0xFFFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s,false))
-       else INT16(int16(uint16(n)),false) }
+       if n > int UInt16.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s,false))
+       else INT16(int16(uint16(n)), false) }
 
  | uint16 
      { let n = lexemeTrimRightToInt32 args lexbuf 2
-       if n > 0xFFFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitUnsigned()) (UINT16(0us))
+       if n > int UInt16.MaxValue || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitUnsigned()) (UINT16(0us))
        else UINT16(uint16 n) }
 
  | int '.' '.' 
      { let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if s = "2147483648" then INT32_DOT_DOT(-2147483648,true) else
+       if Ranges.isInt32BadMax s then INT32_DOT_DOT(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n = try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32_DOT_DOT(n,false)
+       INT32_DOT_DOT(n, false)
      } 
 
  | xint 
  | int 
      { let s = removeUnderscores (lexeme lexbuf)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if s = "2147483648" then INT32(-2147483648,true) else
+       if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32(n,false)
+       INT32(n, false)
      } 
 
  | xint32 
  | int32 
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if s = "2147483648" then INT32(-2147483648,true) else
-       let n = 
+       if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
+       let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32(n,false)
+       INT32(n, false)
      } 
 
  | uint32
@@ -378,7 +400,7 @@ rule token args skip = parse
        let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        let n = 
            try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
-       if n > 0xFFFFFFFFL || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
+       if n > int64 UInt32.MaxValue || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
        UINT32(uint32 (uint64 n)) } 
 
  | uint32l
@@ -386,15 +408,15 @@ rule token args skip = parse
        let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        let n = 
            try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
-       if n > 0xFFFFFFFFL || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
+       if n > int64 UInt32.MaxValue || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
        UINT32(uint32 (uint64 n)) } 
 
  | int64 
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Stupid but allowed because we parse '-' as an operator. 
-       if s = "9223372036854775808" then INT64(-9223372036854775808L,true) else
+       if Ranges.isInt64BadMax s then INT64(Int64.MinValue, true (* 'true' = 'bad'*) ) else
        let n = 
-          try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideSixtyFourBitSigned()) 0L
+           try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideSixtyFourBitSigned()) 0L
        INT64(n,false)
      }
 
@@ -407,9 +429,9 @@ rule token args skip = parse
  | nativeint  
      { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_nativeint+1> to parse as min_nativeint.  Stupid but allowed because we parse '-' as an operator. 
-       if s = "9223372036854775808" then NATIVEINT(-9223372036854775808L, true) else
+       if Ranges.isInt64BadMax s then NATIVEINT(Int64.MinValue, true) else
        let n = 
-          try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeSigned()) 0L
+           try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeSigned()) 0L
        NATIVEINT(n,false)
      }
 
