@@ -387,7 +387,7 @@ rule token args skip = parse
 
  | xint32 
  | int32 
-     { let s = removeUnderscores (lexemeTrimRight lexbuf)
+     { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
        if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
