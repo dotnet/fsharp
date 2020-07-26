@@ -80,7 +80,7 @@ exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
-exception ValNotMutable of DisplayEnv * ValRef * range
+exception ValNotMutable of DisplayEnv * displayName: string * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
 exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range

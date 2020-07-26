@@ -79,7 +79,7 @@ exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * str
 exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
-exception ValNotMutable of DisplayEnv * ValRef * range
+exception ValNotMutable of DisplayEnv * displayName: string * range
 exception ValNotLocal of DisplayEnv * ValRef * range
 exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
 exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
@@ -9837,7 +9837,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                     destByrefTy g vty 
                 else 
                     if not vref.IsMutable then
-                        errorR (ValNotMutable (env.DisplayEnv, vref, mStmt))
+                        errorR (ValNotMutable (env.DisplayEnv, vref.DisplayName, mStmt))
                     vty 
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false vty2 env tpenv e2
@@ -9928,6 +9928,10 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         let exprty = finfo.FieldType(cenv.amap, mItem)
         match delayed with 
         | DelayedSet(e2, mStmt) :: _delayed' ->
+            match finfo.LiteralValue with
+            | Some _literal -> errorR (ValNotMutable (env.DisplayEnv, finfo.FieldName, mStmt))
+            | None -> ()
+
             UnifyTypes cenv env mStmt overallTy g.unit_ty
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false exprty env tpenv e2
