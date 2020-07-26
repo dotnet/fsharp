@@ -38,13 +38,10 @@ module Ranges =
     let isInt16BadMax x = 1 <<< 15 = x
 
     /// Whether valid as signed int32 when a minus sign is prepended, compares as string against "2147483648".
-    let isInt32BadMax s = string(1UL <<< 31) = s
+    let isInt32BadMax = let max = string(1UL <<< 31) in fun s -> max = s
 
     /// Whether valid as signed int64 when a minus sign is prepended, compares as string against "9223372036854775808".
-    let isInt64BadMax s = string(1UL <<< 63) = s
-
-    /// Whether valid as signed nativeint when a minus sign is prepended
-    let isNativeIntBadMax x = 1UL <<< 63 = x
+    let isInt64BadMax = let max = string(1UL <<< 63) in fun s -> max = s
 
 /// Get string from lexbuf
 let lexeme (lexbuf : UnicodeLexing.Lexbuf) = UnicodeLexing.Lexbuf.LexemeString lexbuf
