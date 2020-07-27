@@ -378,6 +378,36 @@ do test "can get name of class type parameter"(GenericClassNameOfTests2<FSharp.D
 do test "can get name of recursive literal"(RecTest.``can get name of recursive literal`` ())
 do test "can get name of literal in recursive module"(RecTest2.``can get name of literal in recursive module`` ())
 
+module PatternMatchingWithNameof =
+    /// Simplified version of EventStore's API
+    type RecordedEvent = { EventType: string; Data: string }
+
+    /// My concrete type:
+    type MyEvent =
+        | A of string
+        | B of string
+
+    let deserialize (e: RecordedEvent) : MyEvent =
+        match e.EventType with
+        | nameof A -> A e.Data
+        | nameof B -> B e.Data
+        | t -> failwithf "Invalid EventType: %s" t
+
+    let getData event =
+        match event with
+        | A amsg -> amsg
+        | B bmsg -> bmsg
+
+    let re1 = { EventType = nameof A; Data = "hello" }
+    let re2 = { EventType = nameof B; Data = "world" }
+
+    let a = deserialize re1
+    let b = deserialize re2
+
+    check "fklwveoihwq1" (getData a) re1.Data
+    check "fklwveoihwq2" (getData b) re2.Data
+
+
 #if TESTS_AS_APP
 let RUN() = 
   match !failures with 

@@ -5420,12 +5420,9 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
-            let _, acc = tcArgPatterns ()
             match getArgPatterns () with
-            | [] -> TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv, names, takenNames) ty (mkSynPatVar vis id)
-                | _ ->
-                    errorR (UndefinedName (0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
-                    (fun _ -> TPat_error m), acc
+            | [] ->
+                TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv, names, takenNames) ty (mkSynPatVar vis id)
                 
             | [arg] 
                 when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf && isNameof id ->
@@ -5434,6 +5431,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
 
             | _ ->
+                let _, acc = tcArgPatterns ()
                 errorR (UndefinedName (0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
                 (fun _ -> TPat_error m), acc
 
