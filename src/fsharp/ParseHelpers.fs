@@ -150,7 +150,7 @@ type LexerStringStyle =
     | TripleQuote
     | SingleQuote
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; Struct>]
 type LexerStringKind =
     { IsByteString: bool
       IsInterpolated: bool

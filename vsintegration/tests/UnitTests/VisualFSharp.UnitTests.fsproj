@@ -91,9 +91,6 @@
     <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
       <Link>Roslyn\DocumentDiagnosticAnalyzerTests.fs</Link>
     </Compile>
-    <Compile Include="ProjectDiagnosticAnalyzerTests.fs">
-      <Link>Roslyn\ProjectDiagnosticAnalyzerTests.fs</Link>
-    </Compile>
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\CompletionProviderTests.fs</Link>
     </Compile>
