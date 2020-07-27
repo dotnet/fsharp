@@ -2606,7 +2606,9 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | Result (resInfo, item, rest) ->
                         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
                         Some(item, rest)
-                    | Exception e -> typeError <- Some e; None
+                    | Exception e -> 
+                        typeError <- Some e
+                        None
 
                 | true, res ->
                     let fresh = FreshenUnqualifiedItem ncenv m res
@@ -2639,11 +2641,10 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     ctorSearch +++ implicitOpSearch
 
-                match AtMostOneResult m innerSearch with
-                | Result (resInfo, item, rest)-> 
-                    ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                    success (item, rest)
-                | _ ->
+                let res =
+                    match AtMostOneResult m innerSearch with
+                    | Result _ as res -> res
+                    | _ ->
                         let failingCase =
                             match typeError with
                             | Some e -> raze e
@@ -2672,8 +2673,11 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                                 raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
                         failingCase
-
-
+                match res with 
+                | Exception e -> raze e
+                | Result (resInfo, item, rest) -> 
+                ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+                success (item, rest)
 
         // A compound identifier.
         // It still might be a value in the environment, or something in an F# module, namespace, type, or nested type
@@ -2691,17 +2695,17 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | _ -> false
 
             if ValIsInEnv id.idText then
-                success (nenv.eUnqualifiedItems.[id.idText], rest)
+              success (nenv.eUnqualifiedItems.[id.idText], rest)
             else
-                // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
-                // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
-                let moduleSearch ad () =
-                   ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
-                       (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
+              // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
+              // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
+              let moduleSearch ad () =
+                 ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
+                     (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
-                // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
-                // This seems strange since we would expect in the vast majority of cases tcrefs is empty here.
-                let tyconSearch ad () =
+              // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
+              // This seems strange since we would expect in the vast majority of cases tcrefs is empty here.
+              let tyconSearch ad () =
                   let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
                   if isNil tcrefs then NoResultsOrUsefulErrors else
                   match rest with
@@ -2714,51 +2718,56 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                   | _ ->
                     NoResultsOrUsefulErrors
 
-                let search =
-                  let envSearch () =
-                      match fullyQualified with
-                      | FullyQualified ->
-                          NoResultsOrUsefulErrors
-                      | OpenQualified ->
-                          match nenv.eUnqualifiedItems.TryGetValue id.idText with
-                          | true, Item.UnqualifiedType _
-                          | false, _ -> NoResultsOrUsefulErrors
-                          | true, res -> OneSuccess (resInfo, FreshenUnqualifiedItem ncenv m res, rest)
+              let search =
+                let envSearch () =
+                    match fullyQualified with
+                    | FullyQualified ->
+                        NoResultsOrUsefulErrors
+                    | OpenQualified ->
+                        match nenv.eUnqualifiedItems.TryGetValue id.idText with
+                        | true, Item.UnqualifiedType _
+                        | false, _ -> NoResultsOrUsefulErrors
+                        | true, res -> OneSuccess (resInfo, FreshenUnqualifiedItem ncenv m res, rest)
 
-                  moduleSearch ad () +++ tyconSearch ad +++ envSearch
+                moduleSearch ad () +++ tyconSearch ad +++ envSearch
 
-                match AtMostOneResult m search with
-                | Result (resInfo, item, rest) ->
-                    ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                    success (item, rest)
-                | _ ->
+              let res =
+                  match AtMostOneResult m search with
+                  | Result _ as res -> res
+                  | _ ->
                       let innerSearch = search +++ (moduleSearch AccessibleFromSomeFSharpCode) +++ (tyconSearch AccessibleFromSomeFSharpCode)
 
                       let suggestEverythingInScope (addToBuffer: string -> unit) =
-                          for kv in nenv.ModulesAndNamespaces fullyQualified do
-                              for modref in kv.Value do
-                                  if IsEntityAccessible ncenv.amap m ad modref then
-                                      addToBuffer modref.DisplayName
-                                      addToBuffer modref.DemangledModuleOrNamespaceName
+                        for kv in nenv.ModulesAndNamespaces fullyQualified do
+                            for modref in kv.Value do
+                                if IsEntityAccessible ncenv.amap m ad modref then
+                                    addToBuffer modref.DisplayName
+                                    addToBuffer modref.DemangledModuleOrNamespaceName
 
-                          for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
-                              if IsEntityAccessible ncenv.amap m ad e.Value then
-                                  addToBuffer e.Value.DisplayName
+                        for e in nenv.TyconsByDemangledNameAndArity fullyQualified do
+                            if IsEntityAccessible ncenv.amap m ad e.Value then
+                                addToBuffer e.Value.DisplayName
 
-                          for e in nenv.eUnqualifiedItems do
-                              if canSuggestThisItem e.Value then
-                                  addToBuffer e.Value.DisplayName
+                        for e in nenv.eUnqualifiedItems do
+                            if canSuggestThisItem e.Value then
+                                addToBuffer e.Value.DisplayName
 
                       match innerSearch with
                       | Exception (UndefinedName(0, _, id1, suggestionsF)) when Range.equals id.idRange id1.idRange ->
-                            let mergeSuggestions addToBuffer = 
-                                suggestionsF addToBuffer 
-                                suggestEverythingInScope addToBuffer
-                            raze (UndefinedName(0, FSComp.SR.undefinedNameValueNamespaceTypeOrModule, id, mergeSuggestions))
+                          let mergeSuggestions addToBuffer = 
+                              suggestionsF addToBuffer 
+                              suggestEverythingInScope addToBuffer
+                          raze (UndefinedName(0, FSComp.SR.undefinedNameValueNamespaceTypeOrModule, id, mergeSuggestions))
                       | Exception err -> raze err
-                      | Result ((_, item, rest) :: _) -> success (item, rest)
+                      | Result (res :: _) -> success res
                       | Result [] ->
                             raze (UndefinedName(0, FSComp.SR.undefinedNameValueNamespaceTypeOrModule, id, suggestEverythingInScope))
+
+              match res with 
+              | Exception e -> raze e
+              | Result (resInfo, item, rest) -> 
+                  ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+                  success (item, rest)
 
 let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid =
     match lid with
@@ -3564,7 +3573,9 @@ let IsUnionCaseUnseen ad g amap m (ucref: UnionCaseRef) =
 
 let ItemIsUnseen ad g amap m item =
     match item with
-    | Item.Value x -> IsValUnseen ad  g m x
+    | Item.Value x -> 
+        let isUnseenNameOfOperator = valRefEq g g.nameof_vref x && not (g.langVersion.SupportsFeature LanguageFeature.NameOf)
+        isUnseenNameOfOperator || IsValUnseen ad  g m x
     | Item.UnionCase(x, _) -> IsUnionCaseUnseen ad g amap m x.UnionCaseRef
     | Item.ExnCase x -> IsTyconUnseen ad g amap m x
     | _ -> false

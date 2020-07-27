@@ -7115,7 +7115,7 @@ and TcConstStringExpr cenv overallTy env m tpenv s =
       let dty = NewInferenceType ()
       let ety = NewInferenceType ()
       let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
-      if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then
+      if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
         // Parse the format string to work out the phantom types 
         let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
         let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
@@ -7131,7 +7131,7 @@ and TcConstStringExpr cenv overallTy env m tpenv s =
         UnifyTypes cenv env m aty aty'
         UnifyTypes cenv env m ety ety'
         mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s), tpenv
-      else
+      else 
         UnifyTypes cenv env m overallTy cenv.g.string_ty
         mkString cenv.g m s, tpenv
 
@@ -9305,9 +9305,9 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             //
             // However we don't commit for a type names - nameof allows 'naked' type names and thus all type name
             // resolutions are checked separately in the next step.
+            let typeNameResInfo = GetLongIdentTypeNameInfo delayed
+            let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
             let resolvesAsExpr =
-                let typeNameResInfo = GetLongIdentTypeNameInfo delayed
-                let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
                 match nameResolutionResult with 
                 | Result ((item, _, _, _) as res) 
                     when 
@@ -9354,6 +9354,8 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                     false
             if resolvedToModuleOrNamespaceName then result else
 
+            ForceRaise nameResolutionResult |> ignore
+            // If that didn't give aan exception then raise a generic error
             error (Error(FSComp.SR.expressionHasNoName(), m))
             
         // expr<tyargs> allowed, even with qualifications 
