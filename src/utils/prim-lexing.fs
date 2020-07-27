@@ -53,6 +53,7 @@ type StringText(str: string) =
 
     override __.GetHashCode() = str.GetHashCode()
     override __.Equals(obj: obj) = str.Equals(obj)
+    override __.ToString() = str
 
     interface ISourceText with
 
