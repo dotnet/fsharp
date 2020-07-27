@@ -764,6 +764,7 @@ module Extensions =
                 loop (this.Body(c, bytes, 0, bytes.Length)) rest
         loop c (List.ofArray contents)
         """) + """
+open Extensions
 
 let check msg actual expected = if actual <> expected then failwithf "FAILED %s, expected %A, got %A" msg expected actual
         """
