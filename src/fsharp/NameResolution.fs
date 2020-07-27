@@ -2579,7 +2579,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
     if first && id.idText = MangledGlobalName then
         match rest with
         | [] ->
-            error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
+            raze (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         | [next] ->
             ResolveExprLongIdentPrim sink ncenv false fullyQualified m ad nenv typeNameResInfo next [] isOpenDecl
         | id2 :: rest2 ->
@@ -2603,8 +2603,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     let search = ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, resInfo, tcrefs)
                     match AtMostOneResult m search with
-                    | Result _ as res ->
-                        let resInfo, item, rest = ForceRaise res
+                    | Result (resInfo, item, rest) ->
                         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
                         Some(item, rest)
                     | Exception e -> typeError <- Some e; None
@@ -2624,7 +2623,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     None
 
             match envSearch with
-            | Some res -> res
+            | Some res -> success res
             | None ->
                 let innerSearch =
                     // Check if it's a type name, e.g. a constructor call or a type instantiation
@@ -2640,10 +2639,11 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                     ctorSearch +++ implicitOpSearch
 
-                let resInfo, item, rest =
-                    match AtMostOneResult m innerSearch with
-                    | Result _ as res -> ForceRaise res
-                    | _ ->
+                match AtMostOneResult m innerSearch with
+                | Result (resInfo, item, rest)-> 
+                    ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+                    success (item, rest)
+                | _ ->
                         let failingCase =
                             match typeError with
                             | Some e -> raze e
@@ -2671,10 +2671,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                                                 addToBuffer (e.Value.DisplayName + "." + id.idText)
 
                                 raze (UndefinedName(0, FSComp.SR.undefinedNameValueOfConstructor, id, suggestNamesAndTypes))
-                        ForceRaise failingCase
+                        failingCase
 
-                ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                item, rest
 
 
         // A compound identifier.
@@ -2693,17 +2691,17 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | _ -> false
 
             if ValIsInEnv id.idText then
-              nenv.eUnqualifiedItems.[id.idText], rest
+                success (nenv.eUnqualifiedItems.[id.idText], rest)
             else
-              // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
-              // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
-              let moduleSearch ad () =
+                // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
+                // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
+                let moduleSearch ad () =
                    ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad id rest isOpenDecl
                        (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
-              // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
-              // This seems strange since we would expect in the vast majority of cases tcrefs is empty here.
-              let tyconSearch ad () =
+                // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
+                // This seems strange since we would expect in the vast majority of cases tcrefs is empty here.
+                let tyconSearch ad () =
                   let tcrefs = LookupTypeNameInEnvNoArity fullyQualified id.idText nenv
                   if isNil tcrefs then NoResultsOrUsefulErrors else
                   match rest with
@@ -2716,7 +2714,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                   | _ ->
                     NoResultsOrUsefulErrors
 
-              let search =
+                let search =
                   let envSearch () =
                       match fullyQualified with
                       | FullyQualified ->
@@ -2729,10 +2727,11 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
 
                   moduleSearch ad () +++ tyconSearch ad +++ envSearch
 
-              let resInfo, item, rest =
-                  match AtMostOneResult m search with
-                  | Result _ as res -> ForceRaise res
-                  | _ ->
+                match AtMostOneResult m search with
+                | Result (resInfo, item, rest) ->
+                    ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+                    success (item, rest)
+                | _ ->
                       let innerSearch = search +++ (moduleSearch AccessibleFromSomeFSharpCode) +++ (tyconSearch AccessibleFromSomeFSharpCode)
 
                       let suggestEverythingInScope (addToBuffer: string -> unit) =
@@ -2755,21 +2754,15 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             let mergeSuggestions addToBuffer = 
                                 suggestionsF addToBuffer 
                                 suggestEverythingInScope addToBuffer
-
-                            let failingCase = raze (UndefinedName(0, FSComp.SR.undefinedNameValueNamespaceTypeOrModule, id, mergeSuggestions))
-                            ForceRaise failingCase
-                      | Exception err -> ForceRaise(Exception err)
-                      | Result (res :: _) -> ForceRaise(Result res)
+                            raze (UndefinedName(0, FSComp.SR.undefinedNameValueNamespaceTypeOrModule, id, mergeSuggestions))
+                      | Exception err -> raze err
+                      | Result ((_, item, rest) :: _) -> success (item, rest)
                       | Result [] ->
-                            let failingCase = raze (UndefinedName(0, FSComp.SR.undefinedNameValueNamespaceTypeOrModule, id, suggestEverythingInScope))
-                            ForceRaise failingCase
-
-              ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-              item, rest
+                            raze (UndefinedName(0, FSComp.SR.undefinedNameValueNamespaceTypeOrModule, id, suggestEverythingInScope))
 
 let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid =
     match lid with
-    | [] -> error (Error(FSComp.SR.nrInvalidExpression(textOfLid lid), m))
+    | [] -> raze (Error(FSComp.SR.nrInvalidExpression(textOfLid lid), m))
     | id :: rest -> ResolveExprLongIdentPrim sink ncenv true OpenQualified m ad nenv typeNameResInfo id rest false
 
 //-------------------------------------------------------------------------
@@ -3414,15 +3407,17 @@ type AfterResolution =
 ///
 /// Called for 'TypeName.Bar' - for VS IntelliSense, we can filter out instance members from method groups
 let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv typeNameResInfo lid =
-    let item1, rest = ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid
+    match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid with 
+    | Exception e -> Exception e 
+    | Result (item1, rest) ->
     let itemRange = ComputeItemRange wholem lid rest
 
     let item = FilterMethodGroups ncenv itemRange item1 true
 
     match item1, item with
     | Item.MethodGroup(name, minfos1, _), Item.MethodGroup(_, [], _) when not (isNil minfos1) ->
-        error(Error(FSComp.SR.methodIsNotStatic name, wholem))
-    | _ -> ()
+        raze(Error(FSComp.SR.methodIsNotStatic name, wholem))
+    | _ -> 
 
     // Fake idents e.g. 'Microsoft.FSharp.Core.None' have identical ranges for each part
     let isFakeIdents =
@@ -3462,15 +3457,13 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
-    item, itemRange, rest, afterResolution
+    success (item, itemRange, rest, afterResolution)
 
 let (|NonOverridable|_|) namedItem =
     match namedItem with
     |   Item.MethodGroup(_, minfos, _) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
     |   Item.Property(_, pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
     |   _ -> Some ()
-
-
 
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
 /// Also called for 'GenericType<Args>.Bar' - for VS IntelliSense, we can filter out non-static members from method groups
