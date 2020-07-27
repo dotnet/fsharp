@@ -237,6 +237,11 @@
         <target state="translated">use! 不得与 and! 结合使用</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignment">
+        <source>Cannot assign a value to the literal '{0}'</source>
+        <target state="new">Cannot assign a value to the literal '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">仅当计算表达式生成器定义了 "{0}" 方法或适当的 "MergeSource" 和 "Bind" 方法时，才可以使用 "let! ... and! ..." 构造</target>

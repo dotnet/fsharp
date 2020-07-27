@@ -237,6 +237,11 @@
         <target state="translated">use!, and! ile birleştirilemez</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignment">
+        <source>Cannot assign a value to the literal '{0}'</source>
+        <target state="new">Cannot assign a value to the literal '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">'let! ... and! ...' yapısı, yalnızca hesaplama ifadesi oluşturucu bir '{0}' metodunu ya da uygun 'MergeSource' ve 'Bind' metotlarını tanımlarsa kullanılabilir</target>

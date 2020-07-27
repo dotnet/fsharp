@@ -3146,6 +3146,7 @@ let BuildILFieldSet g m objExpr (finfo: ILFieldInfo) argExpr =
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. *
     let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
+    finfo.LiteralValue |> Option.iter (fun _ -> error (Error(FSComp.SR.tcLiteralFieldAssignment finfo.FieldName, m)))
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
     let wrap, objExpr, _readonly, _writeonly = mkExprAddrOfExpr g isValueType false DefinitelyMutates objExpr None m 
     wrap (mkAsmExpr ([ mkNormalStfld fspec ], tinst, [objExpr; argExpr], [], m)) 
@@ -3159,6 +3160,7 @@ let BuildILStaticFieldSet m (finfo: ILFieldInfo) argExpr =
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. 
     let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
+    finfo.LiteralValue |> Option.iter (fun _ -> error (Error(FSComp.SR.tcLiteralFieldAssignment finfo.FieldName, m)))
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
     mkAsmExpr ([ mkNormalStsfld fspec ], tinst, [argExpr], [], m)
     
