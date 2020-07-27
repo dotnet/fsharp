@@ -237,9 +237,14 @@
         <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcLiteralFieldAssignment">
-        <source>Cannot assign a value to the literal '{0}'</source>
-        <target state="new">Cannot assign a value to the literal '{0}'</target>
+      <trans-unit id="tcLiteralFieldAssignmentNoArg">
+        <source>Cannot assign a value to another value marked literal</source>
+        <target state="new">Cannot assign a value to another value marked literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentWithArg">
+        <source>Cannot assign '{0}' to a value marked literal</source>
+        <target state="new">Cannot assign '{0}' to a value marked literal</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
