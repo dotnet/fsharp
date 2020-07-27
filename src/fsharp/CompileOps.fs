@@ -1500,7 +1500,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | PatternMatchCompilation.RuleNeverMatched _ -> os.Append(RuleNeverMatchedE().Format) |> ignore
 
-      | ValNotMutable(_, itemName, _) -> os.Append(ValNotMutableE().Format(itemName)) |> ignore
+      | ValNotMutable(_, valRef, _) -> os.Append(ValNotMutableE().Format(valRef.DisplayName)) |> ignore
 
       | ValNotLocal _ -> os.Append(ValNotLocalE().Format) |> ignore
 
