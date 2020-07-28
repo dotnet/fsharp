@@ -641,6 +641,220 @@ module Test3 =
         |> ignore
 
     [<Test>]
+    let ``Open unit of measure - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+open System
+
+[<Measure>]
+type kg
+
+open type kg
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 704, Line 9, Col 11, Line 9, Col 13, "Expected type, not unit-of-measure")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open type with unit of measure`` () =
+        FSharp """
+namespace FSharpTest
+
+open System
+open System.Numerics
+
+[<Measure>]
+type kg
+
+open type float<kg>
+
+[<MeasureAnnotatedAbbreviation>]
+type vec3<[<Measure>] 'Measure> = Vector3
+
+open type vec3<kg>
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
+    let ``Open custom type with unit of measure`` () =
+        FSharp """
+namespace FSharpTest
+
+[<Measure>]
+type kg
+
+type Custom<[<Measure>] 'Measure> =
+    {
+        X: float<'Measure>
+        Y: float<'Measure>
+    }
+
+    static member GetX(c: Custom<'Measure>) = c.X
+
+    static member GetY(c: Custom<'Measure>) = c.Y
+
+open type Custom<kg>
+
+module Test =
+
+    let x : float<kg> = GetX(Unchecked.defaultof<_>)
+
+    let y : float<kg> = GetY(Unchecked.defaultof<_>)
+
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
+    let ``Open custom type with unit of measure and more type params`` () =
+        FSharp """
+namespace FSharpTest
+
+[<Measure>]
+type kg
+
+type Custom<'T, [<Measure>] 'Measure, 'U> =
+    {
+        X: float<'Measure>
+        Y: float<'Measure>
+        Z: 'T
+        W: 'U
+    }
+
+    static member GetX(c: Custom<'T, 'Measure, 'U>) = c.X
+
+    static member GetY(c: Custom<'T, 'Measure, 'U>) = c.Y
+
+    static member GetZ(c: Custom<'T, 'Measure, 'U>) = c.Z
+
+    static member GetW(c: Custom<'T, 'Measure, 'U>) = c.W
+
+open type Custom<int, kg, float>
+
+module Test =
+
+    let x : float<kg> = GetX(Unchecked.defaultof<_>)
+
+    let y : float<kg> = GetY(Unchecked.defaultof<_>)
+
+    let z : int = GetZ(Unchecked.defaultof<_>)
+
+    let w : float = GetW(Unchecked.defaultof<_>)
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
+    let ``Open custom type with unit of measure should error with measure mismatch`` () =
+        FSharp """
+namespace FSharpTest
+
+[<Measure>]
+type kg
+
+[<Measure>]
+type g
+
+type Custom<[<Measure>] 'Measure> =
+    {
+        X: float<'Measure>
+        Y: float<'Measure>
+    }
+
+    static member GetX(c: Custom<'Measure>) = c.X
+
+    static member GetY(c: Custom<'Measure>) = c.Y
+
+open type Custom<kg>
+
+module Test =
+
+    let x : float<g> = GetX(Unchecked.defaultof<_>)
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withErrorCode 1
+        |> ignore
+
+    [<Test>]
+    let ``Open tuple - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+open type (int * int)
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 4, Col 11, Line 4, Col 22, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open function - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+open type (int -> int)
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 4, Col 11, Line 4, Col 23, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open direct tuple - Errors`` () =
+        // Note: `Tuple` is technically a named type but it gets decompiled into F#'s representation of a tuple in its type system.
+        //       This test is to verify that behavior.
+        FSharp """
+namespace FSharpTest
+
+open System
+
+open type Tuple<int, int>
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 6, Col 11, Line 6, Col 26, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open direct function - Errors`` () =
+        // Note: `FSharpFunc` is technically a named type but it gets decompiled into F#'s representation of a function in its type system.
+        //       This test is to verify that behavior.
+        FSharp """
+namespace FSharpTest
+
+open type FSharpFunc<int, int>
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 4, Col 11, Line 4, Col 31, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
     let ``Using the 'open' declaration on a possible type identifier - Error`` () =
         let csharp =
             CSharp """
