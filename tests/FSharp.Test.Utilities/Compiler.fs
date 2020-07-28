@@ -222,7 +222,7 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings : CompilationResult =
 
-        let ((err: FSharpErrorInfo[], outputFilePath: string), _) = CompilerAssert.CompileRaw(compilation)
+        let ((err: FSharpErrorInfo[], outputFilePath: string), _) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
         let (errors, warnings) = err |> fromFSharpErrorInfo
 

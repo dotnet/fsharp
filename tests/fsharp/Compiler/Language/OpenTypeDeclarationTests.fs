@@ -7,6 +7,7 @@ open NUnit.Framework
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Utilities
 open FSharp.Test.Utilities.Compiler
+open FSharp.Tests
 
 [<TestFixture>]
 module OpenTypeDeclarationTests =
@@ -1562,5 +1563,206 @@ let main _ =
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
         |])
+
+#endif
+
+#if !NETCOREAPP
+
+    [<Test>]
+    let ``Opening type providers with abbreviation result in unqualified access to types and members`` () =
+        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+
+        let provider =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provider.fsx"))
+            |> withName "provider"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let provided =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provided.fs"))
+            |> withName "provided"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let test =
+            Fsx """
+type T = FSharp.HelloWorld.HelloWorldTypeWithStaticInt32Parameter<1>
+
+open type T
+
+if NestedType.StaticProperty1 <> "You got a static property" then
+    failwith "failed"
+
+open type T.NestedType
+
+if StaticProperty1 <> "You got a static property" then
+    failwith "failed"
+            """
+            |> asExe
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+            |> withReferences [provider;provided]
+
+        compileAndRun test
+        |> ignore
+
+    [<Test>]
+    let ``Opening type providers result in unqualified access to types and members`` () =
+        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+
+        let provider =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provider.fsx"))
+            |> withName "provider"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let provided =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provided.fs"))
+            |> withName "provided"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let test =
+            Fsx """
+open type FSharp.HelloWorld.HelloWorldTypeWithStaticInt32Parameter<1>
+
+if NestedType.StaticProperty1 <> "You got a static property" then
+    failwith "failed"
+
+open type NestedType
+
+if StaticProperty1 <> "You got a static property" then
+    failwith "failed"
+            """
+            |> asExe
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+            |> withReferences [provider;provided]
+
+        compileAndRun test
+        |> ignore
+
+    [<Test>]
+    let ``Opening type providers with nested result in unqualified access to types and members`` () =
+        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+
+        let provider =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provider.fsx"))
+            |> withName "provider"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let provided =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provided.fs"))
+            |> withName "provided"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let test =
+            Fsx """
+open type FSharp.HelloWorld.HelloWorldTypeWithStaticInt32Parameter<1>.NestedType
+
+if StaticProperty1 <> "You got a static property" then
+    failwith "failed"
+            """
+            |> asExe
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+            |> withReferences [provider;provided]
+
+        compileAndRun test
+        |> ignore
+
+    [<Test>]
+    let ``Opening generative type providers in unqualified access to types and members`` () =
+        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+
+        let provider =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provider.fsx"))
+            |> withName "provider"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let provided =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provided.fs"))
+            |> withName "provided"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let test =
+            Fsx """
+type TheOuterType = FSharp.HelloWorldGenerative.TheContainerType<"TheOuterType">
+
+open type TheOuterType
+
+let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
+            """
+            |> asExe
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+            |> withReferences [provider;provided]
+
+        compileAndRun test
+        |> ignore
+
+    [<Test>]
+    let ``Opening generative type providers directly in unqualified access to types and members - Errors`` () =
+        let dir = Core.getTestsDirectory "typeProviders/helloWorld"
+
+        let provider =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provider.fsx"))
+            |> withName "provider"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let provided =
+            Fsx (sprintf """
+#load @"%s"
+            """ (dir ++ "provided.fs"))
+            |> withName "provided"
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+
+        let test =
+            Fsx """
+open type FSharp.HelloWorldGenerative.TheContainerType<"TheOuterType">
+
+let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
+            """
+            |> asExe
+            |> ignoreWarnings
+            |> withOptions ["--langversion:preview"]
+            |> withReferences [provider;provided]
+
+        compile test
+        |> withDiagnostics
+            [
+                (Error 3039, Line 2, Col 11, Line 2, Col 55, "A direct reference to the generated type 'TheContainerType' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = <path>'. This indicates that a type provider adds generated types to your assembly.")
+                (Error 39, Line 4, Col 9, Line 4, Col 31, "The type 'TheNestedGeneratedType' is not defined. Maybe you want one of the following:
+   TheGeneratedType1
+   TheGeneratedType2
+   TheGeneratedType4
+   TheGeneratedType5
+   TheGeneratedDelegateType")
+            ]
+        |> ignore
 
 #endif
