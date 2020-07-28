@@ -145,13 +145,13 @@ module internal PrintfImpl =
     /// Set of helpers to parse format string
     module private FormatString =
 
-        let intFromString (s: string) pos =
+        let intFromString (s: string) i =
             let rec go acc i =
                 if Char.IsDigit s.[i] then 
                     let n = int s.[i] - int '0'
                     go (acc * 10 + n) (i + 1)
-                else struct (acc, i)
-            go 0 pos
+                else (acc, i)
+            go 0 i
 
         let parseFlags (s: string) i = 
             let rec go flags i = 
@@ -160,36 +160,36 @@ module internal PrintfImpl =
                 | '+' -> go (flags ||| FormatFlags.PlusForPositives) (i + 1)
                 | ' ' -> go (flags ||| FormatFlags.SpaceForPositives) (i + 1)
                 | '-' -> go (flags ||| FormatFlags.LeftJustify) (i + 1)
-                | _ -> struct (flags, i)
+                | _ -> (flags, i)
             go FormatFlags.None i
 
         let parseWidth (s: string) i = 
-            if s.[i] = '*' then struct (StarValue, i + 1)
+            if s.[i] = '*' then (StarValue, i + 1)
             elif Char.IsDigit s.[i] then intFromString s i
-            else struct (NotSpecifiedValue, i)
+            else (NotSpecifiedValue, i)
 
         let parsePrecision (s: string) i = 
             if s.[i] = '.' then
-                if s.[i + 1] = '*' then struct (StarValue, i + 2)
+                if s.[i + 1] = '*' then (StarValue, i + 2)
                 elif Char.IsDigit s.[i + 1] then intFromString s (i + 1)
                 else raise (ArgumentException("invalid precision value"))
-            else struct (NotSpecifiedValue, i)
+            else (NotSpecifiedValue, i)
         
         let parseTypeChar (s: string) i = 
-            struct (s.[i], i + 1)
+            (s.[i], i + 1)
 
         let parseInterpolatedHoleDotNetFormat typeChar (s: string) i =
             if typeChar = 'P' then 
                 if i < s.Length && s.[i] = '(' then  
                      let i2 = s.IndexOf(")", i)
                      if i2 = -1 then 
-                         struct (ValueNone, i)
+                         (ValueNone, i)
                      else 
-                         struct (ValueSome s.[i+1..i2-1], i2+1)
+                         (ValueSome s.[i+1..i2-1], i2+1)
                 else
-                    struct (ValueNone, i)
+                    (ValueNone, i)
             else
-                struct (ValueNone, i)
+                (ValueNone, i)
 
         // Skip %P() added for hole in "...%d{x}..."
         let skipInterpolationHole (fmt: string) i =
@@ -204,15 +204,15 @@ module internal PrintfImpl =
         let findNextFormatSpecifier (s: string) i = 
             let rec go i (buf: Text.StringBuilder) =
                 if i >= s.Length then 
-                    struct (s.Length, buf.ToString())
+                    (s.Length, buf.ToString())
                 else
                     let c = s.[i]
                     if c = '%' then
                         if i + 1 < s.Length then
-                            let struct (_, i1) = parseFlags s (i + 1)
-                            let struct (w, i2) = parseWidth s i1
-                            let struct (p, i3) = parsePrecision s i2
-                            let struct (typeChar, i4) = parseTypeChar s i3
+                            let (_, i1) = parseFlags s (i + 1)
+                            let (w, i2) = parseWidth s i1
+                            let (p, i3) = parsePrecision s i2
+                            let (typeChar, i4) = parseTypeChar s i3
 
                             // shortcut for the simpliest case
                             // if typeChar is not % or it has star as width\precision - resort to long path
@@ -376,7 +376,7 @@ module internal PrintfImpl =
     ///    f3 8           // same activation captures 8 (args --> [3;5;8])
     ///
     /// If we captured into an mutable array then these would interfere 
-    type PrintfFuncContext<'State, 'Residue, 'Result> = unit -> struct (obj list * PrintfEnv<'State, 'Residue, 'Result>)
+    type PrintfFuncContext<'State, 'Residue, 'Result> = unit -> (obj list * PrintfEnv<'State, 'Residue, 'Result>)
     type PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result> = PrintfFuncContext<'State, 'Residue, 'Result> -> 'Printer
 
     [<Literal>]
@@ -396,14 +396,14 @@ module internal PrintfImpl =
      
         static member Final0(allSteps) =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
-                let (struct (args, env)) = prev()
+                let (args, env) = prev()
                 env.RunSteps(revToArray args, null, allSteps)
             )
 
         static member CaptureFinal1<'A>(allSteps) =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 (fun (arg1: 'A) ->
-                    let (struct (args, env)) = prev()
+                    let (args, env) = prev()
                     let finalArgs = box arg1 :: args
                     env.RunSteps(revToArray finalArgs, null, allSteps)
                 )
@@ -412,7 +412,7 @@ module internal PrintfImpl =
         static member CaptureFinal2<'A, 'B>(allSteps) =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 (fun (arg1: 'A) (arg2: 'B) ->
-                    let (struct (args, env)) = prev()
+                    let (args, env) = prev()
                     let finalArgs = box arg2 :: box arg1 :: args
                     env.RunSteps(revToArray finalArgs, null, allSteps)
                 )
@@ -421,7 +421,7 @@ module internal PrintfImpl =
         static member CaptureFinal3<'A, 'B, 'C>(allSteps) =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 (fun (arg1: 'A) (arg2: 'B) (arg3: 'C) ->
-                    let (struct (args, env)) = prev()
+                    let (args, env) = prev()
                     let finalArgs = box arg3 :: box arg2 :: box arg1 :: args
                     env.RunSteps(revToArray finalArgs, null, allSteps)
                 )
@@ -431,8 +431,8 @@ module internal PrintfImpl =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 (fun (arg1: 'A) ->
                     let curr() = 
-                        let (struct (args, env)) = prev()
-                        struct ((box arg1 :: args), env)
+                        let (args, env) = prev()
+                        ((box arg1 :: args), env)
                     next curr : 'Tail
                 )
             )
@@ -441,8 +441,8 @@ module internal PrintfImpl =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 (fun (f: 'State -> 'A -> 'Residue) (arg1: 'A) ->
                     let curr() = 
-                        let (struct (args, env)) = prev()
-                        struct ((box arg1 :: box (fun s (arg:obj) -> f s (unbox arg)) :: args), env)
+                        let (args, env) = prev()
+                        ((box arg1 :: box (fun s (arg:obj) -> f s (unbox arg)) :: args), env)
                     next curr : 'Tail
                 )
             )
@@ -451,8 +451,8 @@ module internal PrintfImpl =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 (fun (arg1: 'A) (arg2: 'B) ->
                     let curr() = 
-                        let (struct (args, env)) = prev()
-                        struct ((box arg2 :: box arg1 :: args), env)
+                        let (args, env) = prev()
+                        ((box arg2 :: box arg1 :: args), env)
                     next curr : 'Tail
                 )
             )
@@ -461,8 +461,8 @@ module internal PrintfImpl =
             (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
                 (fun (arg1: 'A) (arg2: 'B) (arg3: 'C) ->
                     let curr() = 
-                        let (struct (args, env)) = prev()
-                        struct ((box arg3 :: box arg2 :: box arg1 :: args), env)
+                        let (args, env) = prev()
+                        ((box arg3 :: box arg2 :: box arg1 :: args), env)
                     next curr : 'Tail
                 )
             )
@@ -950,12 +950,13 @@ module internal PrintfImpl =
                 | _ -> failwith (String.Format("Expected function with {0} arguments", n))
             else 
                 System.Diagnostics.Debug.Assert((i = n), "i = n")
-                struct (buf, ty)
+                (buf, ty)
         go ty 0    
 
     let MAX_CAPTURE = 3
 
     /// Parses format string and creates resulting step list and printer factory function.
+    [<AllowNullLiteral>]
     type FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt: string) =
     
         let buildCaptureFunc (spec: FormatSpecifier, allSteps, argTys: Type[], retTy, nextInfo) = 
@@ -1045,11 +1046,11 @@ module internal PrintfImpl =
                     StepWithArg (prefix, convFunc)
             
         let parseSpec i = 
-            let struct (flags, i) = FormatString.parseFlags fmt (i + 1)
-            let struct (width, i) = FormatString.parseWidth fmt i
-            let struct (precision, i) = FormatString.parsePrecision fmt i
-            let struct (typeChar, i) = FormatString.parseTypeChar fmt i
-            let struct (interpHoleDotnetFormat, i) = FormatString.parseInterpolatedHoleDotNetFormat typeChar fmt i
+            let (flags, i) = FormatString.parseFlags fmt (i + 1)
+            let (width, i) = FormatString.parseWidth fmt i
+            let (precision, i) = FormatString.parsePrecision fmt i
+            let (typeChar, i) = FormatString.parseTypeChar fmt i
+            let (interpHoleDotnetFormat, i) = FormatString.parseInterpolatedHoleDotNetFormat typeChar fmt i
 
             // Skip %P insertion points added after %d{...} etc. in interpolated strings
             let i = FormatString.skipInterpolationHole fmt i
@@ -1060,7 +1061,7 @@ module internal PrintfImpl =
                   Flags = flags
                   Width = width
                   InteropHoleDotNetFormat = interpHoleDotnetFormat }
-            struct (i, spec)
+            (i, spec)
             
         // The steps, populated on-demand. This is for the case where the string is being used
         // with interpolands captured in the Format object, including the %A capture types.
@@ -1090,13 +1091,13 @@ module internal PrintfImpl =
                 stringCount <- Step.BlockCount allSteps
                 stepsForCapturedFormat <- allSteps
             else
-                let struct (i, spec) = parseSpec i
-                let struct (i, suffix) = FormatString.findNextFormatSpecifier fmt i
+                let (i, spec) = parseSpec i
+                let (i, suffix) = FormatString.findNextFormatSpecifier fmt i
                 let step = buildStep spec null prefix
                 parseAndCreateStepsForCapturedFormatAux (step::steps) suffix i
 
         let parseAndCreateStepsForCapturedFormat () =
-            let struct (i, prefix) = FormatString.findNextFormatSpecifier fmt 0
+            let (i, prefix) = FormatString.findNextFormatSpecifier fmt 0
             parseAndCreateStepsForCapturedFormatAux [] prefix i
 
         /// The more advanced parser which both builds the steps (with %A types extracted from the funcTy),
@@ -1110,34 +1111,34 @@ module internal PrintfImpl =
                 let last = Specializations<'State, 'Residue, 'Result>.Final0(allSteps)
                 stringCount <- Step.BlockCount allSteps
                 let nextInfo = (box last, true, [| |], funcTy, None)
-                struct (allSteps, nextInfo)
+                (allSteps, nextInfo)
             else
                 assert (fmt.[i] = '%')
-                let struct (i, spec) = parseSpec i
-                let struct (i, suffix) = FormatString.findNextFormatSpecifier fmt i
+                let (i, spec) = parseSpec i
+                let (i, suffix) = FormatString.findNextFormatSpecifier fmt i
                 let n = spec.ArgCount
-                let struct (argTys, retTy) =  extractCurriedArguments funcTy n
+                let (argTys, retTy) =  extractCurriedArguments funcTy n
                 let step = buildStep spec argTys prefix
-                let struct (allSteps, nextInfo) = parseAndCreateFuncFactoryAux (step::steps) suffix retTy i
+                let (allSteps, nextInfo) = parseAndCreateFuncFactoryAux (step::steps) suffix retTy i
                 let nextInfoNew = buildCaptureFunc (spec, allSteps, argTys, retTy, nextInfo)
-                struct (allSteps, nextInfoNew)
+                (allSteps, nextInfoNew)
 
         let parseAndCreateFunctionFactory () =
             let funcTy = typeof<'Printer>
 
             // Find the first format specifier
-            let struct (prefixPos, prefix) = FormatString.findNextFormatSpecifier fmt 0
+            let (prefixPos, prefix) = FormatString.findNextFormatSpecifier fmt 0
             
             // If there are not format specifiers then take a simple path
             if prefixPos = fmt.Length then 
                 let factoryObj = 
                     box (fun (initial: PrintfFuncContext<'State, 'Residue, 'Result>) -> 
-                        let (struct (_args, env)) = initial()
+                        let (_args, env) = initial()
                         env.WriteSkipEmpty prefix
                         env.Finish())
                 factoryObj
             else
-                let struct (_, (factoryObj, _, _, _, _)) = parseAndCreateFuncFactoryAux [] prefix funcTy prefixPos
+                let (_, (factoryObj, _, _, _, _)) = parseAndCreateFuncFactoryAux [] prefix funcTy prefixPos
                 factoryObj
 
         /// The format string, used to help identify the cache entry (the cache index types are taken
@@ -1182,7 +1183,7 @@ module internal PrintfImpl =
         static member GetParser(format: Format<'Printer, 'State, 'Residue, 'Result>) =
             let cacheEntry = Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent
             let fmt = format.Value
-            if cacheEntry === null then 
+            if isNull cacheEntry then 
                 let parser = FormatParser(fmt)
                 Cache.mostRecent <- parser
                 parser
@@ -1262,7 +1263,7 @@ module Printf =
         | null -> 
             // The ksprintf "...%d ...." arg path, producing a function
             let factory = cacheItem.GetFunctionFactory()
-            let initial() = (struct ([], envf cacheItem.BlockCount :> PrintfEnv<_,_,_>))
+            let initial() = ([], envf cacheItem.BlockCount :> PrintfEnv<_,_,_>)
             factory initial
         | captures -> 
             // The ksprintf $"...%d{3}...." path, running the steps straight away to produce a string
@@ -1284,7 +1285,7 @@ module Printf =
         | null ->
             // The sprintf "...%d ...." arg path, producing a function
             let factory = cacheItem.GetFunctionFactory()
-            let initial() = (struct ([], StringPrintfEnv cacheItem.BlockCount))
+            let initial() = ([], StringPrintfEnv cacheItem.BlockCount)
             factory initial
         | captures -> 
             // The sprintf $"...%d{3}...." path, running the steps straight away to produce a string
