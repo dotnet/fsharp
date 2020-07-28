@@ -542,6 +542,105 @@ module Test4 =
         |> ignore
 
     [<Test>]
+    let ``Open generic type and use nested types as unqualified 4`` () =
+        let csharp =
+            CSharp """
+namespace CSharpTest
+{
+    public class Test<T1, T2, T3, T4, T5>
+    {
+        public class NestedTest<T6, T7, U>
+        {
+            public class NestedNestedTest
+            {
+                public T7 A()
+                {
+                    return default(T7);
+                }
+            }
+
+            public class NestedNestedTest<T8>
+            {
+                public T8 B()
+                {
+                    return default(T8);
+                }
+            }
+
+            public class NestedNestedTest<T9, T10>
+            {
+                public T9 C()
+                {
+                    return default(T9);
+                }
+            }
+        }
+    }
+}"""
+
+        FSharp """
+namespace FSharpTest
+
+open System
+open CSharpTest
+
+open type Test<char, char, char, char, char>.NestedTest<int, string, uint64>
+
+module Test =
+
+    let aa : NestedNestedTest = NestedNestedTest()
+
+    let bb : NestedNestedTest<int list> = NestedNestedTest<int list>()
+
+    let cc : NestedNestedTest<float list, int64 list> = NestedNestedTest<float list, int64 list>()
+
+    let r1 : string = aa.A()
+
+    let r2 : int list = bb.B()
+
+    let r3 : float list = cc.C()
+
+open type Test<int, int16, uint16, byte, sbyte>
+
+module Test2 =
+
+    let a : NestedTest<string, uint32, uint64> = NestedTest<string, uint32, uint64>()
+
+    let aa : NestedTest<string, uint32, uint64>.NestedNestedTest = NestedTest<string, uint32, uint64>.NestedNestedTest()
+
+    let bb : NestedTest<string, int, uint64>.NestedNestedTest<int []> = NestedTest<string, int, uint64>.NestedNestedTest<int []>()
+
+    let cc : NestedTest<string, int64, uint64>.NestedNestedTest<float [], int64 []> = NestedTest<string, int64, uint64>.NestedNestedTest<float [], int64 []>()
+
+    let r1 : uint32 = aa.A()
+
+    let r2 : int [] = bb.B()
+
+    let r3 : float [] = cc.C()
+
+module Test3 =
+
+    let a : Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64> = Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64>()
+
+    let aa : Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64>.NestedNestedTest = Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64>.NestedNestedTest()
+
+    let bb : Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64>.NestedNestedTest<string> = Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64>.NestedNestedTest<string>()
+
+    let cc : Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64>.NestedNestedTest<int list, int []> = Test<byte, sbyte, uint16, int16, int>.NestedTest<uint32, int64, uint64>.NestedNestedTest<int list, int []>()
+
+    let r1 : int64 = aa.A()
+
+    let r2 : string = bb.B()
+
+    let r3 : int list = cc.C()
+        """
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
     let ``Using the 'open' declaration on a possible type identifier - Error`` () =
         let csharp =
             CSharp """
