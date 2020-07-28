@@ -255,8 +255,8 @@ module internal PrintfImpl =
     [<NoComparison; NoEquality>]
     /// Represents one step in the execution of a format string
     type Step =
-        | StepWithArg of prefix: string * conv1: (obj -> string) 
-        | StepWithTypedArg of prefix: string * conv1: (obj -> Type -> string) 
+        | StepWithArg of prefix: string * conv: (obj -> string) 
+        | StepWithTypedArg of prefix: string * conv: (obj -> Type -> string) 
         | StepString of prefix: string 
         | StepLittleT of prefix: string 
         | StepLittleA of prefix: string
@@ -780,7 +780,7 @@ module internal PrintfImpl =
             | :? uint32 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
             | :? uint64 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
             | :? nativeint | :? unativeint -> toFormattedString fmt (eliminateNative v)
-            | _ -> failwith "toString: unreachable"
+            | _ -> failwith "toFormattedString: unreachable"
 
         let rec toUnsigned (v: obj) = 
             match v with
@@ -1265,14 +1265,14 @@ module internal PrintfImpl =
         static let mutable dict : ConcurrentDictionary<string, FormatParser<'Printer, 'State, 'Residue, 'Result>> = null
 
         static member GetParser(format: Format<'Printer, 'State, 'Residue, 'Result>) =
-            let cacheEntry = Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent
+            let recent = Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent
             let fmt = format.Value
-            if isNull cacheEntry then 
+            if isNull recent then 
                 let parser = FormatParser(fmt)
-                Cache.mostRecent <- parser
+                Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent <- parser
                 parser
-            elif fmt.Equals cacheEntry.FormatString then 
-                cacheEntry
+            elif fmt.Equals recent.FormatString then 
+                recent
             else
                 // Initialize the 2nd level cache if necessary.  Note there's a race condition but it doesn't
                 // matter if we initialize these values twice (and lose one entry)
@@ -1287,7 +1287,7 @@ module internal PrintfImpl =
                         // There's a race condition - but the computation is functional and it doesn't matter if we do it twice
                         dict.TryAdd(fmt, parser) |> ignore
                         parser
-                Cache.mostRecent <- parser
+                Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent <- parser
                 parser
 
     type LargeStringPrintfEnv<'Result>(continuation, blockSize) = 
