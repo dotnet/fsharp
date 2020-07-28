@@ -196,8 +196,9 @@ module internal PrintfImpl =
                 NotSpecifiedValue
         
         let parseTypeChar (s: string) (i: byref<int>) = 
+            let res = s.[i]
             i <- i + 1
-            s.[i]
+            res
 
         let parseInterpolatedHoleDotNetFormat typeChar (s: string) (i: byref<int>) =
             if typeChar = 'P' then 
