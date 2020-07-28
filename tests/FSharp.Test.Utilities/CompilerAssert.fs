@@ -382,6 +382,44 @@ let main argv = 0"""
     static member CompileRaw(cmpl: Compilation) =
         lock gate (fun () -> returnCompilation cmpl)
 
+    static member RunAndReturnResult (outputFilePath: string) =
+        let mutable pinfo = ProcessStartInfo()
+        pinfo.RedirectStandardError <- true
+        pinfo.RedirectStandardOutput <- true
+#if !NETCOREAPP
+        pinfo.FileName <- outputFilePath
+#else
+        pinfo.FileName <- "dotnet"
+        pinfo.Arguments <- outputFilePath
+
+        let runtimeconfig = """
+{
+    "runtimeOptions": {
+        "tfm": "netcoreapp3.1",
+        "framework": {
+            "name": "Microsoft.NETCore.App",
+            "version": "3.1.0"
+        }
+    }
+}"""
+
+        let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
+        File.WriteAllText(runtimeconfigPath, runtimeconfig)
+        use _disposal =
+            { new IDisposable with
+              member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
+#endif
+        pinfo.UseShellExecute <- false
+        let p = Process.Start pinfo
+
+        Assert.True(p.WaitForExit(120000))
+
+        let errors = p.StandardError.ReadToEnd()
+        let output = p.StandardOutput.ReadToEnd()
+
+        (p.ExitCode, errors, output)
+
+
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         let beforeExecute = defaultArg beforeExecute (fun _ _ -> ())
@@ -392,40 +430,8 @@ let main argv = 0"""
                 assertErrors 0 ignoreWarnings errors [||]
                 beforeExecute outputFilePath deps
                 if newProcess then
-                    let mutable pinfo = ProcessStartInfo()
-                    pinfo.RedirectStandardError <- true
-                    pinfo.RedirectStandardOutput <- true
-#if !NETCOREAPP
-                    pinfo.FileName <- outputFilePath
-#else
-                    pinfo.FileName <- "dotnet"
-                    pinfo.Arguments <- outputFilePath
-
-                    let runtimeconfig =
-                        """
-{
-    "runtimeOptions": {
-        "tfm": "netcoreapp3.1",
-        "framework": {
-            "name": "Microsoft.NETCore.App",
-            "version": "3.1.0"
-        }
-    }
-}
-                        """
-
-                    let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
-                    File.WriteAllText(runtimeconfigPath, runtimeconfig)
-                    use _disposal =
-                        { new IDisposable with
-                            member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
-#endif
-                    pinfo.UseShellExecute <- false
-                    let p = Process.Start pinfo
-                    let errors = p.StandardError.ReadToEnd()
-                    let output = p.StandardOutput.ReadToEnd()
-                    Assert.True(p.WaitForExit(120000))
-                    if p.ExitCode <> 0 then
+                    let (exitCode, errors, output) = CompilerAssert.RunAndReturnResult outputFilePath
+                    if exitCode <> 0 then
                         Assert.Fail errors
                     onOutput output
                 else

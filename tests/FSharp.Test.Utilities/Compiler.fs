@@ -61,13 +61,19 @@ module rec Compiler =
           Range:   Range
           Message: string }
 
+    type ExecutionOutput =
+        { ExitCode: int
+          StdOut:   string
+          StdErr:   string }
+
     type Output =
         { OutputPath: string option
           Adjust:     int
           Errors:     ErrorInfo list
-          Warnings:   ErrorInfo list }
+          Warnings:   ErrorInfo list
+          Output:     ExecutionOutput option }
 
-    type CompilationResult =
+    type TestResult =
         | Success of Output
         | Failure of Output
 
@@ -220,7 +226,7 @@ module rec Compiler =
                 | IL _ -> failwith "TODO: Process references for IL"
         loop [] references
 
-    let private compileFSharpCompilation compilation ignoreWarnings : CompilationResult =
+    let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
 
         let ((err: FSharpErrorInfo[], outputFilePath: string), _) = CompilerAssert.CompileRaw(compilation)
 
@@ -230,7 +236,8 @@ module rec Compiler =
             { OutputPath  = None
               Adjust      = 0
               Warnings    = warnings
-              Errors      = errors }
+              Errors      = errors
+              Output      = None }
 
         // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
@@ -240,7 +247,7 @@ module rec Compiler =
             Success { result with Warnings   = warnings
                                   OutputPath = Some outputFilePath }
 
-    let private compileFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
+    let private compileFSharp (fsSource: FSharpCompilationSource) : TestResult =
 
         let source = getSource fsSource.Source
         let sourceKind = fsSource.SourceKind
@@ -253,7 +260,7 @@ module rec Compiler =
 
         compileFSharpCompilation compilation fsSource.IgnoreWarnings
 
-    let private compileCSharpCompilation (compilation: CSharpCompilation) : CompilationResult =
+    let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
 
         let outputPath = Path.Combine(Path.GetTempPath(), "FSharpCompilerTests", Path.GetRandomFileName())
 
@@ -265,17 +272,18 @@ module rec Compiler =
         let cmplResult = compilation.Emit (output)
 
         let result =
-            { OutputPath  = None
-              Adjust      = 0
-              Warnings    = []
-              Errors      = [] }
+            { OutputPath = None
+              Adjust     = 0
+              Warnings   = []
+              Errors     = []
+              Output     = None }
 
         if cmplResult.Success then
             Success { result with OutputPath  = Some output }
         else
             Failure result
 
-    let private compileCSharp (csSource: CSharpCompilationSource) : CompilationResult =
+    let private compileCSharp (csSource: CSharpCompilationSource) : TestResult =
 
         let source = getSource csSource.Source
         let name = defaultArg csSource.Name (Guid.NewGuid().ToString ())
@@ -301,24 +309,25 @@ module rec Compiler =
 
         cmpl |> compileCSharpCompilation
 
-    let compile (cUnit: CompilationUnit) : CompilationResult =
+    let compile (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs -> compileFSharp fs
         | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
 
-    let private typecheckFSharpWithBaseline (options: string list) (dir: string) (file: string) : CompilationResult =
+    let private typecheckFSharpWithBaseline (options: string list) (dir: string) (file: string) : TestResult =
         // Since TypecheckWithErrorsAndOptionsAgainsBaseLine throws if doesn't match expected baseline,
-        // We return a successfull CompilationResult if it succeeds.
+        // We return a successfull TestResult if it succeeds.
         CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine (Array.ofList options) dir file
 
         Success
-            { OutputPath  = None
-              Adjust      = 0
-              Warnings    = []
-              Errors      = [] }
+            { OutputPath = None
+              Adjust     = 0
+              Warnings   = []
+              Errors     = []
+              Output     = None }
 
-    let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : CompilationResult =
+    let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
         let options = fsSource.Options |> Array.ofList
 
@@ -327,10 +336,11 @@ module rec Compiler =
         let (errors, warnings) = err |> fromFSharpErrorInfo
 
         let result =
-            { OutputPath  = None
-              Adjust      = 0
-              Warnings    = warnings
-              Errors      = errors }
+            { OutputPath = None
+              Adjust     = 0
+              Warnings   = warnings
+              Errors     = errors
+              Output     = None }
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
@@ -339,23 +349,32 @@ module rec Compiler =
         else
             Success { result with Warnings   = warnings }
 
-    let private typecheckFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
+    let private typecheckFSharp (fsSource: FSharpCompilationSource) : TestResult =
         match fsSource.Source with
         | Baseline (f, d) -> typecheckFSharpWithBaseline fsSource.Options f d
         | _ -> typecheckFSharpSource fsSource
 
-    let typecheck (cUnit: CompilationUnit) : CompilationResult =
+    let typecheck (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs -> typecheckFSharp fs
         | _ -> failwith "Typecheck only supports F#"
 
-    let run (cResult: CompilationResult ) : unit =
+    let run (cResult: TestResult ) : TestResult =
         match cResult with
         | Failure o -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (o.Errors @ o.Warnings))
         | Success s ->
             match s.OutputPath with
-            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
-            | Some p -> CompilerAssert.Run p
+            | None -> failwith "Compilation didn't produce any output. Unable to run."
+            | Some p ->
+                let runResult = CompilerAssert.RunAndReturnResult p
+                let (exitCode, errors, output) = runResult
+
+                let result = { s with Output = Some { ExitCode = exitCode; StdErr = errors; StdOut = output } }
+
+                if exitCode = 0 then
+                    Success result
+                else
+                    Failure result
 
     let compileAndRun = compile >> run
 
@@ -406,36 +425,36 @@ module rec Compiler =
                            checkEqual "Message" expectedMessage actualMessage)
             ()
 
-        let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
+        let adjust (adjust: int) (result: TestResult) : TestResult =
             match result with
             | Success s -> Success { s with Adjust = adjust }
             | Failure f -> Failure { f with Adjust = adjust }
 
-        let shouldSucceed (result: CompilationResult) : CompilationResult =
+        let shouldSucceed (result: TestResult) : TestResult =
             match result with
             | Success _ -> result
             | Failure r ->
                 let message = sprintf "Compilation failed (expected to succeed).\n All errors:\n%A" (r.Errors @ r.Warnings)
                 failwith message
 
-        let shouldFail (result: CompilationResult) : CompilationResult =
+        let shouldFail (result: TestResult) : TestResult =
             match result with
             | Success _ -> failwith "Compilation was \"Success\" (expected: \"Failure\")."
             | Failure _ -> result
 
-        let private assertResultsCategory (what: string) (selector: Output -> ErrorInfo list) (expected: ErrorInfo list) (result: CompilationResult) : CompilationResult =
+        let private assertResultsCategory (what: string) (selector: Output -> ErrorInfo list) (expected: ErrorInfo list) (result: TestResult) : TestResult =
             match result with
              | Success r | Failure r ->
                 assertErrors what r.Adjust (selector r) expected
             result
 
-        let withResults (expectedResults: ErrorInfo list) result : CompilationResult =
+        let withResults (expectedResults: ErrorInfo list) result : TestResult =
             assertResultsCategory "Results" (fun r -> r.Warnings @ r.Errors) expectedResults result
 
-        let withResult (expectedResult: ErrorInfo ) (result: CompilationResult) : CompilationResult =
+        let withResult (expectedResult: ErrorInfo ) (result: TestResult) : TestResult =
             withResults [expectedResult] result
 
-        let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
+        let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: TestResult) : TestResult =
             let (expectedResults: ErrorInfo list) =
                 expected |>
                 List.map(
@@ -450,58 +469,58 @@ module rec Compiler =
                         Message     = message })
             withResults expectedResults result
 
-        let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
+        let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: TestResult) : TestResult =
             withDiagnostics [expected] result
 
-        let withErrors (expectedErrors: ErrorInfo list) (result: CompilationResult) : CompilationResult =
+        let withErrors (expectedErrors: ErrorInfo list) (result: TestResult) : TestResult =
             assertResultsCategory "Errors" (fun r -> r.Errors) expectedErrors result
 
-        let withError (expectedError: ErrorInfo) (result: CompilationResult) : CompilationResult =
+        let withError (expectedError: ErrorInfo) (result: TestResult) : TestResult =
             withErrors [expectedError] result
 
-        let checkCodes (expected: int list) (selector: Output -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
+        let checkCodes (expected: int list) (selector: Output -> ErrorInfo list) (result: TestResult) : TestResult =
             match result with
             | Success r | Failure r ->
                 assertErrorNumbers (selector r) expected
             result
 
-        let withErrorCodes (expectedCodes: int list) (result: CompilationResult) : CompilationResult =
+        let withErrorCodes (expectedCodes: int list) (result: TestResult) : TestResult =
             checkCodes expectedCodes (fun r -> r.Errors) result
 
-        let withErrorCode (expectedCode: int) (result: CompilationResult) : CompilationResult =
+        let withErrorCode (expectedCode: int) (result: TestResult) : TestResult =
             withErrorCodes [expectedCode] result
 
-        let withWarnings (expectedWarnings: ErrorInfo list) (result: CompilationResult) : CompilationResult =
+        let withWarnings (expectedWarnings: ErrorInfo list) (result: TestResult) : TestResult =
             assertResultsCategory "Warnings" (fun r -> r.Warnings) expectedWarnings result
 
-        let withWarning (expectedWarning: ErrorInfo) (result: CompilationResult) : CompilationResult =
+        let withWarning (expectedWarning: ErrorInfo) (result: TestResult) : TestResult =
             withWarnings [expectedWarning] result
 
-        let withWarningCodes (expectedCodes: int list) (result: CompilationResult) : CompilationResult =
+        let withWarningCodes (expectedCodes: int list) (result: TestResult) : TestResult =
             checkCodes expectedCodes (fun r -> r.Warnings) result
 
-        let withWarningCode (expectedCode: int) (result: CompilationResult) : CompilationResult =
+        let withWarningCode (expectedCode: int) (result: TestResult) : TestResult =
             withWarningCodes [expectedCode] result
 
-        let private checkErrorMessages (messages: string list) (selector: Output -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
+        let private checkErrorMessages (messages: string list) (selector: Output -> ErrorInfo list) (result: TestResult) : TestResult =
             match result with
             | Success r | Failure r -> assertErrorMessages (selector r) messages
             result
 
-        let withMessages (messages: string list) (result: CompilationResult) : CompilationResult =
+        let withMessages (messages: string list) (result: TestResult) : TestResult =
              checkErrorMessages messages (fun r -> r.Warnings @ r.Errors) result
 
-        let withMessage (message: string) (result: CompilationResult) : CompilationResult =
+        let withMessage (message: string) (result: TestResult) : TestResult =
             withMessages [message] result
 
-        let withErrorMessages (messages: string list) (result: CompilationResult) : CompilationResult =
+        let withErrorMessages (messages: string list) (result: TestResult) : TestResult =
             checkErrorMessages messages (fun r -> r.Errors) result
 
-        let withErrorMessage (message: string) (result: CompilationResult) : CompilationResult =
+        let withErrorMessage (message: string) (result: TestResult) : TestResult =
             withErrorMessages [message] result
 
-        let withWarningMessages (messages: string list) (result: CompilationResult) : CompilationResult =
+        let withWarningMessages (messages: string list) (result: TestResult) : TestResult =
             checkErrorMessages messages (fun r -> r.Warnings) result
 
-        let withWarningMessage (message: string) (result: CompilationResult) : CompilationResult =
+        let withWarningMessage (message: string) (result: TestResult) : TestResult =
             withWarningMessages [message] result
