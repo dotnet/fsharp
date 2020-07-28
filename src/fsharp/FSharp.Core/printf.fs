@@ -322,13 +322,13 @@ module internal PrintfImpl =
             for step in steps do 
                 match step with 
                 | StepWithArg (prefix, conv) ->
-                    env.WriteSkipEmpty(prefix)
+                    env.WriteSkipEmpty prefix
                     let arg = args.[argIndex]
                     argIndex <- argIndex + 1
                     env.Write(conv arg)
 
                 | StepWithTypedArg (prefix, conv) ->
-                    env.WriteSkipEmpty(prefix)
+                    env.WriteSkipEmpty prefix
                     let arg = args.[argIndex]
                     let argTy = argTys.[tyIndex]
                     argIndex <- argIndex + 1
@@ -336,7 +336,7 @@ module internal PrintfImpl =
                     env.Write(conv arg argTy)
 
                 | StepString prefix ->
-                    env.WriteSkipEmpty(prefix)
+                    env.WriteSkipEmpty prefix
 
                 | StepLittleT(prefix) -> 
                     env.WriteSkipEmpty prefix
@@ -1219,6 +1219,7 @@ module internal PrintfImpl =
 #endif
                         env.WriteSkipEmpty prefix
                         env.Finish())
+                stringCount <- 1
                 factoryObj
             else
                 let (_, (factoryObj, _, _, _, _)) = parseAndCreateFuncFactoryAux [] prefix funcTy &i
