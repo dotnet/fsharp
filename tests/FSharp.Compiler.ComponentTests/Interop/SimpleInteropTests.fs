@@ -73,3 +73,46 @@ public class BicycleShop {
         app
         |> compile
         |> shouldFail
+
+module ``C# <-> F# interop: fields`` =
+    [<Fact>]
+    let ``can't mutably set a C#-const field in F#`` () =
+        let csLib =
+            CSharp """
+public static class Holder {
+    public const string Label = "label";
+}
+            """
+            |> withName "CsharpConst"
+
+        let fsLib =
+            FSharp """
+module CannaeSetCSharpConst
+Holder.Label <- "nope"
+            """
+            |> withReferences [csLib]
+
+        fsLib
+        |> compile
+        |> shouldFail
+
+    [<Fact>]
+    let ``can't mutably set a C#-readonly field in F#`` () =
+        let csLib =
+            CSharp """
+public static class Holder {
+    public static readonly string Label = "label";
+}
+            """
+            |> withName "CsharpReadonly"
+
+        let fsLib =
+            FSharp """
+module CannaeSetCSharpReadonly
+Holder.Label <- "nope"
+            """
+            |> withReferences [csLib]
+
+        fsLib
+        |> compile
+        |> shouldFail
