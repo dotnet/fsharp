@@ -3137,7 +3137,7 @@ let BuildILFieldGet g amap m objExpr (finfo: ILFieldInfo) =
     // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
     wrap (mkAsmExpr (([ mkNormalLdfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else [])), tinst, [objExpr], [fieldType], m)) 
 
-/// Checks that sets to a field are not setting a literal or initonly field
+/// Checks that setting a field value does not set a literal or initonly field
 let private CheckFieldLiteralArg (finfo: ILFieldInfo) argExpr m =
     finfo.LiteralValue |> Option.iter (fun _ ->
         match argExpr with
