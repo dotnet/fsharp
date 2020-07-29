@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.ErrorMessages.ComponentTests
+namespace FSharp.Compiler.Interop.ComponentTests
 
 open Xunit
 open FSharp.Test.Utilities
