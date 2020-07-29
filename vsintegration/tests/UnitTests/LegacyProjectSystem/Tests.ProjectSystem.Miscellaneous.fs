@@ -266,8 +266,7 @@ type Miscellaneous() =
              this.MSBuildProjectBoilerplate "Library", 
              (fun project ccn projFileName ->
                 let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-                File.AppendAllText(fooPath, "#light")
-                File.AppendAllText(fooPath, "module Foo")
+                File.AppendAllLines(fooPath, ["#light"; "module Foo"])
                 
                 //ccn((project :> IVsHierarchy), "Debug|Any CPU")
                 let configName = "Debug"                
