@@ -370,19 +370,36 @@ let main argv = 0"""
         Directory.CreateDirectory(compileDirectory) |> ignore
         compileCompilationAux compileDirectory (ResizeArray()) false cmpl
 
-    static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
-        let ignoreWarnings = defaultArg ignoreWarnings false
-        lock gate (fun () ->
-            compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
-                assertErrors 0 ignoreWarnings errors expectedErrors))
+    static let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
+        let out = Console.Out
+        let err = Console.Error
 
-    static member Compile(cmpl: Compilation, ?ignoreWarnings) =
-        CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
+        let stdout = StringBuilder ()
+        let stderr = StringBuilder ()
 
-    static member CompileRaw(cmpl: Compilation) =
-        lock gate (fun () -> returnCompilation cmpl)
+        let outWriter = new StringWriter (stdout)
+        let errWriter = new StringWriter (stderr)
 
-    static member RunAndReturnResult (outputFilePath: string) =
+        let mutable exitCode = 0
+
+        try
+            try
+                Console.SetOut(outWriter)
+                Console.SetError(errWriter)
+                (executeBuiltApp outputFilePath deps) |> ignore
+            with e ->
+                let errorMessage = if e.InnerException <> null then (e.InnerException.ToString()) else (e.ToString())
+                stderr.Append (errorMessage) |> ignore
+                exitCode <- -1
+        finally
+            Console.SetOut(out)
+            Console.SetError(err)
+            outWriter.Close()
+            errWriter.Close()
+
+        (exitCode, stdout.ToString(), stderr.ToString())
+
+    static let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
         let mutable pinfo = ProcessStartInfo()
         pinfo.RedirectStandardError <- true
         pinfo.RedirectStandardOutput <- true
@@ -402,7 +419,6 @@ let main argv = 0"""
         }
     }
 }"""
-
         let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
         File.WriteAllText(runtimeconfigPath, runtimeconfig)
         use _disposal =
@@ -412,13 +428,34 @@ let main argv = 0"""
         pinfo.UseShellExecute <- false
         let p = Process.Start pinfo
 
-        Assert.True(p.WaitForExit(120000))
-
-        let errors = p.StandardError.ReadToEnd()
         let output = p.StandardOutput.ReadToEnd()
+        let errors = p.StandardError.ReadToEnd()
 
-        (p.ExitCode, errors, output)
+        let exited = p.WaitForExit(120000)
 
+        let exitCode = if not exited then -2 else p.ExitCode
+
+        (exitCode, output, errors)
+
+
+    static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
+        let ignoreWarnings = defaultArg ignoreWarnings false
+        lock gate (fun () ->
+            compileCompilation ignoreWarnings cmpl (fun ((errors, _), _) ->
+                assertErrors 0 ignoreWarnings errors expectedErrors))
+
+    static member Compile(cmpl: Compilation, ?ignoreWarnings) =
+        CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
+
+    static member CompileRaw(cmpl: Compilation) =
+        lock gate (fun () -> returnCompilation cmpl)
+
+    static member ExecuteAndReturnResult (outputFilePath: string, deps: string list, newProcess: bool) =
+        // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
+       if not newProcess then
+           executeBuiltAppAndReturnResult outputFilePath deps
+       else
+           executeBuiltAppNewProcessAndReturnResult outputFilePath
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -430,7 +467,7 @@ let main argv = 0"""
                 assertErrors 0 ignoreWarnings errors [||]
                 beforeExecute outputFilePath deps
                 if newProcess then
-                    let (exitCode, errors, output) = CompilerAssert.RunAndReturnResult outputFilePath
+                    let (exitCode, output, errors) = executeBuiltAppNewProcessAndReturnResult outputFilePath
                     if exitCode <> 0 then
                         Assert.Fail errors
                     onOutput output
@@ -625,9 +662,6 @@ let main argv = 0"""
 
     static member RunScript source expectedErrorMessages =
         CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
-
-    static member Run (exe: string) =
-        executeBuiltApp exe []
 
     static member ParseWithErrors (source: string) expectedParseErrors =
         let sourceFileName = "test.fs"

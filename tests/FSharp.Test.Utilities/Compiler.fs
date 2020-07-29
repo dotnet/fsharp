@@ -67,11 +67,12 @@ module rec Compiler =
           StdErr:   string }
 
     type Output =
-        { OutputPath: string option
-          Adjust:     int
-          Errors:     ErrorInfo list
-          Warnings:   ErrorInfo list
-          Output:     ExecutionOutput option }
+        { OutputPath:   string option
+          Dependencies: string list
+          Adjust:       int
+          Errors:       ErrorInfo list
+          Warnings:     ErrorInfo list
+          Output:       ExecutionOutput option }
 
     type TestResult =
         | Success of Output
@@ -228,16 +229,17 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
 
-        let ((err: FSharpErrorInfo[], outputFilePath: string), _) = CompilerAssert.CompileRaw(compilation)
+        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation)
 
         let (errors, warnings) = err |> fromFSharpErrorInfo
 
         let result =
-            { OutputPath  = None
-              Adjust      = 0
-              Warnings    = warnings
-              Errors      = errors
-              Output      = None }
+            { OutputPath   = None
+              Dependencies = deps
+              Adjust       = 0
+              Warnings     = warnings
+              Errors       = errors
+              Output       = None }
 
         // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
@@ -272,11 +274,12 @@ module rec Compiler =
         let cmplResult = compilation.Emit (output)
 
         let result =
-            { OutputPath = None
-              Adjust     = 0
-              Warnings   = []
-              Errors     = []
-              Output     = None }
+            { OutputPath   = None
+              Dependencies = []
+              Adjust       = 0
+              Warnings     = []
+              Errors       = []
+              Output       = None }
 
         if cmplResult.Success then
             Success { result with OutputPath  = Some output }
@@ -321,11 +324,12 @@ module rec Compiler =
         CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine (Array.ofList options) dir file
 
         Success
-            { OutputPath = None
-              Adjust     = 0
-              Warnings   = []
-              Errors     = []
-              Output     = None }
+            { OutputPath   = None
+              Dependencies = []
+              Adjust       = 0
+              Warnings     = []
+              Errors       = []
+              Output       = None }
 
     let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source
@@ -336,11 +340,12 @@ module rec Compiler =
         let (errors, warnings) = err |> fromFSharpErrorInfo
 
         let result =
-            { OutputPath = None
-              Adjust     = 0
-              Warnings   = warnings
-              Errors     = errors
-              Output     = None }
+            { OutputPath   = None
+              Dependencies = []
+              Adjust       = 0
+              Warnings     = warnings
+              Errors       = errors
+              Output       = None }
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
@@ -359,22 +364,19 @@ module rec Compiler =
         | FS fs -> typecheckFSharp fs
         | _ -> failwith "Typecheck only supports F#"
 
-    let run (cResult: TestResult ) : TestResult =
-        match cResult with
-        | Failure o -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (o.Errors @ o.Warnings))
+    let run (result: TestResult) : TestResult =
+        match result with
+        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Errors @ f.Warnings))
         | Success s ->
             match s.OutputPath with
-            | None -> failwith "Compilation didn't produce any output. Unable to run."
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
             | Some p ->
-                let runResult = CompilerAssert.RunAndReturnResult p
-                let (exitCode, errors, output) = runResult
-
-                let result = { s with Output = Some { ExitCode = exitCode; StdErr = errors; StdOut = output } }
-
+                let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
+                let executionResult = { s with Output = Some { ExitCode = exitCode; StdOut = output; StdErr = errors } }
                 if exitCode = 0 then
-                    Success result
+                    Success executionResult
                 else
-                    Failure result
+                    Failure executionResult
 
     let compileAndRun = compile >> run
 
@@ -524,3 +526,31 @@ module rec Compiler =
 
         let withWarningMessage (message: string) (result: TestResult) : TestResult =
             withWarningMessages [message] result
+
+        let withExitCode (expectedExitCode: int) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                match r.Output with
+                | None -> failwith "Execution output is missing, cannot check exit code."
+                | Some o -> Assert.AreEqual(o.ExitCode, expectedExitCode, sprintf "Exit code was expected to be: %A, but got %A." expectedExitCode o.ExitCode)
+            result
+
+        let private checkOutput (category: string) (substring: string) (selector: ExecutionOutput -> string) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                match r.Output with
+                | None -> failwith (sprintf "Execution output is missing cannot check \"%A\"" category)
+                | Some o ->
+                    let where = selector o
+                    if not (where.Contains(substring)) then
+                        failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+            result
+
+        let withOutputContains (substring: string) (result: TestResult) : TestResult =
+            checkOutput "STDERR/STDOUT" substring (fun o -> o.StdOut + "\n" + o.StdErr) result
+
+        let withStdOutContains (substring: string) (result: TestResult) : TestResult =
+            checkOutput "STDOUT" substring (fun o -> o.StdOut) result
+
+        let withStdErrContains (substring: string) (result: TestResult) : TestResult =
+            checkOutput "STDERR" substring (fun o -> o.StdErr) result
