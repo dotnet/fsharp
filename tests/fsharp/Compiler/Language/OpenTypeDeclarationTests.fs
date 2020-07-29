@@ -948,6 +948,33 @@ module Test2 =
         |> ignore
 
     [<Test>]
+    let ``Open record should have no access to construct record - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+module Test =
+
+    type TestRecord = { X: int } with
+
+        static member M() = ()
+
+open type Test.TestRecord
+
+module Test2 =
+
+    let x = { X = 1 }
+
+    let y = M()
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 39, Line 14, Col 15, Line 14, Col 16, "The record label 'X' is not defined.")
+            ]
+        |> ignore
+
+    [<Test>]
     let ``Open type should have no access to constructor - Errors`` () =
         FSharp """
 namespace FSharpTest
