@@ -1,7 +1,7 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations #ReqNOMT 
-// <Expects id="FS3350" status="error" span="(22,6-26,8)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version '5.0' or greater.</Expects>
-// <Expects id="FS3350" status="error" span="(34,6-40,8)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version '5.0' or greater.</Expects>
-// <Expects id="FS3350" status="error" span="(54,6-54,7)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version '5.0' or greater.</Expects>
+// <Expects id="FS3350" status="error" span="(22,6-26,8)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.</Expects>
+// <Expects id="FS3350" status="error" span="(34,6-40,8)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.</Expects>
+// <Expects id="FS3350" status="error" span="(54,6-54,7)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 5.0 or greater.</Expects>
 #light
 
 let mutable res = true
