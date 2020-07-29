@@ -723,12 +723,6 @@ module internal PrintfImpl =
             else 
                 fun (v: obj) -> noJustificationCore (f v) true (isPositive v) prefix
 
-    module Int32 =
-        let toString (v: obj) =
-            match v with
-            | :? int32 as n -> n.ToString(CultureInfo.InvariantCulture)
-            | _ -> failwith "toString: unreachable"
-
     /// contains functions to handle left\right and no justification case for numbers
     module Integer =
     
