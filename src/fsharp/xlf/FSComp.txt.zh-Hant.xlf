@@ -3798,8 +3798,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyRecordFieldsAndSimpleLetCanBeMutable">
-        <source>Only record fields and simple, non-recursive 'let' bindings may be marked mutable</source>
-        <target state="translated">只有記錄欄位及簡單的非遞迴 'let' 繫結可以標記為可變動</target>
+        <source>Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</source>
+        <target state="new">Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberIsNotSufficientlyGeneric">
