@@ -108,7 +108,7 @@ public static class Holder {
 
         let fsLib =
             FSharp """
-module CannaeSetCSharpReadonly
+module CannotSetCSharpReadonly
 Holder.Label <- "nope"
             """
             |> withReferences [csLib]
