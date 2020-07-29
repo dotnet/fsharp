@@ -175,13 +175,13 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <int16 * bool> INT16
 %token <int32 * bool> INT32 INT32_DOT_DOT
 %token <int64 * bool> INT64
+%token <int64 * bool> NATIVEINT
 
 %token <byte> UINT8
 %token <uint16> UINT16
 %token <uint32> UINT32
 %token <uint64> UINT64
 %token <uint64> UNATIVEINT
-%token <int64> NATIVEINT
 %token <single> IEEE32
 %token <double> IEEE64
 %token <char> CHAR
@@ -2808,7 +2808,8 @@ rawConstant:
     { SynConst.UInt64 $1 } 
 
   | NATIVEINT
-    { SynConst.IntPtr $1 } 
+    { if snd $1 then errorR(Error(FSComp.SR.lexOutsideNativeSigned(), lhs parseState))
+      SynConst.IntPtr (fst $1) } 
 
   | UNATIVEINT
     { SynConst.UIntPtr $1 } 
