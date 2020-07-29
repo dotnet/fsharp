@@ -84,7 +84,6 @@
     <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
-
     <!-- don't include test resources in subdirectories -->
     <EmbeddedResource Remove="**" />
   </ItemGroup>
