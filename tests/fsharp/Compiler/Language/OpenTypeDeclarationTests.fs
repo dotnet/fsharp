@@ -804,6 +804,21 @@ open type (int * int)
         |> ignore
 
     [<Test>]
+    let ``Open struct tuple - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+open type struct (int * int)
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 4, Col 11, Line 4, Col 29, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
     let ``Open function - Errors`` () =
         FSharp """
 namespace FSharpTest
@@ -815,6 +830,36 @@ open type (int -> int)
         |> withDiagnostics
             [
                 (Error 756, Line 4, Col 11, Line 4, Col 23, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open anon type - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+open type {| x: int |}
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 4, Col 11, Line 4, Col 23, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open struct anon type - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+open type struct {| x: int |}
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 4, Col 11, Line 4, Col 30, "'open type' may only be used with named types")
             ]
         |> ignore
 
@@ -834,6 +879,25 @@ open type Tuple<int, int>
         |> withDiagnostics
             [
                 (Error 756, Line 6, Col 11, Line 6, Col 26, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open direct value tuple - Errors`` () =
+        // Note: `ValueTuple` is technically a named type but it gets decompiled into F#'s representation of a struct tuple in its type system.
+        //       This test is to verify that behavior.
+        FSharp """
+namespace FSharpTest
+
+open System
+
+open type ValueTuple<int, int>
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 6, Col 11, Line 6, Col 31, "'open type' may only be used with named types")
             ]
         |> ignore
 
