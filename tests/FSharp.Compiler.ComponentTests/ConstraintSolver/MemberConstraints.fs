@@ -18,7 +18,7 @@ module MemberConstraints =
         |> withSingleDiagnostic (Error 697, Line 2, Col 43, Line 2, Col 76, "Invalid constraint")
 
     [<Fact>]
-    let ``we can overload operators on a type and not add all the extra jazz such as inlining and the ^ operator.``() =
+    let ``We can overload operators on a type and not add all the extra jazz such as inlining and the ^ operator.``() =
 
         FSharp """
 type Foo(x : int) =
@@ -40,8 +40,9 @@ elif y.Val <> 7 then  failwith "y.Val <> 7"
 elif x2.Val <> 7 then  failwith "x2.Val <> 7"
 elif y2.Val <> 7 then  failwith "x.Val <> 7"
 else ()
-        """
+"""
         |> asExe
         |> compile
         |> run
-        // OR |> compileAsExeAndRun
+        |> shouldSucceed
+        |> withExitCode 0
