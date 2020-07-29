@@ -314,7 +314,7 @@ module internal PrintfImpl =
         member env.WriteSkipEmpty(s: string) = 
             if not (String.IsNullOrEmpty s) then 
                 env.Write s
-
+    
         member env.RunSteps (args: obj[], argTys: Type[], steps: Step[]) =
             let mutable argIndex = 0
             let mutable tyIndex = 0
@@ -400,20 +400,17 @@ module internal PrintfImpl =
     ///    f3 8           // same activation captures 8 (args --> [3;5;8])
     ///
     /// If we captured into an mutable array then these would interfere 
-#if NETSTANDARD
-    type PrintfFuncContext<'State, 'Residue, 'Result> = unit -> struct (obj list * PrintfEnv<'State, 'Residue, 'Result>)
-#else
-    type PrintfFuncContext<'State, 'Residue, 'Result> = unit -> (obj list * PrintfEnv<'State, 'Residue, 'Result>)
-#endif
-    type PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result> = PrintfFuncContext<'State, 'Residue, 'Result> -> 'Printer
+    type PrintfInitial<'State, 'Residue, 'Result> = (unit -> PrintfEnv<'State, 'Residue, 'Result>)
+    type PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result> = 
+        delegate of obj list * PrintfInitial<'State, 'Residue, 'Result> -> 'Printer
 
     [<Literal>]
     let MaxArgumentsInSpecialization = 3
 
-    let revToArray (args: 'T list) = 
+    let revToArray extra (args: 'T list) = 
         // We've reached the end, now fill in the array, reversing steps, avoiding reallocating
         let n = args.Length
-        let res = Array.zeroCreate n
+        let res = Array.zeroCreate (n+extra)
         let mutable j = 0
         for arg in args do
             res.[n-j-1] <- arg
@@ -423,124 +420,107 @@ module internal PrintfImpl =
     type Specializations<'State, 'Residue, 'Result>() =
      
         static member Final0(allSteps) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
-#if NETSTANDARD
-                let struct (args, env) = prev()
-#else
-                let (args, env) = prev()
-#endif
-                env.RunSteps(revToArray args, null, allSteps)
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                let env = initial()
+                env.RunSteps(revToArray 0 args, null, allSteps)
             )
 
         static member CaptureFinal1<'A>(allSteps) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (arg1: 'A) ->
-#if NETSTANDARD
-                    let struct (args, env) = prev()
-#else
-                    let (args, env) = prev()
-#endif
-                    let finalArgs = box arg1 :: args
-                    env.RunSteps(revToArray finalArgs, null, allSteps)
+                    let env = initial()
+                    let argArray = revToArray 1 args
+                    argArray.[argArray.Length-1] <- box arg1
+                    env.RunSteps(argArray, null, allSteps)
                 )
             )
 
         static member CaptureFinal2<'A, 'B>(allSteps) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (arg1: 'A) (arg2: 'B) ->
-#if NETSTANDARD
-                    let struct (args, env) = prev()
-#else
-                    let (args, env) = prev()
-#endif
-                    let finalArgs = box arg2 :: box arg1 :: args
-                    env.RunSteps(revToArray finalArgs, null, allSteps)
+                    let env = initial()
+                    let argArray = revToArray 2 args
+                    argArray.[argArray.Length-1] <- box arg2
+                    argArray.[argArray.Length-2] <- box arg1
+                    env.RunSteps(argArray, null, allSteps)
                 )
             )
 
         static member CaptureFinal3<'A, 'B, 'C>(allSteps) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (arg1: 'A) (arg2: 'B) (arg3: 'C) ->
-#if NETSTANDARD
-                    let struct (args, env) = prev()
-#else
-                    let (args, env) = prev()
-#endif
-                    let finalArgs = box arg3 :: box arg2 :: box arg1 :: args
-                    env.RunSteps(revToArray finalArgs, null, allSteps)
+                    let env = initial()
+                    let argArray = revToArray 3 args
+                    argArray.[argArray.Length-1] <- box arg3
+                    argArray.[argArray.Length-2] <- box arg2
+                    argArray.[argArray.Length-3] <- box arg1
+                    env.RunSteps(argArray, null, allSteps)
                 )
             )
 
-        static member Capture1<'A, 'Tail>(next) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
+        static member Capture1<'A, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (arg1: 'A) ->
-                    let curr() = 
-#if NETSTANDARD
-                        let struct (args, env) = prev()
-                        struct ((box arg1 :: args), env)
-#else
-                        let (args, env) = prev()
-                        ((box arg1 :: args), env)
-#endif
-                    next curr : 'Tail
+                    let args = (box arg1 :: args)
+                    next.Invoke(args, initial) : 'Tail
                 )
             )
 
-        static member CaptureLittleA<'A, 'Tail>(next) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
+        static member CaptureLittleA<'A, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (f: 'State -> 'A -> 'Residue) (arg1: 'A) ->
-                    let curr() = 
-#if NETSTANDARD
-                        let struct (args, env) = prev()
-#else
-                        let (args, env) = prev()
-#endif
-                        let args = box arg1 :: box (fun s (arg:obj) -> f s (unbox arg)) :: args
-#if NETSTANDARD
-                        struct (args, env)
-#else
-                        (args, env)
-#endif
-                    next curr : 'Tail
+                    let args = box arg1 :: box (fun s (arg:obj) -> f s (unbox arg)) :: args
+                    next.Invoke(args, initial) : 'Tail
                 )
             )
 
-        static member Capture2<'A, 'B, 'Tail>(next) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
+        static member Capture2<'A, 'B, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (arg1: 'A) (arg2: 'B) ->
-                    let curr() = 
-#if NETSTANDARD
-                        let struct (args, env) = prev()
-#else
-                        let (args, env) = prev()
-#endif
-                        let args = box arg2 :: box arg1 :: args
-#if NETSTANDARD
-                        struct (args, env)
-#else
-                        (args, env)
-#endif
-                    next curr : 'Tail
+                    let args = box arg2 :: box arg1 :: args
+                    next.Invoke(args, initial) : 'Tail
                 )
             )
 
-        static member Capture3<'A, 'B, 'C, 'Tail> (next) =
-            (fun (prev: PrintfFuncContext<'State, 'Residue, 'Result>) ->
+        static member Capture3<'A, 'B, 'C, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
                 (fun (arg1: 'A) (arg2: 'B) (arg3: 'C) ->
-                    let curr() = 
-#if NETSTANDARD
-                        let struct (args, env) = prev()
-#else
-                        let (args, env) = prev()
-#endif
-                        let args = box arg3 :: box arg2 :: box arg1 :: args
-#if NETSTANDARD
-                        struct (args, env)
-#else
-                        (args, env)
-#endif
-                    next curr : 'Tail
+                    let args = box arg3 :: box arg2 :: box arg1 :: args
+                    next.Invoke(args, initial) : 'Tail
                 )
+            )
+
+        // Special case for format strings containing just one '%d' etc, i.e. StepWithArg then StepString.
+        // This avoids allocating an argument array, and unfolds the single iteration of RunSteps.
+        static member OneStepWithArg<'A>(prefix1, conv1, prefix2) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun _args initial -> 
+                // Note this is the actual computed/stored closure for 
+                //     sprintf "prefix1 %d prefix2"
+                // for any simple format specifiers, where conv1 and conv2 will depend on the format specifiers etc.
+                (fun (arg1: 'A) ->
+                    let env = initial()
+                    env.WriteSkipEmpty prefix1
+                    env.Write(conv1 (box arg1))
+                    env.WriteSkipEmpty prefix2
+                    env.Finish())
+            )
+
+        // Special case for format strings containing two simple formats like '%d %s' etc, i.e. 
+        ///StepWithArg then StepWithArg then StepString. This avoids allocating an argument array, 
+        // and unfolds the two iteration of RunSteps.
+        static member TwoStepWithArg<'A, 'B>(prefix1, conv1, prefix2, conv2, prefix3) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun _args initial -> 
+                // Note this is the actual computed/stored closure for 
+                //     sprintf "prefix1 %d prefix2 %s prefix3"
+                // for any simple format specifiers, where conv1 and conv2 will depend on the format specifiers etc.
+                (fun (arg1: 'A) (arg2: 'B) ->
+                    let env = initial()
+                    env.WriteSkipEmpty prefix1
+                    env.Write(conv1 (box arg1))
+                    env.WriteSkipEmpty prefix2
+                    env.Write(conv2 (box arg2))
+                    env.WriteSkipEmpty prefix3
+                    env.Finish())
             )
 
     let inline (===) a b = Object.ReferenceEquals(a, b)
@@ -654,7 +634,7 @@ module internal PrintfImpl =
                 else
                     adaptPadded  spec f right
 
-    /// contains functions to handle left\right justifications for non-numeric types (strings\bools)
+    /// Contains functions to handle left/right justifications for non-numeric types (strings/bools)
     module Basic =
         let leftJustify (f: obj -> string) padChar = 
             fun (w: int) v -> 
@@ -668,7 +648,7 @@ module internal PrintfImpl =
             let padChar, _ = spec.GetPadAndPrefix false 
             Padding.withPadding spec f (leftJustify f padChar) (rightJustify f padChar)
     
-    /// contains functions to handle left\right and no justification case for numbers
+    /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
 
         let isPositive (n: obj) = 
@@ -692,7 +672,7 @@ module internal PrintfImpl =
         /// this case can be tricky:
         /// - negative numbers, -7 should be printed as '-007', not '00-7'
         /// - positive numbers when prefix for positives is set: 7 should be '+007', not '00+7'
-        let inline rightJustifyWithZeroAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
+        let rightJustifyWithZeroAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
             System.Diagnostics.Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
             if isNumber then
                 if isPositive then
@@ -742,6 +722,12 @@ module internal PrintfImpl =
                 fun (v: obj) -> noJustificationCore (f v) true true prefix
             else 
                 fun (v: obj) -> noJustificationCore (f v) true (isPositive v) prefix
+
+    module Int32 =
+        let toString (v: obj) =
+            match v with
+            | :? int32 as n -> n.ToString(CultureInfo.InvariantCulture)
+            | _ -> failwith "toString: unreachable"
 
     /// contains functions to handle left\right and no justification case for numbers
     module Integer =
@@ -828,6 +814,9 @@ module internal PrintfImpl =
                     fun (w: int) v ->
                         GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
 
+        /// Computes a new function from 'f' that wraps the basic conversion given
+        /// by 'f' with padding for 0, spacing and justification, if the flags specify
+        /// it.  If they don't, f is made into a value converter
         let withPadding (spec: FormatSpecifier) isUnsigned (f: obj -> string)  =
             let allowZeroPadding = not (isLeftJustify spec.Flags) || spec.IsDecimalFormat
             let padChar, prefix = spec.GetPadAndPrefix allowZeroPadding
@@ -1029,6 +1018,63 @@ module internal PrintfImpl =
                 (buf, ty)
         go ty 0    
 
+
+    type LargeStringPrintfEnv<'Result>(continuation, blockSize) = 
+        inherit PrintfEnv<unit, string, 'Result>(())
+        let buf: string[] = Array.zeroCreate blockSize
+        let mutable ptr = 0
+
+        override _.Finish() : 'Result = continuation (String.Concat buf)
+
+        override _.Write(s: string) = 
+            buf.[ptr] <- s
+            ptr <- ptr + 1
+
+        override x.WriteT s = x.Write(s)
+
+    type SmallStringPrintfEnv2() = 
+        inherit PrintfEnv<unit, string, string>(())
+        let mutable c = null
+
+        override _.Finish() : string = if isNull c then "" else c
+        override _.Write(s: string) = if isNull c then c <- s else c <- c + s
+        override x.WriteT s = x.Write(s)
+
+    type SmallStringPrintfEnv4() = 
+        inherit PrintfEnv<unit, string, string>(())
+        let mutable s1 : string = null
+        let mutable s2 : string = null
+        let mutable s3 : string = null
+        let mutable s4 : string = null
+
+        override _.Finish() : string = String.Concat(s1, s2, s3, s4)
+        override _.Write(s: string) =
+            if isNull s1 then s1 <- s 
+            elif isNull s2 then s2 <- s 
+            elif isNull s3 then s3 <- s 
+            else s4 <- s
+        override x.WriteT s = x.Write(s)
+
+    let StringPrintfEnv blockSize = 
+        if blockSize <= 2 then
+            SmallStringPrintfEnv2() :> PrintfEnv<_,_,_>
+        elif blockSize <= 4 then
+            SmallStringPrintfEnv4() :> PrintfEnv<_,_,_>
+        else
+            LargeStringPrintfEnv(id, blockSize) :> PrintfEnv<_,_,_>
+
+    let StringBuilderPrintfEnv<'Result>(k, buf) = 
+        { new PrintfEnv<Text.StringBuilder, unit, 'Result>(buf) with
+            override _.Finish() : 'Result = k ()
+            override _.Write(s: string) = ignore(buf.Append s)
+            override _.WriteT(()) = () }
+
+    let TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
+        { new PrintfEnv<IO.TextWriter, unit, 'Result>(tw) with 
+            override _.Finish() : 'Result = k()
+            override _.Write(s: string) = tw.Write s
+            override _.WriteT(()) = () }
+
     let MAX_CAPTURE = 3
 
     /// Parses format string and creates resulting step list and printer factory function.
@@ -1051,8 +1097,8 @@ module internal PrintfImpl =
                 let captureMethName = "CaptureLittleA" 
                 let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
                 let mi = mi.MakeGenericMethod([| argTys.[1]; retTy |])
-                let funcObj = mi.Invoke(null, [| next  |])
-                funcObj, false, argTys, retTy, None
+                let factoryObj = mi.Invoke(null, [| next  |])
+                factoryObj, false, argTys, retTy, None
 
             | n1, n2 when nextCanCombine && n1 + n2 <= MAX_CAPTURE ->
                 // 'next' is thrown away on this path and replaced by a combined Capture
@@ -1063,21 +1109,21 @@ module internal PrintfImpl =
                     let captureMethName = "CaptureFinal" + string captureCount
                     let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
                     let mi = mi.MakeGenericMethod(combinedArgTys)
-                    let funcObj = mi.Invoke(null, [| allSteps |])
-                    funcObj, true, combinedArgTys, nextRetTy, None
+                    let factoryObj = mi.Invoke(null, [| allSteps |])
+                    factoryObj, true, combinedArgTys, nextRetTy, None
                 | Some nextNext ->
                     let captureMethName = "Capture" + string captureCount
                     let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
                     let mi = mi.MakeGenericMethod(Array.append combinedArgTys [| nextRetTy |])
-                    let funcObj = mi.Invoke(null, [| nextNext |])
-                    funcObj, true, combinedArgTys, nextRetTy, nextNextOpt
+                    let factoryObj = mi.Invoke(null, [| nextNext |])
+                    factoryObj, true, combinedArgTys, nextRetTy, nextNextOpt
 
             | captureCount, _ ->
                 let captureMethName = "Capture" + string captureCount
                 let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
                 let mi = mi.MakeGenericMethod(Array.append argTys [| retTy |])
-                let funcObj = mi.Invoke(null, [| next  |])
-                funcObj, true, argTys, retTy, Some next
+                let factoryObj = mi.Invoke(null, [| next  |])
+                factoryObj, true, argTys, retTy, Some next
 
         let buildStep (spec: FormatSpecifier) (argTys: Type[]) prefix = 
             if spec.TypeChar = 'a' then
@@ -1151,7 +1197,8 @@ module internal PrintfImpl =
         //
         // We may initialize this twice, but the assignment is atomic and the computation will give functionally
         // identical results each time, so it is ok.
-        let mutable functionFactory = Unchecked.defaultof<_>
+        let mutable factory = Unchecked.defaultof<PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result>>
+        let mutable printer = Unchecked.defaultof<'Printer>
 
         // The function factory, populated on-demand.
         //
@@ -1163,8 +1210,8 @@ module internal PrintfImpl =
         let rec parseAndCreateStepsForCapturedFormatAux steps (prefix: string) (i: byref<int>) = 
             if i >= fmt.Length then 
                 let step = StepString(prefix)
-                let steps = step :: steps
-                let allSteps = revToArray steps
+                let allSteps = revToArray 1 steps
+                allSteps.[allSteps.Length-1] <- step
                 stringCount <- Step.BlockCount allSteps
                 stepsForCapturedFormat <- allSteps
             else
@@ -1184,8 +1231,8 @@ module internal PrintfImpl =
             
             if i >= fmt.Length then 
                 let step = StepString(prefix)
-                let steps = step :: steps
-                let allSteps = revToArray steps
+                let allSteps = revToArray 1 steps
+                allSteps.[allSteps.Length-1] <- step
                 let last = Specializations<'State, 'Residue, 'Result>.Final0(allSteps)
                 stringCount <- Step.BlockCount allSteps
                 let nextInfo = (box last, true, [| |], funcTy, None)
@@ -1208,21 +1255,34 @@ module internal PrintfImpl =
             let mutable i = 0
             let prefix = FormatString.findNextFormatSpecifier fmt &i
             
-            // If there are not format specifiers then take a simple path
-            if i = fmt.Length then 
-                let factoryObj = 
-                    box (fun (initial: PrintfFuncContext<'State, 'Residue, 'Result>) -> 
-#if NETSTANDARD
-                        let struct (_args, env) = initial()
-#else
-                        let (_args, env) = initial()
-#endif
-                        env.WriteSkipEmpty prefix
-                        env.Finish())
-                stringCount <- 1
+            let (allSteps, (factoryObj, _, combinedArgTys, _, _)) = parseAndCreateFuncFactoryAux [] prefix funcTy &i
+            
+            // If there are no format specifiers then take a simple path
+            match allSteps with 
+            | [| StepString prefix |] ->
+                PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun _args initial -> 
+                    let env = initial()
+                    env.WriteSkipEmpty prefix
+                    env.Finish()
+                ) |> box
+
+            // If there is one simple format specifier then we can create an even better factory function
+            | [| StepWithArg (prefix1, conv1); StepString prefix2 |] ->
+                let captureMethName = "OneStepWithArg" 
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = mi.MakeGenericMethod(combinedArgTys)
+                let factoryObj = mi.Invoke(null, [| box prefix1; box conv1; box prefix2  |])
                 factoryObj
-            else
-                let (_, (factoryObj, _, _, _, _)) = parseAndCreateFuncFactoryAux [] prefix funcTy &i
+
+            // If there are two simple format specifiers then we can create an even better factory function
+            | [| StepWithArg (prefix1, conv1); StepWithArg (prefix2, conv2); StepString prefix3 |] ->
+                let captureMethName = "TwoStepWithArg" 
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = mi.MakeGenericMethod(combinedArgTys)
+                let factoryObj = mi.Invoke(null, [| box prefix1; box conv1; box prefix2; box conv2; box prefix3 |])
+                factoryObj
+
+            | _ -> 
                 factoryObj
 
         /// The format string, used to help identify the cache entry (the cache index types are taken
@@ -1243,15 +1303,30 @@ module internal PrintfImpl =
         member _.BlockCount = stringCount
             
         /// The factory function used to generate the result or the resulting function.  
-        member _.GetFunctionFactory() =
-            match box functionFactory with
+        member _.GetCurriedPrinterFactory() =
+            match box factory with
             | null -> 
-                let funcObj = parseAndCreateFunctionFactory () 
+                let factoryObj = parseAndCreateFunctionFactory () 
+                let p = (factoryObj :?> PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result>)
                 // We may initialize this twice, but the assignment is atomic and the computation will give functionally
                 // identical results each time it is ok
-                functionFactory <- (funcObj :?> PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result>)
-            | _ -> ()
-            functionFactory
+                factory <- p
+                p
+            | _ -> factory
+
+        /// This avoids reallocation and application of 'initial' for sprintf printers
+        member this.GetCurriedStringPrinter() =
+            match box printer with
+            | null -> 
+                let f = this.GetCurriedPrinterFactory()
+                let initial() = (StringPrintfEnv stringCount |> box :?> PrintfEnv<'State, 'Residue, 'Result>)
+                let p = f.Invoke([], initial)
+                // We may initialize this twice, but the assignment is atomic and the computation will give functionally
+                // identical results each time it is ok
+                printer <- p
+                p
+            | _ -> printer
+
 
     /// 2-level cache, keyed by format string and index types
     type Cache<'Printer, 'State, 'Residue, 'Result>() =
@@ -1290,47 +1365,6 @@ module internal PrintfImpl =
                 Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent <- parser
                 parser
 
-    type LargeStringPrintfEnv<'Result>(continuation, blockSize) = 
-        inherit PrintfEnv<unit, string, 'Result>(())
-        let buf: string[] = Array.zeroCreate blockSize
-        let mutable ptr = 0
-
-        override __.Finish() : 'Result = continuation (String.Concat buf)
-
-        override __.Write(s: string) = 
-            buf.[ptr] <- s
-            ptr <- ptr + 1
-
-        override __.WriteT s =
-            buf.[ptr] <- s
-            ptr <- ptr + 1
-
-    type SmallStringPrintfEnv() = 
-        inherit PrintfEnv<unit, string, string>(())
-        let mutable c = null
-
-        override __.Finish() : string = if isNull c then "" else c
-        override __.Write(s: string) = if isNull c then c <- s else c <- c + s
-        override __.WriteT s = if isNull c then c <- s else c <- c + s
-
-    let StringPrintfEnv blockSize = 
-        if blockSize <= 2 then
-            SmallStringPrintfEnv() :> PrintfEnv<_,_,_>
-        else
-            LargeStringPrintfEnv(id, blockSize) :> PrintfEnv<_,_,_>
-
-    let StringBuilderPrintfEnv<'Result>(k, buf) = 
-        { new PrintfEnv<Text.StringBuilder, unit, 'Result>(buf) with
-            override __.Finish() : 'Result = k ()
-            override __.Write(s: string) = ignore(buf.Append s)
-            override __.WriteT(()) = () }
-
-    let TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
-        { new PrintfEnv<IO.TextWriter, unit, 'Result>(tw) with 
-            override __.Finish() : 'Result = k()
-            override __.Write(s: string) = tw.Write s
-            override __.WriteT(()) = () }
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Printf =
 
@@ -1346,13 +1380,9 @@ module Printf =
         match format.Captures with 
         | null -> 
             // The ksprintf "...%d ...." arg path, producing a function
-            let factory = cacheItem.GetFunctionFactory()
-#if NETSTANDARD
-            let initial() = struct ([], envf cacheItem.BlockCount :> PrintfEnv<_,_,_>)
-#else
-            let initial() = ([], envf cacheItem.BlockCount :> PrintfEnv<_,_,_>)
-#endif
-            factory initial
+            let factory = cacheItem.GetCurriedPrinterFactory()
+            let initial() = (envf cacheItem.BlockCount :> PrintfEnv<_,_,_>)
+            factory.Invoke([], initial)
         | captures -> 
             // The ksprintf $"...%d{3}...." path, running the steps straight away to produce a string
             let steps = cacheItem.GetStepsForCapturedFormat()
@@ -1372,13 +1402,7 @@ module Printf =
         match format.Captures with 
         | null ->
             // The sprintf "...%d ...." arg path, producing a function
-            let factory = cacheItem.GetFunctionFactory()
-#if NETSTANDARD
-            let initial() = struct ([], StringPrintfEnv cacheItem.BlockCount)
-#else
-            let initial() = ([], StringPrintfEnv cacheItem.BlockCount)
-#endif
-            factory initial
+            cacheItem.GetCurriedStringPrinter()
         | captures -> 
             // The sprintf $"...%d{3}...." path, running the steps straight away to produce a string
             let steps = cacheItem.GetStepsForCapturedFormat()
