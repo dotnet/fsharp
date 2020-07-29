@@ -919,6 +919,59 @@ open type FSharpFunc<int, int>
         |> ignore
 
     [<Test>]
+    let ``Open union should have no access to union cases - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+module Test =
+
+    type TestUnion =
+        | UCase1
+        | UCase2 with
+
+    static member M() = ()
+
+open type Test.TestUnion
+
+module Test2 =
+
+    let x = UCase1
+
+    let y = M()
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 39, Line 16, Col 13, Line 16, Col 19, "The value or constructor 'UCase1' is not defined.")
+            ]
+        |> ignore
+
+    [<Test>]
+    let ``Open type should have no access to constructor - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+module Test =
+
+    type TestClass() =
+
+        static member M() = ()
+
+open type Test.TestClass
+
+module Test2 =
+
+    let x = TestClass()
+
+    let y = M()
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withErrorCode 39
+        |> ignore
+
+    [<Test>]
     let ``Using the 'open' declaration on a possible type identifier - Error`` () =
         let csharp =
             CSharp """
