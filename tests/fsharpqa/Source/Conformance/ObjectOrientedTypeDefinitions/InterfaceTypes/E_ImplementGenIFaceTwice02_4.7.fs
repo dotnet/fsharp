@@ -1,6 +1,6 @@
 // #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
 // Verify error when trying to implement the same generic interface twice
-//<Expects status="error" id="FS3350" span="(10,6-10,9)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 'preview' or greater.</Expects>
+//<Expects status="error" id="FS3350" span="(10,6-10,9)">Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version '5.0' or greater.</Expects>
 
 type IFoo<'a> =
     interface

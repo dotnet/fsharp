@@ -203,7 +203,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
             |]
             ``Many Instantiations of the same interface``
             [|
-                (FSharpErrorSeverity.Error, 3350, (24, 6, 24, 20), "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version 'preview' or greater.")
+                (FSharpErrorSeverity.Error, 3350, (24, 6, 24, 20), "Feature 'interfaces with multiple generic instantiation' is not available in F# 4.7. Please use language version '5.0' or greater.")
             |]
 
     [<Test>]
