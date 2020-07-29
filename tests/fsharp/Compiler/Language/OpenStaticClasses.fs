@@ -52,7 +52,7 @@ module OpenSystemMathOnce =
     [<Test>]
     let ``OpenStaticClassesTests - OpenSystemMathOnce - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
+            [| "--langversion:5.0" |]
             (baseModule + """
 module OpenSystemMathOnce =
 
@@ -82,7 +82,7 @@ module OpenSystemMathTwice =
     [<Test>]
     let ``OpenStaticClassesTests - OpenSystemMathTwice - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
+            [| "--langversion:5.0" |]
             (baseModule + """
 module OpenSystemMathOnce =
 
@@ -109,7 +109,7 @@ module OpenMyMathOnce =
     [<Test>]
     let ``OpenStaticClassesTests - OpenMyMathOnce - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
+            [| "--langversion:5.0" |]
             (baseModule + """
 module OpenMyMathOnce = 
 
@@ -135,7 +135,7 @@ module DontOpenAutoMath =
     [<Test>]
     let ``OpenStaticClassesTests - DontOpenAutoMath - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
+            [| "--langversion:5.0" |]
             (baseModule + """
 module DontOpenAutoMath = 
 
@@ -163,7 +163,7 @@ module OpenAutoMath =
     [<Test>]
     let ``OpenStaticClassesTests - OpenAutoMath - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
+            [| "--langversion:5.0" |]
             (baseModule + """
 module OpenAutoMath = 
     open AutoOpenMyMath
@@ -176,7 +176,7 @@ module OpenAutoMath =
     [<Test>]
     let ``OpenStaticClassesTests - OpenAccessibleFields - langversion:preview`` () =
         CompilerAssert.TypeCheckWithErrorsAndOptions
-            [| "--langversion:preview" |]
+            [| "--langversion:5.0" |]
             (baseModule + """
 module OpenAFieldFromMath =
     open System.Math

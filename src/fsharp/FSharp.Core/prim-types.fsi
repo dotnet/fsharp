@@ -1088,97 +1088,78 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val SubtractionDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '/' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val DivisionDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the unary '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val UnaryNegationDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '%' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val ModulusDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val CheckedSubtractionDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked unary '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val CheckedUnaryNegationDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&lt;&lt;&lt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LeftShiftDynamic : value:'T1 -> shift:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&gt;&gt;&gt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val RightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&&&' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val BitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '|||' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val BitwiseOrDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '^^^' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val ExclusiveOrDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '~~~' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LogicalNotDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to conversion operators.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val ExplicitDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LessThanDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val GreaterThanDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LessThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val GreaterThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val EqualityDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val InequalityDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations for the DivideByInt primitive.</summary>

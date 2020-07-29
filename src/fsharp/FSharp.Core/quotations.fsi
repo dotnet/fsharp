@@ -105,7 +105,6 @@ type Expr =
     /// <param name="witnesses">The list of witnesses to the method.</param>
     /// <param name="arguments">The list of arguments to the method.</param>
     /// <returns>The resulting expression.</returns>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     static member CallWithWitnesses: methodInfo: MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments: Expr list -> Expr
 
     /// <summary>Builds an expression that represents a call to an instance method associated with an object</summary>
@@ -115,7 +114,6 @@ type Expr =
     /// <param name="witnesses">The list of witnesses to the method.</param>
     /// <param name="arguments">The list of arguments to the method.</param>
     /// <returns>The resulting expression.</returns>
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     static member CallWithWitnesses: obj:Expr * methodInfo:MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments:Expr list -> Expr
 
     /// <summary>Builds an expression that represents the coercion of an expression to a type</summary>
@@ -476,7 +474,6 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     /// <returns>(Expr option * MethodInfo * MethodInfo * Expr list) option</returns>
     [<CompiledName("CallWithWitnessesPattern")>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     val (|CallWithWitnesses|_|) : input:Expr -> (Expr option * MethodInfo * MethodInfo * Expr list * Expr list) option
 
     /// <summary>An active pattern to recognize expressions that represent coercions from one type to another</summary>

@@ -70,7 +70,7 @@ let x = 1N
     let ``1N is invalid numeric literal in FSI``() =
         if Utils.runningOnMono then ()
         else 
-            CompilerAssert.RunScriptWithOptions [| "--langversion:preview"; "--test:ErrorRanges" |]
+            CompilerAssert.RunScriptWithOptions [| "--langversion:5.0"; "--test:ErrorRanges" |]
                 """
 let x = 1N
                 """

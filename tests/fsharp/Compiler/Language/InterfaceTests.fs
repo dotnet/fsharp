@@ -180,7 +180,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
                 ``Many Instantiations of the same interface - Asserts``,
                 Fs, Library, 
                 options = [|
-                    "--langversion:preview";
+                    "--langversion:5.0";
 #if !NETSTANDARD
                 |])
 #else
@@ -210,7 +210,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
     let MultipleTypedInterfacesFSharp50VerifyIl() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions
             [|
-                "--langversion:preview"; 
+                "--langversion:5.0"; 
                 "--deterministic+";
                 "--define:NO_ANONYMOUS";
 #if NETSTANDARD
