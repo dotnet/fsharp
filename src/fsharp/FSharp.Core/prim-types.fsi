@@ -1220,7 +1220,7 @@ namespace Microsoft.FSharp.Core
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val RightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
 
-        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&&&' operator.</summary>
+        /// <summary>A compiler intrinsic that implements dynamic invocations to the '&amp;&amp;&amp;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val BitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
