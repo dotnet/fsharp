@@ -61,7 +61,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
         /// the message to be sent.</param>
         /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// Defaults to -1 which corresponds to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>The reply from the agent.</returns>
         member PostAndReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> 'Reply
@@ -74,7 +74,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
         /// the message to be sent.</param>
         /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// Defaults to -1 which corresponds to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that will wait for the reply from the agent.</returns>
         member PostAndAsyncReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> Async<'Reply>
@@ -84,7 +84,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
         /// the message to be sent.</param>
         /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// Defaults to -1 which corresponds to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>The reply from the agent or None if the timeout expires.</returns> 
         member TryPostAndReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> 'Reply option
@@ -94,7 +94,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
         /// the message to be sent.</param>
         /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// Defaults to -1 which corresponds to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that will return the reply or None if the timeout expires.</returns> 
         member PostAndTryAsyncReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> Async<'Reply option>
@@ -107,7 +107,7 @@ namespace Microsoft.FSharp.Control
         /// one concurrent reader may be active, so no more than one concurrent call to 
         /// Receive, TryReceive, Scan and/or TryScan may be active.</remarks>
         /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which corresponds
-        /// to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that returns the received message.</returns>
         /// <exception cref="T:System.TimeoutException">Thrown when the timeout is exceeded.</exception>
@@ -123,7 +123,7 @@ namespace Microsoft.FSharp.Control
         /// one concurrent reader may be active, so no more than one concurrent call to 
         /// Receive, TryReceive, Scan and/or TryScan may be active.</remarks>
         /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which
-        /// corresponds to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// corresponds to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that returns the received message or
         /// None if the timeout is exceeded.</returns>
@@ -140,7 +140,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="scanner">The function to return None if the message is to be skipped
         /// or Some if the message is to be processed and removed from the queue.</param>
         /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which corresponds
-        /// to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that <c>scanner</c> built off the read message.</returns>
         /// <exception cref="T:System.TimeoutException">Thrown when the timeout is exceeded.</exception>
@@ -155,7 +155,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="scanner">The function to return None if the message is to be skipped
         /// or Some if the message is to be processed and removed from the queue.</param>
         /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which corresponds
-        /// to <see cref="P:System.Threading.Timeout.Infinite"/>.</param>
+        /// to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that <c>scanner</c> built off the read message.</returns>
         member TryScan : scanner:('Msg -> (Async<'T>) option) * ?timeout:int -> Async<'T option>

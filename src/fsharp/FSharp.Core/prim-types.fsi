@@ -2249,10 +2249,10 @@ namespace Microsoft.FSharp.Collections
     /// values of this type, or pattern match against the values directly.</remarks>
     and 'T list = List<'T>
 
-    /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List{T}"/></summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List`1"/></summary>
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
-    /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.IEnumerable{T}"/></summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.IEnumerable`1"/></summary>
     type seq<'T> = IEnumerable<'T>
 
 namespace Microsoft.FSharp.Core
@@ -4476,7 +4476,7 @@ namespace Microsoft.FSharp.Control
     /// 
     /// <remarks>Use the values in the <c>Lazy</c> module to manipulate 
     /// values of this type, and the notation <c>lazy expr</c> to create values
-    /// of type <see cref="System.Lazy{T}" />.</remarks>
+    /// of type <see cref="T:System.Lazy`1" />.</remarks>
     type Lazy<'T> = System.Lazy<'T>
     and 
         [<System.Obsolete("This type is obsolete. Please use System.Lazy instead.", true)>]

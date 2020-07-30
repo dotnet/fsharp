@@ -157,7 +157,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <param name="computation">The child computation.</param>
         /// <param name="millisecondsTimeout">The timeout value in milliseconds.  If one is not provided
-        /// then the default value of -1 corresponding to <see cref="System.Threading.Timeout.Infinite"/>.</param>
+        /// then the default value of -1 corresponding to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>A new computation that waits for the input computation to finish.</returns>
         static member StartChild : computation:Async<'T> * ?millisecondsTimeout : int -> Async<Async<'T>>
@@ -286,7 +286,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <param name="waitHandle">The <c>WaitHandle</c> that can be signalled.</param>
         /// <param name="millisecondsTimeout">The timeout value in milliseconds.  If one is not provided
-        /// then the default value of -1 corresponding to <see cref="System.Threading.Timeout.Infinite"/>.</param>
+        /// then the default value of -1 corresponding to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that waits on the given <c>WaitHandle</c>.</returns>
         static member AwaitWaitHandle: waitHandle: WaitHandle * ?millisecondsTimeout:int -> Async<bool>
@@ -297,7 +297,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <param name="iar">The IAsyncResult to wait on.</param>
         /// <param name="millisecondsTimeout">The timeout value in milliseconds.  If one is not provided
-        /// then the default value of -1 corresponding to <see cref="System.Threading.Timeout.Infinite"/>.</param>
+        /// then the default value of -1 corresponding to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
         ///
         /// <returns>An asynchronous computation that waits on the given <c>IAsyncResult</c>.</returns>
         static member AwaitIAsyncResult: iar: System.IAsyncResult * ?millisecondsTimeout:int -> Async<bool>

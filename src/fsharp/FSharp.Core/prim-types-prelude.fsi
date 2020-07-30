@@ -30,10 +30,10 @@ namespace Microsoft.FSharp.Core
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Double"/>.</summary>
     type float = System.Double
 
-    /// <summary>An abbreviation for the CLI type <see cref="T:System.Single"/>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Single"/>. Identical to <see cref="T:Microsoft.FSharp.Core.float32"/>.</summary>
     type single = System.Single
 
-    /// <summary>An abbreviation for the CLI type <see cref="T:System.Double"/>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Double"/>. Identical to <see cref="T:Microsoft.FSharp.Core.float"/>.</summary>
     type double = System.Double
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.SByte"/>.</summary>
