@@ -180,6 +180,10 @@ type OperatorsModule2() =
         let result = Operators.int64 UInt64.MaxValue
         Assert.AreEqual(-1L, result)
 
+        // max and min value as literals (this breaks compilation if the lexer fails)
+        Assert.AreEqual(-9223372036854775808L, Int64.MinValue)
+        Assert.AreEqual(9223372036854775807L, Int64.MaxValue)
+
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.int64 Decimal.MinValue |> ignore)
 
@@ -354,6 +358,16 @@ type OperatorsModule2() =
         else
             // Cannot express this as a literal, see https://github.com/dotnet/fsharp/issues/9524
             Assert.AreEqual("-9223372036854775808", string result)
+
+        // Max and min value as literals (this breaks compilation if the lexer fails).
+        // The following tests ensure that the proper value is parsed, which is similar to `nativeint Int64.MaxValue` etc.
+        if Info.isX86Runtime then
+            Assert.AreEqual("0", string -9223372036854775808n)  // same as int32 -9223372036854775808L
+            Assert.AreEqual("-1", string 9223372036854775807n)    // same as int32 9223372036854775807L
+        else
+            Assert.AreEqual("-9223372036854775808", string -9223372036854775808n)
+            Assert.AreEqual("9223372036854775807", string 9223372036854775807n)
+
 
     [<Test>]
     member _.not() =

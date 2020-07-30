@@ -237,6 +237,16 @@
         <target state="translated">Elementu use! nie można łączyć z elementem and!</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentNoArg">
+        <source>Cannot assign a value to another value marked literal</source>
+        <target state="new">Cannot assign a value to another value marked literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentWithArg">
+        <source>Cannot assign '{0}' to a value marked literal</source>
+        <target state="new">Cannot assign '{0}' to a value marked literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">Konstrukcji „let! ... and! ...” można użyć tylko wtedy, gdy konstruktor wyrażeń obliczeniowych definiuje metodę „{0}” lub odpowiednie metody „MergeSource” i „Bind”</target>
