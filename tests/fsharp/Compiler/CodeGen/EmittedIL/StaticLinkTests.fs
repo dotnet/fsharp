@@ -236,9 +236,7 @@ let _ = List.iter (fun s -> eprintf "%s" s) ["hello"; " "; "world"]
 let _ = eprintfn "%s" "."
 let _ = exit 0
             """
-
         let module1 = Compilation.Create(source, Fsx, Exe, [|"--standalone"|])
-
         CompilerAssert.Execute(module1, newProcess=true)
 
     [<Test>]

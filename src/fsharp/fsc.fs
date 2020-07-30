@@ -1314,7 +1314,7 @@ module StaticLinker =
                   data=ilxMainModule // any old module
                   edges = [] 
                   visited = true }
-            let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities" ]      
+            let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities"; "netstandard" ]
 
             begin 
                 let mutable remaining = (computeILRefs ilGlobals ilxMainModule).AssemblyReferences
@@ -1324,7 +1324,7 @@ module StaticLinker =
                     if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then 
                         depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                     else
-                        if not (depModuleTable.ContainsKey ilAssemRef.Name) then 
+                        if not (depModuleTable.ContainsKey ilAssemRef.Name) then
                             match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with 
                             | Some dllInfo ->
                                 let ccu = 
