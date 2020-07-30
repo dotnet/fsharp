@@ -1047,6 +1047,13 @@ let ChoosePropInfosForNameEnv g ty (pinfos: PropInfo list) =
                 KeyValuePair(propName, Item.Property(propName, propGroup))
     }
 
+let ChooseFSharpFieldInfosForNameEnv g ty (rfinfos: RecdFieldInfo list) =
+    seq {
+        for rfinfo in rfinfos do
+            if rfinfo.IsStatic && typeEquiv g rfinfo.DeclaringType ty then
+                KeyValuePair(rfinfo.Name, Item.RecdField rfinfo)
+    }
+
 let ChooseILFieldInfosForNameEnv g ty (finfos: ILFieldInfo list) =
     seq {
         for finfo in finfos do
@@ -1096,7 +1103,12 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
                 infoReader.GetEventInfosOfType(None, ad, m, ty)
                 |> ChooseEventInfosForNameEnv g ty
 
-            // Fields
+            // FSharp fields
+            yield!
+                infoReader.GetRecordOrClassFieldsOfType(None, ad, m, ty)
+                |> ChooseFSharpFieldInfosForNameEnv g ty
+
+            // IL fields
             yield!
                 infoReader.GetILFieldInfosOfType(None, ad, m, ty)
                 |> ChooseILFieldInfosForNameEnv g ty

@@ -932,17 +932,44 @@ open type TestEnum
 module Test =
 
     let x = EnumCase1
+    let y = EnumCase2
         """
         |> withOptions ["--langversion:preview"]
         |> compile
-        |> withDiagnostics
-            [
-                (Error 756, Line 4, Col 11, Line 4, Col 31, "'open type' may only be used with named types")
-            ]
+        |> shouldSucceed
         |> ignore
 
     [<Test>]
-    let ``Open union should have no access to union cases - Errors`` () =
+    let ``Open C# enum should have access to its cases`` () =
+        let csharp = 
+            CSharp """
+namespace CSharpTest
+{
+    public enum CSharpEnum
+    {
+        CSharpEnumCase1 = 1,
+        CsharpEnumCase2 = 2
+    }
+}
+            """
+
+        FSharp """
+namespace FSharpTest
+
+open type CSharpTest.CSharpEnum
+
+module Test =
+
+    let x = CSharpEnumCase1
+    let y = CSharpEnumCase2
+        """
+        |> withOptions ["--langversion:preview"]
+        |> withReferences [csharp]
+        |> compile
+        |> ignore
+
+    [<Test>]
+    let ``Open union should have access to union cases`` () =
         FSharp """
 namespace FSharpTest
 
@@ -964,10 +991,7 @@ module Test2 =
         """
         |> withOptions ["--langversion:preview"]
         |> compile
-        |> withDiagnostics
-            [
-                (Error 39, Line 16, Col 13, Line 16, Col 19, "The value or constructor 'UCase1' is not defined.")
-            ]
+        |> shouldSucceed
         |> ignore
 
     [<Test>]
