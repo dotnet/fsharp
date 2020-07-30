@@ -17,6 +17,7 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Returns a new sequence that contains all pairings of elements from the first and second sequences.</summary>
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("AllPairs")>]
@@ -138,8 +139,10 @@ namespace Microsoft.FSharp.Collections
         val choose: chooser:('T -> 'U option) -> source:seq<'T> -> seq<'U>
 
         /// <summary>Divides the input sequence into chunks of size at most <c>chunkSize</c>.</summary>
+        ///
         /// <param name="chunkSize">The maximum size of each chunk.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The sequence divided into chunks.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
@@ -192,8 +195,10 @@ namespace Microsoft.FSharp.Collections
         val concat: sources:seq<'Collection> -> seq<'T> when 'Collection :> seq<'T>
 
         /// <summary>Tests if the sequence contains the specified element.</summary>
+        ///
         /// <param name="value">The value to locate in the input sequence.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Contains")>]
@@ -257,6 +262,7 @@ namespace Microsoft.FSharp.Collections
         /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="count">The maximum number of chunks.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The sequence split into chunks.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
@@ -375,6 +381,7 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function to test whether an item in the sequence should be returned.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The last element for which the predicate returns True.</returns>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
@@ -401,6 +408,7 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function to test whether the index of a particular element should be returned.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The index of the last element for which the predicate returns True.</returns>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
@@ -428,10 +436,12 @@ namespace Microsoft.FSharp.Collections
         /// when one sequence is exhausted any remaining elements in the other sequence are ignored.
         /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
         /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.</summary>
+        ///
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="state">The initial state.</param>
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
+        ///
         /// <returns>The final state value.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
         [<CompiledName("Fold2")>]
@@ -440,9 +450,11 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c>
         /// then computes <c>f i0 (... (f iN s)...)</c></summary>
+        ///
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="source">The input sequence.</param>
         /// <param name="state">The initial state.</param>
+        ///
         /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
@@ -453,10 +465,12 @@ namespace Microsoft.FSharp.Collections
         /// threading an accumulator argument through the computation. The two sequences need not have equal lengths.
         /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jM</c>, N &lt; M
         /// then computes <c>f i0 j0 (... (f iN jN s)...)</c>.</summary>
+        ///
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
         /// <param name="state">The initial state.</param>
+        ///
         /// <returns>The final state value.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
         [<CompiledName("FoldBack2")>]
@@ -529,7 +543,9 @@ namespace Microsoft.FSharp.Collections
         val tryHead: source:seq<'T> -> 'T option
 
         /// <summary>Returns the last element of the sequence.</summary>
+        ///
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The last element of the sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
@@ -580,7 +596,9 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Builds a new collection whose elements are the corresponding elements of the input collection
         /// paired with the integer index (from 0) of each element.</summary>
+        ///
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Indexed")>]
@@ -620,8 +638,10 @@ namespace Microsoft.FSharp.Collections
         val initInfinite: initializer:(int -> 'T) -> seq<'T>
 
         /// <summary>Computes the element at the specified index in the collection.</summary>
+        ///
         /// <param name="index">The index of the element to retrieve.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The element at the specified index of the sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
@@ -959,8 +979,10 @@ namespace Microsoft.FSharp.Collections
         val reduce: reduction:('T -> 'T -> 'T) -> source:seq<'T> -> 'T
 
         /// <summary>Creates a sequence by replicating the given initial value.</summary>
+        ///
         /// <param name="count">The number of elements to replicate.</param>
         /// <param name="initial">The value to replicate</param>
+        ///
         /// <returns>The generated sequence.</returns>
         [<CompiledName("Replicate")>]
         val replicate: count:int -> initial:'T -> seq<'T>
@@ -968,9 +990,11 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Applies a function to each element of the sequence, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
         /// then computes <c>f i0 (...(f iN-1 iN))</c>.</summary>
+        ///
         /// <param name="reduction">A function that takes in the next-to-last element of the sequence and the
         /// current accumulated result to produce the next accumulated result.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The final result of the reductions.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
@@ -979,7 +1003,9 @@ namespace Microsoft.FSharp.Collections
         val reduceBack: reduction:('T -> 'T -> 'T) -> source:seq<'T> -> 'T
 
         /// <summary>Returns a new sequence with the elements in reverse order.</summary>
+        ///
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The reversed sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the reversed sequence.</remarks>
@@ -1005,6 +1031,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="folder">A function that updates the state with each element from the sequence.</param>
         /// <param name="source">The input sequence.</param>
         /// <param name="state">The initial state.</param>
+        ///
         /// <returns>The resulting sequence of computed states.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
@@ -1072,6 +1099,7 @@ namespace Microsoft.FSharp.Collections
         /// This is a stable sort, that is the original order of equal elements is preserved.</remarks>
         /// <param name="comparer">The function to compare the collection elements.</param>
         /// <param name="list">The input sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("SortWith")>]
@@ -1235,6 +1263,7 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function that evaluates to a Boolean when given an item in the sequence.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The found element or None.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
@@ -1255,8 +1284,10 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Tries to find the nth element in the sequence.
         /// Returns <c>None</c> if index is negative or the input sequence does not contain enough elements.</summary>
+        ///
         /// <param name="index">The index of element to retrieve.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The nth element of the sequence or <c>None</c>.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryItem")>]
@@ -1268,6 +1299,7 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function that evaluates to a Boolean when given an item in the sequence.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The found index or <c>None</c>.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
@@ -1291,6 +1323,7 @@ namespace Microsoft.FSharp.Collections
         /// that sequence is iterated. As a result this function should not be used with
         /// large or infinite sequences.</remarks>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The transposed sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Transpose")>]
@@ -1328,8 +1361,10 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Returns a sequence that yields sliding windows containing elements drawn from the input
         /// sequence. Each window is returned as a fresh array.</summary>
+        ///
         /// <param name="windowSize">The number of elements in each window.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when windowSize is not positive.</exception>
