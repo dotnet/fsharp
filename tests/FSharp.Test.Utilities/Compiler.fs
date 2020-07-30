@@ -197,11 +197,11 @@ module rec Compiler =
             let result = compileFSharpCompilation cmpl false
             match result with
             | Failure f ->
-                let message = sprintf "Compilation failed (expected to succeed).\n All errors:\n%A" (f.Errors @ f.Warnings)
+                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (f.Errors @ f.Warnings)
                 failwith message
             | Success s ->
                 match s.OutputPath with
-                    | None -> failwith "Compilation didn't produce any output!"
+                    | None -> failwith "Operation didn't produce any output!"
                     | Some p -> p |> MetadataReference.CreateFromFile
         | _ -> failwith "Conversion isn't possible"
 
@@ -317,6 +317,31 @@ module rec Compiler =
         | FS fs -> compileFSharp fs
         | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
+
+    let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
+        let source = getSource fsSource.Source
+        let parseResults = CompilerAssert.Parse source
+        let failed = parseResults.ParseHadErrors
+
+        let (errors, warnings) =  parseResults.Errors |> fromFSharpErrorInfo
+
+        let result =
+            { OutputPath   = None
+              Dependencies = []
+              Adjust       = 0
+              Warnings     = errors
+              Errors       = warnings
+              Output       = None }
+
+        if failed then
+            Failure result
+        else
+            Success result
+
+    let parse (cUnit: CompilationUnit) : TestResult =
+        match cUnit with
+        | FS fs -> parseFSharp fs
+        | _ -> failwith "Parsing only supported for F#."
 
     let private typecheckFSharpWithBaseline (options: string list) (dir: string) (file: string) : TestResult =
         // Since TypecheckWithErrorsAndOptionsAgainsBaseLine throws if doesn't match expected baseline,
@@ -436,12 +461,12 @@ module rec Compiler =
             match result with
             | Success _ -> result
             | Failure r ->
-                let message = sprintf "Compilation failed (expected to succeed).\n All errors:\n%A" (r.Errors @ r.Warnings)
+                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (r.Errors @ r.Warnings)
                 failwith message
 
         let shouldFail (result: TestResult) : TestResult =
             match result with
-            | Success _ -> failwith "Compilation was \"Success\" (expected: \"Failure\")."
+            | Success _ -> failwith "Operation was succeeded (expected to fail)."
             | Failure _ -> result
 
         let private assertResultsCategory (what: string) (selector: Output -> ErrorInfo list) (expected: ErrorInfo list) (result: TestResult) : TestResult =
