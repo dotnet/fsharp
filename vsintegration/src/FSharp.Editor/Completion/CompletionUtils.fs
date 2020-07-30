@@ -89,7 +89,8 @@ module internal CompletionUtils =
         let triggerLine = textLines.GetLineFromPosition triggerPosition
         let classifiedSpans = Tokenizer.getClassifiedSpans(documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
         classifiedSpans.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
-        classifiedSpans.Exists (fun classifiedSpan -> 
+        let result =
+          classifiedSpans.Exists (fun classifiedSpan -> 
             classifiedSpan.TextSpan.IntersectsWith triggerPosition &&
             (
                 match classifiedSpan.ClassificationType with
@@ -100,6 +101,7 @@ module internal CompletionUtils =
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
+        result
 
     let inline getKindPriority kind =
         match kind with

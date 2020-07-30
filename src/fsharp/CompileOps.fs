@@ -1166,6 +1166,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_EOF -> getErrorString("Parser.TOKEN.EOF")
               | Parser.TOKEN_CONST -> getErrorString("Parser.TOKEN.CONST")
               | Parser.TOKEN_FIXED -> getErrorString("Parser.TOKEN.FIXED")
+              | Parser.TOKEN_INTERP_STRING_BEGIN_END -> getErrorString("Parser.TOKEN.INTERP.STRING.BEGIN.END")
+              | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
+              | Parser.TOKEN_INTERP_STRING_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.PART")
+              | Parser.TOKEN_INTERP_STRING_END -> getErrorString("Parser.TOKEN.INTERP.STRING.END")
               | unknown ->           
                   Debug.Assert(false, "unknown token tag")
                   let result = sprintf "%+A" unknown
@@ -3589,13 +3593,13 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
     use unwindbuildphase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     try 
         let skip = true in (* don't report whitespace from lexer *)
-        let lightSyntaxStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filename, true) 
-        let lexargs = mkLexargs (filename, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
+        let lightStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filename, true) 
+        let lexargs = mkLexargs (conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
         let shortFilename = SanitizeFileName filename tcConfig.implicitIncludeDir 
         let input = 
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
                 if verbose then dprintn ("Parsing... "+shortFilename)
-                let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
+                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
 
                 if tcConfig.tokenizeOnly then 
                     while true do 

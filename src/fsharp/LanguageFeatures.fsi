@@ -21,6 +21,7 @@ type LanguageFeature =
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | InterfacesWithMultipleGenericInstantiation
+    | StringInterpolation
 
 /// LanguageVersion management
 type LanguageVersion =

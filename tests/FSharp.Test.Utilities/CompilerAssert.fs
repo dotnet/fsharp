@@ -260,8 +260,10 @@ let main argv = 0"""
 
         Array.zip errors expectedErrors
         |> Array.iter (fun (actualError, expectedError) ->
-            let (expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg) = expectedError
-            let (actualSeverity, actualErrorNumber, actualErrorRange, actualErrorMsg) = actualError
+            let (expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg: string) = expectedError
+            let (actualSeverity, actualErrorNumber, actualErrorRange, actualErrorMsg: string) = actualError
+            let expectedErrorMsg = expectedErrorMsg.Replace("\r\n", "\n")
+            let actualErrorMsg = actualErrorMsg.Replace("\r\n", "\n")
             checkEqual "Severity" expectedSeverity actualSeverity
             checkEqual "ErrorNumber" expectedErrorNumber actualErrorNumber
             checkEqual "ErrorRange" expectedErrorRange actualErrorRange
