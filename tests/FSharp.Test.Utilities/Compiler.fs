@@ -341,7 +341,7 @@ module rec Compiler =
     let parse (cUnit: CompilationUnit) : TestResult =
         match cUnit with
         | FS fs -> parseFSharp fs
-        | _ -> failwith "Parsing works only with F# source."
+        | _ -> failwith "Parsing only supported for F#."
 
     let private typecheckFSharpWithBaseline (options: string list) (dir: string) (file: string) : TestResult =
         // Since TypecheckWithErrorsAndOptionsAgainsBaseLine throws if doesn't match expected baseline,
