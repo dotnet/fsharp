@@ -919,6 +919,29 @@ open type FSharpFunc<int, int>
         |> ignore
 
     [<Test>]
+    let ``Open enum should have access to its cases`` () =
+        FSharp """
+namespace FSharpTest
+
+type TestEnum =
+    | EnumCase1 = 1
+    | EnumCase2 = 2
+
+open type TestEnum
+
+module Test =
+
+    let x = EnumCase1
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withDiagnostics
+            [
+                (Error 756, Line 4, Col 11, Line 4, Col 31, "'open type' may only be used with named types")
+            ]
+        |> ignore
+
+    [<Test>]
     let ``Open union should have no access to union cases - Errors`` () =
         FSharp """
 namespace FSharpTest
