@@ -796,49 +796,49 @@ namespace Microsoft.FSharp.Core
     /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <cref>System.Double</cref>.</summary>
+    /// <see cref="T:System.Double"/>.</summary>
     type float<[<Measure>] 'Measure> = float
 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <cref>System.Single</cref>.</summary>
+    /// <see cref="T:System.Single"/>.</summary>
     type float32<[<Measure>] 'Measure> = float32
     
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of decimal numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <cref>System.Decimal</cref>.</summary>
+    /// <see cref="T:System.Decimal"/>.</summary>
     type decimal<[<Measure>] 'Measure> = decimal
 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <cref>System.Int32</cref>.</summary>
+    /// <see cref="T:System.Int32"/>.</summary>
     type int<[<Measure>] 'Measure> = int
 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <cref>System.SByte</cref>.</summary>
+    /// <see cref="T:System.SByte"/>.</summary>
     type sbyte<[<Measure>] 'Measure> = sbyte
 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 16-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <cref>System.Int16</cref>.</summary>
+    /// <see cref="T:System.Int16"/>.</summary>
     type int16<[<Measure>] 'Measure> = int16
 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 64-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <cref>System.Int64</cref>.</summary>
+    /// <see cref="T:System.Int64"/>.</summary>
     type int64<[<Measure>] 'Measure> = int64
 
     /// <summary>Represents a managed pointer in F# code.</summary>
@@ -1695,28 +1695,28 @@ namespace Microsoft.FSharp.Core
         /// <returns>'U</returns>
         abstract member Invoke : func:'T -> 'U
 
-        /// <summary>Convert an F# first class function value to a value of type <cref>System.Converter</cref></summary>
+        /// <summary>Convert an F# first class function value to a value of type <see cref="T:System.Converter"/></summary>
         ///
         /// <param name="func">The input function.</param>
         ///
         /// <returns>A System.Converter of the function type.</returns>
         static member op_Implicit : func:('T -> 'U) -> System.Converter<'T,'U>
 
-        /// <summary>Convert an value of type <cref>System.Converter</cref> to a F# first class function value </summary>
+        /// <summary>Convert an value of type <see cref="T:System.Converter"/> to a F# first class function value </summary>
         ///
         /// <param name="converter">The input System.Converter.</param>
         ///
         /// <returns>An F# function of the same type.</returns>
         static member op_Implicit : converter:System.Converter<'T,'U> -> ('T -> 'U)
 
-        /// <summary>Convert an F# first class function value to a value of type <cref>System.Converter</cref></summary>
+        /// <summary>Convert an F# first class function value to a value of type <see cref="T:System.Converter"/></summary>
         ///
         /// <param name="func">The input function.</param>
         ///
         /// <returns>System.Converter&lt;'T,'U&gt;</returns>
         static member ToConverter : func:('T -> 'U) -> System.Converter<'T,'U>
 
-        /// <summary>Convert an value of type <cref>System.Converter</cref> to a F# first class function value </summary>
+        /// <summary>Convert an value of type <see cref="T:System.Converter"/> to a F# first class function value </summary>
         ///
         /// <param name="converter">The input System.Converter.</param>
         ///
@@ -2249,10 +2249,10 @@ namespace Microsoft.FSharp.Collections
     /// values of this type, or pattern match against the values directly.</remarks>
     and 'T list = List<'T>
 
-    /// <summary>An abbreviation for the CLI type <cref>System.Collections.Generic.List{T}</cref></summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List{T}"/></summary>
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
-    /// <summary>An abbreviation for the CLI type <cref>System.Collections.Generic.IEnumerable{T}</cref></summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.IEnumerable{T}"/></summary>
     type seq<'T> = IEnumerable<'T>
 
 namespace Microsoft.FSharp.Core
@@ -2526,14 +2526,14 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Reraise")>]
         val inline reraise : unit -> 'T
 
-        /// <summary>Builds a <cref>System.Exception</cref> object.</summary>
+        /// <summary>Builds a <see cref="T:System.Exception"/> object.</summary>
         ///
         /// <param name="message">The message for the Exception.</param>
         ///
         /// <returns>A System.Exception.</returns>
         val Failure : message:string -> exn
         
-        /// <summary>Matches <cref>System.Exception</cref> objects whose runtime type is precisely <cref>System.Exception</cref></summary>
+        /// <summary>Matches <see cref="T:System.Exception"/> objects whose runtime type is precisely <see cref="T:System.Exception"/></summary>
         ///
         /// <param name="error">The input exception.</param>
         ///
@@ -2630,7 +2630,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IsNotNull")>]
         val inline internal isNotNull : value:'T -> bool when 'T : null
 
-        /// <summary>Throw a <cref>System.Exception</cref> exception.</summary>
+        /// <summary>Throw a <see cref="T:System.Exception"/> exception.</summary>
         ///
         /// <param name="message">The exception message.</param>
         ///
@@ -2638,7 +2638,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("FailWith")>]
         val inline failwith : message:string -> 'T 
 
-        /// <summary>Throw a <cref>System.ArgumentException</cref> exception with
+        /// <summary>Throw a <see cref="T:System.ArgumentException"/> exception with
         /// the given argument name and message.</summary>
         ///
         /// <param name="argumentName">The argument name.</param>
@@ -2648,7 +2648,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("InvalidArg")>]
         val inline invalidArg : argumentName:string -> message:string -> 'T 
 
-        /// <summary>Throw a <cref>System.ArgumentNullException</cref> exception</summary>
+        /// <summary>Throw a <see cref="T:System.ArgumentNullException"/> exception</summary>
         ///
         /// <param name="argumentName">The argument name.</param>
         ///
@@ -2656,7 +2656,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NullArg")>]
         val inline nullArg : argumentName:string -> 'T 
 
-        /// <summary>Throw a <cref>System.InvalidOperationException</cref> exception</summary>
+        /// <summary>Throw a <see cref="T:System.InvalidOperationException"/> exception</summary>
         ///
         /// <param name="message">The exception message.</param>
         ///
@@ -2730,7 +2730,7 @@ namespace Microsoft.FSharp.Core
         val seq : sequence:seq<'T> -> seq<'T>
 
         /// <summary>Exit the current hardware isolated process, if security settings permit,
-        /// otherwise raise an exception. Calls <cref>System.Environment.Exit</cref>.</summary>
+        /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
         ///
@@ -2738,31 +2738,31 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Exit")>]
         val exit: exitcode:int -> 'T   when default 'T : obj
 
-        /// <summary>Equivalent to <cref>System.Double.PositiveInfinity</cref></summary>
+        /// <summary>Equivalent to <see cref="P:System.Double.PositiveInfinity"/></summary>
         [<CompiledName("Infinity")>]
         val infinity: float
 
-        /// <summary>Equivalent to <cref>System.Double.NaN</cref></summary>
+        /// <summary>Equivalent to <see cref="P:System.Double.NaN"/></summary>
         [<CompiledName("NaN")>]
         val nan: float
 
-        /// <summary>Equivalent to <cref>System.Single.PositiveInfinity</cref></summary>
+        /// <summary>Equivalent to <see cref="P:System.Single.PositiveInfinity"/></summary>
         [<CompiledName("InfinitySingle")>]
         val infinityf: float32
 
-        /// <summary>Equivalent to <cref>System.Single.NaN</cref></summary>
+        /// <summary>Equivalent to <see cref="P:System.Single.NaN"/></summary>
         [<CompiledName("NaNSingle")>]
         val nanf: float32
 
-        /// <summary>Reads the value of the property <cref>System.Console.In</cref>. </summary>
+        /// <summary>Reads the value of the property <see cref="P:System.Console.In"/>. </summary>
         [<CompiledName("ConsoleIn")>]
         val stdin<'T> : System.IO.TextReader
 
-        /// <summary>Reads the value of the property <cref>System.Console.Error</cref>. </summary>
+        /// <summary>Reads the value of the property <see cref="P:System.Console.Error"/>. </summary>
         [<CompiledName("ConsoleError")>]
         val stderr<'T> : System.IO.TextWriter
 
-        /// <summary>Reads the value of the property <cref>System.Console.Out</cref>.</summary>
+        /// <summary>Reads the value of the property <see cref="P:System.Console.Out"/>.</summary>
         [<CompiledName("ConsoleOut")>]
         val stdout<'T> : System.IO.TextWriter
 
@@ -3242,7 +3242,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToChar")>]
         val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
 
-        /// <summary>An active pattern to match values of type <cref>System.Collections.Generic.KeyValuePair</cref></summary>
+        /// <summary>An active pattern to match values of type <see cref="T:System.Collections.Generic.KeyValuePair"/></summary>
         ///
         /// <param name="keyValuePair">The input key/value pair.</param>
         ///
@@ -4310,7 +4310,7 @@ namespace Microsoft.FSharp.Core
             val inline ( * ) : x:^T1 -> y:^T2 -> ^T3  when (^T1 or ^T2) : (static member ( * ) : ^T1 * ^T2    -> ^T3) and default ^T2 : ^T3 and default ^T3 : ^T1 and default ^T3 : ^T2 and default ^T1 : ^T3 and default ^T1 : ^T2 and default ^T1 : int
 
             /// <summary>Converts the argument to <c>byte</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.Byte.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Byte.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4321,7 +4321,7 @@ namespace Microsoft.FSharp.Core
             val inline byte       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int
 
             /// <summary>Converts the argument to <c>sbyte</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.SByte.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.SByte.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4332,7 +4332,7 @@ namespace Microsoft.FSharp.Core
             val inline sbyte      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
 
             /// <summary>Converts the argument to <c>int16</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.Int16.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int16.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4343,7 +4343,7 @@ namespace Microsoft.FSharp.Core
             val inline int16      : value:^T -> int16      when ^T : (static member op_Explicit : ^T -> int16)      and default ^T : int
 
             /// <summary>Converts the argument to <c>uint16</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.UInt16.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.UInt16.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4354,7 +4354,7 @@ namespace Microsoft.FSharp.Core
             val inline uint16     : value:^T -> uint16     when ^T : (static member op_Explicit : ^T -> uint16)     and default ^T : int
 
             /// <summary>Converts the argument to <c>int</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.Int32.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int32.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4365,7 +4365,7 @@ namespace Microsoft.FSharp.Core
             val inline int        : value:^T -> int        when ^T : (static member op_Explicit : ^T -> int)        and default ^T : int
 
             /// <summary>Converts the argument to <c>int32</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.Int32.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int32.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4376,7 +4376,7 @@ namespace Microsoft.FSharp.Core
             val inline int32      : value:^T -> int32      when ^T : (static member op_Explicit : ^T -> int32)      and default ^T : int
 
             /// <summary>Converts the argument to <c>uint32</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.UInt32.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.UInt32.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4387,7 +4387,7 @@ namespace Microsoft.FSharp.Core
             val inline uint32     : value:^T -> uint32     when ^T : (static member op_Explicit : ^T -> uint32)     and default ^T : int
 
             /// <summary>Converts the argument to <c>int64</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.Int64.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.Int64.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///
@@ -4398,7 +4398,7 @@ namespace Microsoft.FSharp.Core
             val inline int64      : value:^T -> int64      when ^T : (static member op_Explicit : ^T -> int64)      and default ^T : int
 
             /// <summary>Converts the argument to <c>uint64</c>. This is a direct, checked conversion for all 
-            /// primitive numeric types. For strings, the input is converted using <cref>System.UInt64.Parse()</cref> 
+            /// primitive numeric types. For strings, the input is converted using <see cref="M:System.UInt64.Parse"/> 
             /// with InvariantCulture settings. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///

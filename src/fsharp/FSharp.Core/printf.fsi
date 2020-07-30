@@ -64,7 +64,7 @@ type Format<'Printer,'State,'Residue,'Result,'Tuple> = PrintfFormat<'Printer,'St
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Printf = 
 
-    /// <summary>Represents a statically-analyzed format associated with writing to a <cref>System.Text.StringBuilder</cref>. The first type parameter indicates the
+    /// <summary>Represents a statically-analyzed format associated with writing to a <see cref="T:System.Text.StringBuilder"/>. The first type parameter indicates the
     /// arguments of the format operation and the last the overall return type.</summary>
     type BuilderFormat<'T,'Result>    = Format<'T, StringBuilder, unit, 'Result>
 
@@ -72,11 +72,11 @@ module Printf =
     /// arguments of the format operation and the last the overall return type.</summary>
     type StringFormat<'T,'Result>     = Format<'T, unit, string, 'Result>
 
-    /// <summary>Represents a statically-analyzed format associated with writing to a <cref>System.IO.TextWriter</cref>. The first type parameter indicates the
+    /// <summary>Represents a statically-analyzed format associated with writing to a <see cref="T:System.IO.TextWriter"/>. The first type parameter indicates the
     /// arguments of the format operation and the last the overall return type.</summary>
     type TextWriterFormat<'T,'Result> = Format<'T, TextWriter, unit, 'Result>
 
-    /// <summary>Represents a statically-analyzed format associated with writing to a <cref>System.Text.StringBuilder</cref>. The type parameter indicates the
+    /// <summary>Represents a statically-analyzed format associated with writing to a <see cref="T:System.Text.StringBuilder"/>. The type parameter indicates the
     /// arguments and return type of the format operation.</summary>
     type BuilderFormat<'T>     = BuilderFormat<'T,unit>
 
@@ -84,11 +84,11 @@ module Printf =
     /// arguments and return type of the format operation.</summary>
     type StringFormat<'T>      = StringFormat<'T,string>
 
-    /// <summary>Represents a statically-analyzed format associated with writing to a <cref>System.IO.TextWriter</cref>. The type parameter indicates the
+    /// <summary>Represents a statically-analyzed format associated with writing to a <see cref="T:System.IO.TextWriter"/>. The type parameter indicates the
     /// arguments and return type of the format operation.</summary>
     type TextWriterFormat<'T>  = TextWriterFormat<'T,unit>
 
-    /// <summary>Print to a <cref>System.Text.StringBuilder</cref></summary>
+    /// <summary>Print to a <see cref="T:System.Text.StringBuilder"/></summary>
     ///
     /// <param name="builder">The StringBuilder to print to.</param>
     /// <param name="format">The input formatter.</param>

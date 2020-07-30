@@ -12,7 +12,7 @@ namespace Microsoft.FSharp.Math
 
 namespace Microsoft.FSharp.Core
 
-    /// An abbreviation for <cref>System.Numerics.BigInteger</cref>
+    /// An abbreviation for <see cref="T:System.Numerics.BigInteger"/>
     type bigint = System.Numerics.BigInteger
 
     [<AutoOpen>]

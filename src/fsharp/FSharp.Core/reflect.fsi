@@ -52,7 +52,7 @@ type FSharpValue =
     /// <remarks>Assumes the given input is a record value. If not, ArgumentException is raised.</remarks>
     /// <param name="record">The record object.</param>
     /// <param name="info">The PropertyInfo describing the field to read.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The field from the record.</returns>
     static member GetRecordField:  record:obj * info:PropertyInfo -> obj
     
@@ -64,7 +64,7 @@ type FSharpValue =
     /// because the path executed by the computed function is optimized given the knowledge that it will be
     /// used to read values of the given type.</remarks>
     /// <param name="info">The PropertyInfo of the field to read.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>A function to read the specified field from the record.</returns>
     static member PreComputeRecordFieldReader : info:PropertyInfo -> (obj -> obj)
 
@@ -74,7 +74,7 @@ type FSharpValue =
     /// <param name="recordType">The type of record to make.</param>
     /// <param name="values">The array of values to initialize the record.</param>
     /// <param name="bindingFlags">Optional binding flags for the record.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The created record.</returns>
     static member MakeRecord: recordType:Type * values:obj [] * ?bindingFlags:BindingFlags  -> obj
 
@@ -83,7 +83,7 @@ type FSharpValue =
     /// <remarks>Assumes the given input is a record value. If not, ArgumentException is raised.</remarks>
     /// <param name="record">The record object.</param>
     /// <param name="bindingFlags">Optional binding flags for the record.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>The array of fields from the record.</returns>
     static member GetRecordFields:  record:obj * ?bindingFlags:BindingFlags  -> obj[]
 
@@ -99,7 +99,7 @@ type FSharpValue =
     /// used to read values of the given type.</remarks>
     /// <param name="recordType">The type of record to read.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>An optimized reader for the given record type.</returns>
     static member PreComputeRecordReader : recordType:Type  * ?bindingFlags:BindingFlags -> (obj -> obj[])
     /// <summary>Precompute a function for constructing a record value. </summary>
@@ -108,7 +108,7 @@ type FSharpValue =
     /// If not, ArgumentException is raised during pre-computation.</remarks>
     /// <param name="recordType">The type of record to construct.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
     /// <returns>A function to construct records of the given type.</returns>
     static member PreComputeRecordConstructor : recordType:Type  * ?bindingFlags:BindingFlags -> (obj[] -> obj)
 
@@ -139,7 +139,7 @@ type FSharpValue =
     /// <param name="value">The input union case.</param>
     /// <param name="unionType">The union type containing the value.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a union case value.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a union case value.</exception>
     /// <returns>The description of the union case and its fields.</returns>
     static member GetUnionFields:  value:obj * unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo * obj []
     
@@ -193,7 +193,7 @@ type FSharpValue =
     /// <remarks>Assumes the given input is an F# exception value. If not, ArgumentException is raised.</remarks>
     /// <param name="exn">The exception instance.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not an F# exception.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not an F# exception.</exception>
     /// <returns>The fields from the given exception.</returns>
     static member GetExceptionFields:  exn:obj * ?bindingFlags:BindingFlags  -> obj[]
 
@@ -202,7 +202,7 @@ type FSharpValue =
     /// <remarks>Assumes at least one element is given. If not, ArgumentException is raised.</remarks>
     /// <param name="tupleElements">The array of tuple fields.</param>
     /// <param name="tupleType">The tuple type to create.</param>
-    /// <exception cref="System.ArgumentException">Thrown if no elements are given.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown if no elements are given.</exception>
     /// <returns>An instance of the tuple type with the given elements.</returns>
     static member MakeTuple: tupleElements:obj[] * tupleType:Type -> obj
 
@@ -219,7 +219,7 @@ type FSharpValue =
     ///
     /// <remarks>Assumes the given input is a tuple value. If not, ArgumentException is raised.</remarks>
     /// <param name="tuple">The input tuple.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input is not a tuple value.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input is not a tuple value.</exception>
     /// <returns>An array of the fields from the given tuple.</returns>
     static member GetTupleFields: tuple:obj -> obj []
     
@@ -228,7 +228,7 @@ type FSharpValue =
     /// <remarks>Assumes the given type is a TupleType.
     /// If not, ArgumentException is raised during pre-computation.</remarks>
     /// <param name="tupleType">The tuple type to read.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the given type is not a tuple type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the given type is not a tuple type.</exception>
     /// <returns>A function to read values of the given tuple type.</returns>
     static member PreComputeTupleReader           : tupleType:Type -> (obj -> obj[])
     
@@ -245,7 +245,7 @@ type FSharpValue =
     /// <remarks>Assumes the given type is a TupleType.
     /// If not, ArgumentException is raised during pre-computation.</remarks>
     /// <param name="tupleType">The type of tuple to read.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the given type is not a tuple type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the given type is not a tuple type.</exception>
     /// <returns>A function to read a particular tuple type.</returns>
     static member PreComputeTupleConstructor      : tupleType:Type -> (obj[] -> obj)
 
@@ -290,7 +290,7 @@ type FSharpType =
     /// <remarks>Assumes the given type is a union type. If not, ArgumentException is raised during pre-computation.</remarks>
     /// <param name="unionType">The input union type.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
-    /// <exception cref="System.ArgumentException">Thrown when the input type is not a union type.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a union type.</exception>
     /// <returns>An array of descriptions of the cases of the given union type.</returns>
     static member GetUnionCases: unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo[]
 
@@ -316,7 +316,7 @@ type FSharpType =
     /// <remarks>Assumes <c>exceptionType</c> is an exception representation type. If not, ArgumentException is raised.</remarks>
     /// <param name="exceptionType">The exception type to read.</param>
     /// <param name="bindingFlags">Optional binding flags.</param>
-    /// <exception cref="System.ArgumentException">Thrown if the given type is not an exception.</exception>
+    /// <exception cref="T:System.ArgumentException">Thrown if the given type is not an exception.</exception>
     /// <returns>An array containing the PropertyInfo of each field in the exception.</returns>
     static member GetExceptionFields: exceptionType:Type * ?bindingFlags:BindingFlags -> PropertyInfo[]
 
@@ -328,7 +328,7 @@ type FSharpType =
     /// <returns>True if the type check is an F# exception.</returns>
     static member IsExceptionRepresentation: exceptionType:Type * ?bindingFlags:BindingFlags -> bool
 
-    /// <summary>Returns a <cref>System.Type</cref> representing the F# function type with the given domain and range</summary>
+    /// <summary>Returns a <see cref="T:System.Type"/> representing the F# function type with the given domain and range</summary>
     ///
     /// <param name="domain">The input type of the function.</param>
     /// <param name="range">The output type of the function.</param>
@@ -336,14 +336,14 @@ type FSharpType =
     /// <returns>The function type with the given domain and range.</returns>
     static member MakeFunctionType: domain:Type * range:Type -> Type
 
-    /// <summary>Returns a <cref>System.Type</cref> representing an F# tuple type with the given element types</summary>
+    /// <summary>Returns a <see cref="T:System.Type"/> representing an F# tuple type with the given element types</summary>
     ///
     /// <param name="types">An array of types for the tuple elements.</param>
     ///
     /// <returns>The type representing the tuple containing the input elements.</returns>
     static member MakeTupleType: types:Type[] -> Type
 
-    /// <summary>Returns a <cref>System.Type</cref> representing an F# tuple type with the given element types</summary>
+    /// <summary>Returns a <see cref="T:System.Type"/> representing an F# tuple type with the given element types</summary>
     ///
     /// <param name="asm">Runtime assembly containing System.Tuple definitions.</param>
     /// <param name="types">An array of types for the tuple elements.</param>
@@ -351,7 +351,7 @@ type FSharpType =
     /// <returns>The type representing the tuple containing the input elements.</returns>
     static member MakeTupleType: asm:Assembly * types:Type[] -> Type
 
-    /// <summary>Returns a <cref>System.Type</cref> representing an F# struct tuple type with the given element types</summary>
+    /// <summary>Returns a <see cref="T:System.Type"/> representing an F# struct tuple type with the given element types</summary>
     ///
     /// <param name="asm">Runtime assembly containing System.ValueTuple definitions.</param>
     /// <param name="types">An array of types for the tuple elements.</param>
@@ -373,7 +373,7 @@ type FSharpType =
     /// <returns>True if the type check succeeds.</returns>
     static member IsFunction : typ:Type -> bool
 
-    /// <summary>Return true if the <c>typ</c> is a <cref>System.Type</cref> value corresponding to the compiled form of an F# module </summary>
+    /// <summary>Return true if the <c>typ</c> is a <see cref="T:System.Type"/> value corresponding to the compiled form of an F# module </summary>
     ///
     /// <param name="typ">The type to check.</param>
     ///
@@ -404,7 +404,7 @@ module FSharpReflectionExtensions =
         /// <param name="recordType">The type of record to make.</param>
         /// <param name="values">The array of values to initialize the record.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flags that denotes accessibility of the private representation.</param>
-        /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>The created record.</returns>
         static member MakeRecord: recordType:Type * values:obj [] * ?allowAccessToPrivateRepresentation : bool -> obj
         /// <summary>Reads all the fields from a record value.</summary>
@@ -412,7 +412,7 @@ module FSharpReflectionExtensions =
         /// <remarks>Assumes the given input is a record value. If not, ArgumentException is raised.</remarks>
         /// <param name="record">The record object.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>
-        /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>The array of fields from the record.</returns>
         static member GetRecordFields:  record:obj * ?allowAccessToPrivateRepresentation : bool  -> obj[]
 
@@ -428,7 +428,7 @@ module FSharpReflectionExtensions =
         /// used to read values of the given type.</remarks>
         /// <param name="recordType">The type of record to read.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
-        /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>An optimized reader for the given record type.</returns>
         static member PreComputeRecordReader : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj -> obj[])
         /// <summary>Precompute a function for constructing a record value. </summary>
@@ -437,7 +437,7 @@ module FSharpReflectionExtensions =
         /// If not, ArgumentException is raised during pre-computation.</remarks>
         /// <param name="recordType">The type of record to construct.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
-        /// <exception cref="System.ArgumentException">Thrown when the input type is not a record type.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
         /// <returns>A function to construct records of the given type.</returns>
         static member PreComputeRecordConstructor : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj[] -> obj)
 
@@ -466,7 +466,7 @@ module FSharpReflectionExtensions =
         /// <param name="value">The input union case.</param>
         /// <param name="unionType">The union type containing the value.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
-        /// <exception cref="System.ArgumentException">Thrown when the input type is not a union case value.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a union case value.</exception>
         /// <returns>The description of the union case and its fields.</returns>
         static member GetUnionFields:  value:obj * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj []
     
@@ -516,7 +516,7 @@ module FSharpReflectionExtensions =
         /// <remarks>Assumes the given input is an F# exception value. If not, ArgumentException is raised.</remarks>
         /// <param name="exn">The exception instance.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
-        /// <exception cref="System.ArgumentException">Thrown when the input type is not an F# exception.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input type is not an F# exception.</exception>
         /// <returns>The fields from the given exception.</returns>
         static member GetExceptionFields:  exn:obj * ?allowAccessToPrivateRepresentation : bool -> obj[]
 
@@ -534,7 +534,7 @@ module FSharpReflectionExtensions =
         /// <remarks>Assumes the given type is a union type. If not, ArgumentException is raised during pre-computation.</remarks>
         /// <param name="unionType">The input union type.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
-        /// <exception cref="System.ArgumentException">Thrown when the input type is not a union type.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a union type.</exception>
         /// <returns>An array of descriptions of the cases of the given union type.</returns>
         static member GetUnionCases: unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo[]
 
@@ -558,7 +558,7 @@ module FSharpReflectionExtensions =
         /// <remarks>Assumes <c>exceptionType</c> is an exception representation type. If not, ArgumentException is raised.</remarks>
         /// <param name="exceptionType">The exception type to read.</param>
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
-        /// <exception cref="System.ArgumentException">Thrown if the given type is not an exception.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown if the given type is not an exception.</exception>
         /// <returns>An array containing the PropertyInfo of each field in the exception.</returns>
         static member GetExceptionFields: exceptionType:Type * ?allowAccessToPrivateRepresentation : bool -> PropertyInfo[]
 

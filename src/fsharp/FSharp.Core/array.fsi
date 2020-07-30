@@ -17,7 +17,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
         ///
         /// <returns>The resulting array of pairs.</returns>
         [<CompiledName("AllPairs")>]
@@ -30,7 +30,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The resulting array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
         [<CompiledName("Append")>]
         val append: array1:'T[] -> array2:'T[] -> 'T[]
 
@@ -38,8 +38,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The average of the elements in the array.</returns>
         [<CompiledName("Average")>]
@@ -54,11 +54,11 @@ namespace Microsoft.FSharp.Collections
         /// <param name="projection">The function to transform the array elements before averaging.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>array</c> is empty.</exception>
         ///
         /// <returns>The computed average.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("AverageBy")>]
         val inline averageBy   : projection:('T -> ^U) -> array:'T[] -> ^U   
                                     when ^U : (static member ( + ) : ^U * ^U -> ^U) 
@@ -73,8 +73,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="targetIndex">The starting index of the target array.</param>
         /// <param name="count">The number of elements to copy.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when any of sourceIndex, targetIndex or count are negative,
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when any of sourceIndex, targetIndex or count are negative,
         /// or when there aren't enough elements in source or target.</exception>
         [<CompiledName("CopyTo")>]
         val inline blit: source:'T[] -> sourceIndex:int -> target:'T[] -> targetIndex:int -> count:int -> unit
@@ -86,7 +86,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The concatenation of the sub-arrays.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Collect")>]
         val collect : mapping:('T -> 'U[]) -> array:'T[] -> 'U[]
 
@@ -103,7 +103,7 @@ namespace Microsoft.FSharp.Collections
         /// arrays, 1 is returned if the first array is longer, 0 is returned if they are equal in 
         /// length, and -1 is returned when the second array is longer.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays
         /// is null.</exception>
         [<CompiledName("CompareWith")>]
         val inline compareWith: comparer:('T -> 'T -> int) -> array1:'T[] -> array2:'T[] -> int
@@ -114,7 +114,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The concatenation of the sequence of input arrays.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Concat")>]
         val concat: arrays:seq<'T[]> -> 'T[]
         
@@ -125,7 +125,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if the input array contains the specified element; false otherwise.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Contains")>]
         val inline contains: value:'T -> array:'T[] -> bool when 'T : equality
 
@@ -135,7 +135,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>A copy of the input array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Copy")>]
         val copy: array:'T[] -> 'T[]
 
@@ -148,7 +148,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("CountBy")>]
         val countBy : projection:('T -> 'Key) -> array:'T[] -> ('Key * int)[] when 'Key : equality
 
@@ -159,7 +159,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The created array.</returns>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when count is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
         [<CompiledName("Create")>]
         val create: count:int -> value:'T -> 'T[]
 
@@ -168,7 +168,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The first element of the array or None.</returns>
         [<CompiledName("TryHead")>]
@@ -183,7 +183,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The first transformed element that is <c>Some(x)</c>.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("TryPick")>]
         val tryPick: chooser:('T -> 'U option) -> array:'T[] -> 'U option
 
@@ -194,20 +194,20 @@ namespace Microsoft.FSharp.Collections
         /// <param name="count">The number of elements to set.</param>
         /// <param name="value">The value to set.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when either targetIndex or count is negative.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when either targetIndex or count is negative.</exception>
         [<CompiledName("Fill")>]
         val fill: target:'T[] -> targetIndex:int -> count:int -> value:'T -> unit
 
         /// <summary>Applies the given function to successive elements, returning the first
         /// result where function returns <c>Some(x)</c> for some <c>x</c>. If the function 
-        /// never returns <c>Some(x)</c> then <c>KeyNotFoundException</c> is raised.</summary>
+        /// never returns <c>Some(x)</c> then <see cref="T:System.Collections.Generic.KeyNotFoundException"/> is raised.</summary>
         ///
         /// <param name="chooser">The function to generate options from the elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if every result from
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if every result from
         /// <c>chooser</c> is <c>None</c>.</exception>
         ///
         /// <returns>The first result.</returns>
@@ -223,7 +223,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array of results.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> array:'T[] -> 'U[]
 
@@ -234,8 +234,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array divided into chunks.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
         [<CompiledName("ChunkBySize")>]
         val chunkBySize: chunkSize:int -> array:'T[] -> 'T[][]
 
@@ -247,7 +247,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Distinct")>]
         val distinct: array:'T[] -> 'T[] when 'T : equality
 
@@ -260,7 +260,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("DistinctBy")>]
         val distinctBy: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : equality
 
@@ -271,8 +271,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array split into chunks.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
         [<CompiledName("SplitInto")>]
         val splitInto: count:int -> array:'T[] -> 'T[][]
 
@@ -288,8 +288,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The only element of the array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: array:'T[] -> 'T
 
@@ -299,7 +299,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The only element of the array or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("TryExactlyOne")>]
         val tryExactlyOne: array:'T[] -> 'T option
 
@@ -312,7 +312,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>An array that contains the distinct elements of <c>array</c> that do not appear in <c>itemsToExclude</c>.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either itemsToExclude or array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either itemsToExclude or array is null.</exception>
         [<CompiledName("Except")>]
         val except: itemsToExclude:seq<'T> -> array:'T[] -> 'T[] when 'T : equality
 
@@ -327,7 +327,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if any result from <c>predicate</c> is true.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Exists")>]
         val exists: predicate:('T -> bool) -> array:'T[] -> bool
 
@@ -345,8 +345,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if any result from <c>predicate</c> is true.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         [<CompiledName("Exists2")>]
         val exists2: predicate:('T1 -> 'T2 -> bool) -> array1:'T1[] -> array2:'T2[] -> bool
 
@@ -358,18 +358,18 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>An array containing the elements for which the given predicate returns true.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Filter")>]
         val filter: predicate:('T -> bool) -> array:'T[] -> 'T[]
 
         /// <summary>Returns the first element for which the given function returns 'true'.
-        /// Raise <c>KeyNotFoundException</c> if no such element exists.</summary>
+        /// Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if no such element exists.</summary>
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
         /// never returns true.</exception>
         ///
         /// <returns>The first element for which <c>predicate</c> returns true.</returns>
@@ -377,44 +377,44 @@ namespace Microsoft.FSharp.Collections
         val find: predicate:('T -> bool) -> array:'T[] -> 'T
 
         /// <summary>Returns the last element for which the given function returns 'true'.
-        /// Raise <c>KeyNotFoundException</c> if no such element exists.</summary>
+        /// Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if no such element exists.</summary>
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
         /// never returns true.</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The last element for which <c>predicate</c> returns true.</returns>
         [<CompiledName("FindBack")>]
         val findBack: predicate:('T -> bool) -> array:'T[] -> 'T
 
         /// <summary>Returns the index of the first element in the array
-        /// that satisfies the given predicate. Raise <c>KeyNotFoundException</c> if 
+        /// that satisfies the given predicate. Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if 
         /// none of the elements satisfy the predicate.</summary>
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
         /// never returns true.</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The index of the first element in the array that satisfies the given predicate.</returns>
         [<CompiledName("FindIndex")>]
         val findIndex: predicate:('T -> bool) -> array:'T[] -> int
 
         /// <summary>Returns the index of the last element in the array
-        /// that satisfies the given predicate. Raise <c>KeyNotFoundException</c> if
+        /// that satisfies the given predicate. Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if
         /// none of the elements satisfy the predicate.</summary>
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
         /// never returns true.</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The index of the last element in the array that satisfies the given predicate.</returns>
         [<CompiledName("FindIndexBack")>]
@@ -431,7 +431,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if all of the array elements satisfy the predicate.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("ForAll")>]
         val forall: predicate:('T -> bool) -> array:'T[] -> bool
 
@@ -448,8 +448,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         ///
         /// <returns>True if all of the array elements satisfy the predicate.</returns>
         [<CompiledName("ForAll2")>]
@@ -465,7 +465,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The final state.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Fold")>]
         val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array: 'T[] -> 'State
 
@@ -479,7 +479,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The state object after the folding function is applied to each element of the array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("FoldBack")>]
         val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State
 
@@ -494,8 +494,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         ///
         /// <returns>The final state.</returns>
         [<CompiledName("Fold2")>]
@@ -511,8 +511,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array2">The second input array.</param>
         /// <param name="state">The initial state.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         ///
         /// <returns>The final state.</returns>
         [<CompiledName("FoldBack2")>]
@@ -525,8 +525,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The value of the array at the given index.</returns>
         ///
-        /// <exception cref="System.NullReferenceException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
+        /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
         [<CompiledName("Get")>]
         val get: array:'T[] -> index:int -> 'T
 
@@ -536,8 +536,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The first element of the array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         [<CompiledName("Head")>]
         val head: array:'T[] -> 'T
 
@@ -550,7 +550,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("GroupBy")>]
         val groupBy : projection:('T -> 'Key) -> array:'T[] -> ('Key * 'T[])[]  when 'Key : equality
 
@@ -561,7 +561,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array of indexed elements.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Indexed")>]
         val indexed: array:'T[] -> (int * 'T)[]
 
@@ -572,7 +572,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The created array.</returns>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when count is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
         [<CompiledName("Initialize")>]
         val inline init: count:int -> initializer:(int -> 'T) -> 'T[]
 
@@ -582,7 +582,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The created array.</returns>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when count is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
         [<CompiledName("ZeroCreate")>]
         val zeroCreate: count:int -> 'T[]
          
@@ -592,7 +592,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if the array is empty.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("IsEmpty")>]
         val isEmpty: array:'T[] -> bool
 
@@ -601,7 +601,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="action">The function to apply.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Iterate")>]
         val inline iter: action:('T -> unit) -> array:'T[] -> unit
 
@@ -613,8 +613,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         [<CompiledName("Iterate2")>]
         val iter2: action:('T1 -> 'T2 -> unit) -> array1:'T1[] -> array2:'T2[] -> unit
 
@@ -624,7 +624,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="action">The function to apply to each index and element.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("IterateIndexed")>]
         val iteri: action:(int -> 'T -> unit) -> array:'T[] -> unit
 
@@ -636,8 +636,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         [<CompiledName("IterateIndexed2")>]
         val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> array1:'T1[] -> array2:'T2[] -> unit
 
@@ -647,8 +647,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The last element of the array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
         [<CompiledName("Last")>]
         val inline last: array:'T[] -> 'T
 
@@ -659,8 +659,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The value of the array at the given index.</returns>
         ///
-        /// <exception cref="System.NullReferenceException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
+        /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
         [<CompiledName("Item")>]
         val item: index:int -> array:'T[] -> 'T
 
@@ -670,7 +670,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The length of the array.</returns>
         ///
-        /// <exception cref="System.NullReferenceException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
         [<CompiledName("Length")>]
         val length: array:'T[] -> int
         
@@ -681,7 +681,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The last element of the array or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception> 
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception> 
         [<CompiledName("TryLast")>]
         val tryLast: array:'T[] -> 'T option
 
@@ -693,7 +693,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array of transformed elements.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Map")>]
         val inline map: mapping:('T -> 'U) -> array:'T[] -> 'U[]
 
@@ -706,8 +706,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
         ///
         /// <returns>The array of transformed elements.</returns>
         [<CompiledName("Map2")>]
@@ -720,7 +720,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="state">The initial state.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The array of transformed elements, and the final accumulated value.</returns>
         [<CompiledName("MapFold")>]
@@ -733,7 +733,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// <param name="state">The initial state.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The array of transformed elements, and the final accumulated value.</returns>
         [<CompiledName("MapFoldBack")>]
@@ -749,8 +749,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array2">The second input array.</param>
         /// <param name="array3">The third input array.</param>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when any of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input arrays is null.</exception>
         ///
         /// <returns>The array of transformed elements.</returns>
         [<CompiledName("Map3")>]
@@ -765,8 +765,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         ///
         /// <returns>The array of transformed elements.</returns>
         [<CompiledName("MapIndexed2")>]
@@ -781,7 +781,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array of transformed elements.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("MapIndexed")>]
         val mapi: mapping:(int -> 'T -> 'U) -> array:'T[] -> 'U[]
 
@@ -791,8 +791,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The maximum element.</returns>
         [<CompiledName("Max")>]
@@ -805,8 +805,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The maximum element.</returns>
         [<CompiledName("MaxBy")>]
@@ -818,8 +818,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The minimum element.</returns>
         [<CompiledName("Min")>]
@@ -832,8 +832,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="projection">The function to transform the elements into a type supporting comparison.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The minimum element.</returns>
         [<CompiledName("MinBy")>]
@@ -853,7 +853,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array of elements from the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("OfSeq")>]
         val ofSeq: source:seq<'T> -> 'T[]
 
@@ -864,7 +864,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Pairwise")>]
         val pairwise: array:'T[] -> ('T * 'T)[]
 
@@ -878,7 +878,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>A pair of arrays. The first containing the elements the predicate evaluated to true,
         /// and the second containing those evaluated to false.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Partition")>]
         val partition: predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
 
@@ -890,8 +890,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The output array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
         [<CompiledName("Permute")>]
         val permute : indexMap:(int -> int) -> array:'T[] -> 'T[]
 
@@ -903,8 +903,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="reduction">The function to reduce a pair of elements to a single element.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The final result of the reductions.</returns>
         [<CompiledName("Reduce")>]
@@ -918,8 +918,8 @@ namespace Microsoft.FSharp.Collections
         /// current accumulated result to produce the next accumulated result.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
         ///
         /// <returns>The final result of the reductions.</returns>
         [<CompiledName("ReduceBack")>]
@@ -932,7 +932,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The generated array.</returns>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when count is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
         [<CompiledName("Replicate")>]
         val replicate: count:int -> initial:'T -> 'T[]
 
@@ -942,7 +942,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The reversed array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Reverse")>]
         val rev: array:'T[] -> 'T[]
 
@@ -954,7 +954,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array of state values.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Scan")>]
         val scan<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array:'T[] -> 'State[]
 
@@ -966,7 +966,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The array of state values.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("ScanBack")>]
         val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State[]
 
@@ -984,8 +984,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="index">The input index.</param>
         /// <param name="value">The input value.</param>
         ///
-        /// <exception cref="System.NullReferenceException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
+        /// <exception cref="T:System.NullReferenceException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
         [<CompiledName("Set")>]
         val set: array:'T[] -> index:int -> value:'T -> unit
 
@@ -996,8 +996,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>A copy of the input array, after removing the first N elements.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentExcepion">Thrown when count is negative or exceeds the number of 
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentExcepion">Thrown when count is negative or exceeds the number of 
         /// elements in the array.</exception>
         [<CompiledName("Skip")>]
         val skip: count:int -> array:'T[] -> 'T[]
@@ -1010,7 +1010,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The created sub array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("SkipWhile")>]
         val skipWhile: predicate:('T -> bool) -> array:'T[] -> 'T[]
 
@@ -1023,8 +1023,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The created sub array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when either startIndex or count is negative,
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when either startIndex or count is negative,
         /// or when there aren't enough elements in the input array.</exception>
         [<CompiledName("GetSubArray")>]
         val sub: array:'T[] -> startIndex:int -> count:int -> 'T[]
@@ -1038,7 +1038,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The sorted array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Sort")>]
         val sort: array:'T[] -> 'T[] when 'T : comparison 
 
@@ -1053,7 +1053,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The sorted array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("SortBy")>]
         val sortBy: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison 
 
@@ -1067,7 +1067,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The sorted array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("SortWith")>]
         val sortWith: comparer:('T -> 'T -> int) -> array:'T[] -> 'T[]
 
@@ -1080,7 +1080,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="projection">The function to transform array elements into the type that is compared.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("SortInPlaceBy")>]
         val sortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
 
@@ -1091,7 +1091,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="comparer">The function to compare pairs of array elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("SortInPlaceWith")>]
         val sortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
 
@@ -1100,7 +1100,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("SortInPlace")>]
         val sortInPlace: array:'T[] -> unit when 'T : comparison 
 
@@ -1111,8 +1111,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The two split arrays.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when split index exceeds the number of elements
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.InvalidOperationException">Thrown when split index exceeds the number of elements
         /// in the array.</exception>
         [<CompiledName("SplitAt")>]
         val splitAt: index:int -> array:'T[] -> ('T[] * 'T[])
@@ -1147,7 +1147,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The resulting sum.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Sum")>]
         val inline sum   : array: ^T[] -> ^T 
                                 when ^T : (static member ( + ) : ^T * ^T -> ^T) 
@@ -1161,7 +1161,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The resulting sum.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("SumBy")>]
         val inline sumBy   : projection:('T -> ^U) -> array:'T[] -> ^U 
                                   when ^U : (static member ( + ) : ^U * ^U -> ^U) 
@@ -1177,9 +1177,9 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when count exceeds the number of elements
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="T:System.InvalidOperationException">Thrown when count exceeds the number of elements
         /// in the list.</exception>
         [<CompiledName("Take")>]
         val take: count:int -> array:'T[] -> 'T[]
@@ -1192,7 +1192,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("TakeWhile")>]
         val takeWhile: predicate:('T -> bool) -> array:'T[] -> 'T[]
 
@@ -1200,8 +1200,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when the array is empty.</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the array is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>A new array containing the elements of the original except the first element.</returns>
         [<CompiledName("Tail")>]
@@ -1213,7 +1213,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The list of array elements.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("ToList")>]
         val toList: array:'T[] -> 'T list
 
@@ -1223,7 +1223,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The sequence of array elements.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("ToSeq")>]
         val toSeq: array:'T[] -> seq<'T>
 
@@ -1233,8 +1233,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The transposed array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         [<CompiledName("Transpose")>]
         val transpose: arrays:seq<'T[]> -> 'T[][]
 
@@ -1245,7 +1245,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Truncate")>]
         val truncate: count:int -> array:'T[] -> 'T[]
 
@@ -1257,7 +1257,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The first element that satisfies the predicate, or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("TryFind")>]
         val tryFind: predicate:('T -> bool) -> array:'T[] -> 'T option
 
@@ -1267,7 +1267,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The last element that satisfies the predicate, or None.</returns>
         [<CompiledName("TryFindBack")>]
@@ -1279,7 +1279,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The index of the first element that satisfies the predicate, or None.</returns>
         [<CompiledName("TryFindIndex")>]
@@ -1293,7 +1293,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The nth element of the array or <c>None</c>.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("TryItem")>]
         val tryItem: index:int -> array:'T[] -> 'T option
 
@@ -1303,7 +1303,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <returns>The index of the last element that satisfies the predicate, or None.</returns>
         [<CompiledName("TryFindIndexBack")>]
@@ -1326,7 +1326,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The two arrays.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Unzip")>]
         val unzip: array:('T1 * 'T2)[] -> ('T1[] * 'T2[])
 
@@ -1336,7 +1336,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The tuple of three arrays.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Unzip3")>]
         val unzip3: array:('T1 * 'T2 * 'T3)[] -> ('T1[] * 'T2[] * 'T3[])
 
@@ -1348,7 +1348,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>An array containing the elements for which the given predicate returns true.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Where")>]
         val where: predicate:('T -> bool) -> array:'T[] -> 'T[]
 
@@ -1360,8 +1360,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when windowSize is not positive.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when windowSize is not positive.</exception>
         [<CompiledName("Windowed")>]
         val windowed : windowSize:int -> array:'T[] -> 'T[][]
 
@@ -1371,8 +1371,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         ///
         /// <returns>The array of tupled elements.</returns>
         [<CompiledName("Zip")>]
@@ -1385,8 +1385,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array2">The second input array.</param>
         /// <param name="array3">The third input array.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when any of the input arrays are null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input arrays are null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
         ///
         /// <returns>The array of tupled elements.</returns>
         [<CompiledName("Zip3")>]
@@ -1407,7 +1407,7 @@ namespace Microsoft.FSharp.Collections
             ///
             /// <returns>'U[]</returns>
             ///
-            /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+            /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Choose")>]
             val choose: chooser:('T -> 'U option) -> array:'T[] -> 'U[]
 
@@ -1421,7 +1421,7 @@ namespace Microsoft.FSharp.Collections
             ///
             /// <returns>'U[]</returns>
             ///
-            /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+            /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Collect")>]
             val collect : mapping:('T -> 'U[]) -> array:'T[] -> 'U[]
             
@@ -1436,7 +1436,7 @@ namespace Microsoft.FSharp.Collections
             ///
             /// <returns>'U[]</returns>
             ///
-            /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+            /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Map")>]
             val map : mapping:('T -> 'U) -> array:'T[] -> 'U[]
             
@@ -1452,7 +1452,7 @@ namespace Microsoft.FSharp.Collections
             ///
             /// <returns>'U[]</returns>
             ///
-            /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+            /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("MapIndexed")>]
             val mapi: mapping:(int -> 'T -> 'U) -> array:'T[] -> 'U[]
 
@@ -1464,7 +1464,7 @@ namespace Microsoft.FSharp.Collections
             /// <param name="action"></param>
             /// <param name="array">The input array.</param>
             ///
-            /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+            /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Iterate")>]
             val iter : action:('T -> unit) -> array:'T[] -> unit
 
@@ -1477,7 +1477,7 @@ namespace Microsoft.FSharp.Collections
             /// <param name="action"></param>
             /// <param name="array">The input array.</param>
             ///
-            /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+            /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("IterateIndexed")>]
             val iteri: action:(int -> 'T -> unit) -> array:'T[] -> unit
             
@@ -1505,6 +1505,6 @@ namespace Microsoft.FSharp.Collections
             ///
             /// <returns>'T[] * 'T[]</returns>
             ///
-            /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+            /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Partition")>]
             val partition : predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]

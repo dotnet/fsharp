@@ -55,7 +55,7 @@ namespace Microsoft.FSharp.Collections
         /// exists in the map.</summary>
         ///
         /// <param name="key">The input key.</param>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown when the key is not found.</exception>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown when the key is not found.</exception>
         ///
         /// <returns>The value mapped to the key.</returns>
         member Item : key:'Key -> 'Value with get
@@ -188,7 +188,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="key">The input key.</param>
         /// <param name="table">The input map.</param>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown when the key does not exist in the map.</exception>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown when the key does not exist in the map.</exception>
         ///
         /// <returns>The value mapped to the given key.</returns>
         [<CompiledName("Find")>]
@@ -323,7 +323,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="table">The input map.</param>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if the key does not exist in the map.</exception>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if the key does not exist in the map.</exception>
         ///
         /// <returns>The first key for which the predicate evaluates true.</returns>
         [<CompiledName("FindKey")>]

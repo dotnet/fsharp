@@ -46,7 +46,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <param name="computation">The computation to run.</param>
         /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
-        /// computation before raising a <see cref="System.TimeoutException"/>.  If no value is provided
+        /// computation before raising a <see cref="T:System.TimeoutException"/>.  If no value is provided
         /// for timeout then a default of -1 is used to correspond to System.Threading.Timeout.Infinite.
         /// If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
@@ -68,12 +68,12 @@ namespace Microsoft.FSharp.Control
         ///
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
         ///
-        /// <returns>A <see cref="System.Threading.Tasks.Task"/> that will be completed
+        /// <returns>A <see cref="T:System.Threading.Tasks.Task`1"/> that will be completed
         /// in the corresponding state once the computation terminates (produces the result, throws exception or gets canceled)</returns>
         ///        
         static member StartAsTask : computation:Async<'T> * ?taskCreationOptions:TaskCreationOptions * ?cancellationToken:CancellationToken -> Task<'T>
 
-        /// <summary>Creates an asynchronous computation which starts the given computation as a <see cref="System.Threading.Tasks.Task"/></summary>
+        /// <summary>Creates an asynchronous computation which starts the given computation as a <see cref="T:System.Threading.Tasks.Task`1"/></summary>
         static member StartChildAsTask : computation:Async<'T> * ?taskCreationOptions:TaskCreationOptions -> Async<Task<'T>>
 
         /// <summary>Creates an asynchronous computation that executes <c>computation</c>.
@@ -318,7 +318,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <returns>An asynchronous computation that will sleep for the given time.</returns>
         ///
-        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when the due time is negative
+        /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the due time is negative
         /// and not infinite.</exception>
         static member Sleep: millisecondsDueTime:int -> Async<unit>
 
@@ -330,7 +330,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <returns>An asynchronous computation that will sleep for the given time.</returns>
         ///
-        /// <exception cref="System.ArgumentOutOfRangeException">Thrown when the due time is negative.</exception>
+        /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the due time is negative.</exception>
         static member Sleep: dueTime:TimeSpan -> Async<unit>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
@@ -510,7 +510,7 @@ namespace Microsoft.FSharp.Control
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
-        /// thread, but also returns the execution as <see cref="System.Threading.Tasks.Task"/>
+        /// thread, but also returns the execution as <see cref="T:System.Threading.Tasks.Task`1"/>
         /// </summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.
         /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 
@@ -521,7 +521,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="cancellationToken">The <c>CancellationToken</c> to associate with the computation.
         /// The default is used if this parameter is not provided.</param>
         ///
-        /// <returns>A <see cref="System.Threading.Tasks.Task"/> that will be completed
+        /// <returns>A <see cref="T:System.Threading.Tasks.Task"/> that will be completed
         /// in the corresponding state once the computation terminates (produces the result, throws exception or gets canceled)</returns>
         static member StartImmediateAsTask: 
             computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
@@ -806,9 +806,9 @@ namespace Microsoft.FSharp.Control
             /// <param name="count">An optional number of bytes to read from the stream.</param>
             ///
             /// <returns>An asynchronous computation that will read from the stream into the given buffer.</returns>
-            /// <exception cref="System.ArgumentException">Thrown when the sum of offset and count is longer than
+            /// <exception cref="T:System.ArgumentException">Thrown when the sum of offset and count is longer than
             /// the buffer length.</exception>
-            /// <exception cref="System.ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
+            /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
             [<CompiledName("AsyncRead")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncRead : buffer:byte[] * ?offset:int * ?count:int -> Async<int>
             
@@ -827,9 +827,9 @@ namespace Microsoft.FSharp.Control
             /// <param name="count">An optional number of bytes to write to the stream.</param>
             ///
             /// <returns>An asynchronous computation that will write the given bytes to the stream.</returns>
-            /// <exception cref="System.ArgumentException">Thrown when the sum of offset and count is longer than
+            /// <exception cref="T:System.ArgumentException">Thrown when the sum of offset and count is longer than
             /// the buffer length.</exception>
-            /// <exception cref="System.ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
+            /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
             [<CompiledName("AsyncWrite")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncWrite : buffer:byte[] * ?offset:int * ?count:int -> Async<unit>
 

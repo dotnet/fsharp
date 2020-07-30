@@ -23,7 +23,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>A new string consisting of the concatenated strings separated by
         /// the separation string.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when <c>strings</c> is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when <c>strings</c> is null.</exception>
         [<CompiledName("Concat")>]
         val concat: sep:string -> strings: seq<string> -> string
 
@@ -94,7 +94,7 @@ namespace Microsoft.FSharp.Core
         /// be concatenated with the others.</param>
         ///
         /// <returns>The constructed string.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
         [<CompiledName("Initialize")>]
         val init: count:int -> initializer:(int -> string) -> string
 
@@ -122,7 +122,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="str">The input string.</param>
         ///
         /// <returns>The concatenated string.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
         [<CompiledName("Replicate")>]
         val replicate: count:int -> str: string -> string
 
