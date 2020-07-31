@@ -131,8 +131,8 @@ module internal Utilities =
                     let dotnetApp =
                         let platform = Environment.OSVersion.Platform
                         if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
-                    let assemblyLocation = typeof<Int32>.GetTypeInfo().Assembly.Location
-                    Path.Combine(assemblyLocation, "../../..", dotnetApp)
+                    let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+                    Path.GetFullPath(Path.Combine(assemblyLocation, "../../..", dotnetApp))
 
                 if File.Exists(dotnetLocation) then
                     Some dotnetLocation

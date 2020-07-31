@@ -95,13 +95,4 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
     </ItemGroup>
   </Target>
-
-  <Target Name="CollectFSharpDesignTimeTools" BeforeTargets="BeforeCompile" DependsOnTargets="_GetFrameworkAssemblyReferences">
-    <ItemGroup>
-      <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' == '' "/>
-      <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)%(PackageReference.Extension)').Replace('.','_'))" Condition = " '%(PackageReference.IsFSharpDesignTimeProvider)' == 'true' and '%(PackageReference.Extension)' != '' "/>
-      <FscCompilerTools Include = "$(%(PropertyNames.Identity))" />
-    </ItemGroup>
-  </Target>
-
 </Project>

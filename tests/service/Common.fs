@@ -96,6 +96,7 @@ let mkStandardProjectReferences () =
             [ yield sysLib "mscorlib"
               yield sysLib "System"
               yield sysLib "System.Core"
+              yield sysLib "System.Numerics"
               yield fsCoreDefaultReference() ]
 #endif              
 

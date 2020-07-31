@@ -8,6 +8,7 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.Operators.Checked
     open Microsoft.FSharp.Collections
+    open Microsoft.FSharp.Primitives.Basics
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
@@ -22,7 +23,25 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Concat")>]
         let concat sep (strings : seq<string>) =  
-            String.Join(sep, strings)
+
+            let concatArray sep (strings: string []) =
+                match length sep with
+                | 0 -> String.Concat strings
+                // following line should be used when this overload becomes part of .NET Standard (it's only in .NET Core)
+                //| 1 -> String.Join(sep.[0], strings, 0, strings.Length)
+                | _ -> String.Join(sep, strings, 0, strings.Length)
+
+            match strings with
+            | :? array<string> as arr -> 
+                concatArray sep arr
+
+            | :? list<string> as lst -> 
+                lst 
+                |> List.toArray 
+                |> concatArray sep
+
+            | _ ->
+                String.Join(sep, strings)
 
         [<CompiledName("Iterate")>]
         let iter (action : (char -> unit)) (str:string) =
@@ -52,13 +71,19 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("MapIndexed")>]
         let mapi (mapping: int -> char -> char) (str:string) =
-            if String.IsNullOrEmpty str then
+            let len = length str
+            if len = 0 then 
                 String.Empty
             else
-                let res = StringBuilder str.Length
+                let result = str.ToCharArray()
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
-                str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore)
-                res.ToString()
+
+                let mutable i = 0
+                while i < len do
+                    result.[i] <- f.Invoke(i, result.[i])
+                    i <- i + 1
+
+                new String(result)
 
         [<CompiledName("Filter")>]
         let filter (predicate: char -> bool) (str:string) =

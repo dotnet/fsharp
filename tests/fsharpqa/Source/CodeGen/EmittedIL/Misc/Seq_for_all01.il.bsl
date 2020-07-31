@@ -69,28 +69,33 @@
     .method public strict virtual instance bool 
             Invoke(int32 s) cil managed
     {
-      // Code size       14 (0xe)
+      // Code size       18 (0x12)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 5,5 : 31,47 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
       IL_0000:  ldc.i4.1
-      IL_0001:  brtrue.s   IL_0005
+      IL_0001:  ldc.i4.0
+      IL_0002:  ceq
+      .line 100001,100001 : 0,0 ''
+      IL_0004:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0005:  brfalse.s  IL_0009
 
-      IL_0003:  br.s       IL_0007
+      IL_0007:  br.s       IL_000b
 
-      IL_0005:  br.s       IL_000b
+      IL_0009:  br.s       IL_000f
 
       .line 5,5 : 48,50 ''
-      IL_0007:  nop
+      IL_000b:  nop
       .line 100001,100001 : 0,0 ''
-      IL_0008:  nop
-      IL_0009:  br.s       IL_000c
+      IL_000c:  nop
+      IL_000d:  br.s       IL_0010
 
       .line 100001,100001 : 0,0 ''
-      IL_000b:  nop
+      IL_000f:  nop
       .line 6,6 : 31,35 ''
-      IL_000c:  ldc.i4.1
-      IL_000d:  ret
+      IL_0010:  ldc.i4.1
+      IL_0011:  ret
     } // end of method q@4::Invoke
 
   } // end of class q@4

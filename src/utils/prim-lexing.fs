@@ -52,7 +52,12 @@ type StringText(str: string) =
     member __.String = str
 
     override __.GetHashCode() = str.GetHashCode()
-    override __.Equals(obj: obj) = str.Equals(obj)
+    override __.Equals(obj: obj) = 
+        match obj with
+        | :? StringText as other -> other.String.Equals(str)
+        | :? string as other -> other.Equals(str)
+        | _ -> false        
+    override __.ToString() = str
 
     interface ISourceText with
 
