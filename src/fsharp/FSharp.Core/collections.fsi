@@ -20,6 +20,7 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Compare using the given comparer function.</summary>
         /// <param name="comparer">A function to compare two values.</param>
+        ///
         /// <returns>An object implementing IComparer using the supplied comparer.</returns>
         val FromFunction : comparer:('T -> 'T -> int) -> IComparer<'T>  
         
@@ -42,8 +43,10 @@ namespace Microsoft.FSharp.Collections
         val Reference<'T>   : IEqualityComparer<'T>  when 'T : not struct 
         
         /// <summary>Hash using the given hashing and equality functions.</summary>
+        ///
         /// <param name="hasher">A function to generate a hash code from a value.</param>
         /// <param name="equality">A function to test equality of two values.</param>
+        ///
         /// <returns>An object implementing IEqualityComparer using the supplied functions.</returns>
 
         // inline justification: allows inlining of hash functions 
