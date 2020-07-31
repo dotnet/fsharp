@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Language.CodeQuatation
+namespace FSharp.Compiler.ComponentTests.Language
 
 open Xunit
 open FSharp.Test.Utilities.Compiler
