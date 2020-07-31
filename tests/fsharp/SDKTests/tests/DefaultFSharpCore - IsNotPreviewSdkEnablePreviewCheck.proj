@@ -1,6 +1,6 @@
 <Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Verifies that in an RTM sdk with the previewcheck disabled it selects the already shipped fsharp.core package -->
+  <!-- Verifies that in an RTM sdk with the previewcheck enabled it selects the already shipped fsharp.core package -->
 
   <PropertyGroup>
     <_NETCoreSdkIsPreview>false</_NETCoreSdkIsPreview>

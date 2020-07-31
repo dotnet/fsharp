@@ -80,25 +80,25 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FSCorePackageVersion>{{FSCorePackageVersion}}</FSCorePackageVersion>
   </PropertyGroup>
 
-      <ItemGroup>
+  <ItemGroup>
 
-        <PackageReference
-            Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"
-            Condition = "'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' != ''"/>
+    <PackageReference
+        Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"
+        Condition = "'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' != ''"/>
 
-        <PackageReference
-            Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersion)"
-            Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' == 'true'"/>
+    <PackageReference
+        Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersion)"
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' == 'true'"/>
 
-        <PackageReference
-            Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)"
-            Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' != 'true'"/>
+    <PackageReference
+        Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)"
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' != 'true'"/>
 
-        <PackageReference
-            Include="FSharp.Core" Version="$(FSCorePackageVersion)"
-            Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' != 'true'"/>
+    <PackageReference
+        Include="FSharp.Core" Version="$(FSCorePackageVersion)"
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' != 'true'"/>
 
-      </ItemGroup>
+  </ItemGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
                         and ('$(TargetFrameworkIdentifier)' == '.NETFramework'
