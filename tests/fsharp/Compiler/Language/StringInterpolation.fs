@@ -683,8 +683,17 @@ let xd = $"%A{}" // empty expression
 """
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [|(FSharpErrorSeverity.Error, 10, (2, 15, 2, 17),
-               "Unexpected interpolated string (final part) in binding")
+            [|(FSharpErrorSeverity.Error, 3382, (2, 15, 2, 15),
+               "Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.")
+            |]
+
+        let code = """
+let xd = $"%A{  }" // empty expression
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 3382, (2, 15, 2, 17),
+               "Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.")
             |]
 
     [<Test>]
