@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
+    <FSharpImplicitFSharpCorePackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpImplicitFSharpCorePackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
