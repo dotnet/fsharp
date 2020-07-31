@@ -362,6 +362,82 @@ let main argv = 0"""
             disposals
             |> Seq.iter (fun x -> x.Dispose())
 
+    // NOTE: This function will not clean up all the compiled projects after itself.
+    // The reason behind is so we can compose verification of test runs easier.
+    // TODO: We must not rely on the filesystem when compiling
+    static let rec returnCompilation (cmpl: Compilation) =
+        let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
+        Directory.CreateDirectory(compileDirectory) |> ignore
+        compileCompilationAux compileDirectory (ResizeArray()) false cmpl
+
+    static let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
+        let out = Console.Out
+        let err = Console.Error
+
+        let stdout = StringBuilder ()
+        let stderr = StringBuilder ()
+
+        let outWriter = new StringWriter (stdout)
+        let errWriter = new StringWriter (stderr)
+
+        let mutable exitCode = 0
+
+        try
+            try
+                Console.SetOut(outWriter)
+                Console.SetError(errWriter)
+                (executeBuiltApp outputFilePath deps) |> ignore
+            with e ->
+                let errorMessage = if e.InnerException <> null then (e.InnerException.ToString()) else (e.ToString())
+                stderr.Append (errorMessage) |> ignore
+                exitCode <- -1
+        finally
+            Console.SetOut(out)
+            Console.SetError(err)
+            outWriter.Close()
+            errWriter.Close()
+
+        (exitCode, stdout.ToString(), stderr.ToString())
+
+    static let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
+        let mutable pinfo = ProcessStartInfo()
+        pinfo.RedirectStandardError <- true
+        pinfo.RedirectStandardOutput <- true
+#if !NETCOREAPP
+        pinfo.FileName <- outputFilePath
+#else
+        pinfo.FileName <- "dotnet"
+        pinfo.Arguments <- outputFilePath
+
+        let runtimeconfig = """
+{
+    "runtimeOptions": {
+        "tfm": "netcoreapp3.1",
+        "framework": {
+            "name": "Microsoft.NETCore.App",
+            "version": "3.1.0"
+        }
+    }
+}"""
+        let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
+        File.WriteAllText(runtimeconfigPath, runtimeconfig)
+        use _disposal =
+            { new IDisposable with
+              member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
+#endif
+        pinfo.UseShellExecute <- false
+        let p = Process.Start pinfo
+
+        let output = p.StandardOutput.ReadToEnd()
+        let errors = p.StandardError.ReadToEnd()
+
+        let exited = p.WaitForExit(120000)
+
+        let exitCode = if not exited then -2 else p.ExitCode
+
+        (exitCode, output, errors)
+
+
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
         lock gate (fun () ->
@@ -370,6 +446,16 @@ let main argv = 0"""
 
     static member Compile(cmpl: Compilation, ?ignoreWarnings) =
         CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
+
+    static member CompileRaw(cmpl: Compilation) =
+        lock gate (fun () -> returnCompilation cmpl)
+
+    static member ExecuteAndReturnResult (outputFilePath: string, deps: string list, newProcess: bool) =
+        // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
+       if not newProcess then
+           executeBuiltAppAndReturnResult outputFilePath deps
+       else
+           executeBuiltAppNewProcessAndReturnResult outputFilePath
 
     static member Execute(cmpl: Compilation, ?ignoreWarnings, ?beforeExecute, ?newProcess, ?onOutput) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -381,40 +467,8 @@ let main argv = 0"""
                 assertErrors 0 ignoreWarnings errors [||]
                 beforeExecute outputFilePath deps
                 if newProcess then
-                    let mutable pinfo = ProcessStartInfo()
-                    pinfo.RedirectStandardError <- true
-                    pinfo.RedirectStandardOutput <- true
-#if !NETCOREAPP
-                    pinfo.FileName <- outputFilePath
-#else
-                    pinfo.FileName <- "dotnet"
-                    pinfo.Arguments <- outputFilePath
-
-                    let runtimeconfig =
-                        """
-{
-    "runtimeOptions": {
-        "tfm": "netcoreapp3.1",
-        "framework": {
-            "name": "Microsoft.NETCore.App",
-            "version": "3.1.0"
-        }
-    }
-}
-                        """
-
-                    let runtimeconfigPath = Path.ChangeExtension(outputFilePath, ".runtimeconfig.json")
-                    File.WriteAllText(runtimeconfigPath, runtimeconfig)
-                    use _disposal =
-                        { new IDisposable with
-                            member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
-#endif
-                    pinfo.UseShellExecute <- false
-                    let p = Process.Start pinfo
-                    let errors = p.StandardError.ReadToEnd()
-                    let output = p.StandardOutput.ReadToEnd()
-                    Assert.True(p.WaitForExit(120000))
-                    if p.ExitCode <> 0 then
+                    let (exitCode, output, errors) = executeBuiltAppNewProcessAndReturnResult outputFilePath
+                    if exitCode <> 0 then
                         Assert.Fail errors
                     onOutput output
                 else
@@ -481,6 +535,27 @@ let main argv = 0"""
 
             Assert.AreEqual(errorsExpectedBaseLine.Replace("\r\n","\n"), errorsActual.Replace("\r\n","\n"))
 
+    static member TypeCheckWithOptions options (source: string) =
+        lock gate <| fun () ->
+            let errors =
+                let parseResults, fileAnswer =
+                    checker.ParseAndCheckFileInProject(
+                        "test.fs",
+                        0,
+                        SourceText.ofString source,
+                        { defaultProjectOptions with OtherOptions = Array.append options defaultProjectOptions.OtherOptions})
+                    |> Async.RunSynchronously
+
+                if parseResults.Errors.Length > 0 then
+                    parseResults.Errors
+                else
+
+                    match fileAnswer with
+                    | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                    | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Errors
+
+            errors
+
     static member TypeCheckWithErrorsAndOptionsAndAdjust options libAdjust (source: string) expectedTypeErrors =
         lock gate <| fun () ->
             let errors =
@@ -501,6 +576,7 @@ let main argv = 0"""
                     | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Errors
 
             assertErrors libAdjust false errors expectedTypeErrors
+
 
     static member TypeCheckWithErrorsAndOptions options (source: string) expectedTypeErrors =
         CompilerAssert.TypeCheckWithErrorsAndOptionsAndAdjust options 0 (source: string) expectedTypeErrors
@@ -587,10 +663,13 @@ let main argv = 0"""
     static member RunScript source expectedErrorMessages =
         CompilerAssert.RunScriptWithOptions [||] source expectedErrorMessages
 
-    static member ParseWithErrors (source: string) expectedParseErrors =
+    static member Parse (source: string) =
         let sourceFileName = "test.fs"
         let parsingOptions = { FSharpParsingOptions.Default with SourceFiles = [| sourceFileName |] }
-        let parseResults = checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunSynchronously
+        checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunSynchronously
+
+    static member ParseWithErrors (source: string) expectedParseErrors =
+        let parseResults = CompilerAssert.Parse source
 
         Assert.True(parseResults.ParseHadErrors)
 

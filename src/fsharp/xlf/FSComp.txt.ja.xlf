@@ -237,6 +237,16 @@
         <target state="translated">use! を and! と組み合わせて使用することはできません</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentNoArg">
+        <source>Cannot assign a value to another value marked literal</source>
+        <target state="new">Cannot assign a value to another value marked literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentWithArg">
+        <source>Cannot assign '{0}' to a value marked literal</source>
+        <target state="new">Cannot assign '{0}' to a value marked literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">'let! ... and! ...' コンストラクトは、コンピュテーション式ビルダーが '{0}' メソッドまたは適切な 'MergeSource' および 'Bind' メソッドのいずれかを定義している場合にのみ使用できます</target>
@@ -3738,8 +3748,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyRecordFieldsAndSimpleLetCanBeMutable">
-        <source>Only record fields and simple, non-recursive 'let' bindings may be marked mutable</source>
-        <target state="translated">'mutable' とマークできるのはレコード フィールドと単純で非再帰的な 'let' バインディングのみです</target>
+        <source>Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</source>
+        <target state="new">Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberIsNotSufficientlyGeneric">

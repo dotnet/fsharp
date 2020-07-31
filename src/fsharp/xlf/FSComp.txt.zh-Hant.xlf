@@ -237,6 +237,16 @@
         <target state="translated">use! 不可與 and! 合併</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentNoArg">
+        <source>Cannot assign a value to another value marked literal</source>
+        <target state="new">Cannot assign a value to another value marked literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentWithArg">
+        <source>Cannot assign '{0}' to a value marked literal</source>
+        <target state="new">Cannot assign '{0}' to a value marked literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">只有在計算運算式產生器定義 '{0}' 方法或正確的 'MergeSource' 和 'Bind' 方法時，才可使用 'let! ... and! ...' 建構</target>
@@ -3738,8 +3748,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyRecordFieldsAndSimpleLetCanBeMutable">
-        <source>Only record fields and simple, non-recursive 'let' bindings may be marked mutable</source>
-        <target state="translated">只有記錄欄位及簡單的非遞迴 'let' 繫結可以標記為可變動</target>
+        <source>Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</source>
+        <target state="new">Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberIsNotSufficientlyGeneric">

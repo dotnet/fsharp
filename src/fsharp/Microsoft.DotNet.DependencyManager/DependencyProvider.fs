@@ -359,11 +359,6 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             reportError.Invoke(ErrorReportType.Error, err, msg)
             null, Unchecked.defaultof<IDependencyManagerProvider>
 
-    /// Remove the dependency mager with the specified key
-    member _.RemoveDependencyManagerKey(packageManagerKey:string, path:string): string =
-
-        path.Substring(packageManagerKey.Length + 1).Trim()
-
     /// Fetch a dependencymanager that supports a specific key
     member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
 
