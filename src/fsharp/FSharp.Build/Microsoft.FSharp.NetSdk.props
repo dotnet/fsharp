@@ -74,11 +74,31 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <DefaultValueTuplePackageVersion>4.4.0</DefaultValueTuplePackageVersion>
-    <DefaultFSharpCorePackageVersion>{{FSharpCoreShippedPackageVersion}}</DefaultFSharpCorePackageVersion>
-    <DefaultFSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersion}}</DefaultFSharpCorePreviewPackageVersion>
     <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
-    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreShippedPackageVersion>{{FSharpCoreShippedPackageVersion}}</FSharpCoreShippedPackageVersion>
+    <FSharpCorePreviewPackageVersion>{{FSharpCorePreviewPackageVersion}}</FSharpCorePreviewPackageVersion>
+    <FSCorePackageVersion>{{FSCorePackageVersion}}</FSCorePackageVersion>
   </PropertyGroup>
+
+      <ItemGroup>
+
+        <PackageReference
+            Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"
+            Condition = "'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' != ''"/>
+
+        <PackageReference
+            Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersion)"
+            Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' == 'true'"/>
+
+        <PackageReference
+            Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)"
+            Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' != 'true'"/>
+
+        <PackageReference
+            Include="FSharp.Core" Version="$(FSCorePackageVersion)"
+            Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' != 'true'"/>
+
+      </ItemGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
                         and ('$(TargetFrameworkIdentifier)' == '.NETFramework'
@@ -92,10 +112,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
                                      '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
                                      '$(_TargetFrameworkVersionWithoutV)' == '4.7')) ">
     <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(DisableImplicitFSharpCoreReference)' != 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" />
   </ItemGroup>
 
   <ItemDefinitionGroup>
