@@ -252,7 +252,7 @@ namespace Microsoft.FSharp.Core
         let RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
 
         [<Literal>]
-        val NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
+        let NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
 
     [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
