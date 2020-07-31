@@ -7,7 +7,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
 
-    /// <summary>Basic operations on lists.</summary>
+    /// <summary>Basic operations for values of type <see cref="T:Microsoft.FSharp.Collections.list`1"/>.</summary>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module List = 

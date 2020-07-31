@@ -96,6 +96,7 @@ namespace Microsoft.FSharp.Collections
     /// <summary>Functional programming operators related to the <c>Map&lt;_,_&gt;</c> type.</summary>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
+    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
     module Map = 
 
         /// <summary>Returns a new map with the binding added to the given map.

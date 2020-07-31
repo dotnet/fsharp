@@ -249,7 +249,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
     /// 
-    /// <remarks>Use the values in the <c>Array</c> module to manipulate values 
+    /// <remarks>Use the values in the <see cref="T:Microsoft.FSharp.Collections.ArrayModule" /> module to manipulate values 
     /// of this type, or the notation <c>arr.[x]</c> to get/set array
     /// values.</remarks>   
     type 'T array = 'T[]
@@ -259,7 +259,7 @@ namespace Microsoft.FSharp.Core
     /// <remarks>This type should only be used when writing F# code that interoperates
     /// with native code.  Use of this type in F# code may result in
     /// unverifiable code being generated.  Conversions to and from the 
-    /// <c>nativeint</c> type may be required. Values of this type can be generated
+    /// <see cref="T:Microsoft.FSharp.Core.nativeint" /> type may be required. Values of this type can be generated
     /// by the functions in the <c>NativeInterop.NativePtr</c> module.</remarks>
     type nativeptr<'T when 'T : unmanaged> = (# "native int" #)
 
@@ -268,7 +268,7 @@ namespace Microsoft.FSharp.Core
     /// <remarks>This type should only be used when writing F# code that interoperates
     /// with native code.  Use of this type in F# code may result in
     /// unverifiable code being generated.  Conversions to and from the 
-    /// <c>nativeint</c> type may be required. Values of this type can be generated
+    /// <see cref="T:Microsoft.FSharp.Core.nativeint" /> type may be required. Values of this type can be generated
     /// by the functions in the <c>NativeInterop.NativePtr</c> module.</remarks>
     type voidptr = (# "void*" #)
 

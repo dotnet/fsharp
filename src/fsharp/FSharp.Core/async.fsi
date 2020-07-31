@@ -142,7 +142,7 @@ namespace Microsoft.FSharp.Control
         /// 
         /// <remarks>This method should normally be used as the immediate 
         /// right-hand-side of a <c>let!</c> binding in an F# asynchronous workflow, that is,
-        /// 
+        /// <code>
         ///        async { ...
         ///                let! completor1 = childComputation1 |> Async.StartChild  
         ///                let! completor2 = childComputation2 |> Async.StartChild  
@@ -150,6 +150,7 @@ namespace Microsoft.FSharp.Control
         ///                let! result1 = completor1 
         ///                let! result2 = completor2 
         ///                ... }
+        /// </code>
         /// 
         /// When used in this way, each use of <c>StartChild</c> starts an instance of <c>childComputation</c> 
         /// and returns a completor object representing a computation to wait for the completion of the operation.
@@ -310,9 +311,11 @@ namespace Microsoft.FSharp.Control
         /// its result.
         static member AwaitTask: task: Task -> Async<unit>
 
-        /// <summary>Creates an asynchronous computation that will sleep for the given time. This is scheduled
-        /// using a System.Threading.Timer object. The operation will not block operating system threads
-        /// for the duration of the wait.</summary>
+        /// <summary>
+        ///  Creates an asynchronous computation that will sleep for the given time. This is scheduled
+        ///  using a System.Threading.Timer object. The operation will not block operating system threads
+        ///  for the duration of the wait.
+        /// </summary>
         ///
         /// <param name="millisecondsDueTime">The number of milliseconds to sleep.</param>
         ///
@@ -322,9 +325,11 @@ namespace Microsoft.FSharp.Control
         /// and not infinite.</exception>
         static member Sleep: millisecondsDueTime:int -> Async<unit>
 
-        /// <summary>Creates an asynchronous computation that will sleep for the given time. This is scheduled
-        /// using a System.Threading.Timer object. The operation will not block operating system threads
-        /// for the duration of the wait.</summary>
+        /// <summary>
+        ///  Creates an asynchronous computation that will sleep for the given time. This is scheduled
+        ///  using a System.Threading.Timer object. The operation will not block operating system threads
+        ///  for the duration of the wait.
+        /// </summary>
         ///
         /// <param name="dueTime">The amount of time to sleep.</param>
         ///
@@ -333,14 +338,13 @@ namespace Microsoft.FSharp.Control
         /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when the due time is negative.</exception>
         static member Sleep: dueTime:TimeSpan -> Async<unit>
 
-        /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
-        /// the style used in CLI APIs. For example, 
-        ///     <c>Async.FromBeginEnd(ws.BeginGetWeather,ws.EndGetWeather)</c>
-        /// When the computation is run, <c>beginFunc</c> is executed, with
-        /// a callback which represents the continuation of the computation. 
-        /// When the callback is invoked, the overall result is fetched using <c>endFunc</c>.</summary>
+        /// <summary>
+        ///  Creates an asynchronous computation in terms of a Begin/End pair of actions in 
+        ///  the style used in CLI APIs.
+        /// </summary>
         ///
-        /// <remarks>The computation will respond to cancellation while waiting for the completion
+        /// <remarks>
+        /// The computation will respond to cancellation while waiting for the completion
         /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
         /// executed, and the computation continues to wait for the completion of the operation.
         /// 
@@ -354,20 +358,18 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation wrapping the given Begin/End functions.</returns>
         static member FromBeginEnd : beginAction:(System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
-        /// the style used in CLI APIs. This overload should be used if the operation is 
-        /// qualified by one argument. For example, 
-        ///     <c>Async.FromBeginEnd(place,ws.BeginGetWeather,ws.EndGetWeather)</c>
-        /// When the computation is run, <c>beginFunc</c> is executed, with
-        /// a callback which represents the continuation of the computation. 
-        /// When the callback is invoked, the overall result is fetched using <c>endFunc</c>.</summary>
+        /// <summary>
+        ///  Creates an asynchronous computation in terms of a Begin/End pair of actions in 
+        ///  the style used in .NET 2.0 APIs.
+        /// </summary>
         ///
         /// <remarks>The computation will respond to cancellation while waiting for the completion
         /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
         /// executed, and the computation continues to wait for the completion of the operation.
-        /// 
-        /// If <c>cancelAction</c> is not specified, then cancellation causes the computation
-        /// to stop immediately, and subsequent invocations of the callback are ignored.</remarks>
+        ///
+        ///  If <c>cancelAction</c> is not specified, then cancellation causes the computation
+        ///  to stop immediately, and subsequent invocations of the callback are ignored.
+        ///</remarks>
         ///
         /// <param name="arg">The argument for the operation.</param>
         /// <param name="beginAction">The function initiating a traditional CLI asynchronous operation.</param>
@@ -377,13 +379,9 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation wrapping the given Begin/End functions.</returns>
         static member FromBeginEnd : arg:'Arg1 * beginAction:('Arg1 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
-        /// the style used in CLI APIs. This overload should be used if the operation is 
-        /// qualified by two arguments. For example, 
-        ///     <c>Async.FromBeginEnd(arg1,arg2,ws.BeginGetWeather,ws.EndGetWeather)</c>
-        /// When the computation is run, <c>beginFunc</c> is executed, with
-        /// a callback which represents the continuation of the computation. 
-        /// When the callback is invoked, the overall result is fetched using <c>endFunc</c>.</summary>
+        /// <summary>
+        /// Creates an asynchronous computation in terms of a Begin/End pair of actions in 
+        /// the style used in .NET 2.0 APIs.</summary>
         ///
         /// <remarks>The computation will respond to cancellation while waiting for the completion
         /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
@@ -402,12 +400,7 @@ namespace Microsoft.FSharp.Control
         static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * beginAction:('Arg1 * 'Arg2 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
-        /// the style used in CLI APIs. This overload should be used if the operation is 
-        /// qualified by three arguments. For example, 
-        ///     <c>Async.FromBeginEnd(arg1,arg2,arg3,ws.BeginGetWeather,ws.EndGetWeather)</c>
-        /// When the computation is run, <c>beginFunc</c> is executed, with
-        /// a callback which represents the continuation of the computation. 
-        /// When the callback is invoked, the overall result is fetched using <c>endFunc</c>.</summary>
+        /// the style used in .NET 2.0 APIs.</summary>
         ///
         /// <remarks>The computation will respond to cancellation while waiting for the completion
         /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
@@ -426,37 +419,8 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation wrapping the given Begin/End functions.</returns>
         static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * arg3:'Arg3 * beginAction:('Arg1 * 'Arg2 * 'Arg3 * System.AsyncCallback * obj -> System.IAsyncResult) * endAction:(System.IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
-        /// <summary>Creates three functions that can be used to implement the .NET Asynchronous 
+        /// <summary>Creates three functions that can be used to implement the .NET 1.0 Asynchronous 
         /// Programming Model (APM) for a given asynchronous computation.</summary>
-        /// 
-        /// <remarks>The functions should normally be published as members with prefix <c>Begin</c>,
-        /// <c>End</c> and <c>Cancel</c>, and can be used within a type definition as follows:
-        /// <c>
-        ///   let beginAction,endAction,cancelAction = Async.AsBeginEnd (fun arg -&gt; computation)
-        ///   member x.BeginSomeOperation(arg,callback,state:obj) = beginAction(arg,callback,state)
-        ///   member x.EndSomeOperation(iar) = endAction(iar)
-        ///   member x.CancelSomeOperation(iar) = cancelAction(iar)
-        /// </c>
-        ///
-        /// If the asynchronous computation takes no arguments, then AsBeginEnd is used as follows:
-        /// <c>
-        ///   let beginAction,endAction,cancelAction = Async.AsBeginEnd (fun () -&gt; computation)
-        ///   member x.BeginSomeOperation(callback,state:obj) = beginAction((),callback,state)
-        ///   member x.EndSomeOperation(iar) = endAction(iar)
-        ///   member x.CancelSomeOperation(iar) = cancelAction(iar)
-        /// </c>
-        ///
-        ///
-        /// If the asynchronous computation takes two arguments, then AsBeginEnd is used as follows:
-        /// <c>
-        ///   let beginAction,endAction,cancelAction = Async.AsBeginEnd (fun arg1 arg2 -&gt; computation)
-        ///   member x.BeginSomeOperation(arg1,arg2,callback,state:obj) = beginAction((),callback,state)
-        ///   member x.EndSomeOperation(iar) = endAction(iar)
-        ///   member x.CancelSomeOperation(iar) = cancelAction(iar)
-        /// </c>
-        ///
-        /// In each case, the resulting API will be familiar to programmers in other CLI languages and 
-        /// is a useful way to publish asynchronous computations in CLI components.</remarks>
         ///
         /// <param name="computation">A function generating the asynchronous computation to split into the traditional
         /// .NET Asynchronous Programming Model.</param>
@@ -480,6 +444,7 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
         /// thread. Call one of the three continuations when the operation completes.</summary>
+        ///
         /// <remarks>If no cancellation token is provided then the default cancellation token
         /// is used.</remarks>
         ///
@@ -501,6 +466,7 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
         /// thread.</summary>
+        ///
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
         ///
         /// <param name="computation">The asynchronous computation to execute.</param>
@@ -512,6 +478,7 @@ namespace Microsoft.FSharp.Control
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
         /// thread, but also returns the execution as <see cref="T:System.Threading.Tasks.Task`1"/>
         /// </summary>
+        ///
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.
         /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 
         /// async computation starts on the current thread with an ability to return a result.

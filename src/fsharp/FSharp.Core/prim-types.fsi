@@ -130,14 +130,18 @@ namespace Microsoft.FSharp.Core
         member IncludeValue: bool
 
     /// <summary>This attribute is used to indicate a generic container type satisfies the F# 'equality' 
-    /// constraint only if a generic argument also satisfies this constraint. For example, adding 
+    /// constraint only if a generic argument also satisfies this constraint.</summary>
+    ///
+    ///
+    ///
+    /// <remarks> For example, adding 
     /// this attribute to parameter 'T on a type definition C&lt;'T&gt; means that a type C&lt;X&gt; only supports 
     /// equality if the type X also supports equality and all other conditions for C&lt;X&gt; to support 
     /// equality are also met. The type C&lt;'T&gt; can still be used with other type arguments, but a type such 
     /// as C&lt;(int -> int)&gt; will not support equality because the type (int -> int) is an F# function type 
-    /// and does not support equality.</summary>
-    ///
-    /// <remarks>This attribute will be ignored if it is used on the generic parameters of functions or methods.</remarks>
+    /// and does not support equality.
+    /// 
+    /// This attribute will be ignored if it is used on the generic parameters of functions or methods.</remarks>
     [<AttributeUsage (AttributeTargets.GenericParameter,AllowMultiple=false)>]  
     [<Sealed>]
     type EqualityConditionalOnAttribute =
@@ -148,14 +152,16 @@ namespace Microsoft.FSharp.Core
         new : unit -> EqualityConditionalOnAttribute
 
     /// <summary>This attribute is used to indicate a generic container type satisfies the F# 'comparison' 
-    /// constraint only if a generic argument also satisfies this constraint. For example, adding 
+    /// constraint only if a generic argument also satisfies this constraint.</summary>
+    ///
+    /// <remarks>For example, adding 
     /// this attribute to parameter 'T on a type definition C&lt;'T&gt; means that a type C&lt;X&gt; only supports 
     /// comparison if the type X also supports comparison and all other conditions for C&lt;X&gt; to support 
     /// comparison are also met. The type C&lt;'T&gt; can still be used with other type arguments, but a type such 
     /// as C&lt;(int -> int)&gt; will not support comparison because the type (int -> int) is an F# function type 
-    /// and does not support comparison.</summary>
+    /// and does not support comparison.
     ///
-    /// <remarks>This attribute will be ignored if it is used on the generic parameters of functions or methods.</remarks>
+    /// This attribute will be ignored if it is used on the generic parameters of functions or methods.</remarks>
     [<AttributeUsage (AttributeTargets.GenericParameter,AllowMultiple=false)>]  
     [<Sealed>]
     type ComparisonConditionalOnAttribute =
@@ -556,9 +562,11 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>This attribute is inserted automatically by the F# compiler to tag types 
     /// and methods in the generated CLI code with flags indicating the correspondence 
-    /// with original source constructs. It is used by the functions in the 
-    /// Microsoft.FSharp.Reflection namespace to reverse-map compiled constructs to 
-    /// their original forms. It is not intended for use from user code.</summary>
+    /// with original source constructs.</summary>
+    ///
+    /// <remarks>This attribute is used by the functions in the 
+    /// FSharp.Reflection namespace to reverse-map compiled constructs to 
+    /// their original forms. It is not intended for use from user code.</remarks>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationMappingAttribute =
@@ -607,8 +615,11 @@ namespace Microsoft.FSharp.Core
         member TypeDefinitions : System.Type[]
 
     /// <summary>This attribute is inserted automatically by the F# compiler to tag 
-    /// methods which are given the 'CompiledName' attribute. It is not intended 
-    /// for use from user code.</summary>
+    /// methods which are given the 'CompiledName' attribute.</summary>
+    ///
+    /// <remarks>This attribute is used by the functions in the 
+    /// FSharp.Reflection namespace to reverse-map compiled constructs to 
+    /// their original forms. It is not intended for use from user code.</remarks>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationSourceNameAttribute =
@@ -764,13 +775,16 @@ namespace Microsoft.FSharp.Core
         /// <returns>RequireQualifiedAccessAttribute</returns>
         new : unit -> RequireQualifiedAccessAttribute
 
-    /// <summary>This attribute is used for two purposes. When applied to an assembly, it must be given a string
-    /// argument, and this argument must indicate a valid module or namespace in that assembly. Source
-    /// code files compiled with a reference to this assembly are processed in an environment
-    /// where the given path is automatically opened.</summary>
+    /// <summary>Indicates a construct is automatically opened when brought into scope through
+    /// an assembly reference or then opening of the containing namespace or module.</summary>
     ///
-    /// <remarks>When applied to a module within an assembly, then the attribute must not be given any arguments.
-    /// When the enclosing namespace is opened in user source code, the module is also implicitly opened.</remarks>
+    /// <remarks>When applied to an assembly, this attribute must be given a string
+    /// argument, and this indicates a valid module or namespace in that assembly. Source
+    /// code files compiled with a reference to this assembly are processed in an environment
+    /// where the given path is automatically opened.
+    ///
+    /// When applied to a type or module within an assembly, then the attribute must not be given any arguments, and
+    /// the type or module is implicitly opened when its enclosing namespace or module is opened.</remarks>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute =
@@ -4408,7 +4422,7 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("ToUInt64")>]
             val inline uint64     : value:^T -> uint64     when ^T : (static member op_Explicit : ^T -> uint64)     and default ^T : int
 
-            /// <summary>Converts the argument to <c>nativeint</c>. This is a direct, checked conversion for all 
+            /// <summary>Converts the argument to <see cref="T:Microsoft.FSharp.Core.nativeint" />. This is a direct, checked conversion for all 
             /// primitive numeric types. Otherwise the operation requires an appropriate
             /// static conversion method on the input type.</summary>
             ///

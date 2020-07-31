@@ -9,7 +9,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
         
 
-    /// <summary>Basic operations on IEnumerables.</summary>
+    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.seq`1"/>.</summary>
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
