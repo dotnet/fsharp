@@ -245,8 +245,6 @@ set RESTOREDIR=!RESTOREBASE!\main_assemblies
 CALL :checkAvailability main_assemblies
 if "!BIN_AVAILABLE!" == "true" (
     CALL :backupAndOrCopy FSharp.Core.dll "%COMPILERMAINASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILERMAINASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILERMAINASSEMBLIESPATH%"
     CALL :backupAndOrCopy FSharp.Core.xml "%COMPILERMAINASSEMBLIESPATH%"
 )
 

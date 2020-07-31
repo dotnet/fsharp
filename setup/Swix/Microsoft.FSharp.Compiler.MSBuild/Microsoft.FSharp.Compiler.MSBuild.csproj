@@ -99,8 +99,6 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Threading.Tasks.Dataflow.dll"
   file source="$(BinariesFolder)\FSharp.Compiler.Server.Shared\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.optdata"
-  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.sigdata"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\FSharp.Build.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\Microsoft.DotNet.DependencyManager\$(Configuration)\net472\Microsoft.DotNet.DependencyManager.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Framework.dll"
