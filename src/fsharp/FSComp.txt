@@ -1517,3 +1517,4 @@ featureWitnessPassing,"witness passing for trait constraints in F# quotations"
 3360,typrelInterfaceWithConcreteAndVariable,"'%s' cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
 3361,typrelInterfaceWithConcreteAndVariableObjectExpression,"You cannot implement the interface '%s' with the two instantiations '%s' and '%s' because they may unify."
 featureInterfacesWithMultipleGenericInstantiation,"interfaces with multiple generic instantiation"
+#3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)
