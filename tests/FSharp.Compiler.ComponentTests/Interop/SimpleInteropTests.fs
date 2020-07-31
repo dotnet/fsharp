@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Interop.ComponentTests
+namespace FSharp.Compiler.ComponentTests.Interop
 
 open Xunit
-open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Compiler
 
 module ``C# <-> F# basic interop`` =
