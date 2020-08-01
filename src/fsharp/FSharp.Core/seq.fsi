@@ -9,7 +9,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
         
 
-    /// <summary>Basic operations on IEnumerables.</summary>
+    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.seq`1"/>.</summary>
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
@@ -17,8 +17,9 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Returns a new sequence that contains all pairings of elements from the first and second sequences.</summary>
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("AllPairs")>]
         val allPairs: source1:seq<'T1> -> source2:seq<'T2> -> seq<'T1 * 'T2>
 
@@ -34,7 +35,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the two provided sequences is
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two provided sequences is
         /// null.</exception>
         [<CompiledName("Append")>]
         val append: source1:seq<'T>  -> source2:seq<'T> -> seq<'T> 
@@ -48,8 +49,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The average.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence has zero elements.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence has zero elements.</exception>
         [<CompiledName("Average")>]
         val inline average   : source:seq<(^T)> -> ^T 
                                       when ^T : (static member ( + ) : ^T * ^T -> ^T) 
@@ -67,8 +68,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The average.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence has zero elements.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence has zero elements.</exception>
         [<CompiledName("AverageBy")>]
         val inline averageBy   : projection:('T -> ^U) -> source:seq<'T>  -> ^U 
                                       when ^U : (static member ( + ) : ^U * ^U -> ^U) 
@@ -101,7 +102,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Cache")>]
         val cache: source:seq<'T> -> seq<'T>
 
@@ -116,7 +117,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Cast")>]
         val cast: source:IEnumerable -> seq<'T>
 
@@ -133,16 +134,18 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         /// 
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> source:seq<'T> -> seq<'U>
 
         /// <summary>Divides the input sequence into chunks of size at most <c>chunkSize</c>.</summary>
+        ///
         /// <param name="chunkSize">The maximum size of each chunk.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The sequence divided into chunks.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
         [<CompiledName("ChunkBySize")>]
         val chunkBySize: chunkSize:int -> source:seq<'T> -> seq<'T[]>
 
@@ -157,7 +160,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Collect")>]
         val collect: mapping:('T -> 'Collection) -> source:seq<'T> -> seq<'U>  when 'Collection :> seq<'U>
 
@@ -172,7 +175,7 @@ namespace Microsoft.FSharp.Collections
         /// is reached it returns a -1 if the first sequence is shorter and a 1 if the second sequence
         /// is shorter.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences
         /// is null.</exception>
         [<CompiledName("CompareWith")>]
         val compareWith: comparer:('T -> 'T -> int) -> source1:seq<'T> -> source2:seq<'T> -> int
@@ -187,15 +190,17 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Concat")>]
         val concat: sources:seq<'Collection> -> seq<'T> when 'Collection :> seq<'T>
 
         /// <summary>Tests if the sequence contains the specified element.</summary>
+        ///
         /// <param name="value">The value to locate in the input sequence.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Contains")>]
         val inline contains: value:'T -> source:seq<'T> -> bool when 'T : equality
 
@@ -213,7 +218,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("CountBy")>]
         val countBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'Key * int> when 'Key : equality
 
@@ -235,7 +240,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Distinct")>]
         val distinct: source:seq<'T> -> seq<'T> when 'T : equality
 
@@ -248,7 +253,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("DistinctBy")>]
         val distinctBy: projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : equality
 
@@ -257,9 +262,10 @@ namespace Microsoft.FSharp.Collections
         /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="count">The maximum number of chunks.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The sequence split into chunks.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("SplitInto")>]
         val splitInto: count:int -> source:seq<'T> -> seq<'T[]>
@@ -285,7 +291,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>A sequence that contains the set difference of the elements of two sequences.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
         [<CompiledName("Except")>]
         val except: itemsToExclude:seq<'T> -> source:seq<'T> -> seq<'T> when 'T : equality
 
@@ -300,7 +306,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if any result from the predicate is true; false otherwise.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Exists")>]
         val exists: predicate:('T -> bool) -> source:seq<'T> -> bool
 
@@ -317,7 +323,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if any result from the predicate is true; false otherwise.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
         [<CompiledName("Exists2")>]
         val exists2: predicate:('T1 -> 'T2 -> bool) -> source1:seq<'T1> -> source2:seq<'T2> -> bool
 
@@ -334,7 +340,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>    
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>    
         [<CompiledName("Filter")>]
         val filter: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
 
@@ -353,7 +359,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>    
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>    
         [<CompiledName("Where")>]
         val where: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
 
@@ -364,9 +370,9 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The first element for which the predicate returns True.</returns>
         ///
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
         [<CompiledName("Find")>]
         val find: predicate:('T -> bool) -> source:seq<'T> -> 'T
 
@@ -375,10 +381,11 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function to test whether an item in the sequence should be returned.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The last element for which the predicate returns True.</returns>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
         [<CompiledName("FindBack")>]
         val findBack: predicate:('T -> bool) -> source:seq<'T> -> 'T
@@ -390,9 +397,9 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The index of the first element for which the predicate returns True.</returns>
         ///
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
         [<CompiledName("FindIndex")>]
         val findIndex: predicate:('T -> bool) -> source:seq<'T> -> int
 
@@ -401,10 +408,11 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function to test whether the index of a particular element should be returned.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The index of the last element for which the predicate returns True.</returns>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown if no element returns true when
         /// evaluated by the predicate</exception>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
         [<CompiledName("FindIndexBack")>]
         val findIndexBack: predicate:('T -> bool) -> source:seq<'T> -> int
@@ -419,7 +427,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Fold")>]
         val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> source:seq<'T> -> 'State
 
@@ -428,23 +436,27 @@ namespace Microsoft.FSharp.Collections
         /// when one sequence is exhausted any remaining elements in the other sequence are ignored.
         /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
         /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.</summary>
+        ///
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="state">The initial state.</param>
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
+        ///
         /// <returns>The final state value.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
         [<CompiledName("Fold2")>]
         val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> source1:seq<'T1> -> source2:seq<'T2> -> 'State
 
         /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c>
         /// then computes <c>f i0 (... (f iN s)...)</c></summary>
+        ///
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="source">The input sequence.</param>
         /// <param name="state">The initial state.</param>
+        ///
         /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
         [<CompiledName("FoldBack")>]
         val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> 'State
@@ -453,12 +465,14 @@ namespace Microsoft.FSharp.Collections
         /// threading an accumulator argument through the computation. The two sequences need not have equal lengths.
         /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jM</c>, N &lt; M
         /// then computes <c>f i0 j0 (... (f iN jN s)...)</c>.</summary>
+        ///
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
         /// <param name="state">The initial state.</param>
+        ///
         /// <returns>The final state value.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
         [<CompiledName("FoldBack2")>]
         val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> source1:seq<'T1> -> source2:seq<'T2> -> state:'State -> 'State
 
@@ -473,7 +487,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if every element of the sequence satisfies the predicate; false otherwise.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("ForAll")>]
         val forall: predicate:('T -> bool) -> source:seq<'T> -> bool
 
@@ -487,7 +501,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if all pairs satisfy the predicate; false otherwise.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("ForAll2")>]
         val forall2: predicate:('T1 -> 'T2 -> bool) -> source1:seq<'T1> -> source2:seq<'T2> -> bool
 
@@ -513,8 +527,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The first element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
         [<CompiledName("Head")>]
         val head: source:seq<'T> -> 'T
 
@@ -524,15 +538,17 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The first element of the sequence or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryHead")>]
         val tryHead: source:seq<'T> -> 'T option
 
         /// <summary>Returns the last element of the sequence.</summary>
+        ///
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The last element of the sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have any elements.</exception>
         [<CompiledName("Last")>]
         val last: source:seq<'T> -> 'T
 
@@ -543,7 +559,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The last element of the sequence or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryLast")>]
         val tryLast: source:seq<'T> -> 'T option
 
@@ -553,8 +569,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The only element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: source:seq<'T> -> 'T
 
@@ -564,7 +580,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The only element of the sequence or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryExactlyOne")>]
         val tryExactlyOne: source:seq<'T> -> 'T option
 
@@ -574,15 +590,17 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>True if the sequence is empty; false otherwise.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("IsEmpty")>]
         val isEmpty: source:seq<'T> -> bool
 
         /// <summary>Builds a new collection whose elements are the corresponding elements of the input collection
         /// paired with the integer index (from 0) of each element.</summary>
+        ///
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Indexed")>]
         val indexed: source:seq<'T> -> seq<int * 'T>
 
@@ -599,7 +617,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentException">Thrown when count is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when count is negative.</exception>
         [<CompiledName("Initialize")>]
         val init: count:int -> initializer:(int -> 'T) -> seq<'T>
         
@@ -620,11 +638,13 @@ namespace Microsoft.FSharp.Collections
         val initInfinite: initializer:(int -> 'T) -> seq<'T>
 
         /// <summary>Computes the element at the specified index in the collection.</summary>
+        ///
         /// <param name="index">The index of the element to retrieve.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The element at the specified index of the sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
         [<CompiledName("Item")>]
         val item: index:int -> source:seq<'T> -> 'T
 
@@ -633,7 +653,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="action">A function to apply to each element of the sequence.</param>
         /// <param name="source">The input sequence.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Iterate")>]
         val iter: action:('T -> unit) -> source:seq<'T> -> unit
 
@@ -643,7 +663,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="action">A function to apply to each element of the sequence that can also access the current index.</param>
         /// <param name="source">The input sequence.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("IterateIndexed")>]
         val iteri: action:(int -> 'T -> unit) -> source:seq<'T> -> unit
 
@@ -654,7 +674,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("Iterate2")>]
         val iter2: action:('T1 -> 'T2 -> unit) -> source1:seq<'T1> -> source2:seq<'T2> -> unit
 
@@ -666,7 +686,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("IterateIndexed2")>]
         val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> source1:seq<'T1> -> source2:seq<'T2> -> unit
 
@@ -676,7 +696,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The length of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Length")>]
         val length: source:seq<'T> -> int
 
@@ -693,7 +713,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Map")>]
         val map  : mapping:('T -> 'U) -> source:seq<'T> -> seq<'U>
 
@@ -707,7 +727,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("Map2")>]
         val map2: mapping:('T1 -> 'T2 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> seq<'U>
 
@@ -718,7 +738,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
         /// <param name="state">The initial state.</param>
         /// <param name="array">The input collection.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input collection is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input collection is null.</exception>
         /// <returns>The collection of transformed elements, and the final accumulated value.</returns>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("MapFold")>]
@@ -731,7 +751,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
         /// <param name="array">The input collection.</param>
         /// <param name="state">The initial state.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input collection is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input collection is null.</exception>
         /// <returns>The collection of transformed elements, and the final accumulated value.</returns>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("MapFoldBack")>]
@@ -748,7 +768,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
         [<CompiledName("Map3")>]
         val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> source3:seq<'T3> -> seq<'U>
 
@@ -761,7 +781,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("MapIndexed")>]
         val mapi: mapping:(int -> 'T -> 'U) -> source:seq<'T> -> seq<'U>
 
@@ -776,7 +796,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("MapIndexed2")>]
         val mapi2: mapping:(int -> 'T1 -> 'T2 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> seq<'U>
 
@@ -784,8 +804,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="source">The input sequence.</param>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         ///
         /// <returns>The largest element of the sequence.</returns>
         [<CompiledName("Max")>]
@@ -798,8 +818,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The largest element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         [<CompiledName("MaxBy")>]
         val inline maxBy  : projection:('T -> 'U) -> source:seq<'T> -> 'T when 'U : comparison 
 
@@ -811,8 +831,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The largest element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         [<CompiledName("MaxValueBy")>]
         val inline maxValBy  : projection:('T -> 'U) -> source:seq<'T> -> 'U when 'U : comparison 
 *)
@@ -823,8 +843,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The smallest element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         [<CompiledName("Min")>]
         val inline min     : source:seq<'T> -> 'T when 'T : comparison 
 
@@ -835,8 +855,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The smallest element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         [<CompiledName("MinBy")>]
         val inline minBy  : projection:('T -> 'U) -> source:seq<'T> -> 'T when 'U : comparison 
 
@@ -848,8 +868,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The smallest element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         [<CompiledName("MinValueBy")>]
         val inline minValBy  : projection:('T -> 'U) -> source:seq<'T> -> 'U when 'U : comparison 
 *)
@@ -861,8 +881,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The nth element of the sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
         [<CompiledName("Get")>]
         [<Obsolete("please use Seq.item")>]
         val nth: index:int -> source:seq<'T> -> 'T
@@ -875,7 +895,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         val ofArray: source:'T[] -> seq<'T>
 
         [<CompiledName("OfList")>]
@@ -893,7 +913,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Pairwise")>]
         val pairwise: source:seq<'T> -> seq<'T * 'T>
 
@@ -909,8 +929,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("Permute")>]
         val permute: indexMap:(int -> int) -> source:seq<'T> -> seq<'T>
@@ -923,8 +943,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The selected element.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown when every item of the sequence
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown when every item of the sequence
         /// evaluates to <c>None</c> when the given function is applied.</exception>
         [<CompiledName("Pick")>]
         val pick: chooser:('T -> 'U option) -> source:seq<'T> -> 'U 
@@ -938,7 +958,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("ReadOnly")>]
         val readonly : source:seq<'T> -> seq<'T>
 
@@ -953,14 +973,16 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The final result of the reduction function.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         [<CompiledName("Reduce")>]
         val reduce: reduction:('T -> 'T -> 'T) -> source:seq<'T> -> 'T
 
         /// <summary>Creates a sequence by replicating the given initial value.</summary>
+        ///
         /// <param name="count">The number of elements to replicate.</param>
         /// <param name="initial">The value to replicate</param>
+        ///
         /// <returns>The generated sequence.</returns>
         [<CompiledName("Replicate")>]
         val replicate: count:int -> initial:'T -> seq<'T>
@@ -968,20 +990,24 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Applies a function to each element of the sequence, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
         /// then computes <c>f i0 (...(f iN-1 iN))</c>.</summary>
+        ///
         /// <param name="reduction">A function that takes in the next-to-last element of the sequence and the
         /// current accumulated result to produce the next accumulated result.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The final result of the reductions.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
         [<CompiledName("ReduceBack")>]
         val reduceBack: reduction:('T -> 'T -> 'T) -> source:seq<'T> -> 'T
 
         /// <summary>Returns a new sequence with the elements in reverse order.</summary>
+        ///
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The reversed sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the reversed sequence.</remarks>
         [<CompiledName("Reverse")>]
         val rev: source:seq<'T> -> seq<'T>
@@ -994,7 +1020,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The resulting sequence of computed states.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Scan")>]
         val scan<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> source:seq<'T> -> seq<'State>
 
@@ -1005,8 +1031,9 @@ namespace Microsoft.FSharp.Collections
         /// <param name="folder">A function that updates the state with each element from the sequence.</param>
         /// <param name="source">The input sequence.</param>
         /// <param name="state">The initial state.</param>
+        ///
         /// <returns>The resulting sequence of computed states.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("ScanBack")>]
         val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> seq<'State>
@@ -1027,8 +1054,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when count exceeds the number of elements
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.InvalidOperationException">Thrown when count exceeds the number of elements
         /// in the sequence.</exception>
         [<CompiledName("Skip")>]
         val skip: count:int -> source:seq<'T> -> seq<'T>
@@ -1041,7 +1068,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("SkipWhile")>]
         val skipWhile: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
 
@@ -1058,7 +1085,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("Sort")>]
         val sort : source:seq<'T> -> seq<'T> when 'T : comparison
@@ -1072,6 +1099,7 @@ namespace Microsoft.FSharp.Collections
         /// This is a stable sort, that is the original order of equal elements is preserved.</remarks>
         /// <param name="comparer">The function to compare the collection elements.</param>
         /// <param name="list">The input sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
         /// <remarks>This function consumes the whole input sequence before yielding the first element of the result sequence.</remarks>
         [<CompiledName("SortWith")>]
@@ -1092,7 +1120,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("SortBy")>]
         val sortBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : comparison 
 
@@ -1109,7 +1137,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("SortDescending")>]
         val inline sortDescending : source:seq<'T> -> seq<'T> when 'T : comparison
 
@@ -1128,7 +1156,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("SortByDescending")>]
         val inline sortByDescending : projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : comparison
 
@@ -1163,8 +1191,8 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.InvalidOperationException">Thrown when the input sequence is empty.</exception>
         [<CompiledName("Tail")>]
         val tail: source:seq<'T> -> seq<'T>
 
@@ -1178,9 +1206,9 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
-        /// <exception cref="System.InvalidOperationException">Thrown when count exceeds the number of elements
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="T:System.InvalidOperationException">Thrown when count exceeds the number of elements
         /// in the sequence.</exception>
         [<CompiledName("Take")>]
         val take: count:int -> source:seq<'T> -> seq<'T>
@@ -1193,7 +1221,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TakeWhile")>]
         val takeWhile: predicate:('T -> bool) -> source:seq<'T> -> seq<'T>
 
@@ -1203,7 +1231,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result array.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("ToArray")>]
         val toArray: source:seq<'T> -> 'T[]
 
@@ -1213,7 +1241,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result list.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("ToList")>]
         val toList: source:seq<'T> -> 'T list
 
@@ -1225,7 +1253,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The found element or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryFind")>]
         val tryFind: predicate:('T -> bool) -> source:seq<'T> -> 'T option
 
@@ -1235,8 +1263,9 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function that evaluates to a Boolean when given an item in the sequence.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The found element or None.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
         [<CompiledName("TryFindBack")>]
         val tryFindBack: predicate:('T -> bool) -> source:seq<'T> -> 'T option
@@ -1249,16 +1278,18 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The found index or None.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryFindIndex")>]
         val tryFindIndex : predicate:('T -> bool) -> source:seq<'T> -> int option
 
         /// <summary>Tries to find the nth element in the sequence.
         /// Returns <c>None</c> if index is negative or the input sequence does not contain enough elements.</summary>
+        ///
         /// <param name="index">The index of element to retrieve.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The nth element of the sequence or <c>None</c>.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryItem")>]
         val tryItem: index:int -> source:seq<'T> -> 'T option
 
@@ -1268,8 +1299,9 @@ namespace Microsoft.FSharp.Collections
         /// result this function should not be used with large or infinite sequences.</remarks>
         /// <param name="predicate">A function that evaluates to a Boolean when given an item in the sequence.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The found index or <c>None</c>.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <remarks>This function consumes the whole input sequence before returning the result.</remarks>
         [<CompiledName("TryFindIndexBack")>]
         val tryFindIndexBack : predicate:('T -> bool) -> source:seq<'T> -> int option
@@ -1282,7 +1314,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The chosen element or <c>None</c>.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("TryPick")>]
         val tryPick: chooser:('T -> 'U option) -> source:seq<'T> -> 'U option
 
@@ -1291,8 +1323,9 @@ namespace Microsoft.FSharp.Collections
         /// that sequence is iterated. As a result this function should not be used with
         /// large or infinite sequences.</remarks>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The transposed sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Transpose")>]
         val transpose: source:seq<'Collection> -> seq<seq<'T>> when 'Collection :> seq<'T>
 
@@ -1303,7 +1336,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Truncate")>]
         val truncate: count:int -> source:seq<'T> -> seq<'T>
 
@@ -1328,11 +1361,13 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Returns a sequence that yields sliding windows containing elements drawn from the input
         /// sequence. Each window is returned as a fresh array.</summary>
+        ///
         /// <param name="windowSize">The number of elements in each window.</param>
         /// <param name="source">The input sequence.</param>
+        ///
         /// <returns>The result sequence.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when windowSize is not positive.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when windowSize is not positive.</exception>
         [<CompiledName("Windowed")>]
         val windowed: windowSize:int -> source:seq<'T> -> seq<'T[]>
 
@@ -1345,7 +1380,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("Zip")>]
         val zip: source1:seq<'T1> -> source2:seq<'T2> -> seq<'T1 * 'T2>
 
@@ -1359,6 +1394,6 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <returns>The result sequence.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
+        /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
         [<CompiledName("Zip3")>]
         val zip3: source1:seq<'T1> -> source2:seq<'T2> -> source3:seq<'T3> -> seq<'T1 * 'T2 * 'T3>
