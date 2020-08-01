@@ -2256,17 +2256,28 @@ namespace Microsoft.FSharp.Collections
         interface IReadOnlyCollection<'T>
         interface IReadOnlyList<'T>
 
-    /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
+    /// <summary>The type of immutable singly-linked lists. </summary>
     ///
-    /// <remarks>Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
-    /// the notation <c>[1;2;3]</c>. Use the values in the <c>List</c> module to manipulate 
-    /// values of this type, or pattern match against the values directly.</remarks>
+    /// <remarks>See the <see cref="T:Microsoft.FSharp.Collections.ListModule"/> module for further operations related to lists.
+    ///
+    /// Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
+    /// the notation <c>[1; 2; 3]</c>. Use the values in the <c>List</c> module to manipulate 
+    /// values of this type, or pattern match against the values directly.
+    ///
+    ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/lists">F# Language Guide - Lists</a>.
+    /// </remarks>
     and 'T list = List<'T>
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.List`1"/></summary>
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
     /// <summary>An abbreviation for the CLI type <see cref="T:System.Collections.Generic.IEnumerable`1"/></summary>
+    ///
+    /// <remarks>
+    ///  See the <see cref="T:Microsoft.FSharp.Collections.SeqModule"/> module for further operations related to sequences.
+    ///
+    ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/sequences">F# Language Guide - Sequences</a>.
+    ///</remarks>
     type seq<'T> = IEnumerable<'T>
 
 namespace Microsoft.FSharp.Core

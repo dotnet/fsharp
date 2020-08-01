@@ -7,11 +7,10 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
 
-    /// <summary>Immutable sets based on binary trees, where comparison is the
-    /// F# structural comparison function, potentially using implementations
-    /// of the IComparable interface on key values.</summary>
+    /// <summary>Immutable sets based on binary trees, where elements are ordered by F# generic comparison. By default
+    /// comparison is the F# structural comparison function or uses implementations of the IComparable interface on element values.</summary>
     ///
-    /// <remarks>See the Set module for further operations on sets.
+    /// <remarks>See the <see cref="T:Microsoft.FSharp.Collections.SetModule"/> module for further operations on sets.
     ///
     /// All members of this class are thread-safe and may be used concurrently from multiple threads.</remarks>
     [<Sealed>]

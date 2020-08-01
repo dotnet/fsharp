@@ -10,7 +10,10 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     /// <summary>Basic operations on 2-dimensional arrays.</summary>
     ///
-    /// <remarks>F# and CLI multi-dimensional arrays are typically zero-based. 
+    /// <remarks>
+    ///  <para>See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.</para>
+    /// 
+    /// <para>F# and CLI multi-dimensional arrays are typically zero-based. 
     /// However, CLI multi-dimensional arrays used in conjunction with external
     /// libraries (e.g. libraries associated with Visual Basic) be 
     /// non-zero based, using a potentially different base for each dimension.
@@ -18,7 +21,8 @@ namespace Microsoft.FSharp.Collections
     /// the basing on an input array will be propagated to a matching output
     /// array on the <c>Array2D.map</c> and <c>Array2D.mapi</c> operations.
     /// Non-zero-based arrays can also be created using <c>Array2D.zeroCreateBased</c>, 
-    /// <c>Array2D.createBased</c> and <c>Array2D.initBased</c>.</remarks>
+    /// <c>Array2D.createBased</c> and <c>Array2D.initBased</c>.</para>
+    /// </remarks>
     module Array2D = 
 
         /// <summary>Fetches the base-index for the first dimension of the array.</summary>
