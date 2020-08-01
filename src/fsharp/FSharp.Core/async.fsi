@@ -11,24 +11,25 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
-    /// <summary>A compositional asynchronous computation, which, when run, will eventually produce a value 
-    /// of type T, or else raises an exception.</summary> 
+    /// <summary>
+    /// An asynchronous computation, which, when run, will eventually produce a value  of type T, or else raises an exception.
+    /// </summary> 
     ///
-    /// <remarks>Asynchronous computations are normally specified using an F# computation expression.
+    /// <remarks>
+    ///  This type has no members. Asynchronous computations are normally specified either by using an async expression
+    ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.Async"/> type.
     ///
-    /// When run, asynchronous computations have two modes: as a work item (executing synchronous 
-    /// code), or as a wait item (waiting for an event or I/O completion). 
-    ///
-    /// When run, asynchronous computations can be governed by CancellationToken. This can usually 
-    /// be specified when the async computation is started. The associated CancellationTokenSource 
-    /// may be used to cancel the asynchronous computation. Asynchronous computations built using 
-    /// computation expressions can check the cancellation condition regularly. Synchronous 
-    /// computations within an asynchronous computation do not automatically check this condition.</remarks> 
+    ///  See also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">F# Language Guide - Async Workflows</a>.
+    /// </remarks> 
      
     [<Sealed; NoEquality; NoComparison; CompiledName("FSharpAsync`1")>]
     type Async<'T>
 
-    /// <summary>This static class holds members for creating and manipulating asynchronous computations.</summary>
+    /// <summary>Holds static members for creating and manipulating asynchronous computations.</summary>
+    ///
+    /// <remarks>
+    ///  See also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">F# Language Guide - Async Workflows</a>.
+    /// </remarks>
 
     [<Sealed>]
     [<CompiledName("FSharpAsync")>]
@@ -47,7 +48,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation">The computation to run.</param>
         /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
         /// computation before raising a <see cref="T:System.TimeoutException"/>.  If no value is provided
-        /// for timeout then a default of -1 is used to correspond to System.Threading.Timeout.Infinite.
+        /// for timeout then a default of -1 is used to correspond to <see cref="F:System.Threading.Timeout.Infinite"/>.
         /// If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
         /// If one is not supplied, the default cancellation token is used.</param>

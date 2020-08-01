@@ -7,10 +7,10 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
 
-    /// <summary>Immutable maps. Keys are ordered by F# generic comparison.</summary>
+    /// <summary>Immutable maps based on binary trees, where keys are ordered by F# generic comparison. By default
+    /// comparison is the F# structural comparison function or uses implementations of the IComparable interface on key values.</summary>
     /// 
-    /// <remarks>Maps based on generic comparison are efficient for small keys. They are not a suitable choice if keys are recursive data structures 
-    /// or if keys require bespoke comparison semantics.
+    /// <remarks>See the <see cref="T:Microsoft.FSharp.Collections.MapModule"/> module for further operations on maps.
     ///
     /// All members of this class are thread-safe and may be used concurrently from multiple threads.</remarks>
     [<CompiledName("FSharpMap`2")>]
@@ -93,10 +93,9 @@ namespace Microsoft.FSharp.Collections
         interface IReadOnlyDictionary<'Key,'Value>
         override Equals : obj -> bool
 
-    /// <summary>Functional programming operators related to the <c>Map&lt;_,_&gt;</c> type.</summary>
+    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
     module Map = 
 
         /// <summary>Returns a new map with the binding added to the given map.
