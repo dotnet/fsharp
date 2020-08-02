@@ -745,25 +745,13 @@ module Extensions =
     type ContentBuilder with
         [<CustomOperation("body")>]
         member this.Body(c: Content, [<ParamArray>] contents: string[]) =
-            let rec loop acc (contents: string list) =
-                match contents with
-                | [] -> acc
-                | content::rest ->
-                    let bytes = Text.Encoding.ASCII.GetBytes(content)
-                    loop (this.Body(c, bytes, 0, bytes.Length)) rest
-            loop c (List.ofArray contents)
+            List.rev [for c in contents -> let b = Text.Encoding.ASCII.GetBytes c in ArraySegment<_>(b,0,b.Length)] @ c
 open Extensions
         """ else """
     // type member
     [<CustomOperation("body")>]
     member this.Body(c: Content, [<ParamArray>] contents: string[]) =
-        let rec loop acc (contents: string list) =
-            match contents with
-            | [] -> acc
-            | content::rest ->
-                let bytes = Text.Encoding.ASCII.GetBytes(content)
-                loop (this.Body(c, bytes, 0, bytes.Length)) rest
-        loop c (List.ofArray contents)
+        List.rev [for c in contents -> let b = Text.Encoding.ASCII.GetBytes c in ArraySegment<_>(b,0,b.Length)] @ c
         """) + """
 
 let check msg actual expected = if actual <> expected then failwithf "FAILED %s, expected %A, got %A" msg expected actual
@@ -797,7 +785,7 @@ let ceResult =
         body "Password"B 2 4
         body "Description" "of" "content"
     }
-check "TmFtZVxyXG5FbWF2" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+check "TmFtZVxyXG5FbWF1" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
     """
 
     [<Test>]
@@ -811,5 +799,5 @@ let ceResult =
         body "Password"B 2 4
         body "Description" "of" "content"
     }
-check "TmFtZVxyXG5FbWF3" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+check "TmFtZVxyXG5FbWF1" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
     """
