@@ -8,6 +8,10 @@ namespace Microsoft.FSharp.Collections
     open System.Collections.Generic
 
     /// <summary>Basic operations on arrays.</summary>
+    ///
+    /// <remarks>
+    ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
+    /// </remarks>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module Array = 
