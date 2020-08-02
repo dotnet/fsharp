@@ -729,19 +729,19 @@ type ContentBuilder() =
     member this.Body(c: Content, segment)  =
         segment::c
         """ + (if includeInternalExtensions then """
-
 type ContentBuilder with
+    // internal type extension
     [<CustomOperation("body")>]
     member this.Body(c: Content, bytes: byte[], offset, count) =
         ArraySegment<byte>(bytes, offset, count)::c
         """ else """
-
+    // type member
     [<CustomOperation("body")>]
     member this.Body(c: Content, bytes: byte[], offset, count) =
         ArraySegment<byte>(bytes, offset, count)::c
         """) + (if includeExternalExtensions then """
-
 module Extensions =
+    // external type extension
     type ContentBuilder with
         [<CustomOperation("body")>]
         member this.Body(c: Content, [<ParamArray>] contents: string[]) =
@@ -752,8 +752,9 @@ module Extensions =
                     let bytes = Text.Encoding.ASCII.GetBytes(content)
                     loop (this.Body(c, bytes, 0, bytes.Length)) rest
             loop c (List.ofArray contents)
+open Extensions
         """ else """
-
+    // type member
     [<CustomOperation("body")>]
     member this.Body(c: Content, [<ParamArray>] contents: string[]) =
         let rec loop acc (contents: string list) =
@@ -764,7 +765,6 @@ module Extensions =
                 loop (this.Body(c, bytes, 0, bytes.Length)) rest
         loop c (List.ofArray contents)
         """) + """
-open Extensions
 
 let check msg actual expected = if actual <> expected then failwithf "FAILED %s, expected %A, got %A" msg expected actual
         """
