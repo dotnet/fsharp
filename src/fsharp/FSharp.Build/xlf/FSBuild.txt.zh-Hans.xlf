@@ -8,8 +8,8 @@
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoSuchTopLevelSourceRoot">
-        <source>The value of SourceRoot.ContainingRoot not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</source>
-        <target state="new">The value of SourceRoot.ContainingRoot not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</target>
+        <source>The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</source>
+        <target state="new">The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="mapSourceRootsNoTopLevelSourceRoot">
