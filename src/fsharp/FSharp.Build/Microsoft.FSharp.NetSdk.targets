@@ -90,7 +90,74 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
       <TfmSpecificPackageFile Include="@(_ResolvedOutputFiles)">
          <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedOutputFiles.NearestTargetFramework)/%(_ResolvedOutputFiles.FileName)%(_ResolvedOutputFiles.Extension)</PackagePath>
       </TfmSpecificPackageFile>
-
     </ItemGroup>
   </Target>
+  
+  <!--
+    The following targets and props for Deterministic Build/SourceRoot mapping were copied from Roslyn:
+      https://github.com/dotnet/roslyn/blob/f244a9377cd43685fa56dfa9c9a0b374f4560cd9/src/Compilers/Core/MSBuildTask/Microsoft.Managed.Core.targets#L131-L192
+    
+    The associated build task was added to this project as well and directly used below.
+    
+    When https://github.com/dotnet/msbuild/issues/5398 is resolved these all should be able to be deleted.
+  -->
+  
+  <!--
+    ========================
+    DeterministicSourcePaths
+    ========================
+    
+    Unless specified otherwise enable deterministic source root (PathMap) when building deterministically on CI server, but not for local builds.
+    In order for the debugger to find source files when debugging a locally built binary the PDB must contain original, unmapped local paths.
+  -->
+  <PropertyGroup>
+    <DeterministicSourcePaths Condition="'$(DeterministicSourcePaths)' == '' and '$(Deterministic)' == 'true' and '$(ContinuousIntegrationBuild)' == 'true'">true</DeterministicSourcePaths>
+  </PropertyGroup>
+
+  <!--
+    ==========
+    SourceRoot
+    ==========
+    All source files of the project are expected to be located under one of the directories specified by SourceRoot item group.
+    This target collects all SourceRoots from various sources.
+    This target calculates final local path for each SourceRoot and sets SourceRoot.MappedPath metadata accordingly.
+    The final path is a path with deterministic prefix when DeterministicSourcePaths is true, and the original path otherwise.
+    In addition, the target validates and deduplicates the SourceRoot items.
+    InitializeSourceControlInformation is an msbuild target that ensures the SourceRoot items are populated from source control.
+    The target is available only if SourceControlInformationFeatureSupported is true.
+    A consumer of SourceRoot.MappedPath metadata, such as Source Link generator, shall depend on this target. 
+  -->
+
+  <Target Name="InitializeSourceRootMappedPaths"
+          DependsOnTargets="_InitializeSourceRootMappedPathsFromSourceControl"
+          Returns="@(SourceRoot)">
+
+    <ItemGroup Condition="'@(_MappedSourceRoot)' != ''">
+      <_MappedSourceRoot Remove="@(_MappedSourceRoot)" />
+    </ItemGroup>
+
+    <FSharp.Build.MapSourceRoots SourceRoots="@(SourceRoot)" Deterministic="$(DeterministicSourcePaths)">
+      <Output TaskParameter="MappedSourceRoots" ItemName="_MappedSourceRoot" />
+    </Microsoft.CodeAnalysis.BuildTasks.MapSourceRoots>
+
+    <ItemGroup>
+      <SourceRoot Remove="@(SourceRoot)" />
+      <SourceRoot Include="@(_MappedSourceRoot)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- 
+    Declare that target InitializeSourceRootMappedPaths that populates MappedPaths metadata on SourceRoot items is available.
+  -->
+  <PropertyGroup>
+    <SourceRootMappedPathsFeatureSupported>true</SourceRootMappedPathsFeatureSupported>
+  </PropertyGroup>
+
+  <!-- 
+    If InitializeSourceControlInformation target isn't supported, we just continue without invoking that synchronization target. 
+    We'll proceed with SourceRoot (and other source control properties) provided by the user (or blank).
+  -->
+  <Target Name="_InitializeSourceRootMappedPathsFromSourceControl"
+          DependsOnTargets="InitializeSourceControlInformation"
+          Condition="'$(SourceControlInformationFeatureSupported)' == 'true'" />
 </Project>
