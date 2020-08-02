@@ -314,6 +314,7 @@ type public FSharpChecker =
     /// <summary>
     /// TypeCheck and compile provided AST
     /// </summary>
+    ///
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member Compile: ast:ParsedInput list * assemblyName:string * outFile:string * dependencies:string list * ?pdbFile:string * ?executable:bool * ?noframework:bool * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
 
@@ -329,12 +330,14 @@ type public FSharpChecker =
     /// the given TextWriters are used for the stdout and stderr streams respectively. In this
     /// case, a global setting is modified during the execution.
     /// </summary>
+    ///
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member CompileToDynamicAssembly: otherFlags:string [] * execute:(TextWriter * TextWriter) option * ?userOpName: string -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
 
     /// <summary>
     /// TypeCheck and compile provided AST
     /// </summary>
+    ///
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member CompileToDynamicAssembly: ast:ParsedInput list * assemblyName:string * dependencies:string list * execute:(TextWriter * TextWriter) option * ?debug:bool * ?noframework:bool  * ?userOpName: string -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
 
@@ -344,6 +347,7 @@ type public FSharpChecker =
     /// If the source of the file has changed the results returned by this function may be out of date, though may
     /// still be usable for generating intellisense menus and information.
     /// </summary>
+    ///
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="sourceText">Optionally, specify source that must match the previous parse precisely.</param>
@@ -392,6 +396,7 @@ type public FSharpChecker =
     /// <summary>
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.
     /// </summary>
+    ///
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member NotifyProjectCleaned: options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 

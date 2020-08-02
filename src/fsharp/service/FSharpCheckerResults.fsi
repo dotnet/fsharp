@@ -236,10 +236,12 @@ type public FSharpCheckFileResults =
     member GetDisplayContextForPos : pos : pos -> Async<FSharpDisplayContext option>
 
     /// <summary>Determines if a long ident is resolvable at a specific point.</summary>
+    ///
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
 
     /// <summary>Determines if a long ident is resolvable at a specific point.</summary>
+    ///
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol * ?userOpName: string -> Async<bool>
 
