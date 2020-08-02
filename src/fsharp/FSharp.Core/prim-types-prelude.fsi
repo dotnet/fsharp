@@ -9,76 +9,76 @@ namespace Microsoft.FSharp.Core
 
     open System
 
-    /// <summary>An abbreviation for the CLI type <c>System.Object</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Object"/>.</summary>
     type obj = System.Object
 
-    /// <summary>An abbreviation for the CLI type <c>System.Exception</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Exception"/>.</summary>
     type exn = System.Exception
 
-    /// <summary>An abbreviation for the CLI type <c>System.IntPtr</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.IntPtr"/>.</summary>
     type nativeint = System.IntPtr
 
-    /// <summary>An abbreviation for the CLI type <c>System.UIntPtr</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.UIntPtr"/>.</summary>
     type unativeint = System.UIntPtr
 
-    /// <summary>An abbreviation for the CLI type <c>System.String</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.String"/>.</summary>
     type string = System.String
 
-    /// <summary>An abbreviation for the CLI type <c>System.Single</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Single"/>.</summary>
     type float32 = System.Single
 
-    /// <summary>An abbreviation for the CLI type <c>System.Double</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Double"/>.</summary>
     type float = System.Double
 
-    /// <summary>An abbreviation for the CLI type <c>System.Single</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Single"/>. Identical to <see cref="T:Microsoft.FSharp.Core.float32"/>.</summary>
     type single = System.Single
 
-    /// <summary>An abbreviation for the CLI type <c>System.Double</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Double"/>. Identical to <see cref="T:Microsoft.FSharp.Core.float"/>.</summary>
     type double = System.Double
 
-    /// <summary>An abbreviation for the CLI type <c>System.SByte</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.SByte"/>.</summary>
     type sbyte = System.SByte
 
-    /// <summary>An abbreviation for the CLI type <c>System.Byte</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Byte"/>.</summary>
     type byte = System.Byte
 
-    /// <summary>An abbreviation for the CLI type <c>System.SByte</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.SByte"/>.</summary>
     type int8 = System.SByte
 
-    /// <summary>An abbreviation for the CLI type <c>System.Byte</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Byte"/>.</summary>
     type uint8 = System.Byte
 
-    /// <summary>An abbreviation for the CLI type <c>System.Int16</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Int16"/>.</summary>
     type int16 = System.Int16
 
-    /// <summary>An abbreviation for the CLI type <c>System.UInt16</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.UInt16"/>.</summary>
     type uint16 = System.UInt16
 
-    /// <summary>An abbreviation for the CLI type <c>System.Int32</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Int32"/>.</summary>
     type int32 = System.Int32
 
-    /// <summary>An abbreviation for the CLI type <c>System.UInt32</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.UInt32"/>.</summary>
     type uint32 = System.UInt32
 
-    /// <summary>An abbreviation for the CLI type <c>System.Int64</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Int64"/>.</summary>
     type int64 = System.Int64
 
-    /// <summary>An abbreviation for the CLI type <c>System.UInt64</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.UInt64"/>.</summary>
     type uint64 = System.UInt64
 
-    /// <summary>An abbreviation for the CLI type <c>System.Char</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Char"/>.</summary>
     type char = System.Char
 
-    /// <summary>An abbreviation for the CLI type <c>System.Boolean</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Boolean"/>.</summary>
     type bool = System.Boolean
 
-    /// <summary>An abbreviation for the CLI type <c>System.Decimal</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Decimal"/>.</summary>
     type decimal = System.Decimal
 
-    /// <summary>An abbreviation for the CLI type <c>System.Int32</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.Int32"/>.</summary>
     type int = int32
 
-    /// <summary>An abbreviation for the CLI type <c>System.UInt32</c>.</summary>
+    /// <summary>An abbreviation for the CLI type <see cref="T:System.UInt32"/>.</summary>
     type uint = uint32
 
     /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
@@ -249,7 +249,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Single dimensional, zero-based arrays, written <c>int[]</c>, <c>string[]</c> etc.</summary>
     /// 
-    /// <remarks>Use the values in the <c>Array</c> module to manipulate values 
+    /// <remarks>Use the values in the <see cref="T:Microsoft.FSharp.Collections.ArrayModule" /> module to manipulate values 
     /// of this type, or the notation <c>arr.[x]</c> to get/set array
     /// values.</remarks>   
     type 'T array = 'T[]
@@ -259,7 +259,7 @@ namespace Microsoft.FSharp.Core
     /// <remarks>This type should only be used when writing F# code that interoperates
     /// with native code.  Use of this type in F# code may result in
     /// unverifiable code being generated.  Conversions to and from the 
-    /// <c>nativeint</c> type may be required. Values of this type can be generated
+    /// <see cref="T:Microsoft.FSharp.Core.nativeint" /> type may be required. Values of this type can be generated
     /// by the functions in the <c>NativeInterop.NativePtr</c> module.</remarks>
     type nativeptr<'T when 'T : unmanaged> = (# "native int" #)
 
@@ -268,7 +268,7 @@ namespace Microsoft.FSharp.Core
     /// <remarks>This type should only be used when writing F# code that interoperates
     /// with native code.  Use of this type in F# code may result in
     /// unverifiable code being generated.  Conversions to and from the 
-    /// <c>nativeint</c> type may be required. Values of this type can be generated
+    /// <see cref="T:Microsoft.FSharp.Core.nativeint" /> type may be required. Values of this type can be generated
     /// by the functions in the <c>NativeInterop.NativePtr</c> module.</remarks>
     type voidptr = (# "void*" #)
 
