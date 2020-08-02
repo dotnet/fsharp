@@ -1,3 +1,2 @@
 # FSharp.Build resource strings 
 toolpathUnknown,"ToolPath is unknown; specify the path to the tool."
-fSharpBannerVersion,"%s for F# %s"
