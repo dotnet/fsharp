@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ComponentTests.Language
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities.Compiler
 open FSharp.Quotations.Patterns
 
-[<TestFixture>]
 module CodeQuotationsTests =
 
-    [<Test>]
+    [<Fact>]
     let ``Quotation on op_UnaryPlus(~+) compiles and runs`` () =
         Fsx """
 open FSharp.Linq.RuntimeHelpers
@@ -39,5 +38,4 @@ let z : unit =
         |> asExe
         |> withOptions ["--langversion:preview"]
         |> compileAndRun
-        
-
+        |> shouldSucceed

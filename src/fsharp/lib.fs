@@ -96,29 +96,29 @@ module NameMap =
 //------------------------------------------------------------------------- 
 module Check = 
     
-    /// Throw <c>System.InvalidOperationException()</c> if argument is <c>None</c>.
+    /// Throw <cref>System.InvalidOperationException</cref> if argument is <c>None</c>.
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
     let NotNone argName (arg:'T option) : 'T = 
         match arg with 
         | None -> raise (new System.InvalidOperationException(argName))
         | Some x -> x
 
-    /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
+    /// Throw <cref>System.ArgumentNullException</cref> if argument is <c>null</c>.
     let ArgumentNotNull arg argName = 
         match box(arg) with 
         | null -> raise (new System.ArgumentNullException(argName))
         | _ -> ()
        
         
-    /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
-    /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
+    /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
+    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is array argument is empty.
     let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName = 
         ArgumentNotNull arr argName
         if (0 = arr.Length) then
             raise (new System.ArgumentOutOfRangeException(argName))
 
-    /// Throw <c>System.ArgumentNullException()</c> if string argument is <c>null</c>.
-    /// Throw <c>System.ArgumentOutOfRangeException()</c> is string argument is empty.
+    /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
+    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
     let StringArgumentNotNullOrEmpty (s:string) argName = 
         ArgumentNotNull s argName
         if s.Length = 0 then
