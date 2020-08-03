@@ -148,7 +148,6 @@ type MapSourceRoots () =
                             | NullOrEmpty ->
                                 log.LogError(FSBuild.SR.mapSourceRootsNoSuchTopLevelSourceRoot "")
                         | NullOrEmpty -> ()
-
             else
                 for root in mappedSourceRoots do
                     root.SetMetadata(MappedPath, root.ItemSpec)

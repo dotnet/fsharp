@@ -390,7 +390,7 @@ type MapSourceRootsTests() =
         let items = [|
             SourceRoot(path1, [
                 "ContainingRoot", path1
-                "NestedRooot", "a/b"
+                "NestedRoot", "a/b"
             ], [
                 "SourceControl", ""
                 "RevisionId", ""
@@ -405,8 +405,6 @@ type MapSourceRootsTests() =
         let outputs = MapSourceRoots.PerformMapping task.Log (items |> Array.map toTaskItem) deterministic
 
         match outputs, deterministic with
-        | None, false ->
-            Assert.Fail "Expected to fail when not deterministic"
         | Some _, true ->
             Assert.Fail "Expected to fail when deterministic"
         | None, true ->
@@ -414,6 +412,8 @@ type MapSourceRootsTests() =
             Assert.AreEqual(1, errors.Count, "Should have had some errors with path mappings")
             let error = errors.[0].Message
             Assert.IsTrue(error.Contains "when DeterministicSourcePaths is true")
+        | None, false ->
+            Assert.Fail (sprintf "Expected to succeed when not deterministic")
         | Some mappings, false ->
             Array.zip items mappings
             |> Array.iteri checkExpectations
