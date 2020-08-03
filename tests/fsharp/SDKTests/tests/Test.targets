@@ -32,6 +32,7 @@
 
     <!-- validate the version of the listed System.ValueTuple -->
     <Error Condition="'$(ExpectsValueTuple)' == 'true' and '%(FoundValueTuplePackages.Version)' != '$(ExpectedValueTuplePackageVersion)'" Text="Expected System.ValueTuple version $(ExpectedValueTuplePackageVersion) but found %(FoundValueTuplePackages.Version)." />
+
   </Target>
 
 </Project>
