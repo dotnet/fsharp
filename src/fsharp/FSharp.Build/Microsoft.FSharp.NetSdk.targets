@@ -138,7 +138,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
     <FSharp.Build.MapSourceRoots SourceRoots="@(SourceRoot)" Deterministic="$(DeterministicSourcePaths)">
       <Output TaskParameter="MappedSourceRoots" ItemName="_MappedSourceRoot" />
-    </Microsoft.CodeAnalysis.BuildTasks.MapSourceRoots>
+    </FSharp.Build.MapSourceRoots>
 
     <ItemGroup>
       <SourceRoot Remove="@(SourceRoot)" />
