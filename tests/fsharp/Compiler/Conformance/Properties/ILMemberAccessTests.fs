@@ -47,7 +47,7 @@ type FSharpBaseClass () =
 """
 
 
-    [<Test>][<Ignore("TODO: This is broken RN, since netcoreapp30 is used for C# and 3.1 for F#, should be fixed as part of https://github.com/dotnet/fsharp/issues/9740")>]
+    [<Test>]
     let ``VerifyVisibility of Properties C# class F# derived class -- AccessPublicStuff`` () =
 
         let fsharpSource =
@@ -78,7 +78,7 @@ type MyFSharpClass () =
 """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -92,7 +92,7 @@ type MyFSharpClass () =
             (FSharpErrorSeverity.Error, 491, (34, 9, 34, 40),
              "The member or object constructor 'GetPublicSetPrivate' is not accessible. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.")|])
 
-    [<Test>][<Ignore("TODO: This is broken RN, since netcoreapp30 is used for C# and 3.1 for F#, should be fixed as part of https://github.com/dotnet/fsharp/issues/9740")>]
+    [<Test>]
     let ``VerifyVisibility of Properties C# class F# non-derived class -- AccessPublicStuff`` () =
 
         let fsharpSource =
@@ -123,7 +123,7 @@ type MyFSharpClass () =
 """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -173,7 +173,7 @@ type MyFSharpClass () =
 """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -209,7 +209,7 @@ type MyFSharpClass () =
 """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpBaseClass, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -218,6 +218,3 @@ type MyFSharpClass () =
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 810, (25, 9, 25, 31),
              "Property 'GetPublicSetPrivate' cannot be set")|])
-
-
-
