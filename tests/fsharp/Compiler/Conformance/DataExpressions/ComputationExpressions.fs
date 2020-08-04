@@ -726,29 +726,55 @@ type ContentBuilder() =
     member this.Yield(_) = []
 
     [<CustomOperation("body")>]
-    member this.Body(c: Content, segment)  =
+    member this.Body(c: Content, segment: ArraySegment<byte>) =
         segment::c
         """ + (if includeInternalExtensions then """
+
 type ContentBuilder with
-    // internal type extension
+    // unattributed internal type extension with same arity
+    member this.Body(c: Content, bytes: byte[]) =
+        ArraySegment<byte>(bytes, 0, bytes.Length)::c
+
+    // internal type extension with different arity
     [<CustomOperation("body")>]
     member this.Body(c: Content, bytes: byte[], offset, count) =
         ArraySegment<byte>(bytes, offset, count)::c
         """ else """
-    // type member
+
+    // unattributed type member with same arity
+    member this.Body(c: Content, bytes: byte[]) =
+        ArraySegment<byte>(bytes, 0, bytes.Length)::c
+
+    // type member with different arity
     [<CustomOperation("body")>]
     member this.Body(c: Content, bytes: byte[], offset, count) =
         ArraySegment<byte>(bytes, offset, count)::c
         """) + (if includeExternalExtensions then """
+
 module Extensions =
-    // external type extension
     type ContentBuilder with
+        // unattributed external type extension with same arity
+        member this.Body(c: Content, content: System.IO.Stream) =
+            let mem = new System.IO.MemoryStream()
+            content.CopyTo(mem)
+            let bytes = mem.ToArray()
+            ArraySegment<byte>(bytes, 0, bytes.Length)::c
+
+        // external type extensions as ParamArray
         [<CustomOperation("body")>]
         member this.Body(c: Content, [<ParamArray>] contents: string[]) =
             List.rev [for c in contents -> let b = Text.Encoding.ASCII.GetBytes c in ArraySegment<_>(b,0,b.Length)] @ c
 open Extensions
         """ else """
-    // type member
+
+    // unattributed type member with same arity
+    member this.Body(c: Content, content: System.IO.Stream) =
+        let mem = new System.IO.MemoryStream()
+        content.CopyTo(mem)
+        let bytes = mem.ToArray()
+        ArraySegment<byte>(bytes, 0, bytes.Length)::c
+
+    // type members
     [<CustomOperation("body")>]
     member this.Body(c: Content, [<ParamArray>] contents: string[]) =
         List.rev [for c in contents -> let b = Text.Encoding.ASCII.GetBytes c in ArraySegment<_>(b,0,b.Length)] @ c
@@ -763,41 +789,50 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
     [<Test>]
     let ``OverloadLib accepts overloaded methods`` () =
         OverloadLibTest false false """
+let mem = new System.IO.MemoryStream("Stream"B)
 let content = ContentBuilder()
 let ceResult =
     content {
         body "Name"
         body (ArraySegment<_>("Email"B, 0, 5))
         body "Password"B 2 4
+        body "BYTES"B
+        body mem
         body "Description" "of" "content"
     }
-check "TmFtZVxyXG5FbWF1" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+check "TmFtZVxyXG5FbWF1" ceResult "Name\r\nEmail\r\nsswo\r\nBYTES\r\nStream\r\nDescription\r\nof\r\ncontent\r\n"B
     """
 
     [<Test>]
     let ``OverloadLib accepts overloaded internal extension methods`` () =
         OverloadLibTest true false """
+let mem = new System.IO.MemoryStream("Stream"B)
 let content = ContentBuilder()
 let ceResult =
     content {
         body "Name"
         body (ArraySegment<_>("Email"B, 0, 5))
         body "Password"B 2 4
+        body "BYTES"B
+        body mem
         body "Description" "of" "content"
     }
-check "TmFtZVxyXG5FbWF2" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+check "TmFtZVxyXG5FbWF2" ceResult "Name\r\nEmail\r\nsswo\r\nBYTES\r\nStream\r\nDescription\r\nof\r\ncontent\r\n"B
     """
 
     [<Test>]
     let ``OverloadLib accepts overloaded internal and external extensions`` () =
         OverloadLibTest true true """
+let mem = new System.IO.MemoryStream("Stream"B)
 let content = ContentBuilder()
 let ceResult =
     content {
         body "Name"
         body (ArraySegment<_>("Email"B, 0, 5))
         body "Password"B 2 4
+        body "BYTES"B
+        body mem
         body "Description" "of" "content"
     }
-check "TmFtZVxyXG5FbWF3" ceResult "Name\r\nEmail\r\nsswo\r\nDescription\r\nof\r\ncontent\r\n"B
+check "TmFtZVxyXG5FbWF3" ceResult "Name\r\nEmail\r\nsswo\r\nBYTES\r\nStream\r\nDescription\r\nof\r\ncontent\r\n"B
     """
