@@ -7,7 +7,7 @@ open FSharp.Test.Utilities.Compiler
 
 module ``C# <-> F# basic interop`` =
 
-    [<Fact(Skip = "TODO: This is broken RN, since netcoreapp30 is used for C# and 3.1 for F#, should be fixed as part of https://github.com/dotnet/fsharp/issues/9740")>]
+    [<Fact>]
     let ``Instantiate C# type from F#`` () =
 
         let CSLib =
@@ -31,8 +31,7 @@ let a = AMaker.makeA()
         |> compile
         |> shouldSucceed
 
-
-    [<Fact(Skip = "TODO: This is broken RN, since netcoreapp30 is used for C# and 3.1 for F#, should be fixed as part of https://github.com/dotnet/fsharp/issues/9740")>]
+    [<Fact>]
     let ``Instantiate F# type from C#`` () =
         let FSLib =
             FSharp """

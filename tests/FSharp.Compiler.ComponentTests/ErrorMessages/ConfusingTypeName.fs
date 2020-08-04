@@ -7,7 +7,6 @@ open FSharp.Test.Utilities.Compiler
 
 module ``Confusing Type Name`` =
 
-    [<Fact (Skip = "Test platform C# build fails with latest fsharp.core")>]
     let ``Expected types with multiple references`` () =
 
         let csLibA =

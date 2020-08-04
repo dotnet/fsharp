@@ -62,4 +62,5 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
   </ItemGroup>
+  <Import Project="$(FSharpTestsRoot)\FSharp.Test.Utilities\TestCommon.targets" />
 </Project>
