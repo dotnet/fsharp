@@ -7684,9 +7684,9 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     let customOperationMethodsIndexedByKeyword = 
         customOperationMethods
         |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
-        |> Seq.map (fun (nm, g) ->
+        |> Seq.map (fun (nm, group) ->
             (nm,
-                g
+                group
                 |> Seq.distinctBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
                 |> Seq.toList))
         |> dict
@@ -7695,9 +7695,9 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     let customOperationMethodsIndexedByMethodName = 
         customOperationMethods
         |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
-        |> Seq.map (fun (nm, g) ->
+        |> Seq.map (fun (nm, group) ->
             (nm,
-                g
+                group
                 |> Seq.distinctBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
                 |> Seq.toList))
         |> dict
