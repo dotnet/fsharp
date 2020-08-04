@@ -62,7 +62,11 @@ type MapSourceRoots () =
         else path + "/"
 
     static let endsWithDirectorySeparator (path: string) =
-        Path.EndsInDirectorySeparator path
+        if path.Length = 0
+        then false
+        else
+            let endChar = path.[path.Length - 1]
+            endChar = Path.DirectorySeparatorChar || endChar = Path.AltDirectorySeparatorChar
 
     static let reportConflictingWellKnownMetadata (log: TaskLoggingHelper) (l: ITaskItem) (r: ITaskItem) =
         for name in knownMetadataNames do
