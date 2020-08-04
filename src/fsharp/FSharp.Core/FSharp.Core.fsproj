@@ -4,8 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
@@ -13,6 +12,12 @@
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --compiling-fslib-40 --maxerrors:20 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
+
+    <PreRelease>true</PreRelease>
+    <PackageId>FSharp.Core</PackageId>
+    <NuspecFile>FSharp.Core.nuspec</NuspecFile>
+    <IsPackable>true</IsPackable>
+    <PackageDescription>FSharp.Core redistributables from Visual F# Tools version $(FSPackageMajorVersion) For F# $(FSCoreMajorVersion).  Contains code from the F# Software Foundation.</PackageDescription>
   </PropertyGroup>
 
   <ItemGroup>
@@ -219,18 +224,5 @@
     <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
   </ItemGroup>
-
-  <!-- Hook compilation phase to do custom work -->
-  <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
-  <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
-  <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
-  <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
-    <ItemGroup>
-      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.optdata" />
-    </ItemGroup>
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-  </Target>
 
 </Project>

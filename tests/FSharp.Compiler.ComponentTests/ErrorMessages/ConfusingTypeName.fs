@@ -7,7 +7,7 @@ open FSharp.Test.Utilities.Compiler
 
 module ``Confusing Type Name`` =
 
-    [<Fact>]
+    [<Fact (Skip = "Test platform C# build fails with latest fsharp.core")>]
     let ``Expected types with multiple references`` () =
 
         let csLibA =
@@ -55,5 +55,4 @@ printfn "%A" (b = otherB)
             (Warning 686, Line 9, Col 14, Line 9, Col 36, "The method or function 'makeOtherB' should not be given explicit type argument(s) because it does not declare its type parameters explicitly")
             (Error 1, Line 6, Col 19, Line 6, Col 25, "This expression was expected to have type\n    'A (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'A (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    ")
             (Error 1, Line 11, Col 19, Line 11, Col 25, "This expression was expected to have type\n    'B<Microsoft.FSharp.Core.int> (libA, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    \nbut here has type\n    'B<Microsoft.FSharp.Core.int> (libB, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null)'    ")
-
         ]

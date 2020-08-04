@@ -983,7 +983,9 @@ let advancedFlagsFsc tcConfigB =
 
         yield CompilerOption
                   ("staticlink", tagFile,
-                   OptionString (fun s -> tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [s]), None,
+                   OptionString (fun s ->
+                       tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [s]
+                       tcConfigB.implicitlyResolveAssemblies <- true), None,
                    Some (FSComp.SR.optsStaticlink()))
 
 #if ENABLE_MONO_SUPPORT
