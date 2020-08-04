@@ -6,25 +6,33 @@ module internal FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
+
 open Internal.Utilities
+
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler
-open FSharp.Compiler.TypeChecker
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Tast
+open FSharp.Compiler.Features
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
+
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
 
+open Microsoft.DotNet.DependencyManager
 
 #if DEBUG
 
@@ -58,18 +66,18 @@ val GetFSharpCoreLibraryName: unit -> string
 // Parsing inputs
 //--------------------------------------------------------------------------
   
-val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.QualifiedNameOfFile
+val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> QualifiedNameOfFile
 
-val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
+val PrependPathToInput: Ident list -> ParsedInput -> ParsedInput
 
-/// State used to de-deuplicate module names along a list of file names
+/// State used to de-deduplicate module names along a list of file names
 type ModuleNamesDict = Map<string,Map<string,QualifiedNameOfFile>>
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-val DeduplicateParsedInputModuleName: ModuleNamesDict -> Ast.ParsedInput -> Ast.ParsedInput * ModuleNamesDict
+val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
 /// Parse a single input (A signature file or implementation file)
-val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
+val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> ParsedInput
 
 //----------------------------------------------------------------------------
 // Error and warnings
@@ -153,9 +161,9 @@ type IRawFSharpAssemblyData =
     abstract HasAnyFSharpSignatureDataAttribute: bool
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
     /// The identity of the module
@@ -202,7 +210,7 @@ type AssemblyResolution =
        /// Whether or not this is an installed system assembly (for example, System.dll)
        sysdir: bool
        // Lazily populated ilAssemblyRef for this reference. 
-       ilAssemblyRef: ILAssemblyRef option ref  }
+       mutable ilAssemblyRef: ILAssemblyRef option }
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 
@@ -246,10 +254,28 @@ type VersionFlag =
     member GetVersionInfo: implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString: implicitIncludeDir:string -> string
 
+type LType =
+    | Resolution
+    | RestoreSource
+
+type LStatus =
+    | Unprocessed
+    | Processed
+
+type PackageManagerLine =
+    { LineType: LType
+      LineStatus: LStatus
+      Line: string
+      Range: range }
+
+    static member AddLineWithKey: string -> LType -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member RemoveUnprocessedLines: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member StripDependencyManagerKey: string -> string -> string
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
-      mutable autoResolveOpenDirectivesToDlls: bool
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
@@ -267,9 +293,10 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
-      mutable loadedSources: (range * string) list
-      
+      mutable loadedSources: (range * string * string) list
+      mutable compilerToolPaths: string  list
       mutable referencedDLLs: AssemblyReference  list
+      mutable packageManagerLines: Map<string, PackageManagerLine list>
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
       reduceMemoryUsage: ReduceMemoryFlag
@@ -281,6 +308,7 @@ type TcConfigBuilder =
       mutable mlCompatibility:bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
+      mutable outputDir: string option
       mutable outputFile: string option
       mutable platform: ILPlatform option
       mutable prefer32Bit: bool
@@ -383,6 +411,10 @@ type TcConfigBuilder =
       mutable noConditionalErasure: bool
 
       mutable pathMap : PathMap
+
+      mutable langVersion : LanguageVersion
+
+      mutable dependencyProvider: DependencyProvider
     }
 
     static member Initial: TcConfigBuilder
@@ -395,26 +427,26 @@ type TcConfigBuilder =
         isInteractive: bool * 
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot 
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
     member TurnWarningOff: range * string -> unit
     member TurnWarningOn: range * string -> unit
     member AddIncludePath: range * string * string -> unit
+    member AddCompilerToolsByPath: string -> unit
     member AddReferencedAssemblyByPath: range * string -> unit
     member RemoveReferencedAssemblyByPath: range * string -> unit
     member AddEmbeddedSourceFile: string -> unit
     member AddEmbeddedResource: string -> unit
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
-    
+
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
 
 [<Sealed>]
 // Immutable TcConfig
 type TcConfig =
     member primaryAssembly: PrimaryAssembly
-    member autoResolveOpenDirectivesToDlls: bool
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
@@ -432,6 +464,7 @@ type TcConfig =
     member conditionalCompilationDefines: string list
     member subsystemVersion: int * int
     member useHighEntropyVA: bool
+    member compilerToolPaths: string list
     member referencedDLLs: AssemblyReference list
     member reduceMemoryUsage: ReduceMemoryFlag
     member inputCodePage: int option
@@ -440,6 +473,7 @@ type TcConfig =
     member mlCompatibility:bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
+    member outputDir: string option
     member outputFile: string option
     member platform: ILPlatform option
     member prefer32Bit: bool
@@ -543,6 +577,7 @@ type TcConfig =
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     member useSdkRefs: bool
+    member langVersion: LanguageVersion
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
@@ -657,7 +692,7 @@ val IsReflectedDefinitionsResource: ILResource -> bool
 val GetSignatureDataResourceName: ILResource -> string
 
 /// Write F# signature data as an IL resource
-val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filename: string * inMem: bool -> ILResource
+val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource
 
 /// Write F# optimization data as an IL resource
 val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
@@ -672,26 +707,26 @@ val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string * assemblyReferenceAdded: (string -> unit) -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
-val ProcessMetaCommandsFromInput: 
-    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> range * string -> unit)) 
-    -> TcConfigBuilder * Ast.ParsedInput * string * 'T 
+val ProcessMetaCommandsFromInput : 
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * LType * range * string -> 'T) * ('T -> range * string -> unit))
+    -> TcConfigBuilder * ParsedInput * string * 'T 
     -> 'T
 
 /// Process all the #r, #I etc. in an input
-val ApplyMetaCommandsFromInputToTcConfig: TcConfig * Ast.ParsedInput * string -> TcConfig
+val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
 /// Process the #nowarn in an input
-val ApplyNoWarnsToTcConfig: TcConfig * Ast.ParsedInput * string -> TcConfig
+val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
 //----------------------------------------------------------------------------
 // Scoped pragmas
 //--------------------------------------------------------------------------
 
 /// Find the scoped #nowarn pragmas with their range information
-val GetScopedPragmasForInput: Ast.ParsedInput -> ScopedPragma list
+val GetScopedPragmasForInput: ParsedInput -> ScopedPragma list
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
@@ -742,7 +777,7 @@ val GetInitialTcState:
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
-    checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
+    checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * NameResolution.TcResultsSink * TcState * ParsedInput  
            -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
@@ -752,11 +787,11 @@ val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * 
 val TypeCheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list
 
 /// Check a closed set of inputs 
-val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
+val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * ParsedInput  list  -> TcState * TopAttribs * TypedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
-    checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
+    checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * NameResolution.TcResultsSink * TcState * ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 /// Indicates if we should report a warning
@@ -797,7 +832,7 @@ type LoadClosure =
       Inputs: LoadClosureInput list
 
       /// The original #load references, including those that didn't resolve
-      OriginalLoadReferences: (range * string) list
+      OriginalLoadReferences: (range * string * string) list
 
       /// The #nowarns
       NoWarns: (string * range list) list

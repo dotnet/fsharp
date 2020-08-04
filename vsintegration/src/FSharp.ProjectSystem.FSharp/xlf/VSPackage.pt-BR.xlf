@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -334,17 +334,17 @@
       </trans-unit>
       <trans-unit id="5041">
         <source>SQL Database Connection (LINQ to SQL, type provider)</source>
-        <target state="translated">Conexão de Banco de Dados SQL (LINQ para SQL, provedor de tipos)</target>
+        <target state="translated">Conexão de Banco de Dados SQL (LINQ to SQL, provedor de tipos)</target>
         <note />
       </trans-unit>
       <trans-unit id="5042">
         <source>A project item for using the SqlDataConnection (LINQ to SQL) type provider to generate types and consume data in a live SQL database.</source>
-        <target state="translated">Um item de projeto para usar o provedor de tipos SqlDataConnection (LINQ para SQL) para gerar tipos e consumir dados em um banco de dados SQL dinâmico.</target>
+        <target state="translated">Um item de projeto para usar o provedor de tipos SqlDataConnection (LINQ to SQL) para gerar tipos e consumir dados em um banco de dados SQL dinâmico.</target>
         <note />
       </trans-unit>
       <trans-unit id="5043">
         <source>SQL Database Connection (LINQ to Entities, type provider)</source>
-        <target state="translated">Conexão de Banco de Dados SQL (LINQ para Entidades, provedor de tipos)</target>
+        <target state="translated">Conexão de Banco de Dados SQL (LINQ to Entities, provedor de tipos)</target>
         <note />
       </trans-unit>
       <trans-unit id="5044">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Ferramentas F# do Microsoft Visual 10.4 para F# 4.6</target>
+        <source>Microsoft Visual F# Tools</source>
+        <target state="needs-review-translation">Microsoft Visual F# Tools {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Ferramentas F# do Microsoft Visual 10.4 para F# 4.6</target>
+        <source>Microsoft Visual F# Tools</source>
+        <target state="needs-review-translation">Microsoft Visual F# Tools {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Ferramentas F# do Visual 10.4 para F# 4.6</target>
+        <source>Visual F# Tools</source>
+        <target state="needs-review-translation">Visual F# Tools {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

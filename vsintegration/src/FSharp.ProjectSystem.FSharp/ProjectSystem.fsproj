@@ -24,13 +24,22 @@
       <ResourceName>Menus.ctmenu</ResourceName>
       <SubType>Designer</SubType>
     </VSCTCompile>
+
+    <!-- Copy resx file and transform product/language version -->
+    <CopyVsixResources Include="Resources/**" />
     <EmbeddedResource Include="VSPackage.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpSR</GeneratedModuleName>
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
       <SubType>Designer</SubType>
+      <IntermediateTargetPath>$(IntermediateOutputPath)resources\</IntermediateTargetPath>
+      <Pattern1>{{FSProductVersion}}</Pattern1>
+      <Replacement1>$(FSProductVersion)</Replacement1>
+      <Pattern2>{{FSLanguageVersion}}</Pattern2>
+      <Replacement2>$(FSLanguageVersion)</Replacement2>
     </EmbeddedResource>
+
     <Compile Include="ProjectPrelude.fs" />
     <Compile Include="WaitDialog.fs" />
     <Compile Include="MSBuildUtilities.fs" />
@@ -123,24 +132,5 @@
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
-
-  <Target Name="CopyCtoFile" BeforeTargets="CopyLocalizationResources" DependsOnTargets="VSCTCompile">
-    <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
-  </Target>
-
-  <Target Name="CopyLocalizationResources" BeforeTargets="CoreResGen">
-    <ItemGroup>
-      <LocalizationResources Include="MenusAndCommands.vsct" />
-    </ItemGroup>
-    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutputPath)\%(Filename)%(Extension)')" />
-  </Target>
-
-  <Target Name="EnsureResourceNameHasCulture" BeforeTargets="MergeCtoResource">
-    <ItemGroup>
-      <_GeneratedCTOFilesWithCulture Update="%(Identity)">
-        <ResourceName>%(ResourceName).%(Culture)</ResourceName>
-      </_GeneratedCTOFilesWithCulture>
-    </ItemGroup>
-  </Target>
 
 </Project>

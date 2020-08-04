@@ -3,7 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.Async type
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
@@ -89,9 +89,15 @@ type AsyncType() =
         Async.RunSynchronously(computation, timeout = 1000) |> ignore
 
     [<Test>]
-    member this.AsyncSleepCancellation1() =
+    [<TestCase("int32")>]
+    [<TestCase("timespan")>]
+    member this.AsyncSleepCancellation1(sleepType) =
         ignoreSynchCtx (fun () ->
-            let computation = Async.Sleep(10000000)
+            let computation =
+                match sleepType with
+                | "int32"    -> Async.Sleep(10000000)
+                | "timespan" -> Async.Sleep(10000000.0 |> TimeSpan.FromMilliseconds)
+                | unknown    -> raise (NotImplementedException(unknown))
             let result = ref ""
             use cts = new CancellationTokenSource()
             Async.StartWithContinuations(computation,
@@ -105,9 +111,15 @@ type AsyncType() =
         )
 
     [<Test>]
-    member this.AsyncSleepCancellation2() =
+    [<TestCase("int32")>]
+    [<TestCase("timespan")>]
+    member this.AsyncSleepCancellation2(sleepType) =
         ignoreSynchCtx (fun () ->
-            let computation = Async.Sleep(10)
+            let computation =
+                match sleepType with
+                | "int32"    -> Async.Sleep(10)
+                | "timespan" -> Async.Sleep(10.0 |> TimeSpan.FromMilliseconds)
+                | unknown    -> raise (NotImplementedException(unknown))
             for i in 1..100 do
                 let result = ref ""
                 use completedEvent = new ManualResetEvent(false)
@@ -121,6 +133,36 @@ type AsyncType() =
                 cts.Cancel()
                 completedEvent.WaitOne() |> Assert.IsTrue
                 Assert.IsTrue(!result = "Cancel" || !result = "Ok")
+        )
+
+    [<Test>]
+    [<TestCase("int32")>]
+    [<TestCase("timespan")>]
+    member this.AsyncSleepThrowsOnNegativeDueTimes(sleepType) =
+        async {
+            try
+                do! match sleepType with
+                    | "int32"    -> Async.Sleep(-100)
+                    | "timespan" -> Async.Sleep(-100.0 |> TimeSpan.FromMilliseconds)
+                    | unknown    -> raise (NotImplementedException(unknown))
+                failwith "Expected ArgumentOutOfRangeException"
+            with
+            | :? ArgumentOutOfRangeException -> ()
+        } |> Async.RunSynchronously
+
+    [<Test>]
+    member this.AsyncSleepInfinitely() =
+        ignoreSynchCtx (fun () ->
+            let computation = Async.Sleep(System.Threading.Timeout.Infinite)
+            let result = TaskCompletionSource()
+            use cts = new CancellationTokenSource(TimeSpan.FromSeconds(1.0)) // there's a long way from 1 sec to infinity, but it'll have to do.
+            Async.StartWithContinuations(computation,
+                                            (fun _ -> result.TrySetResult("Ok")        |> ignore),
+                                            (fun _ -> result.TrySetResult("Exception") |> ignore),
+                                            (fun _ -> result.TrySetResult("Cancel")    |> ignore),
+                                            cts.Token)
+            let result = result.Task |> Async.AwaitTask |> Async.RunSynchronously
+            Assert.AreEqual("Cancel", result)
         )
 
     member private this.WaitASec (t:Task) =
@@ -145,10 +187,12 @@ type AsyncType() =
     [<Test>]
     member this.StartAsTaskCancellation () =
         let cts = new CancellationTokenSource()
-        let tcs = TaskCompletionSource<unit>()
+        let mutable spinloop = true
+        let doSpinloop () = while spinloop do ()
         let a = async {
             cts.CancelAfter (100)
-            do! tcs.Task |> Async.AwaitTask }
+            doSpinloop()
+        }
 #if !NET46
         let t : Task<unit> =
 #else
@@ -156,13 +200,13 @@ type AsyncType() =
 #endif
             Async.StartAsTask(a, cancellationToken = cts.Token)
 
-        // Should not finish
+        // Should not finish, we don't eagerly mark the task done just because it's been signaled to cancel.
         try
             let result = t.Wait(300)
             Assert.IsFalse (result)
-        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
-        tcs.SetCanceled()
+        spinloop <- false
         
         try
             this.WaitASec t
@@ -173,18 +217,29 @@ type AsyncType() =
         Assert.IsTrue (t.IsCompleted, "Task is not completed")
 
     [<Test>]
-    member this.StartTask () =
-        let s = "Hello tasks!"
-        let a = async { return s }
-#if !NET46
-        let t = 
-#else
-        use t =
-#endif
-            Async.StartAsTask a
-        this.WaitASec t
-        Assert.IsTrue (t.IsCompleted)
-        Assert.AreEqual(s, t.Result)    
+    member this.``AwaitTask ignores Async cancellation`` () =
+        let cts = new CancellationTokenSource()
+        let tcs = new TaskCompletionSource<unit>()
+        let innerTcs = new TaskCompletionSource<unit>()
+        let a = innerTcs.Task |> Async.AwaitTask
+
+        Async.StartWithContinuations(a, tcs.SetResult, tcs.SetException, ignore >> tcs.SetCanceled, cts.Token)
+
+        cts.CancelAfter(100)
+        try
+            let result = tcs.Task.Wait(300)
+            Assert.IsFalse (result)
+        with :? AggregateException -> Assert.Fail "Should not finish, yet"
+
+        innerTcs.SetResult ()
+
+        try
+            this.WaitASec tcs.Task
+        with :? AggregateException as a ->
+            match a.InnerException with
+            | :? TaskCanceledException -> ()
+            | _ -> reraise()
+        Assert.IsTrue (tcs.Task.IsCompleted, "Task is not completed")
 
     [<Test>]
     member this.RunSynchronouslyCancellationWithDelayedResult () =
@@ -478,22 +533,37 @@ type AsyncType() =
         
     [<Test>]
     member this.NonGenericTaskAsyncValueCancellation () =
-        use ewh = new ManualResetEvent(false)    
+        use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
         let token = cts.Token
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
-#endif   
+#endif
             Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
-        let cancelled = ref true
         let a = async {
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
-            }        
+            }
         Async.Start a
         cts.Cancel()
-        ewh.WaitOne(10000) |> ignore        
+        ewh.WaitOne(10000) |> ignore
 
+    [<Test>]
+    member this.CancellationExceptionThrown () =
+        use ewh = new ManualResetEventSlim(false)
+        let cts = new CancellationTokenSource()
+        let token = cts.Token
+        let mutable hasThrown = false
+        token.Register(fun () -> ewh.Set() |> ignore) |> ignore
+        let a = async {
+            try
+                while true do token.ThrowIfCancellationRequested()
+            with _ -> hasThrown <- true
+        }
+        Async.Start(a, token)
+        cts.Cancel()
+        ewh.Wait(10000) |> ignore
+        Assert.False hasThrown

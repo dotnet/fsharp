@@ -9,9 +9,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open System.Collections.Generic
-#if FX_RESHAPED_REFLECTION
-    open System.Reflection
-#endif
+    
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
@@ -27,18 +25,16 @@ namespace Microsoft.FSharp.Collections
         let length (list: 'T list) = list.Length
 
         [<CompiledName("Last")>]
-        let rec last (list: 'T list) =
-            match list with
-            | [x] -> x
-            | _ :: tail -> last tail
-            | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
+        let last (list: 'T list) =
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
+            | ValueSome x -> x
+            | ValueNone -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
         [<CompiledName("TryLast")>]
         let rec tryLast (list: 'T list) =
-            match list with
-            | [x] -> Some x
-            | _ :: tail -> tryLast tail
-            | [] -> None
+            match Microsoft.FSharp.Primitives.Basics.List.tryLastV list with
+            | ValueSome x -> Some x
+            | ValueNone -> None            
 
         [<CompiledName("Reverse")>]
         let rev list = Microsoft.FSharp.Primitives.Basics.List.rev list
@@ -71,11 +67,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then countByValueType projection list
                 else countByRefType   projection list
 
@@ -108,7 +100,7 @@ namespace Microsoft.FSharp.Collections
                 loop ([], state) (rev list)
 
         [<CompiledName("Iterate")>]
-        let iter action list = Microsoft.FSharp.Primitives.Basics.List.iter action list
+        let inline iter action (list:'T list) = for x in list do action x
 
         [<CompiledName("Distinct")>]
         let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
@@ -172,18 +164,20 @@ namespace Microsoft.FSharp.Collections
         let takeWhile predicate (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.takeWhile predicate list
 
         [<CompiledName("IterateIndexed")>]
-        let iteri action list = Microsoft.FSharp.Primitives.Basics.List.iteri action list
+        let inline iteri action (list: 'T list) =
+            let mutable n = 0
+            for x in list do action n x; n <- n + 1
 
         [<CompiledName("Initialize")>]
         let init length initializer = Microsoft.FSharp.Primitives.Basics.List.init length initializer
 
-        let rec initConstAcc n x acc =
-            if n <= 0 then acc else initConstAcc (n-1) x (x :: acc)
-
         [<CompiledName("Replicate")>]
         let replicate count initial =
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            initConstAcc count initial []
+            let mutable result = []
+            for i in 0..count-1 do
+               result <- initial :: result
+            result
 
         [<CompiledName("Iterate2")>]
         let iter2 action list1 list2 =
@@ -446,11 +440,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (list:'T list) =
-#if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
             if typeof<'Key>.IsValueType
-#endif
                 then groupByValueType projection list
                 else groupByRefType   projection list
 

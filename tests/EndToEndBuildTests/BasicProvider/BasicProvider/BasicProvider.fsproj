@@ -2,8 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
     <FSharpToolsDirectory>typeproviders</FSharpToolsDirectory>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
     <PackagePath>typeproviders</PackagePath>
   </PropertyGroup>
 

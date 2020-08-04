@@ -10,6 +10,7 @@
   <!-- directory locations -->
   <PropertyGroup>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
+    <FSharpTestsRoot>$(RepoRoot)tests</FSharpTestsRoot>
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
@@ -18,6 +19,8 @@
 
   <!-- nuget -->
   <PropertyGroup>
+    <PackageIconFullPath>$(MSBuildThisFileDirectory)icon.png</PackageIconFullPath>
+
     <!-- Point to artifacts folder as an additional nuget package source  -->
     <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' != ''">$(RestoreAdditionalProjectSources);$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "Exists('$(ArtifactsPackagesDir)') and '$(RestoreAdditionalProjectSources)' == ''">$(ArtifactsPackagesDir)</RestoreAdditionalProjectSources>
@@ -92,6 +95,10 @@
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' == 'Unix'">
+    <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
   </PropertyGroup>
 
   <!-- SDK targets override -->

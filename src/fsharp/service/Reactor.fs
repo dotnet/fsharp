@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Compiler.SourceCodeServices
+
 open System
 open System.Diagnostics
 open System.Globalization
 open System.Threading
-open Microsoft.FSharp.Control
-open FSharp.Compiler.Lib
+
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Lib
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
@@ -18,10 +19,13 @@ type internal IReactorOperations =
 type internal ReactorCommands = 
     /// Kick off a build.
     | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> CancellationToken -> bool)) option
+
     /// Do some work not synchronized in the mailbox.
     | Op of userOpName: string * opName: string * opArg: string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
+
     /// Finish the background building
     | WaitForBackgroundOpCompletion of AsyncReplyChannel<unit>            
+
     /// Finish all the queued ops
     | CompleteAllQueuedOps of AsyncReplyChannel<unit>            
         
@@ -34,7 +38,7 @@ type Reactor() =
     let mutable pauseBeforeBackgroundWork = pauseBeforeBackgroundWorkDefault
 
     // We need to store the culture for the VS thread that is executing now, 
-    // so that when the reactor picks up a thread from the threadpool we can set the culture
+    // so that when the reactor picks up a thread from the thread pool we can set the culture
     let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
     let mutable bgOpCts = new CancellationTokenSource()
@@ -64,11 +68,7 @@ type Reactor() =
                                             Trace.TraceInformation("Reactor: {0:n3} pausing {1} milliseconds", DateTime.Now.TimeOfDay.TotalSeconds, pauseBeforeBackgroundWork)
                                             pauseBeforeBackgroundWork
                                     return! inbox.TryReceive(timeout) }
-#if FX_RESHAPED_GLOBALIZATION
-                    CultureInfo.CurrentUICulture <- culture
-#else
                     Thread.CurrentThread.CurrentUICulture <- culture
-#endif
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)

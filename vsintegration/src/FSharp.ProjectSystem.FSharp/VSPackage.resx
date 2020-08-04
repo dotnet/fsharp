@@ -220,9 +220,6 @@
   <data name="400" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\FSharpAboutBox.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="1000_ctmenu" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>ctofiles\MenusAndCommands.cto;System.Byte[], mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="4000" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\FSharpWindowsApplication.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -467,10 +464,10 @@
     <value>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</value>
   </data>
   <data name="ProductDetails" xml:space="preserve">
-    <value>Microsoft Visual F# Tools 10.4 for F# 4.6</value>
+    <value>Microsoft Visual F# Tools</value>
   </data>
   <data name="9002" xml:space="preserve">
-    <value>Microsoft Visual F# Tools 10.4 for F# 4.6</value>
+    <value>Microsoft Visual F# Tools</value>
   </data>
   <data name="ProductID" xml:space="preserve">
     <value>1.0</value>
@@ -479,7 +476,7 @@
     <value>Microsoft Visual F# Tools</value>
   </data>
   <data name="9001" xml:space="preserve">
-    <value>Visual F# Tools 10.4 for F# 4.6</value>
+    <value>Visual F# Tools</value>
   </data>
   <data name="9027" xml:space="preserve">
     <value>F# Interactive</value>

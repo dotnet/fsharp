@@ -2,12 +2,11 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Range
 open FSharp.Compiler.CompileOps
-
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
 type public FSharpAssemblyContents = 
@@ -89,7 +88,7 @@ module public BasicPatterns =
     /// Matches expressions which are type abstractions
     val (|TypeLambda|_|) : FSharpExpr -> (FSharpGenericParameter list * FSharpExpr) option   
 
-    /// Matches expressions with a decision expression, each branch of which ends in DecisionTreeSuccess pasing control and values to one of the targets.
+    /// Matches expressions with a decision expression, each branch of which ends in DecisionTreeSuccess passing control and values to one of the targets.
     val (|DecisionTree|_|) : FSharpExpr -> (FSharpExpr * (FSharpMemberOrFunctionOrValue list * FSharpExpr) list) option
 
     /// Special expressions at the end of a conditional decision structure in the decision expression node of a DecisionTree .
@@ -217,5 +216,5 @@ module public BasicPatterns =
     val (|ObjectExpr|_|) : FSharpExpr -> (FSharpType * FSharpExpr * FSharpObjectExprOverride list * (FSharpType * FSharpObjectExprOverride list) list) option
 
     /// Matches expressions for an unresolved call to a trait 
-    val (|TraitCall|_|) : FSharpExpr -> (FSharpType list * string * Ast.MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
+    val (|TraitCall|_|) : FSharpExpr -> (FSharpType list * string * MemberFlags * FSharpType list * FSharpType list * FSharpExpr list) option 
 

@@ -27,6 +27,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>The created event.</returns>
         new : unit -> Event<'Delegate,'Args>
         /// <summary>Triggers the event using the given sender object and parameters. The sender object may be <c>null</c>.</summary>
+        ///
         /// <param name="sender">The object triggering the event.</param>
         /// <param name="args">The parameters for the event.</param>
         member Trigger : sender:obj * args:'Args -> unit
@@ -41,6 +42,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>The created event.</returns>
         new : unit -> Event<'T>
         /// <summary>Triggers an observation using the given parameters.</summary>
+        ///
         /// <param name="arg">The event parameters.</param>
         member Trigger : arg:'T -> unit
         /// <summary>Publishes an observation  as a first class value.</summary>

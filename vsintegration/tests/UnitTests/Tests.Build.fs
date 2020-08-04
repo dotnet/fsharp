@@ -93,7 +93,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -109,7 +109,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -125,7 +125,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -143,7 +143,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -159,7 +159,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -174,7 +174,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -190,7 +190,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -206,7 +206,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -222,7 +222,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -238,7 +238,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -254,7 +254,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -270,7 +270,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -285,7 +285,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -301,7 +301,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -318,7 +318,7 @@ type Build() =
                      "--highentropyva-" + Environment.NewLine +
                      "--nocopyfsharpcore" + Environment.NewLine +
                      "--yadda" + Environment.NewLine +
-                     "yadda" + Environment.NewLine)
+                     "yadda")
                     cmd
 
     [<Test>]
@@ -334,7 +334,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -350,7 +350,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -366,7 +366,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -382,7 +382,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -399,7 +399,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -416,7 +416,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -433,7 +433,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -449,7 +449,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -468,7 +468,7 @@ type Build() =
                      "--highentropyva-" + Environment.NewLine +
                      "--nocopyfsharpcore" + Environment.NewLine +
                      src + Environment.NewLine +
-                     src + Environment.NewLine)
+                     src)
                     cmd
         ()
 
@@ -485,7 +485,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -501,7 +501,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -517,7 +517,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -532,7 +532,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -547,7 +547,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd
 
     [<Test>]
@@ -562,7 +562,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd 
 
     [<Test>]
@@ -576,7 +576,7 @@ type Build() =
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +
                      "--highentropyva+" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd 
 
     [<Test>]
@@ -591,7 +591,7 @@ type Build() =
                      "--flaterrors" + Environment.NewLine +
                      "--subsystemversion:6.02" + Environment.NewLine +
                      "--highentropyva-" + Environment.NewLine +
-                     "--nocopyfsharpcore" + Environment.NewLine)
+                     "--nocopyfsharpcore")
                     cmd 
 
     [<Test>]
@@ -665,7 +665,7 @@ type Build() =
             "--other:internal quote" + Environment.NewLine +
             "blah" + Environment.NewLine +
             "foo.fs" + Environment.NewLine +
-            @"C:\Program Files\spaces.fs" + Environment.NewLine
+            @"C:\Program Files\spaces.fs"
 
         AssertEqual expected cmd
 

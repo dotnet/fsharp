@@ -47,11 +47,6 @@ module internal PrintfImpl =
     open Microsoft.FSharp.Collections
     open LanguagePrimitives.IntrinsicOperators
 
-#if FX_RESHAPED_REFLECTION
-    open Microsoft.FSharp.Core.PrimReflectionAdapters
-    open Microsoft.FSharp.Core.ReflectionAdapters
-#endif
-
     open System.IO
     
     [<Flags>]
@@ -1064,18 +1059,16 @@ module internal PrintfImpl =
         
         static member GenericToStringCore(v: 'T, opts: Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions, bindingFlags) = 
             // printfn %0A is considered to mean 'print width zero'
-            match box v with 
-            | null -> "<null>" 
-            | _ -> Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
+            match box v with
+            | null ->
+                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, typeof<'T>)
+            | _ ->
+                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
 
         static member GenericToString<'T>(spec: FormatSpecifier) = 
             let bindingFlags = 
-#if FX_RESHAPED_REFLECTION
-                isPlusForPositives spec.Flags // true - show non-public
-#else
                 if isPlusForPositives spec.Flags then BindingFlags.Public ||| BindingFlags.NonPublic
                 else BindingFlags.Public 
-#endif
 
             let useZeroWidth = isPadWithZeros spec.Flags
             let opts = 

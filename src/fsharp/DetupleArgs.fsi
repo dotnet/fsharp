@@ -3,13 +3,13 @@
 module internal FSharp.Compiler.Detuple 
 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.Tast
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
-val DetupleImplFile : CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
+val DetupleImplFile: CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
 
 module GlobalUsageAnalysis = 
-    val GetValsBoundInExpr : Expr -> Zset<Val>
+    val GetValsBoundInExpr: Expr -> Zset<Val>
 
     type accessor 
 
@@ -17,17 +17,24 @@ module GlobalUsageAnalysis =
     /// This could extend to be a full graph view of the expr.
     /// Later could support "safe" change operations, and optimisations could be in terms of those.
     type Results =
-       { /// v -> context / APP inst args 
-         Uses   : Zmap<Val,(accessor list * TType list * Expr list) list>; 
+       {
+         /// v -> context / APP inst args 
+         Uses: Zmap<Val,(accessor list * TType list * Expr list) list>
+
          /// v -> binding repr 
-         Defns   : Zmap<Val,Expr>;                                    
+         Defns: Zmap<Val,Expr>
+
          /// bound in a decision tree? 
-         DecisionTreeBindings    : Zset<Val>;                                              
+         DecisionTreeBindings: Zset<Val>
+
          /// v -> recursive? * v list   -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val,(bool * Vals)>;                        
+         RecursiveBindings: Zmap<Val,(bool * Vals)>
+
          /// val not defined under lambdas 
-         TopLevelBindings : Zset<Val>;                                            
+         TopLevelBindings: Zset<Val>
+
          /// top of expr toplevel? (true) 
-         IterationIsAtTopLevel      : bool;                                                         
+         IterationIsAtTopLevel: bool
        }
-    val GetUsageInfoOfImplFile :  TcGlobals -> TypedImplFile -> Results
+
+    val GetUsageInfoOfImplFile: TcGlobals -> TypedImplFile -> Results

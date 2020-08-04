@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">netcoreapp2.0</TargetFramework>
+    <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">netcoreapp3.1</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
-    <DebugType>None</DebugType>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +20,7 @@
         <PackagePath>content\myfiles\</PackagePath>
     </Content>
     <PackageReference Include="BasicProvider" Version="1.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170517-02" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
   </ItemGroup>

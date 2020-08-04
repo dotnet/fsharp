@@ -17,9 +17,10 @@
     <_Dependency Include="FSharp.Build" Version="$(FSProductVersion)" />
     <_Dependency Include="FSharp.Compiler.Interactive.Settings" Version="$(FSProductVersion)" />
     <_Dependency Include="FSharp.Compiler.Private" Version="$(FSProductVersion)" />
+    <_Dependency Include="Microsoft.DotNet.DependencyManager" Version="$(FSProductVersion)" />
+    <_Dependency Include="FSharp.DependencyManager.Nuget" Version="$(FSProductVersion)" />
     <_Dependency Include="FSharp.Compiler.Server.Shared" Version="$(FSProductVersion)" />
     <_Dependency Include="FSharp.Core" Version="$(FSCoreVersion)" />
-    <_Dependency Include="FSharp.Data.TypeProviders" Version="$(FSharpDataTypeProvidersVersion)" />
     <_Dependency Include="FSharp.Editor" Version="$(VSAssemblyVersion)" />
     <_Dependency Include="FSharp.LanguageService.Base" Version="$(VSAssemblyVersion)" />
     <_Dependency Include="FSharp.LanguageService" Version="$(VSAssemblyVersion)" />

@@ -3,11 +3,8 @@
 module internal FSharp.Compiler.AbstractIL.Morphs 
 
 open System.Collections.Generic
-open Internal.Utilities
 open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL 
 
 let mutable morphCustomAttributeData = false
@@ -50,7 +47,7 @@ let code_instr2instr_ty2ty  (finstr,fty) (c:ILCode) =
            Exceptions = c.Exceptions |> List.map (fun e -> { e with Clause = e.Clause |> (function ILExceptionClause.TypeCatch (ilty, b) -> ILExceptionClause.TypeCatch (fty ilty, b) | cl -> cl) }) } 
 
 // --------------------------------------------------------------------
-// Standard morphisms - mapping tyes etc.
+// Standard morphisms - mapping types etc.
 // -------------------------------------------------------------------- 
 
 let rec ty_tref2tref f x  = 

@@ -5,8 +5,8 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp2.1</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -18,8 +18,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <EmbeddedText Include="FSBuild.txt" />
+    <EmbeddedText Include="..\..\utils\UtilsStrings.txt" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
-    <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="FSharpCommandLineBuilder.fs" />
     <Compile Include="Fsc.fs" />
     <Compile Include="Fsi.fs" />
@@ -27,6 +27,7 @@
     <Compile Include="FSharpEmbedResXSource.fs" />
     <Compile Include="WriteCodeFragment.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
+    <Compile Include="SubstituteText.fs" />
     <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
@@ -36,16 +37,14 @@
       <Replacement1>$(FSharpCoreShippedPackageVersion)</Replacement1>
       <Pattern2>{{FSharpCorePreviewPackageVersion}}</Pattern2>
       <Replacement2>$(FSharpCorePreviewPackageVersion)</Replacement2>
+      <Pattern3>{{FSCorePackageVersion}}</Pattern3>
+      <Replacement3>$(FSCorePackageVersion)</Replacement3>
     </NoneSubstituteText>
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="Microsoft.VisualFSharp.Type.Providers.Redist" Version="$(MicrosoftVisualFSharpTypeProvidersRedistVersion)" />
   </ItemGroup>
 
   <ItemGroup>

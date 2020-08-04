@@ -4,6 +4,7 @@ module public FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler 
 open FSharp.Compiler.Range
+open FSharp.Compiler.Features
 open System
 
 //------------------------------------------------------------------------
@@ -88,10 +89,15 @@ exception Deprecated of string * range
 exception Experimental of string * range
 exception PossibleUnverifiableCode of range
 
-exception UnresolvedReferenceNoRange of (*assemblyname*) string 
-exception UnresolvedReferenceError of (*assemblyname*) string * range
-exception UnresolvedPathReferenceNoRange of (*assemblyname*) string * (*path*) string
-exception UnresolvedPathReference of (*assemblyname*) string * (*path*) string * range
+exception UnresolvedReferenceNoRange of (*assemblyName*) string 
+exception UnresolvedReferenceError of (*assemblyName*) string * range
+exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string with
+    override this.Message =
+        match this :> exn with
+        | UnresolvedPathReferenceNoRange(assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
+        | _ -> "impossible"
+
+exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
 
 
 
@@ -197,7 +203,7 @@ type PhasedDiagnostic =
 
     /// Construct a phased error
     static member Create(exn:exn, phase:BuildPhase) : PhasedDiagnostic =
-        // FUTURE: renable this assert, which has historically triggered in some compiler service scenarios
+        // FUTURE: reenable this assert, which has historically triggered in some compiler service scenarios
         // System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
 
@@ -281,7 +287,7 @@ let DiscardErrorsLogger =
 
 let AssertFalseErrorLogger =
     { new ErrorLogger("AssertFalseErrorLogger") with 
-            // TODO: renable these asserts in the compiler service
+            // TODO: reenable these asserts in the compiler service
             member x.DiagnosticSink(phasedError, isError) = (* assert false; *) ()
             member x.ErrorCount = (* assert false; *) 0 
     }
@@ -313,7 +319,7 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
-            // FUTURE: renable these asserts, which have historically fired in some compiler service scernaios
+            // FUTURE: reenable these asserts, which have historically fired in some compiler service scenarios
             | null -> (* assert false; *) BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
@@ -351,10 +357,6 @@ module ErrorLoggerExtensions =
 
     /// Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
-#if FX_REDUCED_EXCEPTIONS
-        ignore exn
-        ()
-#else
         match  exn with 
         // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
         | :? System.Reflection.TargetInvocationException -> ()
@@ -366,7 +368,6 @@ module ErrorLoggerExtensions =
             PreserveStackTrace exn
             raise exn
         | _ -> ()
-#endif
 
     type ErrorLogger with  
 
@@ -404,10 +405,7 @@ module ErrorLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
-#if FX_REDUCED_EXCEPTIONS
-#else
             | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException), _) ->  ()
-#endif
             | ReportedError _  | WrappedError(ReportedError _, _)  -> ()
             | StopProcessing | WrappedError(StopProcessing, _) -> 
                 PreserveStackTrace exn
@@ -449,8 +447,8 @@ let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
 let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #ErrorLogger) =
     let oldErrorLogger = CompileThreadStatic.ErrorLogger
     let newErrorLogger = errorLoggerTransformer oldErrorLogger
-    let newInstalled = ref true
-    let newIsInstalled() = if !newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
+    let mutable newInstalled = true
+    let newIsInstalled() = if newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
                              member __.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member __.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
@@ -460,7 +458,7 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     { new System.IDisposable with 
          member __.Dispose() =
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
-            newInstalled := false }
+            newInstalled <- false }
 
 let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPhase <- phase
 let SetThreadErrorLoggerNoUnwind errorLogger     = CompileThreadStatic.ErrorLogger <- errorLogger
@@ -614,7 +612,7 @@ let TryD f g =
         }
     | res -> res
 
-let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
+let rec RepeatWhileD nDeep body = body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep+1) body else CompleteD) 
 let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
 
 
@@ -679,7 +677,29 @@ type public FSharpErrorSeverityOptions =
 
 
 // See https://github.com/Microsoft/visualfsharp/issues/6417, if a compile of the FSharp.Compiler.Services.dll or other compiler
-// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try removing
-// this.
-let dummyMethodFOrBug6417A() = () 
-let dummyMethodFOrBug6417B() = () 
+// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try adding
+// this back in.
+// let dummyMethodFOrBug6417A() = () 
+// let dummyMethodFOrBug6417B() = () 
+
+let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    if not (langVersion.SupportsFeature langFeature) then
+        let featureStr = langVersion.GetFeatureString langFeature
+        let currentVersionStr = langVersion.SpecifiedVersionString
+        let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+        Some (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+    else
+        None
+
+let internal tryLanguageFeatureError langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> error (e)
+    | None -> ()
+
+let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> errorR e
+    | None -> ()
+
+let internal tryLanguageFeatureErrorOption langVersion langFeature m =
+    tryLanguageFeatureErrorAux langVersion langFeature m 

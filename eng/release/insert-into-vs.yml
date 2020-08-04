@@ -1,6 +1,6 @@
 parameters:
   componentBranchName: ''
-  insertBuildPolicy: 'CloudBuild - Request RPS'
+  insertBuildPolicy: 'Request Perf DDRITs'
   insertTargetBranch: ''
   insertTeamEmail: ''
   insertTeamName: ''
@@ -26,6 +26,8 @@ stages:
       value: ${{ parameters.insertTeamEmail }}
     - name: InsertTeamName
       value: ${{ parameters.insertTeamName }}
+    - name: InsertPayloadName
+      value: '${{ parameters.insertTeamName }} $(Build.SourceBranchName) $(Build.BuildNumber)'
     steps:
     - task: DownloadBuildArtifacts@0
       displayName: Download Insertion Artifacts

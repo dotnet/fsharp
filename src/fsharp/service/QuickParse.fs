@@ -8,7 +8,8 @@ open FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
 type PartialLongName =
-    { /// Qualifying idents, prior to the last dot, not including the last part.
+    {
+      /// Qualifying idents, prior to the last dot, not including the last part.
       QualifyingIdents: string list
       
       /// Last part of long ident.
@@ -20,10 +21,10 @@ type PartialLongName =
       /// Position of the last dot.
       LastDotPos: int option }
     
-    /// Empty patial long name.
+    /// Empty partial long name.
     static member Empty(endColumn: int) = { QualifyingIdents = []; PartialIdent = ""; EndColumn = endColumn; LastDotPos = None }
 
-/// Methods for cheaply and innacurately parsing F#.
+/// Methods for cheaply and inaccurately parsing F#.
 ///
 /// These methods are very old and are mostly to do with extracting "long identifier islands" 
 ///     A.B.C
@@ -51,21 +52,21 @@ module QuickParse =
             FSharp.Compiler.Parser.tagOfToken (FSharp.Compiler.Parser.token.IDENT tokenText)
         else tokenTag
 
-    let rec isValidStrippedName (name:string) idx = 
+    let rec isValidStrippedName (name: ReadOnlySpan<char>) idx = 
         if idx = name.Length then false
         elif IsIdentifierPartCharacter name.[idx] then true
         else isValidStrippedName name (idx + 1)
 
     // Utility function that recognizes whether a name is valid active pattern name
     // Extracts the 'core' part without surrounding bars and checks whether it contains some identifier
-    // (Note, this doesn't have to be precise, because this is checked by backround compiler,
+    // (Note, this doesn't have to be precise, because this is checked by background compiler,
     // but it has to be good enough to distinguish operators and active pattern names)
     let private isValidActivePatternName (name: string) = 
 
       // Strip the surrounding bars (e.g. from "|xyz|_|") to get "xyz"
       match name.StartsWithOrdinal("|"), name.EndsWithOrdinal("|_|"), name.EndsWithOrdinal("|") with
-      | true, true, _ when name.Length > 4 -> isValidStrippedName (name.Substring(1, name.Length - 4)) 0
-      | true, _, true when name.Length > 2 -> isValidStrippedName (name.Substring(1, name.Length - 2)) 0
+      | true, true, _ when name.Length > 4 -> isValidStrippedName (name.AsSpan(1, name.Length - 4)) 0
+      | true, _, true when name.Length > 2 -> isValidStrippedName (name.AsSpan(1, name.Length - 2)) 0
       | _ -> false
     
     let GetCompleteIdentifierIslandImpl (lineStr: string) (index: int) : (string * int * bool) option =
@@ -152,7 +153,7 @@ module QuickParse =
     /// In general, only identifiers composed from upper/lower letters and '.' are supported, but there
     /// are a couple of explicitly handled exceptions to allow some common scenarios:
     /// - When the name contains only letters and '|' symbol, it may be an active pattern, so we 
-    ///   treat it as a valid identifier - e.g. let ( |Identitiy| ) a = a
+    ///   treat it as a valid identifier - e.g. let ( |Identity| ) a = a
     ///   (but other identifiers that include '|' are not allowed - e.g. '||' operator)
     /// - It searches for double tick (``) to see if the identifier could be something like ``a b``
     ///

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 #nowarn "52"
 open System
 open FSharp.Core.UnitTests.LibraryTestFx

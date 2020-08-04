@@ -27,6 +27,7 @@ type public Fsc () as this =
     let mutable checksumAlgorithm: string = null
     let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
+    let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
@@ -40,6 +41,7 @@ type public Fsc () as this =
     let mutable generateInterfaceFile : string = null
     let mutable highEntropyVA : bool = false
     let mutable keyFile : string = null
+    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize  : bool = true
     let mutable otherFlags : string = null
@@ -103,15 +105,15 @@ type public Fsc () as this =
                 | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
-        if embedAllSources then
-            builder.AppendSwitch("--embed+")
+        if embedAllSources then builder.AppendSwitch("--embed+")
         if embeddedFiles <> null then 
             for item in embeddedFiles do
                 builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
+        builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         // NoFramework
-        if noFramework then 
-            builder.AppendSwitch("--noframework") 
+        if noFramework then
+            builder.AppendSwitch("--noframework")
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
@@ -120,7 +122,6 @@ type public Fsc () as this =
                 builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
-
         // GenerateInterfaceFile
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
@@ -162,6 +163,12 @@ type public Fsc () as this =
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
+
+        // CompilerTools
+        if compilerTools <> null then 
+            for item in compilerTools do
+                builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
+
         // References
         if references <> null then 
             for item in references do
@@ -276,6 +283,11 @@ type public Fsc () as this =
         with get() = codePage
         and set(s) = codePage <- s
 
+    // -r <string>: Reference an F# or .NET assembly.
+    member fsc.CompilerTools
+        with get() = compilerTools
+        and set(a) = compilerTools <- a
+
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member fsc.DebugSymbols
         with get() = debugSymbols
@@ -343,6 +355,10 @@ type public Fsc () as this =
         with get() = keyFile
         and set(s) = keyFile <- s
 
+    member fsc.LangVersion
+        with get() = langVersion
+        and set(s) = langVersion <- s
+
     member fsc.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
@@ -376,7 +392,7 @@ type public Fsc () as this =
     member fsc.PathMap
         with get() = pathMap
         and set(s) = pathMap <- s
-    
+
     // --pdb <string>: 
     //     Name the debug output file
     member fsc.PdbFile
@@ -573,7 +589,7 @@ type public Fsc () as this =
 
     override fsc.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()
-        builder.GetCapturedArguments() |> Seq.fold(fun acc f -> acc + f + Environment.NewLine) ""
+        builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
     // expose this to internal components (for nunit testing)
     member internal fsc.InternalGenerateCommandLineCommands() =

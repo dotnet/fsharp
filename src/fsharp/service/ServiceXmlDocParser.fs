@@ -2,17 +2,17 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
+open FSharp.Compiler.XmlDoc
 
 /// Represent an Xml documentation block in source code
 type XmlDocable =
     | XmlDocable of line:int * indent:int * paramNames:string list
 
 module XmlDocParsing =
-    open FSharp.Compiler.Range
-    open FSharp.Compiler.Ast
         
     let (|ConstructorPats|) = function
         | Pats ps -> ps

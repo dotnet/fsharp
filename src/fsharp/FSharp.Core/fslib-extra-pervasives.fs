@@ -166,21 +166,13 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("CreateDictionary")>]
     let dict (keyValuePairs:seq<'Key*'T>) : IDictionary<'Key,'T> =
-#if FX_RESHAPED_REFLECTION
-        if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
         if typeof<'Key>.IsValueType
-#endif
             then dictValueType keyValuePairs :> _
             else dictRefType   keyValuePairs :> _
 
     [<CompiledName("CreateReadOnlyDictionary")>]
     let readOnlyDict (keyValuePairs:seq<'Key*'T>) : IReadOnlyDictionary<'Key,'T> =
-#if FX_RESHAPED_REFLECTION
-        if (typeof<'Key>).GetTypeInfo().IsValueType
-#else
         if typeof<'Key>.IsValueType
-#endif
             then dictValueType keyValuePairs :> _
             else dictRefType   keyValuePairs :> _
 

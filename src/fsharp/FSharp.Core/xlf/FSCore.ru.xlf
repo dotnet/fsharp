@@ -707,6 +707,11 @@
         <target state="translated">Недопустимое выражение запроса. Конструкция "{0}" использовалась запросе, но не была распознана транслятором запросов из F# в LINQ. Проверьте спецификацию разрешенных запросов и попробуйте вынести часть операций за пределы выражения запроса.</target>
         <note />
       </trans-unit>
+      <trans-unit id="maxDegreeOfParallelismNotPositive">
+        <source>maxDegreeOfParallelism must be positive, was {0}</source>
+        <target state="translated">Параметр maxDegreeOfParallelism должен иметь положительное значение, указано значение {0}</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

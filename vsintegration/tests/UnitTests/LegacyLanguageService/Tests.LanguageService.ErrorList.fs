@@ -57,18 +57,41 @@ type UsingMSBuild() as this =
         let ok = errors |> List.exists (fun err -> err.Message = text)
         Assert.IsTrue(ok, sprintf "Error list should contain '%s' message" text)
 
+    let assertExpectedErrorMessages expected (actual: list<Error>) =
+        let normalizeCR input = System.Text.RegularExpressions.Regex.Replace(input, @"\r\n|\n\r|\n|\r", "\r\n")
+        let actual = 
+            actual 
+            |> Seq.map (fun e -> e.Message)
+            |> String.concat Environment.NewLine
+            |> normalizeCR
+        let expected = expected |> String.concat Environment.NewLine |> normalizeCR
+        
+        let message = 
+            sprintf """
+=[ expected ]============
+%s
+=[ actual ]==============
+%s
+=========================""" expected actual
+        Assert.AreEqual(expected, actual, message)
 
     //verify the error list Count
     member private this.VerifyErrorListCountAtOpenProject(fileContents : string, num : int) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         let errorList = GetErrors(project)
+        let errorTexts = new System.Text.StringBuilder()
         for error in errorList do
             printfn "%A" error.Severity
-            printf "%s\n" (error.ToString()) 
-        if (num = errorList.Length) then 
-                ()
-            else
-                failwithf "The error list number is not the expected %d" num
+            let s = error.ToString()
+            errorTexts.AppendLine s |> ignore
+            printf "%s\n" s 
+
+        if num <> errorList.Length then 
+            failwithf "The error list number is not the expected %d but %d%s%s" 
+                num 
+                errorList.Length
+                System.Environment.NewLine
+                (errorTexts.ToString())
 
     //Verify the warning list Count
     member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : list<string>) = 
@@ -184,18 +207,16 @@ let g (t : T) = t.Count()
         X(1.0)
         """
 
-        let expectedMessages =
-            [ "Possible overload: 'new : bool -> X'."
-              "Possible overload: 'new : int -> X'." ]
+        let expectedMessages = [ """No overloads match for method 'X'.
 
-        CheckErrorList content <|
-            fun errors ->
-                Assert.AreEqual(3, List.length errors)
-                assertContains errors "No overloads match for method 'X'. The available overloads are shown below."
-                for expected in expectedMessages do
-                   errors
-                   |> List.exists (fun e -> e.Message.StartsWith expected)
-                   |> Assert.IsTrue
+Known type of argument: float
+
+Available overloads:
+ - new : bool -> X // Argument at index 1 doesn't match
+ - new : int -> X // Argument at index 1 doesn't match""" ]
+
+        CheckErrorList content (assertExpectedErrorMessages expectedMessages)
+            
 
     [<Test>]
     member public this.``Query.InvalidJoinRelation.GroupJoin``() = 
@@ -271,10 +292,16 @@ let x =
         let content = """
         System.Console.WriteLine(null)
         """
-        CheckErrorList content <|
-            fun errors ->
-                Assert.AreEqual(1, List.length errors)
-                assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Console.WriteLine(buffer: char []) : unit, System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit, System.Console.WriteLine(value: obj) : unit, System.Console.WriteLine(value: string) : unit"
+        let expectedMessages = [ """A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known type of argument: 'a0 when 'a0 : null
+
+Candidates:
+ - System.Console.WriteLine(buffer: char []) : unit
+ - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit
+ - System.Console.WriteLine(value: obj) : unit
+ - System.Console.WriteLine(value: string) : unit""" ]
+        CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test>]
     member public this.``InvalidMethodOverload2``() = 
@@ -288,10 +315,14 @@ type B() =
 let b = B()
 b.Do(1, 1)
         """
-        CheckErrorList content <|
-            fun errors ->
-                Assert.AreEqual(1, List.length errors)
-                assertContains errors "A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: member A.Do : a:int * b:'T -> unit, member A.Do : a:int * b:int -> unit"
+        let expectedMessages = [ """A unique overload for method 'Do' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known types of arguments: int * int
+
+Candidates:
+ - member A.Do : a:int * b:'T -> unit
+ - member A.Do : a:int * b:int -> unit""" ]
+        CheckErrorList content (assertExpectedErrorMessages expectedMessages)
 
     [<Test; Category("Expensive")>]
     member public this.``NoErrorInErrList``() = 

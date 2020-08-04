@@ -8,7 +8,24 @@ rem
 
 setlocal
 set __scriptpath=%~dp0
+set configuration=Debug
 
+:parseargs
+if "%1" == "" goto argsdone
+if /i "%1" == "-c" goto set_configuration
+
+echo Unsupported argument: %1
+goto failure
+
+:set_configuration
+set configuration=%2
+shift
+shift
+goto parseargs
+
+:argsdone
+
+pushd %__scriptpath%
 rem
 rem Build typeprovider package with desktop compiler
 rem Test it with both desktop and coreclr compilers
@@ -17,17 +34,17 @@ rem
 if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\ComboProvider /s /q
 taskkill /F /IM dotnet.exe
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack ComboProvider\ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40 -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack ComboProvider\ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40 -nr=false
-@if ERRORLEVEL 1 echo Error: ComboProvider failed  && goto :failure
+echo dotnet pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=net40
+     dotnet pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=net40
+if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-@if ERRORLEVEL 1 echo Error: ComboProvider failed  && goto :failure
+echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-@if ERRORLEVEL 1 echo Error: ComboProviderProvider failed  && goto :failure
+echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
 rem
 rem Build typeprovider package with coreclr compiler
@@ -35,24 +52,26 @@ rem Test it with both desktop and coreclr compilers
 rem
 if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\ComboProvider /s /q
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack ComboProvider\ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=coreclr -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack ComboProvider\ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=coreclr -nr=false
-@if ERRORLEVEL 1 echo Error: ComboProviderProvider failed  && goto :failure
+echo dotnet pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
+     dotnet pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
+if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
-@echo%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-@if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
+echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test ComboProvider\ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-@if ERRORLEVEL 1 echo Error: ComboProvider failed  && goto :failure
+echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -v %configuration% -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
 :success
 endlocal
 echo Succeeded
+popd
 exit /b 0
 
 :failure
 endlocal
 echo Failed
+popd
 exit /b 1

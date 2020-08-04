@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Instructions-Line2">
         <source>and select "Execute in Interactive".  You can open the F# Interactive Window from the "View" menu.</source>
-        <target state="translated">並選取 [以互動方式執行]5D;。您可以從 [檢視]5D; 功能表開啟 F# Interactive 視窗。</target>
+        <target state="translated">並選取 [以互動方式執行]。您可以從 [檢視] 功能表開啟 F# 互動式視窗。</target>
         <note />
       </trans-unit>
       <trans-unit id="MoreAbout">
