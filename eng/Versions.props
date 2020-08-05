@@ -179,7 +179,6 @@
     <MicrosoftNETCoreILAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>16.6.1</MicrosoftNETTestSdkVersion>
     <MicrosoftWin32RegistryVersion>4.3.0</MicrosoftWin32RegistryVersion>
-	<MicrosoftTestPlatformVersion>16.6.1</MicrosoftTestPlatformVersion>
     <NewtonsoftJsonVersion>9.0.1</NewtonsoftJsonVersion>
     <NUnitVersion>3.11.0</NUnitVersion>
     <NUnit3TestAdapterVersion>3.11.2</NUnit3TestAdapterVersion>
@@ -189,7 +188,6 @@
     <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
     <StreamJsonRpcVersion>2.0.187</StreamJsonRpcVersion>
     <XUnitVersion>2.4.1</XUnitVersion>
-	<XUnitRunnerVisualStudioVersion>2.4.3</XUnitRunnerVisualStudioVersion>
-	<FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
+    <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
   </PropertyGroup>
 </Project>
