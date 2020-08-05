@@ -10,7 +10,6 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
-    <DefineConstants>$(DefineConstants);LOCALIZATION_FSCOMP</DefineConstants>
     <FsLexOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsLexOutputFolder>
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
@@ -289,6 +288,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\SimulatedMSBuildReferenceResolver.fs">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\utils\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)/utils/CompilerLocationUtils.fs">
       <Link>CompilerLocation/CompilerLocationUtils.fs</Link>
     </Compile>

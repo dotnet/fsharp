@@ -2422,8 +2422,7 @@ type TcConfigBuilder =
           deterministic = false
           preferredUiLang = None
           lcid = None
-          // See bug 6071 for product banner spec
-          productNameForBannerText = FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion)
+          productNameForBannerText = FSharpEnvironment.FSharpProductName
           showBanner = true
           showTimes = false
           showLoadedAssemblies = false

@@ -34,8 +34,6 @@ tupleRequiredInAbstractMethod,"\nA tuple type is required for one or more argume
 203,buildInvalidWarningNumber,"Invalid warning number '%s'"
 204,buildInvalidVersionString,"Invalid version string '%s'"
 205,buildInvalidVersionFile,"Invalid version file '%s'"
-buildProductName,"Microsoft (R) F# Compiler version %s"
-buildProductNameCommunity,"F# Compiler for F# %s"
 206,buildProblemWithFilename,"Problem with filename '%s': %s"
 207,buildNoInputsSpecified,"No inputs specified"
 209,buildPdbRequiresDebug,"The '--pdb' option requires the '--debug' option to be used"
@@ -1494,7 +1492,6 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3352,typrelInterfaceMemberNoMostSpecificImplementation,"Interface member '%s' does not have a most specific implementation."
 3353,chkFeatureNotSupportedInLibrary,"Feature '%s' requires the F# library for language version %s or greater."
 useSdkRefs,"Use reference assemblies for .NET framework references when available (Enabled by default)."
-fSharpBannerVersion,"%s for F# %s"
 optsLangVersion,"Display the allowed values for language version, specify language version such as 'latest' or 'preview'"
 optsSupportedLangVersions,"Supported language versions:"
 nativeResourceFormatError,"Stream does not begin with a null resource and is not in '.RES' format."
@@ -1535,3 +1532,4 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3379,parsEofInInterpolatedString,"Incomplete interpolated string begun at or before here"
 3380,parsEofInInterpolatedVerbatimString,"Incomplete interpolated verbatim string begun at or before here"
 3381,parsEofInInterpolatedTripleQuoteString,"Incomplete interpolated triple-quote string begun at or before here"
+#3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)
