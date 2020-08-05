@@ -10,26 +10,90 @@ open System
 open System.IO
 open System.Reflection
 open Microsoft.Win32
+open Microsoft.Build.Utilities
 open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.AbstractIL.Internal.Library
 
+// ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
+// 1. List of frameworks
+// 2. DeriveTargetFrameworkDirectoriesFor45Plus
+// 3. HighestInstalledRefAssembliesOrDotNETFramework
+// 4. GetPathToDotNetFrameworkImlpementationAssemblies
+[<Literal>]
+let private Net45 = "v4.5"
+
+[<Literal>]
+let private Net451 = "v4.5.1"
+
+[<Literal>]
+let private Net452 = "v4.5.2" // not available in Dev15 MSBuild version
+
+[<Literal>]
+let private Net46 = "v4.6"
+
+[<Literal>]
+let private Net461 = "v4.6.1"
+
+[<Literal>]
+let private Net462 = "v4.6.2"
+
+[<Literal>]
+let private Net47 = "v4.7"
+
+[<Literal>]
+let private Net471 = "v4.7.1"
+
+[<Literal>]
+let private Net472 = "v4.7.2"
+
+[<Literal>]
+let private Net48 = "v4.8"
+
+let SupportedDesktopFrameworkVersions = [ Net48; Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
+
 let private SimulatedMSBuildResolver =
-    let supportedFrameworks = [|
-        "v4.7.2"
-        "v4.7.1"
-        "v4.7"
-        "v4.6.2"
-        "v4.6.1"
-        "v4.6"
-        "v4.5.1"
-        "v4.5"
-        "v4.0"
-    |]
+
+    /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
+    /// This is only used to specify the "last resort" path for assembly resolution.
+    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+        let v =
+            match v with
+            | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
+            | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+#if MSBUILD_AT_LEAST_15
+            | Net452 -> Some TargetDotNetFrameworkVersion.Version452
+            | Net46 -> Some TargetDotNetFrameworkVersion.Version46
+            | Net461 -> Some TargetDotNetFrameworkVersion.Version461
+            | Net462 -> Some TargetDotNetFrameworkVersion.Version462
+            | Net47 -> Some TargetDotNetFrameworkVersion.Version47
+            | Net471 -> Some TargetDotNetFrameworkVersion.Version471
+            | Net472 -> Some TargetDotNetFrameworkVersion.Version472
+            | Net48 -> Some TargetDotNetFrameworkVersion.Version48
+#endif
+            | _ -> assert false; None
+        match v with
+        | Some v -> 
+            match ToolLocationHelper.GetPathToDotNetFramework v with
+            | null -> []
+            | x -> [x]
+        | _ -> []
+
+    let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
+#if NETSTANDARD
+        ignore version
+        let r : string list = []
+        r
+#else
+        match Microsoft.Build.Utilities.ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
+        | null | "" -> []
+        | x -> [x]
+#endif
+
     { new Resolver with
         member x.HighestInstalledNetFrameworkVersion() =
 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            let fwOpt = supportedFrameworks |> Seq.tryFind(fun fw -> Directory.Exists(Path.Combine(root, fw) ))
+            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> Directory.Exists(Path.Combine(root, fw) ))
             match fwOpt with
             | Some fw -> fw
             | None -> "v4.5"
@@ -86,6 +150,8 @@ let private SimulatedMSBuildResolver =
                 if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
                     yield! registrySearchPaths()
 #endif
+                yield! GetPathToDotNetFrameworkReferenceAssemblies targetFrameworkVersion
+                yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
               ]
 
             for (r, baggage) in references do
