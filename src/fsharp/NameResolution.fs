@@ -1072,29 +1072,17 @@ let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
 /// Rules:
 ///     1. Add nested types.
 ///     2. Add C# style extension members.
-///     3. Add union cases.
-///     4. Add extention methods.
-///     5. Add extension properties.
-///     6. Add events.
-///     7. Add fields.
-///     8. Add properies.
-///     9. Add methods.
+///     3. Add extention methods.
+///     4. Add extension properties.
+///     5. Add events.
+///     6. Add fields.
+///     7. Add properies.
+///     8. Add methods.
 let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)
 
     let nenv = AddNestedTypesOfTypeToNameEnv infoReader amap ad m nenv ty
     let nenv = AddCSharpStyleExtensionMembersOfTypeToNameEnv amap m nenv ty
-    let nenv =
-        match tryTcrefOfAppTy g ty with
-        | ValueSome tcref when not tcref.IsILTycon ->
-            let ucrefs = tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
-            let unqualifiedItems = AddUnionCases2 BulkAdd.Yes nenv.eUnqualifiedItems ucrefs
-            let patItems = AddUnionCases1 nenv.ePatItems ucrefs
-            { nenv with
-                eUnqualifiedItems = unqualifiedItems
-                ePatItems = patItems }
-        | _ ->
-            nenv
 
     // The order of items matter such as intrinsic members will always be favored over extension members of the same name.
     // Extension property members will always be favored over extenion methods of the same name.
@@ -2866,7 +2854,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | _ -> false
 
             if ValIsInEnv id.idText then
-              success (nenv.eUnqualifiedItems.[id.idText], rest)
+              success (nenv.eUnqualifiedItems.[id.idText], rest, resInfo.EnclosingTypeInst)
             else
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
@@ -2939,7 +2927,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               | Exception e -> raze e
               | Result (resInfo, item, rest) -> 
                   ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                  success (item, rest, restInfo.EnclosingTypeInst)
+                  success (item, rest, resInfo.EnclosingTypeInst)
 
 let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid =
     match lid with
