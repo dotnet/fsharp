@@ -1,0 +1,2 @@
+buildProductName,"Microsoft (R) F# Compiler version %s"
+fSharpBannerVersion,"%s for F# %s"

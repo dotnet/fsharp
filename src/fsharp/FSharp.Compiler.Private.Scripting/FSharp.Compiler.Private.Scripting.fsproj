@@ -13,7 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <NuspecProperty Include="FSharpCoreVersion=$(FSCorePackageVersion)-$(VersionSuffix)" />
+    <NuspecProperty Include="FsharpCorePackageVersion=$(FSCorePackageVersion)" Condition="'$(VersionSuffix)'==''" />
+    <NuspecProperty Include="FsharpCorePackageVersion=$(FSCorePackageVersion)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
     <NuspecProperty Include="TargetFramework=$(TargetFramework)" />
   </ItemGroup>
 

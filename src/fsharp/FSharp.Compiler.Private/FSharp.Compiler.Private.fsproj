@@ -283,6 +283,7 @@
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
+    <EmbeddedText Include="..\..\utils\UtilsStrings.txt" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
     </Compile>

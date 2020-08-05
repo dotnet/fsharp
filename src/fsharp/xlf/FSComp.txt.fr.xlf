@@ -67,11 +67,6 @@
         <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
         <note />
       </trans-unit>
-      <trans-unit id="fSharpBannerVersion">
-        <source>{0} for F# {1}</source>
-        <target state="translated">{0} pour F# {1}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="new">applicative computation expressions</target>
@@ -440,16 +435,6 @@
       <trans-unit id="buildInvalidVersionFile">
         <source>Invalid version file '{0}'</source>
         <target state="translated">Fichier de version non valide '{0}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildProductName">
-        <source>Microsoft (R) F# Compiler version {0}</source>
-        <target state="translated">Compilateur F# Microsoft (R) version {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildProductNameCommunity">
-        <source>F# Compiler for F# {0}</source>
-        <target state="translated">Compilateur F# pour F# {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="buildProblemWithFilename">
