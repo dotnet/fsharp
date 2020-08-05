@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;netstandard2.0</TargetFrameworks>
+    <TargetFramework Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFramework>
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;NU5125</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -19,7 +19,7 @@
 
     <PackageId>FSharp.Compiler.Service</PackageId>
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
-    <IsPackable>true</IsPackable>
+    <IsPackable Condition="'$(OS)' == 'Windows'">true</IsPackable>
     <PackageDescription>The F# Compiler Services package For F# $(FSCoreMajorVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
   </PropertyGroup>
