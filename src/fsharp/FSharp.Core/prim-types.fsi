@@ -653,10 +653,11 @@ namespace Microsoft.FSharp.Core
         /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member</summary>
         member Flags : CompilationRepresentationFlags
 
-    module internal ExperimentalAttributeMessages = begin
+    module internal ExperimentalAttributeMessages =
         [<Literal>]
         val RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
-    end
+        [<Literal>]
+        val NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
         
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
@@ -2846,7 +2847,7 @@ namespace Microsoft.FSharp.Core
         val inline typeof<'T> : System.Type
 
         /// <summary>Returns the name of the given symbol.</summary>        
-        [<CompiledName("NameOf")>]
+        [<CompiledName("NameOf"); CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)>]
         val inline nameof : 'T -> string
 
         /// <summary>An internal, library-only compiler intrinsic for compile-time 
