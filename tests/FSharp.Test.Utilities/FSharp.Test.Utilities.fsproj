@@ -25,6 +25,8 @@
     <Compile Include="Compiler.fs" />
   </ItemGroup>
 
+  <ItemGroup />
+
   <ItemGroup>
     <!-- CompilerAssert dependencies.
          Make sure they are getting built with the Utilities. -->
@@ -38,5 +40,41 @@
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" /> <!-- TODO: This should be removed once all NUnit frameworks are migrated to xUnit -->
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
-  <Import Project="TestCommon.targets" />
+  <ItemGroup>
+	<PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
+	<PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+	<PackageReference Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
+	<PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
+	<PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
+	<PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+	<PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
+	<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
+	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
+	<PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
+	<PackageReference Include="Microsoft.NETCore.App.Ref" Version="3.1.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
+	<PackageReference Include="Microsoft.TestPlatform" Version="$(MicrosoftTestPlatformVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+	<EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\mscorlib.dll" LogicalName="netcoreapp31.mscorlib.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+	<EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.dll" LogicalName="netcoreapp31.System.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+	<EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Core.dll" LogicalName="netcoreapp31.System.Core.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+	<EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Console.dll" LogicalName="netcoreapp31.System.Console.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+	<EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Runtime.dll" LogicalName="netcoreapp31.System.Runtime.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+	<EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\System.Dynamic.Runtime.dll" LogicalName="netcoreapp31.System.Runtime.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+	<EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\netstandard.dll" LogicalName="netcoreapp31.netstandard.dll">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</EmbeddedResource>
+  </ItemGroup>
 </Project>
