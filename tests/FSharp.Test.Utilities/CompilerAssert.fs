@@ -98,6 +98,7 @@ type CompilerAssert private () =
   <ItemGroup><Reference Include="$FSHARPCORELOCATION" /></ItemGroup>
   <ItemGroup Condition="'$(TARGETFRAMEWORK)'=='net472'">
     <Reference Include="System" />
+    <Reference Include="System.Runtime" />
     <Reference Include="System.Core.dll" />
     <Reference Include="System.Xml.Linq.dll" />
     <Reference Include="System.Data.DataSetExtensions.dll" />
