@@ -8,7 +8,7 @@ namespace Microsoft.FSharp.Collections
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on 2-dimensional arrays.</summary>
+    /// <summary>Contains operations for working with 2-dimensional arrays.</summary>
     ///
     /// <remarks>
     ///  <para>See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.</para>

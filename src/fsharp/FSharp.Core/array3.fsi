@@ -9,7 +9,7 @@ namespace Microsoft.FSharp.Collections
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on rank 3 arrays.</summary>
+    /// <summary>Contains operations for working with rank 3 arrays.</summary>
     ///
     /// <remarks>
     ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
@@ -137,7 +137,7 @@ namespace Microsoft.FSharp.Collections
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on rank 4 arrays. </summary>
+    /// <summary>Contains operations for working with rank 4 arrays. </summary>
     module Array4D =
 
         /// <summary>Creates an array whose elements are all initially the given value</summary>

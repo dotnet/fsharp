@@ -7,6 +7,9 @@ namespace Microsoft.FSharp.Control
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
+    /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Control.IEvent`1"/>.</summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     module Event = 
 
         /// <summary>Fires the output event when either of the input events fire.</summary>

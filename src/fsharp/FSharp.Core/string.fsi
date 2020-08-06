@@ -10,7 +10,10 @@ namespace Microsoft.FSharp.Core
     /// <summary>Functional programming operators for string processing.  Further string operations
     /// are available via the member functions on strings and other functionality in
     ///  <a href="http://msdn2.microsoft.com/en-us/library/system.string.aspx">System.String</a> 
-    /// and <a href="http://msdn2.microsoft.com/library/system.text.regularexpressions.aspx">System.Text.RegularExpressions</a> types.</summary>
+    /// and <a href="http://msdn2.microsoft.com/library/system.text.regularexpressions.aspx">System.Text.RegularExpressions</a> types.
+    /// </summary>
+    ///
+    /// <category>Strings and Text</category>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
     module String = 
