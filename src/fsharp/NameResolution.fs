@@ -3696,7 +3696,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 
-    resInfo.EnclosingTypeInst, item, itemRange, rest, afterResolution
+    item, itemRange, rest, afterResolution
 
 
 //-------------------------------------------------------------------------
