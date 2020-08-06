@@ -173,7 +173,7 @@ module rec Compiler =
 
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with Options = options }
+        | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith "withOptions is only supported n F#"
 
     let withPreview (cUnit: CompilationUnit) : CompilationUnit =
