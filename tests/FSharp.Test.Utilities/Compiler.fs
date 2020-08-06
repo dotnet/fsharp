@@ -178,7 +178,7 @@ module rec Compiler =
 
     let withPreview (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with Options = [ "--langversion:preview" ] }
+        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:preview" ] }
         | _ -> failwith "withPreview is only supported in F#"
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
