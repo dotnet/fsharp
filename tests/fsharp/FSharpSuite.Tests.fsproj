@@ -36,7 +36,6 @@
     <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
-    <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
@@ -83,7 +82,6 @@
     <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
-
     <!-- don't include test resources in subdirectories -->
     <EmbeddedResource Remove="**" />
   </ItemGroup>

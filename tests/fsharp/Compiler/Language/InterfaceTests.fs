@@ -18,11 +18,11 @@ module InterfaceTests =
         CompilerAssert.Pass """
 type IGet<'T> =
     abstract member Get : unit -> 'T
-    
+
 type GetTuple() =
     interface IGet<int * int> with
         member x.Get() = 1, 2
-    
+
 type GetFunction() =
     interface IGet<unit->int> with
         member x.Get() = fun () -> 1
@@ -73,7 +73,7 @@ type AStructRecord = { Forename:string;  Surname:string }
 
 type AClass =
     val value: int
-    
+
     new(value) = { value = value }
 
 type IInterface<'a> =
@@ -170,7 +170,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
 
 #if NETSTANDARD
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(``C# base with dim``, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(``C# base with dim``, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 #endif
 
@@ -178,7 +178,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
             Compilation.Create(
                 ``Many Instantiations of the same interface - SetUp`` +
                 ``Many Instantiations of the same interface - Asserts``,
-                Fs, Library, 
+                Fs, Library,
                 options = [|
                     "--langversion:preview";
 #if !NETSTANDARD
@@ -210,7 +210,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
     let MultipleTypedInterfacesFSharp50VerifyIl() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions
             [|
-                "--langversion:preview"; 
+                "--langversion:preview";
                 "--deterministic+";
                 "--define:NO_ANONYMOUS";
 #if NETSTANDARD
