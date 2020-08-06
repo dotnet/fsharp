@@ -1383,6 +1383,25 @@ let main _ =
         |> ignore
 
     [<Test>]
+    let ``Opened types with operators`` () =
+        FSharp """
+type A() =
+
+    static member (+) (x: string, y: string) = x + y
+
+open type A
+
+[<EntryPoint>]
+let main _ =
+    let _x = 1 + 1
+    0"""
+        |> withOptions ["--langversion:preview"]
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
     let ``An assembly with an event and field with the same name, favor the field`` () =
         let ilSource =
             """

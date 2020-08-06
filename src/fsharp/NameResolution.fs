@@ -1025,7 +1025,8 @@ let ChooseMethInfosForNameEnv g m ty (minfos: MethInfo list) =
         minfos
         |> List.filter (fun minfo ->
             not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty &&
-            not (IsMethInfoPlainCSharpStyleExtensionMember g m isExtTy minfo))
+            not (IsMethInfoPlainCSharpStyleExtensionMember g m isExtTy minfo) &&
+            not (PrettyNaming.IsMangledOpName minfo.LogicalName))
         |> List.groupBy (fun minfo -> minfo.LogicalName)
 
     seq {
