@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
-        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <target state="translated">Funkce {0} není v jazyce F# {1} dostupná. Použijte prosím jazyk verze {2} nebo vyšší.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotRuntimeSupported">
         <source>Feature '{0}' is not supported by target runtime.</source>
-        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <target state="translated">Cílový modul runtime nepodporuje funkci {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -54,17 +54,17 @@
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <target state="translated">Navržené sestavení poskytovatele typu {0} nešlo načíst ze složky {1}, protože chyběla závislost nebo ji nešlo načíst. Všechny závislosti tohoto sestavení se musí nacházet ve stejné složce jako toto sestavení. Ohlášená výjimka: {2} – {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyException">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <target state="translated">Navržené sestavení poskytovatele typu {0} nešlo načíst ze složky {1}. Ohlášená výjimka: {2} – {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
+        <target state="translated">Atribut sestavení {0} odkazuje na navržené sestavení {1}, které se nedá načíst nebo neexistuje. Ohlášená výjimka: {2} – {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="fSharpBannerVersion">
@@ -74,32 +74,32 @@
       </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
-        <target state="new">applicative computation expressions</target>
+        <target state="translated">aplikativní výpočetní výrazy</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
-        <target state="new">default interface member consumption</target>
+        <target state="translated">využití člena výchozího rozhraní</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
-        <target state="new">dotless float32 literal</target>
+        <target state="translated">literál float32 bez tečky</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
-        <target state="new">fixed-index slice 3d/4d</target>
+        <target state="translated">řez 3d/4d s pevným indexem</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
-        <target state="new">from-end slicing</target>
+        <target state="translated">řez od konce</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
-        <target state="new">implicit yield</target>
+        <target state="translated">implicitní yield</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -109,42 +109,42 @@
       </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
-        <target state="new">nameof</target>
+        <target state="translated">nameof</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
-        <target state="new">nullable optional interop</target>
+        <target state="translated">nepovinný zprostředkovatel komunikace s možnou hodnotou null</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenStaticClasses">
         <source>open static classes</source>
-        <target state="new">open static classes</target>
+        <target state="translated">otevřít statické třídy</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
-        <target state="new">package management</target>
+        <target state="translated">správa balíčků</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
-        <target state="new">whitespace relexation</target>
+        <target state="translated">uvolnění prázdných znaků</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
-        <target state="new">single underscore pattern</target>
+        <target state="translated">vzor s jedním podtržítkem</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
-        <target state="new">wild card in for loop</target>
+        <target state="translated">zástupný znak ve smyčce for</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
-        <target state="new">witness passing for trait constraints in F# quotations</target>
+        <target state="translated">předávání kopie clusteru pro omezení vlastností v uvozovkách v jazyce F#</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
-        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <target state="translated">Člen rozhraní {0} nemá nejvíce specifickou implementaci.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariable">
@@ -1214,7 +1214,7 @@
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
         <source>The named argument '{0}' has been assigned more than one value</source>
-        <target state="new">The named argument '{0}' has been assigned more than one value</target>
+        <target state="translated">Pojmenovaný argument {0} má přiřazenou víc než jednu hodnotu.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -5919,7 +5919,7 @@
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
+        <target state="translated">Atribut sestavení {0} odkazuje na navržené sestavení {1}, které se nedá načíst z cesty {2}. Ohlášená výjimka: {3} – {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">

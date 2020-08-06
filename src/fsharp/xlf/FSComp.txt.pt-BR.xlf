@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
-        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <target state="translated">O recurso '{0}' não está disponível no F# {1}. Use a versão da linguagem {2} ou superior.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotRuntimeSupported">
         <source>Feature '{0}' is not supported by target runtime.</source>
-        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <target state="translated">O recurso '{0}' não é compatível com o runtime de destino.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -54,17 +54,17 @@
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <target state="translated">Não foi possível carregar o assembly do designer do provedor de tipos '{0}' da pasta '{1}' porque uma dependência estava ausente ou não pôde ser carregada. Todas as dependências do assembly do designer do provedor de tipos precisam estar localizadas na mesma pasta que esse assembly. A exceção relatada foi: {2} – {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyException">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <target state="translated">Não foi possível carregar o assembly do designer do provedor de tipos '{0}' da pasta '{1}'. A exceção relatada foi: {2} – {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
+        <target state="translated">O atributo de assembly '{0}' refere-se a um assembly de designer '{1}' que não pode ser carregado ou que não existe. A exceção relatada foi {2} – {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="fSharpBannerVersion">
@@ -74,32 +74,32 @@
       </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
-        <target state="new">applicative computation expressions</target>
+        <target state="translated">expressões de computação aplicáveis</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
-        <target state="new">default interface member consumption</target>
+        <target state="translated">consumo de membro da interface padrão</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
-        <target state="new">dotless float32 literal</target>
+        <target state="translated">literal float32 sem ponto</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
-        <target state="new">fixed-index slice 3d/4d</target>
+        <target state="translated">fatia de índice fixo 3d/4d</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
-        <target state="new">from-end slicing</target>
+        <target state="translated">divisão começando no final</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
-        <target state="new">implicit yield</target>
+        <target state="translated">yield implícito</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -109,42 +109,42 @@
       </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
-        <target state="new">nameof</target>
+        <target state="translated">nameof</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
-        <target state="new">nullable optional interop</target>
+        <target state="translated">interoperabilidade opcional anulável</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenStaticClasses">
         <source>open static classes</source>
-        <target state="new">open static classes</target>
+        <target state="translated">abrir classes estáticas</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
-        <target state="new">package management</target>
+        <target state="translated">gerenciamento de pacotes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
-        <target state="new">whitespace relexation</target>
+        <target state="translated">atenuação de espaço em branco</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
-        <target state="new">single underscore pattern</target>
+        <target state="translated">padrão de sublinhado simples</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
-        <target state="new">wild card in for loop</target>
+        <target state="translated">curinga para loop</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
-        <target state="new">witness passing for trait constraints in F# quotations</target>
+        <target state="translated">passagem de testemunha para restrições de característica nas citações do F#</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -254,7 +254,7 @@
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
-        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <target state="translated">O membro de interface '{0}' não tem uma implementação mais específica.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariable">
@@ -1214,7 +1214,7 @@
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
         <source>The named argument '{0}' has been assigned more than one value</source>
-        <target state="new">The named argument '{0}' has been assigned more than one value</target>
+        <target state="translated">Foi atribuído mais de um valor a um argumento nomeado '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -5919,7 +5919,7 @@
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
+        <target state="translated">O atributo de assembly '{0}' se refere a um assembly de designer '{1}' que não pode ser carregado do caminho '{2}'. A exceção relatada foi: {3} – {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">

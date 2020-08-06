@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">Идентификаторы переменных в верхнем регистре обычно не должны использоваться в шаблонах, и могут указывать на неправильно написанное имя шаблона.</target>
+        <target state="translated">Идентификаторы переменных в верхнем регистре обычно не должны использоваться в шаблонах, и могут указывать на отсутствующую открытую декларацию или неправильно написанное имя шаблона.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
