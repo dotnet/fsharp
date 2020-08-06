@@ -995,6 +995,32 @@ module Test2 =
         |> ignore
 
     [<Test>]
+    let ``Open generic union should have access to union cases with the enclosing type instantiations`` () =
+        FSharp """
+namespace FSharpTest
+
+module Test =
+
+    type TestUnion<'T> =
+        | UCase1 of 'T
+        | UCase2 with
+
+    static member M() = ()
+
+open type Test.TestUnion<int>
+
+module Test2 =
+
+    let x = UCase1 ""
+
+    let y = M()
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> shouldFail
+        |> ignore
+
+    [<Test>]
     let ``Open record should have access to construct record via labels`` () =
         FSharp """
 namespace FSharpTest
@@ -1016,6 +1042,30 @@ module Test2 =
         |> withOptions ["--langversion:preview"]
         |> compile
         |> shouldSucceed
+        |> ignore
+
+    [<Test>]
+    let ``Open generic record should have access to construct record via labels with enclosing type instantiations`` () =
+        FSharp """
+namespace FSharpTest
+
+module Test =
+
+    type TestRecord<'T> = { X: 'T } with
+
+        static member M() = ()
+
+open type Test.TestRecord<int>
+
+module Test2 =
+
+    let x = { X = "" }
+
+    let y = M()
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> shouldFail
         |> ignore
 
     [<Test>]
