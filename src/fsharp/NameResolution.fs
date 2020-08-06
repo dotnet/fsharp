@@ -1021,53 +1021,37 @@ let GetNestedTypesOfType (ad, ncenv: NameResolver, optFilter, staticResInfo, che
 let ChooseMethInfosForNameEnv g m ty (minfos: MethInfo list) =
     let isExtTy = IsTypeUsedForCSharpStyleExtensionMembers g m ty
 
-    let methGroups =
-        minfos
-        |> List.filter (fun minfo ->
-            not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty &&
-            not (IsMethInfoPlainCSharpStyleExtensionMember g m isExtTy minfo) &&
-            not (PrettyNaming.IsMangledOpName minfo.LogicalName))
-        |> List.groupBy (fun minfo -> minfo.LogicalName)
-
-    seq {
-        for (methName, methGroup) in methGroups do
-            if not methGroup.IsEmpty then
-                KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)) 
-    }
+    minfos
+    |> List.filter (fun minfo ->
+        not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty &&
+        not (IsMethInfoPlainCSharpStyleExtensionMember g m isExtTy minfo) &&
+        not (PrettyNaming.IsMangledOpName minfo.LogicalName))
+    |> List.groupBy (fun minfo -> minfo.LogicalName)
+    |> List.filter (fun (_, methGroup) -> not methGroup.IsEmpty)
+    |> List.map (fun (methName, methGroup) -> KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)))
 
 let ChoosePropInfosForNameEnv g ty (pinfos: PropInfo list) =
-    let propGroups =
-        pinfos
-        |> List.filter (fun pinfo ->
-            pinfo.IsStatic && typeEquiv g pinfo.ApparentEnclosingType ty)
-        |> List.groupBy (fun pinfo -> pinfo.PropertyName)
-
-    seq {
-        for (propName, propGroup) in propGroups do
-            if not propGroup.IsEmpty then
-                KeyValuePair(propName, Item.Property(propName, propGroup))
-    }
+    pinfos
+    |> List.filter (fun pinfo ->
+        pinfo.IsStatic && typeEquiv g pinfo.ApparentEnclosingType ty)
+    |> List.groupBy (fun pinfo -> pinfo.PropertyName)
+    |> List.filter (fun (_, propGroup) -> not propGroup.IsEmpty)
+    |> List.map (fun (propName, propGroup) -> KeyValuePair(propName, Item.Property(propName, propGroup)))
 
 let ChooseFSharpFieldInfosForNameEnv g ty (rfinfos: RecdFieldInfo list) =
-    seq {
-        for rfinfo in rfinfos do
-            if rfinfo.IsStatic && typeEquiv g rfinfo.DeclaringType ty then
-                KeyValuePair(rfinfo.Name, Item.RecdField rfinfo)
-    }
+    rfinfos
+    |> List.filter (fun rfinfo -> rfinfo.IsStatic && typeEquiv g rfinfo.DeclaringType ty)
+    |> List.map (fun rfinfo -> KeyValuePair(rfinfo.Name, Item.RecdField rfinfo))
 
 let ChooseILFieldInfosForNameEnv g ty (finfos: ILFieldInfo list) =
-    seq {
-        for finfo in finfos do
-            if finfo.IsStatic && typeEquiv g finfo.ApparentEnclosingType ty then
-                KeyValuePair(finfo.FieldName, Item.ILField finfo)
-    }
+    finfos
+    |> List.filter (fun finfo -> finfo.IsStatic && typeEquiv g finfo.ApparentEnclosingType ty)
+    |> List.map (fun finfo -> KeyValuePair(finfo.FieldName, Item.ILField finfo))
 
 let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
-    seq {
-        for einfo in einfos do
-            if einfo.IsStatic && typeEquiv g einfo.ApparentEnclosingType ty then
-                KeyValuePair(einfo.EventName, Item.Event einfo)
-    }
+    einfos
+    |> List.filter (fun einfo -> einfo.IsStatic && typeEquiv g einfo.ApparentEnclosingType ty)
+    |> List.map (fun einfo -> KeyValuePair(einfo.EventName, Item.Event einfo))
 
 /// Add content from a type.
 /// Rules:
