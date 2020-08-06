@@ -995,7 +995,7 @@ module Test2 =
         |> ignore
 
     [<Test>]
-    let ``Open record should have no access to construct record - Errors`` () =
+    let ``Open record should have access to construct record via labels`` () =
         FSharp """
 namespace FSharpTest
 
@@ -1015,10 +1015,7 @@ module Test2 =
         """
         |> withOptions ["--langversion:preview"]
         |> compile
-        |> withDiagnostics
-            [
-                (Error 39, Line 14, Col 15, Line 14, Col 16, "The record label 'X' is not defined.")
-            ]
+        |> shouldSucceed
         |> ignore
 
     [<Test>]

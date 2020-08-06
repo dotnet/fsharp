@@ -1053,21 +1053,21 @@ let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
     |> List.filter (fun einfo -> einfo.IsStatic && typeEquiv g einfo.ApparentEnclosingType ty)
     |> List.map (fun einfo -> KeyValuePair(einfo.EventName, Item.Event einfo))
 
-/// Add content from a type.
+/// Add static content from a type.
 /// Rules:
-///     1. Add nested types.
-///     2. Add C# style extension members.
-///     3. Add extention methods.
-///     4. Add extension properties.
-///     5. Add events.
-///     6. Add fields.
-///     7. Add properies.
-///     8. Add methods.
+///     1. Add nested types - access to their constructors.
+///     2. Add static parts of type - i.e. C# style extension members, record labels, and union cases.
+///     3. Add static extention methods.
+///     4. Add static extension properties.
+///     5. Add static events.
+///     6. Add static fields.
+///     7. Add static properies.
+///     8. Add static methods.
 let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)
 
     let nenv = AddNestedTypesOfTypeToNameEnv infoReader amap ad m nenv ty
-    let nenv = AddCSharpStyleExtensionMembersOfTypeToNameEnv amap m nenv ty
+    let nenv = AddStaticPartsOfTypeToNameEnv amap m nenv ty
 
     // The order of items matter such as intrinsic members will always be favored over extension members of the same name.
     // Extension property members will always be favored over extenion methods of the same name.
@@ -1129,34 +1129,29 @@ and private AddTyconRefsWithEnclosingTypeInstToNameEnv bulkAddMode ownDefinition
             else { nenv with eUnqualifiedEnclosingTypeInsts = nenv.eUnqualifiedEnclosingTypeInsts.Add tcref tinstEnclosing })
     AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap ad m root nenv tcrefs
 
-and private AddCSharpStyleExtensionMembersOfTypeToNameEnv (amap: Import.ImportMap) m nenv ty =
+and private AddStaticPartsOfTypeToNameEnv (amap: Import.ImportMap) m nenv ty =
     match tryTcrefOfAppTy amap.g ty with
     | ValueSome tcref ->
-        AddCSharpStyleExtensionMembersOfTyconRefToNameEnv amap m nenv tcref
+        AddStaticPartsOfTyconRefToNameEnv BulkAdd.Yes false amap.g amap m nenv tcref
     | _ ->
         nenv
 
-and private AddCSharpStyleExtensionMembersOfTyconRefToNameEnv amap m nenv (tcref: TyconRef) =
+and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv (tcref: TyconRef) =
+    let isIL = tcref.IsILTycon
+    let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
+    let flds =  if isIL then [| |] else tcref.AllFieldsArray
+
+    // C# style extension members
     let eIndexedExtensionMembers, eUnindexedExtensionMembers =
         let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m tcref
         ((nenv.eIndexedExtensionMembers, nenv.eUnindexedExtensionMembers), ilStyleExtensionMeths) ||> List.fold (fun (tab1, tab2) extMemInfo ->
             match extMemInfo with
             | Choice1Of2 (tcref, extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
             | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)
-    { nenv with
-        eIndexedExtensionMembers = eIndexedExtensionMembers
-        eUnindexedExtensionMembers = eUnindexedExtensionMembers }
-
-/// Add any implied contents of a type definition to the environment.
-and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
-
-    let isIL = tcref.IsILTycon
-    let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
-    let flds =  if isIL then [| |] else tcref.AllFieldsArray
-
-    let nenv = AddCSharpStyleExtensionMembersOfTyconRefToNameEnv amap m nenv tcref
 
     let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
+
+    // Record labels
     let eFieldLabels =
         if isILOrRequiredQualifiedAccess || not tcref.IsRecordTycon || flds.Length = 0 then
             nenv.eFieldLabels
@@ -1166,6 +1161,36 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
                    else AddRecdField (tcref.MakeNestedRecdFieldRef f) acc)
 
     let eUnqualifiedItems =
+        let tab = nenv.eUnqualifiedItems 
+        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
+            tab
+        else
+            // Union cases for unqualfied
+            AddUnionCases2 bulkAddMode tab ucrefs
+
+    let ePatItems =
+        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
+            nenv.ePatItems
+        else
+            // Union cases for patterns
+            AddUnionCases1 nenv.ePatItems ucrefs
+
+    { nenv with
+        eFieldLabels = eFieldLabels
+        eUnqualifiedItems = eUnqualifiedItems
+        ePatItems = ePatItems
+        eIndexedExtensionMembers = eIndexedExtensionMembers
+        eUnindexedExtensionMembers = eUnindexedExtensionMembers }
+
+and private CanAutoOpenTyconRef (g: TcGlobals) m (tcref: TyconRef) =
+    g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
+    not tcref.IsILTycon &&
+    TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true &&
+    tcref.Typars(m).Length = 0
+
+/// Add any implied contents of a type definition to the environment.
+and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals) amap ad m  nenv (tcref: TyconRef) =
+    let nenv =
         let tab = nenv.eUnqualifiedItems
         // add the type name for potential use as a constructor
         // The rules are
@@ -1192,31 +1217,11 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             else
                 tab
 
-        let tab = 
-            if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
-                tab
-            else
-                AddUnionCases2 bulkAddMode tab ucrefs
+        { nenv with eUnqualifiedItems = tab }
 
-        tab
-
-    let ePatItems =
-        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
-            nenv.ePatItems
-        else
-            AddUnionCases1 nenv.ePatItems ucrefs
-
+    let nenv = AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv tcref
     let nenv = 
-        { nenv with
-            eFieldLabels = eFieldLabels
-            eUnqualifiedItems = eUnqualifiedItems
-            ePatItems = ePatItems }
-
-    let nenv = 
-        if amap.g.langVersion.SupportsFeature LanguageFeature.OpenTypeDeclaration &&
-           not isIL &&
-           TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute tcref.Attribs = Some true &&
-           tcref.Typars(m).Length = 0 then
+        if CanAutoOpenTyconRef g m tcref then
             let ty = generalizedTyconRef tcref
             AddContentOfTypeToNameEnv g amap ad m nenv ty
         else
