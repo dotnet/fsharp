@@ -176,6 +176,11 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = options }
         | _ -> failwith "withOptions is only supported n F#"
 
+    let withPreview (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = [ "--langversion:preview" ] }
+        | _ -> failwith "withPreview is only supported in F#"
+
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Library }

@@ -251,6 +251,9 @@ namespace Microsoft.FSharp.Core
         [<Literal>]
         let RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
 
+        [<Literal>]
+        let NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
+
     [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute(message:string) =
@@ -4718,7 +4721,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
 
-        [<CompiledName("NameOf")>]
+        [<CompiledName("NameOf"); CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)>]
         let inline nameof (_: 'T) : string = raise (Exception "may not call directly, should always be optimized away")
 
         [<CompiledName("MethodHandleOf")>]
