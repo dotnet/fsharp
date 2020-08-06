@@ -39,6 +39,8 @@ type ArgumentContainer =
 /// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols.
 val (|AbbrevOrAppTy|_|) : TType -> TyconRef option
 
+type EnclosingTypeInst = TypeInst
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
 type Item = 
@@ -161,7 +163,7 @@ type NameResolutionEnv =
       eUnqualifiedItems: LayeredMap<string,Item>
 
       /// Enclosing type instantiations that are associated with an unqualified type item
-      eUnqualifiedEnclosingTypeInsts: TyconRefMap<TypeInst>
+      eUnqualifiedEnclosingTypeInsts: TyconRefMap<EnclosingTypeInst>
 
       /// Data Tags and Active Pattern Tags available by unqualified name 
       ePatItems: NameMap<Item>
@@ -548,16 +550,13 @@ val internal ResolvePatternLongIdent                : TcResultsSink -> NameResol
 val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResolver -> NameResolutionEnv -> TypeNameResolutionInfo -> AccessorDomain -> range -> ModuleOrNamespaceRef -> Ident list -> TyconRef 
 
 /// Resolve a long identifier to a type definition
-val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
-
-/// Resolve a long identifier to a type definition with enclosing type instantiations.
-val internal ResolveTypeLongIdentAndEnclosingTypeInst : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TypeInst * TyconRef>
+val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<EnclosingTypeInst * TyconRef>
 
 /// Resolve a long identifier to a field
 val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> Ident list -> FieldResolution list
 
 /// Resolve a long identifier occurring in an expression position
-val internal ResolveExprLongIdent                   : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> ResultOrException<Item * Ident list>
+val internal ResolveExprLongIdent                   : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> ResultOrException<EnclosingTypeInst * Item * Ident list>
 
 /// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
 val internal ResolvePartialLongIdentToClassOrRecdFields : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> Item list
@@ -583,10 +582,10 @@ type AfterResolution =
     | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
-val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> ResultOrException<Item * range * Ident list * AfterResolution>
+val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
-val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TType -> Ident list -> TypeNameResolutionInfo -> FindMemberFlag -> bool -> Item * range * Ident list * TypeInst * AfterResolution
+val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TType -> Ident list -> TypeNameResolutionInfo -> FindMemberFlag -> bool -> EnclosingTypeInst * Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
 val FakeInstantiationGenerator : range -> Typar list -> TType list

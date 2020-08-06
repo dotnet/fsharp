@@ -139,6 +139,9 @@ type ArgumentContainer =
 //   let (|A|B|) x = if x < 0 then A else B    // A and B are reported as results using 'Item.ActivePatternResult'
 //   match () with | A | B -> ()               // A and B are reported using 'Item.ActivePatternCase'
 
+type EnclosingTypeInst = TypeInst
+let emptyEnclosingTypeInst : EnclosingTypeInst = []
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
 type Item =
@@ -335,7 +338,7 @@ type NameResolutionEnv =
       eUnqualifiedItems: UnqualifiedItems
 
       /// Enclosing type instantiations that are associated with an unqualified type item
-      eUnqualifiedEnclosingTypeInsts: TyconRefMap<TypeInst>
+      eUnqualifiedEnclosingTypeInsts: TyconRefMap<EnclosingTypeInst>
 
       /// Data Tags and Active Pattern Tags available by unqualified name
       ePatItems: NameMap<Item>
@@ -2087,7 +2090,7 @@ let CheckAllTyparsInferrable amap m item =
 /// ultimately calls ResolutionInfo.Method to record it for
 /// later use by Visual Studio.
 type ResolutionInfo =
-    | ResolutionInfo of (*entityPath, reversed*)(range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit) * tinstEnclosing: TypeInst
+    | ResolutionInfo of (*entityPath, reversed*)(range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit) * tinstEnclosing: EnclosingTypeInst
 
     static member SendEntityPathToSink(sink, ncenv: NameResolver, nenv, occ, ad, ResolutionInfo(entityPath, warnings, _), typarChecker) =
         entityPath |> List.iter (fun (m, eref: EntityRef) ->
@@ -2102,7 +2105,7 @@ type ResolutionInfo =
         warnings typarChecker
 
     static member Empty =
-        ResolutionInfo([], (fun _ -> ()), [])
+        ResolutionInfo([], (fun _ -> ()), emptyEnclosingTypeInst)
 
     member x.AddEntity info =
         let (ResolutionInfo(entityPath, warnings, tinstEnclosing)) = x
@@ -2752,7 +2755,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     match AtMostOneResult m search with
                     | Result (resInfo, item) ->
                         ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                        Some(item, rest)
+                        Some(resInfo.EnclosingTypeInst, item, rest)
                     | Exception e -> 
                         typeError <- Some e
                         None
@@ -2766,8 +2769,8 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                             // Do not resolve `nameof` if the feature is unsupported, even if it is FSharp.Core
                             None
                          else
-                            Some (fresh, rest)
-                    | _ -> Some (fresh, rest)
+                            Some (emptyEnclosingTypeInst, fresh, rest)
+                    | _ -> Some (emptyEnclosingTypeInst, fresh, rest)
                 | _ ->
                     None
 
@@ -2826,7 +2829,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                 | Exception e -> raze e
                 | Result (resInfo, item) -> 
                 ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                success (item, rest)
+                success (resInfo.EnclosingTypeInst, item, rest)
 
         // A compound identifier.
         // It still might be a value in the environment, or something in an F# module, namespace, type, or nested type
@@ -2844,7 +2847,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     | _ -> false
 
             if ValIsInEnv id.idText then
-              success (nenv.eUnqualifiedItems.[id.idText], rest)
+              success (emptyEnclosingTypeInst, nenv.eUnqualifiedItems.[id.idText], rest)
             else
               // Otherwise modules are searched first. REVIEW: modules and types should be searched together.
               // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace.
@@ -2917,7 +2920,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
               | Exception e -> raze e
               | Result (resInfo, item, rest) -> 
                   ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
-                  success (item, rest)
+                  success (resInfo.EnclosingTypeInst, item, rest)
 
 let ResolveExprLongIdent sink (ncenv: NameResolver) m ad nenv typeNameResInfo lid =
     match lid with
@@ -3313,10 +3316,6 @@ let ResolveTypeLongIdentAux sink (ncenv: NameResolver) occurence fullyQualified 
 /// Resolve a long identifier representing a type and report it
 let ResolveTypeLongIdent sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk =
     let res = ResolveTypeLongIdentAux sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk
-    (res |?> snd)
-
-let ResolveTypeLongIdentAndEnclosingTypeInst sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk =
-    let res = ResolveTypeLongIdentAux sink ncenv occurence fullyQualified nenv ad lid staticResInfo genOk
     (res |?> fun (resInfo, tcref) -> (resInfo.EnclosingTypeInst, tcref))
 
 //-------------------------------------------------------------------------
@@ -3588,7 +3587,7 @@ type AfterResolution =
 let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv typeNameResInfo lid =
     match ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid with 
     | Exception e -> Exception e 
-    | Result (item1, rest) ->
+    | Result (tinstEnclosing, item1, rest) ->
     let itemRange = ComputeItemRange wholem lid rest
 
     let item = FilterMethodGroups ncenv itemRange item1 true
@@ -3636,7 +3635,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink: TcResultsSink) (ncenv: NameReso
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
-    success (item, itemRange, rest, afterResolution)
+    success (tinstEnclosing, item, itemRange, rest, afterResolution)
 
 let (|NonOverridable|_|) namedItem =
     match namedItem with
@@ -3697,7 +3696,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
 
-    item, itemRange, rest, resInfo.EnclosingTypeInst, afterResolution
+    resInfo.EnclosingTypeInst, item, itemRange, rest, afterResolution
 
 
 //-------------------------------------------------------------------------

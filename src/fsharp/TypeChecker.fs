@@ -901,7 +901,7 @@ let TcConst cenv ty m env c =
         | SynMeasure.One -> Measure.One      
         | SynMeasure.Named(tc, m) ->
             let ad = env.eAccessRights
-            let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Use OpenQualified env.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
+            let _, tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Use OpenQualified env.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
             match tcref.TypeOrMeasureKind with
             | TyparKind.Type -> error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
             | TyparKind.Measure -> Measure.Con tcref
@@ -3213,7 +3213,7 @@ let (|JoinRelation|_|) cenv env (e: SynExpr) =
     let isOpName opName vref s =
         (s = opName) &&
         match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName, m)] with
-        | Result (Item.Value vref2, []) -> valRefEq cenv.g vref vref2
+        | Result (_, Item.Value vref2, []) -> valRefEq cenv.g vref vref2
         | _ -> false
 
     match e with 
@@ -4671,7 +4671,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
     | SynType.LongIdent(LongIdentWithDots(tc, _) as lidwd) -> 
         let m = lidwd.Range
         let ad = env.eAccessRights
-        let tinstEnclosing, tcref = ForceRaise(ResolveTypeLongIdentAndEnclosingTypeInst cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
+        let tinstEnclosing, tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
         match optKind, tcref.TypeOrMeasureKind with
         | Some TyparKind.Type, TyparKind.Measure ->
             error(Error(FSComp.SR.tcExpectedTypeNotUnitOfMeasure(), m)) 
@@ -4689,7 +4689,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
 
         let tinstEnclosing, tcref = 
             let tyResInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length
-            ResolveTypeLongIdentAndEnclosingTypeInst cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc tyResInfo PermitDirectReferenceToGeneratedType.No
+            ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc tyResInfo PermitDirectReferenceToGeneratedType.No
             |> ForceRaise
 
         match optKind, tcref.TypeOrMeasureKind with
@@ -5433,7 +5433,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             id.idText = "nameof" &&
             try
                 match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
-                | Result (Item.Value vref, _) -> valRefEq cenv.g vref cenv.g.nameof_vref
+                | Result (_, Item.Value vref, _) -> valRefEq cenv.g vref cenv.g.nameof_vref
                 | _ -> false
             with _ -> false
 
@@ -9329,7 +9329,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
             let resolvesAsExpr =
                 match nameResolutionResult with 
-                | Result ((item, _, _, _) as res) 
+                | Result ((_, item, _, _, _) as res) 
                     when 
                          (match item with 
                           | Item.Types _ 
@@ -9349,10 +9349,10 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 if (match delayed with [DelayedTypeApp _] | [] -> true | _ -> false) then
                     let (TypeNameResolutionInfo(_, staticArgsInfo)) = GetLongIdentTypeNameInfo delayed
                     match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad longId staticArgsInfo PermitDirectReferenceToGeneratedType.No with
-                    | Result tcref when IsEntityAccessible cenv.amap m ad tcref -> 
+                    | Result (tinstEnclosing, tcref) when IsEntityAccessible cenv.amap m ad tcref -> 
                         match delayed with 
                         | [DelayedTypeApp (tyargs, _, mExprAndTypeArgs)] -> 
-                            TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs tcref [] tyargs |> ignore
+                            TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs tcref tinstEnclosing tyargs |> ignore
                         | _ -> ()
                         true // resolved to a type name, done with checks
                     | _ -> 
@@ -9482,7 +9482,7 @@ and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) dela
 // Typecheck "item+projections" 
 //------------------------------------------------------------------------- *)
 // mItem is the textual range covered by the long identifiers that make up the item
-and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) delayed =
+and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) delayed =
     let g = cenv.g
     let delayed = delayRest rest mItem delayed
     let ad = env.eAccessRights
@@ -9638,14 +9638,14 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs 
             // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args 
             // and replace them by 'tyargs' 
-            let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty [] tyargs
+            let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
 
             // Report information about the whole expression including type arguments to VS
             let item = Item.Types(nm, [ty])
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
-            let item, mItem, rest, _, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
-            TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) otherDelayed
+            let _, item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
+            TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) otherDelayed
             
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: _delayed') ->
             // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
@@ -10105,7 +10105,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     if isTyparTy cenv.g objExprTy then 
         ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css env.DisplayEnv mExprAndLongId (freeInTypeLeftToRight cenv.g false objExprTy)
     
-    let item, mItem, rest, _, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId TypeNameResolutionInfo.Default findFlag false
+    let _, item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId TypeNameResolutionInfo.Default findFlag false
     let mExprAndItem = unionRanges mObjExpr mItem
     let delayed = delayRest rest mExprAndItem delayed
 
@@ -15352,12 +15352,12 @@ module TcExceptionDeclarations =
                   ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default longId 
                   |> ForceRaise
               match resolution with
-              | Item.ExnCase exnc, [] -> 
+              | _, Item.ExnCase exnc, [] -> 
                   CheckTyconAccessible cenv.amap m env.eAccessRights exnc |> ignore
                   if not (isNil args') then 
                       errorR (Error(FSComp.SR.tcExceptionAbbreviationsShouldNotHaveArgumentList(), m))
                   TExnAbbrevRepr exnc
-              | Item.CtorGroup(_, meths), [] -> 
+              | _, Item.CtorGroup(_, meths), [] -> 
                   // REVIEW: check this really is an exception type 
                   match args' with 
                   | [] -> ()
@@ -15791,7 +15791,7 @@ module EstablishTypeDefinitionCores =
         | Some (tc, args, m) -> 
             let ad = envinner.eAccessRights
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified envinner.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.Yes with
-            | Result tcrefBeforeStaticArguments when 
+            | Result (_, tcrefBeforeStaticArguments) when 
                   tcrefBeforeStaticArguments.IsProvided && 
                   not tcrefBeforeStaticArguments.IsErased -> 
 
@@ -16885,12 +16885,14 @@ module TcDeclarations =
 
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
-            | Result res -> res
-            | res when inSig && longPath.Length = 1 ->
-                errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
-                ForceRaise res
-            | res -> ForceRaise res            
+            let _, tcref =
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
+                | Result res -> res
+                | res when inSig && longPath.Length = 1 ->
+                    errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
+                    ForceRaise res
+                | res -> ForceRaise res
+            tcref
 
         let isInterfaceOrDelegateOrEnum = 
             tcref.Deref.IsFSharpInterfaceTycon || 
