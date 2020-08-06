@@ -3704,12 +3704,17 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
     static member GetAllDllReferences (tcConfig: TcConfig) = [
             let primaryReference = tcConfig.PrimaryAssemblyDllReference()
-            //yield primaryReference
+
+            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
 
             if not tcConfig.compilingFslib then 
                 yield tcConfig.CoreLibraryDllReference()
+                if assumeDotNetFramework then
+                    // When building desktop then we need these additional dependencies
+                    yield AssemblyReference(rangeStartup, "System.Numerics.dll", None)
+                    yield AssemblyReference(rangeStartup, "System.dll", None)
+                    yield AssemblyReference(rangeStartup, "netstandard.dll", None)
 
-            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
             if tcConfig.framework then
                 for s in defaultReferencesForScriptsAndOutOfProjectSources tcConfig.useFsiAuxLib assumeDotNetFramework tcConfig.useSdkRefs do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
@@ -4111,7 +4116,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | None ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
             look tcImports
-    
 
     member tcImports.FindDllInfo (ctok, m, assemblyName) =
         match tcImports.TryFindDllInfo (ctok, m, assemblyName, lookupOnly=false) with 
@@ -4788,7 +4792,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // If the user is asking for the default framework then also try to resolve other implicit assemblies as they are discovered.
         // Using this flag to mean 'allow implicit discover of assemblies'.
         let tcConfig = tcConfigP.Get ctok
-        if not lookupOnly && tcConfig.implicitlyResolveAssemblies then 
+        if not lookupOnly && tcConfig.implicitlyResolveAssemblies then
             let tryFile speculativeFileName = 
                 let foundFile = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, speculativeFileName, None), ResolveAssemblyReferenceMode.Speculative)
                 match foundFile with 
@@ -4829,7 +4833,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             ResultD [assemblyResolution]
         | None ->
 #if NO_MSBUILD_REFERENCE_RESOLUTION
-           try 
+           try
                ResultD [tcConfig.ResolveLibWithDirectories assemblyReference]
            with e -> 
                ErrorD e
@@ -4850,7 +4854,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         ResultD [resolved]
                     | None ->
                         ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
-                else 
+                else
                     // This is a previously unencountered assembly. Resolve it and add it to the list.
                     // But don't cache resolution failures because the assembly may appear on the disk later.
                     let resolved, unresolved = TcConfig.TryResolveLibsUsingMSBuildRules(tcConfig, [ assemblyReference ], assemblyReference.Range, mode)
@@ -4865,9 +4869,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         // Note, if mode=ResolveAssemblyReferenceMode.Speculative and the resolution failed then TryResolveLibsUsingMSBuildRules returns
                         // the empty list and we convert the failure into an AssemblyNotResolved here.
                         ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
-
-#endif                        
-     
+#endif
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list = 
         CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, assemblyReference, mode))

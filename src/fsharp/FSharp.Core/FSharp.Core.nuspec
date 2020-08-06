@@ -5,7 +5,6 @@
         <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETStandard2.0" />
-            <group targetFramework="net45" />
         </dependencies>
     </metadata>
     <files>
@@ -16,13 +15,7 @@
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.optdata"          target="lib\netstandard2.0" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.xml"              target="lib\netstandard2.0" />
 
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.dll"                       target="lib\net45" />
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.sigdata"                   target="lib\net45" />
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.optdata"                   target="lib\net45" />
-        <file src="FSharp.Core\$Configuration$\net45\FSharp.Core.xml"                       target="lib\net45" />
-
         <!-- resources -->
         <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll" target="lib\netstandard2.0" />
-        <file src="FSharp.Core\$Configuration$\net45\**\FSharp.Core.resources.dll"          target="lib\net45" />
     </files>
 </package>

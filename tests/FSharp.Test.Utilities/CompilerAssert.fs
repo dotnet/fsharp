@@ -83,19 +83,33 @@ type CompilerAssert private () =
 
     static let _ = config |> ignore
 
-// Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
-#if NETCOREAPP
+    // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
     static let projectFile = """
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>$TARGETFRAMEWORK</TargetFramework>
     <UseFSharpPreview>true</UseFSharpPreview>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
+  <ItemGroup><Reference Include="$FSHARPCORELOCATION" /></ItemGroup>
+  <ItemGroup Condition="'$(TARGETFRAMEWORK)'=='net472'">
+    <Reference Include="System" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.Core.dll" />
+    <Reference Include="System.Xml.Linq.dll" />
+    <Reference Include="System.Data.DataSetExtensions.dll" />
+    <Reference Include="Microsoft.CSharp.dll" />
+    <Reference Include="System.Data.dll" />
+    <Reference Include="System.Deployment.dll" />
+    <Reference Include="System.Drawing.dll" />
+    <Reference Include="System.Net.Http.dll" />
+    <Reference Include="System.Windows.Forms.dll" />
+    <Reference Include="System.Xml.dll" />
+  </ItemGroup>
 
   <Target Name="WriteFrameworkReferences" AfterTargets="AfterBuild">
     <WriteLinesToFile File="FrameworkReferences.txt" Lines="@(ReferencePath)" Overwrite="true" WriteOnlyWhenDifferent="true" />
@@ -114,14 +128,18 @@ let main argv = 0"""
         let mutable errors = ""
         let mutable cleanUp = true
         let projectDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
+        let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
         try
             try
                 Directory.CreateDirectory(projectDirectory) |> ignore
                 let projectFileName = Path.Combine(projectDirectory, "ProjectFile.fsproj")
                 let programFsFileName = Path.Combine(projectDirectory, "Program.fs")
                 let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
-
-                File.WriteAllText(projectFileName, projectFile)
+#if NETCOREAPP
+                File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "netcoreapp3.1").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+#else
+                File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+#endif
                 File.WriteAllText(programFsFileName, programFs)
 
                 let pInfo = ProcessStartInfo ()
@@ -133,13 +151,13 @@ let main argv = 0"""
                 pInfo.UseShellExecute <- false
 
                 let p = Process.Start(pInfo)
-                p.WaitForExit()
+                let succeeded = p.WaitForExit(10000)
 
                 output <- p.StandardOutput.ReadToEnd ()
                 errors <- p.StandardError.ReadToEnd ()
                 if not (String.IsNullOrWhiteSpace errors) then Assert.Fail errors
 
-                if p.ExitCode <> 0 then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+                if p.ExitCode <> 0 || not succeeded then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
 
                 File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
             with | e ->
@@ -150,7 +168,6 @@ let main argv = 0"""
         finally
             if cleanUp then
                 try Directory.Delete(projectDirectory) with | _ -> ()
-#endif
 
 #if FX_NO_APP_DOMAINS
     static let executeBuiltApp assembly deps =
@@ -186,12 +203,12 @@ let main argv = 0"""
             ProjectFileName = "Z:\\test.fsproj"
             ProjectId = None
             SourceFiles = [|"test.fs"|]
-#if NETCOREAPP
             OtherOptions =
                 let assemblies = getNetCoreAppReferences |> Array.map (fun x -> sprintf "-r:%s" x)
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework";"--warn:5"|] assemblies
+#if NETCOREAPP
+                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"; "--simpleresolution"; "--warn:5"|] assemblies
 #else
-            OtherOptions = [|"--preferreduilang:en-US";"--warn:5"|]
+                Array.append [|"--preferreduilang:en-US"; "--targetprofile:mscorlib"; "--noframework"; "--warn:5"|] assemblies
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -210,7 +227,6 @@ let main argv = 0"""
             |> Array.append defaultProjectOptions.OtherOptions
             |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
         let errors, _ = checker.Compile args |> Async.RunSynchronously
-
         errors, outputFilePath
 
     static let compileAux isExe options source f : unit =
@@ -637,7 +653,7 @@ let main argv = 0"""
     #if NETCOREAPP
             let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
     #else
-            let args = Array.append argv [|"--noninteractive"|]
+            let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
     #endif
             let allArgs = Array.append args options
 

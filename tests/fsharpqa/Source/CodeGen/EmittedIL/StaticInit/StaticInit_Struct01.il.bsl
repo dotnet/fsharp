@@ -13,7 +13,12 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly StaticInit_Struct01
 {
@@ -36,13 +41,13 @@
   // Offset: 0x000007A8 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
-// MVID: {5ECD86B3-05F6-D6CB-A745-0383B386CD5E}
+// MVID: {5F1FA087-05F6-D6CB-A745-038387A01F5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06E50000
+// Image base: 0x053B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -81,8 +86,8 @@
       IL_000a:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
       IL_000f:  ldloc.0
       IL_0010:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0015:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
-                                                                    valuetype [mscorlib]System.DateTime)
+      IL_0015:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
+                                                                       valuetype [netstandard]System.DateTime)
       IL_001a:  ret
     } // end of method C::CompareTo
 
@@ -122,8 +127,8 @@
       IL_000d:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
       IL_0012:  ldloc.1
       IL_0013:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0018:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
-                                                                    valuetype [mscorlib]System.DateTime)
+      IL_0018:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
+                                                                       valuetype [netstandard]System.DateTime)
       IL_001d:  ret
     } // end of method C::CompareTo
 
@@ -199,8 +204,8 @@
       IL_0017:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
       IL_001c:  ldloc.1
       IL_001d:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_0022:  call       bool [mscorlib]System.DateTime::Equals(valuetype [mscorlib]System.DateTime,
-                                                                  valuetype [mscorlib]System.DateTime)
+      IL_0022:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
+                                                                     valuetype [netstandard]System.DateTime)
       IL_0027:  ret
 
       .line 100001,100001 : 0,0 ''
@@ -266,8 +271,8 @@
       IL_0004:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
       IL_0009:  ldloc.0
       IL_000a:  ldfld      valuetype [mscorlib]System.DateTime StaticInit_Struct01/C::s
-      IL_000f:  call       bool [mscorlib]System.DateTime::Equals(valuetype [mscorlib]System.DateTime,
-                                                                  valuetype [mscorlib]System.DateTime)
+      IL_000f:  call       bool [netstandard]System.DateTime::Equals(valuetype [netstandard]System.DateTime,
+                                                                     valuetype [netstandard]System.DateTime)
       IL_0014:  ret
     } // end of method C::Equals
 

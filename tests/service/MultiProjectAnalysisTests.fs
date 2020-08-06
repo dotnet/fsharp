@@ -128,22 +128,6 @@ let u = Case1 3
                                     (Project1B.dllName, Project1B.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-
-
-[<Test>]
-#if NETCOREAPP
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-#endif
-let ``Test multi project 1 whole project errors`` () = 
-
-    let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
-
-    for e in wholeProjectResults.Errors do 
-        printfn "multi project 1 error: <<<%s>>>" e.Message
-
-    wholeProjectResults .Errors.Length |> shouldEqual 0
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual 7
-
 [<Test>]
 let ``Test multi project 1 basic`` () = 
 
@@ -320,22 +304,6 @@ let p = ("""
     let makeCheckerForStressTest ensureBigEnough = 
         let size = (if ensureBigEnough then numProjectsForStressTest + 10 else numProjectsForStressTest / 2 )
         FSharpChecker.Create(projectCacheSize=size)
-
-[<Test>]
-#if NETCOREAPP
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-#endif
-let ``Test ManyProjectsStressTest whole project errors`` () = 
-
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest true
-    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
-    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
-
-    for e in wholeProjectResults.Errors do 
-        printfn "ManyProjectsStressTest error: <<<%s>>>" e.Message
-
-    wholeProjectResults .Errors.Length |> shouldEqual 0
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual (ManyProjectsStressTest.numProjectsForStressTest + 5)
 
 [<Test>]
 let ``Test ManyProjectsStressTest basic`` () = 
