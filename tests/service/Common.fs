@@ -2,6 +2,7 @@
 module internal FSharp.Compiler.Service.Tests.Common
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
@@ -14,6 +15,7 @@ open NUnit.Framework
 #if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
+        System.Diagnostics.Debugger.Break()
         let psi = System.Diagnostics.ProcessStartInfo()
         psi.FileName <- exePath
         psi.WorkingDirectory <- workingDir
@@ -32,7 +34,7 @@ let readRefs (folder : string) (projectFile: string) =
         exitCode, ()
 
     let projFilePath = Path.Combine(folder, projectFile)
-    let runCmd exePath args = runProcess folder exePath (args |> String.concat " ")
+    let runCmd exePath args = runProcess folder exePath ((args |> String.concat " ") + " -restore")
     let msbuildExec = Dotnet.ProjInfo.Inspect.dotnetMsbuild runCmd
     let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projFilePath
     match result with
@@ -118,6 +120,7 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--target:library" 
         for x in fileNames do 
             yield x
+        System.Diagnostics.Debugger.Break()
         let references = mkStandardProjectReferences ()
         for r in references do
             yield "-r:" + r
@@ -168,14 +171,25 @@ let parseAndCheckFile fileName source options =
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
-let parseAndCheckScriptWithOptions (file, input, opts) = 
+let parseAndCheckScriptWithOptions (file:string, input, opts) = 
 
 #if NETCOREAPP
-    let dllName = Path.ChangeExtension(file, ".dll")
-    let projName = Path.ChangeExtension(file, ".fsproj")
-    let args = mkProjectCommandLineArgsForScript (dllName, [file])
-    printfn "file = %A, args = %A" file args
-    let projectOptions = checker.GetProjectOptionsFromCommandLineArgs (projName, args)
+    let projectOptions = 
+        let path = Path.Combine(Path.GetTempPath(), "tests", Process.GetCurrentProcess().Id.ToString() + "--"+ Guid.NewGuid().ToString())
+        try
+            if not (Directory.Exists(path)) then
+                Directory.CreateDirectory(path) |> ignore
+
+            let fname = Path.Combine(path, Path.GetFileName(file))
+            let dllName = Path.ChangeExtension(fname, ".dll")
+            let projName = Path.ChangeExtension(fname, ".fsproj")
+            let args = mkProjectCommandLineArgsForScript (dllName, [file])
+            printfn "file = %A, args = %A" file args
+            checker.GetProjectOptionsFromCommandLineArgs (projName, args)
+
+        finally
+            if Directory.Exists(path) then
+                Directory.Delete(path, true)
 
 #else    
     let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously

@@ -1,63 +1,71 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+﻿<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Library</OutputType>
     <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
-    <AssemblyName>FSharp.Compiler.Private</AssemblyName>
-    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
+    <AssemblyName>FSharp.Compiler.Service</AssemblyName>
+    <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;NU5125</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
-    <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
+    <OtherFlags>$(OtherFlags) /warnon:1182 --times</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
-  </PropertyGroup>
+    <NGenBinary>true</NGenBinary>
 
-  <PropertyGroup>
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)/</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)/</FsLexOutputFolder>
+
+    <PackageId>FSharp.Compiler.Service</PackageId>
+    <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
+    <IsPackable>true</IsPackable>
+    <PackageDescription>The F# Compiler Services package For F# $(FSCoreMajorVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
+    <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
   </PropertyGroup>
 
-  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
-    <PropertyGroup>
-      <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
-    </PropertyGroup>
-    <ItemGroup>
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Framework.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Utilities.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\Microsoft.Build.Tasks.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Buffers.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Collections.Immutable.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Memory.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Numerics.Vectors.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Reflection.Metadata.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Resources.Extensions.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Runtime.CompilerServices.Unsafe.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\System.Threading.Tasks.Dataflow.dll" />
-    </ItemGroup>
-  </Target>
-
   <ItemGroup>
-    <InternalsVisibleTo Include="fsc" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
-    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
-    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
-    <InternalsVisibleTo Include="HostedCompilerServer" />
-    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
-    <InternalsVisibleTo Include="LanguageServiceProfiling" />
-    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
+    <NuspecProperty Include="FSharpCoreVersion=$(FSCorePackageVersion)" Condition="'$(VersionSuffix)'==''" />
+    <NuspecProperty Include="FSharpCoreVersion=$(FSCorePackageVersion)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
+    <NuspecProperty Include="TargetFramework=$(TargetFramework)" />
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="fsc" />
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="FSharp.LanguageService" />
+    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service.MSBuild.v12" />
+    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
+    <InternalsVisibleTo Include="Test" />
+    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net472'">
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\misc\logo.png" Pack="true" Visible="false" PackagePath="" />
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>
+    <EmbeddedText Include="..\Microsoft.DotNet.DependencyManager\DependencyManager.txt">
+      <Link>DependencyManager.txt</Link>
+    </EmbeddedText>
+    <EmbeddedText Include="..\fsi\FSIstrings.txt">
+      <Link>FSIstrings.txt</Link>
+    </EmbeddedText>
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
+      <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
     <Compile Include="..\Logger.fsi">
       <Link>Logger.fsi</Link>
@@ -277,14 +285,6 @@
     <Compile Include="..\ReferenceResolver.fs">
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
     </Compile>
-    <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
-    <Compile Include="..\LegacyMSBuildReferenceResolver.fsi">
-      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fsi</Link>
-    </Compile>
-    <Compile Include="..\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fs</Link>
-    </Compile>
-    
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
@@ -539,6 +539,24 @@
     <Compile Include="..\DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fsi">
+      <Link>Driver\AssemblyResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/AssemblyResolveHandler.fs">
+      <Link>Driver\AssemblyResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fsi">
+      <Link>Driver\NativeDllResolveHandler.fsi</Link>
+    </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/NativeDllResolveHandler.fs">
+      <Link>Driver\NativeDllResolveHandler.fs</Link>
+    </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/DependencyProvider.fsi">
+      <Link>Driver\DependencyProvider.fsi</Link>
+    </Compile>
+    <Compile Include="..\Microsoft.DotNet.DependencyManager/DependencyProvider.fs">
+      <Link>Driver\DependencyProvider.fs</Link>
+    </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -608,12 +626,6 @@
     </Compile>
     <Compile Include="..\service\IncrementalBuild.fs">
       <Link>Service/IncrementalBuild.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceCompilerDiagnostics.fsi">
-      <Link>Service/ServiceCompilerDiagnostics.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceCompilerDiagnostics.fs">
-      <Link>Service/ServiceCompilerDiagnostics.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
@@ -687,12 +699,6 @@
     <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
-    <Compile Include="..\service\ServiceErrorResolutionHints.fsi">
-      <Link>Service/ServiceErrorResolutionHints.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceErrorResolutionHints.fs">
-      <Link>Service/ServiceErrorResolutionHints.fs</Link>
-    </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
       <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
     </Compile>
@@ -711,27 +717,16 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-
-    <!-- the core of the F# Interactive fsi.exe implementation -->
-    <EmbeddedText Include="..\fsi\FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </EmbeddedText>
     <Compile Include="..\fsi\fsi.fsi">
       <Link>InteractiveSession/fsi.fsi</Link>
     </Compile>
     <Compile Include="..\fsi\fsi.fs">
       <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
-
-    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
-    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
-      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Microsoft.DotNet.DependencyManager\Microsoft.DotNet.DependencyManager.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
@@ -768,5 +763,4 @@
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
   </ItemGroup>
-
 </Project>

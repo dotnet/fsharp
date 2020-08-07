@@ -991,6 +991,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
     let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
 
     try
+        System.Diagnostics.Debugger.Break()
         createTempDir()
         let source = System.String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
