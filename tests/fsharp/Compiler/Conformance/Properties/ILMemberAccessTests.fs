@@ -82,7 +82,7 @@ type MyFSharpClass () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 491, (22, 9, 22, 41),
@@ -127,7 +127,7 @@ type MyFSharpClass () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 491, (22, 9, 22, 39),
@@ -177,7 +177,7 @@ type MyFSharpClass () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 810, (25, 9, 25, 33),
@@ -213,7 +213,7 @@ type MyFSharpClass () =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fsx, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 810, (25, 9, 25, 31),

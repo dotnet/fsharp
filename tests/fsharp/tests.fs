@@ -872,7 +872,7 @@ module CoreTests =
 
     [<Test>]
     let ``printing-1 --langversion:5.0`` () =
-         printing "--langversion:preview" "z.output.test.default.stdout.50.txt" "z.output.test.default.stdout.50.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
+         printing "--langversion:5.0" "z.output.test.default.stdout.50.txt" "z.output.test.default.stdout.50.bsl" "z.output.test.default.stderr.txt" "z.output.test.default.stderr.bsl"
 
     [<Test>]
     let ``printing-2 --langversion:4.7`` () =
@@ -880,7 +880,7 @@ module CoreTests =
 
     [<Test>]
     let ``printing-2 --langversion:5.0`` () =
-         printing "--langversion:preview --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.50.txt" "z.output.test.1000.stdout.50.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
+         printing "--langversion:5.0 --use:preludePrintSize1000.fsx" "z.output.test.1000.stdout.50.txt" "z.output.test.1000.stdout.50.bsl" "z.output.test.1000.stderr.txt" "z.output.test.1000.stderr.bsl"
 
     [<Test>]
     let ``printing-3  --langversion:4.7`` () =
@@ -888,7 +888,7 @@ module CoreTests =
 
     [<Test>]
     let ``printing-3  --langversion:5.0`` () =
-         printing "--langversion:preview --use:preludePrintSize200.fsx" "z.output.test.200.stdout.50.txt" "z.output.test.200.stdout.50.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
+         printing "--langversion:5.0 --use:preludePrintSize200.fsx" "z.output.test.200.stdout.50.txt" "z.output.test.200.stdout.50.bsl" "z.output.test.200.stderr.txt" "z.output.test.200.stderr.bsl"
 
     [<Test>]
     let ``printing-4  --langversion:4.7`` () =
@@ -896,7 +896,7 @@ module CoreTests =
 
     [<Test>]
     let ``printing-4  --langversion:5.0`` () =
-         printing "--langversion:preview --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
+         printing "--langversion:5.0 --use:preludeShowDeclarationValuesFalse.fsx" "z.output.test.off.stdout.50.txt" "z.output.test.off.stdout.50.bsl" "z.output.test.off.stderr.txt" "z.output.test.off.stderr.bsl"
 
     [<Test>]
     let ``printing-5`` () =
@@ -994,7 +994,7 @@ module CoreTests =
 
         csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
 
-        fsc cfg "%s --define:LANGVERSION_PREVIEW --langversion:preview -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s --define:LANGVERSION_PREVIEW --langversion:5.0 -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
