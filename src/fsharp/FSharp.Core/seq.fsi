@@ -1099,7 +1099,7 @@ namespace Microsoft.FSharp.Collections
         val sortWith : comparer:('T -> 'T -> int) -> source:seq<'T> -> seq<'T>
 
         /// <summary>Applies a key-generating function to each element of a sequence and yield a sequence ordered
-        /// by keys.  The keys are compared using generic comparison as implemented by <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary> 
+        /// by keys.  The keys are compared using generic comparison as implemented by <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary> 
         /// 
         /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as 
         /// that sequence is iterated. As a result this function should not be used with 
@@ -1135,7 +1135,7 @@ namespace Microsoft.FSharp.Collections
         val inline sortDescending : source:seq<'T> -> seq<'T> when 'T : comparison
 
         /// <summary>Applies a key-generating function to each element of a sequence and yield a sequence ordered
-        /// descending by keys.  The keys are compared using generic comparison as implemented by <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary> 
+        /// descending by keys.  The keys are compared using generic comparison as implemented by <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary> 
         /// 
         /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as 
         /// that sequence is iterated. As a result this function should not be used with 

@@ -810,7 +810,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortWith")>]
         val sortWith: comparer:('T -> 'T -> int) -> list:'T list -> 'T list 
 
-        /// <summary>Sorts the given list using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// <summary>Sorts the given list using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
         /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
@@ -820,7 +820,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortBy")>]
         val sortBy: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
 
-        /// <summary>Sorts the given list using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// <summary>Sorts the given list using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
         /// <param name="list">The input list.</param>
@@ -841,7 +841,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SplitAt")>]
         val splitAt: index:int -> list:'T list -> ('T list * 'T list)
 
-        /// <summary>Sorts the given list in descending order using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// <summary>Sorts the given list in descending order using keys given by the given projection. Keys are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
         /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
@@ -851,7 +851,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortByDescending")>]
         val inline sortByDescending: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
 
-        /// <summary>Sorts the given list in descending order using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// <summary>Sorts the given list in descending order using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
         /// <param name="list">The input list.</param>

@@ -1033,7 +1033,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("GetSubArray")>]
         val sub: array:'T[] -> startIndex:int -> count:int -> 'T[]
 
-        /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>. </summary>
+        /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
         /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
@@ -1047,7 +1047,7 @@ namespace Microsoft.FSharp.Collections
         val sort: array:'T[] -> 'T[] when 'T : comparison 
 
         /// <summary>Sorts the elements of an array, using the given projection for the keys and returning a new array. 
-        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
         /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
@@ -1076,7 +1076,7 @@ namespace Microsoft.FSharp.Collections
         val sortWith: comparer:('T -> 'T -> int) -> array:'T[] -> 'T[]
 
         /// <summary>Sorts the elements of an array by mutating the array in-place, using the given projection for the keys. 
-        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
         /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
@@ -1100,7 +1100,7 @@ namespace Microsoft.FSharp.Collections
         val sortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
 
         /// <summary>Sorts the elements of an array by mutating the array in-place, using the given comparison function. 
-        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -1121,7 +1121,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SplitAt")>]
         val splitAt: index:int -> array:'T[] -> ('T[] * 'T[])
 
-        /// <summary>Sorts the elements of an array, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>. </summary>
+        /// <summary>Sorts the elements of an array, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
         /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
@@ -1133,7 +1133,7 @@ namespace Microsoft.FSharp.Collections
         val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison
 
         /// <summary>Sorts the elements of an array, in descending order, using the given projection for the keys and returning a new array. 
-        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
         /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>

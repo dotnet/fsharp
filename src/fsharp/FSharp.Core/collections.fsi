@@ -15,7 +15,7 @@ namespace Microsoft.FSharp.Collections
       
         /// <summary>Get an implementation of comparison semantics using structural comparison.</summary>
         ///
-        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.Compare"/>.</returns>
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</returns>
         val inline Structural<'T> : IComparer<'T> when 'T : comparison 
 
         /// <summary>Get an implementation of comparison semantics using non-structural comparison.</summary>
