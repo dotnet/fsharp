@@ -7,7 +7,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open System.Collections.Generic
 
-    /// <summary>Basic operations on arrays.</summary>
+    /// <summary>Contains operations for working with arrays.</summary>
     ///
     /// <remarks>
     ///  See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.
@@ -1033,10 +1033,10 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("GetSubArray")>]
         val sub: array:'T[] -> startIndex:int -> count:int -> 'T[]
 
-        /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using Operators.compare. </summary>
+        /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
-        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -1047,10 +1047,10 @@ namespace Microsoft.FSharp.Collections
         val sort: array:'T[] -> 'T[] when 'T : comparison 
 
         /// <summary>Sorts the elements of an array, using the given projection for the keys and returning a new array. 
-        /// Elements are compared using Operators.compare.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
-        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
         ///
         /// <param name="projection">The function to transform array elements into the type that is compared.</param>
         /// <param name="array">The input array.</param>
@@ -1064,7 +1064,7 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Sorts the elements of an array, using the given comparison function as the order, returning a new array.</summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
-        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
         ///
         /// <param name="comparer">The function to compare pairs of array elements.</param>
         /// <param name="array">The input array.</param>
@@ -1076,10 +1076,10 @@ namespace Microsoft.FSharp.Collections
         val sortWith: comparer:('T -> 'T -> int) -> array:'T[] -> 'T[]
 
         /// <summary>Sorts the elements of an array by mutating the array in-place, using the given projection for the keys. 
-        /// Elements are compared using Operators.compare.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
-        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
         ///
         /// <param name="projection">The function to transform array elements into the type that is compared.</param>
         /// <param name="array">The input array.</param>
@@ -1100,7 +1100,7 @@ namespace Microsoft.FSharp.Collections
         val sortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
 
         /// <summary>Sorts the elements of an array by mutating the array in-place, using the given comparison function. 
-        /// Elements are compared using Operators.compare.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -1121,10 +1121,10 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SplitAt")>]
         val splitAt: index:int -> array:'T[] -> ('T[] * 'T[])
 
-        /// <summary>Sorts the elements of an array, in descending order, returning a new array. Elements are compared using Operators.compare. </summary>
+        /// <summary>Sorts the elements of an array, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
-        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
         ///
         /// <param name="array">The input array.</param>
         ///
@@ -1133,10 +1133,10 @@ namespace Microsoft.FSharp.Collections
         val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison
 
         /// <summary>Sorts the elements of an array, in descending order, using the given projection for the keys and returning a new array. 
-        /// Elements are compared using Operators.compare.</summary>
+        /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
         ///
         /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
-        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>.</remarks>
         ///
         /// <param name="projection">The function to transform array elements into the type that is compared.</param>
         /// <param name="array">The input array.</param>
@@ -1403,13 +1403,13 @@ namespace Microsoft.FSharp.Collections
             /// the array comprised of the results "x" for each element where
             /// the function returns Some(x).</summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="chooser">The function to generate options from the elements.</param>
             /// <param name="array">The input array.</param>
             ///
-            /// <returns>'U[]</returns>
+            /// <returns>The array of results.</returns>
             ///
             /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Choose")>]
@@ -1417,7 +1417,7 @@ namespace Microsoft.FSharp.Collections
 
             /// <summary>For each element of the array, apply the given function. Concatenate all the results and return the combined array.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="mapping"></param>
@@ -1432,13 +1432,13 @@ namespace Microsoft.FSharp.Collections
             /// <summary>Build a new array whose elements are the results of applying the given function
             /// to each of the elements of the array.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="mapping"></param>
             /// <param name="array">The input array.</param>
             ///
-            /// <returns>'U[]</returns>
+            /// <returns>The array of results.</returns>
             ///
             /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Map")>]
@@ -1448,13 +1448,13 @@ namespace Microsoft.FSharp.Collections
             /// to each of the elements of the array. The integer index passed to the
             /// function indicates the index of element being transformed.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="mapping"></param>
             /// <param name="array">The input array.</param>
             ///
-            /// <returns>'U[]</returns>
+            /// <returns>The array of results.</returns>
             ///
             /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("MapIndexed")>]
@@ -1462,7 +1462,7 @@ namespace Microsoft.FSharp.Collections
 
             /// <summary>Apply the given function to each element of the array. </summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="action"></param>
@@ -1475,7 +1475,7 @@ namespace Microsoft.FSharp.Collections
             /// <summary>Apply the given function to each element of the array. The integer passed to the
             /// function indicates the index of element.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="action"></param>
@@ -1487,13 +1487,13 @@ namespace Microsoft.FSharp.Collections
             
             /// <summary>Create an array given the dimension and a generator function to compute the elements.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to indices is not specified.</remarks>
             ///
             /// <param name="count"></param>
             /// <param name="initializer"></param>
             ///
-            /// <returns>'T[]</returns>
+            /// <returns>The array of results.</returns>
             [<CompiledName("Initialize")>]
             val init : count:int -> initializer:(int -> 'T) -> 'T[]
             
@@ -1501,13 +1501,13 @@ namespace Microsoft.FSharp.Collections
             /// elements for which the given predicate returns "true" and "false"
             /// respectively </summary>
             ///
-            /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
             /// The order in which the given function is applied to indices is not specified.</remarks>
             ///
             /// <param name="predicate">The function to test the input elements.</param>
             /// <param name="array">The input array.</param>
             ///
-            /// <returns>'T[] * 'T[]</returns>
+            /// <returns>The two arrays of results.</returns>
             ///
             /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Partition")>]

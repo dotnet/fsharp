@@ -224,19 +224,19 @@ open Example
 type MyClass() =
 
   interface IMessageReader with
-      member this.TryParseMessage(input: inref<byte>): bool = 
+      member this.TryParseMessage(input: inref<byte>): bool =
           failwith "Not Implemented"
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(cs, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(cs, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
             Compilation.Create(fs, Fsx, Library, cmplRefs = [csCmpl])
 
         CompilerAssert.Compile fsCmpl
-        
+
 #endif
 
     [<Test>]

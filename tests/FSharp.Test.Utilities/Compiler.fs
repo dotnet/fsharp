@@ -105,7 +105,7 @@ module rec Compiler =
         | _ ->
             { Source          = Text source
               LangVersion     = CSharpLanguageVersion.CSharp8
-              TargetFramework = TargetFramework.NetCoreApp30
+              TargetFramework = TargetFramework.NetCoreApp31
               Name            = None
               References      = [] }
 
@@ -274,6 +274,7 @@ module rec Compiler =
         Directory.CreateDirectory(outputPath) |> ignore
 
         let filename = compilation.AssemblyName
+
         let output = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
 
         let cmplResult = compilation.Emit (output)

@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Collections
 
         /// <summary>Get an implementation of comparison semantics using non-structural comparison.</summary>
         ///
-        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.NonStructuralComparison.compare"/>.</returns>
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.NonStructuralComparison.Compare"/>.</returns>
         val inline NonStructural< ^T > : IComparer< ^T > when ^T : (static member ( < ) : ^T * ^T    -> bool) and ^T : (static member ( > ) : ^T * ^T    -> bool) 
 
         /// <summary>Get an implementation of comparison semantics using the given function.</summary>

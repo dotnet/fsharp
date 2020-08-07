@@ -12,11 +12,15 @@ namespace Microsoft.FSharp.Math
 
 namespace Microsoft.FSharp.Core
 
-    /// An abbreviation for <see cref="T:System.Numerics.BigInteger"/>
+    /// <summary>An abbreviation for <see cref="T:System.Numerics.BigInteger"/>. </summary>
+    ///
+    /// <category>Basic Types</category>
     type bigint = System.Numerics.BigInteger
 
     [<AutoOpen>]
-    /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 
+    /// <summary>Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' </summary>
+    ///
+    /// <category>Language Primitives</category>
     module NumericLiterals =
 
         /// Provides a default implementations of F# numeric literal syntax  for literals of the form 'dddI' 

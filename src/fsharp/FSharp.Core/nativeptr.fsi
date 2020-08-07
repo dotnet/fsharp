@@ -9,6 +9,12 @@ namespace Microsoft.FSharp.NativeInterop
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     /// <summary>Contains operations on native pointers. Use of these operators may
     /// result in the generation of unverifiable code.</summary>
+    ///
+    /// <namespacedoc><summary>
+    ///   Library functionality for native interopability. See 
+    ///   also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/functions/external-functions">F# External Functions</a> in 
+    ///   the F# Language Guide.
+    /// </summary></namespacedoc>
     module NativePtr =
 
         [<Unverifiable>]
