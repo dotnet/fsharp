@@ -12,6 +12,11 @@
         <target state="translated">Das Feature "{0}" wird von der Zielruntime nicht unterstützt.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkFeatureNotSupportedInLibrary">
+        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
+        <target state="new">Feature '{0}' requires the F# library for language version {1} or greater.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Verfügbare Überladungen:\n{0}</target>
@@ -132,6 +137,11 @@
         <target state="translated">Muster mit einzelnem Unterstrich</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureStringInterpolation">
+        <source>string interpolation</source>
+        <target state="new">string interpolation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">Platzhalter in for-Schleife</target>
@@ -140,6 +150,26 @@
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Zeugenübergabe für Merkmalseinschränkungen in F#-Zitaten</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated">
+        <source>Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</source>
+        <target state="new">Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated2">
+        <source>.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</source>
+        <target state="new">.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated3">
+        <source>The '%P' specifier may not be used explicitly.</source>
+        <target state="new">The '%P' specifier may not be used explicitly.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated4">
+        <source>Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</source>
+        <target state="new">Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -155,6 +185,26 @@
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexByteStringMayNotBeInterpolated">
+        <source>a byte string may not be interpolated</source>
+        <target state="new">a byte string may not be interpolated</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexRBraceInInterpolatedString">
+        <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
+        <target state="new">A '}}' character must be escaped (by doubling) in an interpolated string.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexSingleQuoteInSingleQuote">
+        <source>Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</source>
+        <target state="new">Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTripleQuoteInTripleQuote">
+        <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
+        <target state="new">Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -185,6 +235,26 @@
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">Für das Paketverwaltungsfeature ist Sprachversion 5.0 erforderlich. Verwenden Sie /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedString">
+        <source>Incomplete interpolated string begun at or before here</source>
+        <target state="new">Incomplete interpolated string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedStringFill">
+        <source>Incomplete interpolated string expression fill begun at or before here</source>
+        <target state="new">Incomplete interpolated string expression fill begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedTripleQuoteString">
+        <source>Incomplete interpolated triple-quote string begun at or before here</source>
+        <target state="new">Incomplete interpolated triple-quote string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedVerbatimString">
+        <source>Incomplete interpolated verbatim string begun at or before here</source>
+        <target state="new">Incomplete interpolated verbatim string begun at or before here</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -227,6 +297,16 @@
         <target state="translated">Attribute können nicht auf Typerweiterungen angewendet werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInterpolationMixedWithPercent">
+        <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
+        <target state="new">Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidAlignmentInInterpolatedString">
+        <source>Invalid alignment in interpolated string</source>
+        <target state="new">Invalid alignment in interpolated string</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
@@ -245,6 +325,11 @@
       <trans-unit id="tcRequireMergeSourcesOrBindN">
         <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
         <target state="translated">Das Konstrukt "let! ... and! ..." kann nur verwendet werden, wenn der Berechnungsausdrucks-Generator entweder eine {0}-Methode oder geeignete MergeSource- und Bind-Methoden definiert.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnableToParseInterpolatedString">
+        <source>Invalid interpolated string. {0}</source>
+        <target state="new">Invalid interpolated string. {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
