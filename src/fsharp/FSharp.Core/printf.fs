@@ -216,8 +216,9 @@ module internal PrintfImpl =
                 ValueNone
 
         // Skip %P() added for hole in "...%d{x}..."
-        let skipInterpolationHole (fmt: string) (i: byref<int>) =
-            if i+1 < fmt.Length && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
+        let skipInterpolationHole typeChar (fmt: string) (i: byref<int>) =
+            if typeChar <> 'P' then 
+              if i+1 < fmt.Length && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
                 i <- i + 2
                 if i+1 < fmt.Length && fmt.[i] = '('  && fmt.[i+1] = ')' then 
                     i <- i+2
@@ -1170,7 +1171,7 @@ module internal PrintfImpl =
             let interpHoleDotnetFormat = FormatString.parseInterpolatedHoleDotNetFormat typeChar fmt &i
 
             // Skip %P insertion points added after %d{...} etc. in interpolated strings
-            FormatString.skipInterpolationHole fmt &i
+            FormatString.skipInterpolationHole typeChar fmt &i
 
             let spec = 
                 { TypeChar = typeChar

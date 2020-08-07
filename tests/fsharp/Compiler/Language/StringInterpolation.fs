@@ -42,6 +42,63 @@ check "basic-string-interp9" $"{1}
             """
 
     [<Test>]
+    let ``Neighbouring specifiers for string interpolation`` () =
+        SimpleCheckTest
+            """
+check "nbr-interp71" $"this is {1} {2} {3} {4} {5} {6} {7}"  "this is 1 2 3 4 5 6 7"
+check "nbr-interp7b2" $"this is {1}{2}{3}{4}{5}{6}{7}"  "this is 1234567"
+check "nbr-interp7c3" $"this is {1}{2}{3}{4}{5}{6}"  "this is 123456"
+check "nbr-interp7c4" $"this is {1}{2}{3}{4}{5}"  "this is 12345"
+check "nbr-interp7c5" $"this is {1}{2}{3}{4}"  "this is 1234"
+check "nbr-interp7c6" $"this is {1}{2}{3} {4}"  "this is 123 4"
+check "nbr-interp7c7" $"this is {1}{2} {3} {4}"  "this is 12 3 4"
+check "nbr-interp7c8" $"this is {1}{2} {3}{4}"  "this is 12 34"
+check "nbr-interp7c9" $"this is {1}{2}{3}"  "this is 123"
+check "nbr-interp7cq" $"this is {1} {2}{3}"  "this is 1 23"
+check "nbr-interp7cw" $"this is {1}{2} {3}"  "this is 12 3"
+check "nbr-interp7ce" $"this is {1}{2}"  "this is 12"
+
+check "nbr-interp7r" $"this is %d{1} {2} {3} {4} {5} {6} {7}"  "this is 1 2 3 4 5 6 7"
+check "nbr-interp7bt" $"this is %d{1}{2}{3}{4}{5}{6}{7}"  "this is 1234567"
+check "nbr-interp7cy" $"this is %d{1}{2}{3}{4}{5}{6}"  "this is 123456"
+check "nbr-interp7cu" $"this is %d{1}{2}{3}{4}{5}"  "this is 12345"
+check "nbr-interp7ci" $"this is %d{1}{2}{3}{4}"  "this is 1234"
+check "nbr-interp7co" $"this is %d{1}{2}{3} {4}"  "this is 123 4"
+check "nbr-interp7cp" $"this is %d{1}{2} {3} {4}"  "this is 12 3 4"
+check "nbr-interp7ca" $"this is %d{1}{2} {3}{4}"  "this is 12 34"
+check "nbr-interp7cs" $"this is %d{1}{2}{3}"  "this is 123"
+check "nbr-interp7cd" $"this is %d{1} {2}{3}"  "this is 1 23"
+check "nbr-interp7cf" $"this is %d{1}{2} {3}"  "this is 12 3"
+check "nbr-interp7cg" $"this is %d{1}{2}"  "this is 12"
+
+check "nbr-interp7h" $"this is %d{1} %d{2} {3} {4} {5} {6} {7}"  "this is 1 2 3 4 5 6 7"
+check "nbr-interp7bj" $"this is %d{1}%d{2}{3}{4}{5}{6}{7}"  "this is 1234567"
+check "nbr-interp7ck" $"this is %d{1}%d{2}{3}{4}{5}{6}"  "this is 123456"
+check "nbr-interp7cl" $"this is %d{1}%d{2}{3}{4}{5}"  "this is 12345"
+check "nbr-interp7cz" $"this is %d{1}%d{2}{3}{4}"  "this is 1234"
+check "nbr-interp7cx" $"this is %d{1}%d{2}{3} {4}"  "this is 123 4"
+check "nbr-interp7cc" $"this is %d{1}%d{2} {3} {4}"  "this is 12 3 4"
+check "nbr-interp7cv" $"this is %d{1}%d{2} {3}{4}"  "this is 12 34"
+check "nbr-interp7cb" $"this is %d{1}%d{2}{3}"  "this is 123"
+check "nbr-interp7cn" $"this is %d{1} %d{2}{3}"  "this is 1 23"
+check "nbr-interp7cm" $"this is %d{1}%d{2} {3}"  "this is 12 3"
+check "nbr-interp7cp" $"this is %d{1}%d{2}"  "this is 12"
+
+check "nbr-interp7" $"this is %d{1} %d{2} %d{3} {4} {5} {6} {7}"  "this is 1 2 3 4 5 6 7"
+check "nbr-interp7b" $"this is %d{1}%d{2}%d{3}{4}{5}{6}{7}"  "this is 1234567"
+check "nbr-interp7c" $"this is %d{1}%d{2}%d{3}{4}{5}{6}"  "this is 123456"
+check "nbr-interp7c" $"this is %d{1}%d{2}%d{3}{4}{5}"  "this is 12345"
+check "nbr-interp7c" $"this is %d{1}%d{2}%d{3}{4}"  "this is 1234"
+check "nbr-interp7c" $"this is %d{1}%d{2}%d{3} {4}"  "this is 123 4"
+check "nbr-interp7c" $"this is %d{1}%d{2} %d{3} {4}"  "this is 12 3 4"
+check "nbr-interp7c" $"this is %d{1}%d{2} %d{3}{4}"  "this is 12 34"
+check "nbr-interp7c" $"this is %d{1}%d{2}%d{3}"  "this is 123"
+check "nbr-interp7c" $"this is %d{1} %d{2}%d{3}"  "this is 1 23"
+check "nbr-interp7c" $"this is %d{1}%d{2} %d{3}"  "this is 12 3"
+check "nbr-interp7c" $"this is %d{1}%d{2}"  "this is 12"
+            """
+
+    [<Test>]
     let ``Basic string interpolation verbatim strings`` () =
         SimpleCheckTest
             """
