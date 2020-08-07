@@ -1148,6 +1148,18 @@ and singleQuoteString sargs skip = parse
           else singleQuoteString sargs skip lexbuf 
     }
 
+ | "}"
+    { let (buf, _fin, m, kind, args) = sargs 
+      let result() = 
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+          else singleQuoteString sargs skip lexbuf
+      if kind.IsInterpolated then
+          fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
+      else
+          addUnicodeString buf (lexeme lexbuf) 
+          (result())
+    }
+
  | newline
     { let (buf, _fin, m, kind, args) = sargs 
       newline lexbuf 
@@ -1233,6 +1245,18 @@ and verbatimString sargs skip = parse
           else verbatimString sargs skip lexbuf 
     }
 
+ | "}"
+    { let (buf, _fin, m, kind, args) = sargs 
+      let result() = 
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+          else verbatimString sargs skip lexbuf
+      if kind.IsInterpolated then
+          fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
+      else
+          addUnicodeString buf (lexeme lexbuf) 
+          (result())
+    }
+
  | ident  
     { let (buf, _fin, m, kind, args) = sargs 
       addUnicodeString buf (lexeme lexbuf) 
@@ -1315,6 +1339,18 @@ and tripleQuoteString sargs skip = parse
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
           else tripleQuoteString sargs skip lexbuf 
+    }
+
+ | "}"
+    { let (buf, _fin, m, kind, args) = sargs 
+      let result() = 
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+          else tripleQuoteString sargs skip lexbuf
+      if kind.IsInterpolated then
+          fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
+      else
+          addUnicodeString buf (lexeme lexbuf) 
+          (result())
     }
 
  | eof 

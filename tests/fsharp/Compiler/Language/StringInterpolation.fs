@@ -485,13 +485,21 @@ type R2 = { X : int ; Y: int }
 // Check record expression (parenthesized)
 check "vcewweh18" $"abc{({contents=1}.contents)}def" "abc1def"
 
-// Check {{ }} expression (un-parenthesized)
-check "vcewweh19" $"abc{{contents=1}.contents}def" "abc{contents=1}.contents}def"
+// Check record expression (unparenthesized, spaced)
+check "vcewweh19a" $"abc{   {X=1}   }def" "abc{ X = 1 }def"
 
-// Check record expression (un-parenthesized)
+check "vcewweh19b" $"abc{ {X=1} }def" "abc{ X = 1 }def"
+
+// Check record expression (unparenthesized, spaced ending in token brace then string hole brace)
+check "vcewweh19v" $"abc{ {X=1}}def" "abc{ X = 1 }def"
+
+// Check thing that is not really a record expression (braces are escaped)
 check "vcewweh20" $"abc{{X=1}}def" "abc{X=1}def"
 
-// Check {{ }} expression (un-parenthesized, multi-line)
+// Check thing that is not really a record expression (braces are escaped)
+check "vcewweh20b" $"abc{{quack=1}}def" "abc{quack=1}def"
+
+// Check thing that is not really a record expression (braces are escaped)
 check "vcewweh21" $"abc{{X=1; Y=2}}def" "abc{X=1; Y=2}def"
 
             """
@@ -804,3 +812,35 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
                "Incomplete structured construct at or before this point in binding");
               (FSharpErrorSeverity.Error, 3381, (1, 10, 1, 14),
                "Incomplete interpolated triple-quote string begun at or before here")|]
+
+    [<Test>]
+    let ``String interpolation extra right brace single quote`` () =
+        let code = "let x1 = $\"}\""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 3382, (1, 10, 1, 14),
+               "A '}' character must be escaped (by doubling) in an interpolated string.")|]
+
+    [<Test>]
+    let ``String interpolation extra right brace verbatim`` () =
+        let code = "let x1 = @$\"}\""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 3382, (1, 10, 1, 15),
+               "A '}' character must be escaped (by doubling) in an interpolated string.")|]
+
+    [<Test>]
+    let ``String interpolation extra right brace triple`` () =
+        let code = "let x1 = $\"\"\"}\"\"\""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 3382, (1, 10, 1, 18),
+               "A '}' character must be escaped (by doubling) in an interpolated string.")|]
+
+    [<Test>]
+    let ``String interpolation extra right brace single quote with hole`` () =
+        let code = "let x1 = $\"{0}}\""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 3382, (1, 14, 1, 17),
+               "A '}' character must be escaped (by doubling) in an interpolated string.")|]
