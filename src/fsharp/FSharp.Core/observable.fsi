@@ -7,7 +7,9 @@ namespace Microsoft.FSharp.Control
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on first class event and other observable objects.</summary>
+    /// <summary>Contains operations for working with first class event and other observable objects.</summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     module Observable = 
 
         /// <summary>Returns an observable for the merged observations from the sources. 
