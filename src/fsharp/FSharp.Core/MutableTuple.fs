@@ -22,14 +22,16 @@ open Microsoft.FSharp.Core
 // This terminology mistake also runs all the way through Query.fs. 
 // ----------------------------------------------------------------------------
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1> =
     val private item1 : 'T1
     member x.Item1 = x.item1 
 
     new (Item1) = { item1 = Item1 }
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1, 'T2> =
     val private item1 : 'T1
     member x.Item1 = x.item1 
@@ -39,7 +41,8 @@ type AnonymousObject<'T1, 'T2> =
 
     new (Item1, Item2) = { item1 = Item1; item2 = Item2  }
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1, 'T2, 'T3> =
     val private item1 : 'T1
     member x.Item1 = x.item1 
@@ -53,7 +56,8 @@ type AnonymousObject<'T1, 'T2, 'T3> =
     new (Item1, Item2, Item3) = { item1 = Item1; item2 = Item2; item3 = Item3  }
 
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1, 'T2, 'T3, 'T4> =
     val private item1 : 'T1
     member x.Item1 = x.item1 
@@ -71,7 +75,8 @@ type AnonymousObject<'T1, 'T2, 'T3, 'T4> =
 
 
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5> =
     val private item1 : 'T1
     member x.Item1 = x.item1 
@@ -91,7 +96,8 @@ type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5> =
     new (Item1, Item2, Item3, Item4, Item5) = { item1 = Item1; item2 = Item2; item3 = Item3; item4 = Item4 ; item5 = Item5  }
 
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6> =
     val private item1 : 'T1
     member x.Item1 = x.item1 
@@ -114,7 +120,8 @@ type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6> =
     new (Item1, Item2, Item3, Item4, Item5, Item6) = { item1 = Item1; item2 = Item2; item3 = Item3; item4 = Item4 ; item5 = Item5 ; item6 = Item6  }
 
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> =
     val private item1 : 'T1
     member x.Item1 = x.item1 
@@ -139,7 +146,8 @@ type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7> =
 
     new (Item1, Item2, Item3, Item4, Item5, Item6, Item7) = { item1 = Item1; item2 = Item2; item3 = Item3; item4 = Item4 ; item5 = Item5 ; item6 = Item6  ; item7 = Item7  }
 
-/// This type shouldn't be used directly from user code.
+/// <summary>This type shouldn't be used directly from user code.</summary>
+/// <exclude />
 type AnonymousObject<'T1, 'T2, 'T3, 'T4, 'T5, 'T6, 'T7, 'T8> =
     val private item1 : 'T1
     member x.Item1 = x.item1 

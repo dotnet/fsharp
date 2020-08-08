@@ -441,6 +441,18 @@
   <data name="Parser.TOKEN.FIXED" xml:space="preserve">
     <value>keyword 'fixed'</value>
   </data>
+  <data name="Parser.TOKEN.INTERP.STRING.BEGIN.END" xml:space="preserve">
+    <value>interpolated string</value>
+  </data>
+  <data name="Parser.TOKEN.INTERP.STRING.BEGIN.PART" xml:space="preserve">
+    <value>interpolated string (first part)</value>
+  </data>
+  <data name="Parser.TOKEN.INTERP.STRING.PART" xml:space="preserve">
+    <value>interpolated string (part)</value>
+  </data>
+  <data name="Parser.TOKEN.INTERP.STRING.END" xml:space="preserve">
+    <value>interpolated string (final part)</value>
+  </data>
   <data name="Parser.TOKEN.CONSTRAINT" xml:space="preserve">
     <value>keyword 'constraint'</value>
   </data>

@@ -8,7 +8,9 @@ open Microsoft.FSharp.Collections
 
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-/// <summary>Basic operations on options.</summary>
+/// <summary>Contains operations for working with options.</summary>
+///
+/// <category>Options</category>
 module Option =
     /// <summary>Returns true if the option is not None.</summary>
     /// <param name="option">The input option.</param>
@@ -248,7 +250,9 @@ module Option =
     [<CompiledName("ToObj")>]
     val toObj: value: 'T option -> 'T when 'T : null
 
-/// <summary>Basic operations on value options.</summary>
+/// <summary>Contains operations for working with value options.</summary>
+///
+/// <category>Options</category>
 module ValueOption =
     /// <summary>Returns true if the value option is not ValueNone.</summary>
     ///

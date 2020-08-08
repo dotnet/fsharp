@@ -1,2 +1,6 @@
 # FSharp.Build resource strings 
 toolpathUnknown,"ToolPath is unknown; specify the path to the tool."
+mapSourceRootsContainsDuplicate,"SourceRoot contains duplicate items '%s' with conflicting metadata '%s': '%s' and '%s'"
+mapSourceRootsPathMustEndWithSlashOrBackslash,"SourceRoot paths are required to end with a slash or backslash: '%s'"
+mapSourceRootsNoTopLevelSourceRoot,"SourceRoot items must include at least one top-level (not nested) item when DeterministicSourcePaths is true"
+mapSourceRootsNoSuchTopLevelSourceRoot,"The value of SourceRoot.ContainingRoot was not found in SourceRoot items, or the corresponding item is not a top-level source root: '%s'"

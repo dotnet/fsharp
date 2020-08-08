@@ -126,7 +126,7 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
 
-    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.Set`1"/>.</summary>
+    /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.Set`1"/>.</summary>
     module Set = 
 
         /// <summary>The empty set for the type 'T.</summary>
