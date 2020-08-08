@@ -3204,7 +3204,7 @@ let (|JoinRelation|_|) cenv env (e: SynExpr) =
     let isOpName opName vref s =
         (s = opName) &&
         match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName, m)] with
-        | Item.Value vref2, [] -> valRefEq cenv.g vref vref2
+        | Result (Item.Value vref2, []) -> valRefEq cenv.g vref vref2
         | _ -> false
 
     match e with 
@@ -5398,12 +5398,50 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             let args = getArgPatterns ()
             TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) (NewInferenceTypes args) args
 
+        // Note we parse arguments to parameterized pattern labels as patterns, not expressions.
+        // This means the range of syntactic expression forms that can be used here is limited.
+        let rec convSynPatToSynExpr x =
+            match x with
+            | SynPat.FromParseError(p, _) -> convSynPatToSynExpr p
+            | SynPat.Const (c, m) -> SynExpr.Const (c, m)
+            | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
+            | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
+            | SynPat.LongIdent (LongIdentWithDots(longId, dotms) as lidwd, _, _tyargs, args, None, m) ->
+                let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynConstructorArgs.Pats"
+                let e =
+                    if dotms.Length = longId.Length then
+                        let e = SynExpr.LongIdent (false, LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
+                        SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
+                    else SynExpr.LongIdent (false, lidwd, None, m)
+                List.fold (fun f x -> mkSynApp1 f (convSynPatToSynExpr x) m) e args
+            | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple (isStruct, List.map convSynPatToSynExpr args, [], m)
+            | SynPat.Paren (p, _) -> convSynPatToSynExpr p
+            | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList (isArray,List.map convSynPatToSynExpr args, m)
+            | SynPat.QuoteExpr (e,_) -> e
+            | SynPat.Null m -> SynExpr.Null m
+            | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
+
+        let isNameof (id: Ident) =
+            id.idText = "nameof" &&
+            try
+                match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+                | Result (Item.Value vref, _) -> valRefEq cenv.g vref cenv.g.nameof_vref
+                | _ -> false
+            with _ -> false
+
         match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
         | Item.NewDef id -> 
-            let _, acc = tcArgPatterns ()
             match getArgPatterns () with
-            | [] -> TcPat warnOnUpperForId cenv env topValInfo vFlags acc ty (mkSynPatVar vis id)
+            | [] ->
+                TcPat warnOnUpperForId cenv env topValInfo vFlags (tpenv, names, takenNames) ty (mkSynPatVar vis id)
+
+            | [arg]
+                when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf && isNameof id ->
+                match TcNameOfExpr cenv env tpenv (convSynPatToSynExpr arg) with
+                | Expr.Const(c, m, _) -> (fun _ -> TPat_const (c, m)), (tpenv, names, takenNames)
+                | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
             | _ ->
+                let _, acc = tcArgPatterns ()
                 errorR (UndefinedName (0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
                 (fun _ -> TPat_error m), acc
 
@@ -5438,29 +5476,6 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             if not (isNil activePatArgsAsSynPats) && apinfo.ActiveTags.Length <> 1 then 
                 errorR (Error (FSComp.SR.tcRequireActivePatternWithOneResult (), m))
 
-            // Parse the arguments to an active pattern
-            // Note we parse arguments to parameterized pattern labels as patterns, not expressions. 
-            // This means the range of syntactic expression forms that can be used here is limited. 
-            let rec convSynPatToSynExpr x = 
-                match x with
-                | SynPat.FromParseError (p, _) -> convSynPatToSynExpr p
-                | SynPat.Const (c, m) -> SynExpr.Const (c, m)
-                | SynPat.Named (SynPat.Wild _, id, _, None, _) -> SynExpr.Ident id
-                | SynPat.Typed (p, cty, m) -> SynExpr.Typed (convSynPatToSynExpr p, cty, m)
-                | SynPat.LongIdent (LongIdentWithDots (longId, dotms) as lidwd, _, _tyargs, args, None, m) -> 
-                    let args = match args with SynArgPats.Pats args -> args | _ -> failwith "impossible: active patterns can be used only with SynArgPats.Pats"
-                    let e =
-                        if dotms.Length = longId.Length then
-                            let e = SynExpr.LongIdent (false, LongIdentWithDots(longId, List.truncate (dotms.Length - 1) dotms), None, m)
-                            SynExpr.DiscardAfterMissingQualificationAfterDot (e, unionRanges e.Range (List.last dotms))
-                        else SynExpr.LongIdent (false, lidwd, None, m)
-                    List.fold (fun f x -> mkSynApp1 f (convSynPatToSynExpr x) m) e args
-                | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple (isStruct, List.map convSynPatToSynExpr args, [], m)
-                | SynPat.Paren (p, _) -> convSynPatToSynExpr p
-                | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList (isArray,List.map convSynPatToSynExpr args, m)
-                | SynPat.QuoteExpr (e,_) -> e
-                | SynPat.Null m -> SynExpr.Null m
-                | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
             let activePatArgsAsSynExprs = List.map convSynPatToSynExpr activePatArgsAsSynPats
 
             let activePatResTys = NewInferenceTypes apinfo.Names
@@ -5922,6 +5937,13 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.Const (SynConst.String (s, m), _) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
         TcConstStringExpr cenv overallTy env m tpenv s
+
+    | SynExpr.InterpolatedString (parts, m) -> 
+        tryLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
+
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
+
+        TcInterpolatedStringExpr cenv overallTy env m tpenv parts
 
     | SynExpr.Const (synConst, m) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
@@ -7104,20 +7126,30 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
 and TcConstStringExpr cenv overallTy env m tpenv s =
 
     if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty) then 
-      mkString cenv.g m s, tpenv
+        mkString cenv.g m s, tpenv
     else 
-      let aty = NewInferenceType ()
-      let bty = NewInferenceType ()
-      let cty = NewInferenceType ()
-      let dty = NewInferenceType ()
-      let ety = NewInferenceType ()
-      let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
-      if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
+        TcFormatStringExpr cenv overallTy env m tpenv s
+
+and TcFormatStringExpr cenv overallTy env m tpenv (fmtString: string) =
+    let g = cenv.g
+    let aty = NewInferenceType ()
+    let bty = NewInferenceType ()
+    let cty = NewInferenceType ()
+    let dty = NewInferenceType ()
+    let ety = NewInferenceType ()
+    let formatTy = mkPrintfFormatTy g aty bty cty dty ety
+
+    // This might qualify as a format string - check via a type directed rule
+    let ok = not (isObjTy g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy formatTy
+
+    if ok then
         // Parse the format string to work out the phantom types 
         let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
-        let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
+        let normalizedString = (fmtString.Replace("\r\n", "\n").Replace("\r", "\n"))
         
-        let (aty', ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g formatStringCheckContext normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString s, m)))
+        let _argTys, atyRequired, etyRequired, _percentATys, specifierLocations, _dotnetFormatString =
+            try CheckFormatStrings.ParseFormatString m [m] g false false formatStringCheckContext normalizedString bty cty dty
+            with Failure errString -> error (Error(FSComp.SR.tcUnableToParseFormatString errString, m))
 
         match cenv.tcSink.CurrentSink with 
         | None -> () 
@@ -7125,12 +7157,195 @@ and TcConstStringExpr cenv overallTy env m tpenv s =
             for specifierLocation, numArgs in specifierLocations do
                 sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
 
-        UnifyTypes cenv env m aty aty'
-        UnifyTypes cenv env m ety ety'
-        mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s), tpenv
-      else 
-        UnifyTypes cenv env m overallTy cenv.g.string_ty
-        mkString cenv.g m s, tpenv
+        UnifyTypes cenv env m aty atyRequired
+        UnifyTypes cenv env m ety etyRequired
+        let fmtExpr = mkCallNewFormat g m aty bty cty dty ety (mkString g m fmtString)
+        fmtExpr, tpenv 
+
+    else 
+        UnifyTypes cenv env m overallTy g.string_ty
+        mkString g m fmtString, tpenv
+
+/// Check an interpolated string expression
+and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedStringPart list) =
+    let g = cenv.g
+
+    let synFillExprs =
+        parts 
+        |> List.choose (function
+            | SynInterpolatedStringPart.String _ -> None
+            | SynInterpolatedStringPart.FillExpr (fillExpr, _)  ->
+                match fillExpr with 
+                // Detect "x" part of "...{x,3}..."
+                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
+                | e -> Some e)
+
+    let stringFragmentRanges =
+        parts 
+        |> List.choose (function
+            | SynInterpolatedStringPart.String (_,m) -> Some m
+            | SynInterpolatedStringPart.FillExpr _  -> None)
+
+    let printerTy = NewInferenceType ()
+    let printerArgTy = NewInferenceType ()
+    let printerResidueTy = NewInferenceType ()
+    let printerResultTy = NewInferenceType ()
+    let printerTupleTy = NewInferenceType ()
+    let formatTy = mkPrintfFormatTy g printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy
+
+    // Check the library support is available in the referenced FSharp.Core
+    let newFormatMethod =
+        match GetIntrinsicConstructorInfosOfType cenv.infoReader m formatTy |> List.filter (fun minfo -> minfo.NumArgs = [3]) with
+        | [ctorInfo] -> ctorInfo
+        | _ -> languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
+
+    let stringKind = 
+        // If this is an interpolated string then try to force the result to be a string
+        if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.string_ty) then 
+
+            // And if that succeeds, the result of printing is a string
+            UnifyTypes cenv env m printerArgTy g.unit_ty
+            UnifyTypes cenv env m printerResidueTy g.string_ty
+            UnifyTypes cenv env m printerResultTy overallTy
+
+            // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
+            UnifyTypes cenv env m printerTy printerResultTy  
+
+            Choice1Of2 (true, newFormatMethod)
+
+        // ... or if that fails then may be a FormattableString by a type-directed rule....
+        elif (not (isObjTy g overallTy) && 
+              ((g.system_FormattableString_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_FormattableString_ty) 
+               || (g.system_IFormattable_tcref.CanDeref && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy g.system_IFormattable_ty))) then 
+
+            // And if that succeeds, the result of printing is a string
+            UnifyTypes cenv env m printerArgTy g.unit_ty
+            UnifyTypes cenv env m printerResidueTy g.string_ty
+            UnifyTypes cenv env m printerResultTy overallTy
+
+            // Find the FormattableStringFactor.Create method in the .NET libraries
+            let ad = env.eAccessRights
+            let createMethodOpt = 
+                match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Create" g.system_FormattableStringFactory_ty with 
+                | [x] -> Some x 
+                | _ -> None
+
+            match createMethodOpt with 
+            | Some createMethod -> Choice2Of2 createMethod
+            | None -> languageFeatureNotSupportedInLibraryError cenv.g.langVersion LanguageFeature.StringInterpolation m
+
+        // ... or if that fails then may be a PrintfFormat by a type-directed rule....
+        elif not (isObjTy g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy formatTy then 
+
+            // And if that succeeds, the printerTy and printerResultTy must be the same (there are no curried arguments)
+            UnifyTypes cenv env m printerTy printerResultTy  
+            Choice1Of2 (false, newFormatMethod)
+
+        else
+            // this should fail and produce an error
+            UnifyTypes cenv env m overallTy g.string_ty
+            Choice1Of2 (true, newFormatMethod)
+
+    let isFormattableString = (match stringKind with Choice2Of2 _ -> true | _ -> false)
+
+    // The format string used for checking in CheckFormatStrings. This replaces interpolation holes with %P
+    let printfFormatString = 
+        parts
+        |> List.map (function 
+            | SynInterpolatedStringPart.String (s, _) -> s
+            | SynInterpolatedStringPart.FillExpr (fillExpr, format) -> 
+                let alignText = 
+                    match fillExpr with 
+                    // Validate and detect ",3" part of "...{x,3}..."
+                    | SynExpr.Tuple (false, args, _, _) -> 
+                        match args with 
+                        | [_; SynExpr.Const (SynConst.Int32 align, _)] -> string align
+                        | _ -> errorR(Error(FSComp.SR.tcInvalidAlignmentInInterpolatedString(), m)); ""
+                    | _ -> ""
+                let formatText = match format with None -> "()" | Some n -> "(" + n.idText + ")"
+                "%" + alignText + "P" + formatText )
+        |> String.concat ""
+
+    // Parse the format string to work out the phantom types and check for absence of '%' specifiers in FormattableString
+    //
+    // If FormatStringCheckContext is set (i.e. we are doing foreground checking in the IDE)
+    // then we check the string twice, once to collect % positions and once to get errors.
+    // The process of getting % positions doesn't process the string in a semantically accurate way
+    // (but is enough to report % locations correctly), as it fetched the pieces from the 
+    // original source and this may include some additional characters,
+    // and also doesn't raise all necessary errors
+    match cenv.tcSink.CurrentSink with
+    | Some sink when sink.FormatStringCheckContext.IsSome -> 
+        try 
+            let _argTys, _printerTy, _printerTupleTyRequired, _percentATys, specifierLocations, _dotnetFormatString =
+                CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString sink.FormatStringCheckContext printfFormatString printerArgTy printerResidueTy printerResultTy
+            for specifierLocation, numArgs in specifierLocations do
+                sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
+        with _err-> 
+            ()
+    | _ -> ()
+
+    let argTys, _printerTy, printerTupleTyRequired, percentATys, _specifierLocations, dotnetFormatString =
+        try 
+            CheckFormatStrings.ParseFormatString m stringFragmentRanges g true isFormattableString None printfFormatString printerArgTy printerResidueTy printerResultTy
+        with Failure errString -> 
+            error (Error(FSComp.SR.tcUnableToParseInterpolatedString errString, m))
+
+    // Check the expressions filling the holes
+    if argTys.Length <> synFillExprs.Length then 
+        error (Error(FSComp.SR.tcInterpolationMixedWithPercent(), m))
+
+    match stringKind with 
+
+    // The case for $"..." used as type string and $"...%d{x}..." used as type PrintfFormat - create a PrintfFormat that captures
+    // is arguments
+    | Choice1Of2 (isString, newFormatMethod) -> 
+        
+        UnifyTypes cenv env m printerTupleTy printerTupleTyRequired
+
+        // Type check the expressions filling the holes
+        let flexes = argTys |> List.map (fun _ -> false)
+        let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argTys synFillExprs
+
+        let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
+
+        let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+        let percentATysExpr = 
+            if percentATys.Length = 0 then
+                mkNull m (mkArrayType g g.system_Type_ty)
+            else 
+                let tyExprs = percentATys |> Array.map (mkCallTypeOf g m) |> Array.toList
+                mkArray (g.system_Type_ty, tyExprs, m)
+
+        let fmtExpr = MakeMethInfoCall cenv.amap m newFormatMethod [] [mkString g m printfFormatString; argsExpr; percentATysExpr]
+
+        if isString then 
+            // Make the call to sprintf
+            mkCall_sprintf g m printerTy fmtExpr [], tpenv
+        else
+            fmtExpr, tpenv 
+
+    // The case for $"..." used as type FormattableString or IFormattable
+    | Choice2Of2 createFormattableStringMethod -> 
+
+        // Type check the expressions filling the holes
+        let flexes = argTys |> List.map (fun _ -> false)
+        let fillExprs, tpenv = TcExprs cenv env m tpenv flexes argTys synFillExprs
+
+        let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
+
+        let dotnetFormatStringExpr = mkString g m dotnetFormatString
+        let argsExpr = mkArray (g.obj_ty, fillExprsBoxed, m)
+
+        // FormattableString are *always* turned into FormattableStringFactory.Create calls, boxing each argument
+        let createExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false createFormattableStringMethod NormalValUse [] [dotnetFormatStringExpr; argsExpr] []    
+
+        let resultExpr = 
+            if typeEquiv g overallTy g.system_IFormattable_ty then
+                mkCoerceIfNeeded g g.system_IFormattable_ty g.system_FormattableString_ty createExpr
+            else
+                createExpr
+        resultExpr, tpenv
 
 //-------------------------------------------------------------------------
 // TcConstExpr
@@ -9292,11 +9507,57 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
     let m = cleanSynArg.Range
     let rec check overallTyOpt resultOpt expr (delayed: DelayedItem list) = 
         match expr with
-        | LongOrSingleIdent (false, (LongIdentWithDots(longId, _) as lidd), _, _) ->
+        | LongOrSingleIdent (false, (LongIdentWithDots(longId, _)), _, _) ->
+
             let ad = env.eAccessRights
             let result = defaultArg resultOpt (List.last longId)
+            
+            // Nameof resolution resolves to a symbol and in general we make that the same symbol as
+            // would resolve if the long ident was used as an expression at the given location.
+            //
+            // So we first check if the first identifier resolves as an expression, if so commit and and resolve.
+            //
+            // However we don't commit for a type names - nameof allows 'naked' type names and thus all type name
+            // resolutions are checked separately in the next step.
+            let typeNameResInfo = GetLongIdentTypeNameInfo delayed
+            let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
+            let resolvesAsExpr =
+                match nameResolutionResult with 
+                | Result ((item, _, _, _) as res) 
+                    when 
+                         (match item with 
+                          | Item.Types _ 
+                          | Item.DelegateCtor _
+                          | Item.CtorGroup _
+                          | Item.FakeInterfaceCtor _ -> false
+                          | _ -> true) -> 
+                    let overallTy = match overallTyOpt with None -> NewInferenceType() | Some t -> t 
+                    let _, _ = TcItemThen cenv overallTy env tpenv res delayed
+                    true
+                | _ ->
+                    false
+            if resolvesAsExpr then result else
+
+            // If it's not an expression then try to resolve it as a type name
+            let resolvedToTypeName = 
+                if (match delayed with [DelayedTypeApp _] | [] -> true | _ -> false) then
+                    let (TypeNameResolutionInfo(_, staticArgsInfo)) = GetLongIdentTypeNameInfo delayed
+                    match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad longId staticArgsInfo PermitDirectReferenceToGeneratedType.No with
+                    | Result tcref when IsEntityAccessible cenv.amap m ad tcref -> 
+                        match delayed with 
+                        | [DelayedTypeApp (tyargs, _, mExprAndTypeArgs)] -> 
+                            TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs tcref [] tyargs |> ignore
+                        | _ -> ()
+                        true // resolved to a type name, done with checks
+                    | _ -> 
+                        false
+                else
+                    false
+            if resolvedToTypeName then result else
+
+            // If it's not an expression or type name then resolve it as a module
             let resolvedToModuleOrNamespaceName =
-                if delayed.IsEmpty then 
+                if delayed.IsEmpty then
                     let id,rest = List.headAndTail longId
                     match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest true with 
                     | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) -> 
@@ -9307,23 +9568,9 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                     false
             if resolvedToModuleOrNamespaceName then result else
 
-            let resolvedToTypeName = 
-                if (match delayed with [DelayedTypeApp _] | [] -> true | _ -> false) then
-                    let (TypeNameResolutionInfo(_, staticArgsInfo)) = GetLongIdentTypeNameInfo delayed
-                    match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad longId staticArgsInfo PermitDirectReferenceToGeneratedType.No with
-                    | Result tcref when (match delayed with [DelayedTypeApp _] | [] -> true | _ -> false) && IsEntityAccessible cenv.amap m ad tcref -> 
-                        true // resolved to a type name, done with checks
-                    | _ -> 
-                        false
-                else
-                    false
-            if resolvedToTypeName then result else
-
-            let overallTy = match overallTyOpt with None -> NewInferenceType() | Some t -> t 
-            
-            // This will raise an error if resolution doesn't succeed
-            let _, _ = TcLongIdentThen cenv overallTy env tpenv lidd delayed
-            result // checked as an expression, done with checks
+            ForceRaise nameResolutionResult |> ignore
+            // If that didn't give aan exception then raise a generic error
+            error (Error(FSComp.SR.expressionHasNoName(), m))
             
         // expr<tyargs> allowed, even with qualifications 
         | SynExpr.TypeApp (hd, _, types, _, _, _, m) ->
@@ -9420,7 +9667,9 @@ and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) dela
 
     let ad = env.eAccessRights
     let typeNameResInfo = GetLongIdentTypeNameInfo delayed
-    let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
+    let nameResolutionResult =
+        ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
+        |> ForceRaise
     TcItemThen cenv overallTy env tpenv nameResolutionResult delayed
 
 //-------------------------------------------------------------------------
@@ -9748,6 +9997,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.AddressOf (_, synExpr, _, _) 
             | SynExpr.Quote (_, _, synExpr, _, _) -> isSimpleArgument synExpr
 
+            | SynExpr.InterpolatedString _
             | SynExpr.Null _
             | SynExpr.Ident _ 
             | SynExpr.Const _ 
@@ -12143,7 +12393,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
     let prelimValScheme = ValScheme(bindingId, prelimTyscheme, topValInfo, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
 
     // Check the literal r.h.s., if any
-    let _, konst = TcLiteral cenv ty env tpenv (bindingAttribs, bindingExpr)
+    let _, konst = TcLiteral cenv ty envinner tpenv (bindingAttribs, bindingExpr)
 
     let extraBindings, extraValues, tpenv, recBindIdx = 
        let extraBindings = 
@@ -15271,7 +15521,10 @@ module TcExceptionDeclarations =
         let repr = 
           match reprIdOpt with 
           | Some longId ->
-              match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
+              let resolution =
+                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default longId 
+                  |> ForceRaise
+              match resolution with
               | Item.ExnCase exnc, [] -> 
                   CheckTyconAccessible cenv.amap m env.eAccessRights exnc |> ignore
                   if not (isNil args') then 

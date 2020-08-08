@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">En règle générale, les identificateurs de variable en majuscules ne doivent pas être utilisés dans les modèles. En outre, ils peuvent indiquer une erreur d'orthographe dans le nom du modèle.</target>
+        <target state="translated">Les identificateurs de variables en majuscules ne doivent généralement pas être utilisés dans les modèles. Ils peuvent indiquer une absence de déclaration open ou un nom de modèle mal orthographié.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

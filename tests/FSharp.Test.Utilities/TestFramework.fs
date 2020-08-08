@@ -94,10 +94,10 @@ module Commands =
 #endif
 
     let csc exec cscExe flags srcFiles =
-        exec cscExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
+        exec cscExe (sprintf "%s %s  /reference:netstandard.dll" flags (srcFiles |> Seq.ofList |> String.concat " "))
 
     let vbc exec vbcExe flags srcFiles =
-        exec vbcExe (sprintf "%s %s"  flags (srcFiles |> Seq.ofList |> String.concat " "))
+        exec vbcExe (sprintf "%s %s  /reference:netstandard.dll" flags (srcFiles |> Seq.ofList |> String.concat " "))
 
     let fsi exec fsiExe flags sources =
         exec fsiExe (sprintf "%s %s"  flags (sources |> Seq.ofList |> String.concat " "))
@@ -202,7 +202,7 @@ let config configurationName envVars =
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
-    let fsharpCoreArchitecture = "net45"
+    let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "net472"
     let fsharpCompilerInteractiveSettingsArchitecture = "net472"
     let peverifyArchitecture = "net472"

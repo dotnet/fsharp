@@ -1166,6 +1166,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_EOF -> getErrorString("Parser.TOKEN.EOF")
               | Parser.TOKEN_CONST -> getErrorString("Parser.TOKEN.CONST")
               | Parser.TOKEN_FIXED -> getErrorString("Parser.TOKEN.FIXED")
+              | Parser.TOKEN_INTERP_STRING_BEGIN_END -> getErrorString("Parser.TOKEN.INTERP.STRING.BEGIN.END")
+              | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
+              | Parser.TOKEN_INTERP_STRING_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.PART")
+              | Parser.TOKEN_INTERP_STRING_END -> getErrorString("Parser.TOKEN.INTERP.STRING.END")
               | unknown ->           
                   Debug.Assert(false, "unknown token tag")
                   let result = sprintf "%+A" unknown
@@ -2418,8 +2422,7 @@ type TcConfigBuilder =
           deterministic = false
           preferredUiLang = None
           lcid = None
-          // See bug 6071 for product banner spec
-          productNameForBannerText = FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion)
+          productNameForBannerText = FSharpEnvironment.FSharpProductName
           showBanner = true
           showTimes = false
           showLoadedAssemblies = false
@@ -3589,13 +3592,13 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
     use unwindbuildphase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     try 
         let skip = true in (* don't report whitespace from lexer *)
-        let lightSyntaxStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filename, true) 
-        let lexargs = mkLexargs (filename, conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightSyntaxStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
+        let lightStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filename, true) 
+        let lexargs = mkLexargs (conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
         let shortFilename = SanitizeFileName filename tcConfig.implicitIncludeDir 
         let input = 
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
                 if verbose then dprintn ("Parsing... "+shortFilename)
-                let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
+                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
 
                 if tcConfig.tokenizeOnly then 
                     while true do 
@@ -3701,12 +3704,17 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
     static member GetAllDllReferences (tcConfig: TcConfig) = [
             let primaryReference = tcConfig.PrimaryAssemblyDllReference()
-            //yield primaryReference
+
+            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
 
             if not tcConfig.compilingFslib then 
                 yield tcConfig.CoreLibraryDllReference()
+                if assumeDotNetFramework then
+                    // When building desktop then we need these additional dependencies
+                    yield AssemblyReference(rangeStartup, "System.Numerics.dll", None)
+                    yield AssemblyReference(rangeStartup, "System.dll", None)
+                    yield AssemblyReference(rangeStartup, "netstandard.dll", None)
 
-            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
             if tcConfig.framework then
                 for s in defaultReferencesForScriptsAndOutOfProjectSources tcConfig.useFsiAuxLib assumeDotNetFramework tcConfig.useSdkRefs do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
@@ -4108,7 +4116,6 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         | None ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
             look tcImports
-    
 
     member tcImports.FindDllInfo (ctok, m, assemblyName) =
         match tcImports.TryFindDllInfo (ctok, m, assemblyName, lookupOnly=false) with 
@@ -4785,7 +4792,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // If the user is asking for the default framework then also try to resolve other implicit assemblies as they are discovered.
         // Using this flag to mean 'allow implicit discover of assemblies'.
         let tcConfig = tcConfigP.Get ctok
-        if not lookupOnly && tcConfig.implicitlyResolveAssemblies then 
+        if not lookupOnly && tcConfig.implicitlyResolveAssemblies then
             let tryFile speculativeFileName = 
                 let foundFile = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, speculativeFileName, None), ResolveAssemblyReferenceMode.Speculative)
                 match foundFile with 
@@ -4826,7 +4833,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             ResultD [assemblyResolution]
         | None ->
 #if NO_MSBUILD_REFERENCE_RESOLUTION
-           try 
+           try
                ResultD [tcConfig.ResolveLibWithDirectories assemblyReference]
            with e -> 
                ErrorD e
@@ -4847,7 +4854,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         ResultD [resolved]
                     | None ->
                         ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
-                else 
+                else
                     // This is a previously unencountered assembly. Resolve it and add it to the list.
                     // But don't cache resolution failures because the assembly may appear on the disk later.
                     let resolved, unresolved = TcConfig.TryResolveLibsUsingMSBuildRules(tcConfig, [ assemblyReference ], assemblyReference.Range, mode)
@@ -4862,9 +4869,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                         // Note, if mode=ResolveAssemblyReferenceMode.Speculative and the resolution failed then TryResolveLibsUsingMSBuildRules returns
                         // the empty list and we convert the failure into an AssemblyNotResolved here.
                         ErrorD(AssemblyNotResolved(assemblyReference.Text, assemblyReference.Range))
-
-#endif                        
-     
+#endif
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list = 
         CommitOperationResult(tcImports.TryResolveAssemblyReference(ctok, assemblyReference, mode))

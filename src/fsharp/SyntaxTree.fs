@@ -1008,6 +1008,12 @@ type SynExpr =
         expr: SynExpr *
         range: range
 
+    /// F# syntax: interpolated string, e.g. "abc{x}" or "abc{x,3}" or "abc{x:N4}"
+    /// Note the string ranges include the quotes, verbatim markers, dollar sign and braces
+    | InterpolatedString of
+        contents: SynInterpolatedStringPart list *
+        range: range
+
     /// Gets the syntax range of this construct
     member e.Range =
         match e with
@@ -1074,7 +1080,8 @@ type SynExpr =
         | SynExpr.LetOrUseBang (range=m)
         | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
-        | SynExpr.Fixed (range=m) -> m
+        | SynExpr.Fixed (range=m) 
+        | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
 
     /// Get the Range ignoring any (parse error) extra trailing dots
@@ -1110,6 +1117,11 @@ type SynExpr =
         match this with
         | SynExpr.ArbitraryAfterError _ -> true
         | _ -> false
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynInterpolatedStringPart =
+    | String of string * range
+    | FillExpr of SynExpr * Ident option
 
 /// Represents a syntax tree for an F# indexer expression argument
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

@@ -459,6 +459,12 @@ type AsteriskCompletionSession() =
 [<ExportLanguageService(typeof<IEditorBraceCompletionSessionFactory>, FSharpConstants.FSharpLanguageName)>]
 type EditorBraceCompletionSessionFactory() =
 
+    let spanIsNotCommentOrString (span: ClassifiedSpan) =
+        match span.ClassificationType with
+        | ClassificationTypeNames.Comment
+        | ClassificationTypeNames.StringLiteral -> false
+        | _ -> true 
+
     member __.IsSupportedOpeningBrace openingBrace =
         match openingBrace with
         | Parenthesis.OpenCharacter | CurlyBrackets.OpenCharacter | SquareBrackets.OpenCharacter
@@ -466,23 +472,37 @@ type EditorBraceCompletionSessionFactory() =
         | Asterisk.OpenCharacter -> true
         | _ -> false
 
-    member __.CheckCodeContext(document: Document, position: int, _openingBrace, cancellationToken) =
-        // We need to know if we are inside a F# comment. If we are, then don't do automatic completion.
+    member __.CheckCodeContext(document: Document, position: int, _openingBrace:char, cancellationToken) =
+        // We need to know if we are inside a F# string or comment. If we are, then don't do automatic completion.
         let sourceCodeTask = document.GetTextAsync(cancellationToken)
         sourceCodeTask.Wait(cancellationToken)
         let sourceCode = sourceCodeTask.Result
         
         position = 0 
-        || let colorizationData = Tokenizer.getClassifiedSpans(document.Id, sourceCode, TextSpan(position - 1, 1), Some (document.FilePath), [ ], cancellationToken)
-           in colorizationData.Count = 0 
-              || colorizationData.Exists(fun classifiedSpan -> 
-                    classifiedSpan.TextSpan.IntersectsWith position &&
-                    (
-                        match classifiedSpan.ClassificationType with
-                        | ClassificationTypeNames.Comment
-                        | ClassificationTypeNames.StringLiteral -> false
-                        | _ -> true // anything else is a valid classification type
-                    ))                
+        || (let colorizationData = Tokenizer.getClassifiedSpans(document.Id, sourceCode, TextSpan(position - 1, 1), Some (document.FilePath), [ ], cancellationToken)
+            colorizationData.Count = 0
+            || 
+            colorizationData.Exists(fun classifiedSpan -> 
+                classifiedSpan.TextSpan.IntersectsWith position &&
+                spanIsNotCommentOrString classifiedSpan)) 
+
+            // This would be the case where '{' has been pressed in a string and the next position
+            // is known not to be a string.  This corresponds to the end of an interpolated string part.
+            //
+            // However, Roslyn doesn't activate BraceCompletionSessionProvider for string text at all (and at the time '{
+            // is pressed the text is classified as a string). So this code doesn't get called at all and so
+            // no brace completion is available inside interpolated strings.
+            //
+            // || (openingBrace = '{' &&
+            // colorizationData.Exists(fun classifiedSpan -> 
+            //    classifiedSpan.TextSpan.IntersectsWith (position-1) &&
+            //    spanIsString classifiedSpan) && 
+            // let colorizationData2 = Tokenizer.getClassifiedSpans(document.Id, sourceCode, TextSpan(position, 1), Some (document.FilePath), [ ], cancellationToken)
+            // (colorizationData2.Count = 0 
+            //  || 
+            //  colorizationData2.Exists(fun classifiedSpan -> 
+            //    classifiedSpan.TextSpan.IntersectsWith position &&
+            //    not (spanIsString classifiedSpan)))))
 
     member __.CreateEditorSession(_document, _openingPosition, openingBrace, _cancellationToken) =
         match openingBrace with

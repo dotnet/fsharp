@@ -105,7 +105,7 @@ module rec Compiler =
         | _ ->
             { Source          = Text source
               LangVersion     = CSharpLanguageVersion.CSharp8
-              TargetFramework = TargetFramework.NetCoreApp30
+              TargetFramework = TargetFramework.NetCoreApp31
               Name            = None
               References      = [] }
 
@@ -173,8 +173,13 @@ module rec Compiler =
 
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with Options = options }
+        | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith "withOptions is only supported n F#"
+
+    let withPreview (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:preview" ] }
+        | _ -> failwith "withPreview is only supported in F#"
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -269,6 +274,7 @@ module rec Compiler =
         Directory.CreateDirectory(outputPath) |> ignore
 
         let filename = compilation.AssemblyName
+
         let output = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
 
         let cmplResult = compilation.Emit (output)

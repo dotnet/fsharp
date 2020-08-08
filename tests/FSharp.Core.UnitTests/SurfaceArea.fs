@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Core.UnitTests.SurfaceArea
+namespace FSharp.Core.UnitTests.Portable.SurfaceArea
 
 open NUnit.Framework
 open FSharp.Core.UnitTests.LibraryTestFx
@@ -218,7 +218,6 @@ Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Int32 get_Count()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Add(TKey, TValue)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Remove(TKey)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Core.FSharpOption`1[TValue] TryFind(TKey)
-Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Boolean TryGetValue(TKey, TValue ByRef)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Change(TKey, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[TValue],Microsoft.FSharp.Core.FSharpOption`1[TValue]])
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.String ToString()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue Item [TKey]
@@ -371,12 +370,12 @@ Microsoft.FSharp.Collections.MapModule: System.Collections.Generic.IEnumerable`1
 Microsoft.FSharp.Collections.MapModule: System.Tuple`2[Microsoft.FSharp.Collections.FSharpMap`2[TKey,T],Microsoft.FSharp.Collections.FSharpMap`2[TKey,T]] Partition[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: System.Tuple`2[TKey,T][] ToArray[TKey,T](Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: T Find[TKey,T](TKey, Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
-Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] Change[TKey,T](TKey, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[T],Microsoft.FSharp.Core.FSharpOption`1[T]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: TKey FindKey[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: TResult Pick[TKey,T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[TResult]]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: TState FoldBack[TKey,T,TState](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TState,TState]]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T], TState)
 Microsoft.FSharp.Collections.MapModule: TState Fold[TKey,T,TState](Microsoft.FSharp.Core.FSharpFunc`2[TState,Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,TState]]], TState, Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.MapModule: Void Iterate[TKey,T](Microsoft.FSharp.Core.FSharpFunc`2[TKey,Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.Unit]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
+Microsoft.FSharp.Collections.MapModule: Microsoft.FSharp.Collections.FSharpMap`2[TKey,T] Change[TKey,T](TKey, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpOption`1[T],Microsoft.FSharp.Core.FSharpOption`1[T]], Microsoft.FSharp.Collections.FSharpMap`2[TKey,T])
 Microsoft.FSharp.Collections.SeqModule: Boolean Contains[T](T, System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Boolean Exists2[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,System.Boolean]], System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])
 Microsoft.FSharp.Collections.SeqModule: Boolean Exists[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
@@ -2236,10 +2235,20 @@ Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.S
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.String Value
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.String get_Value()
 Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: Void .ctor(System.String)
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: Void .ctor(System.String, System.Object[], System.Type[])
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Object[] Captures
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Object[] get_Captures()
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Type[] CaptureTypes
+Microsoft.FSharp.Core.PrintfFormat`4[TPrinter,TState,TResidue,TResult]: System.Type[] get_CaptureTypes()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String ToString()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String Value
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.String get_Value()
 Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String)
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: Void .ctor(System.String, System.Object[], System.Type[])
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Object[] Captures
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Object[] get_Captures()
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Type[] CaptureTypes
+Microsoft.FSharp.Core.PrintfFormat`5[TPrinter,TState,TResidue,TResult,TTuple]: System.Type[] get_CaptureTypes()
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLineToError[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLineToTextWriter[T](System.IO.TextWriter, Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 Microsoft.FSharp.Core.PrintfModule: T PrintFormatLine[T](Microsoft.FSharp.Core.PrintfFormat`4[T,System.IO.TextWriter,Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
@@ -2923,9 +2932,4 @@ Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1
             expected +
             @"Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])"
 #endif
-#if CROSS_PLATFORM_COMPILER
-        ()
-        // disabled because of slight order and GetMember discrepencies
-#else
-        SurfaceArea.verify expected "net40" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
-#endif
+        SurfaceArea.verify expected "coreclr" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))

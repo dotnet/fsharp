@@ -129,7 +129,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -169,7 +169,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -217,7 +217,7 @@ type Test () =
             """
         
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -259,7 +259,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -308,7 +308,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -356,7 +356,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -406,7 +406,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -457,7 +457,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -494,7 +494,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -531,7 +531,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -572,7 +572,7 @@ let f1 () =
     """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -622,7 +622,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -677,7 +677,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -758,7 +758,7 @@ let main _ =
 
         // Explicitly implementing a protected DIM is allowed in F# 4.6.
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -857,7 +857,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -933,7 +933,7 @@ type Test2 () =
             """
         
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1071,7 +1071,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1121,7 +1121,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1171,7 +1171,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1221,7 +1221,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1295,7 +1295,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1358,7 +1358,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1433,7 +1433,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1513,7 +1513,7 @@ type Test2 () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1566,7 +1566,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1615,7 +1615,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1665,7 +1665,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1722,7 +1722,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1761,7 +1761,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1804,7 +1804,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1843,7 +1843,7 @@ let test = { new ITest }
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1898,7 +1898,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -1946,7 +1946,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2006,7 +2006,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2074,7 +2074,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2157,7 +2157,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2235,7 +2235,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2313,7 +2313,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2385,7 +2385,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2451,7 +2451,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2540,7 +2540,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2610,7 +2610,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2689,7 +2689,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2751,7 +2751,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2840,7 +2840,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -2965,7 +2965,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3076,7 +3076,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3188,7 +3188,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3304,7 +3304,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3410,7 +3410,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3513,7 +3513,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3612,7 +3612,7 @@ type Test2 () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3659,7 +3659,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3706,7 +3706,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3769,7 +3769,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3836,7 +3836,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3884,7 +3884,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -3939,7 +3939,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4004,7 +4004,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4094,7 +4094,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4172,7 +4172,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4269,7 +4269,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4364,7 +4364,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4451,7 +4451,7 @@ type Test () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4501,7 +4501,7 @@ let test =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4564,7 +4564,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4620,7 +4620,7 @@ let main _ =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4684,7 +4684,7 @@ f ()
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4744,7 +4744,7 @@ f3 ()
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4789,7 +4789,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4839,7 +4839,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4889,7 +4889,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -4942,7 +4942,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =
@@ -5038,7 +5038,7 @@ let f () =
             """
 
         let csCmpl =
-            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp30)
+            CompilationUtil.CreateCSharpCompilation(csharpSource, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31)
             |> CompilationReference.Create
 
         let fsCmpl =

@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
-        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <target state="translated">'{0}' 기능은 F# {1}에서 사용할 수 없습니다. {2} 이상의 언어 버전을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotRuntimeSupported">
         <source>Feature '{0}' is not supported by target runtime.</source>
-        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <target state="translated">'{0}' 기능은 대상 런타임에서 지원되지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -54,52 +54,47 @@
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <target state="translated">종속성이 없거나 로드되지 않았으므로 '{0}' 형식 공급자 디자이너 어셈블리를 '{1}' 폴더에서 로드할 수 없습니다. 형식 공급자 디자이너 어셈블리의 모든 종속성은 해당 어셈블리와 동일한 폴더에 있어야 합니다. 보고된 예외: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyException">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <target state="translated">'{0}' 형식 공급자 디자이너 어셈블리를 '{1}' 폴더에서 로드할 수 없습니다. 보고된 예외: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fSharpBannerVersion">
-        <source>{0} for F# {1}</source>
-        <target state="translated">F# {1}용 {0}</target>
+        <target state="translated">'{0}' 어셈블리 특성이 로드할 수 없거나 존재하지 않는 디자이너 어셈블리'{1}'을(를) 참조합니다. 보고된 예외: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
-        <target state="new">applicative computation expressions</target>
+        <target state="translated">적용 가능한 계산 식</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
-        <target state="new">default interface member consumption</target>
+        <target state="translated">기본 인터페이스 멤버 사용</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
-        <target state="new">dotless float32 literal</target>
+        <target state="translated">점이 없는 float32 리터럴</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
-        <target state="new">fixed-index slice 3d/4d</target>
+        <target state="translated">고정 인덱스 슬라이스 3d/4d</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
-        <target state="new">from-end slicing</target>
+        <target state="translated">끝에서부터 조각화</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
-        <target state="new">implicit yield</target>
+        <target state="translated">암시적 yield</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -109,42 +104,42 @@
       </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
-        <target state="new">nameof</target>
+        <target state="translated">nameof</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
-        <target state="new">nullable optional interop</target>
+        <target state="translated">nullable 선택적 interop</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenStaticClasses">
         <source>open static classes</source>
-        <target state="new">open static classes</target>
+        <target state="translated">정적 클래스 열기</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
-        <target state="new">package management</target>
+        <target state="translated">패키지 관리</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
-        <target state="new">whitespace relexation</target>
+        <target state="translated">공백 완화</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
-        <target state="new">single underscore pattern</target>
+        <target state="translated">단일 밑줄 패턴</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
-        <target state="new">wild card in for loop</target>
+        <target state="translated">for 루프의 와일드카드</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
-        <target state="new">witness passing for trait constraints in F# quotations</target>
+        <target state="translated">F# 인용의 특성 제약 조건에 대한 감시 전달</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -254,7 +249,7 @@
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
-        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <target state="translated">인터페이스 멤버 '{0}'에 가장 한정적인 구현이 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariable">
@@ -435,16 +430,6 @@
       <trans-unit id="buildInvalidVersionFile">
         <source>Invalid version file '{0}'</source>
         <target state="translated">버전 파일 '{0}'이(가) 잘못되었습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildProductName">
-        <source>Microsoft (R) F# Compiler version {0}</source>
-        <target state="translated">Microsoft (R) F# Compiler 버전 {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildProductNameCommunity">
-        <source>F# Compiler for F# {0}</source>
-        <target state="translated">F# {0}에 대한 F# 컴파일러</target>
         <note />
       </trans-unit>
       <trans-unit id="buildProblemWithFilename">
@@ -1214,7 +1199,7 @@
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
         <source>The named argument '{0}' has been assigned more than one value</source>
-        <target state="new">The named argument '{0}' has been assigned more than one value</target>
+        <target state="translated">명명된 인수 '{0}'에 둘 이상의 값이 할당되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -5919,7 +5904,7 @@
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
+        <target state="translated">어셈블리 특성 '{0}'은(는) '{2}' 경로에서 로드할 수 없는 디자이너 어셈블리 '{1}'을(를) 참조합니다. 보고된 예외: {3} - {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">
