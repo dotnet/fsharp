@@ -7897,27 +7897,36 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                     Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
 
     let customOperationMethodsIndexedByKeyword = 
-        customOperationMethods
-        |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
-        |> Seq.map (fun (nm, group) ->
-            (nm,
-                group
-                |> Seq.distinctBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
-                |> Seq.toList))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+            customOperationMethods
+            |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
+            |> Seq.map (fun (nm, group) ->
+                (nm,
+                    group
+                    |> Seq.distinctBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
+                    |> Seq.toList))
+        else
+            customOperationMethods
+            |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
+            |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
         |> dict
 
     // Check for duplicates by method name (keywords and method names must be 1:1)
     let customOperationMethodsIndexedByMethodName = 
-        customOperationMethods
-        |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
-        |> Seq.map (fun (nm, group) ->
-            (nm,
-                group
-                |> Seq.distinctBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
-                |> Seq.toList))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+            customOperationMethods
+            |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
+            |> Seq.map (fun (nm, group) ->
+                (nm,
+                    group
+                    |> Seq.distinctBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
+                    |> Seq.toList))
+        else
+            customOperationMethods
+            |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
+            |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
         |> dict
 
-        
     /// Decide if the identifier represents a use of a custom query operator
     let tryGetDataForCustomOperation (nm: Ident) = 
         match customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with 
@@ -8899,15 +8908,21 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let maintainsVarSpace = customOperationMaintainsVarSpace nm
                         let maintainsVarSpaceUsingBind = customOperationMaintainsVarSpaceUsingBind nm
 
+                        let expectedArgCount = expectedArgCountForCustomOperator nm
+
                         let dataCompAfterOp = 
                             match opExpr with 
                             | StripApps(SingleIdent nm, args) ->
-                                // Check for the [<ProjectionParameter>] attribute on each argument position
-                                let args = args |> List.mapi (fun i arg -> 
-                                    if isCustomOperationProjectionParameter (i+1) nm then 
-                                        SynExpr.Lambda (false, false, varSpaceSimplePat, arg, arg.Range.MakeSynthetic())
-                                    else arg)
-                                mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
+                                if args.Length = expectedArgCount || cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+                                    // Check for the [<ProjectionParameter>] attribute on each argument position
+                                    let args = args |> List.mapi (fun i arg -> 
+                                        if isCustomOperationProjectionParameter (i+1) nm then 
+                                            SynExpr.Lambda (false, false, varSpaceSimplePat, arg, arg.Range.MakeSynthetic())
+                                        else arg)
+                                    mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
+                                else 
+                                    errorR(Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount(nm.idText, expectedArgCount, args.Length), nm.idRange))
+                                    mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause)))
                             | _ -> failwith "unreachable"
 
                         match optionalCont with 

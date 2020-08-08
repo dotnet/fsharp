@@ -34,6 +34,7 @@ type LanguageFeature =
     | WitnessPassing
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
+    | OverloadsForCustomOperations
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -73,6 +74,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.InterfacesWithMultipleGenericInstantiation, previewVersion
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.StringInterpolation, previewVersion
+            LanguageFeature.OverloadsForCustomOperations, previewVersion
         ]
 
     let specified =
