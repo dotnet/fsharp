@@ -4,6 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
+    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

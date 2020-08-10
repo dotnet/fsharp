@@ -9,6 +9,8 @@ namespace Microsoft.FSharp.Control
 
     [<Sealed; CompiledName("FSharpAsyncReplyChannel`1")>]
     /// <summary>A handle to a capability to reply to a PostAndReply message.</summary>
+    ///
+    /// <category index="4">Agents</category>
     type AsyncReplyChannel<'Reply> =
         /// <summary>Sends a reply to a PostAndReply message.</summary>
         /// <param name="value">The value to send.</param>
@@ -22,6 +24,8 @@ namespace Microsoft.FSharp.Control
     ///
     /// The agent may wait for messages using the Receive or TryReceive methods or
     /// scan through all available messages using the Scan or TryScan method.</remarks>
+    ///
+    /// <category index="4">Agents</category>
     [<Sealed; AutoSerializable(false); CompiledName("FSharpMailboxProcessor`1")>]
     type MailboxProcessor<'Msg> =
 

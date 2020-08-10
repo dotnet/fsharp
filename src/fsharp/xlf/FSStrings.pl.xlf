@@ -7,6 +7,26 @@
         <target state="translated">symbol „..^”</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
+        <source>interpolated string</source>
+        <target state="new">interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
+        <source>interpolated string (first part)</source>
+        <target state="new">interpolated string (first part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
+        <source>interpolated string (final part)</source>
+        <target state="new">interpolated string (final part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
+        <source>interpolated string (part)</source>
+        <target state="new">interpolated string (part)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. Zobacz też {0}.</target>
@@ -69,7 +89,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">Identyfikatory zmiennych pisane wielkimi literami nie powinny być używane we wzorcach i mogą oznaczać nazwę wzorca z błędami pisowni.</target>
+        <target state="translated">Identyfikatory zmiennych pisane wielkimi literami nie powinny być na ogół używane we wzorcach i mogą oznaczać brak deklaracji otwierającej lub błąd pisowni w nazwie wzorca.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

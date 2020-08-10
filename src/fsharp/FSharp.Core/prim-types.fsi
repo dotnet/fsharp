@@ -8,16 +8,27 @@ namespace Microsoft.FSharp.Core
 
     open System
 
+    /// <namespacedoc><summary>
+    ///   Basic definitions of operators, options, functions, results, choices, attributes and plain text formatting.
+    /// </summary></namespacedoc>
+    ///
     /// <summary>The type 'unit', which has only one value "()". This value is special and
     /// always uses the representation 'null'.</summary>
+    ///
+    /// <category>Basic Types</category>
+    /// <exclude />
     type Unit =
        interface IComparable
         
     /// <summary>The type 'unit', which has only one value "()". This value is special and
     /// always uses the representation 'null'.</summary>
+    ///
+    /// <category index="1">Basic Types</category>
     and unit = Unit
 
     /// <summary>Indicates the relationship between a compiled entity in a CLI binary and an element in F# source code.</summary>
+    ///
+    /// <category index="8">Attributes</category>
     type SourceConstructFlags = 
        /// <summary>Indicates that the compiled entity has no relationship to an element in F# source code.</summary>
        | None = 0
@@ -57,6 +68,8 @@ namespace Microsoft.FSharp.Core
 
     [<Flags>]
     /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member.</summary>
+    ///
+    /// <category>Attributes</category>
     type CompilationRepresentationFlags = 
 
        /// <summary>No special compilation representation.</summary>
@@ -79,6 +92,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to class definition makes it sealed, which means it may not
     /// be extended or implemented.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     type SealedAttribute =
         inherit Attribute
@@ -98,6 +113,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to class definition makes it abstract, which means it need not
     /// implement all its methods. Instances of abstract classes may not be constructed directly.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type AbstractClassAttribute =
@@ -110,6 +127,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to the let-binding for the definition of a top-level 
     /// value makes the quotation expression that implements the value available
     /// for use at runtime.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute =
@@ -141,7 +160,10 @@ namespace Microsoft.FSharp.Core
     /// as C&lt;(int -> int)&gt; will not support equality because the type (int -> int) is an F# function type 
     /// and does not support equality.
     /// 
-    /// This attribute will be ignored if it is used on the generic parameters of functions or methods.</remarks>
+    /// This attribute will be ignored if it is used on the generic parameters of functions or methods.
+    /// </remarks>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.GenericParameter,AllowMultiple=false)>]  
     [<Sealed>]
     type EqualityConditionalOnAttribute =
@@ -161,7 +183,10 @@ namespace Microsoft.FSharp.Core
     /// as C&lt;(int -> int)&gt; will not support comparison because the type (int -> int) is an F# function type 
     /// and does not support comparison.
     ///
-    /// This attribute will be ignored if it is used on the generic parameters of functions or methods.</remarks>
+    /// This attribute will be ignored if it is used on the generic parameters of functions or methods.
+    /// </remarks>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.GenericParameter,AllowMultiple=false)>]  
     [<Sealed>]
     type ComparisonConditionalOnAttribute =
@@ -172,6 +197,8 @@ namespace Microsoft.FSharp.Core
         new : unit -> ComparisonConditionalOnAttribute
 
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI struct.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute =
@@ -183,6 +210,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a type causes it to be interpreted as a unit of measure.
     /// This may only be used under very limited conditions.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.GenericParameter ||| AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAttribute =
@@ -194,6 +223,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a type causes it to be interpreted as a refined type, currently limited to measure-parameterized types.
     /// This may only be used under very limited conditions.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type MeasureAnnotatedAbbreviationAttribute =
@@ -204,6 +235,8 @@ namespace Microsoft.FSharp.Core
         new : unit -> MeasureAnnotatedAbbreviationAttribute
 
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI interface.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Interface,AllowMultiple=false)>]  
     [<Sealed>]
     type InterfaceAttribute =
@@ -214,6 +247,8 @@ namespace Microsoft.FSharp.Core
         new : unit -> InterfaceAttribute
 
     /// <summary>Adding this attribute to a type causes it to be represented using a CLI class.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type ClassAttribute =
@@ -226,6 +261,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a type lets the 'null' literal be used for the type 
     /// within F# code. This attribute may only be added to F#-defined class or 
     /// interface types.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type AllowNullLiteralAttribute =
@@ -243,6 +280,8 @@ namespace Microsoft.FSharp.Core
         member Value: bool
 
     /// <summary>Adding this attribute to a value causes it to be compiled as a CLI constant literal.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
     [<Sealed>]
     type LiteralAttribute =
@@ -255,6 +294,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a property with event type causes it to be compiled with as a CLI
     /// metadata event, through a syntactic translation to a pair of 'add_EventName' and 
     /// 'remove_EventName' methods.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type CLIEventAttribute =
@@ -266,6 +307,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a record type causes it to be compiled to a CLI representation
     /// with a default constructor with property getters and setters.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type CLIMutableAttribute =
@@ -278,6 +321,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a discriminated union with value false
     /// turns off the generation of standard helper member tester, constructor 
     /// and accessor members for the generated CLI class for that type.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultAugmentationAttribute =
@@ -296,6 +341,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to an F# mutable binding causes the "volatile"
     /// prefix to be used for all accesses to the field.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
     [<Sealed>]
     type VolatileFieldAttribute =
@@ -308,6 +355,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a function indicates it is the entrypoint for an application.
     /// If this attribute is not specified for an EXE then the initialization implicit in the
     /// module bindings in the last file in the compilation sequence are used as the entrypoint.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type EntryPointAttribute =
@@ -320,6 +369,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a record or union type disables the automatic generation
     /// of overrides for 'System.Object.Equals(obj)', 'System.Object.GetHashCode()' 
     /// and 'System.IComparable' for the type. The type will by default use reference equality.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type ReferenceEqualityAttribute =
@@ -332,6 +383,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to a record, union or struct type confirms the automatic 
     /// generation of overrides for 'System.Object.Equals(obj)' and 
     /// 'System.Object.GetHashCode()' for the type. </summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralEqualityAttribute =
@@ -343,6 +396,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a record, union, exception, or struct type confirms the 
     /// automatic generation of implementations for 'System.IComparable' for the type.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type StructuralComparisonAttribute =
@@ -354,8 +409,10 @@ namespace Microsoft.FSharp.Core
 
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
-    /// Indicates that a member on a computation builder type is a custom query operator,
-    /// and indicates the name of that operator.
+    /// <summary>Indicates that a member on a computation builder type is a custom query operator,
+    /// and indicates the name of that operator.</summary>
+    ///
+    /// <category>Attributes</category>
     type CustomOperationAttribute = 
         inherit Attribute
 
@@ -391,6 +448,8 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     /// <summary>Indicates that, when a custom operator is used in a computation expression,
     /// a parameter is automatically parameterized by the variable space of the computation expression</summary>
+    ///
+    /// <category>Attributes</category>
     type ProjectionParameterAttribute = 
 
         /// <summary>Creates an instance of the attribute</summary>
@@ -403,6 +462,8 @@ namespace Microsoft.FSharp.Core
     /// F# type system, this helps ensure that the F# generic equality function is not instantiated directly
     /// at this type. The attribute and checking does not constrain the use of comparison with base or child 
     /// types of this type.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
     [<Sealed>]
     type NoEqualityAttribute =
@@ -413,6 +474,8 @@ namespace Microsoft.FSharp.Core
         new : unit -> NoEqualityAttribute
 
     /// <summary>Adding this attribute to a type indicates it is a type with a user-defined implementation of equality.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type CustomEqualityAttribute =
@@ -423,6 +486,8 @@ namespace Microsoft.FSharp.Core
         new : unit -> CustomEqualityAttribute
 
     /// <summary>Adding this attribute to a type indicates it is a type with a user-defined implementation of comparison.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Struct,AllowMultiple=false)>]  
     [<Sealed>]
     type CustomComparisonAttribute =
@@ -436,7 +501,10 @@ namespace Microsoft.FSharp.Core
     /// This means that the type does not satisfy the F# 'comparison' constraint. Within the bounds of the 
     /// F# type system, this helps ensure that the F# generic comparison function is not instantiated directly
     /// at this type. The attribute and checking does not constrain the use of comparison with base or child 
-    /// types of this type.</summary>
+    /// types of this type.
+    /// </summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum,AllowMultiple=false)>]  
     [<Sealed>]
     type NoComparisonAttribute =
@@ -448,7 +516,10 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a field declaration means that the field is 
     /// not initialized. During type checking a constraint is asserted that the field type supports 'null'. 
-    /// If the 'check' value is false then the constraint is not asserted. </summary>
+    /// If the 'check' value is false then the constraint is not asserted. 
+    /// </summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute =
@@ -469,6 +540,8 @@ namespace Microsoft.FSharp.Core
         new : check: bool -> DefaultValueAttribute
 
     /// <summary>This attribute is added automatically for all optional arguments.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
     [<Sealed>]
     type OptionalArgumentAttribute =
@@ -480,6 +553,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a type, value or member requires that 
     /// uses of the construct must explicitly instantiate any generic type parameters.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type RequiresExplicitTypeArgumentsAttribute =
@@ -491,6 +566,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a non-function value with generic parameters indicates that 
     /// uses of the construct can give rise to generic code through type inference. </summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type GeneralizableValueAttribute =
@@ -502,6 +579,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a value or function definition in an F# module changes the name used
     /// for the value in compiled CLI code.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type CompiledNameAttribute =
@@ -519,6 +598,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>Adding this attribute to a type with value 'false' disables the behaviour where F# makes the
     /// type Serializable by default.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type AutoSerializableAttribute =
@@ -537,6 +618,8 @@ namespace Microsoft.FSharp.Core
     /// <summary>This attribute is added to generated assemblies to indicate the 
     /// version of the data schema used to encode additional F#
     /// specific information in the resource attached to compiled F# libraries.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Assembly,AllowMultiple=false)>]  
     [<Sealed>]
     type FSharpInterfaceDataVersionAttribute =
@@ -567,6 +650,8 @@ namespace Microsoft.FSharp.Core
     /// <remarks>This attribute is used by the functions in the 
     /// FSharp.Reflection namespace to reverse-map compiled constructs to 
     /// their original forms. It is not intended for use from user code.</remarks>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationMappingAttribute =
@@ -619,7 +704,10 @@ namespace Microsoft.FSharp.Core
     ///
     /// <remarks>This attribute is used by the functions in the 
     /// FSharp.Reflection namespace to reverse-map compiled constructs to 
-    /// their original forms. It is not intended for use from user code.</remarks>
+    /// their original forms. It is not intended for use from user code.
+    /// </remarks>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationSourceNameAttribute =
@@ -637,7 +725,10 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>This attribute is used to adjust the runtime representation for a type. 
     /// For example, it may be used to note that the <c>null</c> representation
-    /// may be used for a type. This affects how some constructs are compiled.</summary>
+    /// may be used for a type. This affects how some constructs are compiled.
+    /// </summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationRepresentationAttribute =
@@ -661,6 +752,8 @@ namespace Microsoft.FSharp.Core
         
     /// <summary>This attribute is used to tag values that are part of an experimental library
     /// feature.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute =
@@ -677,7 +770,10 @@ namespace Microsoft.FSharp.Core
         member Message: string
 
     /// <summary>This attribute is generated automatically by the F# compiler to tag functions and members 
-    /// that accept a partial application of some of their arguments and return a residual function</summary>
+    /// that accept a partial application of some of their arguments and return a residual function.
+    /// </summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilationArgumentCountsAttribute =
@@ -697,6 +793,8 @@ namespace Microsoft.FSharp.Core
     /// '%A' printf formatting patterns and other two-dimensional text-based display layouts. 
     /// In this version of F# valid values are of the form <c>PreText {PropertyName1} PostText {PropertyName2} ... {PropertyNameX} PostText</c>.
     /// The property names indicate properties to evaluate and to display instead of the object itself. </summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum,AllowMultiple=false)>]  
     [<Sealed>]
     type StructuredFormatDisplayAttribute =
@@ -715,6 +813,8 @@ namespace Microsoft.FSharp.Core
         member Value: string
 
     /// <summary>Indicates that a message should be emitted when F# source code uses this construct.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.All,AllowMultiple=false)>]  
     [<Sealed>]
     type CompilerMessageAttribute =
@@ -740,6 +840,8 @@ namespace Microsoft.FSharp.Core
     /// of unverifiable code. These values are inevitably marked 'inline' to ensure that
     /// the unverifiable constructs are not present in the actual code for the F# library,
     /// but are rather copied to the source code of the caller.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type UnverifiableAttribute =
@@ -754,6 +856,8 @@ namespace Microsoft.FSharp.Core
     /// causes the method body emitted for the inlined function to raise an exception if 
     /// dynamically invoked, rather than including the unverifiable code in the generated
     /// assembly.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]  
     [<Sealed>]
     type NoDynamicInvocationAttribute =
@@ -767,6 +871,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>This attribute is used to indicate that references to the elements of a module, record or union 
     /// type require explicit qualified access.</summary>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class,AllowMultiple=false)>]  
     [<Sealed>]
     type RequireQualifiedAccessAttribute =
@@ -785,7 +891,10 @@ namespace Microsoft.FSharp.Core
     /// where the given path is automatically opened.
     ///
     /// When applied to a type or module within an assembly, then the attribute must not be given any arguments, and
-    /// the type or module is implicitly opened when its enclosing namespace or module is opened.</remarks>
+    /// the type or module is implicitly opened when its enclosing namespace or module is opened.
+    /// </remarks>
+    ///
+    /// <category>Attributes</category>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute =
@@ -812,13 +921,18 @@ namespace Microsoft.FSharp.Core
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Double"/>.</summary>
+    ///
+    /// <category index="6">Basic Types with Units of Measure</category>
     type float<[<Measure>] 'Measure> = float
 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
-    /// <see cref="T:System.Single"/>.</summary>
+    /// <see cref="T:System.Single"/>.
+    /// </summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
     type float32<[<Measure>] 'Measure> = float32
     
     [<MeasureAnnotatedAbbreviation>] 
@@ -826,6 +940,8 @@ namespace Microsoft.FSharp.Core
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Decimal"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
     type decimal<[<Measure>] 'Measure> = decimal
 
     [<MeasureAnnotatedAbbreviation>] 
@@ -833,6 +949,8 @@ namespace Microsoft.FSharp.Core
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Int32"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
     type int<[<Measure>] 'Measure> = int
 
     [<MeasureAnnotatedAbbreviation>] 
@@ -840,6 +958,8 @@ namespace Microsoft.FSharp.Core
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.SByte"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
     type sbyte<[<Measure>] 'Measure> = sbyte
 
     [<MeasureAnnotatedAbbreviation>] 
@@ -847,6 +967,8 @@ namespace Microsoft.FSharp.Core
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Int16"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
     type int16<[<Measure>] 'Measure> = int16
 
     [<MeasureAnnotatedAbbreviation>] 
@@ -854,6 +976,8 @@ namespace Microsoft.FSharp.Core
     /// of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Int64"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
     type int64<[<Measure>] 'Measure> = int64
 
     /// <summary>Represents a managed pointer in F# code.</summary>
@@ -862,17 +986,20 @@ namespace Microsoft.FSharp.Core
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
 #endif
+    /// <category index="7">ByRef and Pointer Types</category>
     type byref<'T, 'Kind> = (# "!0&" #)
 
     /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></summary>
+    /// <category>ByRef and Pointer Types</category>
     type byref<'T> = (# "!0&" #)
 
-    /// Represents the types of byrefs in F# 4.5+
+    /// <summary>Represents the types of byrefs in F# 4.5+</summary>
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
 #endif
+    /// <category>ByRef and Pointer Types</category>
     module ByRefKinds = 
 
         /// Represents a byref that can be written
@@ -900,12 +1027,16 @@ namespace Microsoft.FSharp.Core
         type InOut
 
     /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    /// <category>ByRef and Pointer Types</category>
     type inref<'T> = byref<'T, ByRefKinds.In>
 
     /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    /// <category>ByRef and Pointer Types</category>
     type outref<'T> = byref<'T, ByRefKinds.Out>
 
     /// <summary>Language primitives associated with the F# language</summary>
+    ///
+    /// <category index="9">Language Primitives</category>
     module LanguagePrimitives =
 
         /// <summary>Compare two values for equality using partial equivalence relation semantics ([nan] &lt;&gt; [nan])</summary>
@@ -1566,7 +1697,7 @@ namespace Microsoft.FSharp.Core
 
 
     /// <summary>Helper types for active patterns with 2 choices.</summary>
-    //[<UnqualfiedLabels(false)>]
+    /// <category index="5">Choices and Results</category>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`2")>]
     type Choice<'T1,'T2> = 
@@ -1578,6 +1709,7 @@ namespace Microsoft.FSharp.Core
       | Choice2Of2 of 'T2
     
     /// <summary>Helper types for active patterns with 3 choices.</summary>
+    /// <category>Choices and Results</category>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`3")>]
     type Choice<'T1,'T2,'T3> = 
@@ -1592,6 +1724,7 @@ namespace Microsoft.FSharp.Core
       | Choice3Of3 of 'T3
     
     /// <summary>Helper types for active patterns with 4 choices.</summary>
+    /// <category>Choices and Results</category>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`4")>]
     type Choice<'T1,'T2,'T3,'T4> = 
@@ -1609,6 +1742,7 @@ namespace Microsoft.FSharp.Core
       | Choice4Of4 of 'T4
     
     /// <summary>Helper types for active patterns with 5 choices.</summary>
+    /// <category>Choices and Results</category>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`5")>]
     type Choice<'T1,'T2,'T3,'T4,'T5> = 
@@ -1629,6 +1763,7 @@ namespace Microsoft.FSharp.Core
       | Choice5Of5 of 'T5
     
     /// <summary>Helper types for active patterns with 6 choices.</summary>
+    /// <category>Choices and Results</category>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`6")>]
     type Choice<'T1,'T2,'T3,'T4,'T5,'T6> = 
@@ -1652,6 +1787,7 @@ namespace Microsoft.FSharp.Core
       | Choice6Of6 of 'T6
     
     /// <summary>Helper types for active patterns with 7 choices.</summary>
+    /// <category>Choices and Results</category>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`7")>]
     type Choice<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
@@ -1678,11 +1814,13 @@ namespace Microsoft.FSharp.Core
       | Choice7Of7 of 'T7
     
     /// <summary>Non-exhaustive match failures will raise the MatchFailureException exception</summary>
+    /// <category>Language Primitives</category>
     [<StructuralEquality; NoComparison>]
     exception MatchFailureException of string * int * int
 
     /// <summary>The CLI type used to represent F# first-class type function values. This type is for use
     /// by compiled F# code.</summary>
+    /// <category>Language Primitives</category>
     [<AbstractClass>]
     type FSharpTypeFunc =
 
@@ -1696,6 +1834,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>The CLI type used to represent F# function values. This type is not
     /// typically used directly, though may be used from other CLI languages.</summary>
+    /// <category>Language Primitives</category>
     [<AbstractClass>]
     type FSharpFunc<'T,'U> = 
 
@@ -1788,6 +1927,7 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
+    /// <category>Language Primitives</category>
     type FuncConvert = 
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
@@ -1918,6 +2058,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>An implementation module used to hold some private implementations of function
     /// value invocation.</summary>
+    /// <category>Language Primitives</category>
     module OptimizedClosures =
 
         /// <summary>The CLI type used to represent F# function values that accept
@@ -2044,6 +2185,9 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
+    ///
+    /// <category>Basic Types</category>
+    /// <exclude />
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpRef`1")>]
     type Ref<'T> = 
@@ -2055,6 +2199,7 @@ namespace Microsoft.FSharp.Core
             
     /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
+    /// <category>Basic Types</category>
     and 'T ref = Ref<'T>
 
     /// <summary>The type of optional values. When used from other CLI languages the
@@ -2067,6 +2212,9 @@ namespace Microsoft.FSharp.Core
     /// <c>None</c> values will appear as the value <c>null</c> to other CLI languages.
     /// Instance methods on this type will appear as static methods to other CLI languages
     /// due to the use of <c>null</c> as a value representation.</remarks>
+    ///
+    /// <category>Options</category>
+    /// <exclude />
     [<DefaultAugmentation(false)>]
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<StructuralEquality; StructuralComparison>]
@@ -2084,6 +2232,7 @@ namespace Microsoft.FSharp.Core
         | Some : Value:'T -> 'T option 
 
         /// <summary>Create an option value that is a 'None' value.</summary>
+        /// <exclude />
         static member None : 'T option
 
         /// <summary>Create an option value that is a 'Some' value.</summary>
@@ -2091,6 +2240,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value</param>
         ///
         /// <returns>An option representing the value.</returns>
+        /// <exclude />
         static member Some : value:'T -> 'T option
 
         /// <summary>Implicitly converts a value into an optional that is a 'Some' value.</summary>
@@ -2098,6 +2248,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value</param>
         ///
         /// <returns>An option representing the value.</returns>
+        /// <exclude />
         static member op_Implicit : value:'T -> 'T option
 
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
@@ -2120,6 +2271,8 @@ namespace Microsoft.FSharp.Core
     /// 'None' values will appear as the value <c>null</c> to other CLI languages.
     /// Instance methods on this type will appear as static methods to other CLI languages
     /// due to the use of <c>null</c> as a value representation.</remarks>
+    ///
+    /// <category index="3">Options</category>
     and 'T option = Option<'T>
 
     /// <summary>The type of optional values, represented as structs.</summary>
@@ -2127,6 +2280,9 @@ namespace Microsoft.FSharp.Core
     /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
     /// or pattern match against the values directly.</remarks>
+    ///
+    /// <category>Options</category>
+    /// <exclude />
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpValueOption`1")>]
     [<Struct>]
@@ -2145,6 +2301,7 @@ namespace Microsoft.FSharp.Core
         member Value : 'T
 
         /// <summary>Create a value option value that is a 'ValueNone' value.</summary>
+        /// <exclude />
         static member None : 'T voption
 
         /// <summary>Create a value option value that is a 'Some' value.</summary>
@@ -2152,6 +2309,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value</param>
         ///
         /// <returns>A value option representing the value.</returns>
+        /// <exclude />
         static member Some : value:'T -> 'T voption
         
         /// <summary>Return 'true' if the value option is a 'ValueSome' value.</summary>
@@ -2165,6 +2323,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input value</param>
         ///
         /// <returns>A voption representing the value.</returns>
+        /// <exclude />
         static member op_Implicit: value: 'T -> 'T voption
 
     /// <summary>The type of optional values, represented as structs.</summary>
@@ -2172,9 +2331,13 @@ namespace Microsoft.FSharp.Core
     /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
     /// or pattern match against the values directly.</remarks>
+    ///
+    /// <category>Options</category>
     and 'T voption = ValueOption<'T>
 
     /// <summary>Helper type for error handling without exceptions.</summary>
+    ///
+    /// <category>Choices and Results</category>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
@@ -2197,7 +2360,10 @@ namespace Microsoft.FSharp.Collections
     ///
     /// <remarks>Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
     /// the notation <c>[1;2;3]</c>. Use the values in the <c>List</c> module to manipulate 
-    /// values of this type, or pattern match against the values directly.</remarks>
+    /// values of this type, or pattern match against the values directly.
+    /// </remarks>
+    ///
+    /// <exclude />
     [<DefaultAugmentation(false)>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
@@ -2289,6 +2455,8 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
 
     /// <summary>Basic F# Operators. This module is automatically opened in all F# code.</summary>
+    ///
+    /// <category index="2">Basic Operators</category>
     [<AutoOpen>]
     module Operators = 
 
@@ -3278,6 +3446,8 @@ namespace Microsoft.FSharp.Core
 
         [<AutoOpen>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        /// <summary>Contains extension methods to allow the use of F# indexer notation with arrays.
+        /// This module is automatically opened in all F# code.</summary>
         module ArrayExtensions = 
             type ``[,,,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
@@ -4471,6 +4641,8 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
 
     /// <summary>Extensions related to Lazy values.</summary>
+    ///
+    /// <category index="3">Lazy Computation</category>
     [<AutoOpen>]
     module LazyExtensions =
 
@@ -4503,6 +4675,8 @@ namespace Microsoft.FSharp.Control
     /// <remarks>Use the values in the <c>Lazy</c> module to manipulate 
     /// values of this type, and the notation <c>lazy expr</c> to create values
     /// of type <see cref="T:System.Lazy`1" />.</remarks>
+    ///
+    /// <category index="3">Lazy Computation</category>
     type Lazy<'T> = System.Lazy<'T>
     and 
         [<System.Obsolete("This type is obsolete. Please use System.Lazy instead.", true)>]
@@ -4518,6 +4692,8 @@ namespace Microsoft.FSharp.Control
     /// <remarks>F# gives special status to member properties compatible with type IDelegateEvent and 
     /// tagged with the CLIEventAttribute. In this case the F# compiler generates appropriate 
     /// CLI metadata to make the member appear to other CLI languages as a CLI event.</remarks>
+    ///
+    /// <category index="3">Events and Observables</category>
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
 
         /// <summary>Connect a handler delegate object to the event. A handler can
@@ -4533,6 +4709,8 @@ namespace Microsoft.FSharp.Control
         abstract RemoveHandler: handler:'Delegate -> unit 
 
     /// <summary>First class event values for CLI events conforming to CLI Framework standards.</summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     [<Interface>]
     type IEvent<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> System.Delegate > =
         inherit IDelegateEvent<'Delegate>
@@ -4542,9 +4720,13 @@ namespace Microsoft.FSharp.Control
     ///
     /// <param name="obj">The object that fired the event.</param>
     /// <param name="args">The event arguments.</param>
+    ///
+    /// <category index="3">Events and Observables</category>
     [<CompiledName("FSharpHandler`1")>]
     type Handler<'T> =  delegate of sender:obj * args:'T -> unit 
 
     /// <summary>First-class listening points (i.e. objects that permit you to register a callback
     /// activated when the event is triggered). </summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     type IEvent<'T> = IEvent<Handler<'T>, 'T>

@@ -4,12 +4,17 @@
     <body>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
-        <target state="new">Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</target>
+        <target state="translated">F# {1} 中無法使用 '{0}' 功能。請使用語言版本 {2} 或更新的版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotRuntimeSupported">
         <source>Feature '{0}' is not supported by target runtime.</source>
-        <target state="new">Feature '{0}' is not supported by target runtime.</target>
+        <target state="translated">目標執行階段不支援功能 '{0}'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkFeatureNotSupportedInLibrary">
+        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
+        <target state="new">Feature '{0}' requires the F# library for language version {1} or greater.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -54,47 +59,47 @@
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
+        <target state="translated">因為缺少相依性或相依性無法載入，導致無法從資料夾 '{1}' 載入類型提供者設計工具組件 '{0}'。類型提供者設計工具組件的所有相依性都必須位於該組件所在的資料夾內。回報的例外狀況: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyException">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</target>
+        <target state="translated">無法從資料夾 '{1}' 載入類型提供者設計工具組件 '{0}'。回報的例外狀況: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</target>
+        <target state="translated">無法載入組件屬性 '{0}' 參考的設計工具組件 '{1}' 或其不存在。回報的例外狀況: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
-        <target state="new">applicative computation expressions</target>
+        <target state="translated">適用的計算運算式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
-        <target state="new">default interface member consumption</target>
+        <target state="translated">預設介面成員使用</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
-        <target state="new">dotless float32 literal</target>
+        <target state="translated">無點號的 float32 常值</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
-        <target state="new">fixed-index slice 3d/4d</target>
+        <target state="translated">固定索引切割 3d/4d</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
-        <target state="new">from-end slicing</target>
+        <target state="translated">從尾端切割</target>
         <note />
       </trans-unit>
       <trans-unit id="featureImplicitYield">
         <source>implicit yield</source>
-        <target state="new">implicit yield</target>
+        <target state="translated">隱含 yield</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -104,12 +109,12 @@
       </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
-        <target state="new">nameof</target>
+        <target state="translated">nameof</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
-        <target state="new">nullable optional interop</target>
+        <target state="translated">可為 Null 的選擇性 Interop</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">
@@ -119,27 +124,52 @@
       </trans-unit>
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
-        <target state="new">package management</target>
+        <target state="translated">套件管理</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
-        <target state="new">whitespace relexation</target>
+        <target state="translated">空白字元放寬</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
-        <target state="new">single underscore pattern</target>
+        <target state="translated">單一底線模式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStringInterpolation">
+        <source>string interpolation</source>
+        <target state="new">string interpolation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
-        <target state="new">wild card in for loop</target>
+        <target state="translated">for 迴圈中的萬用字元</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
-        <target state="new">witness passing for trait constraints in F# quotations</target>
+        <target state="translated">用於 F# 引號中特徵條件約束的見證傳遞</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated">
+        <source>Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</source>
+        <target state="new">Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated2">
+        <source>.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</source>
+        <target state="new">.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated3">
+        <source>The '%P' specifier may not be used explicitly.</source>
+        <target state="new">The '%P' specifier may not be used explicitly.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated4">
+        <source>Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</source>
+        <target state="new">Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -155,6 +185,26 @@
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexByteStringMayNotBeInterpolated">
+        <source>a byte string may not be interpolated</source>
+        <target state="new">a byte string may not be interpolated</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexRBraceInInterpolatedString">
+        <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
+        <target state="new">A '}}' character must be escaped (by doubling) in an interpolated string.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexSingleQuoteInSingleQuote">
+        <source>Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</source>
+        <target state="new">Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTripleQuoteInTripleQuote">
+        <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
+        <target state="new">Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -185,6 +235,26 @@
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">套件管理功能需要語言版本 5.0，請使用 /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedString">
+        <source>Incomplete interpolated string begun at or before here</source>
+        <target state="new">Incomplete interpolated string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedStringFill">
+        <source>Incomplete interpolated string expression fill begun at or before here</source>
+        <target state="new">Incomplete interpolated string expression fill begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedTripleQuoteString">
+        <source>Incomplete interpolated triple-quote string begun at or before here</source>
+        <target state="new">Incomplete interpolated triple-quote string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedVerbatimString">
+        <source>Incomplete interpolated verbatim string begun at or before here</source>
+        <target state="new">Incomplete interpolated verbatim string begun at or before here</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -232,6 +302,16 @@
         <target state="new">Byref types are not allowed in an open type declaration.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInterpolationMixedWithPercent">
+        <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
+        <target state="new">Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidAlignmentInInterpolatedString">
+        <source>Invalid alignment in interpolated string</source>
+        <target state="new">Invalid alignment in interpolated string</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use! 不可與 and! 合併</target>
@@ -252,9 +332,14 @@
         <target state="translated">只有在計算運算式產生器定義 '{0}' 方法或正確的 'MergeSource' 和 'Bind' 方法時，才可使用 'let! ... and! ...' 建構</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcUnableToParseInterpolatedString">
+        <source>Invalid interpolated string. {0}</source>
+        <target state="new">Invalid interpolated string. {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
         <source>Interface member '{0}' does not have a most specific implementation.</source>
-        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
+        <target state="translated">介面成員 '{0}' 沒有最具體的實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariable">
@@ -1204,7 +1289,7 @@
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
         <source>The named argument '{0}' has been assigned more than one value</source>
-        <target state="new">The named argument '{0}' has been assigned more than one value</target>
+        <target state="translated">為具名引數 '{0}' 指派了多個值</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -5909,7 +5994,7 @@
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
         <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
-        <target state="new">Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</target>
+        <target state="translated">無法從路徑 '{2}' 載入組件屬性 '{0}' 參考的設計工具組件 '{1}'。回報告的例外狀況: {3} - {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">

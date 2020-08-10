@@ -4666,7 +4666,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file,"System.Windows.")
         let completions = AutoCompleteAtCursor(file)
         printfn "Completions=%A" completions
-        Assert.AreEqual(1, completions.Length)
+        Assert.AreEqual(3, completions.Length)
         
     /// Tests whether we're correctly showing both type and module when they have the same name
     [<Test>]

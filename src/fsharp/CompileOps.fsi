@@ -673,6 +673,8 @@ type TcImports =
     member ReportUnresolvedAssemblyReferences: UnresolvedAssemblyReference list -> unit
     member SystemRuntimeContainsType: string -> bool
 
+    member internal Base: TcImports option
+
     static member BuildFrameworkTcImports     : CompilationThreadToken * TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> Cancellable<TcGlobals * TcImports>
     static member BuildNonFrameworkTcImports  : CompilationThreadToken * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> Cancellable<TcImports>
     static member BuildTcImports              : CompilationThreadToken * TcConfigProvider -> Cancellable<TcGlobals * TcImports>

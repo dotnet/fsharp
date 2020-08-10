@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -14,6 +14,11 @@
     <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)/</FsYaccOutputFolder>
+    <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)/</FsLexOutputFolder>
   </PropertyGroup>
 
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
@@ -236,11 +241,11 @@
     <Compile Include="..\..\absil\ilsupp.fs">
       <Link>AbsIL\ilsupp.fs</Link>
     </Compile>
-    <Compile Include="ilpars.fs">
-      <Link>AbsIL\ilpars.fs</Link>
+    <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
+      <Link>$(FsYaccOutputFolder)AbsIL\ilpars.fs</Link>
     </Compile>
-    <Compile Include="illex.fs">
-      <Link>AbsIL\illex.fs</Link>
+    <Compile Include="$(FsLexOutputFolder)illex.fs">
+      <Link>$(FsLexOutputFolder)AbsIL\illex.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilbinary.fsi">
       <Link>AbsIL\ilbinary.fsi</Link>
@@ -345,11 +350,11 @@
     <Compile Include="..\ParseHelpers.fs">
       <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
     </Compile>
-    <Compile Include="pppars.fs">
-      <Link>ParserAndUntypedAST\pppars.fs</Link>
+    <Compile Include="$(FsYaccOutputFolder)pppars.fs">
+      <Link>$(FsYaccOutputFolder)ParserAndUntypedAST\pppars.fs</Link>
     </Compile>
-    <Compile Include="pars.fs">
-      <Link>ParserAndUntypedAST\pars.fs</Link>
+    <Compile Include="$(FsYaccOutputFolder)pars.fs">
+      <Link>$(FsYaccOutputFolder)ParserAndUntypedAST\pars.fs</Link>
     </Compile>
     <Compile Include="..\lexhelp.fsi">
       <Link>ParserAndUntypedAST\lexhelp.fsi</Link>
@@ -357,14 +362,14 @@
     <Compile Include="..\lexhelp.fs">
       <Link>ParserAndUntypedAST\lexhelp.fs</Link>
     </Compile>
-    <Compile Include="pplex.fs">
-      <Link>ParserAndUntypedAST\pplex.fs</Link>
+    <Compile Include="$(FsYaccOutputFolder)pplex.fs">
+      <Link>$(FsYaccOutputFolder)ParserAndUntypedAST\pplex.fs</Link>
     </Compile>
-    <Compile Include="lex.fs">
-      <Link>ParserAndUntypedAST\lex.fs</Link>
+    <Compile Include="$(FsYaccOutputFolder)lex.fs">
+      <Link>$(FsYaccOutputFolder)ParserAndUntypedAST\lex.fs</Link>
     </Compile>
     <Compile Include="..\LexFilter.fs">
-      <Link>ParserAndUntypedAST\lexfilter.fs</Link>
+      <Link>ParserAndUntypedAST\LexFilter.fs</Link>
     </Compile>
     <Compile Include="..\tainted.fsi">
       <Link>TypedTree\tainted.fsi</Link>

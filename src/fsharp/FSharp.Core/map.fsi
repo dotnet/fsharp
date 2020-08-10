@@ -93,10 +93,9 @@ namespace Microsoft.FSharp.Collections
         interface IReadOnlyDictionary<'Key,'Value>
         override Equals : obj -> bool
 
-    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
+    /// <summary>Contains operations for working with values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on values of type <see cref="T:Microsoft.FSharp.Collections.Map`2"/>.</summary>
     module Map = 
 
         /// <summary>Returns a new map with the binding added to the given map.
