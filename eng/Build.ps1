@@ -175,7 +175,7 @@ function BuildSolution() {
 
     Write-Host "$($solution):"
 
-    if ($binaryLog -and $excludeCIBinaryLog) { 
+    if ($binaryLog -and $excludeCIBinaryLog) {
         Write-Host "Invalid argument -binarylog(-bl) and -excludeCIBinaryLog(-nobl) cannot be set at the same time"
         ExitWithExitCode 1
         }
@@ -247,7 +247,7 @@ function VerifyAssemblyVersionsAndSymbols() {
     }
 }
 
-function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
+function TestUsingNUnit([string] $testProject, [string] $targetFramework, [boolean] $noTestFilter = $false) {
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
@@ -263,7 +263,7 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
         $args += " --no-build"
     }
 
-    if ($env:RunningAsPullRequest -ne "true") {
+    if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
         $args += " --filter TestCategory!=PullRequest"
     }
 
@@ -276,7 +276,7 @@ function BuildCompiler() {
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
         $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
         $fsiProject = "$RepoRoot\src\fsharp\fsi\fsi.fsproj"
-        
+
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
@@ -458,7 +458,7 @@ try {
     $coreclrTargetFramework = "netcoreapp3.1"
 
     if ($testDesktop -and -not $noVisualStudio) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
@@ -467,7 +467,7 @@ try {
     }
 
     if ($testCoreClr) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
@@ -505,10 +505,10 @@ try {
 
     if ($testCompiler) {
         if (-not $noVisualStudio) {
-            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -noTestFilter $true
             TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         }
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
     }
 

@@ -151,19 +151,22 @@ let main argv = 0"""
                 pInfo.UseShellExecute <- false
 
                 let p = Process.Start(pInfo)
-                let succeeded = p.WaitForExit(10000)
+                let timeout = 30000
+                let succeeded = p.WaitForExit(timeout)
 
                 output <- p.StandardOutput.ReadToEnd ()
                 errors <- p.StandardError.ReadToEnd ()
-                if not (String.IsNullOrWhiteSpace errors) then Assert.Fail errors
 
-                if p.ExitCode <> 0 || not succeeded then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+                if not (String.IsNullOrWhiteSpace errors) then Assert.Fail errors
+                if p.ExitCode <> 0 then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+                if not succeeded then Assert.Fail(sprintf "Program timed out after %d ms" timeout)
 
                 File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
             with | e ->
                 cleanUp <- false
-                printfn "%s" output
-                printfn "%s" errors
+                printfn "Project directory: %s" projectDirectory
+                printfn "STDOUT: %s" output
+                printfn "STDERR: %s" errors
                 raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
         finally
             if cleanUp then
