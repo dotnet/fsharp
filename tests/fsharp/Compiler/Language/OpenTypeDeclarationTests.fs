@@ -994,7 +994,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Test;Ignore("https://github.com/dotnet/fsharp/issues/9914")>]
     let ``Open generic union should have access to union cases with the enclosing type instantiations`` () =
         FSharp """
 namespace FSharpTest
@@ -1044,7 +1044,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test>]
+    [<Test;Ignore("https://github.com/dotnet/fsharp/issues/9914")>]
     let ``Open generic record should have access to construct record via labels with enclosing type instantiations`` () =
         FSharp """
 namespace FSharpTest
@@ -1090,6 +1090,64 @@ module Test2 =
         |> withOptions ["--langversion:preview"]
         |> compile
         |> withErrorCode 39
+        |> ignore
+
+    [<Test>]
+    let ``Open type should combine both extension and intrinsic method groups`` () =
+        FSharp """
+namespace FSharpTest
+
+type Test =
+
+    static member M(_x: int) = ()
+
+module Test =
+
+    type Test with
+
+        static member M(_x: float) : int = 5
+
+open Test
+open type Test
+
+module Test2 =
+
+    let test () : int =
+        M(1)
+        M(2.0)
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Test>]
+    let ``Open type should combine both extension and intrinsic method groups but error if extensions are added after opening the type`` () =
+        FSharp """
+namespace FSharpTest
+
+type Test =
+
+    static member M(_x: int) = ()
+
+module Test =
+
+    type Test with
+
+        static member M(_x: float) : int = 5
+
+open type Test
+open Test
+
+module Test2 =
+
+    let test () : int =
+        M(1)
+        M(2.0)
+        """
+        |> withOptions ["--langversion:preview"]
+        |> compile
+        |> withErrorCodes [1;1]
         |> ignore
 
     [<Test>]

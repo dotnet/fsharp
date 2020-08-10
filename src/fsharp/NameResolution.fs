@@ -1065,8 +1065,8 @@ let ChooseEventInfosForNameEnv g ty (einfos: EventInfo list) =
 ///     5. Add static events.
 ///     6. Add static fields.
 ///     7. Add static properies.
-///     8. Add static methods.
-let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
+///     8. Add static methods and combine extension methods of the same group.
+let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (nenv: NameResolutionEnv) (ty: TType) =
     let infoReader = InfoReader(g,amap)
 
     let nenv = AddNestedTypesOfTypeToNameEnv infoReader amap ad m nenv ty
@@ -1105,14 +1105,30 @@ let rec AddContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) ad m (n
             yield!
                 IntrinsicPropInfosOfTypeInScope infoReader None ad PreferOverrides m ty
                 |> ChoosePropInfosForNameEnv g ty
-
-            // Methods
-            yield!
-                IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
-                |> ChooseMethInfosForNameEnv g m ty
         |]
 
-    { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+    let nenv = { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible items }
+
+    let methodGroupItems =
+        // Methods
+        IntrinsicMethInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+        |> ChooseMethInfosForNameEnv g m ty
+        // Combine methods and extension method groups of the same type
+        |> List.map (fun pair ->
+            match pair.Value with
+            | Item.MethodGroup(name, methInfos, orig) ->              
+                match nenv.eUnqualifiedItems.TryFind pair.Key with
+                // First method of the found group must be an extension and have the same enclosing type as the type we are opening.
+                // If the first method is an extension, we are assuming the rest of the methods in the group are also extensions.
+                | Some(Item.MethodGroup(_, ((methInfo :: _) as methInfos2), _)) when methInfo.IsExtensionMember && typeEquiv g methInfo.ApparentEnclosingType ty ->
+                    KeyValuePair (pair.Key, Item.MethodGroup(name, methInfos @ methInfos2, orig))
+                | _ ->
+                    pair
+            | _ ->
+                pair)
+        |> Array.ofList
+
+    { nenv with eUnqualifiedItems = nenv.eUnqualifiedItems.AddAndMarkAsCollapsible methodGroupItems }
     
 and private AddNestedTypesOfTypeToNameEnv infoReader (amap: Import.ImportMap) ad m nenv ty =
     let tinst, tcrefs = GetNestedTyconRefsOfType infoReader amap (ad, None, TypeNameResolutionStaticArgsInfo.Indefinite, true, m) ty
@@ -1226,7 +1242,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
     let nenv = 
         if CanAutoOpenTyconRef g m tcref then
             let ty = generalizedTyconRef tcref
-            AddContentOfTypeToNameEnv g amap ad m nenv ty
+            AddStaticContentOfTypeToNameEnv g amap ad m nenv ty
         else
             nenv
 
@@ -1358,7 +1374,7 @@ and AddModuleOrNamespaceRefsContentsToNameEnv g amap ad m root nenv modrefs =
 and AddTypeContentsToNameEnv g amap ad m nenv (typ: TType) =
     assert (isAppTy g typ)
     assert not (tcrefOfAppTy g typ).IsModuleOrNamespace
-    AddContentOfTypeToNameEnv g amap ad m nenv typ
+    AddStaticContentOfTypeToNameEnv g amap ad m nenv typ
 
 and AddModuleOrNamespaceRefContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
     assert modref.IsModuleOrNamespace 
