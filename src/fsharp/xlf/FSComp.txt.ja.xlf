@@ -122,11 +122,6 @@
         <target state="new">open type declaration</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="translated">静的クラスを開く</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">パッケージの管理</target>
