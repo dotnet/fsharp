@@ -29,7 +29,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.MutableVar -> MutableVar
         | SemanticClassificationType.DisposableValue
         | SemanticClassificationType.DisposableType -> Disposable
-        | SemanticClassificationType.NameSpace -> ClassificationTypeNames.NamespaceName
+        | SemanticClassificationType.Namespace -> ClassificationTypeNames.NamespaceName
         | SemanticClassificationType.Exception
         | SemanticClassificationType.Module
         | SemanticClassificationType.Type
@@ -60,6 +60,7 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.Delegate -> ClassificationTypeNames.DelegateName
         | SemanticClassificationType.Value -> ClassificationTypeNames.Identifier
         | SemanticClassificationType.LocalValue -> ClassificationTypeNames.LocalName
+        | SemanticClassificationType.Plaintext -> ClassificationTypeNames.Text
 
 module internal ClassificationDefinitions =
 
