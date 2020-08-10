@@ -7,6 +7,21 @@
         <target state="translated">Ajouter le mot clé 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpDisposableTypesClassificationType">
+        <source>F# Disposable Types</source>
+        <target state="new">F# Disposable Types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposableValuesClassificationType">
+        <source>F# Disposable Values</source>
+        <target state="new">F# Disposable Values</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFunctionsClassificationType">
+        <source>F# Functions</source>
+        <target state="new">F# Functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
         <target state="translated">Implémenter l'interface</target>
@@ -37,11 +52,6 @@
         <target state="translated">Le nom peut être simplifié.</target>
         <note />
       </trans-unit>
-      <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
-        <source>F# Functions / Methods</source>
-        <target state="translated">Fonctions / méthodes F#</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FSharpMutableVarsClassificationType">
         <source>F# Mutable Variables / Reference Cells</source>
         <target state="translated">Variables mutables / Cellules de référence F#</target>
@@ -55,11 +65,6 @@
       <trans-unit id="FSharpPropertiesClassificationType">
         <source>F# Properties</source>
         <target state="translated">Propriétés F#</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpDisposablesClassificationType">
-        <source>F# Disposable Types</source>
-        <target state="translated">Types F# pouvant être supprimés</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedOpens">
