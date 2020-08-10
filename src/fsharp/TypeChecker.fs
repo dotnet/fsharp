@@ -5947,7 +5947,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcConstStringExpr cenv overallTy env m tpenv s
 
     | SynExpr.InterpolatedString (parts, m) -> 
-        tryLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
+        checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
 
