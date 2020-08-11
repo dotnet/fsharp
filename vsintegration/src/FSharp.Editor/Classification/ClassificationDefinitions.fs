@@ -33,12 +33,12 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.DisposableValue -> DisposableValue
         | SemanticClassificationType.DisposableType -> DisposableType
         | SemanticClassificationType.NameSpace -> ClassificationTypeNames.NamespaceName
+        | SemanticClassificationType.Printf -> Printf
         | SemanticClassificationType.Exception
         | SemanticClassificationType.Module
         | SemanticClassificationType.Type
         | SemanticClassificationType.TypeDef
         | SemanticClassificationType.ConstructorForReferenceType
-        | SemanticClassificationType.Printf -> Printf
         | SemanticClassificationType.ReferenceType -> ClassificationTypeNames.ClassName
         | SemanticClassificationType.ConstructorForValueType
         | SemanticClassificationType.ValueType -> ClassificationTypeNames.StructName
