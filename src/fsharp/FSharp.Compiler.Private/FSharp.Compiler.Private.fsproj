@@ -242,10 +242,10 @@
       <Link>AbsIL\ilsupp.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
-      <Link>$(FsYaccOutputFolder)AbsIL\ilpars.fs</Link>
+      <Link>AbsIL\ilpars.fs</Link>
     </Compile>
     <Compile Include="$(FsLexOutputFolder)illex.fs">
-      <Link>$(FsLexOutputFolder)AbsIL\illex.fs</Link>
+      <Link>AbsIL\illex.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilbinary.fsi">
       <Link>AbsIL\ilbinary.fsi</Link>
