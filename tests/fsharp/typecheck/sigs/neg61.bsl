@@ -9,10 +9,7 @@ neg61.fs(22,13,22,16): typecheck error FS3145: This is not a known query operato
 
 neg61.fs(22,13,22,16): typecheck error FS0039: The value or constructor 'zip' is not defined.
 
-neg61.fs(25,13,25,28): typecheck error FS0001: This expression was expected to have type
-    'Linq.QuerySource<'a,'b> * ('a -> 'c)'    
-but here has type
-    'Linq.QuerySource<int,System.Collections.IEnumerable>'    
+neg61.fs(26,13,26,19): typecheck error FS3099: 'select' is used with an incorrect number of arguments. This is a custom operation in this query or computation expression. Expected 1 argument(s), but given 0.
 
 neg61.fs(30,13,30,16): typecheck error FS3145: This is not a known query operator. Query operators are identifiers such as 'select', 'where', 'sortBy', 'thenBy', 'groupBy', 'groupValBy', 'join', 'groupJoin', 'sumBy' and 'averageBy', defined using corresponding methods on the 'QueryBuilder' type.
 
@@ -84,10 +81,7 @@ neg61.fs(148,20,148,23): typecheck error FS3147: This 'let' definition may not b
 
 neg61.fs(156,21,156,22): typecheck error FS3147: This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.
 
-neg61.fs(170,13,170,32): typecheck error FS0001: This expression was expected to have type
-    'Linq.QuerySource<'a,'b> * ('a -> 'c)'    
-but here has type
-    'Linq.QuerySource<int,System.Collections.IEnumerable>'    
+neg61.fs(171,13,171,18): typecheck error FS3099: 'sumBy' is used with an incorrect number of arguments. This is a custom operation in this query or computation expression. Expected 1 argument(s), but given 0.
 
 neg61.fs(174,22,174,23): typecheck error FS0041: No overloads match for method 'Source'.
 
