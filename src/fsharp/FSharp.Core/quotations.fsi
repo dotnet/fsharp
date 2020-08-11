@@ -10,6 +10,11 @@ open System
 open System.Reflection
 
 /// <summary>Information at the binding site of a variable</summary>
+///
+/// <namespacedoc><summary>
+///   Library functionality for F# quotations.
+///    See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/code-quotations">F# Code Quotations</a> in the F# Language Guide.
+/// </summary></namespacedoc>
 [<Sealed>]
 [<CompiledName("FSharpVar")>]
 type Var =
@@ -23,6 +28,7 @@ type Var =
     member IsMutable: bool
 
     /// <summary>Creates a new variable with the given name, type and mutability</summary>
+    ///
     /// <param name="name">The declared name of the variable.</param>
     /// <param name="typ">The type associated with the variable.</param>
     /// <param name="isMutable">Indicates if the variable represents a mutable storage location. Default is false.</param>
@@ -565,7 +571,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>Expr option</returns>
+    /// <returns>When successful, the pattern binds the sub-expression of the input AddressOf expression</returns>
     [<CompiledName("AddressOfPattern")>]
     val (|AddressOf|_|)       : input:Expr -> Expr option
 
@@ -573,7 +579,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the target and value expressions of the input expression</returns>
     [<CompiledName("AddressSetPattern")>]
     val (|AddressSet|_|)      : input:Expr -> (Expr * Expr) option
 
@@ -581,7 +587,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the function and argument of the input expression</returns>
     [<CompiledName("ApplicationPattern")>]
     val (|Application|_|)     : input:Expr -> (Expr * Expr) option
 
@@ -589,7 +595,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr option * MethodInfo * Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the object, method and argument sub-expressions of the input expression</returns>
     [<CompiledName("CallPattern")>]
     val (|Call|_|)            : input:Expr -> (Expr option * MethodInfo * Expr list) option
 
@@ -597,7 +603,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr option * MethodInfo * MethodInfo * Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the object, method, witness-argument and argument sub-expressions of the input expression</returns>
     [<CompiledName("CallWithWitnessesPattern")>]
     val (|CallWithWitnesses|_|) : input:Expr -> (Expr option * MethodInfo * MethodInfo * Expr list * Expr list) option
 
@@ -605,7 +611,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Type) option</returns>
+    /// <returns>When successful, the pattern binds the source expression and target type of the input expression</returns>
     [<CompiledName("CoercePattern")>]
     val (|Coerce|_|)          : input:Expr -> (Expr * Type) option
 
@@ -613,7 +619,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr option * FieldInfo) option</returns>
+    /// <returns>When successful, the pattern binds the object and field of the input expression</returns>
     [<CompiledName("FieldGetPattern")>]
     val (|FieldGet|_|)        : input:Expr -> (Expr option * FieldInfo) option
 
@@ -621,7 +627,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr option * FieldInfo * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the object, field and value of the input expression</returns>
     [<CompiledName("FieldSetPattern")>]
     val (|FieldSet|_|)        : input:Expr -> (Expr option * FieldInfo * Expr) option
 
@@ -629,7 +635,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Var * Expr * Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the value, start, finish and body of the input expression</returns>
     [<CompiledName("ForIntegerRangeLoopPattern")>]
     val (|ForIntegerRangeLoop|_|) : input:Expr -> (Var * Expr * Expr * Expr) option
 
@@ -637,7 +643,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the guard and body of the input expression</returns>
     [<CompiledName("WhileLoopPattern")>]
     val (|WhileLoop|_|)       : input:Expr -> (Expr * Expr) option
 
@@ -645,7 +651,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the condition, then-branch and else-branch of the input expression</returns>
     [<CompiledName("IfThenElsePattern")>]
     val (|IfThenElse|_|)      : input:Expr -> (Expr * Expr * Expr) option
 
@@ -653,7 +659,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Var * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the variable and body of the input expression</returns>
     [<CompiledName("LambdaPattern")>]
     val (|Lambda|_|)          : input:Expr -> (Var * Expr) option
 
@@ -661,7 +667,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Var * Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the variable, binding expression and body of the input expression</returns>
     [<CompiledName("LetPattern")>]
     val (|Let|_|)             : input:Expr -> (Var * Expr * Expr) option
 
@@ -669,7 +675,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>((Var * Expr) list * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the bindings and body of the input expression</returns>
     [<CompiledName("LetRecursivePattern")>]
     val (|LetRecursive|_|)          : input:Expr -> ((Var * Expr) list * Expr) option
 
@@ -677,7 +683,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Type * Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the element type and values of the input expression</returns>
     [<CompiledName("NewArrayPattern")>]
     val (|NewArray|_|)        : input:Expr -> (Type * Expr list) option
 
@@ -685,7 +691,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>Type option</returns>
+    /// <returns>When successful, the pattern binds the relevant type of the input expression</returns>
     [<CompiledName("DefaultValuePattern")>]
     val (|DefaultValue|_|)    : input:Expr -> Type option
 
@@ -693,7 +699,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Type * Var list * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the delegate type, argument parameters and body of the input expression</returns>
     [<CompiledName("NewDelegatePattern")>]
     val (|NewDelegate|_|)     : input:Expr -> (Type * Var list * Expr) option
 
@@ -701,7 +707,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(ConstructorInfo * Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the constructor and arguments of the input expression</returns>
     [<CompiledName("NewObjectPattern")>]
     val (|NewObject|_|)       : input:Expr -> (ConstructorInfo * Expr list) option
 
@@ -709,7 +715,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Type * Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the record type and field values of the input expression</returns>
     [<CompiledName("NewRecordPattern")>]
     val (|NewRecord|_|)       : input:Expr -> (Type * Expr list) option
 
@@ -717,7 +723,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(UnionCaseInfo * Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the union case and field values of the input expression</returns>
     [<CompiledName("NewUnionCasePattern")>]
     val (|NewUnionCase|_|)    : input:Expr -> (UnionCaseInfo * Expr list) option
 
@@ -725,7 +731,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the element expressions of the input expression</returns>
     [<CompiledName("NewTuplePattern")>]
     val (|NewTuple|_|)        : input:Expr -> (Expr list) option
 
@@ -733,7 +739,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the element expressions of the input expression</returns>
     [<CompiledName("NewStructTuplePattern")>]
     val (|NewStructTuple|_|)        : input:Expr -> (Expr list) option
 
@@ -741,7 +747,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr option * PropertyInfo * Expr list) option</returns>
+    /// <returns>When successful, the pattern binds the object, property and indexer arguments of the input expression</returns>
     [<CompiledName("PropertyGetPattern")>]
     val (|PropertyGet|_|)         : input:Expr -> (Expr option * PropertyInfo * Expr list) option
 
@@ -749,7 +755,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr option * PropertyInfo * Expr list * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the object, property, indexer arguments and setter value of the input expression</returns>
     [<CompiledName("PropertySetPattern")>]
     val (|PropertySet|_|)         : input:Expr -> (Expr option * PropertyInfo * Expr list * Expr) option
 
@@ -757,7 +763,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>Expr option</returns>
+    /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
     [<CompiledName("QuotePattern")>]
     [<Obsolete("Please use QuoteTyped or QuoteRaw to distinguish between typed and raw quotation literals")>]
     val (|Quote|_|)           : input:Expr -> Expr option 
@@ -766,7 +772,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>Expr option</returns>
+    /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
     [<CompiledName("QuoteRawPattern")>]
     val (|QuoteRaw|_|)           : input:Expr -> Expr option 
 
@@ -774,7 +780,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>Expr option</returns>
+    /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
     [<CompiledName("QuoteTypedPattern")>]
     val (|QuoteTyped|_|)           : input:Expr -> Expr option 
 
@@ -782,7 +788,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the two sub-expressions of the input expression</returns>
     [<CompiledName("SequentialPattern")>]
     val (|Sequential|_|)      : input:Expr -> (Expr * Expr) option 
 
@@ -790,7 +796,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Var * Expr * Var * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the body, exception variable, filter expression and catch expression of the input expression</returns>
     [<CompiledName("TryWithPattern")>]
     val (|TryWith|_|)        : input:Expr -> (Expr * Var * Expr * Var * Expr) option 
 
@@ -798,7 +804,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>The body and handler parts of the try/finally expression</returns>
+    /// <returns>When successful, the pattern binds the body and handler parts of the try/finally expression</returns>
     [<CompiledName("TryFinallyPattern")>]
     val (|TryFinally|_|)      : input:Expr -> (Expr * Expr) option 
 
@@ -806,7 +812,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>The expression and tuple field being accessed</returns>
+    /// <returns>When successful, the pattern binds the expression and tuple field being accessed</returns>
     [<CompiledName("TupleGetPattern")>]
     val (|TupleGet|_|)        : input:Expr -> (Expr * int) option 
 
@@ -814,7 +820,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>The expression and type being tested</returns>
+    /// <returns>When successful, the pattern binds the expression and type being tested</returns>
     [<CompiledName("TypeTestPattern")>]
     val (|TypeTest|_|)        : input:Expr -> (Expr * Type) option 
 
@@ -822,7 +828,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>The expression and union case being tested</returns>
+    /// <returns>When successful, the pattern binds the expression and union case being tested</returns>
     [<CompiledName("UnionCaseTestPattern")>]
     val (|UnionCaseTest|_|)   : input:Expr -> (Expr * UnionCaseInfo) option 
 
@@ -830,7 +836,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>The boxed value and its static type</returns>
+    /// <returns>When successful, the pattern binds the boxed value and its static type</returns>
     [<CompiledName("ValuePattern")>]
     val (|Value|_|)           : input:Expr -> (obj * Type) option
 
@@ -838,7 +844,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>The boxed value, its static type and its name</returns>
+    /// <returns>When successful, the pattern binds the boxed value, its static type and its name</returns>
     [<CompiledName("ValueWithNamePattern")>]
     val (|ValueWithName|_|)  : input:Expr -> (obj * Type * string) option
 
@@ -846,7 +852,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>The boxed value, its static type and its definition</returns>
+    /// <returns>When successful, the pattern binds the boxed value, its static type and its definition</returns>
     [<CompiledName("WithValuePattern")>]
     val (|WithValue|_|)  : input:Expr -> (obj * Type * Expr) option
 
@@ -854,7 +860,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>Var option</returns>
+    /// <returns>When successful, the pattern binds the variable of the input expression</returns>
     [<CompiledName("VarPattern")>]
     val (|Var|_|)             : input:Expr -> Var option
 
@@ -862,7 +868,7 @@ module Patterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Var * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the variable and value expression of the input expression</returns>
     [<CompiledName("VarSetPattern")>]
     val (|VarSet|_|)          : input:Expr -> (Var * Expr) option
     
@@ -874,7 +880,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Var list list * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the curried variables and body of the input expression</returns>
     [<CompiledName("LambdasPattern")>]
     val (|Lambdas|_|)       : input:Expr -> (Var list list * Expr) option
 
@@ -882,7 +888,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr list list) option</returns>
+    /// <returns>When successful, the pattern binds the function and curried arguments of the input expression</returns>
     [<CompiledName("ApplicationsPattern")>]
     val (|Applications|_|)  : input:Expr -> (Expr * Expr list list) option
 
@@ -890,7 +896,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the left and right parts of the input expression</returns>
     [<CompiledName("AndAlsoPattern")>]
     val (|AndAlso|_|)       : input:Expr -> (Expr * Expr) option
 
@@ -898,7 +904,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>(Expr * Expr) option</returns>
+    /// <returns>When successful, the pattern binds the left and right parts of the input expression</returns>
     [<CompiledName("OrElsePattern")>]
     val (|OrElse|_|)        : input:Expr -> (Expr * Expr) option
 
@@ -906,7 +912,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>unit option</returns>
+    /// <returns>When successful, the pattern does not bind any results</returns>
     [<CompiledName("UnitPattern")>]
     val (|Unit|_|)          : input:Expr -> unit option 
 
@@ -914,7 +920,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>bool option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("BoolPattern")>]
     val (|Bool|_|)          : input:Expr -> bool option 
 
@@ -922,7 +928,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>string option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("StringPattern")>]
     val (|String|_|)        : input:Expr -> string option 
 
@@ -930,7 +936,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>float32 option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("SinglePattern")>]
     val (|Single|_|)        : input:Expr -> float32 option 
 
@@ -938,7 +944,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>float option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("DoublePattern")>]
     val (|Double|_|)        : input:Expr -> float option 
 
@@ -946,7 +952,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>char  option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("CharPattern")>]
     val (|Char|_|)          : input:Expr -> char  option 
 
@@ -954,7 +960,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>sbyte option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("SBytePattern")>]
     val (|SByte|_|)         : input:Expr -> sbyte option 
 
@@ -962,7 +968,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>byte option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("BytePattern")>]
     val (|Byte|_|)          : input:Expr -> byte option 
 
@@ -970,7 +976,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>int16 option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("Int16Pattern")>]
     val (|Int16|_|)         : input:Expr -> int16 option 
 
@@ -978,7 +984,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>uint16 option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("UInt16Pattern")>]
     val (|UInt16|_|)        : input:Expr -> uint16 option 
 
@@ -986,7 +992,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>int32 option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("Int32Pattern")>]
     val (|Int32|_|)         : input:Expr -> int32 option 
 
@@ -994,7 +1000,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>uint32 option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("UInt32Pattern")>]
     val (|UInt32|_|)        : input:Expr -> uint32 option 
 
@@ -1002,7 +1008,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>int64 option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("Int64Pattern")>]
     val (|Int64|_|)         : input:Expr -> int64 option 
 
@@ -1010,7 +1016,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>uint64 option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("UInt64Pattern")>]
     val (|UInt64|_|)        : input:Expr -> uint64 option 
 
@@ -1018,7 +1024,7 @@ module DerivedPatterns =
     ///
     /// <param name="input">The input expression to match against.</param>
     ///
-    /// <returns>decimal option</returns>
+    /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
     [<CompiledName("DecimalPattern")>]
     val (|Decimal|_|)        : input:Expr -> decimal option 
 

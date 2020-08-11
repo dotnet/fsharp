@@ -9,6 +9,8 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
     /// <summary>Event implementations for an arbitrary type of delegate.</summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate> = 
         /// <summary>Creates an event object suitable for implementing an arbitrary type of delegate.</summary>
@@ -21,6 +23,8 @@ namespace Microsoft.FSharp.Control
         member Publish : IDelegateEvent<'Delegate>
 
     /// <summary>Event implementations for a delegate types following the standard .NET Framework convention of a first 'sender' argument.</summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     [<CompiledName("FSharpEvent`2")>]
     type Event<'Delegate,'Args when 'Delegate : delegate<'Args,unit> and 'Delegate :> System.Delegate > = 
         /// <summary>Creates an event object suitable for delegate types following the standard .NET Framework convention of a first 'sender' argument.</summary>
@@ -36,6 +40,8 @@ namespace Microsoft.FSharp.Control
 
 
     /// <summary>Event implementations for the IEvent&lt;_&gt; type.</summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     [<CompiledName("FSharpEvent`1")>]
     type Event<'T> = 
         /// <summary>Creates an observable object.</summary>

@@ -7,6 +7,7 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
     <UnitTestType>xunit</UnitTestType>
     <NoWarn>$(NoWarn);3186;1104</NoWarn>
   </PropertyGroup>
@@ -21,12 +22,64 @@
     <Compile Include="ByteMemoryTests.fs" />
     <Compile Include="FsiTests.fs" />
     <Compile Include="ByteMemoryTests.fs" />
+    <Compile Include="..\..\tests\service\FsUnit.fs">
+      <Link>CompilerService\FsUnit.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\Common.fs">
+      <Link>CompilerService\Common.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\Symbols.fs">
+      <Link>CompilerService\Symbols.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\EditorTests.fs">
+      <Link>CompilerService\EditorTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\FileSystemTests.fs">
+      <Link>CompilerService\FileSystemTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\ProjectAnalysisTests.fs">
+      <Link>CompilerService\ProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\TokenizerTests.fs">
+      <Link>CompilerService\TokenizerTests.fs</Link>
+    </Compile>
+    <!-- TODO:  Fix this test
+    <Compile Include="..\..\tests\service\MultiProjectAnalysisTests.fs">
+      <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
+    </Compile>
+-->
+    <Compile Include="..\..\tests\service\PerfTests.fs">
+      <Link>CompilerService\PerfTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\InteractiveCheckerTests.fs">
+      <Link>CompilerService\InteractiveCheckerTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\ExprTests.fs">
+      <Link>CompilerService\ExprTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\CSharpProjectAnalysis.fs">
+      <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\StructureTests.fs">
+      <Link>CompilerService\StructureTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\AssemblyContentProviderTests.fs">
+      <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\ServiceUntypedParseTests.fs">
+      <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\tests\service\TreeVisitorTests.fs">
+      <Link>CompilerService\TreeVisitorTests.fs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
+    <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
   </ItemGroup>
 
 </Project>

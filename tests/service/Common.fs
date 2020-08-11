@@ -168,7 +168,7 @@ let parseAndCheckFile fileName source options =
     | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
     | _ -> failwithf "Parsing aborted unexpectedly..."
 
-let parseAndCheckScript (file, input) = 
+let parseAndCheckScriptWithOptions (file, input, opts) = 
 
 #if NETCOREAPP
     let dllName = Path.ChangeExtension(file, ".dll")
@@ -179,9 +179,10 @@ let parseAndCheckScript (file, input) =
 
 #else    
     let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.Text.SourceText.ofString input) |> Async.RunSynchronously
-    printfn "projectOptions = %A" projectOptions
+    //printfn "projectOptions = %A" projectOptions
 #endif
 
+    let projectOptions = { projectOptions with OtherOptions = Array.append opts projectOptions.OtherOptions }
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString input, projectOptions) |> Async.RunSynchronously
     
     // if parseResult.Errors.Length > 0 then
@@ -192,6 +193,8 @@ let parseAndCheckScript (file, input) =
     | FSharpCheckFileAnswer.Succeeded(res) -> parseResult, res
     | res -> failwithf "Parsing did not finish... (%A)" res
 
+let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
+
 let parseSourceCode (name: string, code: string) =
     let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
     try Directory.CreateDirectory(location) |> ignore with _ -> ()
@@ -201,6 +204,16 @@ let parseSourceCode (name: string, code: string) =
     let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let parseResults = checker.ParseFile(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     parseResults.ParseTree
+
+let matchBraces (name: string, code: string) =
+    let location = Path.Combine(Path.GetTempPath(),"test"+string(hash (name, code)))
+    try Directory.CreateDirectory(location) |> ignore with _ -> ()
+    let filePath = Path.Combine(location, name + ".fs")
+    let dllPath = Path.Combine(location, name + ".dll")
+    let args = mkProjectCommandLineArgs(dllPath, [filePath])
+    let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let braces = checker.MatchBraces(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
+    braces
 
 let parseSourceCodeAndGetModule (source: string) =
     match parseSourceCode ("test", source) with
