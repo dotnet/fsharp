@@ -218,8 +218,8 @@ let config configurationName envVars =
     let artifactsPath = repoRoot ++ "artifacts"
     let artifactsBinPath = artifactsPath ++ "bin"
     let coreClrRuntimePackageVersion = "3.0.0-preview-27318-01"
-    let csc_flags = "/nologo" 
-    let vbc_flags = "/nologo" 
+    let csc_flags = "/nologo"
+    let vbc_flags = "/nologo"
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
     let operatingSystem = getOperatingSystem ()
@@ -236,7 +236,7 @@ let config configurationName envVars =
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
     let CORECLR_DLL = if operatingSystem = "win" then "coreclr.dll" elif operatingSystem = "osx" then "libcoreclr.dylib" else "libcoreclr.so"
     let coreclrdll = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ CORECLR_DLL)
-    let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" else "PEVerify"
+    let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
     let PEVERIFY = requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
@@ -275,7 +275,7 @@ let config configurationName envVars =
       ILASM = ILASM
       PEVERIFY = PEVERIFY
       VBC = VBC
-      CSC = CSC 
+      CSC = CSC
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
@@ -286,10 +286,10 @@ let config configurationName envVars =
       FSharpBuild = FSharpBuild
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
       csc_flags = csc_flags
-      fsc_flags = fsc_flags 
+      fsc_flags = fsc_flags
       fsi_flags = fsi_flags
       vbc_flags = vbc_flags
-      Directory="" 
+      Directory=""
       DotNetExe = dotNetExe
       DefaultPlatform = defaultPlatform }
 

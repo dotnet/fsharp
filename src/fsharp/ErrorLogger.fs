@@ -691,12 +691,12 @@ let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeatu
     else
         None
 
-let internal tryLanguageFeatureError langVersion langFeature m =
+let internal checkLanguageFeatureError langVersion langFeature m =
     match tryLanguageFeatureErrorAux langVersion langFeature m with
     | Some e -> error (e)
     | None -> ()
 
-let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
+let internal checkLanguageFeatureErrorRecover langVersion langFeature m =
     match tryLanguageFeatureErrorAux langVersion langFeature m with
     | Some e -> errorR e
     | None -> ()
