@@ -117,9 +117,9 @@
         <target state="translated">null atanabilir isteğe bağlı birlikte çalışma</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="translated">açık statik sınıflar</target>
+      <trans-unit id="featureOpenTypeDeclaration">
+        <source>open type declaration</source>
+        <target state="new">open type declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -295,6 +295,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Öznitelikler tür uzantılarına uygulanamaz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
+        <source>Byref types are not allowed in an open type declaration.</source>
+        <target state="new">Byref types are not allowed in an open type declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
