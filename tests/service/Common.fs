@@ -15,7 +15,6 @@ open NUnit.Framework
 #if NETCOREAPP
 let readRefs (folder : string) (projectFile: string) =
     let runProcess (workingDir: string) (exePath: string) (args: string) =
-        System.Diagnostics.Debugger.Break()
         let psi = System.Diagnostics.ProcessStartInfo()
         psi.FileName <- exePath
         psi.WorkingDirectory <- workingDir
@@ -120,7 +119,6 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--target:library" 
         for x in fileNames do 
             yield x
-        System.Diagnostics.Debugger.Break()
         let references = mkStandardProjectReferences ()
         for r in references do
             yield "-r:" + r
