@@ -844,14 +844,14 @@ type internal TypeCheckInfo
                          | _ when IsAttribute infoReader cItem.Item -> true
                          | _ -> false), denv, m)
             
-            | Some(CompletionContext.OpenDeclaration) ->
+            | Some(CompletionContext.OpenDeclaration isOpenType) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                     items 
                     |> List.filter (fun x ->
                         match x.Item with
                         | Item.ModuleOrNamespaces _ -> true
-                        | Item.Types (_, tcrefs) when tcrefs |> List.exists (fun ty -> isAppTy g ty && isStaticClass g (tcrefOfAppTy g ty)) -> true
+                        | Item.Types _ when isOpenType -> true
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
@@ -1954,7 +1954,10 @@ type FSharpCheckFileResults
         scopeOptX 
         |> Option.map (fun scope -> 
             let cenv = scope.SymbolEnv
-            scope.OpenDeclarations |> Array.map (fun x -> FSharpOpenDeclaration(x.LongId, x.Range, (x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))), x.AppliedScope, x.IsOwnNamespace)))
+            scope.OpenDeclarations |> Array.map (fun x -> 
+                let modules = x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))
+                let types = x.Types |> List.map (fun x -> FSharpType(cenv, x))
+                FSharpOpenDeclaration(x.Target, x.Range, modules, types, x.AppliedScope, x.IsOwnNamespace)))
         |> Option.defaultValue [| |]
 
     override __.ToString() = "FSharpCheckFileResults(" + filename + ")"

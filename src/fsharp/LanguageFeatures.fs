@@ -23,7 +23,7 @@ type LanguageFeature =
     | RelaxWhitespace
     | NameOf
     | ImplicitYield
-    | OpenStaticClasses
+    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
@@ -68,7 +68,7 @@ type LanguageVersion (specifiedVersionAsString) =
 
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.OpenStaticClasses, previewVersion
+            LanguageFeature.OpenTypeDeclaration, previewVersion
             LanguageFeature.PackageManagement, previewVersion
             LanguageFeature.WitnessPassing, previewVersion
             LanguageFeature.InterfacesWithMultipleGenericInstantiation, previewVersion
@@ -135,7 +135,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf()
         | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield()
-        | LanguageFeature.OpenStaticClasses -> FSComp.SR.featureOpenStaticClasses()
+        | LanguageFeature.OpenTypeDeclaration -> FSComp.SR.featureOpenTypeDeclaration()
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()

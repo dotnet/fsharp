@@ -5,7 +5,7 @@ namespace FSharp.Compiler.ComponentTests.Interop
 open Xunit
 open FSharp.Test.Utilities.Compiler
 
-module ``C# <-> F# basic interop`` =
+module ``Simple interop verification`` =
 
     [<Fact>]
     let ``Instantiate C# type from F#`` () =
@@ -72,7 +72,6 @@ public class BicycleShop {
         |> compile
         |> shouldFail
 
-module ``C# <-> F# interop: fields`` =
     [<Fact>]
     let ``can't mutably set a C#-const field in F#`` () =
         let csLib =

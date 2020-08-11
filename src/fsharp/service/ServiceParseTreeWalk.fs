@@ -181,7 +181,7 @@ module public AstTraversal =
                 | SynModuleDecl.DoExpr(_sequencePointInfoForBinding, synExpr, _range) -> traverseSynExpr path synExpr  
                 | SynModuleDecl.Types(synTypeDefnList, _range) -> synTypeDefnList |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path)) |> pick decl
                 | SynModuleDecl.Exception(_synExceptionDefn, _range) -> None
-                | SynModuleDecl.Open(_longIdent, _range) -> None
+                | SynModuleDecl.Open(_target, _range) -> None
                 | SynModuleDecl.Attributes(_synAttributes, _range) -> None
                 | SynModuleDecl.HashDirective(_parsedHashDirective, range) -> visitor.VisitHashDirective range
                 | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> traverseSynModuleOrNamespace path synModuleOrNamespace
