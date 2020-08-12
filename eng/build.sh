@@ -170,7 +170,7 @@ function TestUsingNUnit() {
         shift
         ;;
       --notestfilter)
-        notestfilter=$2
+        notestfilter=1
         shift
         ;;
       *)
