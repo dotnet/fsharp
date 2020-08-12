@@ -1,72 +1,78 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\netfx.props" />
-  <Import Project="..\..\eng\Versions.props"/>   <!-- keep our test deps in line with the overall compiler -->
+
   <PropertyGroup>
-    <TargetFrameworks>$(FcsTargetNetFxFramework);netcoreapp3.1</TargetFrameworks>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <DefaultFSharpPackageVersion>4.1.19</DefaultFSharpPackageVersion>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <TargetExt>.dll</TargetExt>
+    <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
+    <RuntimeIdentifiers Condition="'$(OS)' == 'Unix'">linux-x64;osx-x64</RuntimeIdentifiers>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateProgramFile>false</GenerateProgramFile>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
+
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
+    <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Common.fs">
+    <Compile Include="..\service\Common.fs">
       <Link>Common.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\AssemblyReaderShim.fs">
+    <Compile Include="..\service\AssemblyReaderShim.fs">
       <Link>AssemblyReaderShim.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\EditorTests.fs">
+    <Compile Include="..\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Symbols.fs">
+    <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FileSystemTests.fs">
+    <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectAnalysisTests.fs">
+    <Compile Include="..\service\ProjectAnalysisTests.fs">
       <Link>ProjectAnalysisTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\MultiProjectAnalysisTests.fs">
+    <Compile Include="..\service\MultiProjectAnalysisTests.fs">
       <Link>MultiProjectAnalysisTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\PerfTests.fs">
+    <Compile Include="..\service\PerfTests.fs">
       <Link>PerfTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\InteractiveCheckerTests.fs">
+    <Compile Include="..\service\InteractiveCheckerTests.fs">
       <Link>InteractiveCheckerTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ExprTests.fs">
+    <Compile Include="..\service\ExprTests.fs">
       <Link>ExprTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\CSharpProjectAnalysis.fs">
+    <Compile Include="..\service\CSharpProjectAnalysis.fs">
       <Link>CSharpProjectAnalysis.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\StructureTests.fs">
+    <Compile Include="..\service\StructureTests.fs">
       <Link>StructureTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TokenizerTests.fs">
+    <Compile Include="..\service\TokenizerTests.fs">
       <Link>TokenizerTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ServiceUntypedParseTests.fs">
+    <Compile Include="..\service\ServiceUntypedParseTests.fs">
       <Link>ServiceUntypedParseTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\TreeVisitorTests.fs">
+    <Compile Include="..\service\TreeVisitorTests.fs">
       <Link>TreeVisitorTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\PatternMatchCompilationTests.fs">
+    <Compile Include="..\service\PatternMatchCompilationTests.fs">
       <Link>PatternMatchCompilationTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ScriptOptionsTests.fs">
+    <Compile Include="..\service\ScriptOptionsTests.fs">
       <Link>ScriptOptionsTests.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
+    <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
     <NoneSubstituteText Include="App.config">
@@ -74,16 +80,16 @@
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </NoneSubstituteText>
   </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="$(FcsFSharpCorePkgVersion)" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
     <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
     <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
     <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
-    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == '$(FcsTargetNetFxFramework)'">
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net472'">
     <Reference Include="mscorlib" />
     <Reference Include="System.Runtime" />
     <Reference Include="System.IO" />
