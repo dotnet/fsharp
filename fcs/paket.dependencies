@@ -13,6 +13,7 @@ nuget Fake.Core.Target
 nuget Fake.Core.UserInput
 nuget Fake.DotNet.Cli
 nuget Fake.DotNet.Fsi
+nuget Fake.DotNet.MSBuild
 nuget Fake.DotNet.Paket
 
 group generate
