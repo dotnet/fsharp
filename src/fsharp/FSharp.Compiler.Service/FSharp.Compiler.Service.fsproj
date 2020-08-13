@@ -731,7 +731,6 @@
     set FSHARPCORE_USE_PACKAGE to true to use package
   -->
     <FSHARPCORE_USE_PACKAGE>false</FSHARPCORE_USE_PACKAGE>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
