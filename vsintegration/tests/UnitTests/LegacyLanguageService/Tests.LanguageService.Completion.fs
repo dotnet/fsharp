@@ -3817,13 +3817,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     type MyAttr() = inherit Attribute()")
 
     [<Test>]
-    member public this.``Attribute.WhenAttachedToNothing.Bug70080``() =        
-        this.AutoCompleteBug70080Helper(@"
-                    open System
-                    [<Attr     // expect AttributeUsage
-                    // nothing here")
-
-    [<Test>]
     member public this.``Attribute.WhenAttachedToLetInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     namespace Foo
@@ -3909,8 +3902,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertAutoCompleteContains 
             [ "open System." ]
             "." // marker
-            [ "Collections"; "Console" ] // should contain (namespace, static type)
-            [ "Int32" ] // should not contain (non-static type)
+            [ "Collections" ] // should contain (namespace)
+            [ ] // should not contain
 
     [<Test>]
     member public this.``OpenNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case2``() =        
@@ -5313,17 +5306,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCtrlSpaceCompleteContains 
             ["""
                     module Foo
-                    open System
-                    [<
-             """]
-            "[<"
-            ["AttributeUsage"]
-            []
-      
-    [<Test>]
-    member this.``Attributes.CanSeeOpenNamespaces.Bug268290.Case2``() =
-        AssertCtrlSpaceCompleteContains 
-            ["""
                     open System
                     [<
              """]

@@ -85,7 +85,7 @@ type public CompletionContext =
 
     | AttributeApplication
 
-    | OpenDeclaration
+    | OpenDeclaration of isOpenType: bool
 
     /// completing pattern type (e.g. foo (x: |))
     | PatternType

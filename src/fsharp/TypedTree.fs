@@ -1912,9 +1912,9 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and generic arity. This means that for generic 
     /// types "List`1", the entry (List, 1) will be present.
-    member mtyp.TypesByDemangledNameAndArity m = 
+    member mtyp.TypesByDemangledNameAndArity = 
         cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
-           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDemangledNameAndArity tc.LogicalName (tc.Typars m) tc) |> List.toArray))
+           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
@@ -5297,9 +5297,9 @@ type Construct() =
 
     static let taccessPublic = TAccess [] 
     
-    /// Key a Tycon or TyconRef by demangled name and arity
-    static member KeyTyconByDemangledNameAndArity<'T> (nm: string) (typars: Typar list) (x: 'T) : KeyValuePair<NameArityPair, 'T> = 
-        KeyValuePair(NameArityPair(DemangleGenericTypeName nm, typars.Length), x)
+    /// Key a Tycon or TyconRef by decoded name
+    static member KeyTyconByDecodedName<'T> (nm: string) (x: 'T) : KeyValuePair<NameArityPair, 'T> = 
+        KeyValuePair(DecodeGenericTypeName nm, x)
 
     /// Key a Tycon or TyconRef by both mangled and demangled name.
     /// Generic types can be accessed either by 'List' or 'List`1'.

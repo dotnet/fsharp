@@ -23,7 +23,7 @@ type LanguageFeature =
     | RelaxWhitespace
     | NameOf
     | ImplicitYield
-    | OpenStaticClasses
+    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
@@ -64,7 +64,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.AndBang, languageVersion50
             LanguageFeature.NullableOptionalInterop, languageVersion50
             LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
-            LanguageFeature.OpenStaticClasses, languageVersion50
+            LanguageFeature.OpenTypeDeclaration, languageVersion50
             LanguageFeature.PackageManagement, languageVersion50
             LanguageFeature.WitnessPassing, languageVersion50
             LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
@@ -133,7 +133,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.RelaxWhitespace -> FSComp.SR.featureRelaxWhitespace()
         | LanguageFeature.NameOf -> FSComp.SR.featureNameOf()
         | LanguageFeature.ImplicitYield -> FSComp.SR.featureImplicitYield()
-        | LanguageFeature.OpenStaticClasses -> FSComp.SR.featureOpenStaticClasses()
+        | LanguageFeature.OpenTypeDeclaration -> FSComp.SR.featureOpenTypeDeclaration()
         | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()

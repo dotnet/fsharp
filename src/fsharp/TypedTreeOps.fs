@@ -9207,21 +9207,6 @@ let (|ValApp|_|) g vref expr =
     | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
     | _ -> None
 
-let isStaticClass (g:TcGlobals) (x: EntityRef) =
-    not x.IsModuleOrNamespace &&
-    x.TyparsNoRange.IsEmpty &&
-    ((x.IsILTycon && 
-      x.ILTyconRawMetadata.IsSealed &&
-      x.ILTyconRawMetadata.IsAbstract) 
-#if !NO_EXTENSIONTYPING
-     || (x.IsProvided &&
-        match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsSealed && info.IsAbstract 
-        | _ -> false)
-#endif
-     || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
-    not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
-
 /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
 /// duplicate modules etc.
 let CombineCcuContentFragments m l = 
