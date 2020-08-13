@@ -15,6 +15,9 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TcGlobals
 
 #nowarn "9"
 
@@ -45,18 +48,6 @@ module ItemKeyTags =
 
     [<Literal>]
     let typeMeasureCon = "#c#"
-
-    [<Literal>]
-    let typeMeasureProd = "#r#"
-
-    [<Literal>]
-    let typeMeasureInv = "#i#"
-
-    [<Literal>]
-    let typeMeasureOne = "#1#"
-
-    [<Literal>]
-    let typeMeasureRationalPower = "#z#"
 
     [<Literal>]
     let itemValueMember = "m$"
@@ -99,6 +90,9 @@ module ItemKeyTags =
 
     [<Literal>]
     let itemDelegateCtor = "g$"
+
+    [<Literal>]
+    let parameters = "p$p$"
 
 [<Sealed>]
 type ItemKeyStore(mmf: MemoryMappedFile, length) =
@@ -177,7 +171,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         b.WriteInt32 i
 
     let writeInt64 (i: int64) =
-        b.WriteInt64 i
+        b.WriteInt64 i 
 
     let writeString (str: string) =
         b.WriteUTF16 str
@@ -228,28 +222,29 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeILType x)
             writeILType mref.ReturnType
 
-    let rec writeType (ty: TType) =
-        match ty with
+    let rec writeType isStandalone (ty: TType) =
+        match stripTyparEqns ty with
         | TType_forall (_, ty) ->
-            writeType ty
+            writeType false ty
         | TType_app (tcref, _) ->
             writeEntityRef tcref
         | TType_tuple (_, tinst) ->
             writeString ItemKeyTags.typeTuple
-            tinst |> List.iter writeType
+            tinst |> List.iter (writeType false)
         | TType_anon (anonInfo, tinst) ->
             writeString ItemKeyTags.typeAnonymousRecord
             writeString anonInfo.ILTypeRef.BasicQualifiedName
-            tinst |> List.iter writeType
+            tinst |> List.iter (writeType false)
         | TType_fun (d, r) ->
             writeString ItemKeyTags.typeFunction
-            writeType d
-            writeType r
+            writeType false d
+            writeType false r
         | TType_measure ms -> 
-            writeString ItemKeyTags.typeMeasure
-            writeMeasure ms
+            if isStandalone then
+                writeString ItemKeyTags.typeMeasure
+                writeMeasure isStandalone ms
         | TType_var tp ->
-            writeTypar tp
+            writeTypar isStandalone tp
         | TType_ucase (uc, _) ->
             match uc with
             | UnionCaseRef.UnionCaseRef(tcref, nm) ->
@@ -257,42 +252,37 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeEntityRef tcref
                 writeString nm
 
-    and writeMeasure (ms: Measure) =
+    and writeMeasure isStandalone (ms: Measure) =
         match ms with
         | Measure.Var typar -> 
             writeString ItemKeyTags.typeMeasureVar
-            writeTypar typar
+            writeTypar isStandalone typar
         | Measure.Con tcref -> 
             writeString ItemKeyTags.typeMeasureCon
             writeEntityRef tcref
-        | Measure.Prod(ms1, ms2) ->
-            writeString ItemKeyTags.typeMeasureProd
-            writeMeasure ms1
-            writeMeasure ms2
-        | Measure.Inv ms ->
-            writeString ItemKeyTags.typeMeasureInv
-            writeMeasure ms
-        | Measure.One ->
-            writeString ItemKeyTags.typeMeasureOne
-        | Measure.RationalPower _ ->
-            writeString ItemKeyTags.typeMeasureRationalPower
+        | _ ->
+            ()
 
-    and writeTypar (typar: Typar) =
+    and writeTypar (isStandalone: bool) (typar: Typar) =
         match typar.Solution with
-        | Some ty -> writeType ty
-        | _ -> writeInt64 typar.Stamp
+        | Some ty -> writeType isStandalone ty
+        | _ -> 
+            if isStandalone then
+                writeInt64 typar.Stamp
 
     let writeValRef (vref: ValRef) =
         match vref.MemberInfo with
         | Some memberInfo ->
-            writeString "m$"
+            writeString ItemKeyTags.itemValueMember
             writeEntityRef memberInfo.ApparentEnclosingEntity
             writeString vref.LogicalName
-            writeType vref.Type
+            writeString ItemKeyTags.parameters
+            writeType false vref.Type
         | _ ->
-            writeString "v$"
+            writeString ItemKeyTags.itemValue
             writeString vref.LogicalName
-            writeType vref.Type
+            writeString ItemKeyTags.parameters
+            writeType false vref.Type
             match vref.DeclaringEntity with
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
@@ -306,15 +296,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
         match item with
         | Item.Value vref ->
-            match vref.MemberInfo with
-            | Some memberInfo ->
-                writeString ItemKeyTags.itemValueMember
-                writeEntityRef memberInfo.ApparentEnclosingEntity
-                writeString vref.LogicalName
-                writeType vref.Type
-            | _ ->
-                writeString ItemKeyTags.itemValue
-                writeValRef vref
+            writeValRef vref
 
         | Item.UnionCase(info, _) -> 
             writeString ItemKeyTags.typeUnionCase
@@ -340,7 +322,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.itemRecordField
             writeEntityRef info.TyconRef
             writeString info.Name
-            writeType info.FieldType
+            writeType false info.FieldType
 
         | Item.UnionCaseField(info, fieldIndex) ->
             writeString ItemKeyTags.typeUnionCase
@@ -351,7 +333,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.AnonRecdField(info, tys, i, _) ->
             writeString ItemKeyTags.itemAnonymousRecordField
             writeString info.ILTypeRef.BasicQualifiedName
-            tys |> List.iter writeType
+            tys |> List.iter (writeType false)
             writeInt32 i
 
         | Item.NewDef ident ->
@@ -374,13 +356,11 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             infos
             |> List.iter (fun info -> writeEntityRef info.DeclaringTyconRef)
 
-        | Item.TypeVar(nm, typar) ->
-            writeString ItemKeyTags.itemTypeVar
-            writeString nm
-            writeTypar typar
+        | Item.TypeVar(_, typar) ->
+            writeTypar true typar
 
         | Item.Types(_, [ty]) ->
-            writeType ty
+            writeType true ty
 
         | Item.UnqualifiedType [tcref] ->
             writeEntityRef tcref
@@ -395,9 +375,9 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 |> List.iter writeILType
                 writeILType info.ILMethodRef.ReturnType
                 writeString info.ILName
-                writeType info.ApparentEnclosingType
+                writeType false info.ApparentEnclosingType
             | _ ->
-                writeString "m$"
+                writeString ItemKeyTags.itemValueMember
                 writeEntityRef info.DeclaringTyconRef
                 writeString info.LogicalName
 
@@ -411,7 +391,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
         | Item.DelegateCtor ty ->
             writeString ItemKeyTags.itemDelegateCtor
-            writeType ty
+            writeType false ty
 
         | Item.MethodGroup _ -> ()
         | Item.CtorGroup _ -> ()
