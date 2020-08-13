@@ -19,7 +19,7 @@
 
     <PackageId>FSharp.Compiler.Service</PackageId>
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
-    <IsPackable Condition="'$(OS)' == 'Windows'">true</IsPackable>
+    <IsPackable Condition="'$(OS)' != 'Unix'">true</IsPackable>
     <PackageDescription>The F# Compiler Services package For F# $(FSCoreMajorVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
   </PropertyGroup>
@@ -738,7 +738,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)"/>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
