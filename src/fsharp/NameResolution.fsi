@@ -137,7 +137,7 @@ val (|ItemWithInst|) : ItemWithInst -> Item * TyparInst
 val ItemWithNoInst : Item -> ItemWithInst
 
 /// Represents a record field resolution and the information if the usage is deprecated.
-type FieldResolution = FieldResolution of RecdFieldRef * bool
+type FieldResolution = FieldResolution of RecdFieldInfo * bool
 
 /// Information about an extension member held in the name resolution environment
 type ExtensionMember =
@@ -180,6 +180,9 @@ type NameResolutionEnv =
       /// by label rather than by known type annotation. 
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup 
       eFieldLabels: NameMultiMap<RecdFieldRef>
+
+      /// RecdField labels that may have type instantiations associated with it.
+      eFieldLabelTypeInsts: TyconRefMap<TypeInst>
 
       /// Tycons indexed by the various names that may be used to access them, e.g. 
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name. 
@@ -510,7 +513,7 @@ exception internal IndeterminateType of range
 exception internal UpperCaseIdentifierInPattern of range
 
 /// Generate a new reference to a record field with a fresh type instantiation
-val FreshenRecdFieldRef :NameResolver -> Range.range -> RecdFieldRef -> Item
+val FreshenRecdFieldRef :NameResolver -> Range.range -> RecdFieldRef -> RecdFieldInfo
 
 /// Indicates the kind of lookup being performed. Note, this type should be made private to nameres.fs.
 [<RequireQualifiedAccess>]

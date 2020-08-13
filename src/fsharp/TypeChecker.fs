@@ -2005,35 +2005,36 @@ let BuildFieldMap cenv env isPartial ty flds m =
             fld, frefSet, fldExpr)
 
     let relevantTypeSets = 
-        frefSets |> List.map (fun (_, frefSet, _) -> frefSet |> List.map (fun (FieldResolution(rfref, _)) -> rfref.TyconRef))
+        frefSets |> List.map (fun (_, frefSet, _) -> frefSet |> List.map (fun (FieldResolution(rfinfo, _)) -> rfinfo.TypeInst, rfinfo.TyconRef))
     
-    let tcref = 
-        match List.fold (ListSet.intersect (tyconRefEq cenv.g)) (List.head relevantTypeSets) (List.tail relevantTypeSets) with
-        | [tcref] -> tcref
+    let tinst, tcref = 
+        match List.fold (ListSet.intersect (fun (_, tcref1) (_, tcref2) -> tyconRefEq cenv.g tcref1 tcref2)) (List.head relevantTypeSets) (List.tail relevantTypeSets) with
+        | [tinst, tcref] -> tinst, tcref
         | tcrefs -> 
             if isPartial then 
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(), m))
 
             // try finding a record type with the same number of fields as the ones that are given.
-            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = fldCount) with
-            | Some tcref -> tcref            
+            match tcrefs |> List.tryFind (fun (_, tc) -> tc.TrueFieldsAsList.Length = fldCount) with
+            | Some (tinst, tcref) -> tinst, tcref            
             | _ -> 
                 // OK, there isn't a unique, good type dictated by the intersection for the field refs. 
                 // We're going to get an error of some kind below. 
                 // Just choose one field ref and let the error come later 
                 let (_, frefSet1, _) = List.head frefSets
-                let (FieldResolution(fref1, _)) = List.head frefSet1
-                fref1.TyconRef
+                let (FieldResolution(rfinfo1, _)) = List.head frefSet1
+                rfinfo1.TypeInst, rfinfo1.TyconRef
     
     let fldsmap, rfldsList = 
         ((Map.empty, []), frefSets) ||> List.fold (fun (fs, rfldsList) (fld, frefs, fldExpr) -> 
-                match frefs |> List.filter (fun (FieldResolution(fref2, _)) -> tyconRefEq cenv.g tcref fref2.TyconRef) with
-                | [FieldResolution(fref2, showDeprecated)] -> 
+                match frefs |> List.filter (fun (FieldResolution(rfinfo2, _)) -> tyconRefEq cenv.g tcref rfinfo2.TyconRef) with
+                | [FieldResolution(rfinfo2, showDeprecated)] -> 
 
                     // Record the precise resolution of the field for intellisense
-                    let item = FreshenRecdFieldRef cenv.nameResolver m fref2
+                    let item = Item.RecdField(rfinfo2)
                     CallNameResolutionSink cenv.tcSink ((snd fld).idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad)
 
+                    let fref2 = rfinfo2.RecdFieldRef
                     CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
                     CheckFSharpAttributes cenv.g fref2.PropertyAttribs m |> CommitOperationResult
                     if Map.containsKey fref2.FieldName fs then 
@@ -2043,14 +2044,14 @@ let BuildFieldMap cenv env isPartial ty flds m =
                         
                     if not (tyconRefEq cenv.g tcref fref2.TyconRef) then 
                         let (_, frefSet1, _) = List.head frefSets
-                        let (FieldResolution(fref1, _)) = List.head frefSet1
-                        errorR (FieldsFromDifferentTypes(env.DisplayEnv, fref1, fref2, m))
+                        let (FieldResolution(rfinfo1, _)) = List.head frefSet1
+                        errorR (FieldsFromDifferentTypes(env.DisplayEnv, rfinfo1.RecdFieldRef, fref2, m))
                         fs, rfldsList
                     else
                         Map.add fref2.FieldName fldExpr fs, (fref2.FieldName, fldExpr) :: rfldsList
 
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
-    tcref, fldsmap, List.rev rfldsList
+    tinst, tcref, fldsmap, List.rev rfldsList
 
 let rec ApplyUnionCaseOrExn (makerForUnionCase, makerForExnTag) m cenv env overallTy item =
     let ad = env.eAccessRights
@@ -5685,9 +5686,10 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             else List.foldBack (mkConsListPat cenv.g argty) args' (mkNilListPat cenv.g m argty)), acc
 
     | SynPat.Record (flds, m) ->
-        let tcref, fldsmap, _fldsList = BuildFieldMap cenv env true ty flds m
+        let tinst, tcref, fldsmap, _fldsList = BuildFieldMap cenv env true ty flds m
         // REVIEW: use _fldsList to type check pattern in code order not field defn order 
-        let _, inst, tinst, gtyp = FreshenTyconRef2 m tcref
+        let gtyp = mkAppTy tcref tinst
+        let inst = List.zip (tcref.Typars m) tinst
         UnifyTypes cenv env m ty gtyp
         let fields = tcref.TrueInstanceFieldsAsList
         let ftys = fields |> List.map (fun fsp -> actualTyOfRecdField inst fsp, fsp) 
@@ -7455,8 +7457,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         match flds with 
         | [] -> []
         | _ ->
-            let tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
-            let _, _, _, gtyp = FreshenTyconRef2 mWholeExpr tcref
+            let tinst, tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
+            let gtyp = mkAppTy tcref tinst
             UnifyTypes cenv env mWholeExpr overallTy gtyp
 
             [ for n, v in fldsList do
@@ -16435,7 +16437,7 @@ module EstablishTypeDefinitionCores =
                         let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
                         let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
                         // Name resolution gives better info for tooltips
-                        let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec)
+                        let item = Item.RecdField(FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec))
                         CallNameResolutionSink cenv.tcSink (fspec.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
                         // Environment is needed for completions
                         CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
