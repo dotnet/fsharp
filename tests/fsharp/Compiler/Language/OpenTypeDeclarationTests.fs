@@ -994,7 +994,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test;Ignore("https://github.com/dotnet/fsharp/issues/9914")>]
+    [<Test>]
     let ``Open generic union should have access to union cases with the enclosing type instantiations`` () =
         FSharp """
 namespace FSharpTest
@@ -1017,7 +1017,7 @@ module Test2 =
         """
         |> withOptions ["--langversion:preview"]
         |> compile
-        |> shouldFail
+        |> withErrorCode 1
         |> ignore
 
     [<Test>]
