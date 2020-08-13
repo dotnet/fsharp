@@ -70,7 +70,8 @@ module TcResolutionsExtensions =
                     | ItemOccurence.UseInAttribute
                     | ItemOccurence.Use _
                     | ItemOccurence.Binding _
-                    | ItemOccurence.Pattern _ -> Some()
+                    | ItemOccurence.Pattern _ 
+                    | ItemOccurence.Open -> Some()
                     | _ -> None
 
                 let (|KeywordIntrinsicValue|_|) (vref: ValRef) =

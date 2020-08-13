@@ -2379,8 +2379,6 @@ val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 /// Match expressions that are an application of a particular F# function value
 val (|ValApp|_|) : TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
 
-val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool
-
 val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
 /// Recognise a while expression

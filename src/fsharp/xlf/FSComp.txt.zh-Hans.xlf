@@ -117,9 +117,9 @@
         <target state="translated">可以为 null 的可选互操作</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="translated">打开静态类</target>
+      <trans-unit id="featureOpenTypeDeclaration">
+        <source>open type declaration</source>
+        <target state="new">open type declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -295,6 +295,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">属性不可应用于类型扩展。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
+        <source>Byref types are not allowed in an open type declaration.</source>
+        <target state="new">Byref types are not allowed in an open type declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">

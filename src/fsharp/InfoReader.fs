@@ -571,9 +571,15 @@ let private tryLanguageFeatureRuntimeErrorAux (infoReader: InfoReader) langFeatu
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
         let featureStr = infoReader.g.langVersion.GetFeatureString langFeature
         error (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+        false
+    else
+        true
 
-let tryLanguageFeatureRuntimeError infoReader langFeature m =
-    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m error
+let checkLanguageFeatureRuntimeError infoReader langFeature m =
+    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m error |> ignore
+
+let checkLanguageFeatureRuntimeErrorRecover infoReader langFeature m =
+    tryLanguageFeatureRuntimeErrorAux infoReader langFeature m errorR |> ignore
 
 let tryLanguageFeatureRuntimeErrorRecover infoReader langFeature m =
     tryLanguageFeatureRuntimeErrorAux infoReader langFeature m errorR
@@ -922,5 +928,3 @@ let PropTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
     let delTy = einfo.GetDelegateType(amap, m)
     let argsTy = ArgsTypOfEventInfo infoReader m ad einfo 
     mkIEventType g delTy argsTy
-
-

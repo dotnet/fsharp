@@ -151,19 +151,22 @@ let main argv = 0"""
                 pInfo.UseShellExecute <- false
 
                 let p = Process.Start(pInfo)
-                let succeeded = p.WaitForExit(10000)
+                let timeout = 30000
+                let succeeded = p.WaitForExit(timeout)
 
                 output <- p.StandardOutput.ReadToEnd ()
                 errors <- p.StandardError.ReadToEnd ()
-                if not (String.IsNullOrWhiteSpace errors) then Assert.Fail errors
 
-                if p.ExitCode <> 0 || not succeeded then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+                if not (String.IsNullOrWhiteSpace errors) then Assert.Fail errors
+                if p.ExitCode <> 0 then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+                if not succeeded then Assert.Fail(sprintf "Program timed out after %d ms" timeout)
 
                 File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
             with | e ->
                 cleanUp <- false
-                printfn "%s" output
-                printfn "%s" errors
+                printfn "Project directory: %s" projectDirectory
+                printfn "STDOUT: %s" output
+                printfn "STDERR: %s" errors
                 raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
         finally
             if cleanUp then
@@ -303,7 +306,7 @@ let main argv = 0"""
                             | TestCompilationReference (cmpl) ->
                                 let filename =
                                  match cmpl with
-                                 | TestCompilation.CSharp c -> c.AssemblyName
+                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
                                  | _ -> Path.GetRandomFileName()
                                 let tmp = Path.Combine(outputPath, Path.ChangeExtension(filename, ".dll"))
                                 disposals.Add({ new IDisposable with
@@ -383,10 +386,10 @@ let main argv = 0"""
     // NOTE: This function will not clean up all the compiled projects after itself.
     // The reason behind is so we can compose verification of test runs easier.
     // TODO: We must not rely on the filesystem when compiling
-    static let rec returnCompilation (cmpl: Compilation) =
+    static let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
         let compileDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
         Directory.CreateDirectory(compileDirectory) |> ignore
-        compileCompilationAux compileDirectory (ResizeArray()) false cmpl
+        compileCompilationAux compileDirectory (ResizeArray()) ignoreWarnings cmpl
 
     static let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
         let out = Console.Out
@@ -465,8 +468,8 @@ let main argv = 0"""
     static member Compile(cmpl: Compilation, ?ignoreWarnings) =
         CompilerAssert.CompileWithErrors(cmpl, [||], defaultArg ignoreWarnings false)
 
-    static member CompileRaw(cmpl: Compilation) =
-        lock gate (fun () -> returnCompilation cmpl)
+    static member CompileRaw(cmpl: Compilation, ?ignoreWarnings) =
+        lock gate (fun () -> returnCompilation cmpl (defaultArg ignoreWarnings false))
 
     static member ExecuteAndReturnResult (outputFilePath: string, deps: string list, newProcess: bool) =
         // If we execute in-process (true by default), then the only way of getting STDOUT is to redirect it to SB, and STDERR is from catching an exception.
