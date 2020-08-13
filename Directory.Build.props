@@ -1,6 +1,9 @@
 <Project>
-
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
+
+  <ItemGroup>
+    <SourceRoot Include="$(MSBuildThisFileDirectory)/" />
+  </ItemGroup>
 
 </Project>
