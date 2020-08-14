@@ -22,6 +22,7 @@ type LanguageFeature =
     | WitnessPassing
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
+    | OverloadsForCustomOperations
 
 /// LanguageVersion management
 type LanguageVersion =
