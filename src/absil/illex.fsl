@@ -80,12 +80,7 @@ let kwdInstrTable =
 
 let kwdOrInstr s = (Lazy.force kwdInstrTable).[s] (* words *)
 
-let eval = function 
-  | '0' -> 0  | '1' -> 1 | '2' -> 2  | '3' -> 3  | '4' -> 4  | '5' -> 5 
-  | '6' -> 6  | '7' -> 7  | '8' -> 8  | '9' -> 9 
-  | 'A' -> 10 | 'B' -> 11 | 'C' -> 12 | 'D' -> 13 | 'E' -> 14 | 'F' -> 15
-  | 'a' -> 10 | 'b' -> 11 | 'c' -> 12 | 'd' -> 13 | 'e' -> 14 | 'f' -> 15
-  | _ -> failwith "bad hexbyte"  
+let evalDigit ch  = (int ch) - (int '0')
 
 let kwdOrInstrOrId s = match (Lazy.force kwdInstrTable).TryFind s with Some v -> v | _ -> VAL_ID s
         
@@ -126,7 +121,7 @@ rule token = parse
       { let c1 = (lexeme_char lexbuf 0) in 
         let c2 = (lexeme_char lexbuf 1) in 
         if c1 >= '0' && c1 <= '9' && c2 >= '0' && c2 <= '9' then 
-          VAL_INT64(int64 (10*eval c1 + eval c2) )
+          VAL_INT64(int64 (10*evalDigit c1 + evalDigit c2) )
         else VAL_ID(lexeme lexbuf) }
   | '0' 'x' ['0'-'9' 'a'-'f' 'A'-'F']+ 
       { VAL_INT64(int64(lexeme lexbuf)) }
@@ -134,7 +129,7 @@ rule token = parse
       { let c1 = (lexeme_char lexbuf 6) in 
         let c2 = (lexeme_char lexbuf 7) in 
         if c1 >= '0' && c1 <= '9' && c2 >= '0' && c2 <= '9' then 
-          VAL_INT64(int64 (10*eval c1 + eval c2)) 
+          VAL_INT64(int64 (10*evalDigit c1 + evalDigit c2)) 
         else VAL_ID(lexeme lexbuf) }
 
   | '-' ['0'-'9']+ 
