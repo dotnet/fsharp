@@ -171,35 +171,28 @@ module rec Compiler =
         | CS cs -> CS { cs with References = cs.References @ references }
         | IL _ -> failwith "References are not supported in IL"
 
-    let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
+    let private withOptionsHelper (options: string list) (message:string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ options }
-        | _ -> failwith "withOptions is only supported n F#"
+        | _ -> failwith message
 
-    let withErrorRanges (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs -> FS { fs with Options = fs.Options @ [ "--test:ErrorRanges" ] }
-        | _ -> failwith "withErrorRanges is only supported in F#"
+    let withOptions options cUnit =
+        withOptionsHelper options "withOptions is only supported n F#" cUnit
 
-    let withLangVersion46 (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:4.6" ] }
-        | _ -> failwith "withLangVersion46 is only supported in F#"
+    let withErrorRanges cUnit=
+        withOptionsHelper [ "--test:ErrorRanges" ] "withErrorRanges is only supported on F#" cUnit
 
-    let withLangVersion47 (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:4.7" ] }
-        | _ -> failwith "withLangVersion47 is only supported in F#"
+    let withLangVersion46 cUnit =
+        withOptionsHelper [ "--langversion:4.6" ] "withLangVersion46 is only supported on F#" cUnit
 
-    let withLangVersion50 (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:5.0" ] }
-        | _ -> failwith "withLangVersion50 is only supported in F#"
+    let withLangVersion47 cUnit: CompilationUnit =
+        withOptionsHelper [ "--langversion:4.7" ] "withLangVersion47 is only supported on F#" cUnit
 
-    let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:preview" ] }
-        | _ -> failwith "withLangVersionPreview is only supported in F#"
+    let withLangVersion50 cUnit =
+        withOptionsHelper [ "--langversion:5.0" ] "withLangVersion50 is only supported on F#" cUnit
+
+    let withLangVersionPreview cUnit =
+        withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
