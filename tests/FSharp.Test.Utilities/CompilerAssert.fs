@@ -430,13 +430,14 @@ let main argv = 0"""
         pinfo.FileName <- "dotnet"
         pinfo.Arguments <- outputFilePath
 
+        // When .NET 5 has shipped, the `version` field below should have the `-preview` suffix removed.
         let runtimeconfig = """
 {
     "runtimeOptions": {
         "tfm": "netcoreapp3.1",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "3.1.0"
+            "version": "5.0.0-preview"
         }
     }
 }"""
