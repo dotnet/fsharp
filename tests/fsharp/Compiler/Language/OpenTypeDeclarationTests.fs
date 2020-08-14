@@ -58,7 +58,7 @@ module OpenSystemMathOnce =
 
                        open type System.Math
                        let x = Min(1.0, 2.0)""")
-         |> withOptions ["--langversion:preview"]
+         |> withPreview
          |> typecheck
          |> shouldSucceed
          |> ignore
@@ -91,7 +91,7 @@ module OpenSystemMathOnce =
 
                    open type System.Math
                    let x = Min(1.0, 2.0)""")
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -122,7 +122,7 @@ module OpenMyMathOnce =
     open type MyMath
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -150,7 +150,7 @@ module DontOpenAutoMath =
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -183,7 +183,7 @@ module OpenAutoMath =
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -195,7 +195,7 @@ module OpenAFieldFromMath =
     open type System.Math
     
     let pi = PI""")
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -236,7 +236,7 @@ module Test =
     let y = NestedTest<int>()
     let a = x.A()
     let b = y.B()"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -274,7 +274,7 @@ namespace FSharpTest
 open System
 type Abbrev = CSharpTest.Test
 open type Abbrev.NestedTest"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -312,7 +312,7 @@ namespace FSharpTest
 open System
 type Abbrev = CSharpTest.Test
 open type Abbrev"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -345,7 +345,7 @@ open type CSharpTest.Test.NestedTest
 
 module Test =
     let x = A()"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -416,7 +416,7 @@ module Test2 =
 
     let y2 : NestedTest<int> = new NestedTest<int>()
     let y2a : byte = y2.A()"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -431,7 +431,7 @@ open type System.Collections.Generic.List<int>
 
 module Test =
     let e2 = new Enumerator()"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -535,7 +535,7 @@ module Test4 =
 
     let d : NestedNestedTest<int> = NestedNestedTest<int>()
     let dd : int = d.D()"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -634,7 +634,7 @@ module Test3 =
 
     let r3 : int list = cc.C()
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -652,7 +652,7 @@ type kg
 
 open type kg
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -678,7 +678,7 @@ type vec3<[<Measure>] 'Measure> = Vector3
 
 open type vec3<kg>
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -710,7 +710,7 @@ module Test =
     let y : float<kg> = GetY(Unchecked.defaultof<_>)
 
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -751,7 +751,7 @@ module Test =
 
     let w : float = GetW(Unchecked.defaultof<_>)
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -783,7 +783,7 @@ module Test =
 
     let x : float<g> = GetX(Unchecked.defaultof<_>)
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -795,7 +795,7 @@ namespace FSharpTest
 
 open type (int * int)
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -810,7 +810,7 @@ namespace FSharpTest
 
 open type struct (int * int)
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -825,7 +825,7 @@ namespace FSharpTest
 
 open type (int -> int)
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -840,7 +840,7 @@ namespace FSharpTest
 
 open type {| x: int |}
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -855,7 +855,7 @@ namespace FSharpTest
 
 open type struct {| x: int |}
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -874,7 +874,7 @@ open System
 
 open type Tuple<int, int>
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -893,7 +893,7 @@ open System
 
 open type ValueTuple<int, int>
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -910,7 +910,7 @@ namespace FSharpTest
 
 open type FSharpFunc<int, int>
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -934,7 +934,7 @@ module Test =
     let x = EnumCase1
     let y = EnumCase2
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -963,7 +963,7 @@ module Test =
     let x = CSharpEnumCase1
     let y = CSharpEnumCase2
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> ignore
@@ -989,7 +989,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1015,7 +1015,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1038,7 +1038,7 @@ module Test2 =
         match x with
         | UCase1 x -> x
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1062,7 +1062,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1092,7 +1092,7 @@ module Test3 =
 
     let y = M()
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1122,7 +1122,7 @@ module Test3 =
         match x with
         | { X = x } -> x
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1146,7 +1146,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withErrorCode 39
         |> ignore
@@ -1175,7 +1175,7 @@ module Test2 =
         M(1)
         M(2.0)
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1204,7 +1204,7 @@ module Test2 =
         M(1)
         M(2.0)
         """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withErrorCodes [1;1]
         |> ignore
@@ -1234,7 +1234,7 @@ open CSharpTest.Test
 
 module Test =
     let x = A()"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> withReferences [csharp]
         |> compile
         |> withDiagnostics
@@ -1250,7 +1250,7 @@ module Test =
 namespace FSharpTest
 
 open type System"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -1264,7 +1264,7 @@ open type System"""
 namespace FSharpTest
 
 open type FSharp.Core.Option"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -1280,7 +1280,7 @@ namespace FSharpTest
 open type byref<int>
 open type inref<int>
 open type outref<int>"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -1437,7 +1437,7 @@ open type System.Math
 
 let x = Equals(2.0, 3.0)
             """
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> compile
         |> withDiagnostics
             [
@@ -1463,7 +1463,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> asExe
         |> compile
         |> withDiagnostics
@@ -1492,7 +1492,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1515,7 +1515,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1540,7 +1540,7 @@ let main _ =
     let x = 1
     x.Test()
     0"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1559,7 +1559,7 @@ open type A
 let main _ =
     let _x = 1 + 1
     0"""
-        |> withOptions ["--langversion:preview"]
+        |> withPreview
         |> asExe
         |> compile
         |> shouldSucceed
@@ -2265,7 +2265,7 @@ let main _ =
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let provided =
             Fsx (sprintf """
@@ -2273,7 +2273,7 @@ let main _ =
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let test =
             Fsx """
@@ -2291,7 +2291,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2307,7 +2307,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let provided =
             Fsx (sprintf """
@@ -2315,7 +2315,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let test =
             Fsx """
@@ -2331,7 +2331,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2347,7 +2347,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let provided =
             Fsx (sprintf """
@@ -2355,7 +2355,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let test =
             Fsx """
@@ -2366,7 +2366,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2382,7 +2382,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let provided =
             Fsx (sprintf """
@@ -2390,7 +2390,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let test =
             Fsx """
@@ -2402,7 +2402,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2418,7 +2418,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let provided =
             Fsx (sprintf """
@@ -2426,7 +2426,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
 
         let test =
             Fsx """
@@ -2436,7 +2436,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
             |> ignoreWarnings
-            |> withOptions ["--langversion:preview"]
+            |> withPreview
             |> withReferences [provider;provided]
 
         compile test

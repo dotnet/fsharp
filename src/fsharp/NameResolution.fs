@@ -367,8 +367,8 @@ type NameResolutionEnv =
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup
       eFieldLabels: NameMultiMap<RecdFieldRef>
 
-      /// RecdField labels that may have type instantiations associated with it.
-      eFieldLabelTypeInsts: TyconRefMap<TypeInst>
+      /// Record or unions that may have type instantiations associated with it.
+      eRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
 
       /// Tycons indexed by the various names that may be used to access them, e.g.
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
@@ -401,7 +401,7 @@ type NameResolutionEnv =
           eModulesAndNamespaces = Map.empty
           eFullyQualifiedModulesAndNamespaces = Map.empty
           eFieldLabels = Map.empty
-          eFieldLabelTypeInsts = TyconRefMap.Empty
+          eRecordOrUnionTypeInsts = TyconRefMap.Empty
           eUnqualifiedItems = LayeredMap.Empty
           eUnqualifiedEnclosingTypeInsts = TyconRefMap.Empty
           ePatItems = Map.empty
@@ -776,24 +776,24 @@ let AddTyconByAccessNames bulkAddMode (tcrefs: TyconRef[]) (tab: LayeredMultiMap
 let AddRecdField (rfref: RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
 
 /// Add a set of union cases to the corresponding sub-table of the environment
-let AddUnionCases1 (tab: Map<_, _>) tinst (ucrefs: UnionCaseRef list) =
+let AddUnionCases1 (tab: Map<_, _>) (ucrefs: UnionCaseRef list) =
     (tab, ucrefs) ||> List.fold (fun acc ucref ->
-        let item = Item.UnionCase(UnionCaseInfo(tinst, ucref), false)
+        let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
         acc.Add (ucref.CaseName, item))
 
 /// Add a set of union cases to the corresponding sub-table of the environment
-let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) tinst (ucrefs: UnionCaseRef list) =
+let AddUnionCases2 bulkAddMode (eUnqualifiedItems: UnqualifiedItems) (ucrefs: UnionCaseRef list) =
     match bulkAddMode with
     | BulkAdd.Yes ->
         let items =
             ucrefs |> Array.ofList |> Array.map (fun ucref ->
-                let item = Item.UnionCase(UnionCaseInfo(tinst, ucref), false)
+                let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
                 KeyValuePair(ucref.CaseName, item))
         eUnqualifiedItems.AddAndMarkAsCollapsible items
 
     | BulkAdd.No ->
         (eUnqualifiedItems, ucrefs) ||> List.fold (fun acc ucref ->
-            let item = Item.UnionCase(UnionCaseInfo(tinst, ucref), false)
+            let item = Item.UnionCase(GeneralizeUnionCaseRef ucref, false)
             acc.Add (ucref.CaseName, item))
 
 //-------------------------------------------------------------------------
@@ -1156,11 +1156,11 @@ and private AddTyconRefsWithEnclosingTypeInstToNameEnv bulkAddMode ownDefinition
 and private AddStaticPartsOfTypeToNameEnv (amap: Import.ImportMap) m nenv ty =
     match tryAppTy amap.g ty with
     | ValueSome (tcref, tinst) ->
-        AddStaticPartsOfTyconRefToNameEnv BulkAdd.Yes false amap.g amap m nenv (tcref, tinst)
+        AddStaticPartsOfTyconRefToNameEnv BulkAdd.Yes false amap.g amap m nenv (Some tinst) tcref
     | _ ->
         nenv
 
-and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv (tcref: TyconRef, tinst) =
+and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv tinstOpt (tcref: TyconRef) =
     let isIL = tcref.IsILTycon
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
@@ -1176,16 +1176,13 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
     let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
 
     // Record labels
-    let eFieldLabels, eFieldLabelTypeInsts =
+    let eFieldLabels  =
         if isILOrRequiredQualifiedAccess || not tcref.IsRecordTycon || flds.Length = 0 then
-            nenv.eFieldLabels, nenv.eFieldLabelTypeInsts
+            nenv.eFieldLabels
         else
-            let eFieldLabelTypeInsts =
-                if tinst.IsEmpty then nenv.eFieldLabelTypeInsts
-                else nenv.eFieldLabelTypeInsts.Add tcref tinst
             (nenv.eFieldLabels, flds) ||> Array.fold (fun acc f ->
                    if f.IsStatic || f.IsCompilerGenerated then acc
-                   else AddRecdField (tcref.MakeNestedRecdFieldRef f) acc), eFieldLabelTypeInsts
+                   else AddRecdField (tcref.MakeNestedRecdFieldRef f) acc)
 
     let eUnqualifiedItems =
         let tab = nenv.eUnqualifiedItems 
@@ -1193,18 +1190,24 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
             tab
         else
             // Union cases for unqualfied
-            AddUnionCases2 bulkAddMode tab tinst ucrefs
+            AddUnionCases2 bulkAddMode tab ucrefs
 
     let ePatItems =
         if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then
             nenv.ePatItems
         else
             // Union cases for patterns
-            AddUnionCases1 nenv.ePatItems tinst ucrefs
+            AddUnionCases1 nenv.ePatItems ucrefs
+
+    let eRecordOrUnionTypeInsts =
+        if tinstOpt.IsNone || isILOrRequiredQualifiedAccess || not (tcref.IsRecordTycon || tcref.IsUnionTycon) then
+            nenv.eRecordOrUnionTypeInsts
+        else
+            nenv.eRecordOrUnionTypeInsts.Add tcref tinstOpt.Value
 
     { nenv with
         eFieldLabels = eFieldLabels
-        eFieldLabelTypeInsts = eFieldLabelTypeInsts
+        eRecordOrUnionTypeInsts = eRecordOrUnionTypeInsts
         eUnqualifiedItems = eUnqualifiedItems
         ePatItems = ePatItems
         eIndexedExtensionMembers = eIndexedExtensionMembers
@@ -1247,7 +1250,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
 
         { nenv with eUnqualifiedItems = tab }
 
-    let nenv = AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv (tcref, generalizeTypars (tcref.Typars m))
+    let nenv = AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv None tcref
     let nenv = 
         if CanAutoOpenTyconRef g m tcref then
             let ty = generalizedTyconRef tcref
@@ -1441,51 +1444,21 @@ let FreshenUnionCaseRef (ncenv: NameResolver) m (ucref: UnionCaseRef) =
     let tinst = ncenv.InstantiationGenerator m (ucref.TyconRef.Typars m)
     UnionCaseInfo(tinst, ucref)
 
-/// Convert a reference to a union case into a UnionCaseInfo that includes
-/// a fresh set of inference type variables for the type parameters of the union type.
-/// Inference type variables will not be created if the type parameter is solved.
-let FreshenUnionCaseRefWithTypeInst (ncenv: NameResolver) m tinst (ucref: UnionCaseRef) =
-    let res = FreshenUnionCaseRef ncenv m ucref
-    match res with
-    | UnionCaseInfo([], _) -> res
-    | UnionCaseInfo(tinstFresh, ucref) ->     
-        let tinst = 
-            (tinstFresh, tinst)
-            ||> List.map2 (fun freshTy ty ->
-                match tryDestTyparTy ncenv.g ty with
-                | ValueSome(typar) ->
-                    if typar.IsSolved then ty
-                    else freshTy
-                | _ -> ty)
-        UnionCaseInfo(tinst, ucref)
-
 /// Generate a new reference to a record field with a fresh type instantiation
 let FreshenRecdFieldRef (ncenv: NameResolver) m (rfref: RecdFieldRef) =
     RecdFieldInfo(ncenv.InstantiationGenerator m (rfref.Tycon.Typars m), rfref)
 
-/// Generate a new reference to a record field with a fresh type instantiation
-/// Inference type variables will not be created if the type parameter is solved.
-let FreshenRecdFieldRefWithTypeInst (ncenv: NameResolver) m tinst (rfref: RecdFieldRef) =
-    let res = FreshenRecdFieldRef ncenv m rfref
+/// This must be called after fetching unqualified items that may need to be freshened 
+/// or have type instantiations
+let ResolveUnqualifiedItem (ncenv: NameResolver) nenv m res =
     match res with
-    | RecdFieldInfo([], _) -> res
-    | RecdFieldInfo(tinstFresh, rfref) ->
-        let tinst = 
-            (tinstFresh, tinst)
-            ||> List.map2 (fun freshTy ty ->
-                match tryDestTyparTy ncenv.g ty with
-                | ValueSome(typar) ->
-                    if typar.IsSolved then ty
-                    else freshTy
-                | _ -> ty)
-        RecdFieldInfo(tinst, rfref)
-
-/// This must be called after fetching unqualified items that may need to be freshened
-let FreshenUnqualifiedItem (ncenv: NameResolver) m res =
-    match res with
-    | Item.UnionCase(UnionCaseInfo(tinst, ucref), _) -> Item.UnionCase(FreshenUnionCaseRefWithTypeInst ncenv m tinst ucref, false)
+    | Item.UnionCase(UnionCaseInfo(_, ucref), _) ->
+        match nenv.eRecordOrUnionTypeInsts.TryFind ucref.TyconRef with
+        | Some tinst ->
+            Item.UnionCase(UnionCaseInfo(tinst, ucref), false)
+        | _ ->
+            Item.UnionCase(FreshenUnionCaseRef ncenv m ucref, false)
     | _ -> res
-
 
 //-------------------------------------------------------------------------
 // Resolve module paths, value, field etc. lookups.  Doing this involves
@@ -2826,7 +2799,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         None
 
                 | true, res ->
-                    let fresh = FreshenUnqualifiedItem ncenv m res
+                    let fresh = ResolveUnqualifiedItem ncenv nenv m res
                     match fresh with
                     | Item.Value value ->
                         let isNameOfOperator = valRefEq ncenv.g ncenv.g.nameof_vref value
@@ -2945,7 +2918,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         match nenv.eUnqualifiedItems.TryGetValue id.idText with
                         | true, Item.UnqualifiedType _
                         | false, _ -> NoResultsOrUsefulErrors
-                        | true, res -> OneSuccess (ResolutionInfo.Empty, FreshenUnqualifiedItem ncenv m res, rest)
+                        | true, res -> OneSuccess (ResolutionInfo.Empty, ResolveUnqualifiedItem ncenv nenv m res, rest)
 
                 moduleSearch ad () +++ tyconSearch ad +++ envSearch
 
@@ -3090,7 +3063,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv: NameResolver) fullyQualified wa
             // For the special case of
             //   let C = x
             match nenv.ePatItems.TryGetValue id.idText with
-            | true, res when not newDef  -> FreshenUnqualifiedItem ncenv m res
+            | true, res when not newDef  -> ResolveUnqualifiedItem ncenv nenv m res
             | _ ->
             // Single identifiers in patterns - variable bindings
             if not newDef &&
@@ -3504,8 +3477,8 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
             |> List.map (fun x -> 
                 let rfinfo =
-                    match nenv.eFieldLabelTypeInsts.TryFind x.TyconRef with
-                    | Some tinst -> FreshenRecdFieldRefWithTypeInst ncenv m tinst x
+                    match nenv.eRecordOrUnionTypeInsts.TryFind x.TyconRef with
+                    | Some tinst -> RecdFieldInfo(tinst, x)
                     | _ -> FreshenRecdFieldRef ncenv m x
                 ResolutionInfo.Empty, FieldResolution(rfinfo, false))
 

@@ -181,8 +181,8 @@ type NameResolutionEnv =
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup 
       eFieldLabels: NameMultiMap<RecdFieldRef>
 
-      /// RecdField labels that may have type instantiations associated with it.
-      eFieldLabelTypeInsts: TyconRefMap<TypeInst>
+      /// Record or unions that may have type instantiations associated with it.
+      eRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
 
       /// Tycons indexed by the various names that may be used to access them, e.g. 
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name. 
