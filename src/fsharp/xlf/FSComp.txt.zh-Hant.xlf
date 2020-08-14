@@ -122,6 +122,11 @@
         <target state="new">open type declaration</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureOverloadsForCustomOperations">
+        <source>overloads for custom operations</source>
+        <target state="new">overloads for custom operations</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featurePackageManagement">
         <source>package management</source>
         <target state="translated">套件管理</target>
