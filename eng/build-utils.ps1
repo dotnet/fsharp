@@ -16,6 +16,12 @@ $bootstrapConfiguration = if (Test-Path variable:bootstrapConfiguration) { $boot
 $bootstrapTfm = if (Test-Path variable:bootstrapTfm) { $bootstrapTfm } else { "net472" }
 $properties = if (Test-Path variable:properties) { $properties } else { @() }
 
+
+
+
+
+
+
 function GetProjectOutputBinary([string]$fileName, [string]$projectName = "", [string]$configuration = $script:configuration, [string]$tfm = "net472", [string]$rid = "", [bool]$published = $false) {
   $projectName = if ($projectName -ne "") { $projectName } else { [System.IO.Path]::GetFileNameWithoutExtension($fileName) }
   $publishDir = if ($published) { "publish\" } else { "" }

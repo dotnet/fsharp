@@ -434,6 +434,15 @@ try {
         EnablePreviewSdks
     }
 
+    <# Ensure new dotnet directory is at front of path #>
+    $dotnetRoot = Join-Path $RepoRoot '.dotnet'
+    $regexAddPath = [regex]::Escape($dotnetRoot)
+    $env:Path = ($env:Path -split ';' | Where-Object {$_ -notMatch "^$regexAddPath\\?"}) -join ';'
+    $env:Path = $dotnetRoot + ';' + $env:Path
+    dotnet --info
+    dotnet --list-sdks
+    $env:DOTNET_MULTILEVEL_LOOKUP=1
+
     $buildTool = InitializeBuildTool
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
