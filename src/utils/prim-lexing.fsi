@@ -97,11 +97,17 @@ type internal LexBuffer<'Char> =
     member EndPos: Position with get,set
 
     /// The matched string.
-    member Lexeme: 'Char []
+    member Lexeme: System.ReadOnlySpan<'Char>
+    
+    /// Get single character of matched string
+    member LexemeChar: int -> 'Char
+
+    /// Determine if Lexeme contains a specific character
+    member LexemeContains: 'Char -> bool
 
     /// Fast helper to turn the matched characters into a string, avoiding an intermediate array.
     static member LexemeString : LexBuffer<char> -> string
-
+    
     /// Dynamically typed, non-lexically scoped parameter table.
     member BufferLocalStore : IDictionary<string,obj>
 
