@@ -367,8 +367,9 @@ type NameResolutionEnv =
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup
       eFieldLabels: NameMultiMap<RecdFieldRef>
 
-      /// Record or unions that may have type instantiations associated with it.
-      eRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
+      /// Record or unions that may have type instantiations associated with them
+      /// when record labels or union cases are used in an unqualified context.
+      eUnqualifiedRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
 
       /// Tycons indexed by the various names that may be used to access them, e.g.
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
@@ -401,7 +402,7 @@ type NameResolutionEnv =
           eModulesAndNamespaces = Map.empty
           eFullyQualifiedModulesAndNamespaces = Map.empty
           eFieldLabels = Map.empty
-          eRecordOrUnionTypeInsts = TyconRefMap.Empty
+          eUnqualifiedRecordOrUnionTypeInsts = TyconRefMap.Empty
           eUnqualifiedItems = LayeredMap.Empty
           eUnqualifiedEnclosingTypeInsts = TyconRefMap.Empty
           ePatItems = Map.empty
@@ -1199,15 +1200,15 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
             // Union cases for patterns
             AddUnionCases1 nenv.ePatItems ucrefs
 
-    let eRecordOrUnionTypeInsts =
+    let eUnqualifiedRecordOrUnionTypeInsts =
         if tinstOpt.IsNone || isILOrRequiredQualifiedAccess || not (tcref.IsRecordTycon || tcref.IsUnionTycon) then
-            nenv.eRecordOrUnionTypeInsts
+            nenv.eUnqualifiedRecordOrUnionTypeInsts
         else
-            nenv.eRecordOrUnionTypeInsts.Add tcref tinstOpt.Value
+            nenv.eUnqualifiedRecordOrUnionTypeInsts.Add tcref tinstOpt.Value
 
     { nenv with
         eFieldLabels = eFieldLabels
-        eRecordOrUnionTypeInsts = eRecordOrUnionTypeInsts
+        eUnqualifiedRecordOrUnionTypeInsts = eUnqualifiedRecordOrUnionTypeInsts
         eUnqualifiedItems = eUnqualifiedItems
         ePatItems = ePatItems
         eIndexedExtensionMembers = eIndexedExtensionMembers
@@ -1452,7 +1453,7 @@ let FreshenRecdFieldRef (ncenv: NameResolver) m (rfref: RecdFieldRef) =
 let ResolveUnqualifiedItem (ncenv: NameResolver) nenv m res =
     match res with
     | Item.UnionCase(UnionCaseInfo(_, ucref), _) ->
-        match nenv.eRecordOrUnionTypeInsts.TryFind ucref.TyconRef with
+        match nenv.eUnqualifiedRecordOrUnionTypeInsts.TryFind ucref.TyconRef with
         | Some tinst ->
             Item.UnionCase(UnionCaseInfo(tinst, ucref), false)
         | _ ->
@@ -3476,7 +3477,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
             |> List.map (fun x -> 
                 let rfinfo =
-                    match nenv.eRecordOrUnionTypeInsts.TryFind x.TyconRef with
+                    match nenv.eUnqualifiedRecordOrUnionTypeInsts.TryFind x.TyconRef with
                     | Some tinst -> RecdFieldInfo(tinst, x)
                     | _ -> FreshenRecdFieldRef ncenv m x
                 ResolutionInfo.Empty, FieldResolution(rfinfo, false))
