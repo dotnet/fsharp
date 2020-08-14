@@ -117,9 +117,14 @@
         <target state="translated">interoperabilidade opcional anulável</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="translated">abrir classes estáticas</target>
+      <trans-unit id="featureOpenTypeDeclaration">
+        <source>open type declaration</source>
+        <target state="new">open type declaration</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOverloadsForCustomOperations">
+        <source>overloads for custom operations</source>
+        <target state="new">overloads for custom operations</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -295,6 +300,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Os atributos não podem ser aplicados às extensões de tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
+        <source>Byref types are not allowed in an open type declaration.</source>
+        <target state="new">Byref types are not allowed in an open type declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">

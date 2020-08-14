@@ -113,7 +113,7 @@ let view model dispatch =
        div [] []
    ]
         """
-        |> withOptions ["--langversion:4.6"]
+        |> withLangVersion46
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3221, Line 9, Col 8, Line 9, Col 17,
@@ -137,7 +137,7 @@ let view model dispatch =
         ]
    ]
         """
-        |> withOptions ["--langversion:4.6"]
+        |> withLangVersion46
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3222, Line 13, Col 19, Line 13, Col 41,
@@ -161,7 +161,7 @@ let view model dispatch =
         ]
    ]
         """
-        |> withOptions ["--langversion:4.6"]
+        |> withLangVersion46
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 20, Line 13, Col 19, Line 13, Col 41,

@@ -15,7 +15,7 @@ module PrimitiveConstraints =
     let ``Invalid object constructor`` () = // Regression test for FSharp1.0:4189
         baseline
             ((__SOURCE_DIRECTORY__ ++ "../testables/"), "typecheck/constructors/neg_invalid_constructor.fs")
-            |> withOptions ["--test:ErrorRanges"]
+            |> withErrorRanges
             |> typecheck
 
 
