@@ -1440,7 +1440,6 @@ let FreshenTyconWithEnclosingTypeInst (ncenv: NameResolver) m (tinstEnclosing: T
 /// Convert a reference to a union case into a UnionCaseInfo that includes
 /// a fresh set of inference type variables for the type parameters of the union type.
 let FreshenUnionCaseRef (ncenv: NameResolver) m (ucref: UnionCaseRef) = 
-    // Only use the fresh type instantation if the current type instantiation is a type argument.
     let tinst = ncenv.InstantiationGenerator m (ucref.TyconRef.Typars m)
     UnionCaseInfo(tinst, ucref)
 
