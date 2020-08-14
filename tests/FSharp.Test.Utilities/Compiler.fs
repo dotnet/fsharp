@@ -176,10 +176,30 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith "withOptions is only supported n F#"
 
-    let withPreview (cUnit: CompilationUnit) : CompilationUnit =
+    let withErrorRanges (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ [ "--test:ErrorRanges" ] }
+        | _ -> failwith "withErrorRanges is only supported in F#"
+
+    let withLangVersion46 (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:4.6" ] }
+        | _ -> failwith "withLangVersion46 is only supported in F#"
+
+    let withLangVersion47 (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:4.7" ] }
+        | _ -> failwith "withLangVersion47 is only supported in F#"
+
+    let withLangVersion50 (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:5.0" ] }
+        | _ -> failwith "withLangVersion50 is only supported in F#"
+
+    let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with Options = fs.Options @ [ "--langversion:preview" ] }
-        | _ -> failwith "withPreview is only supported in F#"
+        | _ -> failwith "withLangVersionPreview is only supported in F#"
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
