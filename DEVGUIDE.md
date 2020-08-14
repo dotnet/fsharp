@@ -39,6 +39,8 @@ Install the latest released [Visual Studio](https://www.visualstudio.com/downloa
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
+You will also need the latest .NET 5 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/5.0).
+
 Building is simple:
 
     build.cmd

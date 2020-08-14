@@ -1,6 +1,7 @@
 # The F# compiler, F# core library, and F# editor tools
 
 You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET Core](https://dotnet.microsoft.com/).
+You will need the latest .NET 5 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/5.0).
 
 ## Contributing
 
