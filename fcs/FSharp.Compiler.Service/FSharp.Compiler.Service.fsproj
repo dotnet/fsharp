@@ -18,6 +18,7 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateProgramFile>false</GenerateProgramFile>
     <DebugType>embedded</DebugType>
     <MicrosoftBuildOverallPackagesVersion>16.6</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
