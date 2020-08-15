@@ -1534,5 +1534,6 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3379,parsEofInInterpolatedString,"Incomplete interpolated string begun at or before here"
 3380,parsEofInInterpolatedVerbatimString,"Incomplete interpolated verbatim string begun at or before here"
 3381,parsEofInInterpolatedTripleQuoteString,"Incomplete interpolated triple-quote string begun at or before here"
-3382,lexRBraceInInterpolatedString,"A '}}' character must be escaped (by doubling) in an interpolated string."
+3382,parsEmptyFillInInterpolatedString,"Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected."
+3383,lexRBraceInInterpolatedString,"A '}}' character must be escaped (by doubling) in an interpolated string."
 #3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)

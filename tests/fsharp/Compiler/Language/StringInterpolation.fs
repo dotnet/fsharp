@@ -683,8 +683,17 @@ let xd = $"%A{}" // empty expression
 """
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [|(FSharpErrorSeverity.Error, 10, (2, 15, 2, 17),
-               "Unexpected interpolated string (final part) in binding")
+            [|(FSharpErrorSeverity.Error, 3382, (2, 15, 2, 15),
+               "Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.")
+            |]
+
+        let code = """
+let xd = $"%A{  }" // empty expression
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
+            code
+            [|(FSharpErrorSeverity.Error, 3382, (2, 15, 2, 17),
+               "Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.")
             |]
 
     [<Test>]
@@ -818,7 +827,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
         let code = "let x1 = $\"}\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [|(FSharpErrorSeverity.Error, 3382, (1, 10, 1, 14),
+            [|(FSharpErrorSeverity.Error, 3383, (1, 10, 1, 14),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
 
     [<Test>]
@@ -826,7 +835,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
         let code = "let x1 = @$\"}\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [|(FSharpErrorSeverity.Error, 3382, (1, 10, 1, 15),
+            [|(FSharpErrorSeverity.Error, 3383, (1, 10, 1, 15),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
 
     [<Test>]
@@ -834,7 +843,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
         let code = "let x1 = $\"\"\"}\"\"\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [|(FSharpErrorSeverity.Error, 3382, (1, 10, 1, 18),
+            [|(FSharpErrorSeverity.Error, 3383, (1, 10, 1, 18),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
 
     [<Test>]
@@ -842,5 +851,5 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
         let code = "let x1 = $\"{0}}\""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:preview" |]
             code
-            [|(FSharpErrorSeverity.Error, 3382, (1, 14, 1, 17),
+            [|(FSharpErrorSeverity.Error, 3383, (1, 14, 1, 17),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
