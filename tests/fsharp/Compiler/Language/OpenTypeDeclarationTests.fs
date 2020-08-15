@@ -1021,7 +1021,7 @@ module Test2 =
         |> ignore
 
     [<Test>]
-    let ``Open generic union should have access to pattern union cases with the enclosing type instantiations`` () =
+    let ``Open generic union should have access to pattern union cases with the enclosing type instantiations - Errors`` () =
         FSharp """
 namespace FSharpTest
 
@@ -1098,7 +1098,7 @@ module Test3 =
         |> ignore
 
     [<Test>]
-    let ``Open generic record should have access to pattern record via labels with enclosing type instantiations`` () =
+    let ``Open generic record should have access to pattern record via labels with enclosing type instantiations - Errors`` () =
         FSharp """
 namespace FSharpTest
 

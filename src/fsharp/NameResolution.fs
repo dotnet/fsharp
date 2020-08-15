@@ -1177,7 +1177,7 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
     let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
 
     // Record labels
-    let eFieldLabels  =
+    let eFieldLabels =
         if isILOrRequiredQualifiedAccess || not tcref.IsRecordTycon || flds.Length = 0 then
             nenv.eFieldLabels
         else
@@ -1201,10 +1201,14 @@ and private AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m
             AddUnionCases1 nenv.ePatItems ucrefs
 
     let eUnqualifiedRecordOrUnionTypeInsts =
-        if tinstOpt.IsNone || isILOrRequiredQualifiedAccess || not (tcref.IsRecordTycon || tcref.IsUnionTycon) then
+        if isILOrRequiredQualifiedAccess || not (tcref.IsRecordTycon || tcref.IsUnionTycon) then
             nenv.eUnqualifiedRecordOrUnionTypeInsts
         else
-            nenv.eUnqualifiedRecordOrUnionTypeInsts.Add tcref tinstOpt.Value
+            match tinstOpt with
+            | None
+            | Some [] -> nenv.eUnqualifiedEnclosingTypeInsts
+            | Some tinst ->
+                nenv.eUnqualifiedRecordOrUnionTypeInsts.Add tcref tinst
 
     { nenv with
         eFieldLabels = eFieldLabels
