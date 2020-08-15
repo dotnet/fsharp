@@ -187,6 +187,7 @@ this file.
 
         <ItemGroup>
             <CompileBefore Include="@(_FsGeneratedResXSource)" />
+            <FsGeneratedSource Include="@(_FsGeneratedResXSource)" />
             <FileWrites Include="@(_FsGeneratedResXSource)" />
         </ItemGroup>
 
@@ -198,11 +199,11 @@ this file.
 
         <ItemGroup>
             <CompileBefore Include="@(_FsGeneratedTxtSource)" />
+            <FsGeneratedSource Include="@(_FsGeneratedTxtSource)" />
             <EmbeddedResource Include="@(_FsGeneratedResx)" />
             <FileWrites Include="@(_FsGeneratedTxtSource)" />
             <FileWrites Include="@(_FsGeneratedResx)" />
         </ItemGroup>
-
     </Target>
 
     <Target
@@ -266,6 +267,7 @@ this file.
 
         <ItemGroup>
             <EmbeddedFiles Include="@(Embed)" KeepDuplicates="false" />
+            <EmbeddedFiles Include="@(FsGeneratedSource)"  KeepDuplicates="false" Condition="'$(SourceLink)'!='' or '$(EmbeddedFiles)'!='' or '$(EmbedAllSources)'!=''" />
         </ItemGroup>
 
         <!-- Dotnet SDK requires SimpleResolution to be true Legacy project system build not -->
@@ -412,10 +414,10 @@ this file.
             ContinueOnError="true"
             Overwrite="true"/>
 
-        <ItemGroup>
-            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(AdditionalSourcesText)' != ''"/>
+        <ItemGroup Condition="'$(AdditionalSourcesText)' != ''">
+            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
+            <_FsGeneratedTfmAttributesSource Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
         </ItemGroup>
-
     </Target>
 
     <!--

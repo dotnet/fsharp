@@ -55,6 +55,7 @@ param (
     [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
+    [switch]$testpack,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
 
@@ -95,6 +96,7 @@ function Print-Usage() {
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testScripting            Run Scripting tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
+    Write-Host "  -testpack                 Verify built packages"
     Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -117,6 +119,7 @@ function Process-Arguments() {
        Print-Usage
        exit 0
     }
+
     $script:nodeReuse = $False;
 
     if ($testAll) {
@@ -124,6 +127,7 @@ function Process-Arguments() {
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
         $script:testVs = $True
+        $script:testpack = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
@@ -136,6 +140,11 @@ function Process-Arguments() {
         $script:testFSharpCore = $False
         $script:testFSharpQA = $False
         $script:testVs = $False
+        $script:testpack = $False
+    }
+
+    if ($ci) {
+        $script:testpack = $true
     }
 
     if ($noRestore) {
@@ -144,6 +153,10 @@ function Process-Arguments() {
 
     if ($noSign) {
         $script:sign = $False;
+    }
+
+    if ($testpack) {
+        $script:pack = $True;
     }
 
     foreach ($property in $properties) {
@@ -541,6 +554,29 @@ try {
     if ($testVs -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+    }
+
+    # verify nupkgs have access to the source code
+    $nupkgtestFailed = $false
+    if ($testpack) {
+        # Fetch soucelink test
+        try {
+            Exec-Console """$RepoRoot\.dotnet\dotnet.exe"" tool install sourcelink --tool-path ""$RepoRoot\.dotnet"""
+        }
+        catch {
+            Write-Host "Already installed is not a problem"
+        }
+
+        $nupkgs =  @(Get-ChildItem "$artifactsDir\packages\$configuration\PreRelease\*.nupkg" -recurse)
+        $nupkgs += @(Get-ChildItem "$artifactsDir\packages\$configuration\Release\*.nupkg" -recurse)
+        $nupkgs += @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
+        $nupkgs | Foreach {
+            Exec-Console """$RepoRoot\.dotnet\sourcelink.exe"" test ""$_"""
+            if (-not $?) { $nupkgtestFailed = $true}
+        }
+    }
+    if ($nupkgtestFailed) {
+            throw "Error Verifying nupkgs have access to the source code"
     }
 
     ExitWithExitCode 0

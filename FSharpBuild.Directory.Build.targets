@@ -62,8 +62,9 @@
 
     <!-- Make sure it will get cleaned  -->
     <ItemGroup>
-      <FileWrites Include="$(IntermediateOutputPath)buildproperties.fs" />
       <CompileBefore Include="$(IntermediateOutputPath)buildproperties.fs" />
+      <FsGeneratedSource Include="$(IntermediateOutputPath)buildproperties.fs" />
+      <FileWrites Include="$(IntermediateOutputPath)buildproperties.fs" />
     </ItemGroup>
   </Target>
 
