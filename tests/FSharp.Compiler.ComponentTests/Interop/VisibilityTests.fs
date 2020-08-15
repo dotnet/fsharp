@@ -67,7 +67,7 @@ type MyFSharpClass () =
         ()
 """
         Fsx fsharpSource
-        |> withLangVersion46
+        |> withLangVersion50
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -112,7 +112,7 @@ type MyFSharpClass () =
 """
 
         Fsx fsharpSource
-        |> withLangVersion46
+        |> withLangVersion50
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -158,7 +158,7 @@ type MyFSharpClass () =
 
         ()"""
         Fsx fsharpSource
-        |> withLangVersion46
+        |> withLangVersion50
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -188,7 +188,7 @@ type MyFSharpClass () =
         ()"""
 
         Fsx fsharpSource
-        |> withLangVersion46
+        |> withLangVersion50
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
