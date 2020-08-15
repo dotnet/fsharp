@@ -5507,6 +5507,13 @@ interpolatedStringParts:
   | INTERP_STRING_PART interpolatedStringFill interpolatedStringParts
      { SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: SynInterpolatedStringPart.FillExpr $2 :: $3 }
 
+  | INTERP_STRING_PART interpolatedStringParts
+     { 
+       let rbrace = parseState.InputEndPosition 1
+       let lbrace = parseState.InputStartPosition 2
+       reportParseErrorAt (mkSynRange rbrace lbrace) (FSComp.SR.parsEmptyFillInInterpolatedString())
+       SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: $2 }
+
 /* INTERP_STRING_BEGIN_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_END */
 /* INTERP_STRING_BEGIN_PART int32 INTERP_STRING_PART int32 INTERP_STRING_END */
@@ -5516,6 +5523,13 @@ interpolatedString:
 
   | INTERP_STRING_BEGIN_END
     { [ SynInterpolatedStringPart.String (fst $1, rhs parseState 1) ] }
+
+  | INTERP_STRING_BEGIN_PART interpolatedStringParts
+    { 
+      let rbrace = parseState.InputEndPosition 1
+      let lbrace = parseState.InputStartPosition 2
+      reportParseErrorAt (mkSynRange rbrace lbrace) (FSComp.SR.parsEmptyFillInInterpolatedString())
+      SynInterpolatedStringPart.String (fst $1, rhs parseState 1) :: $2 }
   
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }
