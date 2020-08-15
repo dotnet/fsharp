@@ -5,7 +5,7 @@ namespace FSharp.Compiler.ComponentTests.Interop
 open Xunit
 open FSharp.Test.Utilities.Compiler
 
-module ``C# <-> F# basic interop`` =
+module ``Simple interop verification`` =
 
     [<Fact(Skip = "TODO: This is broken RN, since netcoreapp30 is used for C# and 3.1 for F#, should be fixed as part of https://github.com/dotnet/fsharp/issues/9740")>]
     let ``Instantiate C# type from F#`` () =
@@ -73,7 +73,6 @@ public class BicycleShop {
         |> compile
         |> shouldFail
 
-module ``C# <-> F# interop: fields`` =
     [<Fact>]
     let ``can't mutably set a C#-const field in F#`` () =
         let csLib =

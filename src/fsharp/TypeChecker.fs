@@ -374,11 +374,19 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
-/// Adjust the TcEnv to account for opening the set of modules, namespaces or static classes implied by an `open` declaration
-let OpenEntities tcSink g amap scopem root env mvvs openDeclaration =
+/// Adjust the TcEnv to account for opening the set of modules or namespaces implied by an `open` declaration
+let OpenModuleOrNamespaceRefs tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
-        { env with eNameResEnv = AddEntitiesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
+        { env with eNameResEnv = AddModuleOrNamespaceRefsContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
+    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
+    CallOpenDeclarationSink tcSink openDeclaration
+    env
+
+/// Adjust the TcEnv to account for opening a type implied by an `open type` declaration
+let OpenTypeContent tcSink g amap scopem env (typ: TType) openDeclaration =
+    let env =
+        { env with eNameResEnv = AddTypeContentsToNameEnv g amap env.eAccessRights scopem env.eNameResEnv typ }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
@@ -648,11 +656,12 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
         match enclosingNamespacePathToOpen with
         | id :: rest ->
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap scopem true true OpenQualified env.eNameResEnv ad id rest true with 
+            match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
             | Result modrefs -> 
                 let modrefs = List.map p23 modrefs
-                let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
-                OpenEntities tcSink g amap scopem false env modrefs openDecl
+                let openTarget = SynOpenDeclTarget.ModuleOrNamespace(enclosingNamespacePathToOpen, scopem)
+                let openDecl = OpenDeclaration.Create (openTarget, modrefs, [], scopem, true)
+                OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
             | Exception _ -> env
         | _ -> env
 
@@ -892,7 +901,7 @@ let TcConst cenv ty m env c =
         | SynMeasure.One -> Measure.One      
         | SynMeasure.Named(tc, m) ->
             let ad = env.eAccessRights
-            let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Use OpenQualified env.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
+            let _, tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Use OpenQualified env.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
             match tcref.TypeOrMeasureKind with
             | TyparKind.Type -> error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
             | TyparKind.Measure -> Measure.Con tcref
@@ -3204,7 +3213,7 @@ let (|JoinRelation|_|) cenv env (e: SynExpr) =
     let isOpName opName vref s =
         (s = opName) &&
         match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default [ident(opName, m)] with
-        | Result (Item.Value vref2, []) -> valRefEq cenv.g vref vref2
+        | Result (_, Item.Value vref2, []) -> valRefEq cenv.g vref vref2
         | _ -> false
 
     match e with 
@@ -3643,16 +3652,19 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
 
+type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range
+type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
+
 /// Represents the shape of a mutually recursive group of declarations including nested modules
 [<RequireQualifiedAccess>]
-type MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = 
+type MutRecShape<'TypeData, 'LetsData, 'ModuleData> = 
     | Tycon of 'TypeData
     | Lets of 'LetsData
-    | Module of 'ModuleData * MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> 
-    | ModuleAbbrev of 'ModuleAbbrevData 
-    | Open of 'OpenData
+    | Module of 'ModuleData * MutRecShapes<'TypeData, 'LetsData, 'ModuleData> 
+    | ModuleAbbrev of MutRecDataForModuleAbbrev
+    | Open of MutRecDataForOpen
 
-and MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> list
+and MutRecShapes<'TypeData, 'LetsData, 'ModuleData> = MutRecShape<'TypeData, 'LetsData, 'ModuleData> list
 
 module MutRecShapes = 
    let rec map f1 f2 f3 x = 
@@ -3789,7 +3801,7 @@ let EliminateInitializationGraphs
       (getLetBinds: 'LetDataIn list -> PreInitializationGraphEliminationBinding list) 
       (morphLetBinds: (PreInitializationGraphEliminationBinding list -> Binding list) -> 'LetDataIn list -> Binding list)
       g mustHaveArity denv 
-      (fixupsAndBindingsWithoutLaziness: MutRecShape<_, _, _, _, _> list) bindsm =
+      (fixupsAndBindingsWithoutLaziness: MutRecShape<_, _, _> list) bindsm =
 
     let recursiveVals = 
         let hash = ValHash<Val>.Create()
@@ -4248,21 +4260,18 @@ type ValSpecResult = ValSpecResult of ParentRef * ValMemberInfoTransient option 
 
 type RecDefnBindingInfo = RecDefnBindingInfo of ContainerInfo * NewSlotsOK * DeclKind * SynBinding
 
-type MutRecDataForOpen = MutRecDataForOpen of LongIdent * range * appliedScope: range
-type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
-
-type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
-type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo> list
+type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo> list
 
 type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
-type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo> list
 
 type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * ParentRef * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK * fixupFinalAttribs: (unit -> unit)
 type MutRecDefnsPhase2DataForModule = MutRecDefnsPhase2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
-type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
 type MutRecDefnsPhase2InfoForTycon = MutRecDefnsPhase2InfoForTycon of Tycon option * TyconRef * Typars * DeclKind * TyconBindingDefn list * fixupFinalAttrs: (unit -> unit)
-type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrec 
@@ -4662,7 +4671,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
     | SynType.LongIdent(LongIdentWithDots(tc, _) as lidwd) -> 
         let m = lidwd.Range
         let ad = env.eAccessRights
-        let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
+        let tinstEnclosing, tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver occ OpenQualified env.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.No)
         match optKind, tcref.TypeOrMeasureKind with
         | Some TyparKind.Type, TyparKind.Measure ->
             error(Error(FSComp.SR.tcExpectedTypeNotUnitOfMeasure(), m)) 
@@ -4673,12 +4682,12 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
         | _, TyparKind.Measure ->
             TType_measure (Measure.Con tcref), tpenv
         | _, TyparKind.Type ->
-            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref [] []
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinstEnclosing []
 
     | SynType.App (StripParenTypes (SynType.LongIdent(LongIdentWithDots(tc, _))), _, args, _commas, _, postfix, m) -> 
         let ad = env.eAccessRights
 
-        let tcref = 
+        let tinstEnclosing, tcref = 
             let tyResInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length
             ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc tyResInfo PermitDirectReferenceToGeneratedType.No
             |> ForceRaise
@@ -4695,7 +4704,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
         | _, TyparKind.Type ->
             if postfix && tcref.Typars m |> List.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false) 
             then error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
-            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref [] args 
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinstEnclosing args 
         | _, TyparKind.Measure ->
             match args, postfix with
             | [arg], true ->
@@ -5129,12 +5138,11 @@ and TcTypeOrMeasureAndRecover optKind cenv newOk checkCxs occ env tpenv ty =
 and TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty =
     TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkCxs occ env tpenv ty
 
-and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty tyargs =
+and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty pathTypeArgs tyargs =
     let ty = convertToTypeWithMetadataIfPossible cenv.g ty
     if not (isAppTy cenv.g ty) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
     match ty with 
-    | TType_app(tcref, tinst) -> 
-        let pathTypeArgs = List.truncate (max (tinst.Length - tcref.Typars(mWholeTypeApp).Length) 0) tinst
+    | TType_app(tcref, _) -> 
         TcTypeApp cenv newOk checkCxs occ env tpenv mWholeTypeApp tcref pathTypeArgs tyargs 
     | _ -> error(InternalError("TcNestedTypeApplication: expected type application", mWholeTypeApp))
 
@@ -5425,7 +5433,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             id.idText = "nameof" &&
             try
                 match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
-                | Result (Item.Value vref, _) -> valRefEq cenv.g vref cenv.g.nameof_vref
+                | Result (_, Item.Value vref, _) -> valRefEq cenv.g vref cenv.g.nameof_vref
                 | _ -> false
             with _ -> false
 
@@ -5939,7 +5947,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcConstStringExpr cenv overallTy env m tpenv s
 
     | SynExpr.InterpolatedString (parts, m) -> 
-        tryLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
+        checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StringInterpolation m
 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
 
@@ -7367,7 +7375,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
         let expr = 
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
+            match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule modName, m))
             | Result ((_, mref, _) :: _) -> 
@@ -7897,19 +7905,36 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                     Some (nm, maintainsVarSpaceUsingBind, maintainsVarSpace, allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, joinConditionWord, methInfo))
 
     let customOperationMethodsIndexedByKeyword = 
-        customOperationMethods
-        |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
-        |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+            customOperationMethods
+            |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
+            |> Seq.map (fun (nm, group) ->
+                (nm,
+                    group
+                    |> Seq.distinctBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
+                    |> Seq.toList))
+        else
+            customOperationMethods
+            |> Seq.groupBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
+            |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
         |> dict
 
     // Check for duplicates by method name (keywords and method names must be 1:1)
     let customOperationMethodsIndexedByMethodName = 
-        customOperationMethods
-        |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
-        |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+            customOperationMethods
+            |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
+            |> Seq.map (fun (nm, group) ->
+                (nm,
+                    group
+                    |> Seq.distinctBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
+                    |> Seq.toList))
+        else
+            customOperationMethods
+            |> Seq.groupBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
+            |> Seq.map (fun (nm, g) -> (nm, Seq.toList g))
         |> dict
 
-        
     /// Decide if the identifier represents a use of a custom query operator
     let tryGetDataForCustomOperation (nm: Ident) = 
         match customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with 
@@ -8891,12 +8916,12 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let maintainsVarSpace = customOperationMaintainsVarSpace nm
                         let maintainsVarSpaceUsingBind = customOperationMaintainsVarSpaceUsingBind nm
 
-                        let expectedArgCount = expectedArgCountForCustomOperator nm 
+                        let expectedArgCount = expectedArgCountForCustomOperator nm
 
                         let dataCompAfterOp = 
                             match opExpr with 
-                            | StripApps(SingleIdent nm, args) -> 
-                                if args.Length = expectedArgCount then 
+                            | StripApps(SingleIdent nm, args) ->
+                                if args.Length = expectedArgCount || cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
                                     // Check for the [<ProjectionParameter>] attribute on each argument position
                                     let args = args |> List.mapi (fun i arg -> 
                                         if isCustomOperationProjectionParameter (i+1) nm then 
@@ -8905,7 +8930,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                     mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
                                 else 
                                     errorR(Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount(nm.idText, expectedArgCount, args.Length), nm.idRange))
-                                    mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause))) 
+                                    mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause)))
                             | _ -> failwith "unreachable"
 
                         match optionalCont with 
@@ -9521,7 +9546,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             let nameResolutionResult = ResolveLongIdentAsExprAndComputeRange cenv.tcSink cenv.nameResolver (rangeOfLid longId) ad env.eNameResEnv typeNameResInfo longId
             let resolvesAsExpr =
                 match nameResolutionResult with 
-                | Result ((item, _, _, _) as res) 
+                | Result ((_, item, _, _, _) as res) 
                     when 
                          (match item with 
                           | Item.Types _ 
@@ -9541,10 +9566,10 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 if (match delayed with [DelayedTypeApp _] | [] -> true | _ -> false) then
                     let (TypeNameResolutionInfo(_, staticArgsInfo)) = GetLongIdentTypeNameInfo delayed
                     match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad longId staticArgsInfo PermitDirectReferenceToGeneratedType.No with
-                    | Result tcref when IsEntityAccessible cenv.amap m ad tcref -> 
+                    | Result (tinstEnclosing, tcref) when IsEntityAccessible cenv.amap m ad tcref -> 
                         match delayed with 
                         | [DelayedTypeApp (tyargs, _, mExprAndTypeArgs)] -> 
-                            TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs tcref [] tyargs |> ignore
+                            TcTypeApp cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs tcref tinstEnclosing tyargs |> ignore
                         | _ -> ()
                         true // resolved to a type name, done with checks
                     | _ -> 
@@ -9557,7 +9582,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             let resolvedToModuleOrNamespaceName =
                 if delayed.IsEmpty then
                     let id,rest = List.headAndTail longId
-                    match ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest true with 
+                    match ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest true with 
                     | Result modref when delayed.IsEmpty && modref |> List.exists (p23 >> IsEntityAccessible cenv.amap m ad) -> 
                         true // resolved to a module or namespace, done with checks
                     | _ -> 
@@ -9674,7 +9699,7 @@ and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId, _)) dela
 // Typecheck "item+projections" 
 //------------------------------------------------------------------------- *)
 // mItem is the textual range covered by the long identifiers that make up the item
-and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) delayed =
+and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afterResolution) delayed =
     let g = cenv.g
     let delayed = delayRest rest mItem delayed
     let ad = env.eAccessRights
@@ -9827,20 +9852,21 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
     
         match delayed with 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedDotLookup (longId, mLongId)) :: otherDelayed) ->
-
             // If Item.Types is returned then the ty will be of the form TType_app(tcref, genericTyargs) where tyargs 
             // is a fresh instantiation for tcref. TcNestedTypeApplication will chop off precisely #genericTyargs args 
             // and replace them by 'tyargs' 
-            let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tyargs
+            let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
 
             // Report information about the whole expression including type arguments to VS
             let item = Item.Types(nm, [ty])
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
-            TcItemThen cenv overallTy env tpenv (ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId IgnoreOverrides true) otherDelayed
+            let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
+            let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
+            TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) otherDelayed
             
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: _delayed') ->
             // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
-            let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tyargs
+            let ty, _ = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs ty tinstEnclosing tyargs
             let item = Item.Types(nm, [ty])
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
             
@@ -9912,7 +9938,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
 
-            let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
+            let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
             let itemAfterTyArgs, minfosAfterTyArgs = 
 #if !NO_EXTENSIONTYPING
@@ -9933,7 +9959,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: otherDelayed) ->
 
-            let objTy, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
+            let objTy, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
 
             // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
             let resolvedItem = Item.Types(nm, [objTy])
@@ -10074,7 +10100,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         | ((DelayedApp (atomicFlag, arg, mItemAndArg)) :: otherDelayed) ->
             TcNewDelegateThen cenv overallTy env tpenv mItem mItemAndArg ty arg atomicFlag otherDelayed
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs)) :: (DelayedApp (atomicFlag, arg, mItemAndArg)) :: otherDelayed) ->
-            let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mItemAndTypeArgs ty tyargs
+            let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mItemAndTypeArgs ty tinstEnclosing tyargs
             
             // Report information about the whole expression including type arguments to VS
             let item = Item.DelegateCtor ty
@@ -10297,7 +10323,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     if isTyparTy cenv.g objExprTy then 
         ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css env.DisplayEnv mExprAndLongId (freeInTypeLeftToRight cenv.g false objExprTy)
     
-    let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId findFlag false
+    let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver mExprAndLongId ad env.NameEnv objExprTy longId TypeNameResolutionInfo.Default findFlag false
     let mExprAndItem = unionRanges mObjExpr mItem
     let delayed = delayRest rest mExprAndItem delayed
 
@@ -13208,12 +13234,12 @@ let TcOpenLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
     | [] -> []
     | id :: rest ->
         let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-        match ResolveLongIndentAsModuleOrNamespaceOrStaticClass tcSink ResultCollectionSettings.AllResults amap m true true OpenQualified env.eNameResEnv ad id rest true with 
+        match ResolveLongIdentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
         | Result res -> res
         | Exception err ->
             errorR(err); []
 
-let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) = 
+let TcOpenModuleOrNamespaceDecl tcSink g amap scopem env (longId, m) = 
     match TcOpenLidAndPermitAutoResolve tcSink env amap longId with
     | [] -> env
     | modrefs ->
@@ -13265,11 +13291,32 @@ let TcOpenDecl tcSink (g: TcGlobals) amap m scopem env (longId: Ident list) =
     let modrefs = List.map p23 modrefs
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
-    let openDecl = OpenDeclaration.Create (longId, modrefs, scopem, false)
-    let env = OpenEntities tcSink g amap scopem false env modrefs openDecl
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.ModuleOrNamespace (longId, m), modrefs, [], scopem, false)
+    let env = OpenModuleOrNamespaceRefs tcSink g amap scopem false env modrefs openDecl
     env    
 
+let TcOpenTypeDecl (cenv: cenv) mOpenDecl scopem env (synType: SynType, m) =
+    let g = cenv.g
 
+    checkLanguageFeatureError g.langVersion LanguageFeature.OpenTypeDeclaration mOpenDecl
+
+    let typ, _tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Open env emptyUnscopedTyparEnv synType
+
+    if not (isAppTy g typ) then
+        error(Error(FSComp.SR.tcNamedTypeRequired("open type"), m))
+
+    if isByrefTy g typ then
+        error(Error(FSComp.SR.tcIllegalByrefsInOpenTypeDeclaration(), m))
+
+    let openDecl = OpenDeclaration.Create (SynOpenDeclTarget.Type (synType, m), [], [typ], scopem, false)
+    let env = OpenTypeContent cenv.tcSink g cenv.amap scopem env typ openDecl
+    env
+
+let TcOpenDecl cenv mOpenDecl scopem env target = 
+    match target with
+    | SynOpenDeclTarget.ModuleOrNamespace (longId, m) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap scopem env (longId, m)
+    | SynOpenDeclTarget.Type (synType, m) -> TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
+        
 exception ParameterlessStructCtor of range
 
 /// Incremental class definitions
@@ -14104,7 +14151,7 @@ module MutRecBindingChecking =
       | Phase2AMember of PreCheckingRecursiveBinding
 #if OPEN_IN_TYPE_DECLARATIONS
       /// A dummy declaration, should we ever support 'open' in type definitions
-      | Phase2AOpen of LongIdent * range
+      | Phase2AOpen of SynOpenDeclTarget * range
 #endif
       /// Indicates the super init has just been called, 'this' may now be published
       | Phase2AIncrClassCtorJustAfterSuperInit 
@@ -14116,7 +14163,7 @@ module MutRecBindingChecking =
       | TyconBindingsPhase2A of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPhase2A list
 
     /// The collected syntactic input definitions for a recursive group of type or type-extension definitions
-    type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
     /// Represents one element in a type definition, after the second phase
     type TyconBindingPhase2B =
@@ -14135,7 +14182,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2B = TyconBindingsPhase2B of Tycon option * TyconRef * TyconBindingPhase2B list
 
-    type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
     /// Represents one element in a type definition, after the third phase
     type TyconBindingPhase2C =
@@ -14149,7 +14196,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2C = TyconBindingsPhase2C of Tycon option * TyconRef * TyconBindingPhase2C list
 
-    type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
 
 
@@ -14286,9 +14333,9 @@ module MutRecBindingChecking =
                             cbinds, innerState
                         
 #if OPEN_IN_TYPE_DECLARATIONS
-                        | SynMemberDefn.Open (mp, m), _ ->
+                        | SynMemberDefn.Open (target, m), _ ->
                             let innerState = (incrClassCtorLhsOpt, env, tpenv, recBindIdx, prelimRecValuesRev, uncheckedBindsRev)
-                            [ Phase2AOpen (mp, m) ], innerState
+                            [ Phase2AOpen (target, m) ], innerState
 #endif
                         
                         | definition -> 
@@ -14500,9 +14547,9 @@ module MutRecBindingChecking =
                             
                             
 #if OPEN_IN_TYPE_DECLARATIONS
-                        | Phase2AOpen(mp, m) -> 
-                            let envInstance = TcOpenDecl cenv.tcSink g cenv.amap m scopem envInstance mp
-                            let envStatic = TcOpenDecl cenv.tcSink g cenv.amap m scopem envStatic mp
+                        | Phase2AOpen(target, m) -> 
+                            let envInstance = TcOpenDecl cenv m scopem envInstance target
+                            let envStatic = TcOpenDecl cenv m scopem envStatic target
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             Phase2BOpen, innerState
 #endif
@@ -14747,7 +14794,7 @@ module MutRecBindingChecking =
         let resolved =
             match p with
             | [] -> Result []
-            | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
+            | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
         let mvvs = ForceRaise resolved
         if isNil mvvs then env else
         let modrefs = mvvs |> List.map p23
@@ -14783,7 +14830,7 @@ module MutRecBindingChecking =
                 let tycons = decls |> List.choose (function MutRecShape.Tycon d -> getTyconOpt d | _ -> None) 
                 let mspecs = decls |> List.choose (function MutRecShape.Module (MutRecDefnsPhase2DataForModule (_, mspec), _) -> Some mspec | _ -> None)
                 let moduleAbbrevs = decls |> List.choose (function MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev (id, mp, m)) -> Some (id, mp, m) | _ -> None)
-                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (mp, m, moduleRange)) -> Some (mp, m, moduleRange) | _ -> None)
+                let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (target, m, moduleRange)) -> Some (target, m, moduleRange) | _ -> None)
                 let lets = decls |> List.collect (function MutRecShape.Lets binds -> getVals binds | _ -> [])
                 let exns = tycons |> List.filter (fun (tycon: Tycon) -> tycon.IsExceptionDecl)
 
@@ -14809,7 +14856,7 @@ module MutRecBindingChecking =
                 // Add the modules being defined
                 let envForDecls = (envForDecls, mspecs) ||> List.fold ((if report then AddLocalSubModuleAndReport cenv.tcSink scopem else AddLocalSubModule) cenv.g cenv.amap m)
                 // Process the 'open' declarations                
-                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (mp, m, moduleRange) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m moduleRange env mp)
+                let envForDecls = (envForDecls, opens) ||> List.fold (fun env (target, m, moduleRange) -> TcOpenDecl cenv m moduleRange env target)
                 // Add the type definitions being defined
                 let envForDecls = (if report then AddLocalTyconsAndReport cenv.tcSink scopem else AddLocalTycons) cenv.g cenv.amap m tycons envForDecls 
                 // Add the exception definitions being defined
@@ -15523,12 +15570,12 @@ module TcExceptionDeclarations =
                   ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default longId 
                   |> ForceRaise
               match resolution with
-              | Item.ExnCase exnc, [] -> 
+              | _, Item.ExnCase exnc, [] -> 
                   CheckTyconAccessible cenv.amap m env.eAccessRights exnc |> ignore
                   if not (isNil args') then 
                       errorR (Error(FSComp.SR.tcExceptionAbbreviationsShouldNotHaveArgumentList(), m))
                   TExnAbbrevRepr exnc
-              | Item.CtorGroup(_, meths), [] -> 
+              | _, Item.CtorGroup(_, meths), [] -> 
                   // REVIEW: check this really is an exception type 
                   match args' with 
                   | [] -> ()
@@ -15732,7 +15779,7 @@ module EstablishTypeDefinitionCores =
     let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm+FSharpModuleSuffix | _ -> nm)
 
 
-    let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
+    let TypeNamesInMutRecDecls cenv env (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         [ for d in compDecls do 
                 match d with 
                 | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(ComponentInfo(_, typars, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
@@ -15962,7 +16009,7 @@ module EstablishTypeDefinitionCores =
         | Some (tc, args, m) -> 
             let ad = envinner.eAccessRights
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified envinner.eNameResEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.Yes with
-            | Result tcrefBeforeStaticArguments when 
+            | Result (_, tcrefBeforeStaticArguments) when 
                   tcrefBeforeStaticArguments.IsProvided && 
                   not tcrefBeforeStaticArguments.IsErased -> 
 
@@ -16204,7 +16251,7 @@ module EstablishTypeDefinitionCores =
 
     // Third phase: check and publish the super types. Run twice, once before constraints are established
     // and once after
-    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns: MutRecShape<(_ * (Tycon * (Attribs * _)) option), _, _, _, _> list) = 
+    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns: MutRecShape<(_ * (Tycon * (Attribs * _)) option), _, _> list) = 
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
         let firstPass = (pass = FirstPass)
 
@@ -16881,7 +16928,7 @@ module EstablishTypeDefinitionCores =
                | _ -> ())
 
 
-    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
+    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo>) =
         let g = cenv.g
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these. Augmentations are skipped in this phase.
@@ -17056,12 +17103,14 @@ module TcDeclarations =
 
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
-            | Result res -> res
-            | res when inSig && longPath.Length = 1 ->
-                errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
-                ForceRaise res
-            | res -> ForceRaise res            
+            let _, tcref =
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
+                | Result res -> res
+                | res when inSig && longPath.Length = 1 ->
+                    errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
+                    ForceRaise res
+                | res -> ForceRaise res
+            tcref
 
         let isInterfaceOrDelegateOrEnum = 
             tcref.Deref.IsFSharpInterfaceTycon || 
@@ -17569,9 +17618,9 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent typeNames emptyUnscopedTyparEnv m scopem None mutRecDefns
             return env 
 
-        | SynModuleSigDecl.Open (mp, m) -> 
+        | SynModuleSigDecl.Open (target, m) -> 
             let scopem = unionRanges m.EndRange endm
-            let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp
+            let env = TcOpenDecl cenv m scopem env target
             return env
 
         | SynModuleSigDecl.Val (vspec, m) -> 
@@ -17619,7 +17668,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let resolved =
                 match p with
                 | [] -> Result []
-                | id :: rest -> ResolveLongIndentAsModuleOrNamespaceOrStaticClass cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m false true OpenQualified env.eNameResEnv ad id rest false
+                | id :: rest -> ResolveLongIdentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
             let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
@@ -17689,7 +17738,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
                     // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment.
                     let env = 
                         match TryStripPrefixPath cenv.g enclosingNamespacePath with 
-                        | Some(p, _) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p]
+                        | Some(p, _) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m.EndRange env ([p], m.EndRange)
                         | None -> env
 
                     // Publish the combined module type
@@ -17734,9 +17783,9 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                     let decls = typeSpecs |> List.map MutRecShape.Tycon
                     decls, (false, false)
 
-                | SynModuleSigDecl.Open (lid, m) -> 
+                | SynModuleSigDecl.Open (target, m) -> 
                       if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
-                      let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m, moduleRange)) ]
+                      let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange)) ]
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (SynExceptionSig(exnRepr, members, _), _) ->
@@ -17801,7 +17850,7 @@ let ElimModuleDoBinding bind =
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
-let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _, _, _>) env = 
+let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env = 
     let freeInEnv = GeneralizationHelpers.ComputeUnabstractableTycons env
     let checkTycon (tycon: Tycon) = 
         if not tycon.IsTypeAbbrev && Zset.contains tycon freeInEnv then 
@@ -17863,9 +17912,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
           return (exprfWithEscapeCheck, []), envAfter, envAfter
 
-      | SynModuleDecl.Open (LongIdentWithDots(mp, _), m) -> 
+      | SynModuleDecl.Open (target, m) -> 
           let scopem = unionRanges m.EndRange scopem
-          let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp
+          let env = TcOpenDecl cenv m scopem env target
           return ((fun e -> e), []), env, env
 
       | SynModuleDecl.Let (letrec, binds, m) -> 
@@ -17998,7 +18047,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                   // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment
                   let env = 
                       match TryStripPrefixPath cenv.g enclosingNamespacePath with 
-                      | Some(p, _) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p]
+                      | Some(p, _) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap m.EndRange env ([p], m.EndRange)
                       | None -> env
 
                   // Publish the combined module type
@@ -18065,9 +18114,9 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames m envInitial mutRecN
                   let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Open (LongIdentWithDots(lid, _), m) ->  
+              | SynModuleDecl.Open (target, m) ->  
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
-                  let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m, moduleRange)) ]
+                  let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange)) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
@@ -18170,8 +18219,9 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     match modref.TryDeref with 
     | ValueNone -> warn()
     | ValueSome _ -> 
-        let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
-        OpenEntities TcResultsSink.NoSink g amap scopem root env [modref] openDecl
+        let openTarget = SynOpenDeclTarget.ModuleOrNamespace([], scopem)
+        let openDecl = OpenDeclaration.Create (openTarget, [modref], [], scopem, false)
+        OpenModuleOrNamespaceRefs TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible) = 
