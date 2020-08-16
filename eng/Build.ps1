@@ -572,9 +572,7 @@ try {
             Write-Host "Already installed is not a problem"
         }
 
-        $nupkgs =  @(Get-ChildItem "$artifactsDir\packages\$configuration\PreRelease\*.nupkg" -recurse)
-        $nupkgs += @(Get-ChildItem "$artifactsDir\packages\$configuration\Release\*.nupkg" -recurse)
-        $nupkgs += @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
+        $nupkgs = @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
         $nupkgs | Foreach {
             Exec-Console "$dotnetPath\sourcelink.exe" "test ""$_"""
             if (-not $?) { $nupkgtestFailed = $true}
