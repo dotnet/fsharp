@@ -143,7 +143,7 @@ function Process-Arguments() {
         $script:testpack = $False
     }
 
-    if ($ci) {
+    if ($pack -and $ci) {
         $script:testpack = $true
     }
 
@@ -160,6 +160,9 @@ function Process-Arguments() {
     }
 
     foreach ($property in $properties) {
+        if ($property.StartsWith("/p:DotNetBuildFromSource=true", "InvariantCultureIgnoreCase")) {
+            $script:testpack = $False;
+        }
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
             Print-Usage
@@ -560,8 +563,10 @@ try {
     $nupkgtestFailed = $false
     if ($testpack) {
         # Fetch soucelink test
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
         try {
-            Exec-Console """$RepoRoot\.dotnet\dotnet.exe"" tool install sourcelink --tool-path ""$RepoRoot\.dotnet"""
+            Exec-Console $dotnetExe "tool install sourcelink --tool-path ""$dotnetPath"""
         }
         catch {
             Write-Host "Already installed is not a problem"
@@ -571,7 +576,7 @@ try {
         $nupkgs += @(Get-ChildItem "$artifactsDir\packages\$configuration\Release\*.nupkg" -recurse)
         $nupkgs += @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
         $nupkgs | Foreach {
-            Exec-Console """$RepoRoot\.dotnet\sourcelink.exe"" test ""$_"""
+            Exec-Console "$dotnetPath\sourcelink.exe" "test ""$_"""
             if (-not $?) { $nupkgtestFailed = $true}
         }
     }
