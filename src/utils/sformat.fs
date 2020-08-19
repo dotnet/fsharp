@@ -582,12 +582,12 @@ module Display =
             // offset - width of last line of block
             // NOTE: offset <= pos -- depending on tabbing of last block
                
-            let breaks,layout,pos,offset =
+            let breaks, layout, pos, offset =
                 match layout with
-                | Attr (tag,attrs,l) ->
-                    let breaks,layout,pos,offset = fit breaks (pos,l) 
-                    let layout = Attr (tag,attrs,layout) 
-                    breaks,layout,pos,offset
+                | Attr (tag, attrs, l) ->
+                    let breaks, layout, pos, offset = fit breaks (pos, l) 
+                    let layout = Attr (tag, attrs, layout) 
+                    breaks, layout, pos, offset
                 | Leaf (jl, text, jr)
                 | ObjLeaf (jl, ObjToTaggedText text, jr) ->
                     // save the formatted text from the squash
@@ -595,94 +595,94 @@ module Display =
                     let textWidth = length text
                     let rec fitLeaf breaks pos =
                         if pos + textWidth <= maxWidth then
-                            breaks,layout,pos + textWidth,textWidth // great, it fits 
+                            breaks, layout, pos + textWidth, textWidth // great, it fits 
                         else
                             match forceBreak breaks with
                             | None                 -> 
-                                breaks,layout,pos + textWidth,textWidth // tough, no more breaks 
-                            | Some (breaks,saving) -> 
+                                breaks, layout, pos + textWidth, textWidth // tough, no more breaks 
+                            | Some (breaks, saving) -> 
                                 let pos = pos - saving 
                                 fitLeaf breaks pos
                        
                     fitLeaf breaks pos
-                | Node (jl,l,jm,r,jr,joint) ->
+                | Node (jl, l, jm, r, jr, joint) ->
                     let mid = if jm then 0 else 1
                     match joint with
                     | Unbreakable    ->
-                        let breaks,l,pos,offsetl = fit breaks (pos,l)    // fit left 
+                        let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         let pos = pos + mid                              // fit space if juxt says so 
-                        let breaks,r,pos,offsetr = fit breaks (pos,r)    // fit right 
-                        breaks,Node (jl,l,jm,r,jr,Unbreakable),pos,offsetl + mid + offsetr
+                        let breaks, r, pos, offsetr = fit breaks (pos, r)    // fit right 
+                        breaks, Node (jl, l, jm, r, jr, Unbreakable), pos, offsetl + mid + offsetr
                     | Broken indent ->
-                        let breaks,l,pos,offsetl = fit breaks (pos,l)    // fit left 
+                        let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         let pos = pos - offsetl + indent                 // broken so - offset left + ident 
-                        let breaks,r,pos,offsetr = fit breaks (pos,r)    // fit right 
-                        breaks,Node (jl,l,jm,r,jr,Broken indent),pos,indent + offsetr
+                        let breaks, r, pos, offsetr = fit breaks (pos, r)    // fit right 
+                        breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
                     | Breakable indent ->
-                        let breaks,l,pos,offsetl = fit breaks (pos,l)    // fit left 
+                        let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         // have a break possibility, with saving 
                         let saving = offsetl + mid - indent
                         let pos = pos + mid
                         if saving>0 then
                             let breaks = pushBreak saving breaks
-                            let breaks,r,pos,offsetr = fit breaks (pos,r)
-                            let breaks,broken = popBreak breaks
+                            let breaks, r, pos, offsetr = fit breaks (pos, r)
+                            let breaks, broken = popBreak breaks
                             if broken then
-                                breaks,Node (jl,l,jm,r,jr,Broken indent)   ,pos,indent + offsetr
+                                breaks, Node (jl, l, jm, r, jr, Broken indent)   , pos, indent + offsetr
                             else
-                                breaks,Node (jl,l,jm,r,jr,Breakable indent),pos,offsetl + mid + offsetr
+                                breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
                         else
                             // actually no saving so no break 
-                            let breaks,r,pos,offsetr = fit breaks (pos,r)
-                            breaks,Node (jl,l,jm,r,jr,Breakable indent)  ,pos,offsetl + mid + offsetr
+                            let breaks, r, pos, offsetr = fit breaks (pos, r)
+                            breaks, Node (jl, l, jm, r, jr, Breakable indent)  , pos, offsetl + mid + offsetr
                
             //printf "\nDone:     pos=%d offset=%d" pos offset;
-            breaks,layout,pos,offset
+            breaks, layout, pos, offset
            
         let breaks = breaks0 ()
         let pos = 0
-        let _,layout,_,_ = fit breaks (pos,layout)
+        let _, layout, _, _ = fit breaks (pos, layout)
         layout
 
     let combine (strs: string list) = String.Concat strs
 
     let showL opts leafFormatter layout =
         let push x rstrs = x :: rstrs
-        let z0 = [],0
-        let addText (rstrs,i) (text:string) = push text rstrs,i + text.Length
-        let index   (_,i)               = i
+        let z0 = [], 0
+        let addText (rstrs, i) (text:string) = push text rstrs, i + text.Length
+        let index   (_, i)               = i
         let extract rstrs = combine(List.rev rstrs) 
-        let newLine (rstrs,_) n     = // \n then spaces... 
+        let newLine (rstrs, _) n     = // \n then spaces... 
             let indent = new System.String(' ', n)
             let rstrs = push "\n"   rstrs
             let rstrs = push indent rstrs
-            rstrs,n
+            rstrs, n
 
         // addL: pos is tab level 
         let rec addL z pos layout = 
             match layout with 
-            | ObjLeaf (_,obj,_)                 -> 
+            | ObjLeaf (_, obj, _)                 -> 
                 let text = leafFormatter obj
                 addText z text                 
-            | Leaf (_,obj,_)                 -> 
+            | Leaf (_, obj, _)                 -> 
                 addText z obj.Text
-            | Node (_,l,_,r,_,Broken indent) 
+            | Node (_, l, _, r, _, Broken indent) 
                     // Print width = 0 implies 1D layout, no squash
                     when not (opts.PrintWidth = 0)  -> 
                 let z = addL z pos l
                 let z = newLine z (pos+indent)
                 let z = addL z (pos+indent) r
                 z
-            | Node (_,l,jm,r,_,_)             -> 
+            | Node (_, l, jm, r, _, _)             -> 
                 let z = addL z pos l
                 let z = if jm then z else addText z " "
                 let pos = index z
                 let z = addL z pos r
                 z
-            | Attr (_,_,l) ->
+            | Attr (_, _, l) ->
                 addL z pos l
            
-        let rstrs,_ = addL z0 0 layout
+        let rstrs, _ = addL z0 0 layout
         extract rstrs
 
     let outL outAttribute leafFormatter (chan: TaggedTextWriter) layout =
@@ -693,7 +693,7 @@ module Display =
         let index i = i
         let addText z text  = write text;  (z + length text)
         let newLine _ n     = // \n then spaces... 
-            let indent = new System.String(' ',n)
+            let indent = new System.String(' ', n)
             chan.WriteLine();
             write (tagText indent);
             n
@@ -701,23 +701,23 @@ module Display =
         // addL: pos is tab level 
         let rec addL z pos layout = 
             match layout with 
-            | ObjLeaf (_,obj,_)                 -> 
+            | ObjLeaf (_, obj, _)                 -> 
                 let text = leafFormatter obj 
                 addText z text
-            | Leaf (_,obj,_)                 -> 
+            | Leaf (_, obj, _)                 -> 
                 addText z obj
-            | Node (_,l,_,r,_,Broken indent) -> 
+            | Node (_, l, _, r, _, Broken indent) -> 
                 let z = addL z pos l
                 let z = newLine z (pos+indent)
                 let z = addL z (pos+indent) r
                 z
-            | Node (_,l,jm,r,_,_)             -> 
+            | Node (_, l, jm, r, _, _)             -> 
                 let z = addL z pos l
                 let z = if jm then z else addText z Literals.space
                 let pos = index z
                 let z = addL z pos r
                 z 
-            | Attr (tag,attrs,l) ->
+            | Attr (tag, attrs, l) ->
             let _ = outAttribute tag attrs true
             let z = addL z pos l
             let _ = outAttribute tag attrs false
@@ -728,7 +728,7 @@ module Display =
 
     let unpackCons recd =
         match recd with 
-        | [|(_,h);(_,t)|] -> (h,t)
+        | [|(_, h);(_, t)|] -> (h, t)
         | _  -> failwith "unpackCons"
 
     let getListValueInfo bindingFlags (x:obj, ty:Type) =
@@ -736,8 +736,8 @@ module Display =
         | null -> None 
         | _ -> 
             match Value.GetValueInfo bindingFlags (x, ty) with
-            | UnionCaseValue (_,"Cons",recd) -> Some (unpackCons recd)
-            | UnionCaseValue (_,"Empty",[| |]) -> None
+            | UnionCaseValue (_, "Cons", recd) -> Some (unpackCons recd)
+            | UnionCaseValue (_, "Empty", [| |]) -> None
             | _ -> failwith "List value had unexpected ValueInfo"
 
     let structL = wordL (tagKeyword "struct")
@@ -747,7 +747,7 @@ module Display =
     let unitL = wordL (tagPunctuation "()")
           
     let makeRecordL nameXs =
-        let itemL (name,xL) = wordL name ^^ wordL Literals.equals -- xL
+        let itemL (name, xL) = wordL name ^^ wordL Literals.equals -- xL
         let braceL xs = (wordL Literals.leftBrace) ^^ xs ^^ (wordL Literals.rightBrace)
             
         nameXs
@@ -756,7 +756,7 @@ module Display =
         |> braceL
 
     let makePropertiesL nameXs =
-        let itemL (name,v) = 
+        let itemL (name, v) = 
             let labelL = wordL name 
             (labelL ^^ wordL Literals.equals)
             ^^ (match v with 
