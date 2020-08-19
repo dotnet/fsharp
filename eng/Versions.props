@@ -13,29 +13,23 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSLanguageVersion>5.0</FSLanguageVersion>
-
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
     <FSCorePackageVersion>$(FSCoreMajorVersion).0</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
-
     <FSharpCompilerServicePrefix>37.0</FSharpCompilerServicePrefix>
     <FSharpCompilerServiceVersion>$(FSharpCompilerServicePrefix).0</FSharpCompilerServiceVersion>
-
     <!-- The current published nuget package -->
     <FSharpCoreShippedPackageVersion>4.7.2</FSharpCoreShippedPackageVersion>
-
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <FSPackageMajorVersion>11.0</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
     <VSMinorVersion>7</VSMinorVersion>
@@ -43,7 +37,6 @@
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
-
   <!-- version number assignment -->
   <PropertyGroup>
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
