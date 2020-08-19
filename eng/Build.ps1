@@ -565,8 +565,11 @@ try {
         # Fetch soucelink test
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+        $dotnettoolsPath = Join-Path $RepoRoot "\.tools\"
+        $sourcelink = Join-Path $dotnettoolsPath "sourcelink.exe"
         try {
-            Exec-Console $dotnetExe "tool install sourcelink --tool-path ""$dotnetPath"""
+            $out = New-Item -Path $dotnettoolsPath -ItemType Directory -Force
+            Exec-Console $dotnetExe "tool install sourcelink --tool-path $dotnettoolsPath"
         }
         catch {
             Write-Host "Already installed is not a problem"
@@ -574,7 +577,7 @@ try {
 
         $nupkgs = @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
         $nupkgs | Foreach {
-            Exec-Console "$dotnetPath\sourcelink.exe" "test ""$_"""
+            Exec-Console """$sourcelink"" test ""$_"""
             if (-not $?) { $nupkgtestFailed = $true}
         }
     }

@@ -242,6 +242,11 @@
         <target state="translated">套件管理功能需要語言版本 5.0，請使用 /langversion:preview</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEmptyFillInInterpolatedString">
+        <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
+        <target state="new">Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEofInInterpolatedString">
         <source>Incomplete interpolated string begun at or before here</source>
         <target state="new">Incomplete interpolated string begun at or before here</target>
