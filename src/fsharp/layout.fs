@@ -245,12 +245,17 @@ let tagListL tagger = function
       process' x xs
 
 let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL Literals.comma) x
+
 let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL Literals.semicolon) x
+
 let spaceListL x = tagListL (fun prefixL -> prefixL) x
+
 let sepListL x y = tagListL (fun prefixL -> prefixL ^^ x) y
 
 let bracketL l = leftL Literals.leftParen ^^ l ^^ rightL Literals.rightParen
+
 let tupleL xs = bracketL (sepListL (sepL Literals.comma) xs)
+
 let aboveListL = function
   | []    -> emptyL
   | [x]   -> x
@@ -261,119 +266,6 @@ let optionL xL = function
   | Some x -> wordL (tagUnionCase "Some") -- (xL x)
 
 let listL xL xs = leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map xL xs) ^^ rightL Literals.rightBracket
-
-
-//--------------------------------------------------------------------------
-//INDEX: breaks v2
-//--------------------------------------------------------------------------
- 
-// A very quick implementation of break stack.
-type breaks = Breaks of 
-                 /// pos of next free slot 
-                 int *     
-                 /// pos of next possible "outer" break - OR - outer=next if none possible 
-                 int *     
-                 /// stack of savings, -ve means it has been broken 
-                 int array 
-
-// next  is next slot to push into - aka size of current occupied stack.
-// outer counts up from 0, and is next slot to break if break forced.
-// - if all breaks forced, then outer=next.
-// - popping under these conditions needs to reduce outer and next.
-let chunkN = 400      
-let breaks0 () = Breaks(0, 0, Array.create chunkN 0)
-let pushBreak saving (Breaks(next, outer, stack)) =
-    let stack = if next = stack.Length then
-                  Array.append stack (Array.create chunkN 0) (* expand if full *)
-                else
-                  stack
-    stack.[next] <- saving
-    Breaks(next+1, outer, stack)
-
-let popBreak (Breaks(next, outer, stack)) =
-    if next=0 then raise (Failure "popBreak: underflow")
-    let topBroke = stack.[next-1] < 0 
-    let outer = if outer=next then outer-1 else outer   (* if all broken, unwind *)
-    let next  = next - 1 
-    Breaks(next, outer, stack), topBroke
-
-let forceBreak (Breaks(next, outer, stack)) =
-    if outer=next then
-      (* all broken *)
-      None
-    else
-      let saving = stack.[outer] 
-      stack.[outer] <- -stack.[outer]    
-      let outer = outer+1 
-      Some (Breaks(next, outer, stack), saving)
-
-let squashTo maxWidth layout =
-   // breaks = break context, can force to get indentation savings.
-   // pos    = current position in line
-   // layout = to fit
-   //------
-   // returns:
-   // breaks
-   // layout - with breaks put in to fit it.
-   // pos    - current pos in line = rightmost position of last line of block.
-   // offset - width of last line of block
-   // NOTE: offset <= pos -- depending on tabbing of last block
-   let rec fit breaks (pos, layout) =
-       (*printf "\n\nCalling pos=%d layout=[%s]\n" pos (showL layout)*)
-       let breaks, layout, pos, offset =
-           match layout with
-           | ObjLeaf _ -> failwith "ObjLeaf should not appear here"
-           | Attr (tag, attrs, l) ->
-               let breaks, layout, pos, offset = fit breaks (pos, l) 
-               let layout = Attr (tag, attrs, layout) 
-               breaks, layout, pos, offset
-           | Leaf (_jl, taggedText, _jr) ->
-               let textWidth = taggedText.Text.Length 
-               let rec fitLeaf breaks pos =
-                 if pos + textWidth <= maxWidth then
-                   breaks, layout, pos + textWidth, textWidth (* great, it fits *)
-                 else
-                   match forceBreak breaks with
-                     None                 -> (breaks, layout, pos + textWidth, textWidth (* tough, no more breaks *))
-                   | Some (breaks, saving) -> (let pos = pos - saving in fitLeaf breaks pos) 
-               fitLeaf breaks pos
-
-           | Node (jl, l, jm, r, jr, joint) ->
-               let mid = if jm then 0 else 1 
-               match joint with
-               | Unbreakable    ->
-                   let breaks, l, pos, offsetl = fit breaks (pos, l)     (* fit left *)
-                   let pos = pos + mid                               (* fit space if juxt says so *)
-                   let breaks, r, pos, offsetr = fit breaks (pos, r)     (* fit right *)
-                   breaks, Node (jl, l, jm, r, jr, Unbreakable), pos, offsetl + mid + offsetr
-               | Broken indent ->
-                   let breaks, l, pos, offsetl = fit breaks (pos, l)     (* fit left *)
-                   let pos = pos - offsetl + indent                  (* broken so - offset left + indent *)
-                   let breaks, r, pos, offsetr = fit breaks (pos, r)     (* fit right *)
-                   breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
-               | Breakable indent ->
-                   let breaks, l, pos, offsetl = fit breaks (pos, l)     (* fit left *)
-                   (* have a break possibility, with saving *)
-                   let saving = offsetl + mid - indent 
-                   let pos = pos + mid 
-                   if saving>0 then
-                     let breaks = pushBreak saving breaks 
-                     let breaks, r, pos, offsetr = fit breaks (pos, r) 
-                     let breaks, broken = popBreak breaks 
-                     if broken then
-                       breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
-                     else
-                       breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
-                   else
-                     (* actually no saving so no break *)
-                     let breaks, r, pos, offsetr = fit breaks (pos, r) 
-                     breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
-       (*printf "\nDone:     pos=%d offset=%d" pos offset*)
-       breaks, layout, pos, offset
-   let breaks = breaks0 () 
-   let pos = 0 
-   let _breaks, layout, _pos, _offset = fit breaks (pos, layout) 
-   layout
 
 //--------------------------------------------------------------------------
 //INDEX: LayoutRenderer
