@@ -601,8 +601,6 @@ module Display =
                     fitLeaf breaks pos
 
                 | Node (l, r, joint) ->
-                    let jl = l.JuxtapositionLeft
-                    let jr = r.JuxtapositionLeft
                     let jm = Layout.JuxtapositionMiddle (l, r)
                     let mid = if jm then 0 else 1
                     match joint with

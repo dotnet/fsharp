@@ -102,8 +102,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
         | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
         | Attr of text: string * attributes: (string * string) list * layout: Layout
-        member JuxtapositionLeft : bool
-        member JuxtapositionRight : bool
+
         static member JuxtapositionMiddle: left: Layout * right: Layout -> bool
 #endif
 
