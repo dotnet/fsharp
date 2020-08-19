@@ -109,7 +109,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #else
     module internal TaggedTextOps =
 #endif
-        val tag: LayoutTag -> string -> TaggedText
+        val mkTag: LayoutTag -> string -> TaggedText
         val keywordFunctions: Set<string>
         val tagAlias: string -> TaggedText
         val tagClass: string -> TaggedText

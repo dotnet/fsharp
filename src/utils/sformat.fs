@@ -80,15 +80,15 @@ type TaggedTextWriter =
 [<StructuralEquality; NoComparison>]
 type Joint =
     | Unbreakable
-    | Breakable of int
-    | Broken of int
+    | Breakable of indentation: int
+    | Broken of indentation: int
 
 /// If either juxtaposition flag is true, then no space between words.
 [<NoEquality; NoComparison>]
 type Layout =
     | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
     | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
-    | Node of juxtLeft: bool * Layout * juxtMiddle: bool * Layout * juxtRight: bool * Joint
+    | Node of juxtLeft: bool * leftLayout: Layout * juxtMiddle: bool * rightLayout: Layout * juxtRight: bool * joint: Joint
     | Attr of text: string * attributes: (string * string) list * layout: Layout
 
 [<NoEquality; NoComparison>]
@@ -98,15 +98,15 @@ type IEnvironment =
     abstract MaxRows: int
 
 module TaggedTextOps =
-    let tag tag text = 
+    let mkTag tag text = 
         { new TaggedText with 
-        member x.Tag = tag
-        member x.Text = text }
+            member _.Tag = tag
+            member _.Text = text }
 
     let length (tt: TaggedText) = tt.Text.Length
     let toText (tt: TaggedText) = tt.Text
 
-    let tagAlias t = tag LayoutTag.Alias t
+    let tagAlias t = mkTag LayoutTag.Alias t
     let keywordFunctions = Set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
     let keywordTypes = 
         [
@@ -140,32 +140,32 @@ module TaggedTextOps =
         "uint64"
         "unativeint"
         ] |> Set.ofList
-    let tagClass name = if Set.contains name keywordTypes then tag LayoutTag.Keyword name else tag LayoutTag.Class name
-    let tagUnionCase t = tag LayoutTag.UnionCase t
-    let tagDelegate t = tag LayoutTag.Delegate t
-    let tagEnum t = tag LayoutTag.Enum t
-    let tagEvent t = tag LayoutTag.Event t
-    let tagField t = tag LayoutTag.Field t
-    let tagInterface t = tag LayoutTag.Interface t
-    let tagKeyword t = tag LayoutTag.Keyword t
-    let tagLineBreak t = tag LayoutTag.LineBreak t
-    let tagLocal t = tag LayoutTag.Local t
-    let tagRecord t = tag LayoutTag.Record t
-    let tagRecordField t = tag LayoutTag.RecordField t
-    let tagMethod t = tag LayoutTag.Method t
-    let tagModule t = tag LayoutTag.Module t
-    let tagModuleBinding name = if keywordFunctions.Contains name then tag LayoutTag.Keyword name else tag LayoutTag.ModuleBinding name
-    let tagNamespace t = tag LayoutTag.Namespace t
-    let tagNumericLiteral t = tag LayoutTag.NumericLiteral t
-    let tagOperator t = tag LayoutTag.Operator t
-    let tagParameter t = tag LayoutTag.Parameter t
-    let tagProperty t = tag LayoutTag.Property t
-    let tagSpace t = tag LayoutTag.Space t
-    let tagStringLiteral t = tag LayoutTag.StringLiteral t
-    let tagStruct t = tag LayoutTag.Struct t
-    let tagTypeParameter t = tag LayoutTag.TypeParameter t
-    let tagText t = tag LayoutTag.Text t
-    let tagPunctuation t = tag LayoutTag.Punctuation t
+    let tagClass name = if Set.contains name keywordTypes then mkTag LayoutTag.Keyword name else mkTag LayoutTag.Class name
+    let tagUnionCase t = mkTag LayoutTag.UnionCase t
+    let tagDelegate t = mkTag LayoutTag.Delegate t
+    let tagEnum t = mkTag LayoutTag.Enum t
+    let tagEvent t = mkTag LayoutTag.Event t
+    let tagField t = mkTag LayoutTag.Field t
+    let tagInterface t = mkTag LayoutTag.Interface t
+    let tagKeyword t = mkTag LayoutTag.Keyword t
+    let tagLineBreak t = mkTag LayoutTag.LineBreak t
+    let tagLocal t = mkTag LayoutTag.Local t
+    let tagRecord t = mkTag LayoutTag.Record t
+    let tagRecordField t = mkTag LayoutTag.RecordField t
+    let tagMethod t = mkTag LayoutTag.Method t
+    let tagModule t = mkTag LayoutTag.Module t
+    let tagModuleBinding name = if keywordFunctions.Contains name then mkTag LayoutTag.Keyword name else mkTag LayoutTag.ModuleBinding name
+    let tagNamespace t = mkTag LayoutTag.Namespace t
+    let tagNumericLiteral t = mkTag LayoutTag.NumericLiteral t
+    let tagOperator t = mkTag LayoutTag.Operator t
+    let tagParameter t = mkTag LayoutTag.Parameter t
+    let tagProperty t = mkTag LayoutTag.Property t
+    let tagSpace t = mkTag LayoutTag.Space t
+    let tagStringLiteral t = mkTag LayoutTag.StringLiteral t
+    let tagStruct t = mkTag LayoutTag.Struct t
+    let tagTypeParameter t = mkTag LayoutTag.TypeParameter t
+    let tagText t = mkTag LayoutTag.Text t
+    let tagPunctuation t = mkTag LayoutTag.Punctuation t
 
     module Literals =
         // common tagged literals
@@ -211,7 +211,7 @@ module LayoutOps =
     // constructors
     let objL (value:obj) = 
         match value with 
-        | :? string as s -> Leaf (false, tag LayoutTag.Text s, false)
+        | :? string as s -> Leaf (false, mkTag LayoutTag.Text s, false)
         | o -> ObjLeaf (false, o, false)
 
     let sLeaf (l, t, r) = Leaf (l, t, r)
@@ -224,7 +224,7 @@ module LayoutOps =
 
     let leftL text = sLeaf (false, text, true)
 
-    let emptyL = sLeaf (true, tag LayoutTag.Text "", true)
+    let emptyL = sLeaf (true, mkTag LayoutTag.Text "", true)
 
     let isEmptyL layout = 
         match layout with 
@@ -711,10 +711,10 @@ module Display =
                 let z = addL z pos r
                 z 
             | Attr (tag, attrs, l) ->
-            let _ = outAttribute tag attrs true
-            let z = addL z pos l
-            let _ = outAttribute tag attrs false
-            z
+                let _ = outAttribute tag attrs true
+                let z = addL z pos l
+                let _ = outAttribute tag attrs false
+                z
            
         let _ = addL z0 0 layout
         ()
