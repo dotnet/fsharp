@@ -46,8 +46,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     [<StructuralEquality; NoComparison>]
     type public Joint =
         | Unbreakable
-        | Breakable of int
-        | Broken of int
+        | Breakable of indentation: int
+        | Broken of indentation: int
     
     [<StructuralEquality; NoComparison>]
     type public LayoutTag =
@@ -100,7 +100,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     type public Layout =
         | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
         | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
-        | Node of juxtLeft: bool * Layout * juxtMiddle: bool * Layout * juxtRight:bool * Joint
+        | Node of juxtLeft: bool * leftLayout: Layout * juxtMiddle: bool * rightLayout: Layout * juxtRight: bool * joint: Joint
         | Attr of text: string * attributes: (string * string) list * layout: Layout
 #endif
 
