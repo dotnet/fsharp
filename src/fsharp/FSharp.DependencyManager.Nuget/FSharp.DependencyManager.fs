@@ -147,7 +147,7 @@ type FSharpDependencyManager (outputDir:string option) =
         try
             if not (File.Exists(scriptsPath)) then
                 Directory.CreateDirectory(scriptsPath) |> ignore
-            true
+            false  //true
         with | _ -> false
 
     let emitFile filename (body:string) =
