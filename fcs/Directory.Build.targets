@@ -50,6 +50,7 @@
     <ItemGroup>
       <FileWrites Include="$(IntermediateOutputPath)$(ProjectName).BuildProperties.fs" />
       <CompileBefore Include="$(IntermediateOutputPath)$(ProjectName).BuildProperties.fs" />
+      <FsGeneratedSource Include="$(IntermediateOutputPath)$(ProjectName).BuildProperties.fs" />
     </ItemGroup>
   </Target>
 

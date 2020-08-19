@@ -242,6 +242,11 @@
         <target state="translated">La característica de administración de paquetes requiere la versión de lenguaje 5.0; use /langversion:preview</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEmptyFillInInterpolatedString">
+        <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
+        <target state="new">Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsEofInInterpolatedString">
         <source>Incomplete interpolated string begun at or before here</source>
         <target state="new">Incomplete interpolated string begun at or before here</target>
