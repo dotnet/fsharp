@@ -16,25 +16,12 @@ type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
 type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
     member val Range = range
     interface TaggedText with
-        member x.Tag = taggedText.Tag
-        member x.Text = taggedText.Text
+        member _.Tag = taggedText.Tag
+        member _.Text = taggedText.Text
 
 let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
 let spaces n = new String(' ', n)
-
-// Note, there is duplication here with 'Display.juxtLeft' etc.
-let rec juxtLeft = function
-  | ObjLeaf (jl, _text, _jr)         -> jl
-  | Leaf (jl, _text, _jr)            -> jl
-  | Node (jl, _l, _jm, _r, _jr, _joint) -> jl
-  | Attr (_tag, _attrs, l)           -> juxtLeft l
-
-let rec juxtRight = function
-  | ObjLeaf (_jl, _text, jr)         -> jr
-  | Leaf (_jl, _text, jr)            -> jr
-  | Node (_jl, _l, _jm, _r, jr, _joint) -> jr
-  | Attr (_tag, _attrs, l)           -> juxtRight l
 
 // NOTE: emptyL might be better represented as a constructor, so then (Sep"") would have true meaning
 let emptyL = Leaf (true, TaggedTextOps.mkTag LayoutTag.Text "", true)
@@ -43,11 +30,7 @@ let isEmptyL = function Leaf(true, tag, true) when tag.Text = "" -> true | _ -> 
 let mkNode l r joint =
    if isEmptyL l then r else
    if isEmptyL r then l else
-   let jl = juxtLeft  l 
-   let jm = juxtRight l || juxtLeft r 
-   let jr = juxtRight r 
-   Node(jl, l, jm, r, jr, joint)
-
+   Node(l, r, joint)
 
 //--------------------------------------------------------------------------
 //INDEX: constructors
@@ -281,12 +264,13 @@ let renderL (rr: LayoutRenderer<_, _>) layout =
         (* pos is tab level *)
       | Leaf (_, text, _)                 -> 
           k(rr.AddText z text, i + text.Text.Length)
-      | Node (_, l, _, r, _, Broken indent) -> 
+      | Node (l, r, Broken indent) -> 
           addL z pos i l <|
             fun (z, _i) ->
               let z, i = rr.AddBreak z (pos+indent), (pos+indent) 
               addL z (pos+indent) i r k
-      | Node (_, l, jm, r, _, _)             -> 
+      | Node (l, r, _)             -> 
+          let jm = Layout.JuxtapositionMiddle (l, r)
           addL z pos i l <|
             fun (z, i) ->
               let z, i = if jm then z, i else rr.AddText z Literals.space, i+1 
@@ -306,11 +290,11 @@ let renderL (rr: LayoutRenderer<_, _>) layout =
 /// string render 
 let stringR =
   { new LayoutRenderer<string, string list> with 
-      member x.Start () = []
-      member x.AddText rstrs taggedText = taggedText.Text :: rstrs
-      member x.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
-      member x.AddTag z (_, _, _) = z
-      member x.Finish rstrs = String.Join("", Array.ofList (List.rev rstrs)) }
+      member _.Start () = []
+      member _.AddText rstrs taggedText = taggedText.Text :: rstrs
+      member _.AddBreak rstrs n = (spaces n) :: "\n" ::  rstrs 
+      member _.AddTag z (_, _, _) = z
+      member _.Finish rstrs = String.Join("", Array.ofList (List.rev rstrs)) }
 
 type NoState = NoState
 type NoResult = NoResult
@@ -318,11 +302,11 @@ type NoResult = NoResult
 /// string render 
 let taggedTextListR collector =
   { new LayoutRenderer<NoResult, NoState> with 
-      member x.Start () = NoState
-      member x.AddText z text = collector text; z
-      member x.AddBreak rstrs n = collector Literals.lineBreak; collector (tagSpace(spaces n)); rstrs 
-      member x.AddTag z (_, _, _) = z
-      member x.Finish rstrs = NoResult }
+      member _.Start () = NoState
+      member _.AddText z text = collector text; z
+      member _.AddBreak rstrs n = collector Literals.lineBreak; collector (tagSpace(spaces n)); rstrs 
+      member _.AddTag z (_, _, _) = z
+      member _.Finish rstrs = NoResult }
 
 
 /// channel LayoutRenderer

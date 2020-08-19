@@ -88,8 +88,25 @@ type Joint =
 type Layout =
     | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
     | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
-    | Node of juxtLeft: bool * leftLayout: Layout * juxtMiddle: bool * rightLayout: Layout * juxtRight: bool * joint: Joint
+    | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
     | Attr of text: string * attributes: (string * string) list * layout: Layout
+
+    member layout.JuxtapositionLeft =
+        match layout with
+        | ObjLeaf (jl, _, _) -> jl
+        | Leaf (jl, _, _) -> jl
+        | Node (left, _, _) -> left.JuxtapositionLeft
+        | Attr (_, _, subLayout) -> subLayout.JuxtapositionLeft
+
+    static member JuxtapositionMiddle (left: Layout, right: Layout) =
+        left.JuxtapositionRight || right.JuxtapositionLeft
+
+    member layout.JuxtapositionRight =
+        match layout with
+        | ObjLeaf (_, _, jr) -> jr
+        | Leaf (_, _, jr) -> jr
+        | Node (_, right, _) -> right.JuxtapositionRight
+        | Attr (_, _, subLayout) -> subLayout.JuxtapositionRight
 
 [<NoEquality; NoComparison>]
 type IEnvironment = 
@@ -188,25 +205,8 @@ module TaggedTextOps =
 module LayoutOps = 
     open TaggedTextOps
 
-    let rec juxtLeft lf =
-        match lf with
-        | ObjLeaf (jl, _, _) -> jl
-        | Leaf (jl, _, _) -> jl
-        | Node (jl, _, _, _, _, _) -> jl
-        | Attr (_, _, l) -> juxtLeft l
-
-    let rec juxtRight lf =
-        match lf with
-        | ObjLeaf (_, _, jr) -> jr
-        | Leaf (_, _, jr) -> jr
-        | Node (_, _, _, _, jr, _) -> jr
-        | Attr (_, _, l) -> juxtRight l
-
     let mkNode l r joint =
-        let jl = juxtLeft  l 
-        let jm = juxtRight l || juxtLeft r 
-        let jr = juxtRight r 
-        Node(jl, l, jm, r, jr, joint)
+        Node(l, r, joint)
 
     // constructors
     let objL (value:obj) = 
@@ -600,20 +600,23 @@ module Display =
                        
                     fitLeaf breaks pos
 
-                | Node (jl, l, jm, r, jr, joint) ->
+                | Node (l, r, joint) ->
+                    let jl = l.JuxtapositionLeft
+                    let jr = r.JuxtapositionLeft
+                    let jm = Layout.JuxtapositionMiddle (l, r)
                     let mid = if jm then 0 else 1
                     match joint with
                     | Unbreakable ->
                         let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         let pos = pos + mid                              // fit space if juxt says so 
                         let breaks, r, pos, offsetr = fit breaks (pos, r)    // fit right 
-                        breaks, Node (jl, l, jm, r, jr, Unbreakable), pos, offsetl + mid + offsetr
+                        breaks, Node (l, r, Unbreakable), pos, offsetl + mid + offsetr
 
                     | Broken indent ->
                         let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         let pos = pos - offsetl + indent                 // broken so - offset left + ident 
                         let breaks, r, pos, offsetr = fit breaks (pos, r)    // fit right 
-                        breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
+                        breaks, Node (l, r, Broken indent), pos, indent + offsetr
 
                     | Breakable indent ->
                         let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
@@ -625,13 +628,13 @@ module Display =
                             let breaks, r, pos, offsetr = fit breaks (pos, r)
                             let breaks, broken = popBreak breaks
                             if broken then
-                                breaks, Node (jl, l, jm, r, jr, Broken indent)   , pos, indent + offsetr
+                                breaks, Node (l, r, Broken indent)   , pos, indent + offsetr
                             else
-                                breaks, Node (jl, l, jm, r, jr, Breakable indent), pos, offsetl + mid + offsetr
+                                breaks, Node (l, r, Breakable indent), pos, offsetl + mid + offsetr
                         else
                             // actually no saving so no break 
                             let breaks, r, pos, offsetr = fit breaks (pos, r)
-                            breaks, Node (jl, l, jm, r, jr, Breakable indent)  , pos, offsetl + mid + offsetr
+                            breaks, Node (l, r, Breakable indent)  , pos, offsetl + mid + offsetr
                
             //printf "\nDone:     pos=%d offset=%d" pos offset;
             breaks, layout, pos, offset
@@ -665,7 +668,7 @@ module Display =
             | Leaf (_, obj, _) ->
                 addText z obj.Text
 
-            | Node (_, l, _, r, _, Broken indent)
+            | Node (l, r, Broken indent)
                     // Print width = 0 implies 1D layout, no squash
                     when not (opts.PrintWidth = 0) ->
                 let z = addL z pos l
@@ -673,7 +676,8 @@ module Display =
                 let z = addL z (pos+indent) r
                 z
 
-            | Node (_, l, jm, r, _, _) ->
+            | Node (l, r, _) ->
+                let jm = Layout.JuxtapositionMiddle (l, r)
                 let z = addL z pos l
                 let z = if jm then z else addText z " "
                 let pos = index z
@@ -707,12 +711,13 @@ module Display =
                 addText z text
             | Leaf (_, obj, _) -> 
                 addText z obj
-            | Node (_, l, _, r, _, Broken indent) -> 
+            | Node (l, r, Broken indent) -> 
                 let z = addL z pos l
                 let z = newLine z (pos+indent)
                 let z = addL z (pos+indent) r
                 z
-            | Node (_, l, jm, r, _, _) -> 
+            | Node (l, r, _) -> 
+                let jm = Layout.JuxtapositionMiddle (l, r)
                 let z = addL z pos l
                 let z = if jm then z else addText z Literals.space
                 let pos = index z

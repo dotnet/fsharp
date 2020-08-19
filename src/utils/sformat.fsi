@@ -100,8 +100,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     type public Layout =
         | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
         | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
-        | Node of juxtLeft: bool * leftLayout: Layout * juxtMiddle: bool * rightLayout: Layout * juxtRight: bool * joint: Joint
+        | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
         | Attr of text: string * attributes: (string * string) list * layout: Layout
+        member JuxtapositionLeft : bool
+        member JuxtapositionRight : bool
+        static member JuxtapositionMiddle: left: Layout * right: Layout -> bool
 #endif
 
 #if COMPILER
