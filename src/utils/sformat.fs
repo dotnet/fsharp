@@ -240,13 +240,13 @@ module LayoutOps =
         elif isEmptyL r then l 
         else f l r
 
-    let (^^)  layout1 layout2  = mkNode layout1 layout2 (Unbreakable)
+    let (^^)  layout1 layout2 = mkNode layout1 layout2 (Unbreakable)
 
-    let (++)  layout1 layout2  = mkNode layout1 layout2 (Breakable 0)
+    let (++)  layout1 layout2 = mkNode layout1 layout2 (Breakable 0)
 
-    let (--)  layout1 layout2  = mkNode layout1 layout2 (Breakable 1)
+    let (--)  layout1 layout2 = mkNode layout1 layout2 (Breakable 1)
 
-    let (---) layout1 layout2  = mkNode layout1 layout2 (Breakable 2)
+    let (---) layout1 layout2 = mkNode layout1 layout2 (Breakable 2)
 
     let (@@) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 0)) layout1 layout2
 
@@ -256,18 +256,18 @@ module LayoutOps =
 
     let tagListL tagger els =
         match els with 
-        | []    -> emptyL
-        | [x]   -> x
+        | [] -> emptyL
+        | [x] -> x
         | x :: xs ->
             let rec process' prefixL yl =
                 match yl with
-                | []    -> prefixL
-                | y :: ys -> process' ((tagger prefixL) ++ y) ys
+                | [] -> prefixL
+                | y :: ys -> process' (tagger prefixL ++ y) ys
             process' x xs
             
-    let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.comma)) layouts
+    let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL Literals.comma) layouts
 
-    let semiListL layouts  = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.semicolon)) layouts
+    let semiListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL Literals.semicolon) layouts
 
     let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
 
@@ -279,13 +279,13 @@ module LayoutOps =
 
     let aboveListL layouts = 
         match layouts with
-        | []    -> emptyL
-        | [x]   -> x
+        | [] -> emptyL
+        | [x] -> x
         | x :: ys -> List.fold (fun pre y -> pre @@ y) x ys
 
     let optionL selector value = 
         match value with 
-        | None   -> wordL (tagUnionCase "None")
+        | None -> wordL (tagUnionCase "None")
         | Some x -> wordL (tagUnionCase "Some") -- (selector x)
 
     let listL selector value =
@@ -307,7 +307,7 @@ module LayoutOps =
         let rec consume n z =
             if stopShort z then [wordL (tagPunctuation "...")] else
             match project z with
-            | None       -> []  // exhausted input 
+            | None -> []  // exhausted input 
             | Some (x, z) -> if n<=0 then [wordL (tagPunctuation "...")]               // hit print_length limit 
                                     else itemL x :: consume (n-1) z  // cons recursive... 
         consume maxLength z  
@@ -545,7 +545,7 @@ module Display =
         if next=0 then raise (Failure "popBreak: underflow");
         let topBroke = stack.[next-1] < 0
         let outer = if outer=next then outer-1 else outer  // if all broken, unwind 
-        let next  = next - 1
+        let next = next - 1
         Breaks(next, outer, stack), topBroke
 
     let forceBreak (Breaks(next, outer, stack)) =
@@ -565,7 +565,7 @@ module Display =
         if maxWidth <= 0 then layout else 
         let rec fit breaks (pos, layout) =
             // breaks = break context, can force to get indentation savings.
-            // pos    = current position in line
+            // pos = current position in line
             // layout = to fit
             //------
             // returns:
@@ -581,6 +581,7 @@ module Display =
                     let breaks, layout, pos, offset = fit breaks (pos, l) 
                     let layout = Attr (tag, attrs, layout) 
                     breaks, layout, pos, offset
+
                 | Leaf (jl, text, jr)
                 | ObjLeaf (jl, ObjToTaggedText text, jr) ->
                     // save the formatted text from the squash
@@ -591,13 +592,14 @@ module Display =
                             breaks, layout, pos + textWidth, textWidth // great, it fits 
                         else
                             match forceBreak breaks with
-                            | None                 -> 
+                            | None -> 
                                 breaks, layout, pos + textWidth, textWidth // tough, no more breaks 
                             | Some (breaks, saving) -> 
                                 let pos = pos - saving 
                                 fitLeaf breaks pos
                        
                     fitLeaf breaks pos
+
                 | Node (jl, l, jm, r, jr, joint) ->
                     let mid = if jm then 0 else 1
                     match joint with
@@ -606,11 +608,13 @@ module Display =
                         let pos = pos + mid                              // fit space if juxt says so 
                         let breaks, r, pos, offsetr = fit breaks (pos, r)    // fit right 
                         breaks, Node (jl, l, jm, r, jr, Unbreakable), pos, offsetl + mid + offsetr
+
                     | Broken indent ->
                         let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         let pos = pos - offsetl + indent                 // broken so - offset left + ident 
                         let breaks, r, pos, offsetr = fit breaks (pos, r)    // fit right 
                         breaks, Node (jl, l, jm, r, jr, Broken indent), pos, indent + offsetr
+
                     | Breakable indent ->
                         let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         // have a break possibility, with saving 
@@ -643,10 +647,10 @@ module Display =
         let push x rstrs = x :: rstrs
         let z0 = [], 0
         let addText (rstrs, i) (text:string) = push text rstrs, i + text.Length
-        let index   (_, i)               = i
+        let index   (_, i)          = i
         let extract rstrs = combine(List.rev rstrs) 
-        let newLine (rstrs, _) n     = // \n then spaces... 
-            let indent = new System.String(' ', n)
+        let newLine (rstrs, _) n = // \n then spaces... 
+            let indent = new String(' ', n)
             let rstrs = push "\n"   rstrs
             let rstrs = push indent rstrs
             rstrs, n
@@ -654,24 +658,28 @@ module Display =
         // addL: pos is tab level 
         let rec addL z pos layout = 
             match layout with 
-            | ObjLeaf (_, obj, _)                 -> 
+            | ObjLeaf (_, obj, _) -> 
                 let text = leafFormatter obj
-                addText z text                 
-            | Leaf (_, obj, _)                 -> 
+                addText z text
+
+            | Leaf (_, obj, _) ->
                 addText z obj.Text
-            | Node (_, l, _, r, _, Broken indent) 
+
+            | Node (_, l, _, r, _, Broken indent)
                     // Print width = 0 implies 1D layout, no squash
-                    when not (opts.PrintWidth = 0)  -> 
+                    when not (opts.PrintWidth = 0) ->
                 let z = addL z pos l
                 let z = newLine z (pos+indent)
                 let z = addL z (pos+indent) r
                 z
-            | Node (_, l, jm, r, _, _)             -> 
+
+            | Node (_, l, jm, r, _, _) ->
                 let z = addL z pos l
                 let z = if jm then z else addText z " "
                 let pos = index z
                 let z = addL z pos r
                 z
+
             | Attr (_, _, l) ->
                 addL z pos l
            
@@ -684,9 +692,9 @@ module Display =
         // z is just current indent 
         let z0 = 0
         let index i = i
-        let addText z text  = write text;  (z + length text)
-        let newLine _ n     = // \n then spaces... 
-            let indent = new System.String(' ', n)
+        let addText z text = write text;  (z + length text)
+        let newLine _ n = // \n then spaces... 
+            let indent = new String(' ', n)
             chan.WriteLine();
             write (tagText indent);
             n
@@ -694,17 +702,17 @@ module Display =
         // addL: pos is tab level 
         let rec addL z pos layout = 
             match layout with 
-            | ObjLeaf (_, obj, _)                 -> 
+            | ObjLeaf (_, obj, _) -> 
                 let text = leafFormatter obj 
                 addText z text
-            | Leaf (_, obj, _)                 -> 
+            | Leaf (_, obj, _) -> 
                 addText z obj
             | Node (_, l, _, r, _, Broken indent) -> 
                 let z = addL z pos l
                 let z = newLine z (pos+indent)
                 let z = addL z (pos+indent) r
                 z
-            | Node (_, l, jm, r, _, _)             -> 
+            | Node (_, l, jm, r, _, _) -> 
                 let z = addL z pos l
                 let z = if jm then z else addText z Literals.space
                 let pos = index z
@@ -722,7 +730,7 @@ module Display =
     let unpackCons recd =
         match recd with 
         | [|(_, h);(_, t)|] -> (h, t)
-        | _  -> failwith "unpackCons"
+        | _ -> failwith "unpackCons"
 
     let getListValueInfo bindingFlags (x:obj, ty:Type) =
         match x with 
@@ -810,7 +818,7 @@ module Display =
         //
         // The suffix like "+[dd chars]" is 11 chars.
         //                  12345678901
-        let suffixLength    = 11 // turning point suffix length
+        let suffixLength = 11 // turning point suffix length
         let prefixMinLength = 12 // arbitrary. If print width is reduced, want to print a minimum of information on strings...
         let prefixLength = max (width - 2 (*quotes*) - suffixLength) prefixMinLength
         "\"" + (str.Substring(0,prefixLength)) + "\"" + "+[" + (str.Length - prefixLength).ToString() + " chars]"
@@ -859,7 +867,7 @@ module Display =
                 match x with 
                 | null -> 
                     reprL showMode (depthLim-1) prec info x
-                | _    ->
+                | _ ->
                     if (path.ContainsKey(x)) then 
                         wordL (tagPunctuation "...")
                     else 
@@ -893,7 +901,7 @@ module Display =
                         let res = 
                             match res with 
                             | Some res -> res
-                            | None     -> reprL showMode (depthLim-1) prec info x
+                            | None -> reprL showMode (depthLim-1) prec info x
 
                         path.Remove(x) |> ignore
                         res
@@ -1028,7 +1036,7 @@ module Display =
                 countNodes 1
                 wordL (tagPunctuation "[]")
 
-        and unionCaseValueL depthLim prec (declaringType: Type option) unionCaseName recd  =
+        and unionCaseValueL depthLim prec (declaringType: Type option) unionCaseName recd =
             countNodes 1
             let caseName =
                 match declaringType with
@@ -1044,7 +1052,7 @@ module Display =
             countNodes 1
             let name = exceptionType.Name 
             match recd with
-            | []   -> (wordL (tagClass name))
+            | [] -> (wordL (tagClass name))
             | recd -> (wordL (tagClass name) --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
 
         and showModeFilter showMode layout =
@@ -1092,7 +1100,7 @@ module Display =
                     else Some ((box (arr.GetValue(x,y)), ty),y+1)
                 let rowL x = boundedUnfoldL (nestedObjL depthLim Precedence.BracketIfTuple) (project2 x) stopShort b2 opts.PrintLength |> makeListL
                 let project1 x = if x>=(b1+n1) then None else Some (x,x+1)
-                let rowsL  = boundedUnfoldL rowL project1 stopShort b1 opts.PrintLength
+                let rowsL = boundedUnfoldL rowL project1 stopShort b1 opts.PrintLength
                 makeArray2L (if b1=0 && b2 = 0 then rowsL else wordL (tagText("bound1=" + string_of_int b1)) :: wordL(tagText("bound2=" + string_of_int b2)) :: rowsL)
             | n -> 
                 makeArrayL [wordL (tagText("rank=" + string_of_int n))]
@@ -1192,7 +1200,7 @@ module Display =
                                                     x<>null && isListType (x.GetType()) ->
                 listValueL depthLim constr recd
 
-            | UnionCaseValue(declaringType, unionCaseName, recd)   ->
+            | UnionCaseValue(declaringType, unionCaseName, recd) ->
                 unionCaseValueL depthLim prec declaringType unionCaseName (Array.toList recd)
 
             | ExceptionValue(exceptionType, recd) ->
@@ -1212,7 +1220,7 @@ module Display =
                     wordL (tagText "<null>")
                 else nullL
 
-            | ObjectValue obj  ->
+            | ObjectValue obj ->
                 let ty = obj.GetType()
                 match obj with 
                 | :? string as s ->
