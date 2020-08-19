@@ -83,24 +83,17 @@ type Joint =
     | Breakable of int
     | Broken of int
 
-/// Leaf juxt,data,juxt
-/// Node juxt,left,juxt,right,juxt and joint
-///
-/// If either juxt flag is true, then no space between words.
+/// If either juxtaposition flag is true, then no space between words.
 [<NoEquality; NoComparison>]
 type Layout =
-    | ObjLeaf of bool * obj * bool
-    | Leaf of bool * TaggedText * bool
-    | Node of bool * layout * bool * layout * bool * joint
-    | Attr of string * (string * string) list * layout
-
-and layout = Layout
-
-and joint = Joint
+    | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
+    | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
+    | Node of juxtLeft: bool * Layout * juxtMiddle: bool * Layout * juxtRight: bool * Joint
+    | Attr of text: string * attributes: (string * string) list * layout: Layout
 
 [<NoEquality; NoComparison>]
 type IEnvironment = 
-    abstract GetLayout: obj -> layout
+    abstract GetLayout: obj -> Layout
     abstract MaxColumns: int
     abstract MaxRows: int
 
@@ -305,7 +298,7 @@ module LayoutOps =
         leftL Literals.leftBrace ^^ layout ^^ rightL Literals.rightBrace
 
     let boundedUnfoldL
-        (itemL: 'a -> layout)
+        (itemL: 'a -> Layout)
         (project: 'z -> ('a * 'z) option)
         (stopShort: 'z -> bool)
         (z: 'z)
@@ -608,7 +601,7 @@ module Display =
                 | Node (jl, l, jm, r, jr, joint) ->
                     let mid = if jm then 0 else 1
                     match joint with
-                    | Unbreakable    ->
+                    | Unbreakable ->
                         let breaks, l, pos, offsetl = fit breaks (pos, l)    // fit left 
                         let pos = pos + mid                              // fit space if juxt says so 
                         let breaks, r, pos, offsetr = fit breaks (pos, r)    // fit right 

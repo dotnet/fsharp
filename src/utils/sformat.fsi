@@ -98,10 +98,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// of this data type is only for the consumption of formatting engines.
     [<NoEquality; NoComparison>]
     type public Layout =
-     | ObjLeaf of bool * obj * bool
-     | Leaf of bool * TaggedText * bool
-     | Node of bool * Layout * bool * Layout * bool * Joint
-     | Attr of string * (string * string) list * Layout
+        | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
+        | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
+        | Node of juxtLeft: bool * Layout * juxtMiddle: bool * Layout * juxtRight:bool * Joint
+        | Attr of text: string * attributes: (string * string) list * layout: Layout
 #endif
 
 #if COMPILER
@@ -162,10 +162,12 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         /// Return to the layout-generation 
         /// environment to layout any otherwise uninterpreted object
         abstract GetLayout: obj -> Layout
+
         /// The maximum number of elements for which to generate layout for 
         /// list-like structures, or columns in table-like 
         /// structures.  -1 if no maximum.
         abstract MaxColumns: int
+
         /// The maximum number of rows for which to generate layout for table-like 
         /// structures.  -1 if no maximum.
         abstract MaxRows: int

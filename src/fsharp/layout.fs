@@ -23,11 +23,7 @@ let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
 let spaces n = new String(' ', n)
 
-
-//--------------------------------------------------------------------------
-// INDEX: support
-//--------------------------------------------------------------------------
-
+// Note, there is duplication here with 'Display.juxtLeft' etc.
 let rec juxtLeft = function
   | ObjLeaf (jl, _text, _jr)         -> jl
   | Leaf (jl, _text, _jr)            -> jl
