@@ -1534,6 +1534,7 @@ module Lexer =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
 
+        resetLexbufPos "" lexbuf
         while not lexbuf.IsPastEndOfStream do
             ct.ThrowIfCancellationRequested ()
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
