@@ -17,24 +17,24 @@ This will make management of multiple forks and your own work easier over time.
 We recommend the following commands to update your fork:
 
 ```
-git checkout master
+git checkout main
 git clean -xdf
 git fetch upstream
-git rebase upstream/master
+git rebase upstream/main
 git push
 ```
 
 Or more succinctly:
 
 ```
-git checkout master && git clean -xdf && git fetch upstream && git rebase upstream/master && git push
+git checkout main && git clean -xdf && git fetch upstream && git rebase upstream/main && git push
 ```
 
 This will update your fork with the latest from `dotnet/fsharp` on your machine and push those updates to your remote fork.
 
 ## Developing on Windows
 
-Install the latest released [Visual Studio](https://www.visualstudio.com/downloads/), as that is what the `master` branch's tools are synced with. Select the following workloads:
+Install the latest released [Visual Studio](https://www.visualstudio.com/downloads/), as that is what the `main` branch's tools are synced with. Select the following workloads:
 
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development

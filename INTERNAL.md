@@ -47,8 +47,8 @@ To see all insertions created this way (possibly including for other internal te
 
 ## Less interesting links
 
-[Nightly VSIX (master) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=70).  Uploads
-a package from every build of `master` to the [Nightly VSIX feed](README.md#using-nightly-releases-in-visual-studio).
+[Nightly VSIX (main) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=70).  Uploads
+a package from every build of `main` to the [Nightly VSIX feed](README.md#using-nightly-releases-in-visual-studio).
 
 [Nightly VSIX (preview) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=71).  Uploads
 a package from every build of the branch that corresponds to the current Visual Studio preview to the
