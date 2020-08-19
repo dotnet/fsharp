@@ -980,6 +980,42 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type int64<[<Measure>] 'Measure> = int64
 
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt32"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint<[<Measure>] 'Measure> = uint
+    
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Byte"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type byte<[<Measure>] 'Measure> = byte
+    
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt16"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint16<[<Measure>] 'Measure> = uint16
+    
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt64"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint64<[<Measure>] 'Measure> = uint64
+
     /// <summary>Represents a managed pointer in F# code.</summary>
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
@@ -1273,6 +1309,34 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The sbyte with units-of-measure.</returns>
         val inline SByteWithMeasure : sbyte -> sbyte<'Measure>
+
+        /// <summary>Creates a uint value with units-of-measure</summary>
+        ///
+        /// <param name="uint">The input uint.</param>
+        ///
+        /// <returns>The uint with units-of-measure.</returns>
+        val inline UInt32WithMeasure : uint -> uint<'Measure>
+        
+        /// <summary>Creates a uint64 value with units-of-measure</summary>
+        ///
+        /// <param name="uint64">The input uint64.</param>
+        ///
+        /// <returns>The uint64 with units-of-measure.</returns>
+        val inline UInt64WithMeasure : uint64 -> uint64<'Measure>
+        
+        /// <summary>Creates a uint16 value with units-of-measure</summary>
+        ///
+        /// <param name="uint16">The input uint16.</param>
+        ///
+        /// <returns>The uint16 with units-of-measure.</returns>
+        val inline UInt16WithMeasure : uint16 -> uint16<'Measure>
+        
+        /// <summary>Creates a byte value with units-of-measure</summary>
+        ///
+        /// <param name="byte">The input byte.</param>
+        ///
+        /// <returns>The byte with units-of-measure.</returns>
+        val inline ByteWithMeasure : byte -> byte<'Measure>
 
         /// <summary>Parse an int32 according to the rules used by the overloaded 'int32' conversion operator when applied to strings</summary>
         ///

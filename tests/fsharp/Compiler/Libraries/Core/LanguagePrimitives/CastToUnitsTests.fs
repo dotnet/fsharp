@@ -26,4 +26,8 @@ let r4 = Int64WithMeasure<M> 5L / 5L<M>
 let r5 = FloatWithMeasure<M> 11.11 + 1.1<M>
 let r6 = Float32WithMeasure<M> 22.22f - 11.11f<M>
 let r7 = DecimalWithMeasure<M> 33.33M * 44.44M<M>
+let r8 = ByteWithMeasure<M> 1uy + 2uy<M>
+let r9 = UInt16WithMeasure<M> 1us + 2us<M>
+let r10 = UInt32WithMeasure<M> 1ul + 2ul<M>
+let r11 = UInt64WithMeasure<M> 1UL + 2UL<M>
             """

@@ -664,7 +664,10 @@ module LeafExpressionEvaluationTests =
         checkEval "castingunits5" (<@ 2L |> LanguagePrimitives.Int64WithMeasure<m> |> int64 @>) 2L
         checkEval "castingunits6" (<@ 2s |> LanguagePrimitives.Int16WithMeasure<m> |> int16 @>) 2s
         checkEval "castingunits7" (<@ 2y |> LanguagePrimitives.SByteWithMeasure<m> |> sbyte @>) 2y
-
+        checkEval "castingunits8" (<@ 2ul |> LanguagePrimitives.UInt32WithMeasure<m> |> uint @>) 2ul
+        checkEval "castingunits9" (<@ 2UL |> LanguagePrimitives.UInt64WithMeasure<m> |> uint64 @>) 2UL
+        checkEval "castingunits10" (<@ 2us |> LanguagePrimitives.UInt16WithMeasure<m> |> uint16 @>) 2us
+        checkEval "castingunits11" (<@ 2uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte @>) 2uy
 
 
     module LargerAutomaticDiferentiationTest_FSharp_1_0_Bug_3498 = 
@@ -1003,4 +1006,3 @@ let aa =
       exit 1
 
 #endif
-

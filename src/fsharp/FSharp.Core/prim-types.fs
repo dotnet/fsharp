@@ -369,6 +369,10 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type sbyte<[<Measure>] 'Measure> = sbyte
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
+    [<MeasureAnnotatedAbbreviation>] type uint<[<Measure>] 'Measure> = uint
+    [<MeasureAnnotatedAbbreviation>] type byte<[<Measure>] 'Measure> = byte
+    [<MeasureAnnotatedAbbreviation>] type uint16<[<Measure>] 'Measure> = uint16
+    [<MeasureAnnotatedAbbreviation>] type uint64<[<Measure>] 'Measure> = uint64
 
     /// <summary>Represents a managed pointer in F# code.</c></summary>
     type byref<'T> = (# "!0&" #)
@@ -2256,6 +2260,10 @@ namespace Microsoft.FSharp.Core
         let inline Int16WithMeasure (f : int16) : int16<'Measure> = retype f
         let inline SByteWithMeasure (f : sbyte) : sbyte<'Measure> = retype f
         let inline Int64WithMeasure (f : int64) : int64<'Measure> = retype f
+        let inline UInt32WithMeasure (f : uint) : uint<'Measure> = retype f
+        let inline UInt16WithMeasure (f : uint16) : uint16<'Measure> = retype f
+        let inline UInt64WithMeasure (f : uint64) : uint64<'Measure> = retype f
+        let inline ByteWithMeasure (f : byte) : byte<'Measure> = retype f
 
         let inline formatError() = raise (new System.FormatException(SR.GetString(SR.badFormatString)))
 
