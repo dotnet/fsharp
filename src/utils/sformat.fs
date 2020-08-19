@@ -197,23 +197,23 @@ module LayoutOps =
 
     let rec juxtLeft lf =
         match lf with
-        | ObjLeaf (jl,_,_) -> jl
-        | Leaf (jl,_,_) -> jl
-        | Node (jl,_,_,_,_,_) -> jl
-        | Attr (_,_,l) -> juxtLeft l
+        | ObjLeaf (jl, _, _) -> jl
+        | Leaf (jl, _, _) -> jl
+        | Node (jl, _, _, _, _, _) -> jl
+        | Attr (_, _, l) -> juxtLeft l
 
     let rec juxtRight lf =
         match lf with
-        | ObjLeaf (_,_,jr) -> jr
-        | Leaf (_,_,jr) -> jr
-        | Node (_,_,_,_,jr,_) -> jr
-        | Attr (_,_,l) -> juxtRight l
+        | ObjLeaf (_, _, jr) -> jr
+        | Leaf (_, _, jr) -> jr
+        | Node (_, _, _, _, jr, _) -> jr
+        | Attr (_, _, l) -> juxtRight l
 
     let mkNode l r joint =
         let jl = juxtLeft  l 
         let jm = juxtRight l || juxtLeft r 
         let jr = juxtRight r 
-        Node(jl,l,jm,r,jr,joint)
+        Node(jl, l, jm, r, jr, joint)
 
     // constructors
     let objL (value:obj) = 
@@ -223,15 +223,15 @@ module LayoutOps =
 
     let sLeaf (l, t, r) = Leaf (l, t, r)
 
-    let wordL text = sLeaf (false,text,false)
+    let wordL text = sLeaf (false, text, false)
 
-    let sepL text = sLeaf (true ,text,true)   
+    let sepL text = sLeaf (true , text, true)   
 
-    let rightL text = sLeaf (true ,text,false)   
+    let rightL text = sLeaf (true , text, false)   
 
-    let leftL text = sLeaf (false,text,true)
+    let leftL text = sLeaf (false, text, true)
 
-    let emptyL = sLeaf (true, tag LayoutTag.Text "",true)
+    let emptyL = sLeaf (true, tag LayoutTag.Text "", true)
 
     let isEmptyL layout = 
         match layout with 
@@ -240,7 +240,7 @@ module LayoutOps =
 
     let aboveL layout1 layout2 = mkNode layout1 layout2 (Broken 0)
 
-    let tagAttrL text maps layout = Attr(text,maps,layout)
+    let tagAttrL text maps layout = Attr(text, maps, layout)
 
     let apply2 f l r =
         if isEmptyL l then r
@@ -315,7 +315,7 @@ module LayoutOps =
             if stopShort z then [wordL (tagPunctuation "...")] else
             match project z with
             | None       -> []  // exhausted input 
-            | Some (x,z) -> if n<=0 then [wordL (tagPunctuation "...")]               // hit print_length limit 
+            | Some (x, z) -> if n<=0 then [wordL (tagPunctuation "...")]               // hit print_length limit 
                                     else itemL x :: consume (n-1) z  // cons recursive... 
         consume maxLength z  
 
@@ -443,8 +443,8 @@ module ReflectUtils =
             // the type are the actual fields of the type.  Again,
             // we should be reading attributes here that indicate the
             // true structure of the type, e.g. the order of the fields.   
-            elif FSharpType.IsUnion(reprty,bindingFlags) then 
-                let tag,vals = FSharpValue.GetUnionFields (obj, reprty, bindingFlags) 
+            elif FSharpType.IsUnion(reprty, bindingFlags) then 
+                let tag, vals = FSharpValue.GetUnionFields (obj, reprty, bindingFlags) 
                 let props = tag.GetFields()
                 let pvals = (props, vals) ||> Array.map2 (fun prop v -> prop.Name, (v, prop.PropertyType))
                 let declaringType =
@@ -452,13 +452,13 @@ module ReflectUtils =
                     else None
                 UnionCaseValue(declaringType, tag.Name, pvals)
 
-            elif FSharpType.IsExceptionRepresentation(reprty,bindingFlags) then 
-                let props = FSharpType.GetExceptionFields(reprty,bindingFlags) 
-                let vals = FSharpValue.GetExceptionFields(obj,bindingFlags) 
+            elif FSharpType.IsExceptionRepresentation(reprty, bindingFlags) then 
+                let props = FSharpType.GetExceptionFields(reprty, bindingFlags) 
+                let vals = FSharpValue.GetExceptionFields(obj, bindingFlags) 
                 let pvals = (props, vals) ||> Array.map2 (fun prop v -> prop.Name, (v, prop.PropertyType))
                 ExceptionValue(reprty, pvals)
 
-            elif FSharpType.IsRecord(reprty,bindingFlags) then 
+            elif FSharpType.IsRecord(reprty, bindingFlags) then 
                 let props = FSharpType.GetRecordFields(reprty, bindingFlags) 
                 RecordValue(props |> Array.map (fun prop -> prop.Name, prop.GetValue (obj, null), prop.PropertyType))
             else
@@ -498,14 +498,14 @@ module Display =
 
     let typeUsesSystemObjectToString (ty:System.Type) =
         try
-            let methInfo = ty.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
+            let methInfo = ty.GetMethod("ToString", BindingFlags.Public ||| BindingFlags.Instance, null, [| |], null)
             methInfo.DeclaringType = typeof<System.Object>
         with _e -> false
 
     /// If "str" ends with "ending" then remove it from "str", otherwise no change.
     let trimEnding (ending:string) (str:string) =
-        if str.EndsWith(ending,StringComparison.Ordinal) then 
-            str.Substring(0,str.Length - ending.Length) 
+        if str.EndsWith(ending, StringComparison.Ordinal) then 
+            str.Substring(0, str.Length - ending.Length) 
         else str
 
     let catchExn f = try Choice1Of2 (f ()) with e -> Choice2Of2 e
@@ -534,10 +534,10 @@ module Display =
     //   stdout.Flush() 
              
     let chunkN = 400      
-    let breaks0 () = Breaks(0,0,Array.create chunkN 0)
+    let breaks0 () = Breaks(0, 0, Array.create chunkN 0)
 
-    let pushBreak saving (Breaks(next,outer,stack)) =
-        //dumpBreaks "pushBreak" (next,outer,stack);
+    let pushBreak saving (Breaks(next, outer, stack)) =
+        //dumpBreaks "pushBreak" (next, outer, stack);
         let stack = 
             if next = stack.Length then
                 Array.init (next + chunkN) (fun i -> if i < next then stack.[i] else 0) // expand if full 
@@ -545,18 +545,18 @@ module Display =
                 stack
            
         stack.[next] <- saving;
-        Breaks(next+1,outer,stack)
+        Breaks(next+1, outer, stack)
 
-    let popBreak (Breaks(next,outer,stack)) =
-        //dumpBreaks "popBreak" (next,outer,stack);
+    let popBreak (Breaks(next, outer, stack)) =
+        //dumpBreaks "popBreak" (next, outer, stack);
         if next=0 then raise (Failure "popBreak: underflow");
         let topBroke = stack.[next-1] < 0
         let outer = if outer=next then outer-1 else outer  // if all broken, unwind 
         let next  = next - 1
-        Breaks(next,outer,stack),topBroke
+        Breaks(next, outer, stack), topBroke
 
-    let forceBreak (Breaks(next,outer,stack)) =
-        //dumpBreaks "forceBreak" (next,outer,stack);
+    let forceBreak (Breaks(next, outer, stack)) =
+        //dumpBreaks "forceBreak" (next, outer, stack);
         if outer=next then
             // all broken 
             None
@@ -564,13 +564,13 @@ module Display =
             let saving = stack.[outer]
             stack.[outer] <- -stack.[outer];    
             let outer = outer+1
-            Some (Breaks(next,outer,stack),saving)
+            Some (Breaks(next, outer, stack), saving)
 
     /// fitting
-    let squashToAux (maxWidth,leafFormatter: _ -> TaggedText) layout =
+    let squashToAux (maxWidth, leafFormatter: _ -> TaggedText) layout =
         let (|ObjToTaggedText|) = leafFormatter
         if maxWidth <= 0 then layout else 
-        let rec fit breaks (pos,layout) =
+        let rec fit breaks (pos, layout) =
             // breaks = break context, can force to get indentation savings.
             // pos    = current position in line
             // layout = to fit
