@@ -290,13 +290,21 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
         /// Adjust for the known primitive numeric types that accept units of measure. 
         let tcref =
             if genericArgsLength = 1 then
+                // real
                 if tyconRefEq g tcref g.system_Double_tcref then g.pfloat_tcr
                 elif tyconRefEq g tcref g.system_Single_tcref then g.pfloat32_tcr
                 elif tyconRefEq g tcref g.system_Decimal_tcref then g.pdecimal_tcr
+                // signed
                 elif tyconRefEq g tcref g.system_Int16_tcref then g.pint16_tcr
                 elif tyconRefEq g tcref g.system_Int32_tcref then g.pint_tcr
                 elif tyconRefEq g tcref g.system_Int64_tcref then g.pint64_tcr
                 elif tyconRefEq g tcref g.system_SByte_tcref then g.pint8_tcr
+                // unsigned
+                elif tyconRefEq g tcref g.system_UInt16_tcref then g.puint16_tcr
+                elif tyconRefEq g tcref g.system_UInt32_tcref then g.puint_tcr
+                elif tyconRefEq g tcref g.system_UInt64_tcref then g.puint64_tcr
+                elif tyconRefEq g tcref g.system_Byte_tcref then g.puint8_tcr
+                // other
                 else tcref
             else
                 tcref

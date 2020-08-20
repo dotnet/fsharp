@@ -45,6 +45,15 @@ type LanguagePrimitivesModule() =
         let y = 2y
         Assert.AreEqual(y, y |> LanguagePrimitives.SByteWithMeasure<m> |> sbyte)
         
+        let i = 2u
+        Assert.AreEqual(i, i |> LanguagePrimitives.UInt32WithMeasure<m> |> uint)
+
+        let l = 2UL
+        Assert.AreEqual(l, l |> LanguagePrimitives.UInt64WithMeasure<m> |> uint64)
+
+        let s = 2us
+        Assert.AreEqual(s, s |> LanguagePrimitives.UInt16WithMeasure<m> |> uint16)
+        
         let uy = 2uy
         Assert.AreEqual(uy, uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte)
 
