@@ -15,6 +15,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UnitTestType>nunit</UnitTestType>
   </PropertyGroup>
 
   <ItemGroup>
@@ -83,9 +84,6 @@
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
-    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
-    <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
-    <PackageReference Include="NunitXml.TestLogger" Version="$(NunitXmlTestLoggerVersion)" />
     <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 
