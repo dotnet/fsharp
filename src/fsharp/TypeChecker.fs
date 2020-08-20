@@ -4253,6 +4253,12 @@ type TyconBindingDefn = TyconBindingDefn of ContainerInfo * NewSlotsOK * DeclKin
 
 type ValSpecResult = ValSpecResult of ParentRef * ValMemberInfoTransient option * Ident * Typars * Typars * TType * PartialValReprInfo * DeclKind 
 
+/// Used to flag if this is the first or a sebsequent translation pass through a computation expression
+type CompExprTranslationPass = Initial | Subsequent
+
+/// Used to flag if computation expression custom operations are allowed in a given context
+type CustomOperationsMode = Allowed | Denied
+
 //-------------------------------------------------------------------------
 // Additional data structures used by checking recursive bindings
 //------------------------------------------------------------------------- 
@@ -7950,7 +7956,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
         | _ -> None
 
     /// Decide if the identifier represents a use of a custom query operator
-    let hasCustomOperations () = not (isNil customOperationMethods)
+    let hasCustomOperations () = if isNil customOperationMethods then CustomOperationsMode.Denied else CustomOperationsMode.Allowed
 
     let isCustomOperation nm = tryGetDataForCustomOperation nm |> Option.isSome
 
@@ -8333,7 +8339,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
         | ForEachThenJoinOrGroupJoinOrZipClause (isFromSource, firstSourcePat, firstSource, nm, secondSourcePat, secondSource, keySelectorsOpt, secondResultPatOpt, mOpCore, innerComp) -> 
 
 
-            if not q then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), nm.idRange))
+            if q = CustomOperationsMode.Denied then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), nm.idRange))
             let firstSource = mkSourceExprConditional isFromSource firstSource
             let secondSource = mkSourceExpr secondSource
 
@@ -8474,7 +8480,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             let varSpaceExpr = mkExprForVarSpace mOpCore valsInner
             let varSpacePat = mkPatForVarSpace mOpCore valsInner
             let joinExpr = mkOverallExprGivenVarSpaceExpr varSpaceExpr
-            Some (trans true q varSpaceInner (SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, varSpacePat, joinExpr, innerComp, mOpCore)) translatedCtxt)
+            Some (trans CompExprTranslationPass.Initial q varSpaceInner (SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, varSpacePat, joinExpr, innerComp, mOpCore)) translatedCtxt)
 
 
         | SynExpr.ForEach (spForLoop, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _) -> 
@@ -8492,14 +8498,14 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                     let _, _, vspecs, envinner, _ = TcMatchPattern cenv (NewInferenceType()) env tpenv (pat, None) 
                     vspecs, envinner)
 
-            Some (trans true q varSpace innerComp 
+            Some (trans CompExprTranslationPass.Initial q varSpace innerComp
                     (fun holeFill -> 
                         translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda (false, sourceExpr.Range, [Clause(pat, None, holeFill, mPat, DebugPointForTarget.Yes)], spBind, mFor) ])) )
 
         | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
             let mFor = match spBind with DebugPointAtFor.Yes m -> m | _ -> m
             if isQuery then errorR(Error(FSComp.SR.tcNoIntegerForLoopInQuery(), mFor))
-            Some (trans true q varSpace (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)) translatedCtxt )
+            Some (trans CompExprTranslationPass.Initial q varSpace (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)) translatedCtxt )
 
         | SynExpr.While (spWhile, guardExpr, innerComp, _) -> 
             let mGuard = guardExpr.Range
@@ -8509,7 +8515,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 error(Error(FSComp.SR.tcRequireBuilderMethod("While"), mWhile))
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "Delay" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), mWhile))
-            Some(trans true q varSpace innerComp (fun holeFill -> translatedCtxt (mkSynCall "While" mWhile [mkSynDelay2 guardExpr; mkSynCall "Delay" mWhile [mkSynDelay innerComp.Range holeFill]])) )
+            Some(trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill -> translatedCtxt (mkSynCall "While" mWhile [mkSynDelay2 guardExpr; mkSynCall "Delay" mWhile [mkSynDelay innerComp.Range holeFill]])) )
 
         | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, _spFinally) ->
 
@@ -8529,7 +8535,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             Some (translatedCtxt (mkSynCall "Zero" m []))
             
         | OptionalSequential (JoinOrGroupJoinOrZipClause (_, _, _, _, _, mClause), _) 
-                      when firstTry -> 
+                      when firstTry = CompExprTranslationPass.Initial ->
 
             // 'join' clauses preceded by 'let' and other constructs get processed by repackaging with a 'for' loop.
             let patvs, _env = varSpace.Force comp.Range
@@ -8544,12 +8550,12 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, varSpacePat, dataCompPrior, comp, comp.Range)
                     
             // Retry with the 'for' loop packaging. Set firstTry=false just in case 'join' processing fails
-            tryTrans false q varSpace rebind id
+            tryTrans CompExprTranslationPass.Subsequent q varSpace rebind id
 
 
         | OptionalSequential (CustomOperationClause (nm, _, opExpr, mClause, _), _) -> 
 
-            if not q then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), opExpr.Range))
+            if q = CustomOperationsMode.Denied then error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedHere(), opExpr.Range))
 
             let patvs, _env = varSpace.Force comp.Range
             let varSpaceExpr = mkExprForVarSpace mClause patvs
@@ -8566,7 +8572,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
             // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore innerComp1
           if isQuery && checkForBinaryApp innerComp1 then 
-            Some (trans true q varSpace innerComp2 translatedCtxt) 
+            Some (trans CompExprTranslationPass.Initial q varSpace innerComp2 translatedCtxt)
 
           else
             
@@ -8575,7 +8581,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
                 | _ -> errorR(Error(FSComp.SR.tcUnrecognizedQueryOperator(), innerComp1.RangeOfFirstPortion))
 
-            match tryTrans true false varSpace innerComp1 id with 
+            match tryTrans CompExprTranslationPass.Initial CustomOperationsMode.Denied varSpace innerComp1 id with
             | Some c -> 
                 // "cexpr; cexpr" is treated as builder.Combine(cexpr1, cexpr1)
                 // This is not pretty - we have to decide which range markers we use for the calls to Combine and Delay
@@ -8595,11 +8601,11 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         | DebugPointAtSequential.ExprOnly -> DebugPointAtBinding m
                         | DebugPointAtSequential.StmtOnly -> NoDebugPointAtDoBinding 
                         | DebugPointAtSequential.Both -> DebugPointAtBinding m
-                    Some(trans true q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, [], innerComp2, m)) translatedCtxt)
+                    Some(trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, [], innerComp2, m)) translatedCtxt)
 
                 // "expr; cexpr" is treated as sequential execution
                 | _ -> 
-                    Some (trans true q varSpace innerComp2 (fun holeFill ->
+                    Some (trans CompExprTranslationPass.Initial q varSpace innerComp2 (fun holeFill ->
                         let fillExpr = 
                             if enableImplicitYield then
                                 // When implicit yields are enabled, then if the 'innerComp1' checks as type
@@ -8624,7 +8630,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                     if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mIfToThen ad "Zero" builderTy) then
                         error(Error(FSComp.SR.tcRequireBuilderMethod("Zero"), mIfToThen))
                     mkSynCall "Zero" mIfToThen []
-                Some (trans true q varSpace thenComp (fun holeFill -> translatedCtxt (SynExpr.IfThenElse (guardExpr, holeFill, Some elseComp, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch))))
+                Some (trans CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill -> translatedCtxt (SynExpr.IfThenElse (guardExpr, holeFill, Some elseComp, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch))))
 
         // 'let binds in expr'
         | SynExpr.LetOrUse (isRec, false, binds, innerComp, m) ->
@@ -8654,7 +8660,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         // error case
                         error(Error(FSComp.SR.tcCustomOperationMayNotBeUsedInConjunctionWithNonSimpleLetBindings(), mQueryOp)))
 
-            Some (trans true q varSpace innerComp (fun holeFill -> translatedCtxt (SynExpr.LetOrUse (isRec, false, binds, holeFill, m))))
+            Some (trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill -> translatedCtxt (SynExpr.LetOrUse (isRec, false, binds, holeFill, m))))
 
         // 'use x = expr in expr'
         | SynExpr.LetOrUse (_, true, [Binding (_, NormalBinding, _, _, _, _, _, pat, _, rhsExpr, _, spBind)], innerComp, _) ->
@@ -8958,7 +8964,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                         else 
                                             SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, intoPat, dataCompAfterOp, contExpr, intoPat.Range)
 
-                                    trans true q emptyVarSpace rebind id
+                                    trans CompExprTranslationPass.Initial q emptyVarSpace rebind id
 
                                 // select a.Name; ...
                                 // distinct; ...
@@ -8980,9 +8986,9 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         else 
                             SynExpr.ForEach (DebugPointAtFor.No, SeqExprOnly false, false, varSpacePat, dataCompPrior, compClausesExpr, compClausesExpr.Range)
                     
-                    trans true q varSpace rebind id
+                    trans CompExprTranslationPass.Initial q varSpace rebind id
     and transNoQueryOps comp =
-        trans true false emptyVarSpace comp id
+        trans CompExprTranslationPass.Initial CustomOperationsMode.Denied emptyVarSpace comp id
 
     and trans firstTry q varSpace comp translatedCtxt = 
         match tryTrans firstTry q varSpace comp translatedCtxt with 
@@ -9000,20 +9006,20 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         SynExpr.ImplicitZero m
                     else
                         SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
-                trans true q varSpace (SynExpr.LetOrUseBang (NoDebugPointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, [], bodyExpr, m)) translatedCtxt
+                trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (NoDebugPointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, [], bodyExpr, m)) translatedCtxt
 
             // "expr;" in final position is treated as { expr; zero }
             // Suppress the sequence point on the "zero"
             | _ -> 
                 // Check for 'where x > y' and other mis-applications of infix operators. If detected, give a good error message, and just ignore comp
                 if isQuery && checkForBinaryApp comp then 
-                    trans true q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt  
+                    trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) translatedCtxt
                 else
                     if isQuery && not comp.IsArbExprAndThusAlreadyReportedError then 
                         match comp with 
                         | SynExpr.JoinIn _ -> () // an error will be reported later when we process innerComp1 as a sequential
                         | _ -> errorR(Error(FSComp.SR.tcUnrecognizedQueryOperator(), comp.RangeOfFirstPortion))
-                    trans true q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill -> 
+                    trans CompExprTranslationPass.Initial q varSpace (SynExpr.ImplicitZero comp.Range) (fun holeFill ->
                         let fillExpr = 
                             if enableImplicitYield then 
                                 let implicitYieldExpr = mkSynCall "Yield" comp.Range [comp]
@@ -9055,7 +9061,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 error(Error(FSComp.SR.tcRequireBuilderMethod(bindName), bindRange))
 
             // Build the `Bind` call
-            trans true q varSpace innerComp (fun holeFill -> 
+            trans CompExprTranslationPass.Initial q varSpace innerComp (fun holeFill ->
                 let consumeExpr = SynExpr.MatchLambda(false, consumePat.Range, [Clause(consumePat, None, holeFill, innerRange, DebugPointForTarget.Yes)], spBind, innerRange)
                 translatedCtxt (mkSynCall bindName bindRange (bindArgs @ [consumeExpr])))
 
@@ -9146,7 +9152,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
         | _ -> true
 
     let basicSynExpr = 
-        trans true (hasCustomOperations ()) (LazyWithContext.NotLazy ([], env)) comp (fun holeFill -> holeFill) 
+        trans CompExprTranslationPass.Initial (hasCustomOperations ()) (LazyWithContext.NotLazy ([], env)) comp (fun holeFill -> holeFill)
 
     let delayedExpr = 
         match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mBuilderVal ad "Delay" builderTy with 
