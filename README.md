@@ -50,11 +50,11 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 
 | Branch | Status |
 |:------:|:------:|
-|master|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=master)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=master)|
+|main|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=main)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=main)|
 
 ## Using nightly releases in Visual Studio
 
-You can use the latest `master` build of the F# compiler and tools for Visual Studio via our nightly releases if you are a Visual Studio user. See details on setup here:
+You can use the latest `main` build of the F# compiler and tools for Visual Studio via our nightly releases if you are a Visual Studio user. See details on setup here:
 
 https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
 
@@ -69,7 +69,7 @@ Alternatively, if you _really_ want to live on the bleeding edge, you can set up
 
 These are the branches in use:
 
-* `master`
+* `main`
   - Most contributions go here.
   - Able to be built, installed and used in the latest public Visual Studio release.
   - May contain updated F# features and logic.
@@ -77,14 +77,14 @@ These are the branches in use:
   - Gets integrated into https://github.com/fsharp/fsharp to form the basis of Mono releases
   - Gets integrated into https://github.com/fsharp/FSharp.Compiler.Service to form the basis of FSharp.Compiler.Service releases
 
-* `dev15.9`
+* `release/dev15.9`
   - Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
 
-* `dev16.x`
+* `release/dev16.x`
   - Latest release branch for the particular point release of Visual Studio.
-  - Incorporates features and fixes from master up to a particular branch point, then selective cherry-picks.
+  - Incorporates features and fixes from main up to a particular branch point, then selective cherry-picks.
   - May contain new features that depend on new things or fixes in the corresponding forthcoming Visual Studio release.
-  - Gets integrated back into master once the corresponding Visual Studio release is made.
+  - Gets integrated back into main once the corresponding Visual Studio release is made.
 
 ## F# language and core library evolution
 
