@@ -1,11 +1,11 @@
 # CI and PR triggers
 trigger:
-- master
+- main
 - dev16.1
 - feature/*
 - release/*
 pr:
-- master
+- main
 - dev16.1
 - feature/*
 - release/*
