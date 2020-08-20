@@ -218,10 +218,9 @@ let rec seekCountUtf8String mdv addr n =
     if c = 0 then n 
     else seekCountUtf8String mdv (addr+1) (n+1)
 
-let seekReadUTF8String mdv addr = 
+let seekReadUTF8String (mdv: BinaryView) addr = 
     let n = seekCountUtf8String mdv addr 0
-    let bytes = seekReadBytes mdv addr n
-    System.Text.Encoding.UTF8.GetString (bytes, 0, bytes.Length)
+    mdv.ReadUtf8String (addr, n)
 
 let seekReadBlob mdv addr = 
     let struct (len, addr) = seekReadCompressedUInt32 mdv addr
