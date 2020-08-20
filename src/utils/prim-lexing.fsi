@@ -96,8 +96,8 @@ type internal LexBuffer<'Char> =
     /// The end position for the lexeme.
     member EndPos: Position with get,set
 
-    /// The matched string.
-    member Lexeme: System.ReadOnlySpan<'Char>
+    /// The currently matched text as a Span, it is only valid until the lexer is advanced
+    member LexemeView: System.ReadOnlySpan<'Char>
     
     /// Get single character of matched string
     member LexemeChar: int -> 'Char

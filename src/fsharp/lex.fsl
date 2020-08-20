@@ -48,7 +48,7 @@ let lexeme (lexbuf : UnicodeLexing.Lexbuf) = UnicodeLexing.Lexbuf.LexemeString l
 
 /// Trim n chars from both sides of lexbuf, return string
 let lexemeTrimBoth  (lexbuf : UnicodeLexing.Lexbuf) (n:int) (m:int) = 
-    let s = lexbuf.Lexeme
+    let s = lexbuf.LexemeView
     s.Slice(n, s.Length - (n+m)).ToString()
 
 /// Trim n chars from the right of lexbuf, return string

@@ -219,7 +219,7 @@ namespace Internal.Utilities.Text.Lexing
            with get() = endPos
            and  set b =  endPos <- b
 
-        member lexbuf.Lexeme         = new System.ReadOnlySpan<'Char>(buffer, bufferScanStart, lexemeLength)
+        member lexbuf.LexemeView         = System.ReadOnlySpan<'Char>(buffer, bufferScanStart, lexemeLength)
         member lexbuf.LexemeChar n   = buffer.[n+bufferScanStart]
         member lexbuf.LexemeContains (c:'Char) =  array.IndexOf(buffer, c, bufferScanStart, lexemeLength) >= 0
         member lexbuf.BufferLocalStore = (context :> IDictionary<_,_>)

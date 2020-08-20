@@ -17,7 +17,7 @@ open FSharp.Compiler.AbstractIL.Internal.AsciiConstants
 
 
 let lexeme (lexbuf : LexBuffer<char>) = LexBuffer<char>.LexemeString lexbuf
-let lexeme_char (lexbuf : LexBuffer<char>) n = lexbuf.LexemeChar n
+let lexemeChar (lexbuf : LexBuffer<char>) n = lexbuf.LexemeChar n
 
 let unexpectedChar _lexbuf =
   raise Parsing.RecoverableParseError ;;
@@ -115,19 +115,19 @@ rule token = parse
   (* The problem is telling an integer-followed-by-ellipses from a floating-point-nubmer-followed-by-dots *)
 
   | ((['0'-'9']) | (['0'-'9']['0'-'9']['0'-'9']+)) "..."
-      {  let b = lexeme lexbuf in 
-         VAL_INT32_ELIPSES(int32(String.sub b  0 (String.length b - 3))) }
+      {  let b = lexbuf.LexemeView in 
+         VAL_INT32_ELIPSES(int32(b.Slice(0, (b.Length - 3)).ToString())) }
   | ['0'-'9' 'A'-'F' 'a'-'f' ] ['0'-'9' 'A'-'F' 'a'-'f' ] 
-      { let c1 = (lexeme_char lexbuf 0) in 
-        let c2 = (lexeme_char lexbuf 1) in 
+      { let c1 = (lexemeChar lexbuf 0) in 
+        let c2 = (lexemeChar lexbuf 1) in 
         if c1 >= '0' && c1 <= '9' && c2 >= '0' && c2 <= '9' then 
           VAL_INT64(int64 (10*evalDigit c1 + evalDigit c2) )
         else VAL_ID(lexeme lexbuf) }
   | '0' 'x' ['0'-'9' 'a'-'f' 'A'-'F']+ 
       { VAL_INT64(int64(lexeme lexbuf)) }
   | "FFFFFF"  ['0'-'9' 'A'-'F' 'a'-'f' ] ['0'-'9' 'A'-'F' 'a'-'f' ] 
-      { let c1 = (lexeme_char lexbuf 6) in 
-        let c2 = (lexeme_char lexbuf 7) in 
+      { let c1 = (lexemeChar lexbuf 6) in 
+        let c2 = (lexemeChar lexbuf 7) in 
         if c1 >= '0' && c1 <= '9' && c2 >= '0' && c2 <= '9' then 
           VAL_INT64(int64 (10*evalDigit c1 + evalDigit c2)) 
         else VAL_ID(lexeme lexbuf) }
