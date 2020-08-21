@@ -6,4 +6,4 @@
 
 let x = 1<Kg>    // ok
 
-let a = 1<Kg> // BigInt
+let a = 1I<Kg> // BigInt
