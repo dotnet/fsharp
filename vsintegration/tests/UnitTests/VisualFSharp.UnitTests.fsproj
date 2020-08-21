@@ -13,6 +13,7 @@
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <UnitTestType>nunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
