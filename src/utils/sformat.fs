@@ -521,16 +521,10 @@ module Display =
     // - if all breaks forced, then outer=next.
     // - popping under these conditions needs to reduce outer and next.
         
-
-    //let dumpBreaks prefix (Breaks(next,outer,stack)) = ()
-    //   printf "%s: next=%d outer=%d stack.Length=%d\n" prefix next outer stack.Length;
-    //   stdout.Flush() 
-             
     let chunkN = 400      
     let breaks0 () = Breaks(0, 0, Array.create chunkN 0)
 
     let pushBreak saving (Breaks(next, outer, stack)) =
-        //dumpBreaks "pushBreak" (next, outer, stack);
         let stack = 
             if next = stack.Length then
                 Array.init (next + chunkN) (fun i -> if i < next then stack.[i] else 0) // expand if full 
@@ -541,7 +535,6 @@ module Display =
         Breaks(next+1, outer, stack)
 
     let popBreak (Breaks(next, outer, stack)) =
-        //dumpBreaks "popBreak" (next, outer, stack);
         if next=0 then raise (Failure "popBreak: underflow");
         let topBroke = stack.[next-1] < 0
         let outer = if outer=next then outer-1 else outer  // if all broken, unwind 
@@ -549,7 +542,6 @@ module Display =
         Breaks(next, outer, stack), topBroke
 
     let forceBreak (Breaks(next, outer, stack)) =
-        //dumpBreaks "forceBreak" (next, outer, stack);
         if outer=next then
             // all broken 
             None
@@ -792,9 +784,6 @@ module Display =
         match c with 
         | '\'' when isChar -> "\\\'"
         | '\"' when not isChar -> "\\\""
-        //| '\n' -> "\\n"
-        //| '\r' -> "\\r"
-        //| '\t' -> "\\t"
         | '\\' -> "\\\\"
         | '\b' -> "\\b"
         | _ when System.Char.IsControl(c) -> 
@@ -808,24 +797,21 @@ module Display =
         let rec check i = i < s.Length && not (System.Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
         let rec conv i acc = if i = s.Length then combine (List.rev acc) else conv (i+1) (formatChar false s.[i] :: acc)  
         "\"" + s + "\""
-        // REVIEW: should we check for the common case of no control characters? Reinstate the following?
-        //"\"" + (if check 0 then s else conv 0 []) + "\""
 
+    // Return a truncated version of the string, e.g.
+    //   "This is the initial text, which has been truncated"+[12 chars]
+    //
+    // Note: The layout code forces breaks based on leaf size and possible break points.
+    //       It does not force leaf size based on width.
+    //       So long leaf-string width can not depend on their printing context...
+    //
+    // The suffix like "+[dd chars]" is 11 chars.
+    //                  12345678901
     let formatStringInWidth (width:int) (str:string) =
-        // Return a truncated version of the string, e.g.
-        //   "This is the initial text, which has been truncated"+[12 chars]
-        //
-        // Note: The layout code forces breaks based on leaf size and possible break points.
-        //       It does not force leaf size based on width.
-        //       So long leaf-string width can not depend on their printing context...
-        //
-        // The suffix like "+[dd chars]" is 11 chars.
-        //                  12345678901
         let suffixLength = 11 // turning point suffix length
         let prefixMinLength = 12 // arbitrary. If print width is reduced, want to print a minimum of information on strings...
         let prefixLength = max (width - 2 (*quotes*) - suffixLength) prefixMinLength
         "\"" + (str.Substring(0,prefixLength)) + "\"" + "+[" + (str.Length - prefixLength).ToString() + " chars]"
-
                            
     type Precedence = 
         | BracketIfTupleOrNotAtomic = 2
@@ -843,12 +829,12 @@ module Display =
         (ty.GetGenericTypeDefinition() = typedefof<Map<_,_>> 
          || ty.GetGenericTypeDefinition() = typedefof<Set<_>>)
 
+    // showMode = ShowTopLevelBinding on the outermost expression when called from fsi.exe,
+    // This allows certain outputs, e.g. objects that would print as <seq> to be suppressed, etc. See 4343.
+    // Calls to layout proper sub-objects should pass showMode = ShowAll.
+    //
+    // Precedences to ensure we add brackets in the right places   
     type ObjectGraphFormatter(opts: FormatOptions, bindingFlags) =
-        // showMode = ShowTopLevelBinding on the outermost expression when called from fsi.exe,
-        // This allows certain outputs, e.g. objects that would print as <seq> to be suppressed, etc. See 4343.
-        // Calls to layout proper sub-objects should pass showMode = ShowAll.
-
-        // Precedences to ensure we add brackets in the right places   
             
         // Keep a record of objects encountered along the way
         let path = Dictionary<obj,int>(10,HashIdentity.Reference)
@@ -1252,10 +1238,6 @@ module Display =
 
         member _.Format(showMode, x:'a, xty:Type) =
             objL showMode opts.PrintDepth  Precedence.BracketIfTuple (x, xty)
-
-    // --------------------------------------------------------------------
-    // pprinter: leafFormatter
-    // --------------------------------------------------------------------
 
     let leafFormatter (opts:FormatOptions) (obj :obj) =
         match obj with 
