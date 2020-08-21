@@ -5,12 +5,6 @@ module LegacyMSBuildReferenceResolver
     open System
     open System.IO
     open System.Reflection
-
-#if FX_RESHAPED_MSBUILD
-    open FSharp.Compiler.MsBuildAdapters
-    open FSharp.Compiler.ToolLocationHelper
-#endif
-
     open FSharp.Compiler.AbstractIL.Internal.Library 
     open FSharp.Compiler.ReferenceResolver
     open Microsoft.Build.Tasks
@@ -73,7 +67,10 @@ module LegacyMSBuildReferenceResolver
     [<Literal>]    
     let private Net472 = "v4.7.2"
 
-    let SupportedDesktopFrameworkVersions = [ Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
+    [<Literal>]    
+    let private Net48 = "v4.8"
+
+    let SupportedDesktopFrameworkVersions = [ Net48; Net472; Net471; Net47; Net462; Net461; Net46; Net452; Net451; Net45 ]
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
@@ -90,6 +87,7 @@ module LegacyMSBuildReferenceResolver
             | Net47 -> Some TargetDotNetFrameworkVersion.Version47
             | Net471 -> Some TargetDotNetFrameworkVersion.Version471
             | Net472 -> Some TargetDotNetFrameworkVersion.Version472
+            | Net48 -> Some TargetDotNetFrameworkVersion.Version48
 #endif
             | _ -> assert false; None
         match v with
@@ -116,7 +114,8 @@ module LegacyMSBuildReferenceResolver
             try
 // The Mono build still uses an ancient version of msbuild from around Dev 14
 #if MSBUILD_AT_LEAST_15
-                if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
+                if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48)) <> null then Net48
+                elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)) <> null then Net471
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version47)) <> null then Net47
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version462)) <> null then Net462
@@ -132,7 +131,6 @@ module LegacyMSBuildReferenceResolver
                 else Net45 // version is 4.5 assumed since this code is running.
             with _ -> Net45
 
-#if !FX_RESHAPED_MSBUILD
         // 1.   First look to see if we can find the highest installed set of dotnet reference assemblies, if yes then select that framework
         // 2.   Otherwise ask msbuild for the highestinstalled framework
         let checkFrameworkForReferenceAssemblies (dotNetVersion:string) =
@@ -148,9 +146,6 @@ module LegacyMSBuildReferenceResolver
         match SupportedDesktopFrameworkVersions |> Seq.tryFind(fun v -> checkFrameworkForReferenceAssemblies v) with
         | Some v -> v
         | None -> getHighestInstalledDotNETFramework()
-#else
-        getHighestInstalledDotNETFramework()
-#endif
 
     /// Derive the target framework directories.
     let DeriveTargetFrameworkDirectories (targetFrameworkVersion:string, logMessage) =
@@ -265,17 +260,10 @@ module LegacyMSBuildReferenceResolver
         let engine = 
             { new IBuildEngine with 
               member __.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
-#if FX_RESHAPED_MSBUILD 
-              member __.LogCustomEvent(e) =  protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
-              member __.LogErrorEvent(e) =   protect (fun () -> logDiagnostic true ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string))
-              member __.LogMessageEvent(e) = protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
-              member __.LogWarningEvent(e) = protect (fun () -> logDiagnostic false ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string))
-#else 
               member __.LogCustomEvent(e) =  protect (fun () -> logMessage e.Message)
               member __.LogErrorEvent(e) =   protect (fun () -> logDiagnostic true e.Code e.Message)
               member __.LogMessageEvent(e) = protect (fun () -> logMessage e.Message)
               member __.LogWarningEvent(e) = protect (fun () -> logDiagnostic false e.Code e.Message)
-#endif 
               member __.ColumnNumberOfTaskNode with get() = 1 
               member __.LineNumberOfTaskNode with get() = 1 
               member __.ContinueOnError with get() = true 
@@ -324,15 +312,10 @@ module LegacyMSBuildReferenceResolver
              |]    
             
         let assemblies = 
-#if FX_RESHAPED_MSBUILD
-            ignore references
-            [||]
-#else
             [| for (referenceName,baggage) in references -> 
                let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
                item.SetMetadata("Baggage", baggage)
                item |]
-#endif
         let rar = 
             ResolveAssemblyReference(BuildEngine=engine, TargetFrameworkDirectories=targetFrameworkDirectories,
                                      FindRelatedFiles=false, FindDependencies=false, FindSatellites=false, 

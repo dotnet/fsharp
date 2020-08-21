@@ -38,8 +38,8 @@ echo dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %config
      dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=net40
 if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
-     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
+echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
 if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
 echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
@@ -56,8 +56,8 @@ echo dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %config
      dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
 if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
-     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
+echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
 if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
 echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr

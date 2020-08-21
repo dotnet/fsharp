@@ -63,12 +63,13 @@ module internal SymbolHelpers =
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
                                  projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, solution: Solution, userOpName) =
         async {
-            let toDict (symbolUses: range seq) =
-                (symbolUses
-                 |> Seq.collect (fun symbolUse -> 
-                      solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
-                 |> Seq.groupBy fst
-                ).ToImmutableDictionary(
+            let toDict (symbolUseRanges: range seq) =
+                let groups =
+                    symbolUseRanges
+                     |> Seq.collect (fun symbolUse -> 
+                          solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
+                     |> Seq.groupBy fst
+                groups.ToImmutableDictionary(
                     (fun (id, _) -> id), 
                     fun (_, xs) -> xs |> Seq.map snd |> Seq.toArray)
 
@@ -77,7 +78,7 @@ module internal SymbolHelpers =
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol)
                 return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.RangeAlternate))
             | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
-                let symbolUses = ResizeArray()
+                let symbolUseRanges = ImmutableArray.CreateBuilder()
                     
                 let projects =
                     if isInternalToProject then projects
@@ -86,10 +87,18 @@ module internal SymbolHelpers =
                             yield project
                             yield! project.GetDependentProjects() ]
                         |> List.distinctBy (fun x -> x.Id)
+
+                let onFound =
+                    fun _ _ symbolUseRange ->
+                        async { symbolUseRanges.Add symbolUseRange }
+
+                let! _ = getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, onFound, userOpName)
                     
-                let! _ = getSymbolUsesInProjects (symbol, projectInfoManager, checker, projects, (fun _ _ symbolUse -> async { symbolUses.Add symbolUse }), userOpName)
-                    
-                return toDict symbolUses }
+                // Distinct these down because each TFM will produce a new 'project'.
+                // Unless guarded by a #if define, symbols with the same range will be added N times
+                let symbolUseRanges = symbolUseRanges.ToArray() |> Array.distinct
+                return toDict symbolUseRanges
+        }
  
     type OriginalText = string
 

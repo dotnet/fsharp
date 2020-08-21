@@ -36,13 +36,11 @@
     <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\DecimalConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\IntegerConstants.fs" />
-    <Compile Include="Compiler\Conformance\Properties\ILMemberAccessTests.fs" />
-    <Compile Include="Compiler\ConstraintSolver\PrimitiveConstraints.fs" />
-    <Compile Include="Compiler\ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Compiler\Warnings\AssignmentWarningTests.fs" />
     <Compile Include="Compiler\Warnings\ExperimentalAttributeTests.fs" />
     <Compile Include="Compiler\Warnings\PatternMatchingWarningTests.fs" />
     <Compile Include="Compiler\SourceTextTests.fs" />
+    <Compile Include="Compiler\Language\WitnessTests.fs" />
     <Compile Include="Compiler\Language\CompilerDirectiveTests.fs" />
     <Compile Include="Compiler\Language\DefaultInterfaceMemberTests.fs" />
     <Compile Include="Compiler\Language\OptionalInteropTests.fs" />
@@ -53,9 +51,10 @@
     <Compile Include="Compiler\Language\HatDesugaringTests.fs" />
     <Compile Include="Compiler\Language\TypeAttributeTests.fs" />
     <Compile Include="Compiler\Language\ByrefTests.fs" />
+    <Compile Include="Compiler\Language\StringInterpolation.fs" />
     <Compile Include="Compiler\Language\InterfaceTests.fs" />
     <Compile Include="Compiler\Language\AnonRecordTests.fs" />
-    <Compile Include="Compiler\Language\OpenStaticClasses.fs" />
+    <Compile Include="Compiler\Language\OpenTypeDeclarationTests.fs" />
     <Compile Include="Compiler\Language\SpanOptimizationTests.fs" />
     <Compile Include="Compiler\Language\SpanTests.fs" />
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
@@ -84,7 +83,6 @@
     <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
     <None Include="app.config" />
     <None Include="update.base.line.with.actuals.fsx" />
-
     <!-- don't include test resources in subdirectories -->
     <EmbeddedResource Remove="**" />
   </ItemGroup>

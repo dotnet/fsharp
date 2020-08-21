@@ -3800,7 +3800,7 @@ let ``Test Project26 parameter symbols`` () =
     
     let rec isByRef (ty: FSharpType) = 
         if ty.IsAbbreviation then isByRef ty.AbbreviatedType 
-        else ty.IsNamedType && ty.NamedEntity.IsByRef
+        else ty.HasTypeDefinition && ty.TypeDefinition.IsByRef
 
     // check we can get the CurriedParameterGroups
     let objMethodsCurriedParameterGroups = 
@@ -5568,7 +5568,7 @@ module Nested =
     |> List.ofSeq
     |> List.map(fun openDeclaration -> tups openDeclaration.AppliedScope)
     |> shouldEqual
-           [ (4, 5), (7, 15)
+           [ (4, 0), (7, 15)
              (6, 0), (7, 15)
-             (11, 5), (14, 15)
+             (11, 0), (14, 15)
              (13, 0), (14, 15) ]

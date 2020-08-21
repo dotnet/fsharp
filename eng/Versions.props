@@ -13,21 +13,29 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSLanguageVersion>5.0</FSLanguageVersion>
+
     <FSCoreMajorVersion>$(FSLanguageVersion)</FSCoreMajorVersion>
     <FSCorePackageVersion>$(FSCoreMajorVersion).0</FSCorePackageVersion>
     <FSCoreVersionPrefix>$(FSCoreMajorVersion).0</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSCoreVersionPrefix).0</FSCoreVersion>
+
+    <FSharpCompilerServicePrefix>37.0</FSharpCompilerServicePrefix>
+    <FSharpCompilerServiceVersion>$(FSharpCompilerServicePrefix).0</FSharpCompilerServiceVersion>
+
     <!-- The current published nuget package -->
     <FSharpCoreShippedPackageVersion>4.7.2</FSharpCoreShippedPackageVersion>
+
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
   </PropertyGroup>
+
   <PropertyGroup>
     <FSPackageMajorVersion>11.0</FSPackageMajorVersion>
     <FSPackageVersion>$(FSPackageMajorVersion).0</FSPackageVersion>
     <FSProductVersionPrefix>$(FSPackageVersion)</FSProductVersionPrefix>
     <FSProductVersion>$(FSPackageVersion).0</FSProductVersion>
   </PropertyGroup>
+
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
     <VSMinorVersion>7</VSMinorVersion>
@@ -35,12 +43,14 @@
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
+
   <!-- version number assignment -->
   <PropertyGroup>
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpPackageVersion)' == 'true'">$(FSCorePackageVersion)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersionPrefix)</VersionPrefix>
+    <VersionPrefix Condition="'$(UseFSharpCompilerServiceVersion)' == 'true'">$(FSharpCompilerServiceVersion)</VersionPrefix>
     <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
@@ -75,7 +85,7 @@
     <SystemIoCompressionVersion>4.3.0</SystemIoCompressionVersion>
     <SystemLinqExpressionsVersion>4.3.0</SystemLinqExpressionsVersion>
     <SystemLinqQueryableVersion>4.3.0</SystemLinqQueryableVersion>
-    <SystemMemoryVersion>4.5.3</SystemMemoryVersion>
+    <SystemMemoryVersion>4.5.4</SystemMemoryVersion>
     <SystemNetRequestsVersion>4.3.0</SystemNetRequestsVersion>
     <SystemNetSecurityVersion>4.3.0</SystemNetSecurityVersion>
     <SystemReflectionEmitVersion>4.3.0</SystemReflectionEmitVersion>
@@ -94,8 +104,7 @@
     <SystemThreadingThreadVersion>4.3.0</SystemThreadingThreadVersion>
     <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
-    <SystemBuffersVersion>4.5.0</SystemBuffersVersion>
-    <SystemMemoryVersion>4.5.3</SystemMemoryVersion>
+    <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
@@ -106,7 +115,7 @@
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.17</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>16.4</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>16.6</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
     <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
@@ -174,6 +183,7 @@
     <MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
     <MicrosoftMSXMLVersion>8.0.0-alpha</MicrosoftMSXMLVersion>
     <MicrosoftNetCompilersVersion>2.7.0</MicrosoftNetCompilersVersion>
+    <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
     <MicrosoftNETCoreILDAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>3.0.0-preview-27318-01</MicrosoftNETCoreILAsmVersion>
     <MicrosoftNETTestSdkVersion>16.6.1</MicrosoftNETTestSdkVersion>

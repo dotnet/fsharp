@@ -9,44 +9,63 @@ namespace Microsoft.FSharp.Collections
     open System
     open System.Collections.Generic
 
-    /// <summary>Common notions of comparison identity used with sorted data structures.</summary>
+    /// <summary>Common notions of value ordering implementing the <see cref="T:System.Collections.Generic.IComparer`1"/> 
+    /// interface, for constructing sorted data structures and performing sorting operations.</summary>
     module ComparisonIdentity = 
       
-        /// <summary>Structural comparison.  Compare using Operators.compare.</summary>
+        /// <summary>Get an implementation of comparison semantics using structural comparison.</summary>
+        ///
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</returns>
         val inline Structural<'T> : IComparer<'T> when 'T : comparison 
 
-        /// <summary>Non-structural comparison.  Compare using NonStructuralComparison.compare.</summary>
+        /// <summary>Get an implementation of comparison semantics using non-structural comparison.</summary>
+        ///
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.NonStructuralComparison.Compare"/>.</returns>
         val inline NonStructural< ^T > : IComparer< ^T > when ^T : (static member ( < ) : ^T * ^T    -> bool) and ^T : (static member ( > ) : ^T * ^T    -> bool) 
 
-        /// <summary>Compare using the given comparer function.</summary>
+        /// <summary>Get an implementation of comparison semantics using the given function.</summary>
+        ///
         /// <param name="comparer">A function to compare two values.</param>
-        /// <returns>An object implementing IComparer using the supplied comparer.</returns>
+        ///
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IComparer`1"/> using the supplied function.</returns>
         val FromFunction : comparer:('T -> 'T -> int) -> IComparer<'T>  
         
-    /// <summary>Common notions of value identity used with hash tables.</summary>
+    /// <summary>Common notions of value identity implementing the <see cref="T:System.Collections.Generic.IEqualityComparer`1"/> 
+    /// interface, for constructing <see cref="T:System.Collections.Generic.Dictionary`2"/> objects and other collections</summary>
     module HashIdentity = 
 
-        /// <summary>Structural hashing.  Hash using Operators.(=) and Operators.hash.</summary>
+        /// <summary>Get an implementation of equality semantics using structural equality and structural hashing.</summary>
+        ///
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IEqualityComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.op_Equality"/> and <see cref="M:Microsoft.FSharp.Core.Operators.hash"/>.</returns>
         val inline Structural<'T> : IEqualityComparer<'T>  when 'T : equality
         
-        /// <summary>Non-structural hashing.  Equality using NonStructuralComparison.(=) and NonStructuralComparison.hash.</summary>
+        /// <summary>Get an implementation of equality semantics using non-structural equality and non-structural hashing.</summary>
+        ///
+        /// <returns>
+        ///  An object implementing <see cref="T:System.Collections.Generic.IEqualityComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.Operators.NonStructuralComparison.op_Equality"/>
+        ///  and <see cref="M:Microsoft.FSharp.Core.Operators.NonStructuralComparison.hash"/>.
+        /// </returns>
         val inline NonStructural<'T> : IEqualityComparer< ^T >  when ^T : equality and ^T  : (static member ( = ) : ^T * ^T    -> bool) 
         
+        /// <summary>Get an implementation of equality semantics semantics using structural equality and structural hashing.</summary>
+        ///
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IEqualityComparer`1"/>.</returns>
         val inline LimitedStructural<'T> : limit: int -> IEqualityComparer<'T>  when 'T : equality
         
-        /// <summary>Physical hashing (hash on reference identity of objects, and the contents of value types).  
-        /// Hash using LanguagePrimitives.PhysicalEquality and LanguagePrimitives.PhysicalHash,
-        /// That is, for value types use GetHashCode and Object.Equals (if no other optimization available),
-        /// and for reference types use System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode and 
-        /// reference equality.</summary>
+        /// <summary>Get an implementation of equality semantics using reference equality and reference hashing.</summary>
+        ///
+        /// <returns>
+        ///  An object implementing <see cref="T:System.Collections.Generic.IEqualityComparer`1"/> using <see cref="M:Microsoft.FSharp.Core.LanguagePrimitives.PhysicalEquality"/>
+        ///  and <see cref="M:Microsoft.FSharp.Core.LanguagePrimitives.PhysicalHash"/>.
+        /// </returns>
         val Reference<'T>   : IEqualityComparer<'T>  when 'T : not struct 
         
-        /// <summary>Hash using the given hashing and equality functions.</summary>
+        /// <summary>Get an implementation of equality semantics using the given functions.</summary>
+        ///
         /// <param name="hasher">A function to generate a hash code from a value.</param>
         /// <param name="equality">A function to test equality of two values.</param>
-        /// <returns>An object implementing IEqualityComparer using the supplied functions.</returns>
-
-        // inline justification: allows inlining of hash functions 
+        ///
+        /// <returns>An object implementing <see cref="T:System.Collections.Generic.IEqualityComparer`1"/> using the given functions.</returns>
         val inline FromFunctions<'T> : hasher:('T -> int) -> equality:('T -> 'T -> bool) -> IEqualityComparer<'T> 
 
     

@@ -7,6 +7,26 @@
         <target state="translated">символ "..^"</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
+        <source>interpolated string</source>
+        <target state="new">interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
+        <source>interpolated string (first part)</source>
+        <target state="new">interpolated string (first part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
+        <source>interpolated string (final part)</source>
+        <target state="new">interpolated string (final part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
+        <source>interpolated string (part)</source>
+        <target state="new">interpolated string (part)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. См. также {0}.</target>
@@ -69,7 +89,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">Идентификаторы переменных в верхнем регистре обычно не должны использоваться в шаблонах, и могут указывать на неправильно написанное имя шаблона.</target>
+        <target state="translated">Идентификаторы переменных в верхнем регистре обычно не должны использоваться в шаблонах, и могут указывать на отсутствующую открытую декларацию или неправильно написанное имя шаблона.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

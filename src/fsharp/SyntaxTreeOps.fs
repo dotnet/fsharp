@@ -731,4 +731,10 @@ let rec synExprContainsError inpExpr =
           | SynExpr.LetOrUseBang  (rhs=e1;body=e2;andBangs=es) ->
               walkExpr e1 || walkExprs [ for (_,_,_,_,e,_) in es do yield e ] || walkExpr e2
 
+          | SynExpr.InterpolatedString (parts, _m) ->
+              walkExprs 
+                  (parts |> List.choose (function 
+                      | SynInterpolatedStringPart.String _ -> None
+                      | SynInterpolatedStringPart.FillExpr (x, _) -> Some x))
+
     walkExpr inpExpr

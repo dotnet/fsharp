@@ -10,7 +10,6 @@
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
-    <DefineConstants>$(DefineConstants);LOCALIZATION_FSCOMP</DefineConstants>
     <FsLexOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsLexOutputFolder>
     <FsYaccOutputFolder Condition="'$(TargetFramework)' != ''">$(TargetFramework)\</FsYaccOutputFolder>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
@@ -19,7 +18,13 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateProgramFile>false</GenerateProgramFile>
     <DebugType>embedded</DebugType>
+    <MicrosoftBuildOverallPackagesVersion>16.6</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Summary>The F# compiler as library. For editors, for tools, for scripting. For you.</Summary>
@@ -283,15 +288,13 @@
     <Compile Include="$(FSharpSourcesRoot)/absil/ilreflect.fs">
       <Link>AbsIL/ilreflect.fs</Link>
     </Compile>
-    <Compile Include="$(FSharpSourcesRoot)\utils\reshapedmsbuild.fs">
-      <Link>ReferenceResolution/reshapedmsbuild.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/ReferenceResolver.fs">
       <Link>ReferenceResolution/ReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\SimulatedMSBuildReferenceResolver.fs">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\utils\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)/utils/CompilerLocationUtils.fs">
       <Link>CompilerLocation/CompilerLocationUtils.fs</Link>
     </Compile>
@@ -726,6 +729,9 @@
     <PackageReference Include="System.Buffers" Version="4.5.0" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />

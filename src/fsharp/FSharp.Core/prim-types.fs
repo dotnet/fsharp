@@ -251,6 +251,9 @@ namespace Microsoft.FSharp.Core
         [<Literal>]
         let RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
 
+        [<Literal>]
+        let NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
+
     [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute(message:string) =
@@ -3793,10 +3796,6 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("FailurePattern")>]
         let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<System.Exception>) then Some error.Message else None
 
-        [<CompiledName("Not")>]
-        let inline not (value: bool) = (# "ceq" value false : bool #)
-           
-
         let inline (<) x y = GenericLessThan x y
         let inline (>) x y = GenericGreaterThan x y
         let inline (>=) x y = GenericGreaterOrEqual x y
@@ -4754,7 +4753,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
 
-        [<CompiledName("NameOf")>]
+        [<CompiledName("NameOf"); CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)>]
         let inline nameof (_: 'T) : string = raise (Exception "may not call directly, should always be optimized away")
 
         [<CompiledName("MethodHandleOf")>]
@@ -4774,6 +4773,9 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Identity")>]
         let id x = x
+
+        [<CompiledName("Not")>]
+        let inline not (value: bool) = match value with true -> false | _ -> true
 
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.

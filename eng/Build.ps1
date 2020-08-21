@@ -37,6 +37,7 @@ param (
     [string]$bootstrapConfiguration = "Proto",
     [string]$bootstrapTfm = "net472",
     [switch][Alias('bl')]$binaryLog,
+    [switch][Alias('nobl')]$excludeCIBinaryLog,
     [switch]$ci,
     [switch]$official,
     [switch]$procdump,
@@ -48,11 +49,13 @@ param (
     [switch]$testCoreClr,
     [switch]$testCambridge,
     [switch]$testCompiler,
+    [switch]$testCompilerService,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
     [switch]$testScripting,
     [switch]$testVs,
     [switch]$testAll,
+    [switch]$testpack,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
 
@@ -69,6 +72,7 @@ function Print-Usage() {
     Write-Host "  -verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
     Write-Host "  -deployExtensions         Deploy built vsixes"
     Write-Host "  -binaryLog                Create MSBuild binary log (short: -bl)"
+    Write-Host "  -excludeCIBinaryLog       When running on CI, allow no binary log (short: -nobl)"
     Write-Host ""
     Write-Host "Actions:"
     Write-Host "  -restore                  Restore packages (short: -r)"
@@ -85,12 +89,14 @@ function Print-Usage() {
     Write-Host "  -testAll                  Run all tests"
     Write-Host "  -testCambridge            Run Cambridge tests"
     Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
+    Write-Host "  -testCompilerService      Run FSharpCompilerService unit tests"
     Write-Host "  -testDesktop              Run tests against full .NET Framework"
     Write-Host "  -testCoreClr              Run tests against CoreCLR"
     Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
     Write-Host "  -testFSharpQA             Run F# Cambridge tests"
     Write-Host "  -testScripting            Run Scripting tests"
     Write-Host "  -testVs                   Run F# editor unit tests"
+    Write-Host "  -testpack                 Verify built packages"
     Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
@@ -113,6 +119,7 @@ function Process-Arguments() {
        Print-Usage
        exit 0
     }
+
     $script:nodeReuse = $False;
 
     if ($testAll) {
@@ -120,17 +127,24 @@ function Process-Arguments() {
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
         $script:testVs = $True
+        $script:testpack = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
         $script:testAll = $False
         $script:testCambridge = $False
         $script:testCompiler = $False
+        $script:testCompilerService = $False
         $script:testDesktop = $False
         $script:testCoreClr = $False
         $script:testFSharpCore = $False
         $script:testFSharpQA = $False
         $script:testVs = $False
+        $script:testpack = $False
+    }
+
+    if ($pack -and $ci) {
+        $script:testpack = $true
     }
 
     if ($noRestore) {
@@ -141,7 +155,14 @@ function Process-Arguments() {
         $script:sign = $False;
     }
 
+    if ($testpack) {
+        $script:pack = $True;
+    }
+
     foreach ($property in $properties) {
+        if ($property.StartsWith("/p:DotNetBuildFromSource=true", "InvariantCultureIgnoreCase")) {
+            $script:testpack = $False;
+        }
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
             Print-Usage
@@ -173,7 +194,12 @@ function BuildSolution() {
 
     Write-Host "$($solution):"
 
+    if ($binaryLog -and $excludeCIBinaryLog) {
+        Write-Host "Invalid argument -binarylog(-bl) and -excludeCIBinaryLog(-nobl) cannot be set at the same time"
+        ExitWithExitCode 1
+        }
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
+
     $projects = Join-Path $RepoRoot $solution
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
@@ -240,7 +266,7 @@ function VerifyAssemblyVersionsAndSymbols() {
     }
 }
 
-function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
+function TestUsingNUnit([string] $testProject, [string] $targetFramework, [boolean] $noTestFilter = $false) {
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
     $projectName = [System.IO.Path]::GetFileNameWithoutExtension($testProject)
@@ -256,7 +282,7 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework) {
         $args += " --no-build"
     }
 
-    if ($env:RunningAsPullRequest -ne "true") {
+    if ($env:RunningAsPullRequest -ne "true" -and $noTestFilter -eq $false) {
         $args += " --filter TestCategory!=PullRequest"
     }
 
@@ -269,7 +295,7 @@ function BuildCompiler() {
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
         $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
         $fsiProject = "$RepoRoot\src\fsharp\fsi\fsi.fsproj"
-        
+
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
@@ -451,8 +477,9 @@ try {
     $coreclrTargetFramework = "netcoreapp3.1"
 
     if ($testDesktop -and -not $noVisualStudio) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework
@@ -460,8 +487,9 @@ try {
     }
 
     if ($testCoreClr) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
@@ -498,9 +526,18 @@ try {
 
     if ($testCompiler) {
         if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -noTestFilter $true
             TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         }
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework
+    }
+
+    if ($testCompilerService) {
+        if (-not $noVisualStudio) {
+            TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework
+        }
+        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework
     }
 
     if ($testCambridge) {
@@ -520,6 +557,32 @@ try {
     if ($testVs -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework
+    }
+
+    # verify nupkgs have access to the source code
+    $nupkgtestFailed = $false
+    if ($testpack) {
+        # Fetch soucelink test
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+        $dotnettoolsPath = Join-Path $RepoRoot "\.tools\"
+        $sourcelink = Join-Path $dotnettoolsPath "sourcelink.exe"
+        try {
+            $out = New-Item -Path $dotnettoolsPath -ItemType Directory -Force
+            Exec-Console $dotnetExe "tool install sourcelink --tool-path $dotnettoolsPath"
+        }
+        catch {
+            Write-Host "Already installed is not a problem"
+        }
+
+        $nupkgs = @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
+        $nupkgs | Foreach {
+            Exec-Console """$sourcelink"" test ""$_"""
+            if (-not $?) { $nupkgtestFailed = $true}
+        }
+    }
+    if ($nupkgtestFailed) {
+            throw "Error Verifying nupkgs have access to the source code"
     }
 
     ExitWithExitCode 0

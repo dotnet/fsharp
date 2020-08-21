@@ -10,7 +10,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies> <!-- Tests won't run without this, at least on OSX, see https://github.com/NuGet/Home/issues/4837#issuecomment-354536302 -->
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
