@@ -2653,8 +2653,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
-        <target state="translated">Ölçü birimleri yalnızca kayan, float32, ondalık ve işaretli tamsayı türlerinde desteklenir</target>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="needs-review-translation">Ölçü birimleri yalnızca kayan, float32, ondalık ve işaretli tamsayı türlerinde desteklenir</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">

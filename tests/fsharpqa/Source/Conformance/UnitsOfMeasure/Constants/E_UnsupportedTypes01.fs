@@ -2,8 +2,8 @@
 // Constants with measures
 // unsupported types 
 // Loosely related to regression tests for FSHARP1.0:2918
-//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal, signed integer types, and unsigned integer types</Expects>
-//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal, signed integer types, and unsigned integer types</Expects>
+//<Expects id="FS0636" status="error">Units-of-measure are only supported on float, float32, decimal, and integer types.</Expects>
+//<Expects id="FS0636" status="error">Units-of-measure are only supported on float, float32, decimal, and integer types.</Expects>
 module M
 [<Measure>] type kg
 

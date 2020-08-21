@@ -2653,7 +2653,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal, signed integer types, and unsigned integer types</source>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
         <target state="translated">仅 float、float32、decimal 和带符号整数类型支持度量单位</target>
         <note />
       </trans-unit>
