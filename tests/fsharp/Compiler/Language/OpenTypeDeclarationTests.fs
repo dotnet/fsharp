@@ -994,7 +994,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test;Ignore("https://github.com/dotnet/fsharp/issues/9914")>]
+    [<Test>]
     let ``Open generic union should have access to union cases with the enclosing type instantiations`` () =
         FSharp """
 namespace FSharpTest
@@ -1017,7 +1017,30 @@ module Test2 =
         """
         |> withLangVersion50
         |> compile
-        |> shouldFail
+        |> withErrorCode 1
+        |> ignore
+
+    [<Test>]
+    let ``Open generic union should have access to pattern union cases with the enclosing type instantiations - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+module Test =
+
+    type TestUnion<'T> =
+        | UCase1 of 'T
+
+open type Test.TestUnion<int>
+
+module Test2 =
+
+    let f x : string =
+        match x with
+        | UCase1 x -> x
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> withErrorCode 1
         |> ignore
 
     [<Test>]
@@ -1044,7 +1067,7 @@ module Test2 =
         |> shouldSucceed
         |> ignore
 
-    [<Test;Ignore("https://github.com/dotnet/fsharp/issues/9914")>]
+    [<Test>]
     let ``Open generic record should have access to construct record via labels with enclosing type instantiations`` () =
         FSharp """
 namespace FSharpTest
@@ -1055,9 +1078,15 @@ module Test =
 
         static member M() = ()
 
-open type Test.TestRecord<int>
+open Test
 
 module Test2 =
+
+    let x = { X = "" }
+
+open type Test.TestRecord<int>
+
+module Test3 =
 
     let x = { X = "" }
 
@@ -1065,7 +1094,37 @@ module Test2 =
         """
         |> withLangVersion50
         |> compile
-        |> shouldFail
+        |> withErrorCode 1
+        |> ignore
+
+    [<Test>]
+    let ``Open generic record should have access to pattern record via labels with enclosing type instantiations - Errors`` () =
+        FSharp """
+namespace FSharpTest
+
+module Test =
+
+    type TestRecord<'T> = { X: 'T }
+
+open Test
+
+module Test2 =
+
+    let f x : string =
+        match x with
+        | { X = x } -> x
+
+open type Test.TestRecord<int>
+
+module Test3 =
+
+    let f x : string =
+        match x with
+        | { X = x } -> x
+        """
+        |> withLangVersionPreview
+        |> compile
+        |> withErrorCode 1
         |> ignore
 
     [<Test>]
@@ -2289,6 +2348,7 @@ if StaticProperty1 <> "You got a static property" then
             |> withName "provider"
             |> withLangVersion50
             |> ignoreWarnings
+            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
@@ -2297,6 +2357,7 @@ if StaticProperty1 <> "You got a static property" then
             |> withName "provided"
             |> withLangVersion50
             |> ignoreWarnings
+            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2324,6 +2385,7 @@ if StaticProperty1 <> "You got a static property" then
             |> withName "provider"
             |> withLangVersion50
             |> ignoreWarnings
+            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
@@ -2332,6 +2394,7 @@ if StaticProperty1 <> "You got a static property" then
             |> withName "provided"
             |> withLangVersion50
             |> ignoreWarnings
+            |> withLangVersionPreview
 
         let test =
             Fsx """
@@ -2360,6 +2423,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             |> withName "provider"
             |> withLangVersion50
             |> ignoreWarnings
+            |> withLangVersionPreview
 
         let provided =
             Fsx (sprintf """
@@ -2368,6 +2432,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             |> withName "provided"
             |> withLangVersion50
             |> ignoreWarnings
+            |> withLangVersionPreview
 
         let test =
             Fsx """
