@@ -2,11 +2,8 @@
 // Constants with measures
 // unsupported types 
 // Loosely related to regression tests for FSHARP1.0:2918
-//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal and signed integer types</Expects>
-//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal and signed integer types</Expects>
-//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal and signed integer types</Expects>
-//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal and signed integer types</Expects>
-//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal and signed integer types</Expects>
+//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal, signed integer types, and unsigned integer types</Expects>
+//<Expects id="FS0636" status="error">Units-of-measure supported only on float, float32, decimal, signed integer types, and unsigned integer types</Expects>
 module M
 [<Measure>] type kg
 
@@ -24,6 +21,3 @@ let _ = 4L<kg>
 // Err
 let _ = 4I<kg>
 let _ = 4N<kg>
-let _ = 4UL<kg>
-let _ = 4u<kg>
-let _ = 4us<kg>

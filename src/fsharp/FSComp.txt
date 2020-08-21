@@ -476,7 +476,7 @@ parsSyntaxModuleSigEndDeprecated,"The syntax 'module ... : sig .. end' is not us
 634,tcNonZeroConstantCannotHaveGenericUnit,"Non-zero constants cannot have generic units. For generic zero, write 0.0<_>."
 635,tcSeqResultsUseYield,"In sequence expressions, results are generated using 'yield'"
 tcUnexpectedBigRationalConstant,"Unexpected big rational constant"
-636,tcInvalidTypeForUnitsOfMeasure,"Units-of-measure supported only on float, float32, decimal and signed integer types"
+636,tcInvalidTypeForUnitsOfMeasure,"Units-of-measure supported only on float, float32, decimal, signed integer types, and unsigned integer types"
 tcUnexpectedConstUint16Array,"Unexpected Const_uint16array"
 tcUnexpectedConstByteArray,"Unexpected Const_bytearray"
 640,tcParameterRequiresName,"A parameter with attributes must also be given a name, e.g. '[<Attribute>] Name : Type'"
