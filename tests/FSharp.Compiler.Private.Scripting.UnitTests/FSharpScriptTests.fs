@@ -11,38 +11,38 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
-open NUnit.Framework
 
-[<TestFixture>]
+open Xunit
+
 type InteractiveTests() =
 
-    [<Test>]
+    [<Fact>]
     member __.``Eval object value``() =
         use script = new FSharpScript()
         let opt = script.Eval("1+1") |> getValue
         let value = opt.Value
-        Assert.AreEqual(typeof<int>, value.ReflectionType)
-        Assert.AreEqual(2, value.ReflectionValue :?> int)
+        Assert.Equal(typeof<int>, value.ReflectionType)
+        Assert.Equal(2, value.ReflectionValue :?> int)
 
-    [<Test>]
+    [<Fact>]
     member __.``Declare and eval object value``() =
         use script = new FSharpScript()
         let opt = script.Eval("let x = 1 + 2\r\nx") |> getValue
         let value = opt.Value
-        Assert.AreEqual(typeof<int>, value.ReflectionType)
-        Assert.AreEqual(3, value.ReflectionValue :?> int)
+        Assert.Equal(typeof<int>, value.ReflectionType)
+        Assert.Equal(3, value.ReflectionValue :?> int)
 
-    [<Test>]
+    [<Fact>]
     member __.``Capture console input``() =
         use input = new RedirectConsoleInput()
         use script = new FSharpScript()
         input.ProvideInput "stdin:1234\r\n"
         let opt = script.Eval("System.Console.ReadLine()") |> getValue
         let value = opt.Value
-        Assert.AreEqual(typeof<string>, value.ReflectionType)
-        Assert.AreEqual("stdin:1234", value.ReflectionValue)
+        Assert.Equal(typeof<string>, value.ReflectionType)
+        Assert.Equal("stdin:1234", downcast value.ReflectionValue)
 
-    [<Test>]
+    [<Fact>]
     member __.``Capture console output/error``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript()
@@ -54,16 +54,16 @@ type InteractiveTests() =
         Assert.True(sawOutputSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see output sentinel value written")
         Assert.True(sawErrorSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")
 
-    [<Test>]
+    [<Fact>]
     member __.``Maintain state between submissions``() =
         use script = new FSharpScript()
         script.Eval("let add x y = x + y") |> ignoreValue
         let opt = script.Eval("add 2 3") |> getValue
         let value = opt.Value
-        Assert.AreEqual(typeof<int>, value.ReflectionType)
-        Assert.AreEqual(5, value.ReflectionValue :?> int)
+        Assert.Equal(typeof<int>, value.ReflectionType)
+        Assert.Equal(5, downcast value.ReflectionValue)
 
-    [<Test>]
+    [<Fact>]
     member __.``Assembly reference event successful``() =
         use script = new FSharpScript()
         let testCode = """
@@ -73,53 +73,53 @@ stacktype.Name = "Stack"
 """
         let opt = script.Eval(testCode) |> getValue
         let value = opt.Value
-        Assert.AreEqual(true, value.ReflectionValue :?> bool)
+        Assert.Equal(true, downcast value.ReflectionValue)
 
-    [<Test>]
+    [<Fact>]
     member __.``Assembly reference unsuccessful``() =
         use script = new FSharpScript()
         let testAssembly = "not-an-assembly-that-can-be-found.dll"
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
-        Assert.AreEqual(1, errors.Length)
+        Assert.Equal(1, errors.Length)
 
-    [<Test>]
+    [<Fact>]
     member _.``Compilation errors report a specific exception``() =
         use script = new FSharpScript()
         let result, _errors = script.Eval("abc")
         match result with
-        | Ok(_) -> Assert.Fail("expected a failure")
-        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+        | Ok(_) -> Assert.False(true, "expected a failure")
+        | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
-    [<Test>]
+    [<Fact>]
     member _.``Runtime exceptions are propagated``() =
         use script = new FSharpScript()
         let result, errors = script.Eval("System.IO.File.ReadAllText(\"not-a-file-path-that-can-be-found-on-disk.txt\")")
-        Assert.IsEmpty(errors)
+        Assert.Empty(errors)
         match result with
-        | Ok(_) -> Assert.Fail("expected a failure")
-        | Error(ex) -> Assert.IsInstanceOf<FileNotFoundException>(ex)
+        | Ok(_) -> Assert.True(false, "expected a failure")
+        | Error(ex) -> Assert.IsAssignableFrom(typeof<FileNotFoundException>, ex)
 
-    [<Test>]
+    [<Fact>]
     member _.``Script with #r "" errors``() =
         use script = new FSharpScript()
         let result, errors = script.Eval("#r \"\"")
-        Assert.IsNotEmpty(errors)
+        Assert.NotEmpty(errors)
         match result with
-        | Ok(_) -> Assert.Fail("expected a failure")
-        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+        | Ok(_) -> Assert.False(true, "expected a failure")
+        | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
-    [<Test>]
+    [<Fact>]
     member _.``Script with #r "    " errors``() =
         use script = new FSharpScript()
         let result, errors = script.Eval("#r \"    \"")
-        Assert.IsNotEmpty(errors)
+        Assert.NotEmpty(errors)
         match result with
-        | Ok(_) -> Assert.Fail("expected a failure")
-        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+        | Ok(_) -> Assert.False(true, "expected a failure")
+        | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
-    [<Test>]
+    [<Fact>]
     member __.``ML - use assembly with native dependencies``() =
         let code = @"
 #r ""nuget:RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json""
@@ -163,18 +163,18 @@ printfn ""%A"" result
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
-        Assert.AreEqual(123, value.ReflectionValue :?> int32)
+        Assert.Equal(123, value.ReflectionValue :?> int32)
 #endif
 
-    [<Test>]
+    [<Fact>]
     member __.``Eval script with package manager invalid key``() =
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let result, _errors = script.Eval(@"#r ""nugt:FSharp.Data""")
         match result with
-        | Ok(_) -> Assert.Fail("expected a failure")
-        | Error(ex) -> Assert.IsInstanceOf<FsiCompilationException>(ex)
+        | Ok(_) -> Assert.False(true, "expected a failure")
+        | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
-    [<Test>]
+    [<Fact>]
     member __.``Eval script with invalid PackageName should fail immediately``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
@@ -188,7 +188,7 @@ printfn ""%A"" result
         let _result, _errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
         Assert.True( (found = 1), "Expected to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
 
-    [<Test>]
+    [<Fact>]
     member __.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
@@ -201,24 +201,24 @@ printfn ""%A"" result
                 """)
         Assert.True( (foundResolve = 1), (sprintf "Expected to see 'Microsoft (R) Build Engine version' only once actually resolved %d times" foundResolve))
 
-    [<Test>]
+    [<Fact>]
     member __.``ML - use assembly with ref dependencies``() =
-        let code = @"
-#r ""nuget:Microsoft.ML.OnnxTransformer,1.4.0""
+        let code = """
+#r "nuget:Microsoft.ML.OnnxTransformer,1.4.0"
+#r "nuget:System.Memory,4.5.4"
 
 open System
 open System.Numerics.Tensors
 let inputValues = [| 12.0; 10.0; 17.0; 5.0 |]
 let tInput = new DenseTensor<float>(inputValues.AsMemory(), new ReadOnlySpan<int>([|4|]))
 tInput.Length
-"
+"""
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
-        Assert.AreEqual(4L, value.ReflectionValue :?> int64)
+        Assert.Equal(4L, downcast value.ReflectionValue)
 
-
-    [<Test>]
+    [<Fact>]
     member __.``System.Device.Gpio - Ensure we reference the runtime version of the assembly``() =
         let code = """
 #r "nuget:System.Device.Gpio"
@@ -229,14 +229,14 @@ typeof<System.Device.Gpio.GpioController>.Assembly.Location
         let value = opt.Value
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes\win\lib\netstandard2.0\System.Device.Gpio.dll") )
+            Assert.True( (value.ReflectionValue :?> string).EndsWith(@"runtimes\win\lib\netstandard2.0\System.Device.Gpio.dll") )
         else if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) then
-            Assert.IsTrue( (value.ReflectionValue :?> string).EndsWith(@"runtimes/linux/lib/netstandard2.0/System.Device.Gpio.dll") )
+            Assert.True( (value.ReflectionValue :?> string).EndsWith(@"runtimes/linux/lib/netstandard2.0/System.Device.Gpio.dll") )
         else
             // Only Windows/Linux supported.
             ()
 
-    [<Test>]
+    [<Fact>]
     member __.``Simple pinvoke should not be impacted by native resolver``() =
         let code = @"
 open System
@@ -259,12 +259,12 @@ else
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
-        Assert.AreEqual(123, value.ReflectionValue :?> int32)
+        Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Test; Ignore("This timing test fails in different environments. Skipping so that we don't assume an arbitrary CI environment has enough compute/etc. for what we need here.")>]
+    [<Fact(Skip="This timing test fails in different environments. Skipping so that we don't assume an arbitrary CI environment has enough compute/etc. for what we need here.")>]
     member _.``Evaluation can be cancelled``() =
         use script = new FSharpScript()
-        let sleepTime = 10000
+        let sleepTime = 10000L
         let mutable result = None
         let mutable wasCancelled = false
         use tokenSource = new CancellationTokenSource()
@@ -281,10 +281,10 @@ else
         evalTask.GetAwaiter().GetResult()
         // ensure we cancelled and didn't complete the sleep or evaluation
         Assert.True(wasCancelled)
-        Assert.LessOrEqual(sw.ElapsedMilliseconds, sleepTime)
-        Assert.AreEqual(None, result)
+        Assert.Equal(sw.ElapsedMilliseconds, sleepTime)
+        Assert.Equal(None, result)
 
-    [<Test>]
+    [<Fact>]
     member _.``Values bound at the root trigger an event``() =
         let mutable foundX = false
         let mutable foundY = false
@@ -302,9 +302,9 @@ let y = 2
         script.Eval(code) |> ignoreValue
         Assert.True(foundX)
         Assert.True(foundY)
-        Assert.AreEqual(2, foundCount)
+        Assert.Equal(2, foundCount)
 
-    [<Test>]
+    [<Fact>]
     member _.``Values re-bound trigger an event``() =
         let mutable foundXCount = 0
         use script = new FSharpScript()
@@ -313,9 +313,9 @@ let y = 2
             if name = "x" && typ = typeof<int> then foundXCount <- foundXCount + 1)
         script.Eval("let x = 1") |> ignoreValue
         script.Eval("let x = 2") |> ignoreValue
-        Assert.AreEqual(2, foundXCount)
+        Assert.Equal(2, foundXCount)
 
-    [<Test>]
+    [<Fact>]
     member _.``Nested let bindings don't trigger event``() =
         let mutable foundInner = false
         use script = new FSharpScript()
@@ -330,10 +330,9 @@ let x =
         script.Eval(code) |> ignoreValue
         Assert.False(foundInner)
 
-    [<Test>]
+    [<Fact>]
     member _.``Script with nuget package that yields out of order dependencies works correctly``() =
         // regression test for: https://github.com/dotnet/fsharp/issues/9217
-
         let code = """
 #r "nuget: FParsec,1.1.1"
 
@@ -352,4 +351,4 @@ test pfloat "1.234"
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let opt = script.Eval(code)  |> getValue
         let value = opt.Value
-        Assert.AreEqual(true, value.ReflectionValue :?> bool)
+        Assert.True(true = downcast value.ReflectionValue)

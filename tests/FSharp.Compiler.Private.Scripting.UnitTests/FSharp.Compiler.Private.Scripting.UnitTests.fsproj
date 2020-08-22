@@ -6,7 +6,7 @@
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <UnitTestType>nunit</UnitTestType>
+    <UnitTestType>xunit</UnitTestType>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
 
@@ -16,8 +16,12 @@
     <Compile Include="DependencyManagerInteractiveTests.fs" />
     <Compile Include="DependencyManagerLineParserTests.fs" />
     <Compile Include="FSharpScriptTests.fs" />
-    <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="CompletionTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="housing.csv"  CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
