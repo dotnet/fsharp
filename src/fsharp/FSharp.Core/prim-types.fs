@@ -784,9 +784,9 @@ namespace Microsoft.FSharp.Core
 
         let inline anyToString nullStr x = 
             match box x with 
+            | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
             | null -> nullStr
-            | :? System.IFormattable as f -> f.ToString(null,System.Globalization.CultureInfo.InvariantCulture)
-            | obj ->  obj.ToString()
+            | _ ->  x.ToString()
 
         let anyToStringShowingNull x = anyToString "null" x
 
@@ -3749,6 +3749,8 @@ namespace Microsoft.FSharp.Core
     open System.Diagnostics              
     open System.Collections.Generic
     open System.Globalization
+    open System.Text
+    open System.Numerics
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -4456,23 +4458,53 @@ namespace Microsoft.FSharp.Core
              when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         [<CompiledName("ToString")>]
-        let inline string (value: ^T) = 
+        let inline string (value: 'T) = 
              anyToString "" value
-             // since we have static optimization conditionals for ints below, we need to special-case Enums.
-             // This way we'll print their symbolic value, as opposed to their integral one (Eg., "A", rather than "1")
-             when ^T struct = anyToString "" value
-             when ^T : float      = (# "" value : float      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : float32    = (# "" value : float32    #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int64      = (# "" value : int64      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int32      = (# "" value : int32      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : nativeint  = (# "" value : nativeint  #).ToString()
-             when ^T : sbyte      = (# "" value : sbyte      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint64     = (# "" value : uint64     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint32     = (# "" value : uint32     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : unativeint = (# "" value : unativeint #).ToString()
-             when ^T : byte       = (# "" value : byte       #).ToString("g",CultureInfo.InvariantCulture)
+             when 'T : string     = (# "" value : string #)     // force no-op
+
+             // Using 'let x = (# ... #) in x.ToString()' leads to better IL, without it, an extra stloc and ldloca.s (get address-of)
+             // gets emitted, which are unnecessary. With it, the extra address-of-variable is not created
+             when 'T : float      = let x = (# "" value : float #)      in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : float32    = let x = (# "" value : float32 #)    in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : decimal    = let x = (# "" value : decimal #)    in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : BigInteger = let x = (# "" value : BigInteger #) in x.ToString(null, CultureInfo.InvariantCulture)
+             
+             // no IFormattable
+             when 'T : char       = let x = (# "" value : 'T #)         in x.ToString()     // use 'T, because char can be an enum  
+             when 'T : bool       = let x = (# "" value : bool #)       in x.ToString()
+             when 'T : nativeint  = let x = (# "" value : nativeint #)  in x.ToString()
+             when 'T : unativeint = let x = (# "" value : unativeint #) in x.ToString()
+
+             // Integral types can be enum:
+             // It is not possible to distinguish statically between Enum and (any type of) int. For signed types we have 
+             // to use IFormattable::ToString, as the minus sign can be overridden. Using boxing we'll print their symbolic
+             // value if it's an enum, e.g.: 'ConsoleKey.Backspace' gives "Backspace", rather than "8")
+             when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int64      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+
+             // unsigned integral types have equal behavior with 'T::ToString() vs IFormattable::ToString
+             // this allows us to issue the 'constrained' opcode with 'callvirt'
+             when 'T : byte       = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint16     = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint32     = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint64     = let x = (# "" value : 'T #) in x.ToString()
+
+
+             // other common mscorlib System struct types
+             when 'T : DateTime         = let x = (# "" value : DateTime #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : DateTimeOffset   = let x = (# "" value : DateTimeOffset #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : TimeSpan         = let x = (# "" value : TimeSpan #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : Guid             = let x = (# "" value : Guid #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T struct = 
+                match box value with
+                | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
+                | _ -> value.ToString()
+
+             // other commmon mscorlib reference types
+             when 'T : StringBuilder = let x = (# "" value : StringBuilder #) in x.ToString()
+             when 'T : IFormattable = let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
