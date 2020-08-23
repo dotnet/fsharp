@@ -2,11 +2,11 @@
 
 namespace FSharp.Core.UnitTests.Portable.SurfaceArea
 
-open NUnit.Framework
+open Xunit
 open FSharp.Core.UnitTests.LibraryTestFx
 
 type SurfaceAreaTest() =
-    [<Test>]
+    [<Fact>]
     member this.VerifyArea() =
         let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])

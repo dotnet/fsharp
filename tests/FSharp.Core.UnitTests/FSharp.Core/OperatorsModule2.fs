@@ -6,10 +6,13 @@
 namespace FSharp.Core.UnitTests.Operators
 
 open System
-open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
 open System.Globalization
 open System.Threading
+
+open FSharp.Core.UnitTests.LibraryTestFx
+
+open Xunit
+
 
 /// If this type compiles without error it is correct
 /// Wrong if you see: FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope.
@@ -22,10 +25,9 @@ type TestFs0670Error<'T> =
             // See: https://github.com/dotnet/fsharp/issues/7958
             Operators.string x
 
-[<TestFixture>]
 type OperatorsModule2() =
 
-    [<Test>]
+    [<Fact>]
     member _.int() =
         // int
         let result = Operators.int 10
@@ -70,7 +72,7 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.int Decimal.MinValue |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member _.int16() =
         // int
         let result = Operators.int16 10
@@ -114,7 +116,7 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.int16 Decimal.MinValue |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.int32() =
         // int
         let result = Operators.int32 10
@@ -159,7 +161,7 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.int32 Decimal.MinValue |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.int64() =
         // int
         let result = Operators.int64 10
@@ -200,12 +202,12 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.int64 Decimal.MinValue |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.invalidArg() =
         CheckThrowsArgumentException(fun() -> Operators.invalidArg  "A" "B" |>ignore )
 
         
-    [<Test>]
+    [<Fact>]
     member _.lock() =
         // lock
         printfn "test8 started"
@@ -226,7 +228,7 @@ type OperatorsModule2() =
         let arr = Async.RunSynchronously (Async.Parallel(Seq.map comp [1..100]))
         Assert.AreNotEqual ([|1..100|], Array.sort arr)
         
-    [<Test>]
+    [<Fact>]
     member _.log() =
         // double
         let result = Operators.log 10.0
@@ -240,7 +242,7 @@ type OperatorsModule2() =
         let result = Operators.log 0.0
         Assert.AreEqual(Double.NegativeInfinity , result)
         
-    [<Test>]
+    [<Fact>]
     member _.log10() =
         // double
         let result = Operators.log10 10.0
@@ -254,7 +256,7 @@ type OperatorsModule2() =
         let result = Operators.log10 0.0
         Assert.AreEqual(Double.NegativeInfinity, result)
         
-    [<Test>]
+    [<Fact>]
     member _.max() =
         // value type
         let result = Operators.max 10 8
@@ -272,7 +274,7 @@ type OperatorsModule2() =
         let result = Operators.max "A" "ABC"
         Assert.AreEqual("ABC", result)
         
-    [<Test>]
+    [<Fact>]
     member _.min() =
         // value type
         let result = Operators.min 10 8
@@ -290,19 +292,19 @@ type OperatorsModule2() =
         let result = Operators.min "A" "ABC"
         Assert.AreEqual("A", result)
         
-    [<Test>]
+    [<Fact>]
     member _.nan() =
         // value type
         let result = Operators.nan
         Assert.AreEqual(System.Double.NaN, nan)
         
-    [<Test>]
+    [<Fact>]
     member _.nanf() =
         // value type
         let result = Operators.nanf
         Assert.AreEqual(System.Single.NaN, result)
         
-    [<Test>]
+    [<Fact>]
     member _.nativeint() =
         // int
         let result = Operators.nativeint 10
@@ -375,27 +377,27 @@ type OperatorsModule2() =
         // Max and min value as literals (this breaks compilation if the lexer fails).
         // The following tests ensure that the proper value is parsed, which is similar to `nativeint Int64.MaxValue` etc.
         if Info.isX86Runtime then
-            Assert.AreEqual("0", string -9223372036854775808n)  // same as int32 -9223372036854775808L
-            Assert.AreEqual("-1", string 9223372036854775807n)    // same as int32 9223372036854775807L
+            Assert.AreEqual("0", string -9223372036854775808n)      // same as int32 -9223372036854775808L
+            Assert.AreEqual("-1", string 9223372036854775807n)      // same as int32 9223372036854775807L
         else
             Assert.AreEqual("-9223372036854775808", string -9223372036854775808n)
             Assert.AreEqual("9223372036854775807", string 9223372036854775807n)
 
 
-    [<Test>]
+    [<Fact>]
     member _.not() =
         let result = Operators.not true
-        Assert.IsFalse(result)
+        Assert.False(result)
         
         let result = Operators.not false
-        Assert.IsTrue(result)
+        Assert.True(result)
         
-    [<Test>]
+    [<Fact>]
     member _.nullArg() =
         CheckThrowsArgumentNullException(fun() -> Operators.nullArg "A" |> ignore)
 
         
-    [<Test>]
+    [<Fact>]
     member _.pown() =
         // int
         let result = Operators.pown 10 2
@@ -427,12 +429,12 @@ type OperatorsModule2() =
         
         CheckThrowsOverflowException(fun() -> Operators.pown System.Int32.MaxValue System.Int32.MaxValue |>ignore)
         
-    [<Test>]
+    [<Fact>]
     member _.raise() =
         CheckThrowsArgumentException(fun()-> Operators.raise <| new ArgumentException("Invalid Argument ")  |> ignore)
         
     
-    [<Test>]
+    [<Fact>]
     member _.ref() =
         // value type
         let result = Operators.ref 0
@@ -450,7 +452,7 @@ type OperatorsModule2() =
         Array.iter funStr [|"A";"B";"C";"D"|]
         Assert.AreEqual(!result,"ABCD")
         
-    [<Test>]
+    [<Fact>]
     member _.reraise() =
         // nothing to reraise should not trigger exception
         try
@@ -458,7 +460,7 @@ type OperatorsModule2() =
         with
         | _ ->    Operators.reraise()
         
-    [<Test>]
+    [<Fact>]
     member _.round() =
         // double
         let result = Operators.round 10.0
@@ -512,7 +514,7 @@ type OperatorsModule2() =
         let result = Operators.round 1234.6M
         Assert.AreEqual(1235M, result)
         
-    [<Test>]
+    [<Fact>]
     member _.sbyte() =
         // int
         let result = Operators.sbyte 10
@@ -557,7 +559,7 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.sbyte Decimal.MinValue |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member _.sign() =
         // int
         let result = Operators.sign 10
@@ -633,7 +635,7 @@ type OperatorsModule2() =
         // float32 nan
         CheckThrowsArithmeticException(fun () -> Operators.sign Single.NaN |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member _.sin() =
         
         let result = Operators.sin 0.5
@@ -648,7 +650,7 @@ type OperatorsModule2() =
         let result = Operators.sin Double.NegativeInfinity
         Assert.AreEqual(Double.NaN, result)
         
-    [<Test>]
+    [<Fact>]
     member _.single() =
         // int
         let result = Operators.float32 10
@@ -662,7 +664,7 @@ type OperatorsModule2() =
         let result = Operators.float32 "10"
         Assert.AreEqual(10f, result)
         
-    [<Test>]
+    [<Fact>]
     member _.sinh() =
      
         let result = Operators.sinh 1.0
@@ -680,7 +682,7 @@ type OperatorsModule2() =
         let result = Operators.sinh Double.NaN
         Assert.AreNearEqual(Double.NaN, result)
 
-    [<Test>]
+    [<Fact>]
     member _.sizeof() =
         // value type
         let result = Operators.sizeof<int>
@@ -698,7 +700,7 @@ type OperatorsModule2() =
         let result = Operators.sizeof<unit>
         Assert.AreEqual(IntPtr.Size, result)
         
-    [<Test>]
+    [<Fact>]
     member _.snd() =
         // value type
         let result = Operators.snd ("ABC",100)
@@ -712,7 +714,7 @@ type OperatorsModule2() =
         let result = Operators.snd (100,null)
         Assert.AreEqual(null, result)
         
-    [<Test>]
+    [<Fact>]
     member _.sqrt() =
         // double
         let result = Operators.sqrt 100.0
@@ -721,22 +723,22 @@ type OperatorsModule2() =
         let result = Operators.sqrt -2.0
         Assert.AreEqual(Double.NaN, result)
         
-    [<Test>]
+    [<Fact>]
     member _.stderr() =
         let result = Operators.stderr
         Assert.AreEqual(null, result.WriteLine("go"))
         
-    [<Test>]
+    [<Fact>]
     member _.stdin() =
         let result = Operators.stdin
         Assert.AreEqual(null, result.Dispose())
         
-    [<Test>]
+    [<Fact>]
     member _.stdout() =
         let result = Operators.stdout
         Assert.AreEqual(null, result.WriteLine("go"))
         
-    [<Test>]
+    [<Fact>]
     member _.string() =
         // value type
         let result = Operators.string 100
@@ -785,7 +787,7 @@ type OperatorsModule2() =
         // reset the culture
         Thread.CurrentThread.CurrentCulture <- currentCI
 
-    [<Test>]
+    [<Fact>]
     member _.``string: don't raise FS0670 anymore``() =
         // The type used here, when compiled, should not raise this error:
         // "FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope."
@@ -793,13 +795,13 @@ type OperatorsModule2() =
         let result = TestFs0670Error 32uy |> Operators.string
         Assert.AreEqual("32", result)
         
-    [<Test>]
+    [<Fact>]
     member _.tan() =
         // double
         let result = Operators.tan 1.0
         Assert.AreNearEqual(1.5574077246549023, result)
         
-    [<Test>]
+    [<Fact>]
     member _.tanh() =
         // The x86 runtime uses 64 bit precision, whereas the x64 runtime uses SSE instructions with 80 bit precision
         // details can be found here: https://github.com/dotnet/fsharp/issues/9522
@@ -818,7 +820,7 @@ type OperatorsModule2() =
         let result = tanh -infinity
         Assert.AreEqual(-1.0, result)
         
-    [<Test>]
+    [<Fact>]
     member _.truncate() =
         // double
         let result = Operators.truncate 10.101
@@ -832,7 +834,7 @@ type OperatorsModule2() =
         let result = Operators.truncate 0.101
         Assert.AreEqual(0.0, result)
         
-    [<Test>]
+    [<Fact>]
     member _.typedefof() =
         // value type
         let result = Operators.typedefof<int>
@@ -846,7 +848,7 @@ type OperatorsModule2() =
         let result = Operators.typedefof<unit>
         Assert.AreEqual("Microsoft.FSharp.Core.Unit", result.FullName)
         
-    [<Test>]
+    [<Fact>]
     member _.typeof() =
         // value type
         let result = Operators.typeof<int>
@@ -860,7 +862,7 @@ type OperatorsModule2() =
         let result = Operators.typeof<unit>
         Assert.AreEqual("Microsoft.FSharp.Core.Unit", result.FullName)
         
-    [<Test>]
+    [<Fact>]
     member _.uint16() =
         // int
         let result = Operators.uint16 100
@@ -877,7 +879,7 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.uint16 Decimal.MinValue |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member _.uint32() =
         // int
         let result = Operators.uint32 100
@@ -919,7 +921,7 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.uint32 Decimal.MinValue |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.uint64() =
         // int
         let result = Operators.uint64 100
@@ -956,7 +958,7 @@ type OperatorsModule2() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.uint64 Decimal.MinValue |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member _.unativeint() =
         // int
         let result = Operators.unativeint 100
@@ -992,7 +994,7 @@ type OperatorsModule2() =
         else
             Assert.AreEqual(18446744073709551615un, result)
 
-    [<Test>]
+    [<Fact>]
     member _.unbox() =
         // value type
         let oint = box 100
@@ -1015,7 +1017,7 @@ type OperatorsModule2() =
         Assert.AreEqual(None, result)
         Assert.AreEqual(null, result)
         
-    [<Test>]
+    [<Fact>]
     member _.using() =
         let sr = new System.IO.StringReader("ABCD")
         Assert.AreEqual(sr.ReadToEnd(),"ABCD")
