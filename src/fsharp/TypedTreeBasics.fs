@@ -412,17 +412,14 @@ let primUnionCaseRefEq compilingFslib fslibCcu (UnionCaseRef(tcr1, c1) as uc1) (
 ///
 /// Note this routine doesn't take type forwarding into account
 let primValRefEq compilingFslib fslibCcu (x: ValRef) (y: ValRef) =
-    x === y ||
-    if (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget) ||
-       (x.IsLocalRef && y.IsLocalRef && valEq x.ResolvedTarget y.ResolvedTarget) then
-        true
-    else
-           (// Use TryDeref to guard against the platforms/times when certain F# language features aren't available,
-            // e.g. CompactFramework doesn't have support for quotations.
-            match x.TryDeref with
-            | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | _ -> false
-            | _ -> match y.TryDeref with ValueNone -> true | _ -> false)
-        || (if compilingFslib then fslibValRefEq fslibCcu x y else false)
+    x === y
+    || (x.IsResolved && y.IsResolved && x.ResolvedTarget === y.ResolvedTarget)
+    || (x.IsLocalRef && y.IsLocalRef && valEq x.ResolvedTarget y.ResolvedTarget)
+    || // Use TryDeref to guard against the platforms/times when certain F# language features aren't available
+       match x.TryDeref with
+       | ValueSome v1 -> match y.TryDeref with ValueSome v2 -> v1 === v2 | ValueNone -> false
+       | ValueNone -> match y.TryDeref with ValueNone -> true | ValueSome _ -> false
+    || (compilingFslib && fslibValRefEq fslibCcu x y)
 
 //---------------------------------------------------------------------------
 // pubpath/cpath mess

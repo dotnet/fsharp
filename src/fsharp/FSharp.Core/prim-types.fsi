@@ -3471,13 +3471,13 @@ namespace Microsoft.FSharp.Core
         
         /// <summary>Converts the argument to a string using <c>ToString</c>.</summary>
         ///
-        /// <remarks>For standard integer and floating point values the <c>ToString</c> conversion 
-        /// uses <c>CultureInfo.InvariantCulture</c>. </remarks>
+        /// <remarks>For standard integer and floating point values the and any type that implements <c>IFormattable</c>
+        /// <c>ToString</c> conversion uses <c>CultureInfo.InvariantCulture</c>. </remarks>
         /// <param name="value">The input value.</param>
         ///
         /// <returns>The converted string.</returns>
         [<CompiledName("ToString")>]
-        val inline string  : value:^T -> string
+        val inline string  : value:'T -> string
 
         /// <summary>Converts the argument to System.Decimal using a direct conversion for all 
         /// primitive numeric types. For strings, the input is converted using <c>UInt64.Parse()</c>  

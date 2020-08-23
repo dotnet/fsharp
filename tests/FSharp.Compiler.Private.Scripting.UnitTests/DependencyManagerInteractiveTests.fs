@@ -7,20 +7,20 @@ open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
+open System.Threading
+
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
-open System.Runtime.InteropServices
-open NUnit.Framework
-open Microsoft.DotNet.DependencyManager
 open FSharp.Compiler.Scripting.UnitTests
-open System.Threading
+open Microsoft.DotNet.DependencyManager
+
+open Xunit
 
 module Native =
     [<DllImport("NoneExistentDll")>]
     extern int NoneSuch()
 
-[<TestFixture>]
 type DependencyManagerInteractiveTests() =
 
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpErrorInfo[])) =
@@ -34,7 +34,7 @@ type DependencyManagerInteractiveTests() =
 
     let scriptHost () = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
 
-    [<Test>]
+    [<Fact>]
     member __.``SmokeTest - #r nuget``() =
         let text = """
 #r @"nuget:Newtonsoft.Json, Version=9.0.1"
@@ -42,10 +42,10 @@ type DependencyManagerInteractiveTests() =
         use script = scriptHost()
         let opt = script.Eval(text) |> getValue
         let value = opt.Value
-        Assert.AreEqual(typeof<int>, value.ReflectionType)
-        Assert.AreEqual(0, value.ReflectionValue :?> int)
+        Assert.Equal(typeof<int>, value.ReflectionType)
+        Assert.Equal(0, value.ReflectionValue :?> int)
 
-    [<Test>]
+    [<Fact>]
     member __.``SmokeTest - #r nuget package not found``() =
         let text = """
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
@@ -53,10 +53,10 @@ type DependencyManagerInteractiveTests() =
         use script = scriptHost()
         let opt = script.Eval(text) |> getValue
         let value = opt.Value
-        Assert.AreEqual(typeof<int>, value.ReflectionType)
-        Assert.AreEqual(0, value.ReflectionValue :?> int)
+        Assert.Equal(typeof<int>, value.ReflectionType)
+        Assert.Equal(0, value.ReflectionValue :?> int)
 
-    [<Test>]
+    [<Fact>]
     member __.``Use Dependency Manager to resolve dependency FSharp.Data``() =
 
         let nativeProbingRoots () = Seq.empty<string>
@@ -73,20 +73,20 @@ type DependencyManagerInteractiveTests() =
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "net472")
-            Assert.AreEqual(true, result.Success)
-            Assert.AreEqual(1, result.Resolutions |> Seq.length)
-            Assert.AreEqual(1, result.SourceFiles |> Seq.length)
-            Assert.AreEqual(1, result.Roots |> Seq.length)
+            Assert.Equal(true, result.Success)
+            Assert.Equal(1, result.Resolutions |> Seq.length)
+            Assert.Equal(1, result.SourceFiles |> Seq.length)
+            Assert.Equal(1, result.Roots |> Seq.length)
 
         let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "netcoreapp3.1")
-        Assert.AreEqual(true, result.Success)
-        Assert.AreEqual(1, result.Resolutions |> Seq.length)
-        Assert.AreEqual(1, result.SourceFiles |> Seq.length)
-        Assert.AreEqual(1, result.Roots |> Seq.length)
+        Assert.Equal(true, result.Success)
+        Assert.Equal(1, result.Resolutions |> Seq.length)
+        Assert.Equal(1, result.SourceFiles |> Seq.length)
+        Assert.Equal(1, result.Roots |> Seq.length)
         ()
 
 
-    [<Test>]
+    [<Fact>]
     member __.``Dependency add with nonexistent package should fail``() =
 
         let nativeProbingRoots () = Seq.empty<string>
@@ -103,20 +103,20 @@ type DependencyManagerInteractiveTests() =
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result = dp.Resolve(idm, ".fsx", [|"System.Collections.Immutable.DoesNotExist"|], reportError, "net472")
-            Assert.AreEqual(false, result.Success)
-            Assert.AreEqual(0, result.Resolutions |> Seq.length)
-            Assert.AreEqual(0, result.SourceFiles |> Seq.length)
-            Assert.AreEqual(0, result.Roots |> Seq.length)
+            Assert.Equal(false, result.Success)
+            Assert.Equal(0, result.Resolutions |> Seq.length)
+            Assert.Equal(0, result.SourceFiles |> Seq.length)
+            Assert.Equal(0, result.Roots |> Seq.length)
 
         let result = dp.Resolve(idm, ".fsx", [|"System.Collections.Immutable.DoesNotExist"|], reportError, "netcoreapp3.1")
-        Assert.AreEqual(false, result.Success)
-        Assert.AreEqual(0, result.Resolutions |> Seq.length)
-        Assert.AreEqual(0, result.SourceFiles |> Seq.length)
-        Assert.AreEqual(0, result.Roots |> Seq.length)
+        Assert.Equal(false, result.Success)
+        Assert.Equal(0, result.Resolutions |> Seq.length)
+        Assert.Equal(0, result.SourceFiles |> Seq.length)
+        Assert.Equal(0, result.Roots |> Seq.length)
         ()
 
 
-    [<Test>]
+    [<Fact>]
     member __.``Multiple Instances of DependencyProvider should be isolated``() =
 
         let assemblyProbingPaths () = Seq.empty<string>
@@ -133,53 +133,53 @@ type DependencyManagerInteractiveTests() =
         let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result1 = dp1.Resolve(idm1, ".fsx", [|"FSharp.Data"|], reportError, "net472")
-            Assert.AreEqual(true, result1.Success)
-            Assert.AreEqual(1, result1.Resolutions |> Seq.length)
-            Assert.IsTrue((result1.Resolutions |> Seq.head).Contains("\\net45\\"))
-            Assert.AreEqual(1, result1.SourceFiles |> Seq.length)
-            Assert.AreEqual(1, result1.Roots |> Seq.length)
-            Assert.IsTrue((result1.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
+            Assert.Equal(true, result1.Success)
+            Assert.Equal(1, result1.Resolutions |> Seq.length)
+            Assert.True((result1.Resolutions |> Seq.head).Contains("\\net45\\"))
+            Assert.Equal(1, result1.SourceFiles |> Seq.length)
+            Assert.Equal(1, result1.Roots |> Seq.length)
+            Assert.True((result1.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
 
         let result2 = dp1.Resolve(idm1, ".fsx", [|"FSharp.Data, 3.3.3"|], reportError, "netcoreapp3.1")
-        Assert.AreEqual(true, result2.Success)
-        Assert.AreEqual(1, result2.Resolutions |> Seq.length)
+        Assert.Equal(true, result2.Success)
+        Assert.Equal(1, result2.Resolutions |> Seq.length)
         let expected2 =
             if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
                 "\\netstandard2.0\\"
             else
                 "/netstandard2.0/"
-        Assert.IsTrue((result2.Resolutions |> Seq.head).Contains(expected2))
-        Assert.AreEqual(1, result2.SourceFiles |> Seq.length)
-        Assert.AreEqual(1, result2.Roots |> Seq.length)
-        Assert.IsTrue((result2.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
+        Assert.True((result2.Resolutions |> Seq.head).Contains(expected2))
+        Assert.Equal(1, result2.SourceFiles |> Seq.length)
+        Assert.Equal(1, result2.Roots |> Seq.length)
+        Assert.True((result2.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
 
         use dp2 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
         let idm2 = dp2.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result3 = dp2.Resolve(idm2, ".fsx", [|"System.Json, Version=4.6.0"|], reportError, "net472")
-            Assert.AreEqual(true, result3.Success)
-            Assert.AreEqual(1, result3.Resolutions |> Seq.length)
-            Assert.IsTrue((result3.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
-            Assert.AreEqual(1, result3.SourceFiles |> Seq.length)
-            Assert.AreEqual(1, result3.SourceFiles |> Seq.length)
-            Assert.IsTrue((result3.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
+            Assert.Equal(true, result3.Success)
+            Assert.Equal(1, result3.Resolutions |> Seq.length)
+            Assert.True((result3.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
+            Assert.Equal(1, result3.SourceFiles |> Seq.length)
+            Assert.Equal(1, result3.SourceFiles |> Seq.length)
+            Assert.True((result3.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
 
         let result4 = dp2.Resolve(idm2, ".fsx", [|"System.Json, Version=4.6.0"|], reportError, "netcoreapp3.1")
-        Assert.AreEqual(true, result4.Success)
-        Assert.AreEqual(1, result4.Resolutions |> Seq.length)
+        Assert.Equal(true, result4.Success)
+        Assert.Equal(1, result4.Resolutions |> Seq.length)
         let expected4 =
             if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
                 "\\netstandard2.0\\"
             else
                 "/netstandard2.0/"
-        Assert.IsTrue((result4.Resolutions |> Seq.head).Contains(expected4))
-        Assert.AreEqual(1, result4.SourceFiles |> Seq.length)
-        Assert.AreEqual(1, result4.Roots |> Seq.length)
-        Assert.IsTrue((result4.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
+        Assert.True((result4.Resolutions |> Seq.head).Contains(expected4))
+        Assert.Equal(1, result4.SourceFiles |> Seq.length)
+        Assert.Equal(1, result4.Roots |> Seq.length)
+        Assert.True((result4.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
         ()
 
-    [<Test>]
+    [<Fact>]
     member __.``Nuget Reference package with dependencies we should get package roots and dependent references``() =
 
         let nativeProbingRoots () = Seq.empty<string>
@@ -196,32 +196,32 @@ type DependencyManagerInteractiveTests() =
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result1 = dp1.Resolve(idm1, ".fsx", [|"Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net472")
-            Assert.AreEqual(true, result1.Success)
-            Assert.AreEqual(6, result1.Resolutions |> Seq.length)
-            Assert.IsTrue((result1.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
-            Assert.AreEqual(1, result1.SourceFiles |> Seq.length)
-            Assert.AreEqual(6, result1.Roots |> Seq.length)
-            Assert.IsTrue((result1.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
+            Assert.Equal(true, result1.Success)
+            Assert.Equal(6, result1.Resolutions |> Seq.length)
+            Assert.True((result1.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
+            Assert.Equal(1, result1.SourceFiles |> Seq.length)
+            Assert.Equal(6, result1.Roots |> Seq.length)
+            Assert.True((result1.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
 
         // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
         // Those assemblies must be delivered by nuget for desktop apps
         let result2 = dp1.Resolve(idm1, ".fsx", [|"Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "netcoreapp3.1")
-        Assert.AreEqual(true, result2.Success)
-        Assert.AreEqual(2, result2.Resolutions |> Seq.length)
+        Assert.Equal(true, result2.Success)
+        Assert.Equal(2, result2.Resolutions |> Seq.length)
         let expected =
             if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
                 "\\netcoreapp3.1\\"
             else
                 "/netcoreapp3.1/"
-        Assert.IsTrue((result2.Resolutions |> Seq.head).Contains(expected))
-        Assert.AreEqual(1, result2.SourceFiles |> Seq.length)
-        Assert.AreEqual(2, result2.Roots |> Seq.length)
-        Assert.IsTrue((result2.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
+        Assert.True((result2.Resolutions |> Seq.head).Contains(expected))
+        Assert.Equal(1, result2.SourceFiles |> Seq.length)
+        Assert.Equal(2, result2.Roots |> Seq.length)
+        Assert.True((result2.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
         ()
 
 /// Native dll resolution is not implemented on desktop
 #if NETCOREAPP
-    [<Test>]
+    [<Fact>]
     member __.``Script using TorchSharp``() =
         let text = """
 #r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"
@@ -235,12 +235,12 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
             use script = scriptHost()
             let opt = script.Eval(text) |> getValue
             let value = opt.Value
-            Assert.AreEqual(typeof<string>, value.ReflectionType)
-            Assert.AreEqual("cpu", value.ReflectionValue :?> string)
+            Assert.Equal(typeof<string>, value.ReflectionType)
+            Assert.Equal("cpu", value.ReflectionValue :?> string)
         ()
 
 
-    [<Test>]
+    [<Fact>]
     member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         let packagemanagerlines = [|
             "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
@@ -269,7 +269,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
-        Assert.IsTrue(result.Success, "resolve failed")
+        Assert.True(result.Success, "resolve failed")
 
         resolverPackageRoots <- result.Roots
         resolverReferences <- result.Resolutions
@@ -335,9 +335,9 @@ printfn ""%A"" result
         use script = new FSharpScript()
         let opt = script.Eval(scriptText)  |> getValue
         let value = opt.Value
-        Assert.AreEqual(123, value.ReflectionValue :?> int32)
+        Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Test>]
+    [<Fact>]
     member __.``Use NativeResolver to resolve native dlls.``() =
         let packagemanagerlines = [|
             "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
@@ -366,7 +366,7 @@ printfn ""%A"" result
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
-        Assert.IsTrue(result.Success, "resolve failed")
+        Assert.True(result.Success, "resolve failed")
 
         resolverPackageRoots <- result.Roots
         resolverReferences <- result.Resolutions
@@ -418,9 +418,9 @@ printfn ""%A"" result
         use script = new FSharpScript()
         let opt = script.Eval(scriptText)  |> getValue
         let value = opt.Value
-        Assert.AreEqual(123, value.ReflectionValue :?> int32)
+        Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Test>]
+    [<Fact>]
     member __.``Use AssemblyResolver to resolve assemblies``() =
         let packagemanagerlines = [|
             "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
@@ -448,7 +448,7 @@ printfn ""%A"" result
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
-        Assert.IsTrue(result.Success, "resolve failed")
+        Assert.True(result.Success, "resolve failed")
 
         resolverPackageRoots <- result.Roots
         resolverReferences <- result.Resolutions
@@ -480,9 +480,9 @@ x |> Seq.iter(fun r ->
         use script = new FSharpScript()
         let opt = script.Eval(scriptText)  |> getValue
         let value = opt.Value
-        Assert.AreEqual(123, value.ReflectionValue :?> int32)
+        Assert.Equal(123, value.ReflectionValue :?> int32)
 
-    [<Test>]
+    [<Fact>]
     member __.``Verify that referencing FSharp.Core fails with FSharp Scripts``() =
         let packagemanagerlines = [| "FSharp.Core,version=4.7.1" |]
 
@@ -506,9 +506,9 @@ x |> Seq.iter(fun r ->
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         // Expected: error FS3217: PackageManager can not reference the System Package 'FSharp.Core'
-        Assert.IsFalse(result.Success, "resolve succeeded but should have failed")
+        Assert.False(result.Success, "resolve succeeded but should have failed")
 
-    [<Test>]
+    [<Fact>]
     member __.``Verify that referencing FSharp.Core succeeds with CSharp Scripts``() =
         let packagemanagerlines = [| "FSharp.Core,version=4.7.1" |]
 
@@ -531,10 +531,10 @@ x |> Seq.iter(fun r ->
             let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
             dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "netcoreapp3.1")
 
-        Assert.IsTrue(result.Success, "resolve failed but should have succeeded")
+        Assert.True(result.Success, "resolve failed but should have succeeded")
 
 
-    [<Test>]
+    [<Fact>]
     member __.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll event handler``() =
 
         let mutable found = false
@@ -555,32 +555,32 @@ x |> Seq.iter(fun r ->
 
             // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
-            Assert.IsTrue (found, "Failed to invoke the nativeProbingRoots callback")
+            Assert.True (found, "Failed to invoke the nativeProbingRoots callback")
 
         // Here the dispose was invoked which should clear the ResolvingUnmanagedDll handler
         found <- false
         try Native.NoneSuch() |> ignore with _ -> ()
-        Assert.IsFalse (found, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
+        Assert.False (found, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
 
         use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "net472")
-            Assert.AreEqual(true, result.Success)
-            Assert.AreEqual(1, result.Resolutions |> Seq.length)
-            Assert.AreEqual(1, result.SourceFiles |> Seq.length)
-            Assert.AreEqual(1, result.Roots |> Seq.length)
+            Assert.Equal(true, result.Success)
+            Assert.Equal(1, result.Resolutions |> Seq.length)
+            Assert.Equal(1, result.SourceFiles |> Seq.length)
+            Assert.Equal(1, result.Roots |> Seq.length)
 
         let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "netcoreapp3.1")
-        Assert.AreEqual(true, result.Success)
-        Assert.AreEqual(1, result.Resolutions |> Seq.length)
-        Assert.AreEqual(1, result.SourceFiles |> Seq.length)
-        Assert.AreEqual(1, result.Roots |> Seq.length)
+        Assert.Equal(true, result.Success)
+        Assert.Equal(1, result.Resolutions |> Seq.length)
+        Assert.Equal(1, result.SourceFiles |> Seq.length)
+        Assert.Equal(1, result.Roots |> Seq.length)
         ()
 
 
-    [<Test>]
+    [<Fact>]
     member __.``Verify that Dispose on DependencyProvider unhooks ResolvingUnmanagedDll and AssemblyResolver event handler``() =
 
         let mutable assemblyFound = false
@@ -599,24 +599,24 @@ x |> Seq.iter(fun r ->
 
             // Invoking a non-existent dll via pinvoke cause a probe. which should invoke the call back
             try Native.NoneSuch() |> ignore with _ -> ()
-            Assert.IsTrue (nativeFound, "Failed to invoke the nativeProbingRoots callback")
+            Assert.True (nativeFound, "Failed to invoke the nativeProbingRoots callback")
 
             // Invoking a non-existent assembly causes a probe. which should invoke the call back
             try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
-            Assert.IsTrue (assemblyFound, "Failed to invoke the AssemblyResolve handler")
+            Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
 
         // Here the dispose was invoked which should clear the ResolvingUnmanagedDll handler
         nativeFound <- false
         assemblyFound <- false
 
         try Native.NoneSuch() |> ignore with _ -> ()
-        Assert.IsFalse (nativeFound, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
+        Assert.False (nativeFound, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
 
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
-        Assert.IsFalse (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
+        Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 #endif
 
-    [<Test>]
+    [<Fact>]
     member __.``Verify that Dispose on AssemblyResolveHandler unhooks AssemblyResolve event handler``() =
 
         let mutable assemblyFound = false
@@ -630,16 +630,16 @@ x |> Seq.iter(fun r ->
 
             // Invoking a non-existent assembly causes a probe. which should invoke the call back
             try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
-            Assert.IsTrue (assemblyFound, "Failed to invoke the AssemblyResolve handler")
+            Assert.True (assemblyFound, "Failed to invoke the AssemblyResolve handler")
 
         // Here the dispose was invoked which should clear the ResolvingUnmanagedDll handler
         assemblyFound <- false
 
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
-        Assert.IsFalse (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
+        Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 
 
-    [<Test>]
+    [<Fact>]
     member __.``Verify that #help produces help text for fsi + dependency manager``() =
         let expected = [|
             """  F# Interactive directives:"""
@@ -685,7 +685,7 @@ x |> Seq.iter(fun r ->
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
 
 
-    [<Test>]
+    [<Fact>]
     member __.``Verify that #help produces help text for fsi + dependency manager language version preview``() =
         let expected = [|
             """  F# Interactive directives:"""
