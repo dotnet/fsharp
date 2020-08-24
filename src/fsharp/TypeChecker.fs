@@ -932,6 +932,9 @@ let TcConst cenv ty m env c =
     match c with 
     | SynConst.Unit -> unif cenv.g.unit_ty; Const.Unit
     | SynConst.Bool i -> unif cenv.g.bool_ty; Const.Bool i
+    | SynConst.Single f -> unif cenv.g.float32_ty; Const.Single f
+    | SynConst.Double f -> unif cenv.g.float_ty; Const.Double f 
+    | SynConst.Decimal f -> unif cenv.g.float_ty; Const.Decimal f 
     | SynConst.SByte i -> unif cenv.g.sbyte_ty; Const.SByte i
     | SynConst.Int16 i -> unif cenv.g.int16_ty; Const.Int16 i
     | SynConst.Int32 i -> unif cenv.g.int_ty; Const.Int32 i
@@ -942,17 +945,17 @@ let TcConst cenv ty m env c =
     | SynConst.UInt32 i -> unif cenv.g.uint32_ty; Const.UInt32 i
     | SynConst.UInt64 i -> unif cenv.g.uint64_ty; Const.UInt64 i
     | SynConst.UIntPtr i -> unif cenv.g.unativeint_ty; Const.UIntPtr i
-    | SynConst.Measure(SynConst.Single f, _) | SynConst.Single f -> unifyMeasureArg (f=0.0f) cenv.g.pfloat32_tcr c; Const.Single f
-    | SynConst.Measure(SynConst.Double f, _) | SynConst.Double f -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
-    | SynConst.Measure(SynConst.Decimal s, _) | SynConst.Decimal s -> unifyMeasureArg false cenv.g.pdecimal_tcr c; Const.Decimal s
-    | SynConst.Measure(SynConst.SByte i, _) | SynConst.SByte i -> unifyMeasureArg (i=0y) cenv.g.pint8_tcr c; Const.SByte i
-    | SynConst.Measure(SynConst.Int16 i, _) | SynConst.Int16 i -> unifyMeasureArg (i=0s) cenv.g.pint16_tcr c; Const.Int16 i
-    | SynConst.Measure(SynConst.Int32 i, _) | SynConst.Int32 i -> unifyMeasureArg (i=0) cenv.g.pint_tcr c; Const.Int32 i
-    | SynConst.Measure(SynConst.Int64 i, _) | SynConst.Int64 i -> unifyMeasureArg (i=0L) cenv.g.pint64_tcr c; Const.Int64 i
-    | SynConst.Measure(SynConst.Byte i, _) | SynConst.Byte i -> unifyMeasureArg (i=0uy) cenv.g.puint8_tcr c; Const.Byte i
-    | SynConst.Measure(SynConst.UInt16 i, _) | SynConst.UInt16 i -> unifyMeasureArg (i=0us) cenv.g.puint16_tcr c; Const.UInt16 i
-    | SynConst.Measure(SynConst.UInt32 i, _) | SynConst.UInt32 i -> unifyMeasureArg (i=0u) cenv.g.puint_tcr c; Const.UInt32 i
-    | SynConst.Measure(SynConst.UInt64 i, _) | SynConst.UInt64 i -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
+    | SynConst.Measure(SynConst.Single f, _) -> unifyMeasureArg (f=0.0f) cenv.g.pfloat32_tcr c; Const.Single f
+    | SynConst.Measure(SynConst.Double f, _) -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
+    | SynConst.Measure(SynConst.Decimal f, _) -> unifyMeasureArg false cenv.g.pdecimal_tcr c; Const.Decimal f
+    | SynConst.Measure(SynConst.SByte i, _) -> unifyMeasureArg (i=0y) cenv.g.pint8_tcr c; Const.SByte i
+    | SynConst.Measure(SynConst.Int16 i, _) -> unifyMeasureArg (i=0s) cenv.g.pint16_tcr c; Const.Int16 i
+    | SynConst.Measure(SynConst.Int32 i, _) -> unifyMeasureArg (i=0) cenv.g.pint_tcr c; Const.Int32 i
+    | SynConst.Measure(SynConst.Int64 i, _) -> unifyMeasureArg (i=0L) cenv.g.pint64_tcr c; Const.Int64 i
+    | SynConst.Measure(SynConst.Byte i, _) -> unifyMeasureArg (i=0uy) cenv.g.puint8_tcr c; Const.Byte i
+    | SynConst.Measure(SynConst.UInt16 i, _) -> unifyMeasureArg (i=0us) cenv.g.puint16_tcr c; Const.UInt16 i
+    | SynConst.Measure(SynConst.UInt32 i, _) -> unifyMeasureArg (i=0u) cenv.g.puint_tcr c; Const.UInt32 i
+    | SynConst.Measure(SynConst.UInt64 i, _) -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
     | SynConst.Char c -> unif cenv.g.char_ty; Const.Char c
     | SynConst.String (s, _) -> unif cenv.g.string_ty; Const.String s
     | SynConst.UserNum _ -> error (InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))

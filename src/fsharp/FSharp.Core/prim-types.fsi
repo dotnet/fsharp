@@ -917,8 +917,8 @@ namespace Microsoft.FSharp.Core
         member Path: string
 
     [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
-    /// of measure is erased in compiled code and when values of this type
+    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Double"/>.</summary>
     ///
@@ -926,8 +926,8 @@ namespace Microsoft.FSharp.Core
     type float<[<Measure>] 'Measure> = float
 
     [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
-    /// of measure is erased in compiled code and when values of this type
+    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Single"/>.
     /// </summary>
@@ -952,7 +952,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <category>Basic Types with Units of Measure</category>
     type int<[<Measure>] 'Measure> = int
-
+    
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
@@ -1015,6 +1015,54 @@ namespace Microsoft.FSharp.Core
     ///
     /// <category>Basic Types with Units of Measure</category>
     type uint64<[<Measure>] 'Measure> = uint64
+    
+    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Double"/>.</summary>
+    ///
+    /// <category index="6">Basic Types with Units of Measure</category>
+    type double<[<Measure>] 'Measure> = float<'Measure>
+    
+    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Single"/>.</summary>
+    ///
+    /// <category index="6">Basic Types with Units of Measure</category>
+    type single<[<Measure>] 'Measure> = float32<'Measure>
+    
+    /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.SByte"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type int8<[<Measure>] 'Measure> = sbyte<'Measure>
+    
+    /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Int32"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type int32<[<Measure>] 'Measure> = int<'Measure>
+    
+    /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Byte"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint8<[<Measure>] 'Measure> = byte<'Measure>
+    
+    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt32"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</summary>
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE

@@ -373,6 +373,13 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type byte<[<Measure>] 'Measure> = byte
     [<MeasureAnnotatedAbbreviation>] type uint16<[<Measure>] 'Measure> = uint16
     [<MeasureAnnotatedAbbreviation>] type uint64<[<Measure>] 'Measure> = uint64
+    
+    type double<[<Measure>] 'Measure> = float<'Measure>
+    type single<[<Measure>] 'Measure> = float32<'Measure>
+    type int8<[<Measure>] 'Measure> = sbyte<'Measure>
+    type int32<[<Measure>] 'Measure> = int<'Measure>
+    type uint8<[<Measure>] 'Measure> = byte<'Measure>
+    type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</c></summary>
     type byref<'T> = (# "!0&" #)
