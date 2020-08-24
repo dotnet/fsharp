@@ -217,7 +217,7 @@ let config configurationName envVars =
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
     let artifactsBinPath = artifactsPath ++ "bin"
-    let coreClrRuntimePackageVersion = "3.0.0-preview-27318-01"
+    let coreClrRuntimePackageVersion = "5.0.0-preview.7.20364.11"
     let csc_flags = "/nologo"
     let vbc_flags = "/nologo"
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
@@ -234,8 +234,6 @@ let config configurationName envVars =
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
-    let CORECLR_DLL = if operatingSystem = "win" then "coreclr.dll" elif operatingSystem = "osx" then "libcoreclr.dylib" else "libcoreclr.so"
-    let coreclrdll = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ CORECLR_DLL)
     let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
     let PEVERIFY = requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
@@ -248,10 +246,6 @@ let config configurationName envVars =
         let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ DOTNET_EXE
         if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
         else DOTNET_EXE
-
-    // ildasm + ilasm requires coreclr.dll to run which has already been restored to the packages directory
-    File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ CORECLR_DLL, overwrite=true)
-    File.Copy(coreclrdll, Path.GetDirectoryName(ILASM) ++ CORECLR_DLL, overwrite=true)
 
     let FSI_PATH = ("fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe")
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH

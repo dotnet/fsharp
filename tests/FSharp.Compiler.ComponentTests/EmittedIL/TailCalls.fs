@@ -1,23 +1,25 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests.CodeGen.EmittedIL
+namespace FSharp.Compiler.ComponentTests.EmittedIL
 
-open FSharp.Test.Utilities
-open NUnit.Framework
+open Xunit
+open FSharp.Test.Utilities.Compiler
 
-[<TestFixture>]
-module ``TailCalls`` =
+module ``Tail Calls`` =
     // Regression test for DevDiv:72571
 
-    [<Test>]
+    let private compileWithTailCalls = ignoreWarnings >> withOptions ["-g"; "--optimize-"; "--tailcalls+"] >> compile
+
+    [<Fact>]
     let ``TailCall 01``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"; "--tailcalls+"|]
-            """
+        FSharp """
 module TailCall01
 let foo(x:int, y) = printfn "%d" x
 let run() = let x = 0 in foo(x,5)
-            """
-            (fun verifier -> verifier.VerifyIL [
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
             """
   .method public static void  foo<a>(int32 x,
                                      !!a y) cil managed
@@ -54,18 +56,19 @@ let run() = let x = 0 in foo(x,5)
                                                      !!0)
     IL_000b:  ret
   }
-            """
-            ])
+            """]
 
-    [<Test>]
+
+    [<Fact>]
     let ``TailCall 02``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"; "--tailcalls+"|]
-            """
+        FSharp """
 module TailCall02
 let foo(x:int byref) = x
 let run() = let mutable x = 0 in foo(&x)
-            """
-            (fun verifier -> verifier.VerifyIL [
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
             """
   .method public static int32  foo(int32& x) cil managed
   {
@@ -89,17 +92,18 @@ let run() = let mutable x = 0 in foo(&x)
     IL_0009:  ret
   }
             """
-            ])
+            ]
 
-    [<Test>]
+    [<Fact>]
     let ``TailCall 03``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"; "--tailcalls+"|]
-            """
+        FSharp """
 module TailCall03
 let foo (x:int byref) (y:int byref) z = printfn "%d" (x+y)
 let run() = let mutable x = 0 in foo &x &x 5
-            """
-            (fun verifier -> verifier.VerifyIL [
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
             """
   .method public static void  foo<a>(int32& x,
                                      int32& y,
@@ -146,17 +150,18 @@ let run() = let mutable x = 0 in foo &x &x 5
     IL_000d:  ret
   }
             """
-            ])
+            ]
 
-    [<Test>]
+    [<Fact>]
     let ``TailCall 04``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"; "--tailcalls+"|]
-            """
+        FSharp """
 module TailCall04
 let foo(x:int byref, y) = printfn "%d" x
 let run() = let mutable x = 0 in foo(&x,5)
-            """
-            (fun verifier -> verifier.VerifyIL [
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
             """
   .method public static void  foo<a>(int32& x,
                                      !!a y) cil managed
@@ -195,17 +200,18 @@ let run() = let mutable x = 0 in foo(&x,5)
     IL_000b:  ret
 
             """
-            ])
+            ]
 
-    [<Test>]
+    [<Fact>]
     let ``TailCall 05``() =
-        CompilerAssert.CompileLibraryAndVerifyILWithOptions [|"-g"; "--optimize-"; "--tailcalls+"|]
-            """
+        FSharp """
 module TailCall05
 let foo(x:int byref, y:int byref, z) = printfn "%d" (x+y)
 let run() = let mutable x = 0 in foo(&x,&x,5)
-            """
-            (fun verifier -> verifier.VerifyIL [
+        """
+        |> compileWithTailCalls
+        |> shouldSucceed
+        |> verifyIL [
             """
   .method public static void  foo<a>(int32& x,
                                      int32& y,
@@ -250,4 +256,5 @@ let run() = let mutable x = 0 in foo(&x,&x,5)
     IL_000d:  ret
   }
             """
-            ])
+            ]
+

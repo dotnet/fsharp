@@ -15,12 +15,20 @@ module ILChecker =
     let config = initializeSuite ()
 
     let private exec exe args =
-        let startInfo = ProcessStartInfo(exe, String.concat " " args)
-        startInfo.RedirectStandardError <- true
-        startInfo.UseShellExecute <- false
-        use p = Process.Start(startInfo)
+        let mutable pinfo = ProcessStartInfo()
+        pinfo.RedirectStandardError <- true
+        pinfo.RedirectStandardOutput <- true
+        pinfo.FileName <- exe
+        pinfo.Arguments <- (String.concat " " args)
+        pinfo.UseShellExecute <- false
+
+        use p = Process.Start pinfo
+
+        let errors = p.StandardError.ReadToEnd()
+
         p.WaitForExit()
-        p.StandardError.ReadToEnd(), p.ExitCode
+
+        errors, p.ExitCode
 
     /// Filters i.e ['The system type \'System.ReadOnlySpan`1\' was required but no referenced system DLL contained this type']
     let private filterSpecialComment (text: string) =
@@ -36,7 +44,13 @@ module ILChecker =
         try
             let ildasmPath = config.ILDASM
 
-            exec ildasmPath (ildasmArgs @ [ sprintf "%s /out=%s" dllFilePath ilFilePath ]) |> ignore
+            let stdErr, exitCode = exec ildasmPath (ildasmArgs @ [ sprintf "%s -out=%s" dllFilePath ilFilePath ])
+
+            if exitCode <> 0 then
+                failwith (sprintf "ILASM Expected exit code \"0\", got \"%d\"\nSTDERR: %s" exitCode stdErr)
+
+            if not (String.IsNullOrWhiteSpace stdErr) then
+                failwith (sprintf "ILASM Stderr is not empty:\n %s" stdErr)
 
             let unifyRuntimeAssemblyName ilCode =
                 System.Text.RegularExpressions.Regex.Replace(ilCode,
@@ -68,13 +82,13 @@ module ILChecker =
                 let expectedLines = ilCode.Split('\n')
                 let startIndex = textNoComments.IndexOf(expectedLines.[0].Trim())
                 if startIndex = -1 then
-                    errorMsgOpt <- Some("==EXPECTED CONTAINS==\n" + ilCode + "\n")
+                    errorMsgOpt <- Some("\nExpected:\n" + ilCode + "\n")
                 else
                     let errors = ResizeArray()
                     let actualLines = textNoComments.Substring(startIndex, textNoComments.Length - startIndex).Split('\n')
                     if actualLines.Length < expectedLines.Length then
-                        let msg = sprintf "==EXPECTED AT LEAST %d LINES BUT FOUND ONLY %d ==\n" expectedLines.Length actualLines.Length
-                        errorMsgOpt <- Some(msg + "==EXPECTED CONTAINS==\n" + ilCode + "\n")
+                        let msg = sprintf "\nExpected at least %d lines but found only %d\n" expectedLines.Length actualLines.Length
+                        errorMsgOpt <- Some(msg + "\nExpected:\n" + ilCode + "\n")
                     else
                         for i = 0 to expectedLines.Length - 1 do
                             let expected = expectedLines.[i].Trim()
@@ -83,15 +97,15 @@ module ILChecker =
                                 errors.Add(sprintf "\n==\nName: '%s'\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
 
                         if errors.Count > 0 then
-                            let msg = String.concat "\n" errors + "\n\n\n==EXPECTED==\n" + ilCode + "\n"
-                            errorMsgOpt <- Some(msg + "\n\n\n==ACTUAL==\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
+                            let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
+                            errorMsgOpt <- Some(msg + "\n\n\nActual:\n" + String.Join("\n", actualLines, 0, expectedLines.Length))
             )
 
             if expectedIL.Length = 0 then
                 errorMsgOpt <- Some ("No Expected IL")
 
             match errorMsgOpt with
-            | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\n==ENTIRE ACTUAL==\n" + textNoComments)
+            | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\nEntire actual:\n" + textNoComments)
             | _ -> ()
         finally
             try File.Delete(ilFilePath) with | _ -> ()
@@ -109,6 +123,9 @@ module ILChecker =
 
     let checkIL dllFilePath expectedIL =
         checkILAux [] dllFilePath expectedIL
+
+    let verifyIL (dllFilePath: string) (expectedIL: string) =
+        checkIL dllFilePath [expectedIL]
 
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
