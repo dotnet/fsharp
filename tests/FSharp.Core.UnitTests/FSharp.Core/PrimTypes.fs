@@ -57,19 +57,6 @@ type LanguagePrimitivesModule() =
         let uy = 2uy
         Assert.AreEqual(uy, uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte)
 
-    [<Test>]
-    member _.MeasurableAliases() =
-        let f (x: int<m>) y: int32<m> = x + y
-        let g (x: int<m>) y: int32<m^2> = x * y  
-        let h (x: int<m>) y = x * y  
-        let i (x: int32<m>) y = x * y
-        
-        let tres = 3<m>
-        let ocho : int32<m> = 8<m>   
-        
-        Assert.AreEqual(ocho, f tres 5<m>)
-        Assert.AreEqual(64<m^2>, g ocho ocho)
-        Assert.AreEqual(h ocho tres, i tres ocho)
 
     [<Test>]
     member this.MaxMinNan() =
