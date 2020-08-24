@@ -68,7 +68,7 @@ type LanguagePrimitivesModule() =
         let ocho : int32<m> = 8<m>   
         
         Assert.AreEqual(ocho, f tres 5<m>)
-        Assert.AreEqual(192<m^2>, g ocho ocho)
+        Assert.AreEqual(64<m^2>, g ocho ocho)
         Assert.AreEqual(h ocho tres, i tres ocho)
 
     [<Test>]
