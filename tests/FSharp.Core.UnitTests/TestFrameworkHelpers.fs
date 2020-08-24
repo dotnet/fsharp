@@ -1,45 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace NUnit.Framework
+namespace Xunit
 
 open System
 open System.Collections.Generic
 open System.Linq
 open System.Runtime.InteropServices
 
-#if XUNIT
 open Xunit
-
-(* The threading tests under XUnit seem prone to be very Flakey *)
-[<assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)>]
-do ()
-
-
-type TestAttribute() =
-    inherit FactAttribute()
-
-type TestFixtureAttribute() =
-    inherit System.Attribute()
-
-type Explicit() =
-    inherit System.Attribute()
-
-type SetUpAttribute() =
-    inherit System.Attribute()
-
-[<AttributeUsage(AttributeTargets.All, AllowMultiple = true)>]
-type Category(_categories:string) =
-    inherit System.Attribute()
-
-type TearDownAttribute() =
-    inherit System.Attribute()
-
-type IgnoreAttribute (_comment:string) =
-    inherit System.Attribute ()
-#endif
-
-// Alias NUnit and XUnit Assert  as LocalAssert
-type TestFrameworkAssert = Assert
 
 module Info =
     /// Use this to distinguish cases where output is deterministically different between x86 runtime or x64 runtime,
@@ -62,9 +30,7 @@ module Info =
     let isNetNative = framework.StartsWith(".NET Native")
 
 
-
 module private Impl =
-    open FsCheck.Arb
 
     let rec equals (expected:obj) (actual:obj) =
 
@@ -122,20 +88,19 @@ module private Impl =
 
 
 type Assert =
-    
+
     static member AreEqual(expected : obj, actual : obj, message : string) =
-            
         if not (Impl.equals expected actual) then
             let message = 
                 let (exp, act) = Impl.floatStr expected actual
                 sprintf "%s: Expected %s but got %s" message exp act
 
-            AssertionException message |> raise
+            Exception message |> raise
 
     static member AreNotEqual(expected : obj, actual : obj, message : string) =
         if Impl.equals expected actual then
             let message = sprintf "%s: Expected not %A but got %A" message expected actual
-            AssertionException message |> raise
+            Exception message |> raise
 
     static member AreEqual(expected : obj, actual : obj) = Assert.AreEqual(expected, actual, "Assertion")
 
@@ -147,40 +112,15 @@ type Assert =
             let ((e, a)) = Impl.floatStr expected actual
             sprintf "Are near equal: expected %s, but got %s (with delta: %f)" e a delta
 
-        global.NUnit.Framework.Assert.AreEqual(expected, actual, 1.0, message)
         Assert.AreEqual(Math.Round(expected, 15), Math.Round(actual, 15), message)
 
-    static member AreNotEqual(expected : obj, actual : obj) = Assert.AreNotEqual(expected, actual, "Assertion")
+    static member AreNotEqual(expected: obj, actual: obj) = Assert.AreNotEqual(expected, actual, "Assertion")
 
-    static member IsNull(o : obj) = Assert.AreEqual(null, o)
-
-    static member IsTrue(x : bool, message : string) =
-        if not x then
-            AssertionException(message) |> raise
-
-    static member IsTrue(x : bool) = Assert.IsTrue(x, "")
-
-    static member True(x : bool) = Assert.IsTrue(x)
-
-    static member IsFalse(x : bool, message : string) =
-        if x then
-            AssertionException(message) |> raise
-
-    static member IsFalse(x : bool) = Assert.IsFalse(x, "")
-
-    static member False(x : bool) = Assert.IsFalse(x)
-
-    static member Fail(message : string) = AssertionException(message) |> raise
+    static member Fail(message : string) = Exception(message) |> raise
 
     static member Fail() = Assert.Fail("") 
 
     static member Fail(message : string, args : obj[]) = Assert.Fail(String.Format(message,args))
-
-#if XUNIT
-    static member Throws(except:Type, func: unit -> unit ) = TestFrameworkAssert.Throws(except, new Action(func))
-#else
-    static member Throws(except:Type, func: unit -> unit ) = TestFrameworkAssert.Throws(except, TestDelegate(func))
-#endif
 
 type CollectionAssert =
     static member AreEqual(expected, actual) = 
