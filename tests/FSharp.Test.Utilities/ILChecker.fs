@@ -15,18 +15,18 @@ module ILChecker =
     let config = initializeSuite ()
 
     let private exec exe args =
-        let mutable pinfo = ProcessStartInfo()
-        pinfo.RedirectStandardError <- true
-        pinfo.RedirectStandardOutput <- true
-        pinfo.FileName <- exe
-        pinfo.Arguments <- (String.concat " " args)
-        pinfo.UseShellExecute <- false
-
-        use p = Process.Start pinfo
+        let startInfo = ProcessStartInfo(exe, String.concat " " args)
+        startInfo.RedirectStandardError <- true
+        startInfo.UseShellExecute <- false
+        let p = Process.Start(startInfo)
 
         let errors = p.StandardError.ReadToEnd()
 
-        p.WaitForExit()
+        let timeout = 30000
+        let exited = p.WaitForExit(timeout)
+
+        if not exited then
+            failwith (sprintf "Process hasn't exited after %d milliseconds" timeout)
 
         errors, p.ExitCode
 
