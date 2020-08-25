@@ -7,7 +7,7 @@ namespace FSharp.Core.UnitTests.Control
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 open System.Threading
 open System.Collections.Generic
 
@@ -16,7 +16,6 @@ type Message =
     | Fetch of AsyncReplyChannel<int> 
     | Reset
 
-[<TestFixture>]
 type MailboxProcessorType() =
 
     let getSimpleMailbox() =
@@ -40,7 +39,7 @@ type MailboxProcessorType() =
             )
         mailbox
 
-    [<Test>]
+    [<Fact>]
     member this.DefaultTimeout() =
 
         let mailbox = getSimpleMailbox()
@@ -69,8 +68,7 @@ type MailboxProcessorType() =
 
         ()
 
-    [<Test>]
-    [<Category("PullRequest")>]
+    [<Fact>]
     member this.``Receive handles cancellation token``() =
         let result = ref None
 
@@ -103,8 +101,7 @@ type MailboxProcessorType() =
 
         Assert.AreEqual(Some("Received 1 Disposed"), !result)
 
-    [<Test>]
-    [<Category("PullRequest")>]
+    [<Fact>]
     member this.``Receive with timeout argument handles cancellation token``() =
         let result = ref None
 
@@ -137,8 +134,7 @@ type MailboxProcessorType() =
 
         Assert.AreEqual(Some("Received 1 Disposed"),!result)
 
-    [<Test>]
-    [<Category("PullRequest")>]
+    [<Fact>]
     member this.``Scan handles cancellation token``() =
         let result = ref None
 
@@ -171,7 +167,7 @@ type MailboxProcessorType() =
 
         Assert.AreEqual(Some("Scanned 1 Disposed"), !result)
 
-    [<Test>]
+    [<Fact>]
     member this.``Receive Races with Post``() =
         let receiveEv = new ManualResetEvent(false)
         let postEv = new ManualResetEvent(false)
@@ -203,7 +199,7 @@ type MailboxProcessorType() =
             finishedEv.WaitOne() |> ignore
             finishedEv.Reset() |> ignore
 
-    [<Test>]
+    [<Fact>]
     member this.``Receive Races with Post on timeout``() =
         let receiveEv = new ManualResetEvent(false)
         let postEv = new ManualResetEvent(false)
@@ -242,7 +238,7 @@ type MailboxProcessorType() =
 
             finishedEv.Reset() |> ignore
 
-    [<Test>]
+    [<Fact>]
     member this.``TryReceive Races with Post on timeout``() =
         let receiveEv = new ManualResetEvent(false)
         let postEv = new ManualResetEvent(false)
@@ -281,7 +277,7 @@ type MailboxProcessorType() =
 
             finishedEv.Reset() |> ignore
 
-    [<Test>]
+    [<Fact>]
     member this.Dispose() =
 
         // No unit test actually hit the Dispose method for the Mailbox...
@@ -295,7 +291,7 @@ type MailboxProcessorType() =
 
         test()
 
-    //[<Test>] // need to re-visit this
+    //[<Fact>] // need to re-visit this
     member this.PostAndAsyncReply_Cancellation() =
 
         use cancel = new CancellationTokenSource(500)

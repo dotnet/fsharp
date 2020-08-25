@@ -6,12 +6,12 @@ namespace FSharp.Core.UnitTests.Type_Forwarding
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 #if NET46
 [<TestFixture>]
 type TypeForwardingModule() =
-    [<Test>]
+    [<Fact>]
     member this.TypeForwarding() =
         let currentRuntimeVersion = System.Runtime.InteropServices.RuntimeEnvironment.GetSystemVersion()
         let currentFSharpCoreTargetRuntime = typeof<int list>.Assembly.ImageRuntimeVersion

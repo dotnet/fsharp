@@ -18,6 +18,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="EmittedIL\Literals.fs" />
+    <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />

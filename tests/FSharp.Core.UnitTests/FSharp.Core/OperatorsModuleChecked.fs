@@ -6,26 +6,25 @@ namespace FSharp.Core.UnitTests.Operators
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 open Microsoft.FSharp.Core.Operators.Checked
 
-[<TestFixture>]
 type OperatorsModuleChecked() =
 
-    [<Test>]
+    [<Fact>]
     member _.Checkedbyte() =
         // int type
         let intByte = Operators.Checked.byte 100
         Assert.AreEqual(100uy, intByte)
-        
+ 
         // char type
         let charByte = Operators.Checked.byte '0'
         Assert.AreEqual(48uy, charByte)
-        
-        // boundary value
+
+ // boundary value
         let boundByte = Operators.Checked.byte 255.0
         Assert.AreEqual(255uy, boundByte)
-        
+
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.byte 256 |> ignore)
 
@@ -35,7 +34,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> 0uy - 1uy |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.Checkedchar() =
 
         // number
@@ -57,7 +56,7 @@ type OperatorsModuleChecked() =
         CheckThrowsOverflowException(fun () -> '\uFFFF' + '\u0001' |> ignore)
 
         
-    [<Test>]
+    [<Fact>]
     member _.CheckedInt() =
 
         // char
@@ -81,7 +80,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int32.MinValue - 1 |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.CheckedInt16() =
 
         // char
@@ -105,7 +104,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int16.MinValue - 1s |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.CheckedInt32() =
 
         // char
@@ -129,7 +128,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int32.MinValue - 1 |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.CheckedInt64() =
 
         // char
@@ -159,7 +158,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int64.MinValue - 1L |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.CheckedNativeint() =
 
         // char
@@ -182,7 +181,7 @@ type OperatorsModuleChecked() =
                 Operators.Checked.nativeint 9223372036854775808.0 |> ignore)
 
          
-    [<Test>]
+    [<Fact>]
     member _.Checkedsbyte() =
 
         // char
@@ -206,7 +205,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> SByte.MinValue - 1y |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.Checkeduint16() =
 
         // char
@@ -229,7 +228,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> UInt16.MinValue - 1us |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.Checkeduint32() =
 
         // char
@@ -253,7 +252,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> UInt32.MinValue - 1u |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.Checkeduint64() =
 
         // char
@@ -277,7 +276,7 @@ type OperatorsModuleChecked() =
         // overflow exception
         CheckThrowsOverflowException(fun () -> UInt64.MinValue - 1UL |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.Checkedunativeint() =
 
         // char
