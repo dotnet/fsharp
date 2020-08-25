@@ -176,22 +176,22 @@ module rec Compiler =
         | FS fs -> FS { fs with Options = fs.Options @ options }
         | _ -> failwith message
 
-    let withOptions options cUnit =
+    let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper options "withOptions is only supported n F#" cUnit
 
-    let withErrorRanges cUnit=
+    let withErrorRanges (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--test:ErrorRanges" ] "withErrorRanges is only supported on F#" cUnit
 
-    let withLangVersion46 cUnit =
+    let withLangVersion46 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:4.6" ] "withLangVersion46 is only supported on F#" cUnit
 
-    let withLangVersion47 cUnit: CompilationUnit =
+    let withLangVersion47 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:4.7" ] "withLangVersion47 is only supported on F#" cUnit
 
-    let withLangVersion50 cUnit =
+    let withLangVersion50 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:5.0" ] "withLangVersion50 is only supported on F#" cUnit
 
-    let withLangVersionPreview cUnit =
+    let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
@@ -598,3 +598,12 @@ module rec Compiler =
 
         let withStdErrContains (substring: string) (result: TestResult) : TestResult =
             checkOutput "STDERR" substring (fun o -> o.StdErr) result
+
+        let verifyIL (il: string list) (result: TestResult) : unit =
+            match result with
+            | Success s ->
+                match s.OutputPath with
+                | None -> failwith "Operation didn't produce any output!"
+                | Some p -> ILChecker.checkIL p il
+            | Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+
