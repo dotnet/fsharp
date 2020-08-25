@@ -934,7 +934,7 @@ let TcConst cenv ty m env c =
     | SynConst.Bool i -> unif cenv.g.bool_ty; Const.Bool i
     | SynConst.Single f -> unif cenv.g.float32_ty; Const.Single f
     | SynConst.Double f -> unif cenv.g.float_ty; Const.Double f 
-    | SynConst.Decimal f -> unif cenv.g.decimal_ty; Const.Decimal f 
+    | SynConst.Decimal f -> unif (mkAppTy cenv.g.decimal_tcr []); Const.Decimal f 
     | SynConst.SByte i -> unif cenv.g.sbyte_ty; Const.SByte i
     | SynConst.Int16 i -> unif cenv.g.int16_ty; Const.Int16 i
     | SynConst.Int32 i -> unif cenv.g.int_ty; Const.Int32 i
