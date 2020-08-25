@@ -170,6 +170,9 @@ let stringBufferIsBytes (buf: ByteBuffer) =
 let newline (lexbuf:LexBuffer<_>) = 
     lexbuf.EndPos <- lexbuf.EndPos.NextLine
 
+let advanceColumnBy (lexbuf:LexBuffer<_>) n = 
+    lexbuf.EndPos <- lexbuf.EndPos.ShiftColumnBy(n)
+
 let trigraph c1 c2 c3 =
     let digit (c:char) = int c - int '0' 
     char (digit c1 * 100 + digit c2 * 10 + digit c3)
