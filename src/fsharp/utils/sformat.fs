@@ -144,7 +144,7 @@ module TaggedTextOps =
             "int32"
             "int64"
             "sbyte"
-            "seq" // seq x when 'x' is a string works, for example
+            "seq" // 'seq x' when 'x' is a string works, strangely enough
             "single"
             "string"
             "unit"

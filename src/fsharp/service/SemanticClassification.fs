@@ -164,23 +164,11 @@ module TcResolutionsExtensions =
                     | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m ->
                         add m SemanticClassificationType.IntrinsicFunction
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type ->
+                    | (Item.Value vref), _, _, _, _, m when isFunctionTy g vref.Type ->
                         if isDiscard vref.DisplayName then
                             add m SemanticClassificationType.Plaintext
                         elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then
                             add m SemanticClassificationType.Operator
-=======
-                    | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type && not (vref.IsConstructor) ->
-=======
-                    | (Item.Value vref), _, _, _, _, m when isFunctionTy g vref.Type && not (vref.IsConstructor) ->
->>>>>>> 9219aa3c1... Move isFunction and use it in pretty-printing
-                        if isDiscard vref.DisplayName then
-                            ()
-                        elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
-                            ()
->>>>>>> 168dba511... Color functions in tooltips + consistent operator treatment
                         elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                             add m SemanticClassificationType.Property
                         elif vref.IsMember then
@@ -254,12 +242,6 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.ExtensionMethod
                             else
                                 add m SemanticClassificationType.Method
-<<<<<<< HEAD
-=======
-
-                    | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m ->
-                        add m SemanticClassificationType.ComputationExpression
->>>>>>> 82291b017... Fix classification for unresolved/impossible-to-construct constructors
 
                     // Special case measures for struct types
                     | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
