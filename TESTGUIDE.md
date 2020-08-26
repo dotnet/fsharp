@@ -8,14 +8,18 @@ To run tests, from a command prompt, use variations such as the following, depen
 
 ### Tests runnable in any configuration
 
-The following tests sets can be run in Release or Debug mode, with or without the `-ci` argument. 
+The following testsets can be run in Release or Debug mode, with or without the `-ci` argument. 
 
     .\build -testCompiler -c Release
     .\build -testDesktop -c Release
     .\build -testCoreClr -c Release
     .\build -testFSharpCore -c Release    
-    .\build -testScripting -c Release
+    .\build -testScripting -c Release*
     .\build -testVs -c Release
+    
+TODO: verify testVs/CoreClr/Desktop. Rest is done.
+
+* This testset currently has three failing tests.
 
 ### Tests that are Windows-only
 
@@ -214,7 +218,7 @@ Some tests can run for several minutes, this doesn't mean that your system froze
 
 ![image](https://user-images.githubusercontent.com/16015770/91359250-7dfd2500-e7f4-11ea-86bf-518c07ad61ab.png)
 
-The following are rough indications from an older workstation run, actual durations will vary per system:
+The following are rough indications from an older workstation run, Release config, actual durations will vary per system:
 
 | Testset | Approx running time | Ngen'ed running time |
 |-------|-------|-----|
@@ -222,4 +226,6 @@ The following are rough indications from an older workstation run, actual durati
 | `-testCambridge` | 72 min | 35 min |
 | `-testFSharpQA`  | 13 min | ? |
 | `-testCompiler` | 30 seconds | n/a |
+| `-testFSharpCore` | 2 min | ? |
+
 
