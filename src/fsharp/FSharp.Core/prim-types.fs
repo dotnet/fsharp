@@ -369,10 +369,12 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type sbyte<[<Measure>] 'Measure> = sbyte
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
+    [<MeasureAnnotatedAbbreviation>] type nativeint<[<Measure>] 'Measure> = nativeint
     [<MeasureAnnotatedAbbreviation>] type uint<[<Measure>] 'Measure> = uint
     [<MeasureAnnotatedAbbreviation>] type byte<[<Measure>] 'Measure> = byte
     [<MeasureAnnotatedAbbreviation>] type uint16<[<Measure>] 'Measure> = uint16
     [<MeasureAnnotatedAbbreviation>] type uint64<[<Measure>] 'Measure> = uint64
+    [<MeasureAnnotatedAbbreviation>] type unativeint<[<Measure>] 'Measure> = unativeint
     
     type double<[<Measure>] 'Measure> = float<'Measure>
     type single<[<Measure>] 'Measure> = float32<'Measure>
@@ -2266,11 +2268,13 @@ namespace Microsoft.FSharp.Core
         let inline Int32WithMeasure (f : int) : int<'Measure> = retype f
         let inline Int16WithMeasure (f : int16) : int16<'Measure> = retype f
         let inline SByteWithMeasure (f : sbyte) : sbyte<'Measure> = retype f
+        let inline IntPtrWithMeasure (f : nativeint) : nativeint<'Measure> = retype f
         let inline Int64WithMeasure (f : int64) : int64<'Measure> = retype f
         let inline UInt32WithMeasure (f : uint) : uint<'Measure> = retype f
         let inline UInt16WithMeasure (f : uint16) : uint16<'Measure> = retype f
         let inline UInt64WithMeasure (f : uint64) : uint64<'Measure> = retype f
         let inline ByteWithMeasure (f : byte) : byte<'Measure> = retype f
+        let inline UIntPtrWithMeasure (f : unativeint) : unativeint<'Measure> = retype f
 
         let inline formatError() = raise (new System.FormatException(SR.GetString(SR.badFormatString)))
 

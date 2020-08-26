@@ -1858,6 +1858,7 @@ Microsoft.FSharp.Core.LanguagePrimitives: Int32 ParseInt32(System.String)
 Microsoft.FSharp.Core.LanguagePrimitives: Int32 PhysicalHash[T](T)
 Microsoft.FSharp.Core.LanguagePrimitives: Int64 Int64WithMeasure(Int64)
 Microsoft.FSharp.Core.LanguagePrimitives: Int64 ParseInt64(System.String)
+Microsoft.FSharp.Core.LanguagePrimitives: IntPtr IntPtrWithMeasure(IntPtr)
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+HashCompare
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicFunctions
@@ -1895,6 +1896,7 @@ Microsoft.FSharp.Core.LanguagePrimitives: UInt64 ParseUInt64(System.String)
 Microsoft.FSharp.Core.LanguagePrimitives: UInt16 UInt16WithMeasure(UInt16)
 Microsoft.FSharp.Core.LanguagePrimitives: UInt32 UInt32WithMeasure(UInt32)
 Microsoft.FSharp.Core.LanguagePrimitives: UInt64 UInt64WithMeasure(UInt64)
+Microsoft.FSharp.Core.LanguagePrimitives: UIntPtr IntPtrWithMeasure(UIntPtr)
 Microsoft.FSharp.Core.LiteralAttribute: Void .ctor()
 Microsoft.FSharp.Core.MatchFailureException: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.MatchFailureException: Boolean Equals(System.Object, System.Collections.IEqualityComparer)

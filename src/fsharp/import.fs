@@ -304,6 +304,9 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 elif tyconRefEq g tcref g.system_UInt32_tcref then g.puint_tcr
                 elif tyconRefEq g tcref g.system_UInt64_tcref then g.puint64_tcr
                 elif tyconRefEq g tcref g.system_Byte_tcref then g.puint8_tcr
+                //native
+                elif tyconRefEq g tcref g.system_IntPtr_tcref then g.pnativeint_tcr
+                elif tyconRefEq g tcref g.system_UIntPtr_tcref then g.punativeint_tcr
                 // other
                 else tcref
             else

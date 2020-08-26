@@ -980,6 +980,15 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type int64<[<Measure>] 'Measure> = int64
 
+    [<MeasureAnnotatedAbbreviation>]
+    /// <summary>The type of machine-sized signed integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.IntPtr"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type nativeint<[<Measure>] 'Measure> = nativeint
+
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -1015,6 +1024,15 @@ namespace Microsoft.FSharp.Core
     ///
     /// <category>Basic Types with Units of Measure</category>
     type uint64<[<Measure>] 'Measure> = uint64
+    
+    [<MeasureAnnotatedAbbreviation>]
+    /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UIntPtr"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type unativeint<[<Measure>] 'Measure> = unativeint
     
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -1358,6 +1376,13 @@ namespace Microsoft.FSharp.Core
         /// <returns>The sbyte with units-of-measure.</returns>
         val inline SByteWithMeasure : sbyte -> sbyte<'Measure>
 
+        /// <summary>Creates a nativeint value with units-of-measure</summary>
+        ///
+        /// <param name="nativeint">The input nativeint.</param>
+        ///
+        /// <returns>The nativeint with units-of-measure.</returns>
+        val inline IntPtrWithMeasure : nativeint -> nativeint<'Measure>
+
         /// <summary>Creates a uint value with units-of-measure</summary>
         ///
         /// <param name="uint">The input uint.</param>
@@ -1385,6 +1410,13 @@ namespace Microsoft.FSharp.Core
         ///
         /// <returns>The byte with units-of-measure.</returns>
         val inline ByteWithMeasure : byte -> byte<'Measure>
+        
+        /// <summary>Creates a unativeint value with units-of-measure</summary>
+        ///
+        /// <param name="unativeint">The input unativeint.</param>
+        ///
+        /// <returns>The unativeint with units-of-measure.</returns>
+        val inline UIntPtrWithMeasure : unativeint -> unativeint<'Measure>
 
         /// <summary>Parse an int32 according to the rules used by the overloaded 'int32' conversion operator when applied to strings</summary>
         ///

@@ -952,10 +952,12 @@ let TcConst cenv ty m env c =
     | SynConst.Measure(SynConst.Int16 i, _) -> unifyMeasureArg (i=0s) cenv.g.pint16_tcr c; Const.Int16 i
     | SynConst.Measure(SynConst.Int32 i, _) -> unifyMeasureArg (i=0) cenv.g.pint_tcr c; Const.Int32 i
     | SynConst.Measure(SynConst.Int64 i, _) -> unifyMeasureArg (i=0L) cenv.g.pint64_tcr c; Const.Int64 i
+    | SynConst.Measure(SynConst.IntPtr i, _) -> unifyMeasureArg (i=0L) cenv.g.pnativeint_tcr c; Const.IntPtr i
     | SynConst.Measure(SynConst.Byte i, _) -> unifyMeasureArg (i=0uy) cenv.g.puint8_tcr c; Const.Byte i
     | SynConst.Measure(SynConst.UInt16 i, _) -> unifyMeasureArg (i=0us) cenv.g.puint16_tcr c; Const.UInt16 i
     | SynConst.Measure(SynConst.UInt32 i, _) -> unifyMeasureArg (i=0u) cenv.g.puint_tcr c; Const.UInt32 i
     | SynConst.Measure(SynConst.UInt64 i, _) -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
+    | SynConst.Measure(SynConst.UIntPtr i, _) -> unifyMeasureArg (i=0UL) cenv.g.punativeint_tcr c; Const.UIntPtr i
     | SynConst.Char c -> unif cenv.g.char_ty; Const.Char c
     | SynConst.String (s, _) -> unif cenv.g.string_ty; Const.String s
     | SynConst.UserNum _ -> error (InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))

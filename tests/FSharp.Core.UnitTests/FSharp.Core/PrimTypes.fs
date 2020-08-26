@@ -44,6 +44,9 @@ type LanguagePrimitivesModule() =
         let y = 2y
         Assert.AreEqual(y, y |> LanguagePrimitives.SByteWithMeasure<m> |> sbyte)
         
+        let n = 2n
+        Assert.AreEqual(n, n |> LanguagePrimitives.IntPtrWithMeasure<m> |> nativeint)
+        
         let i = 2u
         Assert.AreEqual(i, i |> LanguagePrimitives.UInt32WithMeasure<m> |> uint)
 
@@ -56,6 +59,8 @@ type LanguagePrimitivesModule() =
         let uy = 2uy
         Assert.AreEqual(uy, uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte)
 
+        let n = 2un
+        Assert.AreEqual(n, n |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint)
 
     [<Fact>]
     member this.MaxMinNan() =
