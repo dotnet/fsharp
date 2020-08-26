@@ -19,6 +19,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="LibraryTestFx.fs" />
+    <Compile Include="SurfaceArea.net472.fs" Condition="'$(TargetFramework)'=='net472'" />
+    <Compile Include="SurfaceArea.netstandard.fs" Condition="'$(TargetFramework)'!='net472'" />
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
