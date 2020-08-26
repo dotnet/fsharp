@@ -1069,6 +1069,9 @@ and singleQuoteString sargs skip = parse
  |  '\\' newline anywhite* 
     { let (_buf, _fin, m, kind, args) = sargs 
       newline lexbuf 
+      let text = lexeme lexbuf
+      let text2 = text |> String.filter (fun c -> c <> ' ' && c <> '\t')
+      advanceColumnBy lexbuf (text.Length - text2.Length)
       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
       else singleQuoteString sargs skip lexbuf }
 
