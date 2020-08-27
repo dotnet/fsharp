@@ -5943,11 +5943,19 @@ and GenParams (cenv: cenv) eenv m (mspec: ILMethodSpec) witnessInfos (argInfos: 
     ilWitnessParams @ ilParams
 
 /// Generate IL method return information
-and GenReturnInfo cenv eenv ilRetTy (retInfo: ArgReprInfo) : ILReturn =
+and GenReturnInfo cenv eenv retTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
     let marshal, attribs = GenMarshal cenv retInfo.Attribs
+    let ilAttribs = GenAttrs cenv eenv attribs
+
+    let ilAttribs =
+        match GenReadOnlyAttributeIfNecessary cenv.g retTy with
+        | Some attr -> ilAttribs @ [attr]
+        | None -> ilAttribs
+
+    let ilAttrs = mkILCustomAttrs ilAttribs
     { Type=ilRetTy
       Marshal=marshal
-      CustomAttrsStored= storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
+      CustomAttrsStored= storeILCustomAttrs ilAttrs
       MetadataIndex = NoMetadataIdx }
    
 /// Generate an IL property for a member
@@ -6184,7 +6192,7 @@ and GenMethodForBinding
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
     let ilParams = GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)
-    let ilReturn = GenReturnInfo cenv eenvUnderMethTypeTypars mspec.FormalReturnType retInfo
+    let ilReturn = GenReturnInfo cenv eenvUnderMethTypeTypars returnTy mspec.FormalReturnType retInfo
     let methName = mspec.Name
     let tref = mspec.MethodRef.DeclaringTypeRef
 
@@ -7108,9 +7116,11 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
 
         assert witnessInfos.IsEmpty
 
+        let _, retTy = stripFunTy g vref.Type
+
         let eenvForMeth = EnvForTypars (ctps@mtps) eenv
         let ilMethTypars = GenGenericParams cenv eenvForMeth mtps
-        let ilReturn = GenReturnInfo cenv eenvForMeth mspec.FormalReturnType retInfo
+        let ilReturn = GenReturnInfo cenv eenvForMeth retTy mspec.FormalReturnType retInfo
         let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None
     
         let compileAsInstance = ValRefIsCompiledAsInstanceMember g vref
