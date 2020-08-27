@@ -52,5 +52,7 @@ stages:
     - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
       displayName: 'Insert VS Payload'
       inputs:
+        # only auto-complete if the target branch is not `rel/*`
+        AutoCompletePR: ${{ not(contains(parameters.insertTargetBranch, 'rel/')) }}
         LinkWorkItemsToPR: false
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'))
