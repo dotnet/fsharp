@@ -1754,8 +1754,10 @@ module EvaluationTests =
         checkEval "castingunits9" (<@ 2UL |> LanguagePrimitives.UInt64WithMeasure<m> |> uint64 @>) 2UL
         checkEval "castingunits10" (<@ 2us |> LanguagePrimitives.UInt16WithMeasure<m> |> uint16 @>) 2us
         checkEval "castingunits11" (<@ 2uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte @>) 2uy
-        checkEval "castingunits12" (<@ 2 |> LanguagePrimitives.IntPtrWithMeasure<m> |> nativeint @>) 2n
-        checkEval "castingunits13" (<@ 2 |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint @>) 2un
+        //HACK vvv extra cast needed because quotations don't support native integer literals
+        checkEval "castingunits12" (<@ 2 |> nativeint |> LanguagePrimitives.IntPtrWithMeasure<m> |> nativeint @>) 2n
+        //HACK vvv extra cast needed because quotations don't support native integer literals
+        checkEval "castingunits13" (<@ 2 |> unativeint |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint @>) 2un
 
 module QuotationTests =
     open Microsoft.FSharp.Quotations
