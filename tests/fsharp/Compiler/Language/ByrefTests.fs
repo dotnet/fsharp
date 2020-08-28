@@ -279,7 +279,21 @@ type C() =
     member _.X: inref<_> = &x
             """
 
+        let verifyProperty = """.property instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
+                X()
+        {
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+          .get instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
+        }"""
+
+        let verifyMethod = """.method public hidebysig specialname 
+                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+                get_X() cil managed
+        {
+          .param [0]
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+
         FSharp src
         |> compile
-        |> verifyIL [ """.custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""]
+        |> verifyIL [verifyProperty;verifyMethod]
         |> ignore

@@ -6188,7 +6188,8 @@ and GenMethodForBinding
 
     let ilAttrsThatGoOnPrimaryItem =
         [ yield! GenAttrs cenv eenv attrs
-          yield! GenCompilationArgumentCountsAttr cenv v ]
+          yield! GenCompilationArgumentCountsAttr cenv v ] @ 
+        (match GenReadOnlyAttributeIfNecessary g returnTy with Some ilAttr -> [ilAttr] | _ -> [])
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
     let ilParams = GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)
@@ -6295,6 +6296,7 @@ and GenMethodForBinding
                    if mdef.Access <> ILMemberAccess.Private then
                        let vtyp = ReturnTypeOfPropertyVal g v
                        let ilPropTy = GenType cenv.amap m eenvUnderMethTypeTypars.tyenv vtyp
+                       let ilPropTy = GenReadOnlyModReqIfNecessary g vtyp ilPropTy
                        let ilArgTys = v |> ArgInfosOfPropertyVal g |> List.map fst |> GenTypes cenv.amap m eenvUnderMethTypeTypars.tyenv
                        let ilPropDef = GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrsThatGoOnPrimaryItem) compiledName
                        mgbuf.AddOrMergePropertyDef(tref, ilPropDef, m)
