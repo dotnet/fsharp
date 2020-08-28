@@ -270,7 +270,7 @@ To get an idea of how long it may take, or how much coffee you'll need while wai
 |-------|-------|-----|
 | sln build time | 1 min* | n/a |
 | `-testDesktop` | 5 min | ? |
-| `-testCoreClr` | 6 min | ? |
+| `-testCoreClr` | 36 min | ? |
 | `-testCambridge` | 72 min | 35 min |
 | `-testFSharpQA`  | 13 min | ? |
 | `-testCompiler` | 30 seconds | n/a |
