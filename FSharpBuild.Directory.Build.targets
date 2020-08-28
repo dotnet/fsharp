@@ -116,4 +116,19 @@
     <Copy SourceFiles="@(CopyVsixResources)" DestinationFolder="$(IntermediateOutputPath)\resources\Resources" Condition="'$(IntermediateFilesHash)' != '$(IntermediateResourceFilesHash)'" />
   </Target>
 
+  <PropertyGroup>
+    <CoreBuildDependsOn>$(CoreBuildDependsOn);PrefixRepoToReleaseNotes</CoreBuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="PrefixRepoToReleaseNotes"
+          BeforeTargets="InitializeStandardNuspecProperties"
+          DependsOnTargets="InitializeSourceControlInformationFromSourceControlManager"
+          Condition="'$(IsPackable)'=='true'">
+
+    <PropertyGroup Condition="$(ScmRepositoryUrl.EndsWith('.git'))">
+        <_GitUrl>$([System.Text.RegularExpressions.Regex]::Replace($(ScmRepositoryUrl), ".git$", ""))</_GitUrl>
+        <PackageReleaseNotes>$(_GitUrl)$(PackageReleaseNotes)</PackageReleaseNotes>
+    </PropertyGroup>
+  </Target>
+
 </Project>
