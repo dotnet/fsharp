@@ -87,6 +87,11 @@
         <target state="translated">valore letterale float32 senza punti</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="new">more types support units of measure</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">sezione a indice fisso 3D/4D</target>

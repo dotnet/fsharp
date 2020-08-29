@@ -369,24 +369,42 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type sbyte<[<Measure>] 'Measure> = sbyte
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
-    [<MeasureAnnotatedAbbreviation>] type nativeint<[<Measure>] 'Measure> = nativeint
-    [<MeasureAnnotatedAbbreviation>] type uint<[<Measure>] 'Measure> = uint
-    [<MeasureAnnotatedAbbreviation>] type byte<[<Measure>] 'Measure> = byte
-    [<MeasureAnnotatedAbbreviation>] type uint16<[<Measure>] 'Measure> = uint16
-    [<MeasureAnnotatedAbbreviation>] type uint64<[<Measure>] 'Measure> = uint64
-    [<MeasureAnnotatedAbbreviation>] type unativeint<[<Measure>] 'Measure> = unativeint
     
-    type double<[<Measure>] 'Measure> = float<'Measure>
-    type single<[<Measure>] 'Measure> = float32<'Measure>
-    type int8<[<Measure>] 'Measure> = sbyte<'Measure>
-    type int32<[<Measure>] 'Measure> = int<'Measure>
-    type uint8<[<Measure>] 'Measure> = byte<'Measure>
-    type uint32<[<Measure>] 'Measure> = uint<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type nativeint<[<Measure>] 'Measure> = nativeint
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type uint<[<Measure>] 'Measure> = uint
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type byte<[<Measure>] 'Measure> = byte
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type uint16<[<Measure>] 'Measure> = uint16
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type uint64<[<Measure>] 'Measure> = uint64
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+    [<MeasureAnnotatedAbbreviation>] 
+    type unativeint<[<Measure>] 'Measure> = unativeint
+    
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type double<[<Measure>] 'Measure> = float<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type single<[<Measure>] 'Measure> = float32<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type int8<[<Measure>] 'Measure> = sbyte<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type int32<[<Measure>] 'Measure> = int<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint8<[<Measure>] 'Measure> = byte<'Measure>
+    [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</c></summary>
     type byref<'T> = (# "!0&" #)
 
-    /// <summary>Represents a managed pointer in F# code.</summary>
+    /// <summary>Represents a managed pointer in F# code.</summary> 
     type byref<'T, 'Kind> = (# "!0&" #)
 
     /// Represents the types of byrefs in F# 4.5+
@@ -2268,12 +2286,24 @@ namespace Microsoft.FSharp.Core
         let inline Int32WithMeasure (f : int) : int<'Measure> = retype f
         let inline Int16WithMeasure (f : int16) : int16<'Measure> = retype f
         let inline SByteWithMeasure (f : sbyte) : sbyte<'Measure> = retype f
-        let inline IntPtrWithMeasure (f : nativeint) : nativeint<'Measure> = retype f
         let inline Int64WithMeasure (f : int64) : int64<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        let inline IntPtrWithMeasure (f : nativeint) : nativeint<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UInt32WithMeasure (f : uint) : uint<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UInt16WithMeasure (f : uint16) : uint16<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UInt64WithMeasure (f : uint64) : uint64<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline ByteWithMeasure (f : byte) : byte<'Measure> = retype f
+        
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         let inline UIntPtrWithMeasure (f : unativeint) : unativeint<'Measure> = retype f
 
         let inline formatError() = raise (new System.FormatException(SR.GetString(SR.badFormatString)))

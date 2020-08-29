@@ -980,6 +980,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type int64<[<Measure>] 'Measure> = int64
 
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     [<MeasureAnnotatedAbbreviation>]
     /// <summary>The type of machine-sized signed integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -989,6 +990,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type nativeint<[<Measure>] 'Measure> = nativeint
 
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -998,6 +1000,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type uint<[<Measure>] 'Measure> = uint
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -1007,6 +1010,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type byte<[<Measure>] 'Measure> = byte
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -1016,6 +1020,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type uint16<[<Measure>] 'Measure> = uint16
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -1025,6 +1030,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type uint64<[<Measure>] 'Measure> = uint64
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     [<MeasureAnnotatedAbbreviation>]
     /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
@@ -1034,6 +1040,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type unativeint<[<Measure>] 'Measure> = unativeint
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
@@ -1042,6 +1049,7 @@ namespace Microsoft.FSharp.Core
     /// <category index="6">Basic Types with Units of Measure</category>
     type double<[<Measure>] 'Measure> = float<'Measure>
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
@@ -1050,6 +1058,7 @@ namespace Microsoft.FSharp.Core
     /// <category index="6">Basic Types with Units of Measure</category>
     type single<[<Measure>] 'Measure> = float32<'Measure>
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
@@ -1058,6 +1067,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type int8<[<Measure>] 'Measure> = sbyte<'Measure>
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
@@ -1066,6 +1076,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type int32<[<Measure>] 'Measure> = int<'Measure>
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
@@ -1074,6 +1085,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     type uint8<[<Measure>] 'Measure> = byte<'Measure>
     
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
     /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
@@ -1376,6 +1388,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The sbyte with units-of-measure.</returns>
         val inline SByteWithMeasure : sbyte -> sbyte<'Measure>
 
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a nativeint value with units-of-measure</summary>
         ///
         /// <param name="nativeint">The input nativeint.</param>
@@ -1383,6 +1396,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The nativeint with units-of-measure.</returns>
         val inline IntPtrWithMeasure : nativeint -> nativeint<'Measure>
 
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint value with units-of-measure</summary>
         ///
         /// <param name="uint">The input uint.</param>
@@ -1390,6 +1404,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The uint with units-of-measure.</returns>
         val inline UInt32WithMeasure : uint -> uint<'Measure>
         
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint64 value with units-of-measure</summary>
         ///
         /// <param name="uint64">The input uint64.</param>
@@ -1397,6 +1412,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The uint64 with units-of-measure.</returns>
         val inline UInt64WithMeasure : uint64 -> uint64<'Measure>
         
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint16 value with units-of-measure</summary>
         ///
         /// <param name="uint16">The input uint16.</param>
@@ -1404,6 +1420,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The uint16 with units-of-measure.</returns>
         val inline UInt16WithMeasure : uint16 -> uint16<'Measure>
         
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a byte value with units-of-measure</summary>
         ///
         /// <param name="byte">The input byte.</param>
@@ -1411,6 +1428,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The byte with units-of-measure.</returns>
         val inline ByteWithMeasure : byte -> byte<'Measure>
         
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a unativeint value with units-of-measure</summary>
         ///
         /// <param name="unativeint">The input unativeint.</param>
