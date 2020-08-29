@@ -860,6 +860,9 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
 
     /// Indicates if this is a constructor.
     member IsConstructor : bool
+
+    /// Indicates if this is a special method used in Computation Expression builders.
+    member IsComputationExpressionMethod : bool
     
     /// Format the type using the rules of the given display context
     member FormatLayout : context: FSharpDisplayContext -> Layout

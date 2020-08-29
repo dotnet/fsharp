@@ -2019,6 +2019,35 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
         | _ -> false
 
+    member x.IsComputationExpressionMethod =
+        let isNameN (methodName: string) (methodKind: string) =
+            if methodName.StartsWith(methodKind) then
+                let (didParse, _) = System.Int32.TryParse(methodName.[methodKind.Length..])
+                didParse
+            else
+                false
+        let isBindNReturn (methodName: string) =
+            if methodName.StartsWith("Bind") && methodName.EndsWith("Return") then
+                let (didParse, _) = System.Int32.TryParse(methodName.[4..methodName.Length-7]) // replace this disgusting mess with reverse indexing some time
+                didParse
+            else
+                false
+        x.CompiledName = "Bind"
+        || x.CompiledName = "Return"
+        || x.CompiledName = "ReturnFrom"
+        || x.CompiledName = "Combine"
+        || x.CompiledName = "Delay"
+        || x.CompiledName = "Zero"
+        || x.CompiledName = "TryWith"
+        || x.CompiledName = "TryFinally"
+        || x.CompiledName = "For"
+        || x.CompiledName = "Using"
+        || x.CompiledName = "BindReturn"
+        || x.CompiledName = "MergeSources"
+        || isNameN x.CompiledName "Bind"
+        || isNameN x.CompiledName "MergeSources"
+        || isBindNReturn x.CompiledName
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
