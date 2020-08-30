@@ -10,7 +10,7 @@ module ``Cast to Units Tests`` =
     
     [<Test>]
     let ``Casting to Measures should compile``() =
-        CompilerAssert.Pass
+        CompilerAssert.PassWithOptions [| "--langversion:preview" |]
             """
 module M
 
@@ -35,8 +35,6 @@ let r9 = UInt16WithMeasure<M> 1us + 2us<M>
 let r10a = UInt32WithMeasure<M> 1u + 2u<M>
 let r10b = UInt32WithMeasure<M> 1ul + 2ul<M>
 let r11 = UInt64WithMeasure<M> 1UL + 2UL<M>
+let r12 = IntPtrWithMeasure<M> 1n + 2n<M>
+let r13 = UIntPtrWithMeasure<M> 1un + 2un<M>
             """
-//HACK the following 2 tests are incompatible with this test scaffolding
-//TODO revisit when the test scaffolding is changed/migrated!
-// let r12 = IntPtrWithMeasure<M> 1n + 2n<M>
-// let r13 = UIntPtrWithMeasure<M> 1un + 2un<M>
