@@ -1755,7 +1755,7 @@ module EvaluationTests =
         checkEval "castingunits10" (<@ 2us |> LanguagePrimitives.UInt16WithMeasure<m> |> uint16 @>) 2us
         checkEval "castingunits11" (<@ 2uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte @>) 2uy
 
-        //HACK the following 2 tests are incompatible with this test scaffolding
+        //NOTE quotations currently *DO NOT* support native integers
         //TODO revisit when the test scaffolding is changed/migrated!
         // checkEval "castingunits12" (<@ 2n |> LanguagePrimitives.IntPtrWithMeasure<m> |> nativeint @>) 2n
         // checkEval "castingunits13" (<@ 2un |> unativeint |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint @>) 2un

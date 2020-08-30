@@ -63,6 +63,20 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(n, n |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint)
 
     [<Fact>]
+    member _.MeasurableAliases() =
+        let f (x: int<m>) y: int32<m> = x + y   // should be: `int<m> -> int<m> -> int32<m>`
+        let g (x: int<m>) (y:int32<m>) = x * y  // should be: `int<m> -> int32<m> -> int<m^2>`
+        let h (x: int<m>) y = x * y
+        let i (x: int32<m>) y = x * y
+        
+        let tres = 3<m>
+        let ocho : int32<m> = 8<m>
+        
+        Assert.Equal(ocho, f tres 5<m>)
+        Assert.Equal(64<m^2>, g ocho ocho)
+        Assert.Equal(h ocho tres, i tres ocho)
+
+    [<Fact>]
     member this.MaxMinNan() =
         Assert.True(Double.IsNaN(max nan 1.0))
         Assert.True(Double.IsNaN(max 1.0 nan))
