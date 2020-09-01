@@ -127,7 +127,6 @@ function Process-Arguments() {
         $script:testCoreClr = $True
         $script:testFSharpQA = $True
         $script:testVs = $True
-        $script:testpack = $True
     }
 
     if ([System.Boolean]::Parse($script:officialSkipTests)) {
