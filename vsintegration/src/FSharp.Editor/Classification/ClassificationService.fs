@@ -75,6 +75,7 @@ type internal FSharpClassificationService
     static let userOpName = "SemanticColorization"
 
     static let getLexicalClassifications(filePath: string, defines, text: SourceText, textSpan: TextSpan, ct) =
+        let text = text.GetSubText(textSpan)
         let result = ImmutableArray.CreateBuilder()
         let tokenCallback =
             fun (tok: FSharpSyntaxToken) ->
@@ -94,7 +95,7 @@ type internal FSharpClassificationService
                 | _ -> ()
                 
         let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter
-        FSharpLexer.Lex(text.GetSubText(textSpan).ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
+        FSharpLexer.Lex(text.ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
 
         result.ToImmutable()
 

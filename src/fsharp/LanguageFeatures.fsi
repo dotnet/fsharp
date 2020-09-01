@@ -11,7 +11,7 @@ type LanguageFeature =
     | RelaxWhitespace
     | NameOf
     | ImplicitYield
-    | OpenStaticClasses
+    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
@@ -21,6 +21,8 @@ type LanguageFeature =
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | InterfacesWithMultipleGenericInstantiation
+    | StringInterpolation
+    | OverloadsForCustomOperations
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -35,12 +35,12 @@ open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
-let internal projectOptions = { 
+let internal projectOptions opts = { 
     ProjectFileName = "C:\\test.fsproj"
     ProjectId = None
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
-    OtherOptions = [| |]
+    OtherOptions = opts
     IsIncompleteTypeCheckEnvironment = true
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue
@@ -53,10 +53,10 @@ let internal projectOptions = {
 let formatCompletions(completions : string seq) =
     "\n\t" + String.Join("\n\t", completions)
 
-let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
+let VerifyCompletionListWithOptions(fileContents: string, marker: string, expected: string list, unexpected: string list, opts) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions opts, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -99,12 +99,15 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
         let msg = sprintf "%s%s%s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
 
         Assert.Fail(msg)
+let VerifyCompletionList(fileContents, marker, expected, unexpected) =
+   VerifyCompletionListWithOptions(fileContents, marker, expected, unexpected, [| |])
+
 
 let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions [| |], filePath, 0, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -134,18 +137,18 @@ let ShouldTriggerCompletionAtCorrectMarkers() =
         ("System.", true)
         ("Console.", true) ]
 
-    for (marker: string, shouldBeTriggered: bool) in testCases do
-    let fileContents = """
+    for (marker, shouldBeTriggered) in testCases do
+      let fileContents = """
 let x = 1
 let y = 2
 System.Console.WriteLine(x + y)
 """
 
-    let caretPosition = fileContents.IndexOf(marker) + marker.Length
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    let getInfo() = documentId, filePath, []
-    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
-    Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
+      let caretPosition = fileContents.IndexOf(marker) + marker.Length
+      let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+      let getInfo() = documentId, filePath, []
+      let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+      Assert.AreEqual(shouldBeTriggered, triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result")
 
 [<Test>]
 let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertionOrDeletion() = 
@@ -179,6 +182,32 @@ System.Console.WriteLine()
     let getInfo() = documentId, filePath, []
     let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+    
+[<Test>]
+let ShouldTriggerCompletionInInterpolatedString() =
+    let fileContents = """
+
+let x = 1
+let y = 2
+let z = $"abc  {System.Console.WriteLine(x + y)} def"
+"""
+    let testCases = 
+       [
+        ("x", true)
+        ("y", true)
+        ("1", false)
+        ("2", false)
+        ("x +", false)
+        ("Console.Write", false)
+        ("System.", true)
+        ("Console.", true) ]
+
+    for (marker, shouldBeTriggered) in testCases do
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo, IntelliSenseOptions.Default)
+        Assert.AreEqual(shouldBeTriggered, triggered, sprintf "FSharpCompletionProvider.ShouldTriggerCompletionAux() should compute the correct result for marker '%s'" marker) 
     
 [<Test>]
 let ShouldNotTriggerCompletionInExcludedCode() =
@@ -305,6 +334,16 @@ type T1 =
 System.Console.WriteLine()
 """
     VerifyCompletionList(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"])
+
+[<Test>]
+let ShouldDisplaySystemNamespaceInInterpolatedString() =
+    let fileContents = """
+type T1 =
+    member this.M1 = 5
+    member this.M2 = "literal"
+let x = $"1 not the same as {System.Int32.MaxValue} is it"
+"""
+    VerifyCompletionListWithOptions(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"], [| "/langversion:preview" |])
 
 [<Test>]
 let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a variable)``() =
@@ -447,7 +486,7 @@ List().
 [<Test>]
 let ``Completion for open contains namespaces and static types``() =
     let fileContents = """
-open System.Ma
+open type System.Ma
 """
     let expected = ["Management"; "Math"] // both namespace and static type
     VerifyCompletionList(fileContents, "System.Ma", expected, [])

@@ -3,7 +3,7 @@
 namespace FSharp.Core.UnitTests.Collections
 
 open System
-open NUnit.Framework
+open Xunit
 
 open FSharp.Core.UnitTests.LibraryTestFx
 
@@ -18,38 +18,33 @@ Make sure each method works on:
 * Null string (null)
 *)
 
-[<TestFixture>]
 type StringModule() =
 
-    [<Test>]
+    [<Fact>]
     member this.Concat() =
-        let e1 = String.concat null ["foo"]
-        Assert.AreEqual("foo", e1)
-        
-        let e2 = String.concat "" []
-        Assert.AreEqual("", e2)
-        
-        let e3 = String.concat "foo" []
-        Assert.AreEqual("", e3)        
-        
-        let e4 = String.concat "" [null]
-        Assert.AreEqual("", e4)
-        
-        let e5 = String.concat "" [""]
-        Assert.AreEqual("", e5)
-        
-        let e6 = String.concat "foo" ["bar"]
-        Assert.AreEqual("bar", e6)
-        
-        let e7 = String.concat "foo" ["bav";"baz"]
-        Assert.AreEqual("bavfoobaz", e7)
+        /// This tests the three paths of String.concat w.r.t. array, list, seq
+        let execTest f expected arg = 
+            let r1 = f (List.toSeq arg)
+            Assert.AreEqual(expected, r1)
 
-        let e8 = String.concat "foo" [null;"baz";null;"bar"]
-        Assert.AreEqual("foobazfoofoobar", e8)
-        
-        CheckThrowsArgumentNullException(fun () -> String.concat "foo" null |> ignore)
+            let r2 = f (List.toArray arg)
+            Assert.AreEqual(expected, r2)
 
-    [<Test>]
+            let r3 = f arg
+            Assert.AreEqual(expected, r3)
+
+        do execTest (String.concat null) "world" ["world"]
+        do execTest (String.concat "") "" []
+        do execTest (String.concat "|||") "" []
+        do execTest (String.concat "") "" [null]
+        do execTest (String.concat "") "" [""]
+        do execTest (String.concat "|||") "apples" ["apples"]
+        do execTest (String.concat " ") "happy together" ["happy"; "together"]
+        do execTest (String.concat "Me! ") "Me! No, you. Me! Me! Oh, them." [null;"No, you. ";null;"Oh, them."]
+
+        CheckThrowsArgumentNullException(fun () -> String.concat "%%%" null |> ignore)
+
+    [<Fact>]
     member this.Iter() =
         let result = ref 0
         do String.iter (fun c -> result := !result + (int c)) "foo"
@@ -59,7 +54,7 @@ type StringModule() =
         do String.iter (fun c -> result := !result + (int c)) null
         Assert.AreEqual(0, !result)
 
-    [<Test>]
+    [<Fact>]
     member this.IterI() =
         let result = ref 0
         do String.iteri(fun i c -> result := !result + (i*(int c))) "foo"
@@ -69,7 +64,7 @@ type StringModule() =
         do String.iteri(fun i c -> result := !result + (i*(int c))) null
         Assert.AreEqual(0, !result)
 
-    [<Test>]
+    [<Fact>]
     member this.Map() =
         let e1 = String.map id "xyz"
         Assert.AreEqual("xyz", e1)
@@ -101,15 +96,39 @@ type StringModule() =
         Assert.AreEqual(x, 5)
         Assert.AreEqual(e8, "bdfhj")
 
-    [<Test>]
+    [<Fact>]
     member this.MapI() =
-        let e1 = String.mapi (fun i c -> char(int c + i)) "foo"
-        Assert.AreEqual("fpq", e1)
+        let e1 = String.mapi (fun _ c -> c) "12345"
+        Assert.AreEqual("12345", e1)
 
-        let e2 = String.mapi (fun i c -> c) null 
-        Assert.AreEqual("", e2)
+        let e2 = String.mapi (fun _ c -> c + char 1) "1"
+        Assert.AreEqual("2", e2)
 
-    [<Test>]
+        let e3 = String.mapi (fun _ c -> c + char 1) "AB"
+        Assert.AreEqual("BC", e3)
+
+        let e4 = String.mapi (fun i c -> char(int c + i)) "hello"
+        Assert.AreEqual("hfnos", e4)
+
+        let e5 = String.mapi (fun _ c -> c) null 
+        Assert.AreEqual("", e5)
+
+        let e6 = String.mapi (fun _ c -> c) String.Empty 
+        Assert.AreEqual("", e6)
+
+        let e7 = String.mapi (fun _ _ -> failwith "should not fail") null 
+        Assert.AreEqual("", e7)
+
+        let e8 = String.mapi (fun i _ -> if i = 1 then failwith "should not fail" else char i) "X" 
+        Assert.AreEqual("\u0000", e8)
+
+        // side-effect and "order of operation" test
+        let mutable x = 0
+        let e9 = String.mapi (fun i c -> x <- x + i; c + char x) "abcde"
+        Assert.AreEqual(x, 10)
+        Assert.AreEqual(e9, "acfjo")
+
+    [<Fact>]
     member this.Filter() =
         let e1 = String.filter (fun c -> true) "Taradiddle"
         Assert.AreEqual("Taradiddle", e1)
@@ -130,7 +149,7 @@ type StringModule() =
         let e5 = String.filter (fun c -> c > 'B' ) (String.replicate 5_000 "ABRACADABRA")
         Assert.AreEqual(String.replicate 5_000 "RCDR", e5)
 
-    [<Test>]
+    [<Fact>]
     member this.Collect() =
         let e1 = String.collect (fun c -> "a"+string c) "foo"
         Assert.AreEqual("afaoao", e1)
@@ -141,7 +160,7 @@ type StringModule() =
         let e3 = String.collect (fun c -> "") null 
         Assert.AreEqual("", e3)
 
-    [<Test>]
+    [<Fact>]
     member this.Init() =
         let e1 = String.init 0 (fun i -> "foo")
         Assert.AreEqual("", e1)
@@ -154,7 +173,7 @@ type StringModule() =
 
         CheckThrowsArgumentException(fun () -> String.init -1 (fun c -> "") |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.Replicate() = 
         let e1 = String.replicate 0 "Snickersnee"
         Assert.AreEqual("", e1)
@@ -194,7 +213,7 @@ type StringModule() =
 
         CheckThrowsArgumentException(fun () -> String.replicate -1 "foo" |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.Forall() = 
         let e1 = String.forall (fun c -> true) ""
         Assert.AreEqual(true, e1)
@@ -214,7 +233,7 @@ type StringModule() =
         let e6 = String.forall (fun c -> false) null 
         Assert.AreEqual(true, e6)
 
-    [<Test>]
+    [<Fact>]
     member this.Exists() = 
         let e1 = String.exists (fun c -> true) ""
         Assert.AreEqual(false, e1)
@@ -231,7 +250,7 @@ type StringModule() =
         let e5 = String.exists (fun c -> false) (String.replicate 1000000 "x")
         Assert.AreEqual(false, e5)
 
-    [<Test>]
+    [<Fact>]
     member this.Length() = 
         let e1 = String.length ""
         Assert.AreEqual(0, e1)
@@ -242,19 +261,19 @@ type StringModule() =
         let e3 = String.length null
         Assert.AreEqual(0, e3)
 
-    [<Test>]
+    [<Fact>]
     member this.``Slicing with both index reverse behaves as expected``()  = 
         let str = "abcde"
 
-        Assert.That(str.[^3..^1], Is.EquivalentTo(str.[1..3]))
+        Assert.AreEqual(str.[^3..^1], str.[1..3])
 
-    [<Test>]
+    [<Fact>]
     member this.``Indexer with reverse index behaves as expected``() =
         let str = "abcde"
 
-        Assert.That(str.[^1], Is.EqualTo('d'))
+        Assert.AreEqual(str.[^1], 'd')
 
-    [<Test>] 
+    [<Fact>] 
     member this.SlicingUnboundedEnd() = 
         let str = "123456"
 
@@ -267,7 +286,7 @@ type StringModule() =
         Assert.AreEqual(str.[7..], (""))
 
     
-    [<Test>] 
+    [<Fact>] 
     member this.SlicingUnboundedStart() = 
         let str = "123456"
 
@@ -282,7 +301,7 @@ type StringModule() =
         Assert.AreEqual(str.[..7], "123456")
 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingBoundedStartEnd() =
         let str = "123456"
 
@@ -308,7 +327,7 @@ type StringModule() =
         Assert.AreEqual(str.[4..1], (""))
 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingEmptyString() = 
 
         let empty = ""
@@ -320,7 +339,7 @@ type StringModule() =
         Assert.AreEqual(empty.[3..5], (""))
 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingOutOfBounds() = 
         let str = "123456"
        

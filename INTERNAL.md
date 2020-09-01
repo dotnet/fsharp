@@ -42,13 +42,25 @@ insertion into VS will be created into the `insertTargetBranch` branch.  The lin
 near the bottom of the build under the title 'Insert into VS'.  Examine the log for 'Insert VS Payload' and near the
 bottom you'll see a line that looks like `Created request #xxxxxx at https://...`.
 
-To see all insertions created this way (possibly including for other internal teams), check
+Insertions generated to any `rel/*` branch will have to be manually verified and merged, and they'll be listed
 [here](https://dev.azure.com/devdiv/DevDiv/_git/VS/pullrequests?createdBy=122d5278-3e55-4868-9d40-1e28c2515fc4&_a=active).
+Note that insertions for other teams will also be listed.
+
+Insertions to any other VS branch (e.g., `main`) will have the auto-merge flag set and should handle themselves, but
+it's a good idea to check the previous link for any old or stalled insertions into VS `main`.
 
 ## Less interesting links
 
-[Nightly VSIX (master) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=70).  Uploads
-a package from every build of `master` to the [Nightly VSIX feed](README.md#using-nightly-releases-in-visual-studio).
+[FSharp.Core (Official NuGet Release)](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=72).
+Uploads the final FSharp.Core package from the specified build to NuGet.  This should only be run when we know for
+certain which build produced the final offical package.
+
+[FSharp.Core (Preview NuGet Release)](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=92).
+Uploads the preview FSharp.Core.5.0.0-beta.* package from the specified build to NuGet.  This should be run every time
+a new SDK preview is released.
+
+[Nightly VSIX (main) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=70).  Uploads
+a package from every build of `main` to the [Nightly VSIX feed](README.md#using-nightly-releases-in-visual-studio).
 
 [Nightly VSIX (preview) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=71).  Uploads
 a package from every build of the branch that corresponds to the current Visual Studio preview to the

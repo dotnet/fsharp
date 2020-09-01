@@ -4,8 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
@@ -13,6 +12,13 @@
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --compiling-fslib-40 --maxerrors:20 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
+
+    <PreRelease>true</PreRelease>
+    <PackageId>FSharp.Core</PackageId>
+    <NuspecFile>FSharp.Core.nuspec</NuspecFile>
+    <IsPackable>true</IsPackable>
+    <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSCorePackageVersion) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
+    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Core-$(FSCoreReleaseNotesVersion)</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
