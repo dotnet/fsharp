@@ -70,10 +70,10 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.WitnessPassing, languageVersion50
             LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
             LanguageFeature.NameOf, languageVersion50
+            LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.StringInterpolation, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
         ]
 
