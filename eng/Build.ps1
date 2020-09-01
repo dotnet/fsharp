@@ -143,10 +143,6 @@ function Process-Arguments() {
         $script:testpack = $False
     }
 
-    if ($pack -and $ci) {
-        $script:testpack = $true
-    }
-
     if ($noRestore) {
         $script:restore = $False;
     }
