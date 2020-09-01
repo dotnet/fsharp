@@ -1364,7 +1364,7 @@ tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced
 3215,parsUnexpectedSymbolEqualsInsteadOfIn,"Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?"
 3216,packageManagerUnknown,"Package manager key '%s' was not registered in %s. Currently registered: %s"
 3217,packageManagerError,"%s"
-tcAnonRecdInvalid, "Invalid Anonymous Record type declaration."
+tcAnonRecdInvalid,"Invalid Anonymous Record type declaration."
 tcAnonRecdCcuMismatch,"Two anonymous record types are from different assemblies '%s' and '%s'"
 tcAnonRecdFieldNameMismatch,"This anonymous record does not exactly match the expected shape. Add the missing fields %s and remove the extra fields %s."
 tcAnonRecdFieldNameSubset,"This anonymous record does not have enough fields. Add the missing fields %s."
