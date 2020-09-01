@@ -210,7 +210,7 @@ assertion (fun (x:float) -> x * 3.0) (fun v ->
     let MultipleTypedInterfacesFSharp50VerifyIl() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions
             [|
-                "--langversion:preview";
+                "--langversion:5.0";
                 "--deterministic+";
                 "--define:NO_ANONYMOUS";
 #if NETSTANDARD
