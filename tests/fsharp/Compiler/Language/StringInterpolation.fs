@@ -616,7 +616,7 @@ check "vcewweh23" $"abc{({| A=1 |})}def" "abc{ A = 1 }def"
 let x = $"one" 
             """
             [|(FSharpErrorSeverity.Error, 3350, (2, 9, 2, 15),
-                   "Feature 'string interpolation' is not available in F# 4.7. Please use language version 'preview' or greater.")|]
+                   "Feature 'string interpolation' is not available in F# 4.7. Please use language version 5.0 or greater.")|]
 
 
     [<Test>]
