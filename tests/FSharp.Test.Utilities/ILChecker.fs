@@ -37,10 +37,11 @@ module ILChecker =
             (fun me -> String.Empty)
         )
 
-    let private checkILAux ildasmArgs dllFilePath expectedIL =
+    let private checkILAux' ildasmArgs dllFilePath expectedIL =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
 
         let mutable errorMsgOpt = None
+        let mutable actualIL = String.Empty
         try
             let ildasmPath = config.ILDASM
 
@@ -104,16 +105,23 @@ module ILChecker =
             if expectedIL.Length = 0 then
                 errorMsgOpt <- Some ("No Expected IL")
 
+            actualIL <- textNoComments
+
             match errorMsgOpt with
             | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\nEntire actual:\n" + textNoComments)
             | _ -> ()
         finally
             try File.Delete(ilFilePath) with | _ -> ()
 
-            match errorMsgOpt with
-            | Some(errorMsg) ->
-                Assert.Fail(errorMsg)
-            | _ -> ()
+        match errorMsgOpt with
+        | Some(errorMsg) -> (false, errorMsg, actualIL)
+        | _ -> (true, String.Empty, String.Empty)
+
+    let private checkILAux ildasmArgs dllFilePath expectedIL =
+        let (success, errorMsg, _) = checkILAux' ildasmArgs dllFilePath expectedIL
+        if not success then
+            Assert.Fail(errorMsg)
+        else ()
 
     let checkILItem item dllFilePath expectedIL =
         checkILAux [ sprintf "/item:%s" item ] dllFilePath expectedIL
@@ -127,6 +135,7 @@ module ILChecker =
     let verifyIL (dllFilePath: string) (expectedIL: string) =
         checkIL dllFilePath [expectedIL]
 
+    let verifyILAndReturnActual (dllFilePath: string) (expectedIL: string) = checkILAux' [] dllFilePath [expectedIL]
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
         let errors, _ = exec ilasmPath ([ sprintf "%s /output=%s /dll" ilFilePath dllFilePath ])
