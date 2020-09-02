@@ -4745,6 +4745,9 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: SyntacticUnscope
                 let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
                 TType_tuple(tupInfo,args'),tpenv
 
+    | SynType.AnonRecd(_, [],m) -> 
+        error(Error((FSComp.SR.tcAnonymousTypeInvalidInDeclaration()), m))
+
     | SynType.AnonRecd(isStruct, args,m) ->   
         let tupInfo = mkTupInfo isStruct
         let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
