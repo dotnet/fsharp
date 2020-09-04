@@ -136,3 +136,17 @@ module TestNullableStructAnonRecds =
 
     // As mentioned above, in F# 5.0 struct anon records containing type variables or inference variables are not considered to satisfy 
     // the collected Nullable constraints
+
+
+module TestAnotherStructRecord = 
+    
+    let inline test<'t when 't: (new: unit -> 't)  and  't: struct and  't:> ValueType>    () = ()
+
+    [<Struct>]
+    type Delta =
+        { SkipX: byte
+          Control: sbyte }
+
+    test<Delta> ()
+    test< struct {| SkipX: byte; Control: sbyte |} > ()
+    test< struct (byte * sbyte) > ()
