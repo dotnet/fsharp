@@ -2187,7 +2187,7 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
     | ValueSome destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.RequiresDefaultConstructor m)
     | _ ->
-        if isStructTy g ty && TypeHasDefaultValue g m ty then 
+        if isStructTy g ty && TypeHasDefaultValue g m ty then
             CompleteD
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
