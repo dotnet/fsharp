@@ -27,9 +27,7 @@
     <Compile Include="tests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
-    <Compile Include="Compiler\CodeGen\EmittedIL\LiteralValue.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
-    <Compile Include="Compiler\CodeGen\EmittedIL\TailCalls.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />

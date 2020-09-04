@@ -15,9 +15,13 @@
 
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="EmittedIL\Operators.fs" />
+    <Compile Include="EmittedIL\Literals.fs" />
+    <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />

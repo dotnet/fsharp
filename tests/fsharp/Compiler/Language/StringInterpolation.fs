@@ -853,3 +853,11 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
             code
             [|(FSharpErrorSeverity.Error, 3383, (1, 14, 1, 17),
                "A '}' character must be escaped (by doubling) in an interpolated string.")|]
+
+    [<Test>]
+    let ``String continuation character gives right ranges`` () =
+        let code = "let x1 = \"hello \\\n     world\", foo"
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+            code
+            [|(FSharpErrorSeverity.Error, 39, (2, 14, 2, 17),
+               "The value or constructor 'foo' is not defined. Maybe you want one of the following:\n   floor")|]
