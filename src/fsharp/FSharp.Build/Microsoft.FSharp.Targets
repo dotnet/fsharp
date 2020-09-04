@@ -339,7 +339,14 @@ this file.
 
     </Target>
 
-    <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />
+    <!-- ***************************************************************************************************************
+       Select Microsoft.Common.targets 
+       *************************************************************************************************************** -->
+    <PropertyGroup>
+        <MicrosoftCommonTargets Condition="'$(MicrosoftCommonTargets)' == '' and Exists('$(MSBuildSDKsPath)\..\Microsoft.Common.targets') ">$(MSBuildSDKsPath)\..</MicrosoftCommonTargets>
+        <MicrosoftCommonTargets Condition="'$(MicrosoftCommonTargets)' == '' and Exists('$(MSBuildBinPath)\Microsoft.Common.targets') ">$(MSBuildBinPath)</MicrosoftCommonTargets>
+    </PropertyGroup>
+    <Import Project="$(MicrosoftCommonTargets)\Microsoft.Common.targets" />
 
     <!--
             ============================================================
