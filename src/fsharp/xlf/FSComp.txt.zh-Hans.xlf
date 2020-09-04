@@ -302,6 +302,11 @@
         <target state="translated">此匿名记录的字段太多。请删除额外的字段 {0}。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">属性不可应用于类型扩展。</target>
