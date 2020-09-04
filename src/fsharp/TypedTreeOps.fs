@@ -8145,7 +8145,7 @@ let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
 
-// Note, isStructTy does not include type parameters with the ': not struct' constraint
+// Note, isStructTy does not include type parameters with the ': struct' constraint
 // This predicate is used to detect those type parameters.
 let isNonNullableStructTyparTy g ty = 
     match tryDestTyparTy g ty with 
@@ -8154,7 +8154,7 @@ let isNonNullableStructTyparTy g ty =
     | ValueNone ->
         false
 
-// Note, isStructTy does not include type parameters with the ': not struct' constraint
+// Note, isRefTy does not include type parameters with the ': not struct' constraint
 // This predicate is used to detect those type parameters.
 let isReferenceTyparTy g ty = 
     match tryDestTyparTy g ty with 
@@ -8199,16 +8199,18 @@ let TypeNullNotLiked g m ty =
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
+// The non-inferring counter-part to SolveTypeSupportsNull
 let TypeSatisfiesNullConstraint g m ty = 
     TypeNullIsExtraValue g m ty  
 
+// The non-inferring counter-part to SolveTypeRequiresDefaultValue (and SolveTypeRequiresDefaultConstructor for struct types)
 let rec TypeHasDefaultValue g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
-    // Reference types satisfying the ': null' constraint have default values
+    // Check reference types - precisely the ones satisfying the ': null' constraint have default values
     TypeSatisfiesNullConstraint g m ty  
     || 
-    // Check nominal struct types
-    (isStructTy g ty &&
+      // Check nominal struct types
+      (isStructTy g ty &&
         // F# struct types have a DefaultValue if all their field types have a default value excluding those with DefaultValue(false)
         (if isFSharpStructTy g ty then 
             let tcref, tinst = destAppTy g ty 
@@ -8233,10 +8235,9 @@ let rec TypeHasDefaultValue g m ty =
             // All nominal struct types defined in other .NET languages have a DefaultValue regardless of their instantiation
             true))
     || 
-    // Check variable struct types
-    (isNonNullableStructTyparTy g ty &&
+      // Check for type variables with the ":struct" and "(new : unit -> 'T)" constraints
+      (isNonNullableStructTyparTy g ty &&
         (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
-
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint
@@ -8261,10 +8262,9 @@ let (|SpecialComparableHeadType|_|) g ty =
             None
 
 let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
+
 let (|SpecialNotEquatableHeadType|_|) g ty = 
     if isFunTy g ty then Some() else None
-
-
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
@@ -8276,7 +8276,6 @@ let canUseTypeTestFast g ty =
 let canUseUnboxFast g m ty = 
      not (isTyparTy g ty) && 
      not (TypeNullNotLiked g m ty)
-     
      
 //--------------------------------------------------------------------------
 // Nullness tests and pokes 

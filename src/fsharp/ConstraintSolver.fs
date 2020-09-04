@@ -2190,16 +2190,16 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
         AddConstraint csenv ndeep m2 trace tp (TyparConstraint.RequiresDefaultConstructor m)
     | _ ->
         if isStructTy g ty then
-         if isStructTupleTy g ty then 
-            destStructTupleTy g ty |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
-         elif isStructAnonRecdTy g ty then 
-            match tryDestAnonRecdTy g ty with
-            | ValueNone -> CompleteD
-            | ValueSome (_, ptys) -> ptys |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
-         elif TypeHasDefaultValue g m ty then
-            CompleteD
-         else
-            ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
+            if isStructTupleTy g ty then 
+                destStructTupleTy g ty |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
+            elif isStructAnonRecdTy g ty then 
+                match tryDestAnonRecdTy g ty with
+                | ValueNone -> CompleteD
+                | ValueSome (_, ptys) -> ptys |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
+            elif TypeHasDefaultValue g m ty then
+                CompleteD
+            else
+                ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
                |> List.exists (fun x -> x.IsNullary && IsMethInfoAccessible amap m AccessibleFromEverywhere x)
@@ -2227,15 +2227,14 @@ and SolveTypeRequiresDefaultValue (csenv: ConstraintSolverEnv) ndeep m2 trace or
     let g = csenv.g
     let m = csenv.m
     let ty = stripTyEqnsAndMeasureEqns g origTy
-    match tryDestTyparTy g ty with
-    | ValueSome tp ->
-        if tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false) then
+    if isTyparTy g ty then
+        if isNonNullableStructTyparTy g ty then
             SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
-        elif tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | _ -> false) then
+        elif isReferenceTyparTy g ty then
             SolveTypeSupportsNull csenv ndeep m2 trace ty
         else
             ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructOrReferenceConstraint(), m, m2))
-    | _ ->
+    else
         if isStructTy g ty then
              SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
         else

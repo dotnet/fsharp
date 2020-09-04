@@ -1540,6 +1540,18 @@ val normalizeEnumTy : TcGlobals -> TType -> TType
 /// Determine if a type is a struct type
 val isStructTy                   : TcGlobals -> TType -> bool
 
+/// Determine if a type is a variable type with the ': struct' constraint.
+///
+/// Note, isStructTy does not include type parameters with the ': struct' constraint
+/// This predicate is used to detect those type parameters.
+val isNonNullableStructTyparTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is a variable type with the ': not struct' constraint.
+///
+/// Note, isRefTy does not include type parameters with the ': not struct' constraint
+/// This predicate is used to detect those type parameters.
+val isReferenceTyparTy : TcGlobals -> TType -> bool
+
 /// Determine if a type is an unmanaged type
 val isUnmanagedTy                : TcGlobals -> TType -> bool
 
