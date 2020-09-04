@@ -208,3 +208,18 @@ module TestAnotherStructRecord =
     test<Delta> ()
     test< struct {| SkipX: byte; Control: sbyte |} > ()
     test< struct (byte * sbyte) > ()
+
+module TestAnotherStructTuple = 
+    
+    let x = System.Nullable<struct (int * int)>(struct (0, 0)) // note, the type annotations are required
+
+module TestAnotherStructTuple2 = 
+    
+    let x = struct(0, 0)
+    let y = System.Nullable(x)
+
+module TestAnotherStructTuple3 = 
+    
+    let x = struct(0, 0)
+    let y = System.Nullable(struct (0, 0) |> unbox<System.ValueTuple<int,int>>)
+    let z = System.Nullable(x |> unbox<System.ValueTuple<int,int>>)
