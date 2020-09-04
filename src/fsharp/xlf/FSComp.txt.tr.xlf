@@ -302,6 +302,11 @@
         <target state="translated">Bu anonim kayıtta çok fazla alan var. Ek {0} alanlarını kaldırın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Öznitelikler tür uzantılarına uygulanamaz.</target>

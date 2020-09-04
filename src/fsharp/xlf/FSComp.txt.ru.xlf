@@ -302,6 +302,11 @@
         <target state="translated">Эта анонимная запись содержит слишком много полей. Удалите лишние поля {0}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Атрибуты не могут быть применены к расширениям типа.</target>
