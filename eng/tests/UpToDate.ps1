@@ -16,7 +16,7 @@ try {
     # do first build
     & $BuildScript -configuration $configuration @properties
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Error running first build."
+        Write-Host "##[error](NETCORE_ENGINEERING_TELEMETRY=Build) Error running first build."
         exit 1
     }
 
@@ -45,7 +45,7 @@ try {
     # build again
     & $BuildScript -configuration $configuration @properties
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Error running second build."
+        Write-Host "##[error](NETCORE_ENGINEERING_TELEMETRY=Build) Error running second build."
         exit 1
     }
 
@@ -68,9 +68,14 @@ try {
     }
 
     $RecompiledCount = $RecompiledFiles.Length
-    Write-Host "$RecompiledCount of $InitialCompiledCount assemblies were re-compiled"
-    $RecompiledFiles | ForEach-Object { Write-Host "    $_" }
-    exit $RecompiledCount
+    if ($RecompiledCount -ge 0) {
+        Write-Host "##[error](NETCORE_ENGINEERING_TELEMETRY=Test) $RecompiledCount of $InitialCompiledCount assemblies were re-compiled."
+        $RecompiledFiles | ForEach-Object { Write-Host "    $_" }
+        exit $RecompiledCount
+    } else {
+        Write-Host "No assemblies rebuilt."
+        exit 0
+    }
 }
 catch {
     Write-Host $_
