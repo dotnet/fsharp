@@ -302,6 +302,11 @@
         <target state="translated">Dieser anonyme Datensatz enthält zu viele Felder. Entfernen Sie die zusätzlichen Felder ({0}).</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Attribute können nicht auf Typerweiterungen angewendet werden.</target>

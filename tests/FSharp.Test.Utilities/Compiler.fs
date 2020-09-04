@@ -15,24 +15,31 @@ open System.IO
 
 module rec Compiler =
 
+    type Baseline =
+        { SourceFilename: string option
+          OutputBaseline: string option
+          ILBaseline:     string option }
+
     type TestType =
         | Text of string
         | Path of string
-        | Baseline of (string * string)
 
     type CompilationUnit =
         | FS  of FSharpCompilationSource
         | CS  of CSharpCompilationSource
         | IL  of ILCompilationSource
+        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
 
     type FSharpCompilationSource =
         { Source:         TestType
+          Baseline:       Baseline option
           Options:        string list
           OutputType:     CompileOutput
           SourceKind:     SourceKind
           Name:           string option
           IgnoreWarnings: bool
           References:     CompilationUnit list }
+        override this.ToString() = match this.Name with | Some n -> n | _ -> (sprintf "%A" this)
 
     type CSharpCompilationSource =
         { Source:          TestType
@@ -51,10 +58,10 @@ module rec Compiler =
     type Col = Col of int
 
     type Range =
-          { StartLine:   int
-            StartColumn: int
-            EndLine:     int
-            EndColumn:   int }
+        { StartLine:   int
+          StartColumn: int
+          EndLine:     int
+          EndColumn:   int }
 
     type ErrorInfo =
         { Error:   ErrorType
@@ -70,8 +77,7 @@ module rec Compiler =
         { OutputPath:   string option
           Dependencies: string list
           Adjust:       int
-          Errors:       ErrorInfo list
-          Warnings:     ErrorInfo list
+          Diagnostics:  ErrorInfo list
           Output:       ExecutionOutput option }
 
     type TestResult =
@@ -85,13 +91,12 @@ module rec Compiler =
         match src with
         | Text t -> t
         | Path p -> System.IO.File.ReadAllText p
-        | Baseline (d, f) -> System.IO.File.ReadAllText (System.IO.Path.Combine(d, f))
-
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
         | null -> failwith "Source cannot be null"
         | _ ->
             { Source         = Text source
+              Baseline       = None
               Options        = defaultOptions
               OutputType     = Library
               SourceKind     = kind
@@ -109,7 +114,7 @@ module rec Compiler =
               Name            = None
               References      = [] }
 
-    let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : (ErrorInfo list * ErrorInfo list) =
+    let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : ErrorInfo list =
         let toErrorInfo (e: FSharpErrorInfo) : ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
@@ -128,8 +133,10 @@ module rec Compiler =
         |> List.ofArray
         |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
         |> List.map toErrorInfo
-        |> List.partition  (fun e -> match e.Error with Error _ -> true | _ -> false)
 
+    let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
+    let private getErrors diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Error _ -> true | _ -> false)
+    let private getWarnings diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Warning _ -> true | _ -> false)
     let private adjustRange (range: Range) (adjust: int) : Range =
         { range with
                 StartLine   = range.StartLine   - adjust
@@ -142,20 +149,6 @@ module rec Compiler =
 
     let FSharp (source: string) : CompilationUnit =
         fsFromString source SourceKind.Fs |> FS
-
-    let baseline (dir: string, file: string) : CompilationUnit =
-        match (dir, file) with
-        | dir, _ when String.IsNullOrWhiteSpace dir -> failwith "Baseline tests directory cannot be null or empty."
-        | _, file when String.IsNullOrWhiteSpace file -> failwith "Baseline source file name cannot be null or empty."
-        | _ ->
-            { Source         = Baseline (dir, file)
-              Options        = defaultOptions
-              OutputType     = Library
-              SourceKind     = Fs
-              Name           = None
-              IgnoreWarnings = false
-              References     = [] } |> FS
-
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CS
 
@@ -215,7 +208,7 @@ module rec Compiler =
             let result = compileFSharpCompilation cmpl false
             match result with
             | Failure f ->
-                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (f.Errors @ f.Warnings)
+                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (f.Diagnostics)
                 failwith message
             | Success s ->
                 match s.OutputPath with
@@ -249,23 +242,22 @@ module rec Compiler =
 
         let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
-        let (errors, warnings) = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpErrorInfo
 
         let result =
             { OutputPath   = None
               Dependencies = deps
               Adjust       = 0
-              Warnings     = warnings
-              Errors       = errors
+              Diagnostics  = diagnostics
               Output       = None }
+
+        let (errors, warnings) = partitionErrors diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
-            Failure { result with Warnings = warnings
-                                  Errors   = errors }
+            Failure result
         else
-            Success { result with Warnings   = warnings
-                                  OutputPath = Some outputFilePath }
+            Success { result with OutputPath = Some outputFilePath }
 
     let private compileFSharp (fsSource: FSharpCompilationSource) : TestResult =
 
@@ -296,8 +288,7 @@ module rec Compiler =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Warnings     = []
-              Errors       = []
+              Diagnostics  = []
               Output       = None }
 
         if cmplResult.Success then
@@ -342,14 +333,13 @@ module rec Compiler =
         let parseResults = CompilerAssert.Parse source
         let failed = parseResults.ParseHadErrors
 
-        let (errors, warnings) =  parseResults.Errors |> fromFSharpErrorInfo
+        let diagnostics =  parseResults.Errors |> fromFSharpErrorInfo
 
         let result =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Warnings     = errors
-              Errors       = warnings
+              Diagnostics  = diagnostics
               Output       = None }
 
         if failed then
@@ -362,45 +352,39 @@ module rec Compiler =
         | FS fs -> parseFSharp fs
         | _ -> failwith "Parsing only supported for F#."
 
-    let private typecheckFSharpWithBaseline (options: string list) (dir: string) (file: string) : TestResult =
-        // Since TypecheckWithErrorsAndOptionsAgainsBaseLine throws if doesn't match expected baseline,
-        // We return a successfull TestResult if it succeeds.
-        CompilerAssert.TypeCheckWithErrorsAndOptionsAgainstBaseLine (Array.ofList options) dir file
-
-        Success
-            { OutputPath   = None
-              Dependencies = []
-              Adjust       = 0
-              Warnings     = []
-              Errors       = []
-              Output       = None }
-
-    let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : TestResult =
+    let private typecheckFSharpSourceAndReturnErrors (fsSource: FSharpCompilationSource) : FSharpErrorInfo [] =
         let source = getSource fsSource.Source
         let options = fsSource.Options |> Array.ofList
 
-        let (err: FSharpErrorInfo []) = CompilerAssert.TypeCheckWithOptions options source
+        let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
 
-        let (errors, warnings) = err |> fromFSharpErrorInfo
+        let (err: FSharpErrorInfo []) = CompilerAssert.TypeCheckWithOptionsAndName options name source
+
+        err
+
+    let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : TestResult =
+
+        let (err: FSharpErrorInfo []) = typecheckFSharpSourceAndReturnErrors fsSource
+
+        let diagnostics = err |> fromFSharpErrorInfo
 
         let result =
             { OutputPath   = None
               Dependencies = []
               Adjust       = 0
-              Warnings     = warnings
-              Errors       = errors
+              Diagnostics  = diagnostics
               Output       = None }
+
+        let (errors, warnings) = partitionErrors diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
-            Failure { result with Warnings = warnings
-                                  Errors   = errors }
+            Failure result
         else
-            Success { result with Warnings   = warnings }
+            Success result
 
     let private typecheckFSharp (fsSource: FSharpCompilationSource) : TestResult =
         match fsSource.Source with
-        | Baseline (f, d) -> typecheckFSharpWithBaseline fsSource.Options f d
         | _ -> typecheckFSharpSource fsSource
 
     let typecheck (cUnit: CompilationUnit) : TestResult =
@@ -410,7 +394,7 @@ module rec Compiler =
 
     let run (result: TestResult) : TestResult =
         match result with
-        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Errors @ f.Warnings))
+        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
         | Success s ->
             match s.OutputPath with
             | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
@@ -425,6 +409,73 @@ module rec Compiler =
     let compileAndRun = compile >> run
 
     let compileExeAndRun = asExe >> compileAndRun
+
+    let private createBaselineErrors (baseline: Baseline) actualErrors extension : unit =
+        match baseline.SourceFilename with
+        | Some f -> File.WriteAllText(Path.ChangeExtension(f, extension), actualErrors)
+        | _ -> ()
+
+    let private verifyFSBaseline (fs) : unit =
+        match fs.Baseline with
+        | None -> failwith "Baseline was not provided."
+        | Some bsl ->
+            let errorsExpectedBaseLine =
+                match bsl.OutputBaseline with
+                | Some b -> b.Replace("\r\n","\n")
+                | None ->  String.Empty
+
+            let typecheckDiagnostics = fs |> typecheckFSharpSourceAndReturnErrors
+
+            let errorsActual = (typecheckDiagnostics |> Array.map (sprintf "%A") |> String.concat "\n").Replace("\r\n","\n")
+
+            if errorsExpectedBaseLine <> errorsActual then
+                createBaselineErrors bsl errorsActual "fs.bsl.err"
+
+            Assert.AreEqual(errorsExpectedBaseLine, errorsActual)
+
+    /// Check the typechecker output against the baseline, if invoked with empty baseline, will expect no error/warnings output.
+    let verifyBaseline (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> (verifyFSBaseline fs) |> ignore
+        | _ -> failwith "Baseline tests are only supported for F#."
+
+        cUnit
+
+    let verifyIL (il: string list) (result: TestResult) : unit =
+        match result with
+        | Success s ->
+            match s.OutputPath with
+            | None -> failwith "Operation didn't produce any output!"
+            | Some p -> ILChecker.checkIL p il
+        | Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+
+    let private verifyFSILBaseline (baseline: Baseline option) (result: Output) : unit =
+        match baseline with
+        | None -> failwith "Baseline was not provided."
+        | Some bsl ->
+            match result.OutputPath with
+                | None -> failwith "Operation didn't produce any output!"
+                | Some p ->
+                    let expectedIL =
+                        match bsl.ILBaseline with
+                        | Some b -> b.Replace("\r\n","\n")
+                        | None ->  String.Empty
+                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
+
+                    if not success then
+                        createBaselineErrors bsl actualIL "fs.il.err"
+                        Assert.Fail(errorMsg)
+    let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs ->
+            match fs |> compileFSharp |> shouldSucceed with
+            | Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+            | Success s -> verifyFSILBaseline fs.Baseline s
+        | _ -> failwith "Baseline tests are only supported for F#."
+
+        cUnit
+
+    let verifyBaselines = verifyBaseline >> verifyILBaseline
 
     [<AutoOpen>]
     module Assertions =
@@ -480,7 +531,7 @@ module rec Compiler =
             match result with
             | Success _ -> result
             | Failure r ->
-                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (r.Errors @ r.Warnings)
+                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (r.Diagnostics)
                 failwith message
 
         let shouldFail (result: TestResult) : TestResult =
@@ -495,7 +546,7 @@ module rec Compiler =
             result
 
         let withResults (expectedResults: ErrorInfo list) result : TestResult =
-            assertResultsCategory "Results" (fun r -> r.Warnings @ r.Errors) expectedResults result
+            assertResultsCategory "Results" (fun r -> r.Diagnostics) expectedResults result
 
         let withResult (expectedResult: ErrorInfo ) (result: TestResult) : TestResult =
             withResults [expectedResult] result
@@ -519,7 +570,7 @@ module rec Compiler =
             withDiagnostics [expected] result
 
         let withErrors (expectedErrors: ErrorInfo list) (result: TestResult) : TestResult =
-            assertResultsCategory "Errors" (fun r -> r.Errors) expectedErrors result
+            assertResultsCategory "Errors" (fun r -> getErrors r.Diagnostics) expectedErrors result
 
         let withError (expectedError: ErrorInfo) (result: TestResult) : TestResult =
             withErrors [expectedError] result
@@ -531,19 +582,19 @@ module rec Compiler =
             result
 
         let withErrorCodes (expectedCodes: int list) (result: TestResult) : TestResult =
-            checkCodes expectedCodes (fun r -> r.Errors) result
+            checkCodes expectedCodes (fun r -> getErrors r.Diagnostics) result
 
         let withErrorCode (expectedCode: int) (result: TestResult) : TestResult =
             withErrorCodes [expectedCode] result
 
         let withWarnings (expectedWarnings: ErrorInfo list) (result: TestResult) : TestResult =
-            assertResultsCategory "Warnings" (fun r -> r.Warnings) expectedWarnings result
+            assertResultsCategory "Warnings" (fun r -> getWarnings r.Diagnostics) expectedWarnings result
 
         let withWarning (expectedWarning: ErrorInfo) (result: TestResult) : TestResult =
             withWarnings [expectedWarning] result
 
         let withWarningCodes (expectedCodes: int list) (result: TestResult) : TestResult =
-            checkCodes expectedCodes (fun r -> r.Warnings) result
+            checkCodes expectedCodes (fun r -> getWarnings r.Diagnostics) result
 
         let withWarningCode (expectedCode: int) (result: TestResult) : TestResult =
             withWarningCodes [expectedCode] result
@@ -554,19 +605,19 @@ module rec Compiler =
             result
 
         let withMessages (messages: string list) (result: TestResult) : TestResult =
-             checkErrorMessages messages (fun r -> r.Warnings @ r.Errors) result
+             checkErrorMessages messages (fun r -> r.Diagnostics) result
 
         let withMessage (message: string) (result: TestResult) : TestResult =
             withMessages [message] result
 
         let withErrorMessages (messages: string list) (result: TestResult) : TestResult =
-            checkErrorMessages messages (fun r -> r.Errors) result
+            checkErrorMessages messages (fun r -> getErrors r.Diagnostics) result
 
         let withErrorMessage (message: string) (result: TestResult) : TestResult =
             withErrorMessages [message] result
 
         let withWarningMessages (messages: string list) (result: TestResult) : TestResult =
-            checkErrorMessages messages (fun r -> r.Warnings) result
+            checkErrorMessages messages (fun r -> getWarnings r.Diagnostics) result
 
         let withWarningMessage (message: string) (result: TestResult) : TestResult =
             withWarningMessages [message] result
@@ -598,12 +649,3 @@ module rec Compiler =
 
         let withStdErrContains (substring: string) (result: TestResult) : TestResult =
             checkOutput "STDERR" substring (fun o -> o.StdErr) result
-
-        let verifyIL (il: string list) (result: TestResult) : unit =
-            match result with
-            | Success s ->
-                match s.OutputPath with
-                | None -> failwith "Operation didn't produce any output!"
-                | Some p -> ILChecker.checkIL p il
-            | Failure _ -> failwith "Result should be \"Success\" in order to get IL."
-

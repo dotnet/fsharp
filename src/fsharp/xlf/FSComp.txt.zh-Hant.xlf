@@ -302,6 +302,11 @@
         <target state="translated">此匿名記錄有太多欄位。請移除額外的欄位 {0}。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">屬性無法套用到類型延伸模組。</target>

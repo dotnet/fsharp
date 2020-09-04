@@ -4,20 +4,19 @@ namespace FSharp.Compiler.ComponentTests.ConstraintSolver
 
 open Xunit
 open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Utilities.Xunit.Attributes
 
 module PrimitiveConstraints =
 
-    [<Fact>]
     /// Title: Type checking oddity
     ///
     /// This suggestion was resolved as by design,
     /// so the test makes sure, we're emitting error message about 'not being a valid object construction expression'
-    let ``Invalid object constructor`` () = // Regression test for FSharp1.0:4189
-        baseline
-            ((__SOURCE_DIRECTORY__ ++ "../testables/"), "typecheck/constructors/neg_invalid_constructor.fs")
-            |> withErrorRanges
-            |> typecheck
 
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/typecheck/constructors")>]
+    let ``Invalid object constructor`` compilation = // Regression test for FSharp1.0:4189
+        compilation
+        |> verifyBaseline
 
     [<Fact>]
     let ``Test primitive : constraints``() =
