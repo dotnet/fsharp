@@ -166,6 +166,7 @@ module internal Utilities =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
+            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
             use p = new Process()
