@@ -53,6 +53,7 @@ scripts/*.patch
 /src/fsharp/FSharp.LanguageService.Compiler/pplex.fs
 /src/fsharp/FSharp.LanguageService.Compiler/pppars.fs
 /src/fsharp/FSharp.LanguageService.Compiler/pppars.fsi
+/src/fsharp/*/Properties/launchSettings.json
 /vsintegration/src/unittests/Unittests.fsi
 /tests/*FSharp_Failures.env
 /tests/*FSharp_Failures.lst
@@ -133,3 +134,7 @@ msbuild.binlog
 /tests/fsharp/regression/5531/compilation.output.test.txt
 /tests/fsharp/core/fsfromfsviacs/compilation.langversion.old.output.txt
 /tests/fsharp/core/fsfromfsviacs/compilation.errors.output.txt
+*ncrunch*.user
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*

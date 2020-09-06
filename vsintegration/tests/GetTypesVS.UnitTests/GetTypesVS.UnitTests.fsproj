@@ -12,6 +12,7 @@
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <NoMsbuild>true</NoMsbuild>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <UnitTestType>nunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 

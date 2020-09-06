@@ -126,13 +126,13 @@ module internal Utilities =
             | value when not (String.IsNullOrEmpty(value)) ->
                 Some value                           // Value set externally
             | _ ->
-                // Probe for netsdk install
+                // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
                 let dotnetLocation =
                     let dotnetApp =
                         let platform = Environment.OSVersion.Platform
                         if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
-                    let assemblyLocation = typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location
-                    Path.Combine(assemblyLocation, "../../..", dotnetApp)
+                    let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+                    Path.GetFullPath(Path.Combine(assemblyLocation, "../../..", dotnetApp))
 
                 if File.Exists(dotnetLocation) then
                     Some dotnetLocation
@@ -166,6 +166,7 @@ module internal Utilities =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
+            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
             use p = new Process()
@@ -209,10 +210,10 @@ module internal Utilities =
         let succeeded, stdOut, stdErr =
             if not (isRunningOnCoreClr) then
                 // The Desktop build uses "msbuild" to build
-                executeBuild msbuildExePath (arguments "") workingDir
+                executeBuild msbuildExePath (arguments "-v:quiet") workingDir
             else
                 // The coreclr uses "dotnet msbuild" to build
-                executeBuild dotnetHostPath (arguments "msbuild") workingDir
+                executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir
 
         let outputFile = projectPath + ".resolvedReferences.paths"
         let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None

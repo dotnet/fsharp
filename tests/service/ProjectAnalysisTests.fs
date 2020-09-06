@@ -3800,7 +3800,7 @@ let ``Test Project26 parameter symbols`` () =
     
     let rec isByRef (ty: FSharpType) = 
         if ty.IsAbbreviation then isByRef ty.AbbreviatedType 
-        else ty.IsNamedType && ty.NamedEntity.IsByRef
+        else ty.HasTypeDefinition && ty.TypeDefinition.IsByRef
 
     // check we can get the CurriedParameterGroups
     let objMethodsCurriedParameterGroups = 
@@ -4862,15 +4862,15 @@ let ``Test project38 abstract slot information`` () =
         [|
             ".ctor", []
             "Generic", ["type OverrideTests.B<'YY> original generics: <'Y> with member Generic : 'Y -> Microsoft.FSharp.Core.unit"]
-            "OverrideTests-I`1-Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic : named:'X -> Microsoft.FSharp.Core.unit"]
-            "OverrideTests-I`1-Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic<'Y> : 'X * 'Y -> Microsoft.FSharp.Core.unit"]
+            "OverrideTests.I<'XX>.Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic : named:'X -> Microsoft.FSharp.Core.unit"]
+            "OverrideTests.I<'XX>.Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic<'Y> : 'X * 'Y -> Microsoft.FSharp.Core.unit"]
             "Method", ["type OverrideTests.B<'YY> original generics: <'Y> with member Method : () -> Microsoft.FSharp.Core.unit"]
-            "OverrideTests-I`1-Method", ["type OverrideTests.I<'XX> original generics: <'X> with member Method : () -> Microsoft.FSharp.Core.unit"]
+            "OverrideTests.I<'XX>.Method", ["type OverrideTests.I<'XX> original generics: <'X> with member Method : () -> Microsoft.FSharp.Core.unit"]
             "NotOverride", []
             "add_Event", ["type OverrideTests.B<'YY> original generics: <'Y> with member add_Event : Microsoft.FSharp.Control.Handler<Microsoft.FSharp.Core.unit> -> Microsoft.FSharp.Core.unit"]
             "get_Event", ["type OverrideTests.B<'YY> with member get_Event : () -> Microsoft.FSharp.Core.unit"]
             "get_Property", ["type OverrideTests.B<'YY> original generics: <'Y> with member get_Property : () -> Microsoft.FSharp.Core.int"]
-            "OverrideTests-I`1-get_Property", ["type OverrideTests.I<'XX> original generics: <'X> with member get_Property : () -> Microsoft.FSharp.Core.int"]
+            "OverrideTests.I<'XX>.get_Property", ["type OverrideTests.I<'XX> original generics: <'X> with member get_Property : () -> Microsoft.FSharp.Core.int"]
             "remove_Event", ["type OverrideTests.B<'YY> original generics: <'Y> with member remove_Event : Microsoft.FSharp.Control.Handler<Microsoft.FSharp.Core.unit> -> Microsoft.FSharp.Core.unit"]
             "get_Property", ["type OverrideTests.B<'YY> original generics: <'Y> with member get_Property : () -> Microsoft.FSharp.Core.int"]
             "get_Event", ["type OverrideTests.B<'YY> with member get_Event : () -> Microsoft.FSharp.Core.unit"]
@@ -5568,7 +5568,7 @@ module Nested =
     |> List.ofSeq
     |> List.map(fun openDeclaration -> tups openDeclaration.AppliedScope)
     |> shouldEqual
-           [ (4, 5), (7, 15)
+           [ (4, 0), (7, 15)
              (6, 0), (7, 15)
-             (11, 5), (14, 15)
+             (11, 0), (14, 15)
              (13, 0), (14, 15) ]

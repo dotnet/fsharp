@@ -879,6 +879,17 @@ let convertToTypeWithMetadataIfPossible g ty =
     else ty
  
 //---------------------------------------------------------------------------
+// TType modifications
+//---------------------------------------------------------------------------
+
+let stripMeasuresFromTType g tt = 
+    match tt with
+    | TType_app(a,b) ->
+        let b' = b |> List.filter (isMeasureTy g >> not)
+        TType_app(a, b')
+    | _ -> tt
+
+//---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
 //---------------------------------------------------------------------------
 
@@ -2904,12 +2915,41 @@ let fullDisplayTextOfValRefAsLayout (vref: ValRef) =
         pathText ^^ SepL.dot ^^ wordL n
         //pathText +.+ vref.DisplayName
 
-
-let fullMangledPathToTyconRef (tcref: TyconRef) = 
+let fullMangledPathToTyconRef (tcref:TyconRef) = 
     match tcref with 
     | ERefLocal _ -> (match tcref.PublicPath with None -> [| |] | Some pp -> pp.EnclosingPath)
     | ERefNonLocal nlr -> nlr.EnclosingMangledPath
-  
+    
+/// generates a name like 'System.IComparable<System.Int32>.Get'
+let tyconRefToFullName (tc:TyconRef) =
+    let namespaceParts =
+        // we need to ensure there are no collisions between (for example)
+        // - ``IB<GlobalType>`` (non-generic)
+        // - IB<'T> instantiated with 'T = GlobalType
+        // This is only an issue for types inside the global namespace, because '.' is invalid even in a quoted identifier.
+        // So if the type is in the global namespace, prepend 'global`', because '`' is also illegal -> there can be no quoted identifer with that name.
+        match fullMangledPathToTyconRef tc with
+        | [||] -> [| "global`" |]
+        | ns -> ns
+    seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
+
+let rec qualifiedInterfaceImplementationNameAux g (x:TType) : string =
+    match stripMeasuresFromTType g (stripTyEqnsAndErase true g x) with
+    | TType_app (a,[]) -> tyconRefToFullName a
+    | TType_anon (a,b) ->
+        let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
+        sprintf "%s<%s>" (a.ILTypeRef.FullName) genericParameters
+    | TType_app (a,b) ->
+        let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
+        sprintf "%s<%s>" (tyconRefToFullName a) genericParameters
+    | TType_var (v) -> "'" + v.Name
+    | _ -> failwithf "unexpected: expected TType_app but got %O" (x.GetType())
+
+/// for types in the global namespace, `global is prepended (note the backtick)
+let qualifiedInterfaceImplementationName g (tt:TType) memberName =
+    let interfaceName = tt |> qualifiedInterfaceImplementationNameAux g
+    sprintf "%s.%s" interfaceName memberName
+
 let qualifiedMangledNameOfTyconRef tcref nm = 
     String.concat "-" (Array.toList (fullMangledPathToTyconRef tcref) @ [ tcref.LogicalName + "-" + nm ])
 
@@ -7019,7 +7059,8 @@ let mkCallRaise (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.r
 
 let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
-let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
+let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 =
+    mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
 
 let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
     let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
@@ -7095,6 +7136,9 @@ let mkCallSeqSingleton g m ty1 arg1 =
                   
 let mkCallSeqEmpty g m ty1 = 
     mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [[ty1]], [ ], m) 
+                 
+let mkCall_sprintf (g: TcGlobals) m aty fmt es = 
+    mkApps g (typedExprForIntrinsic g m g.sprintf_info, [[aty]], fmt::es , m) 
                  
 let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 = 
     let args = [ e1; e2; e3; e4 ]
@@ -9162,21 +9206,6 @@ let (|ValApp|_|) g vref expr =
     // use 'seq { ... }' as an indicator
     | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
     | _ -> None
-
-let isStaticClass (g:TcGlobals) (x: EntityRef) =
-    not x.IsModuleOrNamespace &&
-    x.TyparsNoRange.IsEmpty &&
-    ((x.IsILTycon && 
-      x.ILTyconRawMetadata.IsSealed &&
-      x.ILTyconRawMetadata.IsAbstract) 
-#if !NO_EXTENSIONTYPING
-     || (x.IsProvided &&
-        match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsSealed && info.IsAbstract 
-        | _ -> false)
-#endif
-     || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
-    not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
 
 /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
 /// duplicate modules etc.

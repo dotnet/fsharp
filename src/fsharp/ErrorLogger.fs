@@ -91,7 +91,12 @@ exception PossibleUnverifiableCode of range
 
 exception UnresolvedReferenceNoRange of (*assemblyName*) string 
 exception UnresolvedReferenceError of (*assemblyName*) string * range
-exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string
+exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string with
+    override this.Message =
+        match this :> exn with
+        | UnresolvedPathReferenceNoRange(assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
+        | _ -> "impossible"
+
 exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
 
 
@@ -677,15 +682,29 @@ type public FSharpErrorSeverityOptions =
 // let dummyMethodFOrBug6417A() = () 
 // let dummyMethodFOrBug6417B() = () 
 
-let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) error =
-    if not (langVersion.SupportsFeature langFeature) then 
+let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    if not (langVersion.SupportsFeature langFeature) then
         let featureStr = langVersion.GetFeatureString langFeature
         let currentVersionStr = langVersion.SpecifiedVersionString
         let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
-        error (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+        Some (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+    else
+        None
 
-let internal tryLanguageFeatureError langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m error
+let internal checkLanguageFeatureError langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> error (e)
+    | None -> ()
 
-let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m errorR
+let internal checkLanguageFeatureErrorRecover langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> errorR e
+    | None -> ()
+
+let internal tryLanguageFeatureErrorOption langVersion langFeature m =
+    tryLanguageFeatureErrorAux langVersion langFeature m
+
+let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    let featureStr = langVersion.GetFeatureString langFeature
+    let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+    error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary(featureStr, suggestedVersionStr), m))

@@ -24,6 +24,7 @@ open System.Threading
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Filename
+open Internal.Utilities.StructuredFormat
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL 
@@ -321,7 +322,7 @@ module InterfaceFileWriter =
         for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
-              (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Layout.squashTo 80 |> Layout.showL)
+              (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> Layout.showL)
        
         if tcConfig.printSignatureFile <> "" then os.Dispose()
 
@@ -1314,7 +1315,7 @@ module StaticLinker =
                   data=ilxMainModule // any old module
                   edges = [] 
                   visited = true }
-            let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities" ]      
+            let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities"; "netstandard" ]
 
             begin 
                 let mutable remaining = (computeILRefs ilGlobals ilxMainModule).AssemblyReferences
@@ -1324,7 +1325,7 @@ module StaticLinker =
                     if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then 
                         depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                     else
-                        if not (depModuleTable.ContainsKey ilAssemRef.Name) then 
+                        if not (depModuleTable.ContainsKey ilAssemRef.Name) then
                             match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with 
                             | Some dllInfo ->
                                 let ccu = 

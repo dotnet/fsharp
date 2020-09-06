@@ -73,7 +73,7 @@
     } // end of method 'res5@9-1'::.ctor
 
     .method private hidebysig newslot virtual final 
-            instance void  'System-IDisposable-Dispose'() cil managed
+            instance void  System.IDisposable.Dispose() cil managed
     {
       .override [mscorlib]System.IDisposable::Dispose
       // Code size       1 (0x1)
@@ -81,7 +81,7 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 9,9 : 68,70 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
       IL_0000:  ret
-    } // end of method 'res5@9-1'::'System-IDisposable-Dispose'
+    } // end of method 'res5@9-1'::System.IDisposable.Dispose
 
   } // end of class 'res5@9-1'
 

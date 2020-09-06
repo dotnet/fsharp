@@ -560,9 +560,8 @@ and convTypeAux cenv emEnv preferCreated ty =
         let baseT = convTypeAux cenv emEnv preferCreated eltType
         baseT.MakeByRefType()
     | ILType.TypeVar tv -> envGetTyvar emEnv tv
-    // Consider completing the following cases:                                                      
     | ILType.Modified (_, _, modifiedTy) -> 
-        // Note, "modreq" are not being emitted. This is 
+        
         convTypeAux cenv emEnv preferCreated modifiedTy
 
     | ILType.FunctionPointer _callsig -> failwith "convType: fptr"

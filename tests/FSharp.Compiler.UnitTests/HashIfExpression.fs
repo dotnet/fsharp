@@ -49,21 +49,21 @@ type public HashIfExpression() =
         sb.ToString ()
 
     let createParser () =
-        let errors          = ResizeArray<PhasedDiagnostic>()
-        let warnings        = ResizeArray<PhasedDiagnostic>()
+        let errors = ResizeArray<PhasedDiagnostic>()
+        let warnings = ResizeArray<PhasedDiagnostic>()
 
-        let errorLogger     =
+        let errorLogger =
             {
                 new ErrorLogger("TestErrorLogger") with
                     member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e
                     member x.ErrorCount         = errors.Count
             }
 
-        let lightSyntax     = LightSyntaxStatus(true, false)
+        let lightSyntax = LightSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
-        let defines         = []
-        let startPos        = Position.Empty
-        let args            = mkLexargs ("dummy", defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
+        let defines= []
+        let startPos = Position.Empty
+        let args = mkLexargs (defines, lightSyntax, resourceManager, [], errorLogger, PathMap.empty)
 
         CompileThreadStatic.ErrorLogger <- errorLogger
 

@@ -122,11 +122,6 @@
         <target state="translated">ディレクトリ "{0}" は存在しません</target>
         <note />
       </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">無効なディレクティブ '#{0} {1}'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiLineTooLong">
         <source>Warning: line too long, ignoring some characters\n</source>
         <target state="translated">警告: 行が長すぎます。一部の文字は無視されます\n</target>

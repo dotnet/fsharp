@@ -7,6 +7,26 @@
         <target state="translated">símbolo "..^"</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
+        <source>interpolated string</source>
+        <target state="new">interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
+        <source>interpolated string (first part)</source>
+        <target state="new">interpolated string (first part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
+        <source>interpolated string (final part)</source>
+        <target state="new">interpolated string (final part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
+        <source>interpolated string (part)</source>
+        <target state="new">interpolated string (part)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. Vea también {0}.</target>
@@ -69,7 +89,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">En general, los identificadores de variable en mayúscula no deben usarse en patrones y pueden indicar un nombre de patrón mal escrito.</target>
+        <target state="translated">En general, los identificadores de variables en mayúscula no deben usarse en patrones y pueden indicar una declaración abierta que falta o un nombre de patrón mal escrito.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

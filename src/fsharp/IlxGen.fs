@@ -1637,10 +1637,14 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let info = generateAnonType genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)
             anonTypeTable.Table.[key] <- info
 
-    member __.LookupAnonType (anonInfo: AnonRecdTypeInfo) =
+    member this.LookupAnonType (genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         match anonTypeTable.Table.TryGetValue anonInfo.Stamp with
         | true, res -> res
-        | _ -> failwithf "the anonymous record %A has not been generated in the pre-phase of generating this module" anonInfo.ILTypeRef
+        | _ -> 
+           if anonInfo.ILTypeRef.Scope.IsLocalRef then
+               failwithf "the anonymous record %A has not been generated in the pre-phase of generating this module" anonInfo.ILTypeRef
+           this.GenerateAnonType (genToStringMethod, anonInfo)
+           anonTypeTable.Table.[anonInfo.Stamp]
 
     member __.GrabExtraBindingsToGenerate () =
         let result = extraBindingsToGenerate
@@ -2793,7 +2797,7 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
         GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, m) sequel =
-    let anonCtor, _anonMethods, anonType = cgbuf.mgbuf.LookupAnonType anonInfo
+    let anonCtor, _anonMethods, anonType = cgbuf.mgbuf.LookupAnonType ((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
     let boxity = anonType.Boxity
     GenExprs cenv cgbuf eenv args
     let ilTypeArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
@@ -2802,7 +2806,7 @@ and GenAllocAnonRecd cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, tyargs, args, 
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenGetAnonRecdField cenv cgbuf eenv (anonInfo: AnonRecdTypeInfo, e, tyargs, n, m) sequel =
-    let _anonCtor, anonMethods, anonType = cgbuf.mgbuf.LookupAnonType anonInfo
+    let _anonCtor, anonMethods, anonType = cgbuf.mgbuf.LookupAnonType ((fun ilThisTy -> GenToStringMethod cenv eenv ilThisTy m), anonInfo)
     let boxity = anonType.Boxity
     let ilTypeArgs = GenTypeArgs cenv.amap m eenv.tyenv tyargs
     let anonMethod = anonMethods.[n]
@@ -4298,8 +4302,10 @@ and GenActualSlotsig m cenv eenv (TSlotSig(_, ty, ctps, mtps, ilSlotParams, ilSl
 
 and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
     let (TSlotSig(nameOfOverridenMethod, enclTypOfOverridenMethod, _, _, _, _)) = slotsig
-    if useMethodImpl then qualifiedMangledNameOfTyconRef (tcrefOfAppTy cenv.g enclTypOfOverridenMethod) nameOfOverridenMethod
-    else nameOfOverridenMethod
+    if useMethodImpl then
+        qualifiedInterfaceImplementationName cenv.g enclTypOfOverridenMethod nameOfOverridenMethod
+    else
+        nameOfOverridenMethod
 
 and GenMethodImpl cenv eenv (useMethodImpl, (TSlotSig(nameOfOverridenMethod, _, _, _, _, _) as slotsig)) m =
     let ilOverrideTy, ilOverrideParams, ilOverrideRet = GenFormalSlotsig m cenv eenv slotsig

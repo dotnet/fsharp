@@ -41,6 +41,9 @@ type IDependencyManagerProvider =
     ///     paket: indicates that this DM is for paket scripts, which manage nuget packages, github source dependencies etc ...
     abstract Key: string
 
+    /// The help messages for this dependency manager inster
+    abstract HelpMessages: string[]
+
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
     abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string * rid: string -> IResolveDependenciesResult
 
@@ -63,11 +66,11 @@ type DependencyProvider =
     /// Construct a new DependencyProvider
     new: nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
+    /// Returns a formatted help messages for registered dependencymanagers for the host to present
+    member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]
+
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError: string seq * string * string * ResolvingErrorReport -> int * string
-
-    /// Remove the dependency mager with the specified key
-    member RemoveDependencyManagerKey: packageManagerKey: string * path: string -> string
 
     /// Resolve reference for a list of package manager lines
     member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: string seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string -> IResolveDependenciesResult
