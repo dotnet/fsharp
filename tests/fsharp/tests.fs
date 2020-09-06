@@ -2257,6 +2257,11 @@ module TypecheckTests =
         fsc cfg "%s --target:library -o:pos37.dll --warnaserror" cfg.fsc_flags ["pos37.fs"]
         peverify cfg "pos37.dll"
 
+    let ``sigs pos38`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos38.dll --warnaserror" cfg.fsc_flags ["pos38.fs"]
+        peverify cfg "pos38.dll"
+
     [<Test>]
     let ``sigs pos23`` () =
         let cfg = testConfig' "typecheck/sigs"
