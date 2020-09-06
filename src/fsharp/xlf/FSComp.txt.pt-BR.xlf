@@ -22,6 +22,11 @@
         <target state="translated">Sobrecargas disponíveis:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
+        <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
+        <target state="new">A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">Tipos de argumentos conhecidos: {0}</target>
