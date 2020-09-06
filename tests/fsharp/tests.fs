@@ -2252,6 +2252,12 @@ module TypecheckTests =
         exec cfg ("." ++ "pos36-srtp-app.exe") ""
 
     [<Test>]
+    let ``sigs pos38`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos38.dll --warnaserror" cfg.fsc_flags ["pos38.fs"]
+        peverify cfg "pos38.dll"
+
+    [<Test>]
     let ``sigs pos23`` () =
         let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]

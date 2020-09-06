@@ -3080,20 +3080,20 @@ and GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m numObjArgs curriedArgInf
         GenExpr cenv cgbuf eenv SPSuppress arg2 discard
     | _ ->
         (curriedArgInfos, args) ||> List.iter2 (fun argInfos x ->
-            GenUntupledArgExpr cenv cgbuf eenv m argInfos x Continue)
+            GenUntupledArgExpr cenv cgbuf eenv m argInfos x)
 
 /// Codegen arguments
-and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
+and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr =
     let g = cenv.g
     let numRequiredExprs = List.length argInfos
-    assert (numRequiredExprs >= 1)
-    if numRequiredExprs = 1 then
-        GenExpr cenv cgbuf eenv SPSuppress expr sequel
+    if numRequiredExprs = 0 then
+        ()
+    elif numRequiredExprs = 1 then
+        GenExpr cenv cgbuf eenv SPSuppress expr Continue
     elif isRefTupleExpr expr then
         let es = tryDestRefTupleExpr expr
         if es.Length <> numRequiredExprs then error(InternalError("GenUntupledArgExpr (2)", m))
         es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue)
-        GenSequel cenv eenv.cloc cgbuf sequel
     else
         let ty = tyOfExpr g expr
         let locv, loce = mkCompGenLocal m "arg" ty
@@ -3104,7 +3104,6 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
             let tys = destRefTupleTy g ty
             assert (tys.Length = numRequiredExprs)
             argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef, loce, tys, i, m) Continue)
-            GenSequel cenv eenv.cloc cgbuf sequel
         )
 
 
@@ -3224,7 +3223,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                     // static extension method with empty arguments. 
                     | [[]], [_] when numObjArgs = 0 -> 0
                     // instance extension method with empty arguments. 
-                    | [[_];[]], [_;_] when numObjArgs = 1 -> 0
+                    | [[_];[]], [_;_] when numObjArgs = 0 -> 1
                     | _ -> numMethodArgs
                 else numMethodArgs
 
