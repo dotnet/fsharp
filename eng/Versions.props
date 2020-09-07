@@ -23,7 +23,7 @@
     <FSCoreReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)-$(FSBuildVersion)</FSCoreReleaseNotesVersion>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion).$(FSRevisionVersion)</FSCoreVersion>
-    <FCSMajorVersion>37</FCSMajorVersion>
+    <FCSMajorVersion>38</FCSMajorVersion>
     <FCSMinorVersion>$(FSMinorVersion)</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>

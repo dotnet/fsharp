@@ -81,12 +81,14 @@ let GetSuperTypeOfType g amap m ty =
         elif isRefTy g ty && not (isObjTy g ty) then
             Some g.obj_ty
         elif isStructTupleTy g ty then
-            Some g.obj_ty
+            Some g.system_Value_ty
         elif isFSharpStructOrEnumTy g ty then
             if isFSharpEnumTy g ty then
                 Some g.system_Enum_ty
             else
                 Some g.system_Value_ty
+        elif isStructAnonRecdTy g ty then
+            Some g.system_Value_ty
         elif isAnonRecdTy g ty then
             Some g.obj_ty
         elif isRecdTy g ty || isUnionTy g ty then
@@ -146,12 +148,22 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
                     tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
         | _ -> []
 
+    
+    // NOTE: Anonymous record types are not directly considered to implement IComparable,
+    // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
+    // consitutent types, which may not yet be known in type inference.
+    //
+    // NOTE: Tuples could in theory always support IComparable etc. because this
+    // is in the .NET metadata for System.Tuple etc.  However from the F# perspective tuple types don't
+    // always support the 'comparable' and 'equality' constraints (again, it depends on their constitutent types).
+
     // .NET array types are considered to implement IList<T>
     let itys =
         if isArray1DTy g ty then
             mkSystemCollectionsGenericIListTy g (destArrayTy g ty) :: itys
         else
             itys
+
     itys
 
 [<RequireQualifiedAccess>]

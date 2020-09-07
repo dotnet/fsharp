@@ -2252,6 +2252,12 @@ module TypecheckTests =
         exec cfg ("." ++ "pos36-srtp-app.exe") ""
 
     [<Test>]
+    let ``sigs pos37`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos37.dll --warnaserror" cfg.fsc_flags ["pos37.fs"]
+        peverify cfg "pos37.dll"
+
+    [<Test>]
     let ``sigs pos38`` () =
         let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos38.dll --warnaserror" cfg.fsc_flags ["pos38.fs"]
@@ -2800,6 +2806,9 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg129`` () = singleNegTest (testConfig' "typecheck/sigs") "neg129"
+
+    [<Test>]
+    let ``type check neg130`` () = singleNegTest (testConfig' "typecheck/sigs") "neg130"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig' "typecheck/sigs") "neg_anon_1"
