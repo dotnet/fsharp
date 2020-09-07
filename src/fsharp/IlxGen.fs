@@ -246,7 +246,7 @@ type cenv =
       casApplied: Dictionary<Stamp, bool>
       
       /// Used to apply forced inlining optimizations to witnesses generated late during codegen
-      mutable optimizeDuringCodeGen: (Expr -> Expr)
+      mutable optimizeDuringCodeGen: (bool -> Expr -> Expr)
 
       /// What depth are we at when generating an expression?
       mutable exprRecursionDepth: int
@@ -1598,7 +1598,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                   yield! AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation g tycon
                   yield! AugmentWithHashCompare.MakeBindingsForEqualsAugmentation g tycon ]
 
-            let optimizedExtraBindings = extraBindings |> List.map (fun (TBind(a, b, c)) -> TBind(a, cenv.optimizeDuringCodeGen b, c))
+            let optimizedExtraBindings =
+                extraBindings |> List.map (fun (TBind(a, b, c)) ->
+                    // Disable method splitting for bindings related to anonymous records
+                    TBind(a, cenv.optimizeDuringCodeGen true b, c))
 
             extraBindingsToGenerate <- optimizedExtraBindings @ extraBindingsToGenerate
 
@@ -4095,7 +4098,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         let replacementExpr = mkThrow m (tyOfExpr g expr) exnExpr
         GenExpr cenv cgbuf eenv SPSuppress replacementExpr sequel
     | Some expr ->
-        let expr = cenv.optimizeDuringCodeGen expr
+        let expr = cenv.optimizeDuringCodeGen false expr
         GenExpr cenv cgbuf eenv SPSuppress expr sequel
 
 //--------------------------------------------------------------------------
@@ -6896,7 +6899,9 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
 
 /// Generate the namespace fragments in a single file
-and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes), optimizeDuringCodeGen) =
+and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedImplFileAfterOptimization) =
+    let (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = implFile.ImplFile
+    let optimizeDuringCodeGen = implFile.OptimizeDuringCodeGen
     let g = cenv.g
     let m = qname.Range
 
@@ -7906,11 +7911,11 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
 
-let CodegenAssembly cenv eenv mgbuf fileImpls =
-    if not (isNil fileImpls) then
-        let a, b = List.frontAndBack fileImpls
-        let eenv = List.fold (GenTopImpl cenv mgbuf None) eenv a
-        let eenv = GenTopImpl cenv mgbuf cenv.opts.mainMethodInfo eenv b
+let CodegenAssembly cenv eenv mgbuf implFiles =
+    if not (isNil implFiles) then
+        let a, b = List.frontAndBack implFiles
+        let eenv = List.fold (GenImplFile cenv mgbuf None) eenv a
+        let eenv = GenImplFile cenv mgbuf cenv.opts.mainMethodInfo eenv b
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
@@ -7960,7 +7965,7 @@ type IlxGenResults =
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 
-let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization fileImpls, assemAttribs, moduleAttribs) =
+let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
     let g = cenv.g
@@ -7973,7 +7978,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
     GenTypeDefForCompLoc (cenv, eenv, mgbuf, CompLocForPrivateImplementationDetails eenv.cloc, useHiddenInitCode, [], ILTypeInit.BeforeField, true, (* atEnd= *) true)
 
     // Generate the whole assembly
-    CodegenAssembly cenv eenv mgbuf fileImpls
+    CodegenAssembly cenv eenv mgbuf implFiles
 
     let ilAssemAttrs = GenAttrs cenv eenv assemAttribs
 
@@ -8167,7 +8172,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               casApplied = casApplied
               intraAssemblyInfo = intraAssemblyInfo
               opts = codeGenOpts
-              optimizeDuringCodeGen = (fun x -> x)
+              optimizeDuringCodeGen = (fun _flag expr -> expr)
               exprRecursionDepth = 0
               delayedGenMethods = Queue () }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)

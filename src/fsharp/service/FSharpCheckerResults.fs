@@ -2108,7 +2108,7 @@ type FSharpCheckProjectResults
         let mimpls =
             match optimizedImpls with
             | TypedAssemblyAfterOptimization files ->
-                files |> List.map fst
+                files |> List.map (fun implFile -> implFile.ImplFile)
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
