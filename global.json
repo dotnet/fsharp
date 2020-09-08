@@ -5,7 +5,7 @@
   "tools": {
     "dotnet": "3.1.401",
     "vs": {
-      "version": "16.4",
+      "version": "16.7",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
