@@ -229,7 +229,7 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
 
         do
-            self.DisplayName <- SR.FSharpDisposableValuesClassificationType()
+            self.DisplayName <- SR.FSharpDisposableLocalValuesClassificationType()
             self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.DisposableLocalValue
 
     [<Export(typeof<EditorFormatDefinition>)>]
@@ -241,5 +241,5 @@ module internal ClassificationDefinitions =
         inherit ClassificationFormatDefinition()
 
         do
-            self.DisplayName <- SR.FSharpDisposableValuesClassificationType()
+            self.DisplayName <- SR.FSharpDisposableTopLevelValuesClassificationType()
             self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.DisposableTopLevelValue
