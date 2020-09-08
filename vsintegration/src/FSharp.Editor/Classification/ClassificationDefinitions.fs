@@ -24,13 +24,13 @@ module internal FSharpClassificationTypes =
     let [<Literal>] Function = "FSharp.Function"
     let [<Literal>] MutableVar = "FSharp.MutableVar"
     let [<Literal>] DisposableType = "FSharp.DisposableType"
-    let [<Literal>] DisposableValue = "FSharp.DisposableValue"
     let [<Literal>] Printf = "FSharp.Printf"
+    let [<Literal>] DisposableLocalValue = "FSharp.DisposableLocalValue"
+    let [<Literal>] DisposableTopLevelValue = "FSharp.DisposableTopLevelValue"
 
     let getClassificationTypeName = function
         | SemanticClassificationType.MutableRecordField
         | SemanticClassificationType.MutableVar -> MutableVar
-        | SemanticClassificationType.DisposableValue -> DisposableValue
         | SemanticClassificationType.DisposableType -> DisposableType
         | SemanticClassificationType.Namespace -> ClassificationTypeNames.NamespaceName
         | SemanticClassificationType.Printf -> Printf
@@ -61,7 +61,9 @@ module internal FSharpClassificationTypes =
         | SemanticClassificationType.NamedArgument -> ClassificationTypeNames.LabelName
         | SemanticClassificationType.Event -> ClassificationTypeNames.EventName
         | SemanticClassificationType.Delegate -> ClassificationTypeNames.DelegateName
+        | SemanticClassificationType.DisposableTopLevelValue
         | SemanticClassificationType.Value -> ClassificationTypeNames.Identifier
+        | SemanticClassificationType.DisposableLocalValue
         | SemanticClassificationType.LocalValue -> ClassificationTypeNames.LocalName
         | SemanticClassificationType.Plaintext -> ClassificationTypeNames.Text
 
@@ -91,12 +93,15 @@ module internal ClassificationDefinitions =
                 {| ClassificationName = FSharpClassificationTypes.MutableVar
                    LightThemeColor = Color.FromRgb(160uy, 128uy, 0uy)
                    DarkThemeColor = Color.FromRgb(255uy, 210uy, 28uy) |}
+                {| ClassificationName = FSharpClassificationTypes.DisposableLocalValue
+                   LightThemeColor = Color.FromRgb(31uy, 55uy, 127uy)
+                   DarkThemeColor = Color.FromRgb(156uy, 220uy, 254uy) |}
+                {| ClassificationName = FSharpClassificationTypes.DisposableTopLevelValue
+                   LightThemeColor = Colors.Black
+                   DarkThemeColor = Color.FromRgb(220uy, 220uy, 220uy) |}
                 {| ClassificationName = FSharpClassificationTypes.DisposableType
-                   LightThemeColor = Colors.Green
-                   DarkThemeColor = Color.FromRgb(2uy, 183uy, 43uy) |}
-                {| ClassificationName = FSharpClassificationTypes.DisposableValue
-                   LightThemeColor = Colors.Green
-                   DarkThemeColor = Color.FromRgb(2uy, 183uy, 43uy) |}
+                   LightThemeColor = Color.FromRgb(43uy, 145uy, 175uy)
+                   DarkThemeColor = Color.FromRgb(78uy, 220uy, 176uy) |}
                 {| ClassificationName = FSharpClassificationTypes.Function
                    LightThemeColor = Color.FromRgb(116uy, 83uy, 31uy)
                    DarkThemeColor = Color.FromRgb(220uy, 220uy, 170uy) |}
@@ -155,8 +160,11 @@ module internal ClassificationDefinitions =
     [<Export; Name(FSharpClassificationTypes.DisposableType); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpDisposableClassificationType : ClassificationTypeDefinition = null
     
-    [<Export; Name(FSharpClassificationTypes.DisposableValue); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
-    let FSharpDisposableValueClassificationType : ClassificationTypeDefinition = null
+    [<Export; Name(FSharpClassificationTypes.DisposableLocalValue); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
+    let FSharpDisposableLocalValueClassificationType : ClassificationTypeDefinition = null
+
+    [<Export; Name(FSharpClassificationTypes.DisposableTopLevelValue); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
+    let FSharpDisposableTopLevelValueClassificationType : ClassificationTypeDefinition = null
 
     [<Export; Name(FSharpClassificationTypes.Function); BaseDefinition(PredefinedClassificationTypeNames.FormalLanguage)>]
     let FSharpFunctionClassificationType : ClassificationTypeDefinition = null
@@ -213,13 +221,25 @@ module internal ClassificationDefinitions =
             self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.DisposableType
 
     [<Export(typeof<EditorFormatDefinition>)>]
-    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.DisposableValue)>]
-    [<Name(FSharpClassificationTypes.DisposableValue)>]
+    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.DisposableLocalValue)>]
+    [<Name(FSharpClassificationTypes.DisposableLocalValue)>]
     [<UserVisible(true)>]
     [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
-    type internal FSharpDisposableValueFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+    type internal FSharpDisposableLocalValueFormat [<ImportingConstructor>](theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
         do
             self.DisplayName <- SR.FSharpDisposableValuesClassificationType()
-            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.DisposableValue
+            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.DisposableLocalValue
+
+    [<Export(typeof<EditorFormatDefinition>)>]
+    [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.DisposableTopLevelValue)>]
+    [<Name(FSharpClassificationTypes.DisposableTopLevelValue)>]
+    [<UserVisible(true)>]
+    [<Order(After = PredefinedClassificationTypeNames.Keyword)>]
+    type internal FSharpDisposableTopLevelValueFormat [<ImportingConstructor>](theme: ThemeColors) as self =
+        inherit ClassificationFormatDefinition()
+
+        do
+            self.DisplayName <- SR.FSharpDisposableValuesClassificationType()
+            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.DisposableTopLevelValue
