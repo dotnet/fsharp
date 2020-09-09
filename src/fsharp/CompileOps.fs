@@ -3149,6 +3149,52 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member tcConfig.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         data.ResolveSourceFile(m, nm, pathLoadedFrom)
 
+    member tcConfig.MsBuildResolve (references, mode, errorAndWarningRange, showMessages) =
+        let logMessage showMessages = 
+            if showMessages && tcConfig.showReferenceResolutions then (fun (message: string)->dprintf "%s\n" message)
+            else ignore
+
+        let logDiagnostic showMessages = 
+            (fun isError code message->
+                if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then 
+                  if isError then
+                    errorR(MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
+                  else
+                    match code with 
+                    // These are warnings that mean 'not resolved' for some assembly.
+                    // Note that we don't get to know the name of the assembly that couldn't be resolved.
+                    // Ignore these and rely on the logic below to emit an error for each unresolved reference.
+                    | "MSB3246" // Resolved file has a bad image, no metadata, or is otherwise inaccessible.
+                    | "MSB3106"  
+                        -> ()
+                    | _ -> 
+                        if code = "MSB3245" then 
+                            errorR(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange))
+                        else
+                            warning(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange)))
+
+        let targetProcessorArchitecture = 
+            match tcConfig.platform with
+            | None -> "MSIL"
+            | Some X86 -> "x86"
+            | Some AMD64 -> "amd64"
+            | Some IA64 -> "ia64"
+ 
+        try 
+            tcConfig.legacyReferenceResolver.Resolve
+               (tcConfig.resolutionEnvironment, 
+                references, 
+                tcConfig.targetFrameworkVersion, 
+                tcConfig.GetTargetFrameworkDirectories(), 
+                targetProcessorArchitecture, 
+                tcConfig.fsharpBinariesDir, // FSharp binaries directory
+                tcConfig.includes, // Explicit include directories
+                tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
+                logMessage showMessages, logDiagnostic showMessages)
+        with 
+            ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
+
+
     // NOTE!! if mode=Speculative then this method must not report ANY warnings or errors through 'warning' or 'error'. Instead
     // it must return warnings and errors as data
     //
@@ -3162,7 +3208,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
         if originalReferences=[] then [], []
-        else            
+        else
             // Group references by name with range values in the grouped value list.
             // In the grouped reference, store the index of the last use of the reference.
             let groupedReferences = 
@@ -3176,36 +3222,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                     assemblyName, highestPosition, assemblyGroup)
                 |> Array.ofSeq
 
-            let logMessage showMessages = 
-                if showMessages && tcConfig.showReferenceResolutions then (fun (message: string)->dprintf "%s\n" message)
-                else ignore
-
-            let logDiagnostic showMessages = 
-                (fun isError code message->
-                    if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then 
-                      if isError then
-                        errorR(MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
-                      else
-                        match code with 
-                        // These are warnings that mean 'not resolved' for some assembly.
-                        // Note that we don't get to know the name of the assembly that couldn't be resolved.
-                        // Ignore these and rely on the logic below to emit an error for each unresolved reference.
-                        | "MSB3246" // Resolved file has a bad image, no metadata, or is otherwise inaccessible.
-                        | "MSB3106"  
-                            -> ()
-                        | _ -> 
-                            if code = "MSB3245" then 
-                                errorR(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange))
-                            else
-                                warning(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange)))
-
-            let targetProcessorArchitecture = 
-                    match tcConfig.platform with
-                    | None -> "MSIL"
-                    | Some X86 -> "x86"
-                    | Some AMD64 -> "amd64"
-                    | Some IA64 -> "ia64"
-
             // First, try to resolve everything as a file using simple resolution
             let resolvedAsFile = 
                 groupedReferences 
@@ -3214,29 +3230,12 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                                 (maxIndexOfReference, assemblyResolution))  
                 |> Array.filter(fun (_, refs)->refs |> isNil |> not)
                 
-                                       
-            // Whatever is left, pass to MSBuild.
-            let Resolve(references, showMessages) =
-                try 
-                    tcConfig.legacyReferenceResolver.Resolve
-                       (tcConfig.resolutionEnvironment, 
-                        references, 
-                        tcConfig.targetFrameworkVersion, 
-                        tcConfig.GetTargetFrameworkDirectories(), 
-                        targetProcessorArchitecture, 
-                        tcConfig.fsharpBinariesDir, // FSharp binaries directory
-                        tcConfig.includes, // Explicit include directories
-                        tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
-                        logMessage showMessages, logDiagnostic showMessages)
-                with 
-                    ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
-            
             let toMsBuild = [|0..groupedReferences.Length-1|] 
                              |> Array.map(fun i->(p13 groupedReferences.[i]), (p23 groupedReferences.[i]), i) 
                              |> Array.filter (fun (_, i0, _)->resolvedAsFile|>Array.exists(fun (i1, _) -> i0=i1)|>not)
                              |> Array.map(fun (ref, _, i)->ref, string i)
 
-            let resolutions = Resolve(toMsBuild, (*showMessages*)true)  
+            let resolutions = tcConfig.MsBuildResolve(toMsBuild, mode, errorAndWarningRange, (*showMessages*)true)  
 
             // Map back to original assembly resolutions.
             let resolvedByMsbuild = 
@@ -3271,7 +3270,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 else 
                     // MSBuild resolution may have unified the result of two duplicate references. Try to re-resolve now.
                     // If re-resolution worked then this was a removed duplicate.
-                    Resolve([|originalName, ""|], (*showMessages*)false).Length<>0 
+                    tcConfig.MsBuildResolve([|originalName, ""|], mode, errorAndWarningRange, (*showMessages*)false).Length<>0 
                     
             let unresolvedReferences =                     
                     groupedReferences 
@@ -3713,7 +3712,16 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     // When building desktop then we need these additional dependencies
                     yield AssemblyReference(rangeStartup, "System.Numerics.dll", None)
                     yield AssemblyReference(rangeStartup, "System.dll", None)
-                    yield AssemblyReference(rangeStartup, "netstandard.dll", None)
+                    let asm = AssemblyReference(rangeStartup, "netstandard.dll", None)
+                    let found =
+                        if tcConfig.useSimpleResolution then
+                            match tcConfig.ResolveLibWithDirectories (CcuLoadFailureAction.ReturnNone, asm) with
+                            | Some _ -> true
+                            | None -> false
+                        else
+                            let resolutions = tcConfig.MsBuildResolve([|asm.Text, ""|], ResolveAssemblyReferenceMode.Speculative, rangeStartup, (*showMessages*)false)
+                            resolutions.Length = 1
+                    if found then yield asm
 
             if tcConfig.framework then
                 for s in defaultReferencesForScriptsAndOutOfProjectSources tcConfig.useFsiAuxLib assumeDotNetFramework tcConfig.useSdkRefs do
