@@ -1054,7 +1054,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
                 let nmW = ExtraWitnessMethodName nm
                 mkILInstanceMethSpecInTy (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
-        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys
+        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
     else
         let methodArgTys, paramInfos = List.unzip flatArgInfos
         let ilMethodArgTys = GenParamTypes amap m tyenvUnderTypars false methodArgTys
@@ -1068,7 +1068,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
                 let nmW = ExtraWitnessMethodName nm
                 mkILStaticMethSpecInTy (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
-        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys
+        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
 
 /// Determine how a top-level value is represented, when representing as a field, by computing an ILFieldSpec
 let ComputeFieldSpecForVal(optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option, isInteractive, g, ilTyForProperty, vspec: Val, nm, m, cloc, ilTy, ilGetterMethRef) =
@@ -1105,7 +1105,7 @@ let ComputeStorageForFSharpValue amap (g:TcGlobals) cloc optIntraAssemblyInfo op
 
 /// Compute the representation information for an F#-declared member
 let ComputeStorageForFSharpMember amap g topValInfo memberInfo (vref: ValRef) m =
-    let mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys = GetMethodSpecForMemberVal amap g memberInfo vref
+    let mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, _ = GetMethodSpecForMemberVal amap g memberInfo vref
     Method (topValInfo, vref, mspec, mspecW, m, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
 
 /// Compute the representation information for an F#-declared function in a module or an F#-declared extension member.
@@ -5943,14 +5943,18 @@ and GenParams (cenv: cenv) eenv m (mspec: ILMethodSpec) witnessInfos (argInfos: 
     ilWitnessParams @ ilParams
 
 /// Generate IL method return information
-and GenReturnInfo cenv eenv retTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
+and GenReturnInfo cenv eenv returnTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
     let marshal, attribs = GenMarshal cenv retInfo.Attribs
     let ilAttribs = GenAttrs cenv eenv attribs
 
     let ilAttribs =
-        match GenReadOnlyAttributeIfNecessary cenv.g retTy with
-        | Some attr -> ilAttribs @ [attr]
-        | None -> ilAttribs
+        match returnTy with
+        | Some retTy ->
+            match GenReadOnlyAttributeIfNecessary cenv.g retTy with
+            | Some attr -> ilAttribs @ [attr]
+            | None -> ilAttribs
+        | _ ->
+            ilAttribs
 
     let ilAttrs = mkILCustomAttrs ilAttribs
     { Type=ilRetTy
@@ -6188,12 +6192,19 @@ and GenMethodForBinding
 
     let ilAttrsThatGoOnPrimaryItem =
         [ yield! GenAttrs cenv eenv attrs
-          yield! GenCompilationArgumentCountsAttr cenv v ] @ 
-        (match GenReadOnlyAttributeIfNecessary g returnTy with Some ilAttr -> [ilAttr] | _ -> [])
+          yield! GenCompilationArgumentCountsAttr cenv v
+
+          match v.MemberInfo with
+          | Some memberInfo when 
+            memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGet ||
+            memberInfo.MemberFlags.MemberKind = MemberKind.PropertySet ||
+            memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet ->
+                match GenReadOnlyAttributeIfNecessary g returnTy with Some ilAttr -> ilAttr | _ -> ()
+          | _ -> () ]
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
     let ilParams = GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)
-    let ilReturn = GenReturnInfo cenv eenvUnderMethTypeTypars returnTy mspec.FormalReturnType retInfo
+    let ilReturn = GenReturnInfo cenv eenvUnderMethTypeTypars (Some returnTy) mspec.FormalReturnType retInfo
     let methName = mspec.Name
     let tref = mspec.MethodRef.DeclaringTypeRef
 
@@ -6765,7 +6776,7 @@ and GenAttr amap g eenv (Attrib(_, k, args, props, _, _, _)) =
         | ILAttrib mref -> mkILMethSpec(mref, AsObject, [], [])
         | FSAttrib vref ->
              assert(vref.IsMember)
-             let mspec, _, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
+             let mspec, _, _, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
              mspec
     let ilArgs = List.map2 (fun (AttribExpr(_, vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args mspec.FormalArgTypes
     mkILCustomAttribMethRef g.ilg (mspec, ilArgs, props)
@@ -7113,16 +7124,14 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
             [ yield! GenAttrs cenv eenv attribs
               yield! GenCompilationArgumentCountsAttr cenv vref.Deref ]
     
-        let mspec, _mspecW, ctps, mtps, _curriedArgInfos, argInfos, retInfo, witnessInfos, methArgTys =
+        let mspec, _mspecW, ctps, mtps, _curriedArgInfos, argInfos, retInfo, witnessInfos, methArgTys, returnTy =
             GetMethodSpecForMemberVal cenv.amap cenv.g memberInfo vref
 
         assert witnessInfos.IsEmpty
 
-        let _, retTy = stripFunTy g vref.Type
-
         let eenvForMeth = EnvForTypars (ctps@mtps) eenv
         let ilMethTypars = GenGenericParams cenv eenvForMeth mtps
-        let ilReturn = GenReturnInfo cenv eenvForMeth retTy mspec.FormalReturnType retInfo
+        let ilReturn = GenReturnInfo cenv eenvForMeth returnTy mspec.FormalReturnType retInfo
         let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None
     
         let compileAsInstance = ValRefIsCompiledAsInstanceMember g vref

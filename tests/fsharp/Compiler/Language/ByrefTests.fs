@@ -269,7 +269,7 @@ let test () =
                 |]
 
     [<Test>]
-    let ``Returning an 'inref<_>' from a function should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
+    let ``Returning an 'inref<_>' from a property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
         let src =
             """
 module Test
@@ -296,4 +296,49 @@ type C() =
         FSharp src
         |> compile
         |> verifyIL [verifyProperty;verifyMethod]
+        |> ignore
+
+    [<Test>]
+    let ``Returning an 'inref<_>' from a generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
+        let src =
+            """
+module Test
+
+type C<'T>() =
+    let x = Unchecked.defaultof<'T>
+    member _.X<'U>(): inref<'T> = &x
+            """
+
+        let verifyMethod = """.method public hidebysig instance !T& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+                X<U>() cil managed
+        {
+          .param [0]
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+
+        FSharp src
+        |> compile
+        |> verifyIL [verifyMethod]
+        |> ignore
+
+    [<Test>]
+    let ``Returning an 'inref<_>' from an abstract generic method should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
+        let src =
+            """
+module Test
+
+[<AbstractClass>]
+type C<'T>() =
+    abstract X<'U> : unit -> inref<'U>
+            """
+
+        let verifyMethod = """.method public hidebysig abstract virtual 
+                instance !!U& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+                X<U>() cil managed
+        {
+          .param [0]
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) """
+
+        FSharp src
+        |> compile
+        |> verifyIL [verifyMethod]
         |> ignore
