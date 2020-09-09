@@ -323,18 +323,18 @@ stages:
               continueOnError: true
               condition: failed()
 
-        # Up-to-date
-        - job: UpToDate_Windows
-          pool:
-            vmImage: windows-2019
-          steps:
-          - checkout: self
-            clean: true
-          - task: PowerShell@2
-            displayName: Run up-to-date build check
-            inputs:
-              filePath: eng\tests\UpToDate.ps1
-              arguments: -configuration $(_BuildConfig) -ci -binaryLog
+        # Up-to-date - disabled due to it being flaky
+        #- job: UpToDate_Windows
+        #  pool:
+        #    vmImage: windows-2019
+        #  steps:
+        #  - checkout: self
+        #    clean: true
+        #  - task: PowerShell@2
+        #    displayName: Run up-to-date build check
+        #    inputs:
+        #      filePath: eng\tests\UpToDate.ps1
+        #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
 
 #---------------------------------------------------------------------------------------------------------------------#
