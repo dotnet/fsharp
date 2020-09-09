@@ -329,6 +329,7 @@ csTypeNotCompatibleBecauseOfPrintf,"The type '%s' is not compatible with any of 
 csGenericConstructRequiresReferenceSemantics,"A generic construct requires that the type '%s' have reference semantics, but it does not, i.e. it is a struct"
 csGenericConstructRequiresNonAbstract,"A generic construct requires that the type '%s' be non-abstract"
 csGenericConstructRequiresPublicDefaultConstructor,"A generic construct requires that the type '%s' have a public default constructor"
+csGenericConstructRequiresStructOrReferenceConstraint,"A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation."
 483,csTypeInstantiationLengthMismatch,"Type instantiation length mismatch"
 484,csOptionalArgumentNotPermittedHere,"Optional arguments not permitted here"
 485,csMemberIsNotStatic,"%s is not a static member"

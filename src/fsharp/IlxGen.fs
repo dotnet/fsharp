@@ -246,7 +246,7 @@ type cenv =
       casApplied: Dictionary<Stamp, bool>
       
       /// Used to apply forced inlining optimizations to witnesses generated late during codegen
-      mutable optimizeDuringCodeGen: (Expr -> Expr)
+      mutable optimizeDuringCodeGen: (bool -> Expr -> Expr)
 
       /// What depth are we at when generating an expression?
       mutable exprRecursionDepth: int
@@ -1054,7 +1054,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
                 let nmW = ExtraWitnessMethodName nm
                 mkILInstanceMethSpecInTy (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
-        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys
+        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
     else
         let methodArgTys, paramInfos = List.unzip flatArgInfos
         let ilMethodArgTys = GenParamTypes amap m tyenvUnderTypars false methodArgTys
@@ -1068,7 +1068,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo: ValMemberInfo) (vref: ValRef) 
                 let nmW = ExtraWitnessMethodName nm
                 mkILStaticMethSpecInTy (ilTy, nmW, ilWitnessArgTys @ ilMethodArgTys, ilActualRetTy, ilMethodInst)
     
-        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys
+        mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, returnTy
 
 /// Determine how a top-level value is represented, when representing as a field, by computing an ILFieldSpec
 let ComputeFieldSpecForVal(optIntraAssemblyInfo: IlxGenIntraAssemblyInfo option, isInteractive, g, ilTyForProperty, vspec: Val, nm, m, cloc, ilTy, ilGetterMethRef) =
@@ -1105,7 +1105,7 @@ let ComputeStorageForFSharpValue amap (g:TcGlobals) cloc optIntraAssemblyInfo op
 
 /// Compute the representation information for an F#-declared member
 let ComputeStorageForFSharpMember amap g topValInfo memberInfo (vref: ValRef) m =
-    let mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys = GetMethodSpecForMemberVal amap g memberInfo vref
+    let mspec, mspecW, ctps, mtps, curriedArgInfos, paramInfos, retInfo, witnessInfos, methodArgTys, _ = GetMethodSpecForMemberVal amap g memberInfo vref
     Method (topValInfo, vref, mspec, mspecW, m, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, methodArgTys, retInfo)
 
 /// Compute the representation information for an F#-declared function in a module or an F#-declared extension member.
@@ -1598,7 +1598,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                   yield! AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation g tycon
                   yield! AugmentWithHashCompare.MakeBindingsForEqualsAugmentation g tycon ]
 
-            let optimizedExtraBindings = extraBindings |> List.map (fun (TBind(a, b, c)) -> TBind(a, cenv.optimizeDuringCodeGen b, c))
+            let optimizedExtraBindings =
+                extraBindings |> List.map (fun (TBind(a, b, c)) ->
+                    // Disable method splitting for bindings related to anonymous records
+                    TBind(a, cenv.optimizeDuringCodeGen true b, c))
 
             extraBindingsToGenerate <- optimizedExtraBindings @ extraBindingsToGenerate
 
@@ -3080,20 +3083,20 @@ and GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m numObjArgs curriedArgInf
         GenExpr cenv cgbuf eenv SPSuppress arg2 discard
     | _ ->
         (curriedArgInfos, args) ||> List.iter2 (fun argInfos x ->
-            GenUntupledArgExpr cenv cgbuf eenv m argInfos x Continue)
+            GenUntupledArgExpr cenv cgbuf eenv m argInfos x)
 
 /// Codegen arguments
-and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
+and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr =
     let g = cenv.g
     let numRequiredExprs = List.length argInfos
-    assert (numRequiredExprs >= 1)
-    if numRequiredExprs = 1 then
-        GenExpr cenv cgbuf eenv SPSuppress expr sequel
+    if numRequiredExprs = 0 then
+        ()
+    elif numRequiredExprs = 1 then
+        GenExpr cenv cgbuf eenv SPSuppress expr Continue
     elif isRefTupleExpr expr then
         let es = tryDestRefTupleExpr expr
         if es.Length <> numRequiredExprs then error(InternalError("GenUntupledArgExpr (2)", m))
         es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue)
-        GenSequel cenv eenv.cloc cgbuf sequel
     else
         let ty = tyOfExpr g expr
         let locv, loce = mkCompGenLocal m "arg" ty
@@ -3104,7 +3107,6 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
             let tys = destRefTupleTy g ty
             assert (tys.Length = numRequiredExprs)
             argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef, loce, tys, i, m) Continue)
-            GenSequel cenv eenv.cloc cgbuf sequel
         )
 
 
@@ -3224,7 +3226,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                     // static extension method with empty arguments. 
                     | [[]], [_] when numObjArgs = 0 -> 0
                     // instance extension method with empty arguments. 
-                    | [[_];[]], [_;_] when numObjArgs = 1 -> 0
+                    | [[_];[]], [_;_] when numObjArgs = 0 -> 1
                     | _ -> numMethodArgs
                 else numMethodArgs
 
@@ -4096,7 +4098,7 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         let replacementExpr = mkThrow m (tyOfExpr g expr) exnExpr
         GenExpr cenv cgbuf eenv SPSuppress replacementExpr sequel
     | Some expr ->
-        let expr = cenv.optimizeDuringCodeGen expr
+        let expr = cenv.optimizeDuringCodeGen false expr
         GenExpr cenv cgbuf eenv SPSuppress expr sequel
 
 //--------------------------------------------------------------------------
@@ -5947,11 +5949,23 @@ and GenParams (cenv: cenv) eenv m (mspec: ILMethodSpec) witnessInfos (argInfos: 
     ilWitnessParams @ ilParams
 
 /// Generate IL method return information
-and GenReturnInfo cenv eenv ilRetTy (retInfo: ArgReprInfo) : ILReturn =
+and GenReturnInfo cenv eenv returnTy ilRetTy (retInfo: ArgReprInfo) : ILReturn =
     let marshal, attribs = GenMarshal cenv retInfo.Attribs
+    let ilAttribs = GenAttrs cenv eenv attribs
+
+    let ilAttribs =
+        match returnTy with
+        | Some retTy ->
+            match GenReadOnlyAttributeIfNecessary cenv.g retTy with
+            | Some attr -> ilAttribs @ [attr]
+            | None -> ilAttribs
+        | _ ->
+            ilAttribs
+
+    let ilAttrs = mkILCustomAttrs ilAttribs
     { Type=ilRetTy
       Marshal=marshal
-      CustomAttrsStored= storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
+      CustomAttrsStored= storeILCustomAttrs ilAttrs
       MetadataIndex = NoMetadataIdx }
    
 /// Generate an IL property for a member
@@ -6184,11 +6198,19 @@ and GenMethodForBinding
 
     let ilAttrsThatGoOnPrimaryItem =
         [ yield! GenAttrs cenv eenv attrs
-          yield! GenCompilationArgumentCountsAttr cenv v ]
+          yield! GenCompilationArgumentCountsAttr cenv v
+
+          match v.MemberInfo with
+          | Some memberInfo when 
+            memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGet ||
+            memberInfo.MemberFlags.MemberKind = MemberKind.PropertySet ||
+            memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet ->
+                match GenReadOnlyAttributeIfNecessary g returnTy with Some ilAttr -> ilAttr | _ -> ()
+          | _ -> () ]
 
     let ilTypars = GenGenericParams cenv eenvUnderMethLambdaTypars methLambdaTypars
     let ilParams = GenParams cenv eenvUnderMethTypeTypars m mspec witnessInfos paramInfos argTys (Some nonUnitNonSelfMethodVars)
-    let ilReturn = GenReturnInfo cenv eenvUnderMethTypeTypars mspec.FormalReturnType retInfo
+    let ilReturn = GenReturnInfo cenv eenvUnderMethTypeTypars (Some returnTy) mspec.FormalReturnType retInfo
     let methName = mspec.Name
     let tref = mspec.MethodRef.DeclaringTypeRef
 
@@ -6291,6 +6313,7 @@ and GenMethodForBinding
                    if mdef.Access <> ILMemberAccess.Private then
                        let vtyp = ReturnTypeOfPropertyVal g v
                        let ilPropTy = GenType cenv.amap m eenvUnderMethTypeTypars.tyenv vtyp
+                       let ilPropTy = GenReadOnlyModReqIfNecessary g vtyp ilPropTy
                        let ilArgTys = v |> ArgInfosOfPropertyVal g |> List.map fst |> GenTypes cenv.amap m eenvUnderMethTypeTypars.tyenv
                        let ilPropDef = GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrsThatGoOnPrimaryItem) compiledName
                        mgbuf.AddOrMergePropertyDef(tref, ilPropDef, m)
@@ -6759,7 +6782,7 @@ and GenAttr amap g eenv (Attrib(_, k, args, props, _, _, _)) =
         | ILAttrib mref -> mkILMethSpec(mref, AsObject, [], [])
         | FSAttrib vref ->
              assert(vref.IsMember)
-             let mspec, _, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
+             let mspec, _, _, _, _, _, _, _, _, _ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
              mspec
     let ilArgs = List.map2 (fun (AttribExpr(_, vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args mspec.FormalArgTypes
     mkILCustomAttribMethRef g.ilg (mspec, ilArgs, props)
@@ -6897,7 +6920,9 @@ and GenModuleBinding cenv (cgbuf: CodeGenBuffer) (qname: QualifiedNameOfFile) la
 
 
 /// Generate the namespace fragments in a single file
-and GenTopImpl cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes), optimizeDuringCodeGen) =
+and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedImplFileAfterOptimization) =
+    let (TImplFile (qname, _, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) = implFile.ImplFile
+    let optimizeDuringCodeGen = implFile.OptimizeDuringCodeGen
     let g = cenv.g
     let m = qname.Range
 
@@ -7107,14 +7132,14 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
             [ yield! GenAttrs cenv eenv attribs
               yield! GenCompilationArgumentCountsAttr cenv vref.Deref ]
     
-        let mspec, _mspecW, ctps, mtps, _curriedArgInfos, argInfos, retInfo, witnessInfos, methArgTys =
+        let mspec, _mspecW, ctps, mtps, _curriedArgInfos, argInfos, retInfo, witnessInfos, methArgTys, returnTy =
             GetMethodSpecForMemberVal cenv.amap cenv.g memberInfo vref
 
         assert witnessInfos.IsEmpty
 
         let eenvForMeth = EnvForTypars (ctps@mtps) eenv
         let ilMethTypars = GenGenericParams cenv eenvForMeth mtps
-        let ilReturn = GenReturnInfo cenv eenvForMeth mspec.FormalReturnType retInfo
+        let ilReturn = GenReturnInfo cenv eenvForMeth returnTy mspec.FormalReturnType retInfo
         let ilParams = GenParams cenv eenvForMeth m mspec [] argInfos methArgTys None
     
         let compileAsInstance = ValRefIsCompiledAsInstanceMember g vref
@@ -7907,11 +7932,11 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
 
-let CodegenAssembly cenv eenv mgbuf fileImpls =
-    if not (isNil fileImpls) then
-        let a, b = List.frontAndBack fileImpls
-        let eenv = List.fold (GenTopImpl cenv mgbuf None) eenv a
-        let eenv = GenTopImpl cenv mgbuf cenv.opts.mainMethodInfo eenv b
+let CodegenAssembly cenv eenv mgbuf implFiles =
+    if not (isNil implFiles) then
+        let a, b = List.frontAndBack implFiles
+        let eenv = List.fold (GenImplFile cenv mgbuf None) eenv a
+        let eenv = GenImplFile cenv mgbuf cenv.opts.mainMethodInfo eenv b
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
@@ -7961,7 +7986,7 @@ type IlxGenResults =
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 
-let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization fileImpls, assemAttribs, moduleAttribs) =
+let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
     let g = cenv.g
@@ -7974,7 +7999,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
     GenTypeDefForCompLoc (cenv, eenv, mgbuf, CompLocForPrivateImplementationDetails eenv.cloc, useHiddenInitCode, [], ILTypeInit.BeforeField, true, (* atEnd= *) true)
 
     // Generate the whole assembly
-    CodegenAssembly cenv eenv mgbuf fileImpls
+    CodegenAssembly cenv eenv mgbuf implFiles
 
     let ilAssemAttrs = GenAttrs cenv eenv assemAttribs
 
@@ -8168,7 +8193,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               casApplied = casApplied
               intraAssemblyInfo = intraAssemblyInfo
               opts = codeGenOpts
-              optimizeDuringCodeGen = (fun x -> x)
+              optimizeDuringCodeGen = (fun _flag expr -> expr)
               exprRecursionDepth = 0
               delayedGenMethods = Queue () }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)

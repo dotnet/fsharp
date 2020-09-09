@@ -1,11 +1,11 @@
 {
   "sdk": {
-    "version": "5.0.100-preview.6.20310.4"
+    "version": "3.1.401"
   },
   "tools": {
-    "dotnet": "5.0.100-preview.6.20310.4",
+    "dotnet": "3.1.401",
     "vs": {
-      "version": "16.4",
+      "version": "16.7",
       "components": [
         "Microsoft.VisualStudio.Component.FSharp"
       ]
