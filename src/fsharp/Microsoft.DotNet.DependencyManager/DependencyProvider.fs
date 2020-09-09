@@ -108,7 +108,7 @@ type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract HelpMessages: string[]
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: string seq * tfm: string * rid: string -> IResolveDependenciesResult
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string -> IResolveDependenciesResult
 
 type ReflectionDependencyManagerProvider(theType: Type, 
         nameProperty: PropertyInfo,
@@ -138,11 +138,11 @@ type ReflectionDependencyManagerProvider(theType: Type,
         | _, _, None, _ -> None
         | Some _, Some nameProperty, Some keyProperty, None ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
-            let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
+            let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
             Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
         | Some _, Some nameProperty, Some keyProperty, Some helpMessagesProperty ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
-            let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
+            let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
             Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
 
     static member MakeResultFromObject(result: obj) = {
@@ -229,7 +229,13 @@ type ReflectionDependencyManagerProvider(theType: Type,
                 if resolveDepsEx.IsSome then
                     resolveDepsEx, [| box scriptExt; box packageManagerTextLines; box tfm; box rid |]
                 elif resolveDeps.IsSome then
-                    resolveDeps, [| box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines; box tfm |]
+                    resolveDeps, [| box scriptDir
+                                    box mainScriptName
+                                    box scriptName
+                                    box (packageManagerTextLines
+                                         |> Seq.filter(fun (dv, _) -> dv = "r") 
+                                         |> Seq.map(fun (_, line) -> line))
+                                    box tfm |]
                 else
                     None, [||]
 
@@ -377,7 +383,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
     /// Resolve reference for a list of package manager lines
     member _.Resolve (packageManager:IDependencyManagerProvider,
                        scriptExt: string,
-                       packageManagerTextLines: string seq,
+                       packageManagerTextLines: (string * string) seq,
                        reportError: ResolvingErrorReport,
                        executionTfm: string,
                        [<Optional;DefaultParameterValue(null:string)>]executionRid: string,

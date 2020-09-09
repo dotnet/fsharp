@@ -27,6 +27,11 @@
         <target state="translated">Element {0} wymaga wartości.</target>
         <note />
       </trans-unit>
+      <trans-unit id="sourceDirectoryDoesntExist">
+        <source>The source directory '{0}' not found</source>
+        <target state="new">The source directory '{0}' not found</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">Nie można zastosować niejawnego argumentu o numerze {0}</target>
