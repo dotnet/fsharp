@@ -29,7 +29,8 @@ type SemanticClassificationType =
     | TypeArgument
     | Operator
     | DisposableType
-    | DisposableValue
+    | DisposableTopLevelValue
+    | DisposableLocalValue
     | Method
     | ExtensionMethod
     | ConstructorForReferenceType

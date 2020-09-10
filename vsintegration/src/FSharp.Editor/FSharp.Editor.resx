@@ -210,10 +210,13 @@
   <data name="RenameValueToDoubleUnderscore" xml:space="preserve">
     <value>Rename '{0}' to '__'</value>
   </data>
-  <data name="FSharpDisposableValuesClassificationType" xml:space="preserve">
-    <value>F# Disposable Values</value>
+  <data name="FSharpDisposableLocalValuesClassificationType" xml:space="preserve">
+    <value>F# Disposable Values (locals)</value>
   </data>
   <data name="FSharpPropertiesClassificationType" xml:space="preserve">
     <value>F# Properties</value>
+  </data>
+  <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
+    <value>F# Dispostable Values (top-level)</value>
   </data>
 </root>
