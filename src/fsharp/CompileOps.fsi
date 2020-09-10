@@ -254,21 +254,21 @@ type VersionFlag =
     member GetVersionInfo: implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString: implicitIncludeDir:string -> string
 
-type LType =
+type Directive =
     | Resolution
-    | RestoreSource
+    | Include
 
 type LStatus =
     | Unprocessed
     | Processed
 
 type PackageManagerLine =
-    { LineType: LType
+    { Directive: Directive
       LineStatus: LStatus
       Line: string
       Range: range }
 
-    static member AddLineWithKey: string -> LType -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member AddLineWithKey: string -> Directive -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member RemoveUnprocessedLines: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
@@ -713,7 +713,7 @@ val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: s
 
 /// Processing # commands
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * LType * range * string -> 'T) * ('T -> range * string -> unit))
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * Directive * range * string -> 'T) * ('T -> range * string -> unit))
     -> TcConfigBuilder * ParsedInput * string * 'T 
     -> 'T
 
