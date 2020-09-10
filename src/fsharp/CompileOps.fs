@@ -2090,21 +2090,21 @@ type CcuLoadFailureAction =
     | RaiseError
     | ReturnNone
 
-type LType =
+type Directive =
     | Resolution
-    | RestoreSource
+    | Include
 
 type LStatus =
     | Unprocessed
     | Processed
 
 type PackageManagerLine =
-    { LineType: LType
+    { Directive: Directive
       LineStatus: LStatus
       Line: string
       Range: range }
 
-    static member AddLineWithKey (packageKey: string) (lt:LType) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
+    static member AddLineWithKey (packageKey: string) (directive:Directive) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
         let path = PackageManagerLine.StripDependencyManagerKey packageKey line
         let map =
             let mutable found = false
@@ -2113,13 +2113,13 @@ type PackageManagerLine =
                 |> Map.map(fun key lines ->
                     if key = packageKey then
                         found <- true
-                        lines |> List.append [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
+                        lines |> List.append [{Directive=directive; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
                     else
                         lines)
             if found then
                 result
             else
-                result.Add(packageKey, [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
+                result.Add(packageKey, [{Directive=directive; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
         map
 
     static member RemoveUnprocessedLines (packageKey: string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
@@ -5066,7 +5066,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
-      packageRequireF: 'state -> IDependencyManagerProvider * LType * range * string -> 'state,
+      packageRequireF: 'state -> IDependencyManagerProvider * Directive * range * string -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder, inp, pathOfMetaCommandSource, state0) =
 
@@ -5080,22 +5080,7 @@ let ProcessMetaCommandsFromInput
     let ProcessMetaCommand state hash =
         let mutable matchedm = range0
         try 
-            match hash with 
-            | ParsedHashDirective("I", args, m) ->
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashIncludeNotAllowedInNonScript m)
-               match args with 
-               | [path] -> 
-                   matchedm <- m
-                   tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
-                   state
-               | _ -> 
-                   errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
-                   state
-            | ParsedHashDirective("nowarn",numbers,m) ->
-               List.fold (fun state d -> nowarnF state (m,d)) state numbers
-
-            | ParsedHashDirective(("reference" | "r"),args,m) -> 
+            let processDependencyManagerDirectives directive args m =            
                 if not canHaveScriptMetaCommands then
                     errorR(HashReferenceNotAllowedInNonScript m)
 
@@ -5115,10 +5100,14 @@ let ProcessMetaCommandsFromInput
                     match dm with
                     | _, dependencyManager when not(isNull dependencyManager) ->
                         if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                            packageRequireF state (dependencyManager, LType.Resolution, m, path)
+                            packageRequireF state (dependencyManager, directive, m, path)
                         else
                             errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                             state
+
+                    | _, _ when directive = Directive.Include ->
+                        errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+                        state
 
                     // #r "Assembly"
                     | path, _ ->
@@ -5131,6 +5120,27 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
                    state
+
+            match hash with 
+            | ParsedHashDirective("I", args, m) ->
+               if not canHaveScriptMetaCommands then 
+                   errorR(HashIncludeNotAllowedInNonScript m)
+               match args with 
+               | [path] -> 
+                   matchedm <- m
+                   tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
+                   state
+               | _ -> 
+                   errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
+                   state
+            | ParsedHashDirective("nowarn",numbers,m) ->
+               List.fold (fun state d -> nowarnF state (m,d)) state numbers
+
+            | ParsedHashDirective(("reference" | "r"), args, m) -> 
+                processDependencyManagerDirectives Directive.Resolution args m
+
+            | ParsedHashDirective(("i"), args, m) -> 
+                processDependencyManagerDirectives Directive.Include args m
 
             | ParsedHashDirective("load", args, m) -> 
                if not canHaveScriptMetaCommands then 
@@ -5395,7 +5405,7 @@ module ScriptPreprocessClosure =
                     let packageManagerKey, packageManagerLines = kv.Key, kv.Value
                     match packageManagerLines with
                     | [] -> ()
-                    | { LineType=_; LineStatus=_; Line=_; Range=m } :: _ ->
+                    | { Directive=_; LineStatus=_; Line=_; Range=m } :: _ ->
                         let reportError =
                             let report errorType err msg =
                                 let error = err, msg
@@ -5413,7 +5423,12 @@ module ScriptPreprocessClosure =
                                 errorR(Error(tcConfig.dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
 
                             | dependencyManager ->
-                                let packageManagerTextLines = packageManagerLines |> List.map(fun l -> l.Line)
+                                let directive d =
+                                    match d with
+                                    | Directive.Resolution -> "r"
+                                    | Directive.Include -> "i"
+
+                                let packageManagerTextLines = packageManagerLines |> List.map(fun l -> directive l.Directive, l.Line)
                                 let result = tcConfig.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
                                 match result.Success with
                                 | true ->

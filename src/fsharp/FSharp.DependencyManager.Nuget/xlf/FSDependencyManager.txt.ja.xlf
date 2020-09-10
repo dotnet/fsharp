@@ -27,6 +27,11 @@
         <target state="translated">{0} には値が必要です</target>
         <note />
       </trans-unit>
+      <trans-unit id="sourceDirectoryDoesntExist">
+        <source>The source directory '{0}' not found</source>
+        <target state="new">The source directory '{0}' not found</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">暗黙的な引数番号 {0} を適用できません</target>

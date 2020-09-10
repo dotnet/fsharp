@@ -27,6 +27,11 @@
         <target state="translated">{0}, bir değer gerektiriyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="sourceDirectoryDoesntExist">
+        <source>The source directory '{0}' not found</source>
+        <target state="new">The source directory '{0}' not found</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">Örtük bağımsız değişken sayısı ({0}) uygulanamıyor</target>
