@@ -38,9 +38,15 @@ If you'd like to use Visual Studio online (or VSCode with VSO as backend), just 
 
 This will provision an environment with all necessary dependencies. Initial build of the environment may take up to 10 minutes, as it's also performing initial build of the F# compiler.
 
-### More options and information
+### Documentation for contributors
 
-See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for more details on additional configurations for building and testing, how to update compiler error messages, and more.
+See [DEVGUIDE.md](DEVGUIDE.md) for more details on configurations for building the codebase. In practice, you only really need to run `build.cmd`/`build.sh`.
+
+See [TESTGUIDE.md](TESTGUIDE.md) for information about the various test suites in this codebase and how to run them individually.
+
+See the [Compiler Guide](docs/compiler-guide.md) for an in-depth guide to the F# compiler. It is essential reading for any larger contributions to the F# compiler codebase.
+
+See [the F# Language Specification](https://fsharp.org/specs/language-spec/) for an in-depth description of the F# language. This is essential for understanding some behaviors of the F# compiler and some of the rules within the compiler codebase. For example, the order and way name resolution happens is specified here, which greatly impacts how the code in Name Resolutions works and why certain decisions are made.
 
 ### No contribution is too small
 
@@ -70,12 +76,10 @@ Alternatively, if you _really_ want to live on the bleeding edge, you can set up
 These are the branches in use:
 
 * `main`
-  - Most contributions go here.
+  - Almost all contributions go here.
   - Able to be built, installed and used in the latest public Visual Studio release.
   - May contain updated F# features and logic.
   - Used to build nightly VSIX (see above).
-  - Gets integrated into https://github.com/fsharp/fsharp to form the basis of Mono releases
-  - Gets integrated into https://github.com/fsharp/FSharp.Compiler.Service to form the basis of FSharp.Compiler.Service releases
 
 * `release/dev15.9`
   - Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
@@ -93,13 +97,6 @@ Evolution of the F# language and core library follows a process spanning two add
 1. Use the [F# language suggestions repo](https://github.com/fsharp/fslang-suggestions/) to search for ideas, vote on ones you like, submit new ideas, and discuss details with the F# community.
 2. Ideas that are "approved in principle" are eligible for a new RFC in the [F# language design repo](https://github.com/fsharp/fslang-design). This is where the technical specification and discussion of approved suggestions go.
 3. Implementations and testing of an RFC are submitted to this repository.
-
-## Additional project documentation
-
-The following links can help you get an overview of some technical aspects of the F# language and compiler:
-
-* [The F# Compiler Technical Guide](https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
-* [The F# Language Specification](https://fsharp.org/specs/language-spec/)
 
 ## License
 
