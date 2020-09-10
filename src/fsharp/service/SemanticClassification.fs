@@ -37,7 +37,8 @@ type SemanticClassificationType =
     | TypeArgument
     | Operator
     | DisposableType
-    | DisposableValue
+    | DisposableTopLevelValue
+    | DisposableLocalValue
     | Method
     | ExtensionMethod
     | ConstructorForReferenceType
@@ -180,7 +181,10 @@ module TcResolutionsExtensions =
 
                     | (Item.Value vref), _, _, _, _, m ->
                         if isValRefDisposable vref then
-                            add m SemanticClassificationType.DisposableValue
+                            if vref.IsCompiledAsTopLevel then
+                                add m SemanticClassificationType.DisposableTopLevelValue
+                            else
+                                add m SemanticClassificationType.DisposableLocalValue
                         elif Option.isSome vref.LiteralValue then
                             add m SemanticClassificationType.Literal
                         elif not vref.IsCompiledAsTopLevel && not(isDiscard vref.DisplayName) then

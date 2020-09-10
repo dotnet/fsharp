@@ -24759,7 +24759,8 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Constr
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ConstructorForValueType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Delegate
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableLocalValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableTopLevelValue
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Enumeration
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Event
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Exception
@@ -24798,7 +24799,8 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsConstru
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsConstructorForValueType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDelegate
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableLocalValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableTopLevelValue
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsEnumeration
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsEvent
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsException
@@ -24834,7 +24836,8 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsCon
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsConstructorForValueType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDelegate()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableValue()
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableLocalValue()
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableTopLevelValue()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsEnumeration()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsEvent()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsException()
@@ -24870,7 +24873,8 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.S
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType ConstructorForValueType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Delegate
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableType
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableLocalValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableTopLevelValue
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Enumeration
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Event
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Exception
@@ -24906,7 +24910,8 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.S
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ConstructorForValueType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Delegate()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableType()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableValue()
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableLocalValue()
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableTopLevelValue()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Enumeration()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Event()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Exception()
@@ -42372,7 +42377,7 @@ Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.IAsyncResult 
 Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: Void .ctor(System.Object, IntPtr)
 Microsoft.DotNet.DependencyManager.AssemblyResolveHandler: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe)
 Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IDependencyManagerProvider TryFindDependencyManagerByKey(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
-Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult Resolve(Microsoft.DotNet.DependencyManager.IDependencyManagerProvider, System.String, System.Collections.Generic.IEnumerable`1[System.String], Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String, System.String, System.String, System.String, System.String)
+Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult Resolve(Microsoft.DotNet.DependencyManager.IDependencyManagerProvider, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String, System.String, System.String, System.String, System.String)
 Microsoft.DotNet.DependencyManager.DependencyProvider: System.String[] GetRegisteredDependencyManagerHelpText(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport)
 Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.Int32,System.String] CreatePackageManagerUnknownError(System.Collections.Generic.IEnumerable`1[System.String], System.String, System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport)
 Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.String,Microsoft.DotNet.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
@@ -42400,7 +42405,7 @@ Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyM
 Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType get_Warning()
 Microsoft.DotNet.DependencyManager.ErrorReportType: Microsoft.DotNet.DependencyManager.ErrorReportType+Tags
 Microsoft.DotNet.DependencyManager.ErrorReportType: System.String ToString()
-Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult ResolveDependencies(System.String, System.String, System.String, System.String, System.Collections.Generic.IEnumerable`1[System.String], System.String, System.String)
+Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult ResolveDependencies(System.String, System.String, System.String, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], System.String, System.String)
 Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String Key
 Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String Name
 Microsoft.DotNet.DependencyManager.IDependencyManagerProvider: System.String get_Key()

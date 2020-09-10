@@ -287,6 +287,11 @@
         <target state="translated">Algorithmus "{0}" wird nicht unterstützt</target>
         <note />
       </trans-unit>
+      <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
+        <source>#i is not supported by the registered PackageManagers</source>
+        <target state="new">#i is not supported by the registered PackageManagers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Dieses Feature wird in dieser Version von F# nicht unterstützt. Möglicherweise müssen Sie "/langversion:preview" hinzufügen, um dieses Feature zu verwenden.</target>

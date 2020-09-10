@@ -12,7 +12,7 @@ open FSharp.DependencyManager.Nuget.ProjectFile
 open FSDependencyManager
 
 module FSharpDependencyManager =
-
+    
     [<assembly: DependencyManagerAttribute()>]
     do ()
 
@@ -22,6 +22,20 @@ module FSharpDependencyManager =
         | false, true -> s
         | true, false -> v
         | _  -> ""
+
+    let validateAndFormatRestoreSources (sources:string) = [|
+            let items = sources.Split(';')
+            for item in items do
+                let uri = new Uri(item)
+                if uri.IsFile then
+                    let directoryName = uri.LocalPath
+                    if Directory.Exists(directoryName) then
+                        yield sprintf """  <PropertyGroup Condition="Exists('%s')"><RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);%s</RestoreAdditionalProjectSources></PropertyGroup>""" directoryName directoryName
+                    else
+                        raise (Exception(SR.sourceDirectoryDoesntExist(directoryName)))
+                else
+                    yield sprintf """  <PropertyGroup><RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);%s</RestoreAdditionalProjectSources></PropertyGroup>""" uri.OriginalString 
+        |]
 
     let formatPackageReference p =
         let { Include=inc; Version=ver; RestoreSources=src; Script=script } = p
@@ -33,68 +47,80 @@ module FSharpDependencyManager =
             | true, false, true  -> yield sprintf @"  <ItemGroup><PackageReference Include='%s' Script='%s' /></ItemGroup>" inc script
             | _ -> ()
             match not (String.IsNullOrEmpty(src)) with
-            | true -> yield sprintf @"  <PropertyGroup><RestoreAdditionalProjectSources>%s</RestoreAdditionalProjectSources></PropertyGroup>" (concat "$(RestoreAdditionalProjectSources)" src)
+            | true -> yield! validateAndFormatRestoreSources src
             | _ -> ()
         }
 
+    let parsePackageReferenceOption scriptExt (setBinLogPath: string option option -> unit) (line: string) =
+        let validatePackageName package packageName =
+            if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
+                raise (ArgumentException(SR.cantReferenceSystemPackage(packageName)))
+        let rec parsePackageReferenceOption' (options: (string option * string option) list) (implicitArgumentCount: int) (packageReference: PackageReference option) =
+            let current =
+                match packageReference with
+                | Some p -> p
+                | None -> { Include = ""; Version = "*"; RestoreSources = ""; Script = "" }
+            match options with
+            | [] -> packageReference
+            | opt :: rest ->
+                let addInclude v =
+                    validatePackageName v "mscorlib"
+                    if scriptExt = fsxExt then
+                        validatePackageName v "FSharp.Core"
+                    validatePackageName v "System.ValueTuple"
+                    validatePackageName v "NETStandard.Library"
+                    Some { current with Include = v }
+                let setVersion v = Some { current with Version = v }
+                match opt with
+                | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "include", None -> raise (ArgumentException(SR.requiresAValue("Include")))
+                | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "version", None -> setVersion "*" |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "restoresources", None -> raise (ArgumentException(SR.requiresAValue("RestoreSources")))
+                | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "bl", value ->
+                    match value with
+                    | Some v when v.ToLowerInvariant() = "true" -> setBinLogPath (Some None)      // auto-generated logging location
+                    | Some v when v.ToLowerInvariant() = "false" -> setBinLogPath None          // no logging
+                    | Some path -> setBinLogPath (Some (Some (path))) // explicit logging location
+                    | None ->
+                        // parser shouldn't get here because unkeyed values follow a different path, but for the sake of completeness and keeping the compiler happy,
+                        // this is fine
+                        setBinLogPath (Some None) // auto-generated logging location
+                    parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                | None, Some v ->
+                    match v.ToLowerInvariant() with
+                    | "bl" ->
+                        // a bare 'bl' enables binary logging and is NOT interpreted as one of the positional arguments.  On the off chance that the user actually wants
+                        // to reference a package named 'bl' they still have the 'Include=bl' syntax as a fallback.
+                        setBinLogPath (Some None) // auto-generated logging location
+                        parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                    | _ ->
+                        match implicitArgumentCount with
+                        | 0 -> addInclude v
+                        | 1 -> setVersion v
+                        | _ -> raise (ArgumentException(SR.unableToApplyImplicitArgument(implicitArgumentCount + 1)))
+                        |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
+                | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
+        let options = getOptions line
+        parsePackageReferenceOption' options 0 None
+
     let parsePackageReference scriptExt (lines: string list) =
         let mutable binLogPath = None
-        let parsePackageReferenceOption (line: string) =
-            let validatePackageName package packageName =
-                if String.Compare(packageName, package, StringComparison.OrdinalIgnoreCase) = 0 then
-                    raise (ArgumentException(SR.cantReferenceSystemPackage(packageName)))
-            let rec parsePackageReferenceOption' (options: (string option * string option) list) (implicitArgumentCount: int) (packageReference: PackageReference option) =
-                let current =
-                    match packageReference with
-                    | Some p -> p
-                    | None -> { Include = ""; Version = "*"; RestoreSources = ""; Script = "" }
-                match options with
-                | [] -> packageReference
-                | opt :: rest ->
-                    let addInclude v =
-                        validatePackageName v "mscorlib"
-                        if scriptExt = fsxExt then
-                            validatePackageName v "FSharp.Core"
-                        validatePackageName v "System.ValueTuple"
-                        validatePackageName v "NETStandard.Library"
-                        Some { current with Include = v }
-                    let setVersion v = Some { current with Version = v }
-                    match opt with
-                    | Some "include", Some v -> addInclude v |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "include", None -> raise (ArgumentException(SR.requiresAValue("Include")))
-                    | Some "version", Some v -> setVersion v |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "version", None -> setVersion "*" |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "restoresources", None -> raise (ArgumentException(SR.requiresAValue("RestoreSources")))
-                    | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
-                    | Some "bl", value ->
-                        match value with
-                        | Some v when v.ToLowerInvariant() = "true" -> binLogPath <- Some None // auto-generated logging location
-                        | Some v when v.ToLowerInvariant() = "false" -> binLogPath <- None // no logging
-                        | Some path -> binLogPath <- Some(Some path) // explicit logging location
-                        | None ->
-                            // parser shouldn't get here because unkeyed values follow a different path, but for the sake of completeness and keeping the compiler happy,
-                            // this is fine
-                            binLogPath <- Some None // auto-generated logging location
-                        parsePackageReferenceOption' rest implicitArgumentCount packageReference
-                    | None, Some v ->
-                        match v.ToLowerInvariant() with
-                        | "bl" ->
-                            // a bare 'bl' enables binary logging and is NOT interpreted as one of the positional arguments.  On the off chance that the user actually wants
-                            // to reference a package named 'bl' they still have the 'Include=bl' syntax as a fallback.
-                            binLogPath <- Some None // auto-generated logging location
-                            parsePackageReferenceOption' rest implicitArgumentCount packageReference
-                        | _ ->
-                            match implicitArgumentCount with
-                            | 0 -> addInclude v
-                            | 1 -> setVersion v
-                            | _ -> raise (ArgumentException(SR.unableToApplyImplicitArgument(implicitArgumentCount + 1)))
-                            |> parsePackageReferenceOption' rest (implicitArgumentCount + 1)
-                    | _ -> parsePackageReferenceOption' rest implicitArgumentCount packageReference
-            let options = getOptions line
-            parsePackageReferenceOption' options 0 None
         lines
-        |> List.choose parsePackageReferenceOption
+        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) line)
+        |> List.distinct
+        |> (fun l -> l, binLogPath)
+
+    let parsePackageDirective scriptExt (lines: (string * string) list) =
+        let mutable binLogPath = None
+        lines
+        |> List.map(fun (directive, line) ->
+            match directive with
+            | "i" -> sprintf "RestoreSources=%s" line
+            | _ -> line)
+        |> List.choose (fun line -> parsePackageReferenceOption scriptExt (fun p -> binLogPath <- p) line)
         |> List.distinct
         |> (fun l -> l, binLogPath)
 
@@ -164,11 +190,11 @@ type FSharpDependencyManager (outputDir:string option) =
     member _.Key = key
 
     member _.HelpMessages = [|
-        sprintf """    #r "nuget:FSharp.Data, 3.1.2";;   // %s 'FSharp.Data' %s '3.1.2'""" (SR.loadNugetPackage()) (SR.version())
-        sprintf """    #r "nuget:FSharp.Data";;          // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
+        sprintf """    #r "nuget:FSharp.Data, 3.1.2";;               // %s 'FSharp.Data' %s '3.1.2'""" (SR.loadNugetPackage()) (SR.version())
+        sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
         |]
 
-    member _.ResolveDependencies(scriptExt:string, packageManagerTextLines:string seq, tfm: string, rid: string) : obj =
+    member _.ResolveDependencies(scriptExt:string, packageManagerTextLines: (string *string) seq, tfm: string, rid: string) : obj =
 
         let scriptExt, poundRprefix  =
             match scriptExt with
@@ -178,7 +204,7 @@ type FSharpDependencyManager (outputDir:string option) =
         let packageReferences, binLogPath =
             packageManagerTextLines
             |> List.ofSeq
-            |> FSharpDependencyManager.parsePackageReference scriptExt
+            |> FSharpDependencyManager.parsePackageDirective scriptExt
 
         let packageReferenceLines =
             packageReferences
