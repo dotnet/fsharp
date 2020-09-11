@@ -286,11 +286,11 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
 }
 
 function TestUsingXUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath) {
-    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $false
+    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $true
 }
 
 function TestUsingNUnit([string] $testProject, [string] $targetFramework, [string]$testadapterpath) {
-    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $true
+    TestUsingMsBuild -testProject $testProject -targetFramework $targetFramework -testadapterpath $testadapterpath -noTestFilter $false
 }
 
 function BuildCompiler() {
