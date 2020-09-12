@@ -328,11 +328,6 @@ module InterfaceFileWriter =
 
 module XmlDocWriter =
 
-    let getDoc xmlDoc = 
-        match XmlDoc.Process xmlDoc with
-        | XmlDoc [| |] -> ""
-        | XmlDoc strs  -> strs |> Array.toList |> String.concat Environment.NewLine
-
     let hasDoc xmlDoc =
         // No need to process the xml doc - just need to know if there's anything there
         match xmlDoc with
@@ -389,7 +384,7 @@ module XmlDocWriter =
         let mutable members = []
         let addMember id xmlDoc = 
             if hasDoc xmlDoc then
-                let doc = getDoc xmlDoc
+                let doc = xmlDoc.GetXml()
                 members <- (id, doc) :: members
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
         let doUnionCase (uc: UnionCase) = addMember uc.XmlDocSig uc.XmlDoc

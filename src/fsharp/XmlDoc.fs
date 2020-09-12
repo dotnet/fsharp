@@ -2,12 +2,16 @@
 
 module public FSharp.Compiler.XmlDoc
 
+open System
+open System.Xml.Linq
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Range
 
-/// Represents the final form of collected XmlDoc lines
+/// Represents collected XmlDoc lines
 type XmlDoc =
-    | XmlDoc of string[]
+    | XmlDoc of (string * range)[]
     
     static member Empty = XmlDocStatics.Empty
     
@@ -15,23 +19,38 @@ type XmlDoc =
     
     static member Merge (XmlDoc lines) (XmlDoc lines') = XmlDoc (Array.append lines lines')
     
+    member x.Range = 
+        let (XmlDoc lines) = x
+        match lines with 
+        | [| |] -> Range.range0
+        | _ -> Array.reduce Range.unionRanges (Array.map snd lines)
+
     /// This code runs for .XML generation and thus influences cross-project xmldoc tooltips; for within-project tooltips,
     /// see XmlDocumentation.fs in the language service
     static member Process (XmlDoc lines) =
-        let rec processLines (lines: string list) =
+        let rec processLines (lines: (string * range) list) =
             match lines with
             | [] -> []
-            | (lineA :: rest) as lines ->
+            | ((lineA, m) :: rest) as lines ->
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
                 else if lineAT.StartsWithOrdinal("<") then lines
-                else ["<summary>"] @
-                     (lines |> List.map (fun line -> Microsoft.FSharp.Core.XmlAdapters.escape line)) @
-                     ["</summary>"]
+                else [("<summary>", m)] @
+                     (lines |> List.map (map1Of2 Microsoft.FSharp.Core.XmlAdapters.escape)) @
+                     [("</summary>", m)]
 
         let lines = processLines (Array.toList lines)
         if isNil lines then XmlDoc.Empty
         else XmlDoc (Array.ofList lines)
+
+    member x.GetXml() =
+        match XmlDoc.Process x with
+        | XmlDoc [| |] -> ""
+        | XmlDoc strs ->
+            strs 
+            |> Array.toList
+            |> List.map fst
+            |> String.concat Environment.NewLine
 
 // Discriminated unions can't contain statics, so we use a separate type
 and XmlDocStatics() =
@@ -42,14 +61,14 @@ and XmlDocStatics() =
 
 /// Used to collect XML documentation during lexing and parsing.
 type XmlDocCollector() =
-    let mutable savedLines = new ResizeArray<(string * pos)>()
+    let mutable savedLines = new ResizeArray<(string * range)>()
     let mutable savedGrabPoints = new ResizeArray<pos>()
     let posCompare p1 p2 = if posGeq p1 p2 then 1 else if posEq p1 p2 then 0 else -1
     let savedGrabPointsAsArray =
         lazy (savedGrabPoints.ToArray() |> Array.sortWith posCompare)
 
     let savedLinesAsArray =
-        lazy (savedLines.ToArray() |> Array.sortWith (fun (_, p1) (_, p2) -> posCompare p1 p2))
+        lazy (savedLines.ToArray() |> Array.sortWith (fun (_, p1) (_, p2) -> posCompare p1.End p2.End))
 
     let check() =
         // can't add more XmlDoc elements to XmlDocCollector after extracting first XmlDoc from the overall results
@@ -59,15 +78,15 @@ type XmlDocCollector() =
         check()
         savedGrabPoints.Add pos
 
-    member x.AddXmlDocLine(line, pos) =
+    member x.AddXmlDocLine(line, range) =
         check()
-        savedLines.Add(line, pos)
+        savedLines.Add(line, range)
 
     member x.LinesBefore grabPointPos =
       try
         let lines = savedLinesAsArray.Force()
         let grabPoints = savedGrabPointsAsArray.Force()
-        let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_, pos) -> posGeq pos grabPointPos)
+        let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_, m) -> posGeq m.End grabPointPos)
         let grabPointIndex = Array.findFirstIndexWhereTrue grabPoints (fun pos -> posGeq pos grabPointPos)
         assert (posEq grabPoints.[grabPointIndex] grabPointPos)
         let firstLineIndexAfterPrevGrabPoint =
@@ -75,10 +94,10 @@ type XmlDocCollector() =
                 0
             else
                 let prevGrabPointPos = grabPoints.[grabPointIndex-1]
-                Array.findFirstIndexWhereTrue lines (fun (_, pos) -> posGeq pos prevGrabPointPos)
+                Array.findFirstIndexWhereTrue lines (fun (_, m) -> posGeq m.End prevGrabPointPos)
 
         let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1]
-        lines |> Array.map fst
+        lines
       with e ->
         [| |]
 
@@ -89,13 +108,20 @@ type PreXmlDoc =
     | PreXmlDocEmpty
 
     member x.ToXmlDoc() =
-        match x with
-        | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc()) (b.ToXmlDoc())
-        | PreXmlDocEmpty -> XmlDoc.Empty
-        | PreXmlDoc (pos, collector) ->
-            let lines = collector.LinesBefore pos
-            if lines.Length = 0 then XmlDoc.Empty
-            else XmlDoc lines
+        let doc =
+            match x with
+            | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc()) (b.ToXmlDoc())
+            | PreXmlDocEmpty -> XmlDoc.Empty
+            | PreXmlDoc (pos, collector) ->
+                let lines = collector.LinesBefore pos
+                if lines.Length = 0 then XmlDoc.Empty
+                else XmlDoc lines
+        if doc.NonEmpty then
+            try XDocument.Load(doc.GetXml()) |> ignore
+            with e -> 
+               warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
+        doc
+
 
     static member CreateFromGrabPoint(collector: XmlDocCollector, grabPointPos) =
         collector.AddGrabPoint grabPointPos

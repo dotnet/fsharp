@@ -1540,3 +1540,4 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3382,parsEmptyFillInInterpolatedString,"Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected."
 3383,lexRBraceInInterpolatedString,"A '}}' character must be escaped (by doubling) in an interpolated string."
 #3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)
+3390,xmlDocBadlyFormed,"This XML comment is invalid XML: '%s'"
