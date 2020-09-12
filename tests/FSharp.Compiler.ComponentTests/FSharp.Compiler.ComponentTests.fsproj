@@ -46,6 +46,7 @@
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
+    <Compile Include="Scripting\Interactive.fs" />
   </ItemGroup>
 
   <ItemGroup>
