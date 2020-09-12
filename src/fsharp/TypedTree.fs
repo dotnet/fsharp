@@ -745,7 +745,9 @@ type Entity =
     member x.XmlDoc = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id)))
+        | TProvidedTypeExtensionPoint info ->
+            let lines = info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id))
+            XmlDoc (lines |> Array.map (fun line -> line, x.DefinitionRange))
         | _ -> 
 #endif
         match x.entity_opt_data with

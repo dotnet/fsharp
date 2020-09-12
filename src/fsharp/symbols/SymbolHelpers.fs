@@ -662,13 +662,14 @@ module internal SymbolHelpers =
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
         let result = 
             match xmlDoc with 
-            | None | Some (XmlDoc [| |]) -> ""
-            | Some (XmlDoc l) -> 
+            | None -> ""
+            | Some xmlDoc when xmlDoc.IsEmpty -> ""
+            | Some (XmlDoc lines) -> 
                 bufs (fun os -> 
                     bprintf os "\n"
-                    l |> Array.iter (fun (s: string) -> 
+                    lines |> Array.iter (fun (line, _) -> 
                         // Note: this code runs for local/within-project xmldoc tooltips, but not for cross-project or .XML
-                        bprintf os "\n%s" s))
+                        bprintf os "\n%s" line))
 
         if String.IsNullOrEmpty result then 
             GetXmlDocHelpSigOfItemForLookup infoReader m d

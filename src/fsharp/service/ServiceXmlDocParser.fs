@@ -49,12 +49,10 @@ module XmlDocParsing =
             i
 
         let isEmptyXmlDoc (preXmlDoc: PreXmlDoc) =
-            match preXmlDoc.ToXmlDoc() with 
-            | XmlDoc [||] -> true
-            | XmlDoc [|x|] when x.Trim() = "" -> true
-            | _ -> false
+            preXmlDoc.ToXmlDoc().IsEmpty
 
-        let rec getXmlDocablesSynModuleDecl = function
+        let rec getXmlDocablesSynModuleDecl decl =
+            match decl with 
             | SynModuleDecl.NestedModule(_,  _, synModuleDecls, _, _) -> 
                 (synModuleDecls |> List.collect getXmlDocablesSynModuleDecl)
             | SynModuleDecl.Let(_, synBindingList, range) -> 

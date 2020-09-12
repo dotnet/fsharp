@@ -522,6 +522,21 @@
         <target state="translated">請在可行的情況下使用適用於 .NET 架構參考的參考組件 (預設會啟用)。</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocBadlyFormed">
+        <source>This XML comment is invalid: '{0}'</source>
+        <target state="new">This XML comment is invalid: '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocInvalidParameterName">
+        <source>This XML comment is invalid: invalid parameter reference '{0}'</source>
+        <target state="new">This XML comment is invalid: invalid parameter reference '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameterName">
+        <source>This XML comment is invalid: missing parameter name</source>
+        <target state="new">This XML comment is invalid: missing parameter name</target>
+        <note />
+      </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
         <source>Consider using 'yield!' instead of 'yield'.</source>
         <target state="translated">請考慮使用 'yield!' 而不使用 'yield'。</target>

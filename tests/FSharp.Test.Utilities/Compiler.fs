@@ -178,7 +178,7 @@ module rec Compiler =
         | _ -> failwith message
 
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
-        withOptionsHelper options "withOptions is only supported n F#" cUnit
+        withOptionsHelper options "withOptions is only supported for F#" cUnit
 
     let withErrorRanges (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--test:ErrorRanges" ] "withErrorRanges is only supported on F#" cUnit
@@ -194,6 +194,9 @@ module rec Compiler =
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
+
+    let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--warnon:3390" ] "withXmlCommentChecking is only supported for F#" cUnit
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -573,7 +576,7 @@ module rec Compiler =
 
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" what k a b errors)
+                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
 
             // TODO: Check all "categories", collect all results and print alltogether.
             checkEqual "Errors count"  expected.Length errors.Length

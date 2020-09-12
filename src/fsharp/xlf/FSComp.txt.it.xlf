@@ -522,6 +522,21 @@
         <target state="translated">Usa gli assembly di riferimento per i riferimenti a .NET Framework quando disponibili (abilitato per impostazione predefinita).</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocBadlyFormed">
+        <source>This XML comment is invalid: '{0}'</source>
+        <target state="new">This XML comment is invalid: '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocInvalidParameterName">
+        <source>This XML comment is invalid: invalid parameter reference '{0}'</source>
+        <target state="new">This XML comment is invalid: invalid parameter reference '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameterName">
+        <source>This XML comment is invalid: missing parameter name</source>
+        <target state="new">This XML comment is invalid: missing parameter name</target>
+        <note />
+      </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
         <source>Consider using 'yield!' instead of 'yield'.</source>
         <target state="translated">Provare a usare 'yield!' invece di 'yield'.</target>

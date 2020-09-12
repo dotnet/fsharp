@@ -15,9 +15,14 @@ type XmlDoc =
     
     static member Empty = XmlDocStatics.Empty
     
-    member x.NonEmpty = (let (XmlDoc lines) = x in lines.Length <> 0)
+    member x.IsEmpty =
+        let (XmlDoc lines) = x
+        lines |> Array.forall (fst >> String.IsNullOrWhiteSpace)
+
+    member x.NonEmpty = not x.IsEmpty
     
-    static member Merge (XmlDoc lines) (XmlDoc lines') = XmlDoc (Array.append lines lines')
+    static member Merge (XmlDoc lines) (XmlDoc lines') = 
+        XmlDoc (Array.append lines lines')
     
     member x.Range = 
         let (XmlDoc lines) = x
@@ -43,7 +48,7 @@ type XmlDoc =
         if isNil lines then XmlDoc.Empty
         else XmlDoc (Array.ofList lines)
 
-    member x.GetXml() =
+    member x.GetXmlText() =
         match XmlDoc.Process x with
         | XmlDoc [| |] -> ""
         | XmlDoc strs ->
@@ -117,9 +122,31 @@ type PreXmlDoc =
                 if lines.Length = 0 then XmlDoc.Empty
                 else XmlDoc lines
         if doc.NonEmpty then
-            try XDocument.Load(doc.GetXml()) |> ignore
+            try
+                // We must wrap with <doc> in order to have only one root element
+                let xml = XDocument.Parse("<doc>\n"+doc.GetXmlText()+"\n</doc>", LoadOptions.SetLineInfo)
+                
+                // Note, the parameter names are curently only checked for internal
+                // consistency, so parameter references must match an XML doc parameter name.
+                let paramNames =
+                    [ for p in xml.Elements(XName.op_Implicit "param") do
+                        match p.Attribute(XName.op_Implicit "name") with 
+                        | null -> 
+                            warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
+                        | nm -> 
+                            nm.Value ]
+
+                for pref in xml.Descendants(XName.op_Implicit "paramref") do
+                    match pref.Attribute(XName.op_Implicit "name") with 
+                    | null -> warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
+                    | attr -> 
+                       let nm = attr.Value
+                       if not (paramNames |> List.contains nm) then
+                          warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
+                xml |> ignore
+
             with e -> 
-               warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
+                warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
         doc
 
 

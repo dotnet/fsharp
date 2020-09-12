@@ -1345,7 +1345,7 @@ let p_range (x: range) st =
 
 let p_dummy_range : range pickler   = fun _x _st -> ()
 let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText, x.idRange) st
-let p_xmldoc (XmlDoc x) st = p_array p_string x st
+let p_xmldoc (XmlDoc lines) st = p_array p_string (Array.map fst lines) st
 
 let u_pos st = let a = u_int st in let b = u_int st in mkPos a b
 let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in mkRange a b c
@@ -1353,7 +1353,7 @@ let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in 
 // Most ranges (e.g. on optimization expressions) can be elided from stored data
 let u_dummy_range : range unpickler = fun _st -> range0
 let u_ident st = let a = u_string st in let b = u_range st in ident(a, b)
-let u_xmldoc st = XmlDoc (u_array u_string st)
+let u_xmldoc st = XmlDoc (u_array u_string st |> Array.map (fun line -> line, range0))
 
 let p_local_item_ref ctxt tab st = p_osgn_ref ctxt tab st
 

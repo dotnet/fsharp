@@ -384,7 +384,7 @@ module XmlDocWriter =
         let mutable members = []
         let addMember id xmlDoc = 
             if hasDoc xmlDoc then
-                let doc = xmlDoc.GetXml()
+                let doc = xmlDoc.GetXmlText()
                 members <- (id, doc) :: members
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
         let doUnionCase (uc: UnionCase) = addMember uc.XmlDocSig uc.XmlDoc
