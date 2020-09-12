@@ -129,7 +129,7 @@ type PreXmlDoc =
                 // Note, the parameter names are curently only checked for internal
                 // consistency, so parameter references must match an XML doc parameter name.
                 let paramNames =
-                    [ for p in xml.Elements(XName.op_Implicit "param") do
+                    [ for p in xml.Descendants(XName.op_Implicit "param") do
                         match p.Attribute(XName.op_Implicit "name") with 
                         | null -> 
                             warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
