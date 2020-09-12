@@ -6,6 +6,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SyntaxTree
@@ -25,7 +26,7 @@ val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemappi
 
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TopAttribs -> StrongNameSigningInfo
 
-val GetStrongNameSigner : StrongNameSigningInfo -> ILBinaryWriter.ILStrongNameSigner option
+val GetStrongNameSigner : StrongNameSigningInfo -> ILStrongNameSigner option
 
 /// Process the given set of command line arguments
 val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
