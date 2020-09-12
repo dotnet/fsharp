@@ -2,6 +2,8 @@
 
 namespace FSharp.Test.Utilities
 
+open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Assert
@@ -68,17 +70,23 @@ module rec Compiler =
           Range:   Range
           Message: string }
 
+    type EvalOutput = Result<FsiValue option, exn>
+
     type ExecutionOutput =
         { ExitCode: int
           StdOut:   string
           StdErr:   string }
+
+    type RunOutput =
+        | EvalOutput of EvalOutput
+        | ExecutionOutput of ExecutionOutput
 
     type Output =
         { OutputPath:   string option
           Dependencies: string list
           Adjust:       int
           Diagnostics:  ErrorInfo list
-          Output:       ExecutionOutput option }
+          Output:       RunOutput option }
 
     type TestResult =
         | Success of Output
@@ -400,15 +408,71 @@ module rec Compiler =
             | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
-                let executionResult = { s with Output = Some { ExitCode = exitCode; StdOut = output; StdErr = errors } }
+                let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }
                 if exitCode = 0 then
                     Success executionResult
                 else
                     Failure executionResult
 
     let compileAndRun = compile >> run
-
     let compileExeAndRun = asExe >> compileAndRun
+    let private evalFSharp (fs: FSharpCompilationSource) : TestResult =
+        let source = getSource fs.Source
+        let options = fs.Options |> Array.ofList
+
+        use script = new FSharpScript(additionalArgs=options)
+
+        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpErrorInfo[])) = script.Eval(source)
+
+        let diagnostics = err |> fromFSharpErrorInfo
+
+        let result =
+            { OutputPath   = None
+              Dependencies = []
+              Adjust       = 0
+              Diagnostics  = diagnostics
+              Output       = Some(EvalOutput evalresult) }
+
+        let (errors, warnings) = partitionErrors diagnostics
+
+        let evalError = match evalresult with Ok _ -> false | _ -> true
+
+        if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then
+            Failure result
+        else
+            Success result
+
+    let eval (cUnit: CompilationUnit) : TestResult =
+        match cUnit with
+        | FS fs -> evalFSharp fs
+        | _ -> failwith "Script evaluation is only supported for F#."
+
+    let runFsi (cUnit: CompilationUnit) : TestResult =
+        match cUnit with
+        | FS fs ->
+            let source = getSource fs.Source
+
+            let options = fs.Options |> Array.ofList
+
+            let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
+
+            let result =
+                { OutputPath   = None
+                  Dependencies = []
+                  Adjust       = 0
+                  Diagnostics  = []
+                  Output       = None }
+
+            if errors.Count > 0 then
+                let output = ExecutionOutput {
+                    ExitCode = -1
+                    StdOut   = String.Empty
+                    StdErr   = ((errors |> String.concat "\n").Replace("\r\n","\n")) }
+                Failure { result with Output = Some output }
+            else
+                Success result
+        | _ -> failwith "FSI running only supports F#."
+
 
     let private createBaselineErrors (baseline: Baseline) actualErrors extension : unit =
         match baseline.SourceFilename with
@@ -465,6 +529,7 @@ module rec Compiler =
                     if not success then
                         createBaselineErrors bsl actualIL "fs.il.err"
                         Assert.Fail(errorMsg)
+
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs ->
@@ -541,7 +606,7 @@ module rec Compiler =
 
         let private assertResultsCategory (what: string) (selector: Output -> ErrorInfo list) (expected: ErrorInfo list) (result: TestResult) : TestResult =
             match result with
-             | Success r | Failure r ->
+            | Success r | Failure r ->
                 assertErrors what r.Adjust (selector r) expected
             result
 
@@ -605,7 +670,7 @@ module rec Compiler =
             result
 
         let withMessages (messages: string list) (result: TestResult) : TestResult =
-             checkErrorMessages messages (fun r -> r.Diagnostics) result
+            checkErrorMessages messages (fun r -> r.Diagnostics) result
 
         let withMessage (message: string) (result: TestResult) : TestResult =
             withMessages [message] result
@@ -627,7 +692,10 @@ module rec Compiler =
             | Success r | Failure r ->
                 match r.Output with
                 | None -> failwith "Execution output is missing, cannot check exit code."
-                | Some o -> Assert.AreEqual(o.ExitCode, expectedExitCode, sprintf "Exit code was expected to be: %A, but got %A." expectedExitCode o.ExitCode)
+                | Some o ->
+                    match o with
+                    | ExecutionOutput e -> Assert.AreEqual(e.ExitCode, expectedExitCode, sprintf "Exit code was expected to be: %A, but got %A." expectedExitCode e.ExitCode)
+                    | _ -> failwith "Cannot check exit code on this run result."
             result
 
         let private checkOutput (category: string) (substring: string) (selector: ExecutionOutput -> string) (result: TestResult) : TestResult =
@@ -636,9 +704,12 @@ module rec Compiler =
                 match r.Output with
                 | None -> failwith (sprintf "Execution output is missing cannot check \"%A\"" category)
                 | Some o ->
-                    let where = selector o
-                    if not (where.Contains(substring)) then
-                        failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                    match o with
+                    | ExecutionOutput e ->
+                        let where = selector e
+                        if not (where.Contains(substring)) then
+                            failwith (sprintf "\nThe following substring:\n    %A\nwas not found in the %A\nOutput:\n    %A" substring category where)
+                    | _ -> failwith "Cannot check output on this run result."
             result
 
         let withOutputContains (substring: string) (result: TestResult) : TestResult =
@@ -649,3 +720,31 @@ module rec Compiler =
 
         let withStdErrContains (substring: string) (result: TestResult) : TestResult =
             checkOutput "STDERR" substring (fun o -> o.StdErr) result
+
+        // TODO: probably needs a bit of simplification, + need to remove that pyramid of doom.
+        let private assertEvalOutput (selector: FsiValue -> 'T) (value: 'T) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                match r.Output with
+                | None -> failwith "Execution output is missing cannot check value."
+                | Some o ->
+                    match o with
+                    | EvalOutput e ->
+                        match e with
+                        | Ok v ->
+                            match v with
+                            | None -> failwith "Cannot assert value of evaluation, since it is None."
+                            | Some e -> Assert.AreEqual(value, (selector e))
+                        | Result.Error ex -> raise ex
+                    | _ -> failwith "Only 'eval' output is supported."
+            result
+
+        // TODO: Need to support for:
+        // STDIN, to test completions
+        // Contains
+        // Cancellation
+        let withEvalValueEquals (value: 'T) (result: TestResult) : TestResult =
+            assertEvalOutput (fun (x: FsiValue) -> x.ReflectionValue :?> 'T) value result
+
+        let withEvalTypeEquals t (result: TestResult) : TestResult =
+            assertEvalOutput (fun (x: FsiValue) -> x.ReflectionType) t result

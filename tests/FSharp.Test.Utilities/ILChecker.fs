@@ -134,7 +134,6 @@ module ILChecker =
 
     let verifyIL (dllFilePath: string) (expectedIL: string) =
         checkIL dllFilePath [expectedIL]
-
     let verifyILAndReturnActual (dllFilePath: string) (expectedIL: string) = checkILAux' [] dllFilePath [expectedIL]
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
