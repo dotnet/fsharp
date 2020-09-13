@@ -53,7 +53,8 @@ type PickledDataWithReferences<'rawData> =
             // Only fixup what needs fixing up
             if reqd.IsUnresolvedReference then
                 match loader reqd.AssemblyName with
-                | Some loaded -> reqd.Fixup loaded
+                | Some loaded ->
+                    if reqd.IsUnresolvedReference then reqd.Fixup loaded
                 | _ -> () )
         x.RawData
 
