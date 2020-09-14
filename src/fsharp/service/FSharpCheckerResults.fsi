@@ -239,8 +239,6 @@ type public FSharpCheckFileResults =
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
 
     /// Determines if a long ident is resolvable at a specific point.
-    ///
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol * ?userOpName: string -> Async<bool>
 
     /// Represents complete typechecked implementation file, including its typechecked signatures if any.
