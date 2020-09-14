@@ -22,7 +22,7 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Returns a new event that passes values transformed by the given function.</summary>
         ///
-        /// <param name="map">The function to transform event values.</param>
+        /// <param name="mapping">The function to transform event values.</param>
         /// <param name="sourceEvent">The input event.</param>
         ///
         /// <returns>An event that passes the transformed values.</returns>

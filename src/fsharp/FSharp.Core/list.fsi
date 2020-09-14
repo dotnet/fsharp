@@ -956,7 +956,7 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Returns at most N elements in a new list.</summary>
         ///
         /// <param name="count">The maximum number of items to return.</param>
-        /// <param name="array">The input list.</param>
+        /// <param name="list">The input list.</param>
         ///
         /// <returns>The result list.</returns>
         [<CompiledName("Truncate")>]
