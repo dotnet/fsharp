@@ -98,7 +98,7 @@ type ILScopeRef =
     /// A reference to the type in the current module
     | Local 
     /// A reference to a type in a module in the same assembly
-    | Module of ILModuleRef   
+    | Module of ILModuleRef
     /// A reference to a type in another assembly
     | Assembly of ILAssemblyRef
     /// A reference to a type in the primary assembly

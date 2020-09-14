@@ -9,7 +9,6 @@
 //    - Compiling (including optimizing)
 //    - Linking (including ILX-IL transformation)
 
-
 module internal FSharp.Compiler.Driver 
 
 open System
@@ -26,12 +25,12 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Internal.Utilities.StructuredFormat
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.ILBinaryReader 
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
@@ -51,6 +50,8 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.XmlDoc
+
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -1122,7 +1123,6 @@ module MainModuleBuilder =
 /// Optional static linking of all DLLs that depend on the F# Library, plus other specified DLLs
 module StaticLinker =
 
-
     // Handles TypeForwarding for the generated IL model
     type TypeForwarding (tcImports: TcImports) =
 
@@ -1675,16 +1675,16 @@ let GetStrongNameSigner signingInfo =
     // REVIEW: favor the container over the key file - C# appears to do this
     match container with
     | Some container ->
-        Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container)
+        Some (ILStrongNameSigner.OpenKeyContainer container)
     | None ->
         match signer with 
         | None -> None
         | Some s ->
             try 
                 if publicsign || delaysign then
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
+                    Some (ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
                 else
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
+                    Some (ILStrongNameSigner.OpenKeyPairFile s) 
             with _ -> 
                 // Note :: don't use errorR here since we really want to fail and not produce a binary
                 error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))

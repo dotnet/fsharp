@@ -8,14 +8,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILPdbWriter
-
-[<Sealed>]
-type ILStrongNameSigner =
-    member PublicKey: byte[]
-    static member OpenPublicKeyOptions: string -> bool -> ILStrongNameSigner
-    static member OpenPublicKey: byte[] -> ILStrongNameSigner
-    static member OpenKeyPairFile: string -> ILStrongNameSigner
-    static member OpenKeyContainer: string -> ILStrongNameSigner
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 type options =
  { ilg: ILGlobals
