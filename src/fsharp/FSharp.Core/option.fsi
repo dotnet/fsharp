@@ -292,7 +292,7 @@ module ValueOption =
 
     /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
     ///
-    /// <param name="ifNone">The value to use if <paramref name="option"/> is <c>None</c>.</param>
+    /// <param name="ifNone">The value to use if <paramref name="voption"/> is <c>None</c>.</param>
     /// <param name="voption">The input option.</param>
     ///
     /// <returns>The option if the option is Some, else the alternate option.</returns>

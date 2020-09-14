@@ -1092,7 +1092,7 @@ namespace Microsoft.FSharp.Collections
         /// sequence and uses a stable sort, that is the original order of equal elements is preserved.</remarks>
         ///
         /// <param name="comparer">The function to compare the collection elements.</param>
-        /// <param name="list">The input sequence.</param>
+        /// <param name="source">The input sequence.</param>
         ///
         /// <returns>The result sequence.</returns>
         [<CompiledName("SortWith")>]
