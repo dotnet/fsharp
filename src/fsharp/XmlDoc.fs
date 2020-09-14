@@ -85,7 +85,12 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                 if paramsWithDocs.Length > 0 then 
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
-                            warning (Error (FSComp.SR.xmlDocMissingParameterDoc(p), doc.Range))
+                            warning (Error (FSComp.SR.xmlDocMissingParameter(p), doc.Range))
+
+                let duplicates = paramsWithDocs |> List.duplicates
+
+                for d in duplicates do
+                    warning (Error (FSComp.SR.xmlDocDuplicateParameter(d), doc.Range))
 
                 for pref in xml.Descendants(XName.op_Implicit "paramref") do
                     match pref.Attribute(XName.op_Implicit "name") with 
@@ -99,7 +104,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
 
 #if CREF_ELABORATION
-    member doc.Elaborate (paramNames) =
+    member doc.Elaborate (crefResolver) =
                 for see in seq { yield! xml.Descendants(XName.op_Implicit "see") 
                                  yield! xml.Descendants(XName.op_Implicit "seealso")
                                  yield! xml.Descendants(XName.op_Implicit "exception") } do

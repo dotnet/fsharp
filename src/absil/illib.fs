@@ -420,6 +420,12 @@ module List =
 
     let mapiFoldSquared f z xss = mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
 
+    let duplicates (xs: 'T list) =
+        xs
+        |> List.groupBy id
+        |> List.filter (fun (_, elems) -> Seq.length elems > 1) 
+        |> List.map fst 
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
