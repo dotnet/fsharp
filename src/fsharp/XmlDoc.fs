@@ -43,34 +43,8 @@ type XmlDoc(unprocessedLines: string[], range: range) =
         XmlDoc(Array.append doc1.Lines doc2.Lines,
                unionRanges doc1.Range doc2.Range)
     
-    member doc.Elaborate (paramNames) =
-        if doc.NonEmpty then
-            try
-                // We must wrap with <doc> in order to have only one root element
-                let xml =
-                    XDocument.Parse("<doc>\n"+doc.GetXmlText()+"\n</doc>",
-                        LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
-                
-                // Note, the parameter names are curently only checked for internal
-                // consistency, so parameter references must match an XML doc parameter name.
-                for p in xml.Descendants(XName.op_Implicit "param") do
-                    match p.Attribute(XName.op_Implicit "name") with 
-                    | null -> 
-                        warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
-                    | attr -> 
-                        let nm = attr.Value
-                        if not (paramNames |> List.contains nm) then
-                            warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
-
-                for pref in xml.Descendants(XName.op_Implicit "paramref") do
-                    match pref.Attribute(XName.op_Implicit "name") with 
-                    | null -> warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
-                    | attr -> 
-                        let nm = attr.Value
-                        if not (paramNames |> List.contains nm) then
-                            warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
-
 #if CREF_ELABORATION
+    member doc.Elaborate (paramNames) =
                 for see in seq { yield! xml.Descendants(XName.op_Implicit "see") 
                                  yield! xml.Descendants(XName.op_Implicit "seealso")
                                  yield! xml.Descendants(XName.op_Implicit "exception") } do
@@ -95,14 +69,56 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                              yield! e.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)  |]
                     lines <-  newLines
 #endif
-            with e -> 
-                warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
 
     member doc.GetXmlText() =
         if doc.IsEmpty then ""
         else
             doc.Lines
             |> String.concat Environment.NewLine
+
+    member doc.Check(paramNamesOpt: string list option) =
+        try
+            // We must wrap with <doc> in order to have only one root element
+            let xml =
+                XDocument.Parse("<doc>\n"+doc.GetXmlText()+"\n</doc>",
+                    LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
+                
+            // The parameter names are checked for consistency, so parameter references and 
+            // parameter documentation must match an actual parameter.  In addition, if any parameters
+            // have documentation then all parameters must have documentation
+            match paramNamesOpt with 
+            | None -> ()
+            | Some paramNames -> 
+                for p in xml.Descendants(XName.op_Implicit "param") do
+                    match p.Attribute(XName.op_Implicit "name") with 
+                    | null -> 
+                        warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
+                    | attr -> 
+                        let nm = attr.Value
+                        if not (paramNames |> List.contains nm) then
+                            warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
+
+                let paramsWithDocs = 
+                    [ for p in xml.Descendants(XName.op_Implicit "param") do
+                        match p.Attribute(XName.op_Implicit "name") with 
+                        | null -> ()
+                        | attr -> attr.Value ]
+
+                if paramsWithDocs.Length > 0 then 
+                    for p in paramNames do
+                        if not (paramsWithDocs |> List.contains p) then
+                            warning (Error (FSComp.SR.xmlDocMissingParameterDoc(nm), doc.Range))
+
+                for pref in xml.Descendants(XName.op_Implicit "paramref") do
+                    match pref.Attribute(XName.op_Implicit "name") with 
+                    | null -> warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
+                    | attr -> 
+                        let nm = attr.Value
+                        if not (paramNames |> List.contains nm) then
+                            warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
+
+        with e -> 
+            warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
 
 // Discriminated unions can't contain statics, so we use a separate type
 and XmlDocStatics() =
@@ -159,16 +175,21 @@ type PreXmlDoc =
     | PreXmlDoc of pos * XmlDocCollector
     | PreXmlDocEmpty
 
-    member x.ToXmlDoc() =
+    member x.ToXmlDoc(check, paramNamesOpt: string list option) =
         match x with
-        | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc()) (b.ToXmlDoc())
+        | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc(check, paramNamesOpt)) (b.ToXmlDoc(check, paramNamesOpt))
         | PreXmlDocEmpty -> XmlDoc.Empty
         | PreXmlDoc (pos, collector) ->
-            let lines = collector.LinesBefore pos
-            if lines.Length = 0 then
+            let preLines = collector.LinesBefore pos
+            if preLines.Length = 0 then
                 XmlDoc.Empty
             else 
-                XmlDoc (Array.map fst lines, Array.reduce Range.unionRanges (Array.map snd lines))
+                let lines = Array.map fst preLines
+                let m = Array.reduce Range.unionRanges (Array.map snd preLines)
+                let doc = XmlDoc (lines, m)
+                if check then 
+                   doc.Check(paramNamesOpt)
+                doc
 
     static member CreateFromGrabPoint(collector: XmlDocCollector, grabPointPos) =
         collector.AddGrabPoint grabPointPos

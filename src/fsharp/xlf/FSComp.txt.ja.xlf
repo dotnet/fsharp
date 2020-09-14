@@ -532,9 +532,24 @@
         <target state="new">This XML comment is invalid: invalid parameter reference '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocMissingCrossReference">
+        <source>This XML comment is invalid: missing 'cref' attribute for cross-reference</source>
+        <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameterDoc">
+        <source>This XML comment is invalid: some parameters have documentation, but no documentation has been given for parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: some parameters have documentation, but no documentation has been given for parameter '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocMissingParameterName">
-        <source>This XML comment is invalid: missing parameter name</source>
-        <target state="new">This XML comment is invalid: missing parameter name</target>
+        <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
+        <target state="new">This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocUnresolvedCrossReference">
+        <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
+        <target state="new">This XML comment is invalid: unresolved cross-reference '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">

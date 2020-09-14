@@ -2224,18 +2224,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 for (argty, _) in argtys do 
                      CheckTypeNoInnerByrefs cenv env vref.Range argty
             CheckTypeNoInnerByrefs cenv env vref.Range rty
-            let paramNames = [ for argtys in argtysl do for (_, arginfo) in argtys do match arginfo.Name with None -> () | Some nm -> nm ]
-            vref.XmlDoc.Elaborate(paramNames) 
         | None -> ()
-
-    tycon.XmlDoc.Elaborate([]) 
-    for ucase in tycon.UnionCasesArray do 
-        let names = ucase.RecdFields |> List.map (fun f -> f.Name)
-        ucase.XmlDoc.Elaborate(names)
-    for fld in tycon.TrueFieldsAsList do 
-        fld.XmlDoc.Elaborate([])
-    for gp in tycon.Typars(tycon.DefinitionRange) do 
-        gp.XmlDoc.Elaborate([])
 
     // Supported interface may not have byrefs
     tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (CheckTypeNoByrefs cenv env m)   
