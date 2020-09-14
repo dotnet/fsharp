@@ -110,7 +110,7 @@ module rec Compiler =
               OutputType     = Library
               SourceKind     = kind
               Name           = None
-              IgnoreWarnings = true
+              IgnoreWarnings = false
               References     = [] }
 
     let private csFromString (source: string) : CSharpCompilationSource =
@@ -269,7 +269,7 @@ module rec Compiler =
 
         let (errors, warnings) = partitionErrors diagnostics
 
-        // Treat warnings as errors if "ignoreWarnings" is true
+        // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
             Failure result
         else
@@ -393,7 +393,7 @@ module rec Compiler =
 
         let (errors, warnings) = partitionErrors diagnostics
 
-        // Treat warnings as errors if "ignoreWarnings" is false;
+        // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
             Failure result
         else
