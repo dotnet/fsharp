@@ -41892,10 +41892,10 @@ FSharp.Compiler.XmlDoc+XmlDoc: System.Tuple`2[System.String,FSharp.Compiler.Rang
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc NewXmlDoc(System.Tuple`2[System.String,FSharp.Compiler.Range+range][])
 FSharp.Compiler.XmlDoc+XmlDoc: range Range
 FSharp.Compiler.XmlDoc+XmlDoc: range get_Range()
-FSharp.Compiler.XmlDoc+XmlDocCollector: System.String[] LinesBefore(pos)
 FSharp.Compiler.XmlDoc+XmlDocCollector: Void .ctor()
 FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddGrabPoint(pos)
-FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddXmlDocLine(System.String, pos)
+FSharp.Compiler.XmlDoc+XmlDocCollector: System.Tuple`2[System.String,FSharp.Compiler.Range+range][] LinesBefore(pos)
+FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddXmlDocLine(System.String, range)
 FSharp.Compiler.XmlDoc+XmlDocStatics: Void .ctor()
 FSharp.Compiler.XmlDoc+XmlDocStatics: XmlDoc Empty
 FSharp.Compiler.XmlDoc+XmlDocStatics: XmlDoc get_Empty()
