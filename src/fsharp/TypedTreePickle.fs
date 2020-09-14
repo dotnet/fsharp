@@ -1345,7 +1345,7 @@ let p_range (x: range) st =
 
 let p_dummy_range : range pickler   = fun _x _st -> ()
 let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText, x.idRange) st
-let p_xmldoc (doc: XmlDoc) st = p_array p_string doc.Lines st
+let p_xmldoc (doc: XmlDoc) st = p_array p_string doc.UnprocessedLines st
 
 let u_pos st = let a = u_int st in let b = u_int st in mkPos a b
 let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in mkRange a b c

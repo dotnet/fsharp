@@ -667,8 +667,9 @@ module internal SymbolHelpers =
             | Some xmlDoc -> 
                 bufs (fun os -> 
                     bprintf os "\n"
-                    xmlDoc.Lines |> Array.iter (fun line -> 
-                        // Note: this code runs for local/within-project xmldoc tooltips, but not for cross-project or .XML
+                    // Note: this code uses the unprocessed lines for the XML comnment.  In the future we should properly
+                    // crack and display the XML here.
+                    xmlDoc.UnprocessedLines |> Array.iter (fun line -> 
                         bprintf os "\n%s" line))
 
         if String.IsNullOrEmpty result then 

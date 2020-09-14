@@ -24,56 +24,34 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                 (lines |> List.map Microsoft.FSharp.Core.XmlAdapters.escape) @
                 ["</summary>"]
 
-    let processedLines = processLines (Array.toList unprocessedLines)
+    /// Get the lines before insertion of implicit summary tags and encoding
+    member _.UnprocessedLines = unprocessedLines
 
-    let lines = Array.ofList processedLines
+    /// Get the lines after insertion of implicit summary tags and encoding
+    member _.GetXmlLines() =
+        let processedLines = processLines (Array.toList unprocessedLines)
 
-    member _.Lines = lines
+        let lines = Array.ofList processedLines
+
+        lines
 
     member _.Range = range
 
     static member Empty = XmlDocStatics.Empty
     
     member _.IsEmpty =
-        lines |> Array.forall String.IsNullOrWhiteSpace
+        unprocessedLines  |> Array.forall String.IsNullOrWhiteSpace
 
     member doc.NonEmpty = not doc.IsEmpty
     
     static member Merge (doc1: XmlDoc) (doc2: XmlDoc) = 
-        XmlDoc(Array.append doc1.Lines doc2.Lines,
+        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines,
                unionRanges doc1.Range doc2.Range)
     
-#if CREF_ELABORATION
-    member doc.Elaborate (paramNames) =
-                for see in seq { yield! xml.Descendants(XName.op_Implicit "see") 
-                                 yield! xml.Descendants(XName.op_Implicit "seealso")
-                                 yield! xml.Descendants(XName.op_Implicit "exception") } do
-                    match see.Attribute(XName.op_Implicit "cref") with 
-                    | null -> warning (Error (FSComp.SR.xmlDocMissingCrossReference(), doc.Range))
-                    | attr -> 
-                        let cref = attr.Value
-                        if cref.StartsWith("T:") || cref.StartsWith("P:") || cref.StartsWith("M:") || 
-                           cref.StartsWith("E:") || cref.StartsWith("F:") then 
-                            ()
-                        else
-                            match crefResolver cref with 
-                            | None ->
-                                warning (Error (FSComp.SR.xmlDocUnresolvedCrossReference(nm), doc.Range))
-                            | Some text -> 
-                                attr.Value <- text
-                                modified <- true
-                if modified then 
-                    let m = doc.Range 
-                    let newLines = 
-                        [| for e in xml.Elements() do
-                             yield! e.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)  |]
-                    lines <-  newLines
-#endif
-
     member doc.GetXmlText() =
         if doc.IsEmpty then ""
         else
-            doc.Lines
+            doc.GetXmlLines()
             |> String.concat Environment.NewLine
 
     member doc.Check(paramNamesOpt: string list option) =
@@ -119,6 +97,33 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
         with e -> 
             warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
+
+#if CREF_ELABORATION
+    member doc.Elaborate (paramNames) =
+                for see in seq { yield! xml.Descendants(XName.op_Implicit "see") 
+                                 yield! xml.Descendants(XName.op_Implicit "seealso")
+                                 yield! xml.Descendants(XName.op_Implicit "exception") } do
+                    match see.Attribute(XName.op_Implicit "cref") with 
+                    | null -> warning (Error (FSComp.SR.xmlDocMissingCrossReference(), doc.Range))
+                    | attr -> 
+                        let cref = attr.Value
+                        if cref.StartsWith("T:") || cref.StartsWith("P:") || cref.StartsWith("M:") || 
+                           cref.StartsWith("E:") || cref.StartsWith("F:") then 
+                            ()
+                        else
+                            match crefResolver cref with 
+                            | None ->
+                                warning (Error (FSComp.SR.xmlDocUnresolvedCrossReference(nm), doc.Range))
+                            | Some text -> 
+                                attr.Value <- text
+                                modified <- true
+                if modified then 
+                    let m = doc.Range 
+                    let newLines = 
+                        [| for e in xml.Elements() do
+                             yield! e.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)  |]
+                    lines <-  newLines
+#endif
 
 // Discriminated unions can't contain statics, so we use a separate type
 and XmlDocStatics() =
