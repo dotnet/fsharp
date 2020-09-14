@@ -68,6 +68,23 @@ module M =
                 ]
 
     [<Fact>]
+    let ``duplicate parameter docs are reported`` () =
+        Fsx"""
+    /// <summary> Return <paramref name="a" /> </summary>
+    /// <param name="a"> the parameter </param>
+    /// <param name="a"> the parameter </param>
+    let f a = a
+        """ 
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics
+                [ (Warning 3390, Line 2, Col 5, Line 4, Col 48,
+                   "This XML comment is invalid: multiple documentation entries for parameter 'a'");
+                ]
+
+    [<Fact>]
     let ``missing parameter name is reported`` () =
         Fsx"""
     /// <summary> Return <paramref/> </summary>
