@@ -145,3 +145,17 @@ module M =
          |> compile
          |> shouldSucceed
          |> withDiagnostics [ ]
+
+    [<Fact>]
+    let ``delegates can have param docs`` () =
+        Fsx"""
+    /// <summary> The type with an implicit constructor with visibility</summary>
+    /// <param name="sender"> The sender</param>
+    /// <param name="args"> The args</param>
+    type C = delegate of sender: obj * args: int -> C
+        """ 
+         |> withXmlCommentChecking
+         |> warningsDoNotCauseFailure
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics [ ]

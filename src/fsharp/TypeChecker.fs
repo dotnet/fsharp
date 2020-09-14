@@ -15899,7 +15899,12 @@ module EstablishTypeDefinitionCores =
         // If we supported nested types and modules then additions would be needed here
         let lmtyp = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
 
-        let doc = doc.ToXmlDoc(true, Some [] )
+        // '<param>' documentation is allowed for delegates
+        let paramNames =
+            match synTyconRepr with 
+            | SynTypeDefnSimpleRepr.General (TyconDelegate (_ty, arity), _, _, _, _, _, _, _) -> arity.ArgNames
+            | _ -> []
+        let doc = doc.ToXmlDoc(true, Some paramNames )
         Construct.NewTycon
             (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
              doc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmtyp)
