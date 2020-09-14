@@ -11,7 +11,7 @@ module ``Test Compiler Directives`` =
     let ``r# "" is invalid`` () =
         Fsx"""
 #r ""
-        """ |> warningsDoNotCauseFailure
+        """ |> ignoreWarnings
             |> compile
             |> shouldSucceed
             |> withSingleDiagnostic (Warning 213, Line 2, Col 1, Line 2, Col 6, "'' is not a valid assembly name")
@@ -29,6 +29,7 @@ module ``Test compiler directives in FSI`` =
     let ``r# "" is invalid`` () =
         Fsx"""
 #r ""
-        """ |> eval
+        """ |> ignoreWarnings
+            |> eval
             |> shouldFail
             |> withSingleDiagnostic (Error 2301, Line 2, Col 1, Line 2, Col 6, "'' is not a valid assembly name")

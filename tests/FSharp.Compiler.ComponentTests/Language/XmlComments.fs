@@ -22,7 +22,7 @@ module M =
 
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics
@@ -41,7 +41,7 @@ module M =
     let f a = a
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics
@@ -57,7 +57,7 @@ module M =
     let f a = a
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics
@@ -75,7 +75,7 @@ module M =
     let f a = a
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics
@@ -103,7 +103,7 @@ module M =
          member x.OtherM((a,b): (string * string), p2: string) = ((a,b), p2)
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics [ ]
@@ -122,7 +122,7 @@ module M =
          member x.M(p1: string, p2: string) = (p1, p2)
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics [ ]
@@ -141,7 +141,7 @@ module M =
          member x.M(p1: string, p2: string) = (p1, p2)
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics [ ]
@@ -155,7 +155,7 @@ module M =
     type C = delegate of sender: obj * args: int -> C
         """ 
          |> withXmlCommentChecking
-         |> warningsDoNotCauseFailure
+         |> ignoreWarnings
          |> compile
          |> shouldSucceed
          |> withDiagnostics [ ]

@@ -263,10 +263,10 @@ let main argv = 0"""
             o.Dispose()
             reraise()
 
-    static let assertErrors libAdjust warningsDoNotCauseFailure (errors: FSharpErrorInfo []) expectedErrors =
+    static let assertErrors libAdjust ignoreWarnings (errors: FSharpErrorInfo []) expectedErrors =
         let errors =
             errors
-            |> Array.filter (fun error -> if warningsDoNotCauseFailure then error.Severity <> FSharpErrorSeverity.Warning else true)
+            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpErrorSeverity.Warning else true)
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
@@ -293,7 +293,7 @@ let main argv = 0"""
     static let compile isExe options source f =
         lock gate (fun _ -> compileAux isExe options source f)
 
-    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) warningsDoNotCauseFailure (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
+    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
         let compilationRefs, deps =
             match cmpl with
             | Compilation(_, _, _, _, cmpls, _) ->
@@ -302,7 +302,7 @@ let main argv = 0"""
                     |> List.map (fun cmpl ->
                             match cmpl with
                             | CompilationReference (cmpl, staticLink) ->
-                                compileCompilationAux outputPath disposals warningsDoNotCauseFailure cmpl, staticLink
+                                compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
                             | TestCompilationReference (cmpl) ->
                                 let filename =
                                  match cmpl with
@@ -318,7 +318,7 @@ let main argv = 0"""
                 let compilationRefs =
                     compiledRefs
                     |> List.map (fun (((errors, outputFilePath), _), staticLink) ->
-                        assertErrors 0 warningsDoNotCauseFailure errors [||]
+                        assertErrors 0 ignoreWarnings errors [||]
                         let rOption = "-r:" + outputFilePath
                         if staticLink then
                             [rOption;"--staticlink:" + Path.GetFileNameWithoutExtension outputFilePath]

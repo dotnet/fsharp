@@ -18,7 +18,7 @@ module WitnessTests =
 #load @"%s"
         """ (dir ++ "provider.fsx"))
         |> asExe
-        |> warningsDoNotCauseFailure
+        |> ignoreWarnings
         |> withLangVersionPreview
         |> compile
         |> shouldSucceed

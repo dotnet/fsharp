@@ -9,7 +9,7 @@ module ``Tail Calls`` =
     // Regression test for DevDiv:72571
 
     let private compileWithTailCalls opts =
-        opts |> warningsDoNotCauseFailure |> withOptions ["-g"; "--optimize-"; "--tailcalls+"] |> compile
+        opts |> ignoreWarnings |> withOptions ["-g"; "--optimize-"; "--tailcalls+"] |> compile
 
     [<Fact>]
     let ``TailCall 01``() =
