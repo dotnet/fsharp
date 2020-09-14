@@ -117,7 +117,7 @@ module internal XmlDocumentation =
         | FSharpXmlDoc.XmlDocFileSignature(filename,signature) -> 
             documentationProvider.AppendDocumentation(sink, filename, signature, showExceptions, showParameters, paramName)
         | FSharpXmlDoc.Text(rawText, _) ->
-            let processedXml = ProcessXml(String.concat "\n" rawText)
+            let processedXml = ProcessXml("\n\n" + String.concat "\n" rawText)
             documentationProvider.AppendDocumentationFromProcessedXML(sink, processedXml, showExceptions, showParameters, paramName)
 
     let private AddSeparator (collector: ITaggedTextCollector_DEPRECATED) =
