@@ -41930,25 +41930,27 @@ FSharp.Compiler.XmlDoc+XmlDoc: Boolean Equals(System.Object, System.Collections.
 FSharp.Compiler.XmlDoc+XmlDoc: Boolean Equals(XmlDoc)
 FSharp.Compiler.XmlDoc+XmlDoc: Boolean NonEmpty
 FSharp.Compiler.XmlDoc+XmlDoc: Boolean get_NonEmpty()
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 CompareTo(System.Object)
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 CompareTo(XmlDoc)
 FSharp.Compiler.XmlDoc+XmlDoc: Int32 GetHashCode()
 FSharp.Compiler.XmlDoc+XmlDoc: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.XmlDoc+XmlDoc: Int32 Tag
 FSharp.Compiler.XmlDoc+XmlDoc: Int32 get_Tag()
 FSharp.Compiler.XmlDoc+XmlDoc: System.String ToString()
-FSharp.Compiler.XmlDoc+XmlDoc: System.String[] Item
-FSharp.Compiler.XmlDoc+XmlDoc: System.String[] get_Item()
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Empty
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Merge(XmlDoc, XmlDoc)
-FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc NewXmlDoc(System.String[])
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Process(XmlDoc)
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc get_Empty()
-FSharp.Compiler.XmlDoc+XmlDocCollector: System.String[] LinesBefore(pos)
+FSharp.Compiler.XmlDoc+XmlDoc: Boolean IsEmpty
+FSharp.Compiler.XmlDoc+XmlDoc: Boolean get_IsEmpty()
+FSharp.Compiler.XmlDoc+XmlDoc: System.String GetXmlText()
+FSharp.Compiler.XmlDoc+XmlDoc: System.Tuple`2[System.String,FSharp.Compiler.Range+range][] Item
+FSharp.Compiler.XmlDoc+XmlDoc: System.Tuple`2[System.String,FSharp.Compiler.Range+range][] get_Item()
+FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc NewXmlDoc(System.Tuple`2[System.String,FSharp.Compiler.Range+range][])
+FSharp.Compiler.XmlDoc+XmlDoc: range Range
+FSharp.Compiler.XmlDoc+XmlDoc: range get_Range()
+FSharp.Compiler.XmlDoc+XmlDocCollector: System.Tuple`2[System.String,FSharp.Compiler.Range+range][] LinesBefore(pos)
+FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddXmlDocLine(System.String, range)
 FSharp.Compiler.XmlDoc+XmlDocCollector: Void .ctor()
 FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddGrabPoint(pos)
-FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddXmlDocLine(System.String, pos)
 FSharp.Compiler.XmlDoc+XmlDocStatics: Void .ctor()
 FSharp.Compiler.XmlDoc+XmlDocStatics: XmlDoc Empty
 FSharp.Compiler.XmlDoc+XmlDocStatics: XmlDoc get_Empty()
