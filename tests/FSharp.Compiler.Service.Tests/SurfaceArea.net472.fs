@@ -18209,6 +18209,7 @@ FSharp.Compiler.AbstractIL.Internal.Library+List: Void iterSquared[a](Microsoft.
 FSharp.Compiler.AbstractIL.Internal.Library+List: a indexNotFound[a]()
 FSharp.Compiler.AbstractIL.Internal.Library+List: a[][] toArraySquared[a](Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
 FSharp.Compiler.AbstractIL.Internal.Library+List: b assoc[a,b](a, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[a,b]])
+FSharp.Compiler.AbstractIL.Internal.Library+List: Microsoft.FSharp.Collections.FSharpList`1[T] duplicates[T](Microsoft.FSharp.Collections.FSharpList`1[T])
 FSharp.Compiler.AbstractIL.Internal.Library+Lock`1[LockTokenType]: Void .ctor()
 FSharp.Compiler.AbstractIL.Internal.Library+Lock`1[LockTokenType]: a AcquireLock[a](Microsoft.FSharp.Core.FSharpFunc`2[LockTokenType,a])
 FSharp.Compiler.AbstractIL.Internal.Library+Map: Microsoft.FSharp.Collections.FSharpList`1[b] tryFindMulti[a,b](a, Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]])

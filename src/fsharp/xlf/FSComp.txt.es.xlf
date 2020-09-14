@@ -528,8 +528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="xmlDocDuplicateParameter">
-        <source>This XML comment is invalid: multiple documentation entries for '{0}'</source>
-        <target state="new">This XML comment is invalid: multiple documentation entries for '{0}'</target>
+        <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: multiple documentation entries for parameter '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
