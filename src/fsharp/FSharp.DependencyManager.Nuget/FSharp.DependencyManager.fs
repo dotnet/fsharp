@@ -69,6 +69,7 @@ module FSharpDependencyManager =
                         validatePackageName v "FSharp.Core"
                     validatePackageName v "System.ValueTuple"
                     validatePackageName v "NETStandard.Library"
+                    validatePackageName v "Microsoft.NETFramework.ReferenceAssemblies"
                     Some { current with Include = v }
                 let setVersion v = Some { current with Version = v }
                 match opt with
