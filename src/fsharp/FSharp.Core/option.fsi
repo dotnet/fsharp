@@ -290,7 +290,7 @@ module ValueOption =
     [<CompiledName("DefaultWith")>]
     val defaultWith: defThunk:(unit -> 'T) -> voption: 'T voption -> 'T
 
-    /// <summary>Returns <paramref name="option"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
+    /// <summary>Returns <paramref name="voption"/> if it is <c>Some</c>, otherwise returns <paramref name="ifNone"/>.</summary>
     ///
     /// <param name="ifNone">The value to use if <paramref name="voption"/> is <c>None</c>.</param>
     /// <param name="voption">The input option.</param>
