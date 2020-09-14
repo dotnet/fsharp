@@ -82,7 +82,7 @@ module Impl =
         makeReadOnlyCollection doc.UnprocessedLines
     
     let makeElaboratedXmlDoc (doc: XmlDoc) =
-        makeReadOnlyCollection (doc.GetProcessedLines())
+        makeReadOnlyCollection (doc.GetElaboratedXmlLines())
     
     let rescopeEntity optViewedCcu (entity: Entity) = 
         match optViewedCcu with 

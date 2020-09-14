@@ -28,7 +28,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
     member _.UnprocessedLines = unprocessedLines
 
     /// Get the lines after insertion of implicit summary tags and encoding
-    member _.GetXmlLines() =
+    member _.GetElaboratedXmlLines() =
         let processedLines = processLines (Array.toList unprocessedLines)
 
         let lines = Array.ofList processedLines
@@ -51,7 +51,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
     member doc.GetXmlText() =
         if doc.IsEmpty then ""
         else
-            doc.GetXmlLines()
+            doc.GetElaboratedXmlLines()
             |> String.concat Environment.NewLine
 
     member doc.Check(paramNamesOpt: string list option) =

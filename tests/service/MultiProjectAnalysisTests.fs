@@ -218,6 +218,9 @@ let ``Test multi project 1 xmldoc`` () =
     
     match x3FromProject1A with 
     | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is"; " x3"|] |> toIList)
+    | _ -> failwith "odd symbol!"
+
+    match x3FromProject1A with 
     | :? FSharpMemberOrFunctionOrValue as v -> v.ElaboratedXmlDoc |> shouldEqual ([|"<summary>"; " This is"; " x3"; "</summary>" |] |> toIList)
     | _ -> failwith "odd symbol!"
 
