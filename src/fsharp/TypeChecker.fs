@@ -14132,9 +14132,6 @@ module IncrClassChecking =
         
         ctorBody, cctorBodyOpt, methodBinds, reps
 
-
-
-
 // Checking of mutually recursive types, members and 'let' bindings in classes
 //
 // Technique: multiple passes.
@@ -14928,7 +14925,6 @@ module MutRecBindingChecking =
 
         // Phase2B: type check pass, convert from ast to tast and collects type assertions, and generalize
         let defnsBs, generalizedRecBinds, tpenv = TcMutRecBindings_Phase2B_TypeCheckAndIncrementalGeneralization cenv tpenv envInitial (envMutRec, defnsAs, uncheckedRecBinds, scopem)
-
 
         let generalizedTyparsForRecursiveBlock = 
              generalizedRecBinds 

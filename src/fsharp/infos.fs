@@ -1065,8 +1065,7 @@ type MethInfo =
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(_, mi, _, m)->
             let lines = mi.PUntaint((fun mix -> (mix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(mi.TypeProvider.PUntaintNoFailure id)), m)
-            let lines = lines |> Array.map (fun line -> line, m)
-            XmlDoc lines
+            XmlDoc (lines, m)
 #endif
 
     /// Try to get an arbitrary F# ValRef associated with the member. This is to determine if the member is virtual, amongst other things.
@@ -2165,8 +2164,7 @@ type PropInfo =
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(_, pi, m) ->
             let lines = pi.PUntaint((fun pix -> (pix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(pi.TypeProvider.PUntaintNoFailure id)), m)
-            let lines = lines |> Array.map (fun line -> line, m)
-            XmlDoc lines
+            XmlDoc (lines, m)
 #endif
 
     /// Get the TcGlobals associated with the object
@@ -2421,8 +2419,7 @@ type EventInfo =
 #if !NO_EXTENSIONTYPING
         | ProvidedEvent (_, ei, m) ->
             let lines = ei.PUntaint((fun eix -> (eix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(ei.TypeProvider.PUntaintNoFailure id)), m)
-            let lines = lines |> Array.map (fun line -> line, m)
-            XmlDoc lines
+            XmlDoc (lines, m)
 #endif
 
     /// Get the logical name of the event.

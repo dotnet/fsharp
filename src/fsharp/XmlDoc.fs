@@ -10,57 +10,104 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Range
 
 /// Represents collected XmlDoc lines
-type XmlDoc =
-    | XmlDoc of (string * range)[]
-    
+[<RequireQualifiedAccess>]
+type XmlDoc(unprocessedLines: string[], range: range) =
+    let rec processLines (lines: string list) =
+        match lines with
+        | [] -> []
+        | (lineA :: rest) as lines ->
+            let lineAT = lineA.TrimStart([|' '|])
+            if lineAT = "" then processLines rest
+            elif lineAT.StartsWithOrdinal("<") then lines
+            else 
+                ["<summary>"] @
+                (lines |> List.map Microsoft.FSharp.Core.XmlAdapters.escape) @
+                ["</summary>"]
+
+    let processedLines = processLines (Array.toList unprocessedLines)
+
+    let lines = Array.ofList processedLines
+
+    member _.Lines = lines
+
+    member _.Range = range
+
     static member Empty = XmlDocStatics.Empty
     
-    member x.IsEmpty =
-        let (XmlDoc lines) = x
-        lines |> Array.forall (fst >> String.IsNullOrWhiteSpace)
+    member _.IsEmpty =
+        lines |> Array.forall String.IsNullOrWhiteSpace
 
-    member x.NonEmpty = not x.IsEmpty
+    member doc.NonEmpty = not doc.IsEmpty
     
-    static member Merge (XmlDoc lines) (XmlDoc lines') = 
-        XmlDoc (Array.append lines lines')
+    static member Merge (doc1: XmlDoc) (doc2: XmlDoc) = 
+        XmlDoc(Array.append doc1.Lines doc2.Lines,
+               unionRanges doc1.Range doc2.Range)
     
-    member x.Range = 
-        let (XmlDoc lines) = x
-        match lines with 
-        | [| |] -> Range.range0
-        | _ -> Array.reduce Range.unionRanges (Array.map snd lines)
+    member doc.Elaborate (paramNames) =
+        if doc.NonEmpty then
+            try
+                // We must wrap with <doc> in order to have only one root element
+                let xml =
+                    XDocument.Parse("<doc>\n"+doc.GetXmlText()+"\n</doc>",
+                        LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
+                
+                // Note, the parameter names are curently only checked for internal
+                // consistency, so parameter references must match an XML doc parameter name.
+                for p in xml.Descendants(XName.op_Implicit "param") do
+                    match p.Attribute(XName.op_Implicit "name") with 
+                    | null -> 
+                        warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
+                    | attr -> 
+                        let nm = attr.Value
+                        if not (paramNames |> List.contains nm) then
+                            warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
 
-    /// This code runs for .XML generation and thus influences cross-project xmldoc tooltips; for within-project tooltips,
-    /// see XmlDocumentation.fs in the language service
-    static member Process (XmlDoc lines) =
-        let rec processLines (lines: (string * range) list) =
-            match lines with
-            | [] -> []
-            | ((lineA, m) :: rest) as lines ->
-                let lineAT = lineA.TrimStart([|' '|])
-                if lineAT = "" then processLines rest
-                else if lineAT.StartsWithOrdinal("<") then lines
-                else [("<summary>", m)] @
-                     (lines |> List.map (map1Of2 Microsoft.FSharp.Core.XmlAdapters.escape)) @
-                     [("</summary>", m)]
+                for pref in xml.Descendants(XName.op_Implicit "paramref") do
+                    match pref.Attribute(XName.op_Implicit "name") with 
+                    | null -> warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
+                    | attr -> 
+                        let nm = attr.Value
+                        if not (paramNames |> List.contains nm) then
+                            warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
 
-        let lines = processLines (Array.toList lines)
-        if isNil lines then XmlDoc.Empty
-        else XmlDoc (Array.ofList lines)
+#if CREF_ELABORATION
+                for see in seq { yield! xml.Descendants(XName.op_Implicit "see") 
+                                 yield! xml.Descendants(XName.op_Implicit "seealso")
+                                 yield! xml.Descendants(XName.op_Implicit "exception") } do
+                    match see.Attribute(XName.op_Implicit "cref") with 
+                    | null -> warning (Error (FSComp.SR.xmlDocMissingCrossReference(), doc.Range))
+                    | attr -> 
+                        let cref = attr.Value
+                        if cref.StartsWith("T:") || cref.StartsWith("P:") || cref.StartsWith("M:") || 
+                           cref.StartsWith("E:") || cref.StartsWith("F:") then 
+                            ()
+                        else
+                            match crefResolver cref with 
+                            | None ->
+                                warning (Error (FSComp.SR.xmlDocUnresolvedCrossReference(nm), doc.Range))
+                            | Some text -> 
+                                attr.Value <- text
+                                modified <- true
+                if modified then 
+                    let m = doc.Range 
+                    let newLines = 
+                        [| for e in xml.Elements() do
+                             yield! e.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)  |]
+                    lines <-  newLines
+#endif
+            with e -> 
+                warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
 
-    member x.GetXmlText() =
-        match XmlDoc.Process x with
-        | XmlDoc [| |] -> ""
-        | XmlDoc strs ->
-            strs 
-            |> Array.toList
-            |> List.map fst
+    member doc.GetXmlText() =
+        if doc.IsEmpty then ""
+        else
+            doc.Lines
             |> String.concat Environment.NewLine
 
 // Discriminated unions can't contain statics, so we use a separate type
 and XmlDocStatics() =
 
-    static let empty = XmlDoc[| |]
+    static let empty = XmlDoc ([| |], range0)
 
     static member Empty = empty
 
@@ -113,42 +160,15 @@ type PreXmlDoc =
     | PreXmlDocEmpty
 
     member x.ToXmlDoc() =
-        let doc =
-            match x with
-            | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc()) (b.ToXmlDoc())
-            | PreXmlDocEmpty -> XmlDoc.Empty
-            | PreXmlDoc (pos, collector) ->
-                let lines = collector.LinesBefore pos
-                if lines.Length = 0 then XmlDoc.Empty
-                else XmlDoc lines
-        if doc.NonEmpty then
-            try
-                // We must wrap with <doc> in order to have only one root element
-                let xml = XDocument.Parse("<doc>\n"+doc.GetXmlText()+"\n</doc>", LoadOptions.SetLineInfo)
-                
-                // Note, the parameter names are curently only checked for internal
-                // consistency, so parameter references must match an XML doc parameter name.
-                let paramNames =
-                    [ for p in xml.Descendants(XName.op_Implicit "param") do
-                        match p.Attribute(XName.op_Implicit "name") with 
-                        | null -> 
-                            warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
-                        | nm -> 
-                            nm.Value ]
-
-                for pref in xml.Descendants(XName.op_Implicit "paramref") do
-                    match pref.Attribute(XName.op_Implicit "name") with 
-                    | null -> warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
-                    | attr -> 
-                       let nm = attr.Value
-                       if not (paramNames |> List.contains nm) then
-                          warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
-                xml |> ignore
-
-            with e -> 
-                warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
-        doc
-
+        match x with
+        | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc()) (b.ToXmlDoc())
+        | PreXmlDocEmpty -> XmlDoc.Empty
+        | PreXmlDoc (pos, collector) ->
+            let lines = collector.LinesBefore pos
+            if lines.Length = 0 then
+                XmlDoc.Empty
+            else 
+                XmlDoc (Array.map fst lines, Array.reduce Range.unionRanges (Array.map snd lines))
 
     static member CreateFromGrabPoint(collector: XmlDocCollector, grabPointPos) =
         collector.AddGrabPoint grabPointPos

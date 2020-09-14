@@ -664,10 +664,10 @@ module internal SymbolHelpers =
             match xmlDoc with 
             | None -> ""
             | Some xmlDoc when xmlDoc.IsEmpty -> ""
-            | Some (XmlDoc lines) -> 
+            | Some xmlDoc -> 
                 bufs (fun os -> 
                     bprintf os "\n"
-                    lines |> Array.iter (fun (line, _) -> 
+                    xmlDoc.Lines |> Array.iter (fun line -> 
                         // Note: this code runs for local/within-project xmldoc tooltips, but not for cross-project or .XML
                         bprintf os "\n%s" line))
 

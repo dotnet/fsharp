@@ -78,8 +78,8 @@ module Impl =
     let makeReadOnlyCollection (arr: seq<'T>) = 
         System.Collections.ObjectModel.ReadOnlyCollection<_>(Seq.toArray arr) :> IList<_>
         
-    let makeXmlDoc (XmlDoc lines) =
-        makeReadOnlyCollection (Array.map fst lines)
+    let makeXmlDoc (doc: XmlDoc) =
+        makeReadOnlyCollection doc.Lines
     
     let rescopeEntity optViewedCcu (entity: Entity) = 
         match optViewedCcu with 

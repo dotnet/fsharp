@@ -328,11 +328,7 @@ module InterfaceFileWriter =
 
 module XmlDocWriter =
 
-    let hasDoc xmlDoc =
-        // No need to process the xml doc - just need to know if there's anything there
-        match xmlDoc with
-        | XmlDoc [| |] -> false
-        | _ -> true
+    let hasDoc (doc: XmlDoc) = not doc.IsEmpty
         
     let computeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)

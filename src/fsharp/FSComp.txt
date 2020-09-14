@@ -1541,5 +1541,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3383,lexRBraceInInterpolatedString,"A '}}' character must be escaped (by doubling) in an interpolated string."
 #3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)
 3390,xmlDocBadlyFormed,"This XML comment is invalid: '%s'"
-3390,xmlDocMissingParameterName,"This XML comment is invalid: missing parameter name"
+3390,xmlDocMissingParameterName,"This XML comment is invalid: missing 'name' attribute for parameter or parameter reference"
+3390,xmlDocMissingCrossReference,"This XML comment is invalid: missing 'cref' attribute for cross-reference"
 3390,xmlDocInvalidParameterName,"This XML comment is invalid: invalid parameter reference '%s'"
+3390,xmlDocUnresolvedCrossReference,"This XML comment is invalid: unresolved cross-reference '%s'"
