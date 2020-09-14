@@ -1548,7 +1548,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
 
     let oddActivePatternCase = oddSymbol :?> FSharpActivePatternCase
     oddActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
-    oddActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "<summary>"]
+    oddActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
     oddActivePatternCase.XmlDocSig |> shouldEqual ""
     let oddGroup = oddActivePatternCase.Group
     oddGroup.IsTotal |> shouldEqual true
@@ -1563,7 +1563,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     evenSymbol.ToString() |> shouldEqual "symbol Even"
     let evenActivePatternCase = evenSymbol :?> FSharpActivePatternCase
     evenActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
-    evenActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "<summary>"]
+    evenActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
     evenActivePatternCase.XmlDocSig |> shouldEqual ""
     let evenGroup = evenActivePatternCase.Group
     evenGroup.IsTotal |> shouldEqual true
