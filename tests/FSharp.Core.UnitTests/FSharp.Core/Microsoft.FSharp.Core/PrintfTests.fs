@@ -5,8 +5,6 @@
 
 namespace FSharp.Core.UnitTests
 
-open System
-open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 
 type MyUnionType =
@@ -57,16 +55,16 @@ type PrintfTests() =
 
     [<Fact>]
     member __.``union case formatting with RequireQualifiedAccess`` () =
-        Assert.AreEqual("SecondUnionType.Case1", sprintf "%A" SecondUnionType.Case1)
-        Assert.AreEqual("SecondUnionType.Case2 \"hello\"", sprintf "%A" (SecondUnionType.Case2 "hello"))
-        Assert.AreEqual("SecondUnionType.Case2Opt None", sprintf "%A" (SecondUnionType.Case2Opt None))
-        Assert.AreEqual("SecondUnionType.Case2Opt (Some \"hi\")", sprintf "%A" (SecondUnionType.Case2Opt (Some "hi")))
-        Assert.AreEqual("SecondUnionType.Case3 (5, \"hello\")", sprintf "%A" (SecondUnionType.Case3 (5, "hello")))
+        Assert.AreEqual("Case1", sprintf "%A" SecondUnionType.Case1)
+        Assert.AreEqual("Case2 \"hello\"", sprintf "%A" (SecondUnionType.Case2 "hello"))
+        Assert.AreEqual("Case2Opt None", sprintf "%A" (SecondUnionType.Case2Opt None))
+        Assert.AreEqual("Case2Opt (Some \"hi\")", sprintf "%A" (SecondUnionType.Case2Opt (Some "hi")))
+        Assert.AreEqual("Case3 (5, \"hello\")", sprintf "%A" (SecondUnionType.Case3 (5, "hello")))
 
     [<Fact>]
     member __.``union case formatting with UseNullAsTrueValue`` () =
         Assert.AreEqual("NullCase", sprintf "%A" NullCase)
-        Assert.AreEqual("RQANullAsTrueUnionType.NullCase", sprintf "%A" RQANullAsTrueUnionType.NullCase)
+        Assert.AreEqual("NullCase", sprintf "%A" RQANullAsTrueUnionType.NullCase)
 
     [<Fact>]
     member __.``F# option formatting`` () =
