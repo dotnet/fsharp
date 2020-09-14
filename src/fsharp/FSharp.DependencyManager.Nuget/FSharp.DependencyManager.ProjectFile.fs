@@ -144,6 +144,10 @@ $(POUND_R)
     <FSharpCoreImplicitPackageVersion Condition="'$(FSharpCoreImplicitPackageVersion)' == '{{FSharpCorePreviewPackageVersion}}'">4.7.1-*</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include='Microsoft.NETFramework.ReferenceAssemblies' Version='1.0.0' Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'"/>
+  </ItemGroup>
+
 $(PACKAGEREFERENCES)
 
   <Target Name="ComputePackageRootsForInteractivePackageManagement"
