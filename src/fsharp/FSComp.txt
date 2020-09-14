@@ -1543,6 +1543,6 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3390,xmlDocBadlyFormed,"This XML comment is invalid: '%s'"
 3390,xmlDocMissingParameterName,"This XML comment is invalid: missing 'name' attribute for parameter or parameter reference"
 3390,xmlDocMissingCrossReference,"This XML comment is invalid: missing 'cref' attribute for cross-reference"
-3390,xmlDocInvalidParameterName,"This XML comment is invalid: invalid parameter reference '%s'"
-3390,xmlDocMissingParameterDoc,"This XML comment is invalid: some parameters have documentation, but no documentation has been given for parameter '%s'"
+3390,xmlDocInvalidParameterName,"This XML comment is invalid: unknown parameter '%s'"
+3390,xmlDocMissingParameterDoc,"This XML comment is incomplete: no documentation for parameter '%s'"
 3390,xmlDocUnresolvedCrossReference,"This XML comment is invalid: unresolved cross-reference '%s'"

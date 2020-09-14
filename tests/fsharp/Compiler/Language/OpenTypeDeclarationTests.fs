@@ -2264,7 +2264,7 @@ let main _ =
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
             
         let provided =
@@ -2272,7 +2272,7 @@ let main _ =
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let test =
@@ -2290,7 +2290,7 @@ if StaticProperty1 <> "You got a static property" then
     failwith "failed"
             """
             |> asExe
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
             |> withReferences [provider;provided]
 
@@ -2306,7 +2306,7 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let provided =
@@ -2314,7 +2314,7 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let test =
@@ -2330,7 +2330,7 @@ if StaticProperty1 <> "You got a static property" then
     failwith "failed"
             """
             |> asExe
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
             |> withReferences [provider;provided]
 
@@ -2347,7 +2347,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> withLangVersionPreview
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let provided =
@@ -2356,7 +2356,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> withLangVersionPreview
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let test =
@@ -2367,7 +2367,7 @@ if StaticProperty1 <> "You got a static property" then
     failwith "failed"
             """
             |> asExe
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
             |> withReferences [provider;provided]
 
@@ -2384,7 +2384,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> withLangVersionPreview
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let provided =
@@ -2393,7 +2393,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> withLangVersionPreview
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let test =
@@ -2407,7 +2407,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             |> asExe
             |> withLangVersionPreview
             |> withReferences [provider;provided]
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
 
         compileAndRun test
         |> ignore
@@ -2422,7 +2422,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> withLangVersionPreview
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let provided =
@@ -2431,7 +2431,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> withLangVersionPreview
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
             |> withLangVersionPreview
 
         let test =
@@ -2443,7 +2443,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             |> asExe
             |> withLangVersionPreview
             |> withReferences [provider;provided]
-            |> ignoreWarnings
+            |> warningsDoNotCauseFailure
 
         compile test
         |> withDiagnostics

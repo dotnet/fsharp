@@ -13044,8 +13044,7 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
             let paramNames = 
                 match valscheme.ValReprInfo with 
                 | None -> None
-                | Some topValInfo ->
-                    Some [ for argtys in topValInfo.ArgInfos do for arginfo in argtys do match arginfo.Name with None -> () | Some nm -> nm.idText ]
+                | Some topValInfo -> topValInfo.ArgNames
 
             let doc = doc.ToXmlDoc(true, paramNames)
             let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, doc, konst, false)
@@ -13404,7 +13403,7 @@ module IncrClassChecking =
 
     /// Check and elaborate the "left hand side" of the implicit class construction 
     /// syntax.
-    let TcImplicitCtorLhs_Phase2A(cenv, env, tpenv, tcref: TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy) =
+    let TcImplicitCtorLhs_Phase2A(cenv, env, tpenv, tcref: TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, doc: PreXmlDoc) =
 
         let baseValOpt = 
             match GetSuperTypeOfType cenv.g cenv.amap m objTy with 
@@ -13449,7 +13448,9 @@ module IncrClassChecking =
             let isComplete = ComputeIsComplete copyOfTyconTypars [] ctorTy
             let topValInfo = InferGenericArityFromTyScheme prelimTyschemeG partialValReprInfo
             let ctorValScheme = ValScheme(id, prelimTyschemeG, Some topValInfo, Some memberInfo, false, ValInline.Never, NormalVal, vis, false, true, false, false)
-            let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, XmlDoc.Empty, None, false) 
+            let paramNames = topValInfo.ArgNames
+            let doc = doc.ToXmlDoc(true, paramNames)
+            let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, doc, None, false) 
             ctorValScheme, ctorVal
 
         // We only generate the cctor on demand, because we don't need it if there are no cctor actions. 
@@ -14292,12 +14293,12 @@ module MutRecBindingChecking =
                             error(Error(FSComp.SR.tcEnumerationsMayNotHaveMembers(), (trimRangeToLine m))) 
 
                         match classMemberDef, containerInfo with
-                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
+                        | SynMemberDefn.ImplicitCtor (vis, Attributes attrs, SynSimplePats.SimplePats(spats, _), thisIdOpt, doc, m), ContainerInfo(_, Some(MemberOrValContainerInfo(tcref, _, baseValOpt, safeInitInfo, _))) ->
                             if tcref.TypeOrMeasureKind = TyparKind.Measure then
                                 error(Error(FSComp.SR.tcMeasureDeclarationsRequireStaticMembers(), m))
 
                             // Phase2A: make incrClassCtorLhs - ctorv, thisVal etc, type depends on argty(s) 
-                            let incrClassCtorLhs = TcImplicitCtorLhs_Phase2A(cenv, envForTycon, tpenv, tcref, vis, attrs, spats, thisIdOpt, baseValOpt, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy)
+                            let incrClassCtorLhs = TcImplicitCtorLhs_Phase2A(cenv, envForTycon, tpenv, tcref, vis, attrs, spats, thisIdOpt, baseValOpt, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, doc)
                             // Phase2A: Add copyOfTyconTypars from incrClassCtorLhs - or from tcref 
                             let envForTycon = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envForTycon
                             let innerState = (Some incrClassCtorLhs, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
@@ -17236,7 +17237,7 @@ module TcDeclarations =
              | SynMemberDefn.Member (_, m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have binding", m))
              | SynMemberDefn.AbstractSlot (_, _, m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have slotsig", m))
              | SynMemberDefn.Interface (_, _, m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have interface", m))
-             | SynMemberDefn.ImplicitCtor (_, _, _, _, m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
+             | SynMemberDefn.ImplicitCtor (_, _, _, _, _, m) :: _ -> errorR(InternalError("implicit class construction with two implicit constructions", m))
              | SynMemberDefn.AutoProperty (_, _, _, _, _, _, _, _, _, _, m) :: _ -> errorR(InternalError("List.takeUntil is wrong, have auto property", m))
              | SynMemberDefn.ImplicitInherit (_, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveOneInherit(), m))
              | SynMemberDefn.LetBindings (_, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcTypeDefinitionsWithImplicitConstructionMustHaveLocalBindingsBeforeMembers(), m))
@@ -17248,7 +17249,7 @@ module TcDeclarations =
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
             match ds with
              | SynMemberDefn.Member (_, m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
-             | SynMemberDefn.ImplicitCtor (_, _, _, _, m) :: _ -> errorR(InternalError("CheckMembersForm: implicit ctor line should be first", m))
+             | SynMemberDefn.ImplicitCtor (_, _, _, _, _, m) :: _ -> errorR(InternalError("CheckMembersForm: implicit ctor line should be first", m))
              | SynMemberDefn.ImplicitInherit (_, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcInheritConstructionCallNotPartOfImplicitSequence(), m))
              | SynMemberDefn.AutoProperty(_, _, _, _, _, _, _, _, _, _, m) :: _ -> errorR(Error(FSComp.SR.tcAutoPropertyRequiresImplicitConstructionSequence(), m))
              | SynMemberDefn.LetBindings (_, false, _, m) :: _ -> errorR(Error(FSComp.SR.tcLetAndDoRequiresImplicitConstructionSequence(), m))
@@ -17396,13 +17397,13 @@ module TcDeclarations =
 
             let hasSelfReferentialCtor = 
                 members |> List.exists (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, _, thisIdOpt, _) 
+                    | SynMemberDefn.ImplicitCtor (_, _, _, thisIdOpt, _, _) 
                     | SynMemberDefn.Member(Binding(_, _, _, _, _, _, SynValData(_, _, thisIdOpt), _, _, _, _, _), _) -> thisIdOpt.IsSome
                     | _ -> false)
 
             let implicitCtorSynPats = 
                 members |> List.tryPick (function 
-                    | SynMemberDefn.ImplicitCtor (_, _, (SynSimplePats.SimplePats _ as spats), _, _) -> Some spats
+                    | SynMemberDefn.ImplicitCtor (_, _, (SynSimplePats.SimplePats _ as spats), _, _, _) -> Some spats
                     | _ -> None)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
@@ -17411,7 +17412,7 @@ module TcDeclarations =
                 members |> List.exists (function 
                     | SynMemberDefn.Member(Binding(_, _, _, _, _, _, SynValData(Some memberFlags, _, _), SynPatForConstructorDecl SynPatForNullaryArgs, _, _, _, _), _) -> 
                         memberFlags.MemberKind=MemberKind.Constructor 
-                    | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _) -> isNil spats
+                    | SynMemberDefn.ImplicitCtor (_, _, SynSimplePats.SimplePats(spats, _), _, _, _) -> isNil spats
                     | _ -> false)
             let repr = SynTypeDefnSimpleRepr.General(kind, inherits, slotsigs, fields, isConcrete, isIncrClass, implicitCtorSynPats, m)
             let isAtOriginalTyconDefn = not (isAugmentationTyconDefnRepr repr)

@@ -1893,6 +1893,7 @@ type SynMemberDefn =
         attributes: SynAttributes *
         ctorArgs: SynSimplePats *
         selfIdentifier: Ident option *
+        doc: PreXmlDoc *
         range: range
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'

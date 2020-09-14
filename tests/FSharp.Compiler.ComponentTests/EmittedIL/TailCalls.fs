@@ -8,7 +8,8 @@ open FSharp.Test.Utilities.Compiler
 module ``Tail Calls`` =
     // Regression test for DevDiv:72571
 
-    let private compileWithTailCalls = ignoreWarnings >> withOptions ["-g"; "--optimize-"; "--tailcalls+"] >> compile
+    let private compileWithTailCalls opts =
+        opts |> warningsDoNotCauseFailure |> withOptions ["-g"; "--optimize-"; "--tailcalls+"] |> compile
 
     [<Fact>]
     let ``TailCall 01``() =

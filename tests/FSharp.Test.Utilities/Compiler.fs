@@ -39,7 +39,7 @@ module rec Compiler =
           OutputType:     CompileOutput
           SourceKind:     SourceKind
           Name:           string option
-          IgnoreWarnings: bool
+          WarningsCauseFailure: bool
           References:     CompilationUnit list }
         override this.ToString() = match this.Name with | Some n -> n | _ -> (sprintf "%A" this)
 
@@ -109,7 +109,7 @@ module rec Compiler =
               OutputType     = Library
               SourceKind     = kind
               Name           = None
-              IgnoreWarnings = false
+              WarningsCauseFailure = true
               References     = [] }
 
     let private csFromString (source: string) : CSharpCompilationSource =
@@ -208,9 +208,9 @@ module rec Compiler =
         | FS fs -> FS { fs with OutputType = CompileOutput.Exe }
         | _ -> failwith "TODO: Implement where applicable."
 
-    let ignoreWarnings (cUnit: CompilationUnit) : CompilationUnit =
+    let warningsDoNotCauseFailure (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with IgnoreWarnings = true }
+        | FS fs -> FS { fs with WarningsCauseFailure = false }
         | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
     let rec private asMetadataReference reference =
@@ -249,9 +249,9 @@ module rec Compiler =
                 | IL _ -> failwith "TODO: Process references for IL"
         loop [] references
 
-    let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
+    let private compileFSharpCompilation compilation warningsCauseFailure : TestResult =
 
-        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, warningsCauseFailure)
 
         let diagnostics = err |> fromFSharpErrorInfo
 
@@ -264,8 +264,8 @@ module rec Compiler =
 
         let (errors, warnings) = partitionErrors diagnostics
 
-        // Treat warnings as errors if "IgnoreWarnings" is false
-        if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
+        // Treat warnings as errors if "warningsCauseFailure" is true
+        if errors.Length > 0 || (warnings.Length > 0 &&  warningsCauseFailure) then
             Failure result
         else
             Success { result with OutputPath = Some outputFilePath }
@@ -281,7 +281,7 @@ module rec Compiler =
 
         let compilation = Compilation.Create(source, sourceKind, output, options, references)
 
-        compileFSharpCompilation compilation fsSource.IgnoreWarnings
+        compileFSharpCompilation compilation fsSource.WarningsCauseFailure
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
 
@@ -388,8 +388,8 @@ module rec Compiler =
 
         let (errors, warnings) = partitionErrors diagnostics
 
-        // Treat warnings as errors if "IgnoreWarnings" is false;
-        if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
+        // Treat warnings as errors if "WarningsCauseFailure" is false;
+        if errors.Length > 0 || (warnings.Length > 0 && not fsSource.WarningsCauseFailure) then
             Failure result
         else
             Success result
@@ -440,7 +440,7 @@ module rec Compiler =
 
         let evalError = match evalresult with Ok _ -> false | _ -> true
 
-        if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then
+        if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.WarningsCauseFailure) then
             Failure result
         else
             Success result

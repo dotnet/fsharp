@@ -107,7 +107,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                 if paramsWithDocs.Length > 0 then 
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
-                            warning (Error (FSComp.SR.xmlDocMissingParameterDoc(nm), doc.Range))
+                            warning (Error (FSComp.SR.xmlDocMissingParameterDoc(p), doc.Range))
 
                 for pref in xml.Descendants(XName.op_Implicit "paramref") do
                     match pref.Attribute(XName.op_Implicit "name") with 

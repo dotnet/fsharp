@@ -47,7 +47,7 @@ type DirectoryAttribute(dir: string) =
           OutputType     = Library
           SourceKind     = SourceKind.Fsx
           Name           = Some fs
-          IgnoreWarnings = false
+          WarningsCauseFailure = true
           References     = [] } |> FS
 
     override _.GetData(_: MethodInfo) =

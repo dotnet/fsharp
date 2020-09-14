@@ -22,7 +22,7 @@ module M =
 
         """ 
          |> withXmlCommentChecking
-         |> ignoreWarnings // means "don't treat warnings as errors"
+         |> warningsDoNotCauseFailure
          |> compile
          |> shouldSucceed
          |> withDiagnostics
@@ -34,17 +34,114 @@ module M =
                    "This XML comment is invalid: 'Name cannot begin with the '\n' character, hexadecimal value 0x0A. Line 2, position 13.'")
                 ]
     [<Fact>]
-    let ``invalid parameter reference is reported`` () =
+    let ``unknown parameter is reported`` () =
         Fsx"""
     /// <summary> Return <paramref name="b" /> </summary>
     /// <param name="a"> the parameter </param>
     let f a = a
         """ 
          |> withXmlCommentChecking
-         |> ignoreWarnings // means "don't treat warnings as errors"
+         |> warningsDoNotCauseFailure
          |> compile
          |> shouldSucceed
          |> withDiagnostics
                 [ (Warning 3390, Line 2, Col 5, Line 3, Col 48,
-                   "This XML comment is invalid: invalid parameter reference 'b'");
+                   "This XML comment is invalid: unknown parameter 'b'");
                 ]
+
+    [<Fact>]
+    let ``invalid parameter name is reported`` () =
+        Fsx"""
+    /// <summary> Return <paramref name="b" /> </summary>
+    /// <param name="b"> the parameter </param>
+    let f a = a
+        """ 
+         |> withXmlCommentChecking
+         |> warningsDoNotCauseFailure
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics
+                [ (Warning 3390, Line 2, Col 5, Line 3, Col 48,
+                   "This XML comment is invalid: unknown parameter 'b'");
+                  (Warning 3390, Line 2, Col 5, Line 3, Col 48,
+                   "This XML comment is incomplete: no documentation for parameter 'a'");
+                ]
+
+    [<Fact>]
+    let ``missing parameter name is reported`` () =
+        Fsx"""
+    /// <summary> Return <paramref/> </summary>
+    /// <param> the parameter </param>
+    let f a = a
+        """ 
+         |> withXmlCommentChecking
+         |> warningsDoNotCauseFailure
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics
+                [ (Warning 3390, Line 2, Col 5, Line 3, Col 39,
+                   "This XML comment is invalid: missing 'name' attribute for parameter or parameter reference");
+                ]
+
+    [<Fact>]
+    let ``valid parameter names are not reported`` () =
+        Fsx"""
+    /// <summary> Return <paramref name="a" /> </summary>
+    /// <param name="a"> the parameter </param>
+    let f a = a
+
+    /// <summary> The type </summary>
+    type C(x1: string, x2: string) =
+         let _unused = (x1, x2)
+        /// <summary> The instance method</summary>
+        /// <param name="p1"> the parameter </param>
+        /// <param name="p2"> the other parameter </param>
+         member x.M(p1: string, p2: string) = (p1, p2)
+
+        /// <summary> The instance method</summary>
+        /// <param name="p2"> the other parameter </param>
+         member x.OtherM((a,b): (string * string), p2: string) = ((a,b), p2)
+        """ 
+         |> withXmlCommentChecking
+         |> warningsDoNotCauseFailure
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics [ ]
+
+    [<Fact>]
+    let ``valid parameter names are not reported for documented implicit constructor`` () =
+        Fsx"""
+    /// <summary> The type with an implicit constructor</summary>
+    type C
+        /// <summary> The constructor</summary>
+        /// <param name="x1"> the parameter </param>
+        /// <param name="x2"> the other parameter </param>
+         (x1: string, x2: string) =
+         let _unused = (x1, x2)
+
+         member x.M(p1: string, p2: string) = (p1, p2)
+        """ 
+         |> withXmlCommentChecking
+         |> warningsDoNotCauseFailure
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics [ ]
+
+    [<Fact>]
+    let ``valid parameter names are not reported for documented implicit constructor with visibility`` () =
+        Fsx"""
+    /// <summary> The type with an implicit constructor with visibility</summary>
+    type C
+        /// <summary> The constructor</summary>
+        /// <param name="x1"> the parameter </param>
+        /// <param name="x2"> the other parameter </param>
+         public (x1: string, x2: string) =
+         let _unused = (x1, x2)
+
+         member x.M(p1: string, p2: string) = (p1, p2)
+        """ 
+         |> withXmlCommentChecking
+         |> warningsDoNotCauseFailure
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics [ ]

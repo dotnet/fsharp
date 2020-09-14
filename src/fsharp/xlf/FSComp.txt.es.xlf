@@ -528,8 +528,8 @@
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
-        <source>This XML comment is invalid: invalid parameter reference '{0}'</source>
-        <target state="new">This XML comment is invalid: invalid parameter reference '{0}'</target>
+        <source>This XML comment is invalid: unknown parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: unknown parameter '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingCrossReference">
@@ -538,8 +538,8 @@
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingParameterDoc">
-        <source>This XML comment is invalid: some parameters have documentation, but no documentation has been given for parameter '{0}'</source>
-        <target state="new">This XML comment is invalid: some parameters have documentation, but no documentation has been given for parameter '{0}'</target>
+        <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
+        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingParameterName">

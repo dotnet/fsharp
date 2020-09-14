@@ -4370,6 +4370,9 @@ type ValReprInfo =
             | (_ :: _ :: h) :: t -> loop t (acc + h.Length + 2) 
         loop args 0
 
+    member x.ArgNames =
+        Some [ for argtys in x.ArgInfos do for arginfo in argtys do match arginfo.Name with None -> () | Some nm -> nm.idText ]
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
