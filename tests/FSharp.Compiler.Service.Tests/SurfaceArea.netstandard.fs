@@ -18209,6 +18209,7 @@ FSharp.Compiler.AbstractIL.Internal.Library+List: Void iterSquared[a](Microsoft.
 FSharp.Compiler.AbstractIL.Internal.Library+List: a indexNotFound[a]()
 FSharp.Compiler.AbstractIL.Internal.Library+List: a[][] toArraySquared[a](Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[a]])
 FSharp.Compiler.AbstractIL.Internal.Library+List: b assoc[a,b](a, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[a,b]])
+FSharp.Compiler.AbstractIL.Internal.Library+List: Microsoft.FSharp.Collections.FSharpList`1[T] duplicates[T](Microsoft.FSharp.Collections.FSharpList`1[T])
 FSharp.Compiler.AbstractIL.Internal.Library+Lock`1[LockTokenType]: Void .ctor()
 FSharp.Compiler.AbstractIL.Internal.Library+Lock`1[LockTokenType]: a AcquireLock[a](Microsoft.FSharp.Core.FSharpFunc`2[LockTokenType,a])
 FSharp.Compiler.AbstractIL.Internal.Library+Map: Microsoft.FSharp.Collections.FSharpList`1[b] tryFindMulti[a,b](a, Microsoft.FSharp.Collections.FSharpMap`2[a,Microsoft.FSharp.Collections.FSharpList`1[b]])
@@ -21334,7 +21335,9 @@ FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: Microsoft.FSharp.Cor
 FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] get_DeclarationLocation()
 FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] get_ImplementationLocation()
 FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] get_SignatureLocation()
+FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: System.Collections.Generic.IList`1[System.String] XmlDoc
+FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: System.Collections.Generic.IList`1[System.String] get_XmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: System.String DisplayName
 FSharp.Compiler.SourceCodeServices.FSharpActivePatternCase: System.String FullName
@@ -21738,7 +21741,9 @@ FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.ILis
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpType] get_DeclaredInterfaces()
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpUnionCase] UnionCases
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpUnionCase] get_UnionCases()
+FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.IList`1[System.String] XmlDoc
+FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.Collections.Generic.IList`1[System.String] get_XmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String AccessPath
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String CompiledName
@@ -21860,7 +21865,9 @@ FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList
 FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpAttribute] PropertyAttributes
 FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpAttribute] get_FieldAttributes()
 FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpAttribute] get_PropertyAttributes()
+FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList`1[System.String] XmlDoc
+FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpField: System.Collections.Generic.IList`1[System.String] get_XmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpField: System.String DisplayName
 FSharp.Compiler.SourceCodeServices.FSharpField: System.String FullName
@@ -22070,7 +22077,9 @@ FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Ge
 FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpAttribute] get_Attributes()
 FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpGenericParameterConstraint] Constraints
 FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpGenericParameterConstraint] get_Constraints()
+FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Generic.IList`1[System.String] XmlDoc
+FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.Collections.Generic.IList`1[System.String] get_XmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.String DisplayName
 FSharp.Compiler.SourceCodeServices.FSharpGenericParameter: System.String FullName
@@ -22501,7 +22510,9 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collect
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpGenericParameter] get_GenericParameters()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]] CurriedParameterGroups
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]] get_CurriedParameterGroups()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] XmlDoc
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] get_XmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String CompiledName
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String DisplayName
@@ -23248,7 +23259,9 @@ FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.I
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpAttribute] get_Attributes()
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpField] UnionCaseFields
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpField] get_UnionCaseFields()
+FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.IList`1[System.String] XmlDoc
+FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.Collections.Generic.IList`1[System.String] get_XmlDoc()
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.String CompiledName
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: System.String DisplayName
@@ -23282,9 +23295,11 @@ FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: Int32 GetHashCode()
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: Int32 Tag
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: Int32 get_Tag()
-FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: System.String Item
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: System.String ToString()
-FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: System.String get_Item()
+FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: System.String[] elaboratedXmlLines
+FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: System.String[] get_elaboratedXmlLines()
+FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: System.String[] get_unprocessedLines()
+FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+Text: System.String[] unprocessedLines
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+XmlDocFileSignature: Boolean Equals(FSharp.Compiler.SourceCodeServices.FSharpXmlDoc)
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+XmlDocFileSignature: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc+XmlDocFileSignature: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -23315,7 +23330,7 @@ FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: Boolean IsXmlDocFileSignature
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: Boolean get_IsNone()
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: Boolean get_IsText()
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: Boolean get_IsXmlDocFileSignature()
-FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: FSharp.Compiler.SourceCodeServices.FSharpXmlDoc NewText(System.String)
+FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: FSharp.Compiler.SourceCodeServices.FSharpXmlDoc NewText(System.String[], System.String[])
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: FSharp.Compiler.SourceCodeServices.FSharpXmlDoc NewXmlDocFileSignature(System.String, System.String)
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: FSharp.Compiler.SourceCodeServices.FSharpXmlDoc None
 FSharp.Compiler.SourceCodeServices.FSharpXmlDoc: FSharp.Compiler.SourceCodeServices.FSharpXmlDoc get_None()
@@ -24758,9 +24773,9 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Comput
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ConstructorForReferenceType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 ConstructorForValueType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Delegate
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableLocalValue
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableTopLevelValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 DisposableType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Enumeration
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Event
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType+Tags: Int32 Exception
@@ -24798,9 +24813,9 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsComputa
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsConstructorForReferenceType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsConstructorForValueType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDelegate
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableLocalValue
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableTopLevelValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsDisposableType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsEnumeration
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsEvent
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean IsException
@@ -24835,9 +24850,9 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsCom
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsConstructorForReferenceType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsConstructorForValueType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDelegate()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableLocalValue()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableTopLevelValue()
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsDisposableType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsEnumeration()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsEvent()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: Boolean get_IsException()
@@ -24872,9 +24887,9 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.S
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType ConstructorForReferenceType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType ConstructorForValueType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Delegate
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableLocalValue
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableTopLevelValue
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType DisposableType
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Enumeration
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Event
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType Exception
@@ -24909,9 +24924,9 @@ FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.S
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ConstructorForReferenceType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_ConstructorForValueType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Delegate()
-FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableLocalValue()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableTopLevelValue()
+FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_DisposableType()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Enumeration()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Event()
 FSharp.Compiler.SourceCodeServices.SemanticClassificationType: FSharp.Compiler.SourceCodeServices.SemanticClassificationType get_Exception()
@@ -26066,6 +26081,8 @@ FSharp.Compiler.SyntaxTree+SynArgInfo: Int32 Tag
 FSharp.Compiler.SyntaxTree+SynArgInfo: Int32 get_Tag()
 FSharp.Compiler.SyntaxTree+SynArgInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynAttributeList] attributes
 FSharp.Compiler.SyntaxTree+SynArgInfo: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynAttributeList] get_attributes()
+FSharp.Compiler.SyntaxTree+SynArgInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident] Ident
+FSharp.Compiler.SyntaxTree+SynArgInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident] get_Ident()
 FSharp.Compiler.SyntaxTree+SynArgInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident] get_ident()
 FSharp.Compiler.SyntaxTree+SynArgInfo: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident] ident
 FSharp.Compiler.SyntaxTree+SynArgInfo: SynArgInfo NewSynArgInfo(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynAttributeList], Boolean, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident])
@@ -37256,6 +37273,8 @@ FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: Microsoft.FSharp.Core.FSh
 FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident] selfIdentifier
 FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess] accessibility
 FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess] get_accessibility()
+FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: PreXmlDoc doc
+FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: PreXmlDoc get_doc()
 FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: SynSimplePats ctorArgs
 FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: SynSimplePats get_ctorArgs()
 FSharp.Compiler.SyntaxTree+SynMemberDefn+ImplicitCtor: System.String ToString()
@@ -37574,7 +37593,7 @@ FSharp.Compiler.SyntaxTree+SynMemberDefn: Int32 Tag
 FSharp.Compiler.SyntaxTree+SynMemberDefn: Int32 get_Tag()
 FSharp.Compiler.SyntaxTree+SynMemberDefn: SynMemberDefn NewAbstractSlot(SynValSig, MemberFlags, range)
 FSharp.Compiler.SyntaxTree+SynMemberDefn: SynMemberDefn NewAutoProperty(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynAttributeList], Boolean, Ident, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynType], MemberKind, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.SyntaxTree+MemberKind,FSharp.Compiler.SyntaxTree+MemberFlags], PreXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range], range)
-FSharp.Compiler.SyntaxTree+SynMemberDefn: SynMemberDefn NewImplicitCtor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynAttributeList], SynSimplePats, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident], range)
+FSharp.Compiler.SyntaxTree+SynMemberDefn: SynMemberDefn NewImplicitCtor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynAttributeList], SynSimplePats, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident], PreXmlDoc, range)
 FSharp.Compiler.SyntaxTree+SynMemberDefn: SynMemberDefn NewImplicitInherit(SynType, SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident], range)
 FSharp.Compiler.SyntaxTree+SynMemberDefn: SynMemberDefn NewInherit(SynType, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident], range)
 FSharp.Compiler.SyntaxTree+SynMemberDefn: SynMemberDefn NewInterface(SynType, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynMemberDefn]], range)
@@ -41518,16 +41537,20 @@ FSharp.Compiler.SyntaxTree+SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSha
 FSharp.Compiler.SyntaxTree+SynValData: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+MemberFlags] get_Item1()
 FSharp.Compiler.SyntaxTree+SynValData: SynValData NewSynValData(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+MemberFlags], SynValInfo, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+Ident])
 FSharp.Compiler.SyntaxTree+SynValData: SynValInfo Item2
+FSharp.Compiler.SyntaxTree+SynValData: SynValInfo SynValInfo
 FSharp.Compiler.SyntaxTree+SynValData: SynValInfo get_Item2()
+FSharp.Compiler.SyntaxTree+SynValData: SynValInfo get_SynValInfo()
 FSharp.Compiler.SyntaxTree+SynValData: System.String ToString()
 FSharp.Compiler.SyntaxTree+SynValInfo: Int32 Tag
 FSharp.Compiler.SyntaxTree+SynValInfo: Int32 get_Tag()
-FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] ArgInfos
-FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] Item1
-FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] get_ArgInfos()
-FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] get_Item1()
-FSharp.Compiler.SyntaxTree+SynValInfo: SynArgInfo Item2
-FSharp.Compiler.SyntaxTree+SynValInfo: SynArgInfo get_Item2()
+FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] CurriedArgInfos
+FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] curriedArgInfos
+FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] get_CurriedArgInfos()
+FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]] get_curriedArgInfos()
+FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[System.String] ArgNames
+FSharp.Compiler.SyntaxTree+SynValInfo: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_ArgNames()
+FSharp.Compiler.SyntaxTree+SynValInfo: SynArgInfo get_returnInfo()
+FSharp.Compiler.SyntaxTree+SynValInfo: SynArgInfo returnInfo
 FSharp.Compiler.SyntaxTree+SynValInfo: SynValInfo NewSynValInfo(Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynArgInfo]], SynArgInfo)
 FSharp.Compiler.SyntaxTree+SynValInfo: System.String ToString()
 FSharp.Compiler.SyntaxTree+SynValSig: Boolean get_isInline()
@@ -41817,7 +41840,7 @@ FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: Int32 GetHashCode(System.Collections
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: Int32 Tag
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: Int32 get_Tag()
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: System.String ToString()
-FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: XmlDoc ToXmlDoc()
+FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: XmlDoc ToXmlDoc(Boolean, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: XmlDocCollector Item2
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: XmlDocCollector get_Item2()
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlDoc: pos Item1
@@ -41840,7 +41863,7 @@ FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlMerge: PreXmlDoc Item2
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlMerge: PreXmlDoc get_Item1()
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlMerge: PreXmlDoc get_Item2()
 FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlMerge: System.String ToString()
-FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlMerge: XmlDoc ToXmlDoc()
+FSharp.Compiler.XmlDoc+PreXmlDoc+PreXmlMerge: XmlDoc ToXmlDoc(Boolean, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.XmlDoc+PreXmlDoc+Tags: Int32 PreXmlDoc
 FSharp.Compiler.XmlDoc+PreXmlDoc+Tags: Int32 PreXmlDocEmpty
 FSharp.Compiler.XmlDoc+PreXmlDoc+Tags: Int32 PreXmlMerge
@@ -41869,31 +41892,26 @@ FSharp.Compiler.XmlDoc+PreXmlDoc: PreXmlDoc PreXmlDocEmpty
 FSharp.Compiler.XmlDoc+PreXmlDoc: PreXmlDoc get_Empty()
 FSharp.Compiler.XmlDoc+PreXmlDoc: PreXmlDoc get_PreXmlDocEmpty()
 FSharp.Compiler.XmlDoc+PreXmlDoc: System.String ToString()
-FSharp.Compiler.XmlDoc+PreXmlDoc: XmlDoc ToXmlDoc()
-FSharp.Compiler.XmlDoc+XmlDoc: Boolean Equals(System.Object)
-FSharp.Compiler.XmlDoc+XmlDoc: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-FSharp.Compiler.XmlDoc+XmlDoc: Boolean Equals(XmlDoc)
+FSharp.Compiler.XmlDoc+PreXmlDoc: XmlDoc ToXmlDoc(Boolean, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
+FSharp.Compiler.XmlDoc+XmlDoc: Boolean IsEmpty
 FSharp.Compiler.XmlDoc+XmlDoc: Boolean NonEmpty
+FSharp.Compiler.XmlDoc+XmlDoc: Boolean get_IsEmpty()
 FSharp.Compiler.XmlDoc+XmlDoc: Boolean get_NonEmpty()
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 CompareTo(System.Object)
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 CompareTo(System.Object, System.Collections.IComparer)
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 CompareTo(XmlDoc)
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 GetHashCode()
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 Tag
-FSharp.Compiler.XmlDoc+XmlDoc: Int32 get_Tag()
-FSharp.Compiler.XmlDoc+XmlDoc: System.String ToString()
-FSharp.Compiler.XmlDoc+XmlDoc: System.String[] Item
-FSharp.Compiler.XmlDoc+XmlDoc: System.String[] get_Item()
+FSharp.Compiler.XmlDoc+XmlDoc: System.String GetXmlText()
+FSharp.Compiler.XmlDoc+XmlDoc: System.String[] GetElaboratedXmlLines()
+FSharp.Compiler.XmlDoc+XmlDoc: System.String[] UnprocessedLines
+FSharp.Compiler.XmlDoc+XmlDoc: System.String[] get_UnprocessedLines()
+FSharp.Compiler.XmlDoc+XmlDoc: Void .ctor(System.String[], range)
+FSharp.Compiler.XmlDoc+XmlDoc: Void Check(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Empty
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Merge(XmlDoc, XmlDoc)
-FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc NewXmlDoc(System.String[])
-FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc Process(XmlDoc)
 FSharp.Compiler.XmlDoc+XmlDoc: XmlDoc get_Empty()
-FSharp.Compiler.XmlDoc+XmlDocCollector: System.String[] LinesBefore(pos)
+FSharp.Compiler.XmlDoc+XmlDoc: range Range
+FSharp.Compiler.XmlDoc+XmlDoc: range get_Range()
+FSharp.Compiler.XmlDoc+XmlDocCollector: System.Tuple`2[System.String,FSharp.Compiler.Range+range][] LinesBefore(pos)
 FSharp.Compiler.XmlDoc+XmlDocCollector: Void .ctor()
 FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddGrabPoint(pos)
-FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddXmlDocLine(System.String, pos)
+FSharp.Compiler.XmlDoc+XmlDocCollector: Void AddXmlDocLine(System.String, range)
 FSharp.Compiler.XmlDoc+XmlDocStatics: Void .ctor()
 FSharp.Compiler.XmlDoc+XmlDocStatics: XmlDoc Empty
 FSharp.Compiler.XmlDoc+XmlDocStatics: XmlDoc get_Empty()

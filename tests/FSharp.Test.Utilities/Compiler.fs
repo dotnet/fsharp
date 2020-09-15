@@ -99,6 +99,7 @@ module rec Compiler =
         match src with
         | Text t -> t
         | Path p -> System.IO.File.ReadAllText p
+
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
         | null -> failwith "Source cannot be null"
@@ -143,8 +144,11 @@ module rec Compiler =
         |> List.map toErrorInfo
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
+
     let private getErrors diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Error _ -> true | _ -> false)
+
     let private getWarnings diagnostics = diagnostics |> List.filter (fun e -> match e.Error with Warning _ -> true | _ -> false)
+
     let private adjustRange (range: Range) (adjust: int) : Range =
         { range with
                 StartLine   = range.StartLine   - adjust
@@ -157,6 +161,7 @@ module rec Compiler =
 
     let FSharp (source: string) : CompilationUnit =
         fsFromString source SourceKind.Fs |> FS
+
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CS
 
@@ -178,7 +183,7 @@ module rec Compiler =
         | _ -> failwith message
 
     let withOptions (options: string list) (cUnit: CompilationUnit) : CompilationUnit =
-        withOptionsHelper options "withOptions is only supported n F#" cUnit
+        withOptionsHelper options "withOptions is only supported for F#" cUnit
 
     let withErrorRanges (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--test:ErrorRanges" ] "withErrorRanges is only supported on F#" cUnit
@@ -194,6 +199,14 @@ module rec Compiler =
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
+
+    /// Turns on checks that check integrity of XML doc comments
+    let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--warnon:3390" ] "withXmlCommentChecking is only supported for F#" cUnit
+
+    /// Turns on checks that force the documentation of all parameters
+    let withXmlCommentStrictParamChecking (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--warnon:3391" ] "withXmlCommentChecking is only supported for F#" cUnit
 
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -415,7 +428,9 @@ module rec Compiler =
                     Failure executionResult
 
     let compileAndRun = compile >> run
+
     let compileExeAndRun = asExe >> compileAndRun
+
     let private evalFSharp (fs: FSharpCompilationSource) : TestResult =
         let source = getSource fs.Source
         let options = fs.Options |> Array.ofList
@@ -573,7 +588,7 @@ module rec Compiler =
 
             let inline checkEqual k a b =
              if a <> b then
-                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" what k a b errors)
+                 Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
 
             // TODO: Check all "categories", collect all results and print alltogether.
             checkEqual "Errors count"  expected.Length errors.Length

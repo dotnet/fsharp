@@ -752,7 +752,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
         /// <param name="state">The initial state.</param>
-        /// <param name="array">The input collection.</param>
+        /// <param name="source">The input collection.</param>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input collection is null.</exception>
         ///
@@ -767,7 +767,7 @@ namespace Microsoft.FSharp.Collections
         /// not be used with large or infinite sequences.</remarks>
         ///
         /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
-        /// <param name="array">The input collection.</param>
+        /// <param name="source">The input collection.</param>
         /// <param name="state">The initial state.</param>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input collection is null.</exception>
@@ -1092,7 +1092,7 @@ namespace Microsoft.FSharp.Collections
         /// sequence and uses a stable sort, that is the original order of equal elements is preserved.</remarks>
         ///
         /// <param name="comparer">The function to compare the collection elements.</param>
-        /// <param name="list">The input sequence.</param>
+        /// <param name="source">The input sequence.</param>
         ///
         /// <returns>The result sequence.</returns>
         [<CompiledName("SortWith")>]

@@ -767,10 +767,11 @@ module ParsedInput =
                 walkTypeDefnSigRepr repr
                 List.iter walkMemberSig memberSigs
     
-        and walkMember = function
+        and walkMember memb =
+            match memb with
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _) ->
+            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _, _) ->
                 List.iter walkAttribute attrs
                 List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) -> walkType t; walkExpr e

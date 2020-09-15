@@ -75,7 +75,14 @@ type public FSharpChecker =
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
     /// <param name="legacyReferenceResolver">An optional resolver for non-file references, for legacy purposes</param>
     /// <param name="tryGetMetadataSnapshot">An optional resolver to access the contents of .NET binaries in a memory-efficient way</param>
-    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * ?suggestNamesForErrors: bool * ?keepAllBackgroundSymbolUses: bool * ?enableBackgroundItemKeyStoreAndSemanticClassification: bool -> FSharpChecker
+    /// <param name="suggestNamesForErrors">Indicate whether name suggestion should be enabled</param>
+    /// <param name="keepAllBackgroundSymbolUses">Indicate whether all symbol uses should be kept in background checking</param>
+    /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
+    static member Create: 
+        ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  *
+        ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
+        ?suggestNamesForErrors: bool * ?keepAllBackgroundSymbolUses: bool * ?enableBackgroundItemKeyStoreAndSemanticClassification: bool 
+          -> FSharpChecker
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -125,7 +132,7 @@ type public FSharpChecker =
     /// </summary>
     ///
     /// <param name="filename">The path for the file. The file name is also as a module name for implicit top level modules (e.g. in scripts).</param>
-    /// <param name="sourceText">The source to be parsed.</param>
+    /// <param name="source">The source to be parsed.</param>
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("Please call checker.ParseFile instead.  To do this, you must also pass FSharpParsingOptions instead of FSharpProjectOptions. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
@@ -195,7 +202,7 @@ type public FSharpChecker =
     ///
     /// <param name="filename">The name of the file in the project whose source is being checked.</param>
     /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
-    /// <param name="source">The full source for the file.</param>
+    /// <param name="sourceText">The source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="textSnapshotInfo">
     ///     An item passed back to 'hasTextChangedSinceLastTypecheck' (from some calls made on 'FSharpCheckFileResults') to help determine if
@@ -219,14 +226,24 @@ type public FSharpChecker =
     /// <para>All files are read from the FileSystem API, except the file being checked.</para>
     /// </summary>
     ///
-    /// <param name="filename">Used to differentiate between scripts, to consider each script a separate project.
-    /// Also used in formatted error messages.</param>
-    ///
+    /// <param name="filename">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
+    /// <param name="sourceText">The source for the file.</param>
+    /// <param name="previewEnabled">Is the preview compiler enabled.</param>
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
+    /// <param name="otherFlags">Other flags for compilation.</param>
+    /// <param name="useFsiAuxLib">Add a default reference to the FSharp.Compiler.Interactive.Settings library.</param>
+    /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
+    /// <param name="assumeDotNetFramework">Set up compilation and analysis for .NET Framework scripts.</param>
+    /// <param name="extraProjectInfo">An extra data item added to the returned FSharpProjectOptions.</param>
+    /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetProjectOptionsFromScript : filename: string * sourceText: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string -> Async<FSharpProjectOptions * FSharpErrorInfo list>
+    member GetProjectOptionsFromScript:
+        filename: string * sourceText: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime *
+        ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool *
+        ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string
+            -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>
@@ -237,6 +254,7 @@ type public FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
+    /// <param name="extraProjectInfo">An extra data item added to the returned FSharpProjectOptions.</param>
     member GetProjectOptionsFromCommandLineArgs : projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?extraProjectInfo: obj -> FSharpProjectOptions
 
     /// <summary>
@@ -245,6 +263,7 @@ type public FSharpChecker =
     ///
     /// <param name="sourceFiles">Initial source files list. Additional files may be added during argv evaluation.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
+    /// <param name="isInteractive">Indicates that parsing should assume the INTERACTIVE define and related settings</param>
     member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
@@ -252,14 +271,15 @@ type public FSharpChecker =
     /// </summary>
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
+    /// <param name="isInteractive">Indicates that parsing should assume the INTERACTIVE define and related settings</param>
     member GetParsingOptionsFromCommandLineArgs: argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a FSharpProjectOptions.</para>
     /// </summary>
     ///
-    /// <param name="argv">The command line arguments for the project build.</param>
-    member GetParsingOptionsFromProjectOptions: FSharpProjectOptions -> FSharpParsingOptions * FSharpErrorInfo list
+    /// <param name="options">The overall options.</param>
+    member GetParsingOptionsFromProjectOptions: options: FSharpProjectOptions -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Like ParseFile, but uses results from the background builder.</para>
@@ -308,6 +328,8 @@ type public FSharpChecker =
     /// The output file must be given by a -o flag.
     /// The first argument is ignored and can just be "fsc.exe".
     /// </summary>
+    ///
+    /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member Compile: argv:string[] * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
 
@@ -315,6 +337,13 @@ type public FSharpChecker =
     /// TypeCheck and compile provided AST
     /// </summary>
     ///
+    /// <param name="ast">The syntax tree for the build.</param>
+    /// <param name="assemblyName">The assembly name for the compiled output.</param>
+    /// <param name="outFile">The output file for the compialtion.</param>
+    /// <param name="dependencies">The list of dependencies for the compialtion.</param>
+    /// <param name="pdbFile">The output PDB file, if any.</param>
+    /// <param name="executable">Indicates if an executable is being produced.</param>
+    /// <param name="noframework">Enables the <c>/noframework</c> flag.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member Compile: ast:ParsedInput list * assemblyName:string * outFile:string * dependencies:string list * ?pdbFile:string * ?executable:bool * ?noframework:bool * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
 
@@ -331,6 +360,8 @@ type public FSharpChecker =
     /// case, a global setting is modified during the execution.
     /// </summary>
     ///
+    /// <param name="otherFlags">Other flags for compilation.</param>
+    /// <param name="execute">An optional pair of output streams, enabling execution of the result.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member CompileToDynamicAssembly: otherFlags:string [] * execute:(TextWriter * TextWriter) option * ?userOpName: string -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
 
@@ -338,6 +369,12 @@ type public FSharpChecker =
     /// TypeCheck and compile provided AST
     /// </summary>
     ///
+    /// <param name="ast">The syntax tree for the build.</param>
+    /// <param name="assemblyName">The assembly name for the compiled output.</param>
+    /// <param name="dependencies">The list of dependencies for the compialtion.</param>
+    /// <param name="execute">An optional pair of output streams, enabling execution of the result.</param>
+    /// <param name="debug">Enabled debug symbols</param>
+    /// <param name="noframework">Enables the <c>/noframework</c> flag.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member CompileToDynamicAssembly: ast:ParsedInput list * assemblyName:string * dependencies:string list * execute:(TextWriter * TextWriter) option * ?debug:bool * ?noframework:bool  * ?userOpName: string -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
 
@@ -397,6 +434,7 @@ type public FSharpChecker =
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.
     /// </summary>
     ///
+    /// <param name="options">The options describing the project that has been cleaned.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member NotifyProjectCleaned: options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
 

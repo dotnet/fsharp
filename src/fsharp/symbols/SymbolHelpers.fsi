@@ -50,10 +50,14 @@ type public FSharpXmlDoc =
     /// No documentation is available
     | None
 
-    /// The text for documentation 
-    | Text of string
+    /// The text for documentation for in-memory references.  Here unprocessedText is the `\n` concatenated
+    /// text of the original source and processsedXmlLines is the 
+    /// XML produced after all checking and processing by the F# compiler, including
+    /// insertion of summary tags, encoding and resolving of cross-references if
+    // supported.
+    | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
 
-    /// Indicates that the text for the documentation can be found in a .xml documentation file, using the given signature key
+    /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
 
 type public Layout = Internal.Utilities.StructuredFormat.Layout

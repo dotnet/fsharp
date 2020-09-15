@@ -43,7 +43,7 @@ namespace Microsoft.FSharp.Control
         /// each subscribed observer. The returned object also propagates error 
         /// observations arising from the source and completes when the source completes.</summary>
         ///
-        /// <param name="filter">The function to apply to observations to determine if it should
+        /// <param name="predicate">The function to apply to observations to determine if it should
         /// be kept.</param>
         /// <param name="source">The input Observable.</param>
         ///
