@@ -19,7 +19,7 @@ module WitnessTests =
         """ (dir ++ "provider.fsx"))
         |> asExe
         |> ignoreWarnings
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore

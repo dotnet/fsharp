@@ -65,15 +65,15 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.AndBang, languageVersion50
             LanguageFeature.NullableOptionalInterop, languageVersion50
             LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
+            LanguageFeature.OpenTypeDeclaration, languageVersion50
+            LanguageFeature.PackageManagement, languageVersion50
+            LanguageFeature.WitnessPassing, languageVersion50
+            LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
+            LanguageFeature.NameOf, languageVersion50
+            LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.OpenTypeDeclaration, previewVersion
-            LanguageFeature.PackageManagement, previewVersion
-            LanguageFeature.WitnessPassing, previewVersion
-            LanguageFeature.InterfacesWithMultipleGenericInstantiation, previewVersion
-            LanguageFeature.NameOf, previewVersion
-            LanguageFeature.StringInterpolation, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
         ]
 

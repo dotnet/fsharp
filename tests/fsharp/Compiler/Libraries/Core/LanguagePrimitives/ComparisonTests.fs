@@ -24,7 +24,7 @@ module ``Comparison Tests`` =
         // Regression test for FSHARP1.0:5640
         // This is a sanity test: more coverage in FSHARP suite...
 
-        CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
+        CompilerAssert.RunScriptWithOptions [| "--langversion:5.0" |]
             """
 type 'a www = W of 'a
 
