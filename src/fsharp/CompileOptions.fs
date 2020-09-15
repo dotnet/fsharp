@@ -4,10 +4,9 @@
 
 module internal FSharp.Compiler.CompileOptions
 
-open Internal.Utilities
-open Internal.Utilities.StructuredFormat
 open System
 open System.IO
+
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
@@ -25,6 +24,9 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.ErrorLogger
+
+open Internal.Utilities
+open Internal.Utilities.StructuredFormat
 
 module Attributes = 
     open System.Runtime.CompilerServices
@@ -1787,12 +1789,16 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
                 else 
                     implFile, optEnvFinalSimplify 
 
-            ((implFile, optimizeDuringCodeGen), implFileOptData), (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden))
+            let implFile = 
+                { ImplFile = implFile
+                  OptimizeDuringCodeGen = optimizeDuringCodeGen }
+
+            (implFile, implFileOptData), (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden))
 
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
     let tassembly = TypedAssemblyAfterOptimization implFiles
-    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (List.map fst implFiles)
+    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (implFiles |> List.map (fun implFile -> implFile.ImplFile))
     ReportTime tcConfig ("Ending Optimizations")
     tassembly, assemblyOptData, optEnvFirstLoop
 

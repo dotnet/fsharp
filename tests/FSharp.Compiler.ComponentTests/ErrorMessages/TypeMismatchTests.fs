@@ -64,8 +64,8 @@ match x with
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 20, Line 3, Col 1,  Line 5, Col 13, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
-            (Error   1,  Line 4, Col 10, Line 4, Col 13, "A pattern match guard must be of type 'bool', but this 'when' expression is of type 'string'.")]
+            (Error   1,  Line 4, Col 10, Line 4, Col 13, "A pattern match guard must be of type 'bool', but this 'when' expression is of type 'string'.")
+            (Warning 20, Line 3, Col 1,  Line 5, Col 13, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")]
 
     [<Fact>]
     let ``Runtime Type Test In Pattern``() =

@@ -23,9 +23,8 @@
     <Compile Include="CompilerAssert.fs" />
     <Compile Include="Assert.fs" />
     <Compile Include="Compiler.fs" />
+    <Compile Include="Xunit\Attributes\DirectoryAttribute.fs" />
   </ItemGroup>
-
-  <ItemGroup />
 
   <ItemGroup>
     <!-- CompilerAssert dependencies.
@@ -33,11 +32,13 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private.Scripting\FSharp.Compiler.Private.Scripting.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\fsharpqa\testenv\src\PEVerify\PEVerify.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" /> <!-- TODO: This should be removed once all NUnit frameworks are migrated to xUnit -->
+    <PackageReference Include="xunit" Version="$(XUnitVersion)" />
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +54,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
         <PackageReference Include="Microsoft.NETCore.App.Ref" Version="3.1.0" IncludeAssets="none" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
+
   <ItemGroup>
         <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\netcoreapp3.1\mscorlib.dll" LogicalName="netcoreapp31.mscorlib.dll">
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -76,4 +78,5 @@
                 <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
 </Project>

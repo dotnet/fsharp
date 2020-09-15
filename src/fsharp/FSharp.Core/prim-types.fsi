@@ -667,6 +667,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>Creates an instance of the attribute</summary>
         ///
         /// <param name="sourceConstructFlags">Indicates the type of source construct.</param>
+        /// <param name="sequenceNumber">Indicates the index in the sequence of constructs.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
         new : sourceConstructFlags:SourceConstructFlags * sequenceNumber: int -> CompilationMappingAttribute
@@ -674,6 +675,8 @@ namespace Microsoft.FSharp.Core
         /// <summary>Creates an instance of the attribute</summary>
         ///
         /// <param name="sourceConstructFlags">Indicates the type of source construct.</param>
+        /// <param name="variantNumber">Indicates the index in the sequence of variants.</param>
+        /// <param name="sequenceNumber">Indicates the index in the sequence of constructs.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
         new : sourceConstructFlags:SourceConstructFlags * variantNumber : int * sequenceNumber : int -> CompilationMappingAttribute
@@ -681,6 +684,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>Creates an instance of the attribute</summary>
         ///
         /// <param name="typeDefinitions">Indicates the type definitions needed to resolve the source construct.</param>
+        /// <param name="resourceName">The name of the resource needed to resolve the source construct.</param>
         ///
         /// <returns>CompilationMappingAttribute</returns>
         new : resourceName:string * typeDefinitions:System.Type[] -> CompilationMappingAttribute
@@ -1341,52 +1345,52 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Creates a float value with units-of-measure</summary>
         ///
-        /// <param name="float">The input float.</param>
+        /// <param name="input">The input float.</param>
         ///
         /// <returns>The float with units-of-measure.</returns>
-        val inline FloatWithMeasure : float -> float<'Measure>
+        val inline FloatWithMeasure : input: float -> float<'Measure>
 
         /// <summary>Creates a float32 value with units-of-measure</summary>
         ///
-        /// <param name="float32">The input float.</param>
+        /// <param name="input">The input float.</param>
         ///
         /// <returns>The float with units-of-measure.</returns>
-        val inline Float32WithMeasure : float32 -> float32<'Measure>
+        val inline Float32WithMeasure : input: float32 -> float32<'Measure>
 
         /// <summary>Creates a decimal value with units-of-measure</summary>
         ///
-        /// <param name="decimal">The input decimal.</param>
+        /// <param name="input">The input decimal.</param>
         ///
         /// <returns>The decimal with units of measure.</returns>
-        val inline DecimalWithMeasure : decimal -> decimal<'Measure>
+        val inline DecimalWithMeasure : input: decimal -> decimal<'Measure>
 
         /// <summary>Creates an int32 value with units-of-measure</summary>
         ///
-        /// <param name="int">The input int.</param>
+        /// <param name="input">The input int.</param>
         ///
         /// <returns>The int with units of measure.</returns>
-        val inline Int32WithMeasure : int -> int<'Measure>
+        val inline Int32WithMeasure : input: int -> int<'Measure>
 
         /// <summary>Creates an int64 value with units-of-measure</summary>
         ///
-        /// <param name="int64">The input int64.</param>
+        /// <param name="input">The input int64.</param>
         ///
         /// <returns>The int64 with units of measure.</returns>
-        val inline Int64WithMeasure : int64 -> int64<'Measure>
+        val inline Int64WithMeasure : input: int64 -> int64<'Measure>
 
         /// <summary>Creates an int16 value with units-of-measure</summary>
         ///
-        /// <param name="int16">The input int16.</param>
+        /// <param name="input">The input int16.</param>
         ///
         /// <returns>The int16 with units-of-measure.</returns>
-        val inline Int16WithMeasure : int16 -> int16<'Measure>
+        val inline Int16WithMeasure : input: int16 -> int16<'Measure>
 
         /// <summary>Creates an sbyte value with units-of-measure</summary>
         ///
-        /// <param name="sbyte">The input sbyte.</param>
+        /// <param name="input">The input sbyte.</param>
         ///
         /// <returns>The sbyte with units-of-measure.</returns>
-        val inline SByteWithMeasure : sbyte -> sbyte<'Measure>
+        val inline SByteWithMeasure : input: sbyte -> sbyte<'Measure>
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a nativeint value with units-of-measure</summary>
@@ -1441,7 +1445,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="s">The input string.</param>
         ///
         /// <returns>The parsed value.</returns>
-        val ParseInt32 : s:string -> int32
+        val ParseInt32 : s: string -> int32
 
         /// <summary>Parse an uint32 according to the rules used by the overloaded 'uint32' conversion operator when applied to strings</summary>
         ///
@@ -2108,42 +2112,42 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
-        /// <param name="func">The input Action delegate.</param>
+        /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
         static member  inline FromAction       : action:Action          -> (unit -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
-        /// <param name="func">The input Action delegate.</param>
+        /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
         static member  inline FromAction       : action:Action<'T>          -> ('T -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
-        /// <param name="func">The input Action delegate.</param>
+        /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F#funcfunction.</returns>
         static member  inline FromAction       : action:Action<'T1,'T2>          -> ('T1 -> 'T2 -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
-        /// <param name="func">The input Action delegate.</param>
+        /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
         static member  inline FromAction       : action:Action<'T1,'T2,'T3>          -> ('T1 -> 'T2 -> 'T3 -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
-        /// <param name="func">The input Action delegate.</param>
+        /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
         static member  inline FromAction       : action:Action<'T1,'T2,'T3,'T4>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> unit)
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
-        /// <param name="func">The input Action delegate.</param>
+        /// <param name="action">The input Action delegate.</param>
         ///
         /// <returns>The F# function.</returns>
         static member  inline FromAction       : action:Action<'T1,'T2,'T3,'T4,'T5>          -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> unit)
@@ -2454,7 +2458,7 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>The representation of "Value of type 'T"</summary>
         ///
-        /// <param name="Value">The input value.</param>
+        /// <param name="Item">The input value.</param>
         ///
         /// <returns>An option representing the value.</returns>
         | ValueSome: 'T -> 'T voption
@@ -3886,11 +3890,11 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
-            /// <param name="source">The source array.</param>
-            /// <param name="start1">The start index of the first dimension.</param>
-            /// <param name="finish1">The end index of the first dimension.</param>
+            /// <param name="target">The target array.</param>
+            /// <param name="index1">The fixed index of the first dimension.</param>
             /// <param name="index2">The fixed index of the second dimension.</param>
-            /// <param name="index3">The fixed index of the third dimension.</param>
+            /// <param name="start3">The start index of the third dimension.</param>
+            /// <param name="finish3">The end index of the third dimension.</param>
             /// <param name="source">The source array.</param>
             ///
             /// <returns>The one dimensional sub array from the given indices.</returns>
@@ -3899,7 +3903,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
-            /// <param name="source">The source array.</param>
+            /// <param name="target">The target array.</param>
             /// <param name="index1">The fixed index of the first dimension.</param>
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
@@ -3912,7 +3916,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Sets a 1D slice of a 3D array.</summary>
             ///
-            /// <param name="source">The source array.</param>
+            /// <param name="target">The target array.</param>
             /// <param name="start1">The start index of the first dimension.</param>
             /// <param name="finish1">The end index of the first dimension.</param>
             /// <param name="index2">The fixed index of the second dimension.</param>
@@ -4120,9 +4124,9 @@ namespace Microsoft.FSharp.Core
             /// <returns>The one dimensional sub array from the given indices.</returns>
             val inline GetArraySlice4DFixedTriple1 : source:'T[,,,] -> start1:int option -> finish1:int option -> index2:int -> index3:int -> index4:int -> 'T[]
             
-            /// <summary>Gets a 3D slice of a 4D array</summary>
+            /// <summary>Sets a 3D slice of a 4D array</summary>
             ///
-            /// <param name="source">The source array.</param>
+            /// <param name="target">The target array.</param>
             /// <param name="index1">The fixed index of the first dimension.</param>
             /// <param name="start2">The start index of the second dimension.</param>
             /// <param name="finish2">The end index of the second dimension.</param>
@@ -4520,7 +4524,7 @@ namespace Microsoft.FSharp.Core
             ///
             /// <returns>The unboxed result.</returns>
             [<CompiledName("Unbox")>]
-            val inline unbox<'T> : obj -> 'T
+            val inline unbox<'T> : value: obj -> 'T
 
             /// <summary>Generate a default value for any type. This is null for reference types, 
             /// For structs, this is struct value where all fields have the default value. 
@@ -4628,7 +4632,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>Calls GetHashCode() on the value</summary>
             ///
-            /// <param name="e1">The value.</param>
+            /// <param name="value">The value.</param>
             ///
             /// <returns>The hash code.</returns>
             [<CompiledName("Hash")>]
@@ -4880,7 +4884,7 @@ namespace Microsoft.FSharp.Control
     
     /// <summary>A delegate type associated with the F# event type <c>IEvent&lt;_&gt;</c></summary>
     ///
-    /// <param name="obj">The object that fired the event.</param>
+    /// <param name="sender">The object that fired the event.</param>
     /// <param name="args">The event arguments.</param>
     ///
     /// <category index="3">Events and Observables</category>

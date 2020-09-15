@@ -10,7 +10,7 @@
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <OtherFlags>$(OtherFlags) /warnon:1182 --times</OtherFlags>
+    <OtherFlags>$(OtherFlags) /warnon:1182 /warnon:3390 --times</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
 
@@ -21,7 +21,7 @@
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
     <IsPackable Condition="'$(OS)' != 'Unix'">true</IsPackable>
     <PackageDescription>The F# Compiler Services package For F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
-    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Compilere-Service-$(FSharpCompilerServiceReleaseNotesVersion)</PackageReleaseNotes>
+    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Compiler-Service-$(FSharpCompilerServiceReleaseNotesVersion)</PackageReleaseNotes>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
   </PropertyGroup>
 
@@ -235,7 +235,10 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith('netstandard'))">
+    <Compile Include="..\..\absil\ilsign.fsi">
+      <Link>AbsIL\ilsign.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilsign.fs">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilnativeres.fsi">

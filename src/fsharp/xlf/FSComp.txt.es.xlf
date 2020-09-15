@@ -22,6 +22,11 @@
         <target state="translated">Sobrecargas disponibles:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
+        <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
+        <target state="new">A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">Tipos de argumentos conocidos: {0}</target>
@@ -287,6 +292,11 @@
         <target state="translated">No se admite el algoritmo '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
+        <source>#i is not supported by the registered PackageManagers</source>
+        <target state="new">#i is not supported by the registered PackageManagers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Esta versión de F# no admite esta característica. Es posible que tenga que agregar /langversion:preview para usarla.</target>
@@ -305,6 +315,11 @@
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
         <target state="translated">Este registro anónimo tiene demasiados campos. Quite los campos adicionales {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -510,6 +525,41 @@
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
         <target state="translated">Use ensamblados de referencia para las referencias de .NET Framework cuando estén disponibles (habilitado de forma predeterminada).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocBadlyFormed">
+        <source>This XML comment is invalid: '{0}'</source>
+        <target state="new">This XML comment is invalid: '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocDuplicateParameter">
+        <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: multiple documentation entries for parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocInvalidParameterName">
+        <source>This XML comment is invalid: unknown parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: unknown parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingCrossReference">
+        <source>This XML comment is invalid: missing 'cref' attribute for cross-reference</source>
+        <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameter">
+        <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
+        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameterName">
+        <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
+        <target state="new">This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocUnresolvedCrossReference">
+        <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
+        <target state="new">This XML comment is invalid: unresolved cross-reference '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">

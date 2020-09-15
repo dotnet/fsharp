@@ -404,6 +404,7 @@ let warningOn err level specificWarnOn =
     | 1182 -> false // chkUnusedValue - off by default
     | 3218 -> false // ArgumentsInSigAndImplMismatch - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
+    | 3390 -> false // xmlDocBadlyFormed - off by default
     | _ -> level >= GetWarningLevel err 
 
 let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list = 
@@ -2090,21 +2091,21 @@ type CcuLoadFailureAction =
     | RaiseError
     | ReturnNone
 
-type LType =
+type Directive =
     | Resolution
-    | RestoreSource
+    | Include
 
 type LStatus =
     | Unprocessed
     | Processed
 
 type PackageManagerLine =
-    { LineType: LType
+    { Directive: Directive
       LineStatus: LStatus
       Line: string
       Range: range }
 
-    static member AddLineWithKey (packageKey: string) (lt:LType) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
+    static member AddLineWithKey (packageKey: string) (directive:Directive) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
         let path = PackageManagerLine.StripDependencyManagerKey packageKey line
         let map =
             let mutable found = false
@@ -2113,13 +2114,13 @@ type PackageManagerLine =
                 |> Map.map(fun key lines ->
                     if key = packageKey then
                         found <- true
-                        lines |> List.append [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
+                        lines |> List.append [{Directive=directive; LineStatus=LStatus.Unprocessed; Line=path; Range=m}]
                     else
                         lines)
             if found then
                 result
             else
-                result.Add(packageKey, [{LineType=lt; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
+                result.Add(packageKey, [{Directive=directive; LineStatus=LStatus.Unprocessed; Line=path; Range=m}])
         map
 
     static member RemoveUnprocessedLines (packageKey: string) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list> =
@@ -3149,6 +3150,52 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member tcConfig.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         data.ResolveSourceFile(m, nm, pathLoadedFrom)
 
+    member tcConfig.MsBuildResolve (references, mode, errorAndWarningRange, showMessages) =
+        let logMessage showMessages = 
+            if showMessages && tcConfig.showReferenceResolutions then (fun (message: string)->dprintf "%s\n" message)
+            else ignore
+
+        let logDiagnostic showMessages = 
+            (fun isError code message->
+                if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then 
+                  if isError then
+                    errorR(MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
+                  else
+                    match code with 
+                    // These are warnings that mean 'not resolved' for some assembly.
+                    // Note that we don't get to know the name of the assembly that couldn't be resolved.
+                    // Ignore these and rely on the logic below to emit an error for each unresolved reference.
+                    | "MSB3246" // Resolved file has a bad image, no metadata, or is otherwise inaccessible.
+                    | "MSB3106"  
+                        -> ()
+                    | _ -> 
+                        if code = "MSB3245" then 
+                            errorR(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange))
+                        else
+                            warning(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange)))
+
+        let targetProcessorArchitecture = 
+            match tcConfig.platform with
+            | None -> "MSIL"
+            | Some X86 -> "x86"
+            | Some AMD64 -> "amd64"
+            | Some IA64 -> "ia64"
+ 
+        try 
+            tcConfig.legacyReferenceResolver.Resolve
+               (tcConfig.resolutionEnvironment, 
+                references, 
+                tcConfig.targetFrameworkVersion, 
+                tcConfig.GetTargetFrameworkDirectories(), 
+                targetProcessorArchitecture, 
+                tcConfig.fsharpBinariesDir, // FSharp binaries directory
+                tcConfig.includes, // Explicit include directories
+                tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
+                logMessage showMessages, logDiagnostic showMessages)
+        with 
+            ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
+
+
     // NOTE!! if mode=Speculative then this method must not report ANY warnings or errors through 'warning' or 'error'. Instead
     // it must return warnings and errors as data
     //
@@ -3162,7 +3209,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
         if originalReferences=[] then [], []
-        else            
+        else
             // Group references by name with range values in the grouped value list.
             // In the grouped reference, store the index of the last use of the reference.
             let groupedReferences = 
@@ -3176,36 +3223,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                     assemblyName, highestPosition, assemblyGroup)
                 |> Array.ofSeq
 
-            let logMessage showMessages = 
-                if showMessages && tcConfig.showReferenceResolutions then (fun (message: string)->dprintf "%s\n" message)
-                else ignore
-
-            let logDiagnostic showMessages = 
-                (fun isError code message->
-                    if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then 
-                      if isError then
-                        errorR(MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
-                      else
-                        match code with 
-                        // These are warnings that mean 'not resolved' for some assembly.
-                        // Note that we don't get to know the name of the assembly that couldn't be resolved.
-                        // Ignore these and rely on the logic below to emit an error for each unresolved reference.
-                        | "MSB3246" // Resolved file has a bad image, no metadata, or is otherwise inaccessible.
-                        | "MSB3106"  
-                            -> ()
-                        | _ -> 
-                            if code = "MSB3245" then 
-                                errorR(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange))
-                            else
-                                warning(MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange)))
-
-            let targetProcessorArchitecture = 
-                    match tcConfig.platform with
-                    | None -> "MSIL"
-                    | Some X86 -> "x86"
-                    | Some AMD64 -> "amd64"
-                    | Some IA64 -> "ia64"
-
             // First, try to resolve everything as a file using simple resolution
             let resolvedAsFile = 
                 groupedReferences 
@@ -3214,29 +3231,12 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                                 (maxIndexOfReference, assemblyResolution))  
                 |> Array.filter(fun (_, refs)->refs |> isNil |> not)
                 
-                                       
-            // Whatever is left, pass to MSBuild.
-            let Resolve(references, showMessages) =
-                try 
-                    tcConfig.legacyReferenceResolver.Resolve
-                       (tcConfig.resolutionEnvironment, 
-                        references, 
-                        tcConfig.targetFrameworkVersion, 
-                        tcConfig.GetTargetFrameworkDirectories(), 
-                        targetProcessorArchitecture, 
-                        tcConfig.fsharpBinariesDir, // FSharp binaries directory
-                        tcConfig.includes, // Explicit include directories
-                        tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
-                        logMessage showMessages, logDiagnostic showMessages)
-                with 
-                    ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
-            
             let toMsBuild = [|0..groupedReferences.Length-1|] 
                              |> Array.map(fun i->(p13 groupedReferences.[i]), (p23 groupedReferences.[i]), i) 
                              |> Array.filter (fun (_, i0, _)->resolvedAsFile|>Array.exists(fun (i1, _) -> i0=i1)|>not)
                              |> Array.map(fun (ref, _, i)->ref, string i)
 
-            let resolutions = Resolve(toMsBuild, (*showMessages*)true)  
+            let resolutions = tcConfig.MsBuildResolve(toMsBuild, mode, errorAndWarningRange, (*showMessages*)true)  
 
             // Map back to original assembly resolutions.
             let resolvedByMsbuild = 
@@ -3271,7 +3271,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 else 
                     // MSBuild resolution may have unified the result of two duplicate references. Try to re-resolve now.
                     // If re-resolution worked then this was a removed duplicate.
-                    Resolve([|originalName, ""|], (*showMessages*)false).Length<>0 
+                    tcConfig.MsBuildResolve([|originalName, ""|], mode, errorAndWarningRange, (*showMessages*)false).Length<>0 
                     
             let unresolvedReferences =                     
                     groupedReferences 
@@ -3713,7 +3713,16 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     // When building desktop then we need these additional dependencies
                     yield AssemblyReference(rangeStartup, "System.Numerics.dll", None)
                     yield AssemblyReference(rangeStartup, "System.dll", None)
-                    yield AssemblyReference(rangeStartup, "netstandard.dll", None)
+                    let asm = AssemblyReference(rangeStartup, "netstandard.dll", None)
+                    let found =
+                        if tcConfig.useSimpleResolution then
+                            match tcConfig.ResolveLibWithDirectories (CcuLoadFailureAction.ReturnNone, asm) with
+                            | Some _ -> true
+                            | None -> false
+                        else
+                            let resolutions = tcConfig.MsBuildResolve([|asm.Text, ""|], ResolveAssemblyReferenceMode.Speculative, rangeStartup, (*showMessages*)false)
+                            resolutions.Length = 1
+                    if found then yield asm
 
             if tcConfig.framework then
                 for s in defaultReferencesForScriptsAndOutOfProjectSources tcConfig.useFsiAuxLib assumeDotNetFramework tcConfig.useSdkRefs do
@@ -5058,7 +5067,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
-      packageRequireF: 'state -> IDependencyManagerProvider * LType * range * string -> 'state,
+      packageRequireF: 'state -> IDependencyManagerProvider * Directive * range * string -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder, inp, pathOfMetaCommandSource, state0) =
 
@@ -5072,22 +5081,7 @@ let ProcessMetaCommandsFromInput
     let ProcessMetaCommand state hash =
         let mutable matchedm = range0
         try 
-            match hash with 
-            | ParsedHashDirective("I", args, m) ->
-               if not canHaveScriptMetaCommands then 
-                   errorR(HashIncludeNotAllowedInNonScript m)
-               match args with 
-               | [path] -> 
-                   matchedm <- m
-                   tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
-                   state
-               | _ -> 
-                   errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
-                   state
-            | ParsedHashDirective("nowarn",numbers,m) ->
-               List.fold (fun state d -> nowarnF state (m,d)) state numbers
-
-            | ParsedHashDirective(("reference" | "r"),args,m) -> 
+            let processDependencyManagerDirectives directive args m =            
                 if not canHaveScriptMetaCommands then
                     errorR(HashReferenceNotAllowedInNonScript m)
 
@@ -5107,10 +5101,14 @@ let ProcessMetaCommandsFromInput
                     match dm with
                     | _, dependencyManager when not(isNull dependencyManager) ->
                         if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                            packageRequireF state (dependencyManager, LType.Resolution, m, path)
+                            packageRequireF state (dependencyManager, directive, m, path)
                         else
                             errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                             state
+
+                    | _, _ when directive = Directive.Include ->
+                        errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+                        state
 
                     // #r "Assembly"
                     | path, _ ->
@@ -5123,6 +5121,27 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
                    state
+
+            match hash with 
+            | ParsedHashDirective("I", args, m) ->
+               if not canHaveScriptMetaCommands then 
+                   errorR(HashIncludeNotAllowedInNonScript m)
+               match args with 
+               | [path] -> 
+                   matchedm <- m
+                   tcConfig.AddIncludePath(m, path, pathOfMetaCommandSource)
+                   state
+               | _ -> 
+                   errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
+                   state
+            | ParsedHashDirective("nowarn",numbers,m) ->
+               List.fold (fun state d -> nowarnF state (m,d)) state numbers
+
+            | ParsedHashDirective(("reference" | "r"), args, m) -> 
+                processDependencyManagerDirectives Directive.Resolution args m
+
+            | ParsedHashDirective(("i"), args, m) -> 
+                processDependencyManagerDirectives Directive.Include args m
 
             | ParsedHashDirective("load", args, m) -> 
                if not canHaveScriptMetaCommands then 
@@ -5387,7 +5406,7 @@ module ScriptPreprocessClosure =
                     let packageManagerKey, packageManagerLines = kv.Key, kv.Value
                     match packageManagerLines with
                     | [] -> ()
-                    | { LineType=_; LineStatus=_; Line=_; Range=m } :: _ ->
+                    | { Directive=_; LineStatus=_; Line=_; Range=m } :: _ ->
                         let reportError =
                             let report errorType err msg =
                                 let error = err, msg
@@ -5405,7 +5424,12 @@ module ScriptPreprocessClosure =
                                 errorR(Error(tcConfig.dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
 
                             | dependencyManager ->
-                                let packageManagerTextLines = packageManagerLines |> List.map(fun l -> l.Line)
+                                let directive d =
+                                    match d with
+                                    | Directive.Resolution -> "r"
+                                    | Directive.Include -> "i"
+
+                                let packageManagerTextLines = packageManagerLines |> List.map(fun l -> directive l.Directive, l.Line)
                                 let result = tcConfig.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
                                 match result.Success with
                                 | true ->

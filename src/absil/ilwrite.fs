@@ -13,13 +13,10 @@ open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
 open FSharp.Compiler.AbstractIL.Internal.Support
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-#if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-#endif
-
 
 #if DEBUG
 let showEntryLookups = false
@@ -145,66 +142,6 @@ let applyFixup32 (data: byte[]) offset v =
     data.[offset+1] <- b1 v
     data.[offset+2] <- b2 v
     data.[offset+3] <- b3 v
-
-//---------------------------------------------------------------------
-// Strong name signing
-//---------------------------------------------------------------------
-
-type ILStrongNameSigner =  
-    | PublicKeySigner of Support.pubkey
-    | PublicKeyOptionsSigner of Support.pubkeyOptions
-    | KeyPair of Support.keyPair
-    | KeyContainer of Support.keyContainerName
-
-    static member OpenPublicKeyOptions s p = PublicKeyOptionsSigner((Support.signerOpenPublicKeyFile s), p)
-
-    static member OpenPublicKey pubkey = PublicKeySigner pubkey
-
-    static member OpenKeyPairFile s = KeyPair(Support.signerOpenKeyPairFile s)
-
-    static member OpenKeyContainer s = KeyContainer s
-
-    member s.Close() = 
-        match s with 
-        | PublicKeySigner _
-        | PublicKeyOptionsSigner _
-        | KeyPair _ -> ()
-        | KeyContainer containerName -> Support.signerCloseKeyContainer containerName
-      
-    member s.IsFullySigned =
-        match s with 
-        | PublicKeySigner _ -> false
-        | PublicKeyOptionsSigner pko -> let _, usePublicSign = pko
-                                        usePublicSign
-        | KeyPair _ | KeyContainer _ -> true
-
-    member s.PublicKey = 
-        match s with 
-        | PublicKeySigner pk -> pk
-        | PublicKeyOptionsSigner pko -> let pk, _ = pko
-                                        pk
-        | KeyPair kp -> Support.signerGetPublicKeyForKeyPair kp
-        | KeyContainer kn -> Support.signerGetPublicKeyForKeyContainer kn
-
-    member s.SignatureSize = 
-        let pkSignatureSize pk =
-            try Support.signerSignatureSize pk
-            with e -> 
-              failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-              0x80 
-        match s with 
-        | PublicKeySigner pk -> pkSignatureSize pk
-        | PublicKeyOptionsSigner pko -> let pk, _ = pko
-                                        pkSignatureSize pk
-        | KeyPair kp -> pkSignatureSize (Support.signerGetPublicKeyForKeyPair kp)
-        | KeyContainer kn -> pkSignatureSize (Support.signerGetPublicKeyForKeyContainer kn)
-
-    member s.SignFile file = 
-        match s with 
-        | PublicKeySigner _ -> ()
-        | PublicKeyOptionsSigner _ -> ()
-        | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
-        | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
 
 //---------------------------------------------------------------------
 // TYPES FOR TABLES

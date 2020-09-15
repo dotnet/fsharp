@@ -401,7 +401,7 @@ namespace Microsoft.FSharp.Core
     [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint8<[<Measure>] 'Measure> = byte<'Measure>
     [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>] type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
-    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    /// <summary>Represents a managed pointer in F# code.</summary>
     type byref<'T> = (# "!0&" #)
 
     /// <summary>Represents a managed pointer in F# code.</summary> 
@@ -3484,7 +3484,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-    [<DebuggerDisplay("{DebugDisplay,nq}")>]
+    [<DebuggerDisplay("{get_DebugDisplay(this),nq}")>]
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]

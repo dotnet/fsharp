@@ -21,6 +21,8 @@ module Native =
     [<DllImport("NoneExistentDll")>]
     extern int NoneSuch()
 
+type scriptHost (?langVersion: LangVersion) = inherit FSharpScript(langVersion=defaultArg langVersion LangVersion.Preview)
+
 type DependencyManagerInteractiveTests() =
 
     let getValue ((value: Result<FsiValue option, exn>), (errors: FSharpErrorInfo[])) =
@@ -30,16 +32,17 @@ type DependencyManagerInteractiveTests() =
         | Ok(value) -> value
         | Error ex -> raise ex
 
-    let ignoreValue = getValue >> ignore
+    let getErrors ((_value: Result<FsiValue option, exn>), (errors: FSharpErrorInfo[])) =
+        errors
 
-    let scriptHost () = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
+    let ignoreValue = getValue >> ignore
 
     [<Fact>]
     member __.``SmokeTest - #r nuget``() =
         let text = """
 #r @"nuget:Newtonsoft.Json, Version=9.0.1"
 0"""
-        use script = scriptHost()
+        use script = new scriptHost()
         let opt = script.Eval(text) |> getValue
         let value = opt.Value
         Assert.Equal(typeof<int>, value.ReflectionType)
@@ -50,12 +53,20 @@ type DependencyManagerInteractiveTests() =
         let text = """
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
 0"""
-        use script = scriptHost()
+        use script = new scriptHost()
         let opt = script.Eval(text) |> getValue
         let value = opt.Value
         Assert.Equal(typeof<int>, value.ReflectionType)
         Assert.Equal(0, value.ReflectionValue :?> int)
 
+(*
+    [<Theory>]
+    [<InlineData("""#r "#i "unknown:Astring" """, """ """)>]
+    member __.``syntax produces error messages in FSharp 4.7``(code:string, message: string) =
+        use script = new scriptHost()
+        let errors = script.Eval(code) |> getErrors
+        Assert.Contains(message, errors |> Array.map(fun e -> e.Message))
+*)
     [<Fact>]
     member __.``Use Dependency Manager to resolve dependency FSharp.Data``() =
 
@@ -72,13 +83,13 @@ type DependencyManagerInteractiveTests() =
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "net472")
+            let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")
             Assert.Equal(true, result.Success)
             Assert.Equal(1, result.Resolutions |> Seq.length)
             Assert.Equal(1, result.SourceFiles |> Seq.length)
             Assert.Equal(1, result.Roots |> Seq.length)
 
-        let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "netcoreapp3.1")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result.Success)
         Assert.Equal(1, result.Resolutions |> Seq.length)
         Assert.Equal(1, result.SourceFiles |> Seq.length)
@@ -102,13 +113,13 @@ type DependencyManagerInteractiveTests() =
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            let result = dp.Resolve(idm, ".fsx", [|"System.Collections.Immutable.DoesNotExist"|], reportError, "net472")
+            let result = dp.Resolve(idm, ".fsx", [|"r", "System.Collections.Immutable.DoesNotExist"|], reportError, "net472")
             Assert.Equal(false, result.Success)
             Assert.Equal(0, result.Resolutions |> Seq.length)
             Assert.Equal(0, result.SourceFiles |> Seq.length)
             Assert.Equal(0, result.Roots |> Seq.length)
 
-        let result = dp.Resolve(idm, ".fsx", [|"System.Collections.Immutable.DoesNotExist"|], reportError, "netcoreapp3.1")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "System.Collections.Immutable.DoesNotExist"|], reportError, "netcoreapp3.1")
         Assert.Equal(false, result.Success)
         Assert.Equal(0, result.Resolutions |> Seq.length)
         Assert.Equal(0, result.SourceFiles |> Seq.length)
@@ -132,7 +143,7 @@ type DependencyManagerInteractiveTests() =
 
         let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            let result1 = dp1.Resolve(idm1, ".fsx", [|"FSharp.Data"|], reportError, "net472")
+            let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")
             Assert.Equal(true, result1.Success)
             Assert.Equal(1, result1.Resolutions |> Seq.length)
             Assert.True((result1.Resolutions |> Seq.head).Contains("\\net45\\"))
@@ -140,7 +151,7 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(1, result1.Roots |> Seq.length)
             Assert.True((result1.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
 
-        let result2 = dp1.Resolve(idm1, ".fsx", [|"FSharp.Data, 3.3.3"|], reportError, "netcoreapp3.1")
+        let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data, 3.3.3"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result2.Success)
         Assert.Equal(1, result2.Resolutions |> Seq.length)
         let expected2 =
@@ -157,7 +168,7 @@ type DependencyManagerInteractiveTests() =
         let idm2 = dp2.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            let result3 = dp2.Resolve(idm2, ".fsx", [|"System.Json, Version=4.6.0"|], reportError, "net472")
+            let result3 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "net472")
             Assert.Equal(true, result3.Success)
             Assert.Equal(1, result3.Resolutions |> Seq.length)
             Assert.True((result3.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
@@ -165,7 +176,7 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(1, result3.SourceFiles |> Seq.length)
             Assert.True((result3.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
 
-        let result4 = dp2.Resolve(idm2, ".fsx", [|"System.Json, Version=4.6.0"|], reportError, "netcoreapp3.1")
+        let result4 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result4.Success)
         Assert.Equal(1, result4.Resolutions |> Seq.length)
         let expected4 =
@@ -195,7 +206,7 @@ type DependencyManagerInteractiveTests() =
         let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            let result1 = dp1.Resolve(idm1, ".fsx", [|"Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net472")
+            let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net472")
             Assert.Equal(true, result1.Success)
             Assert.Equal(6, result1.Resolutions |> Seq.length)
             Assert.True((result1.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
@@ -205,7 +216,7 @@ type DependencyManagerInteractiveTests() =
 
         // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
         // Those assemblies must be delivered by nuget for desktop apps
-        let result2 = dp1.Resolve(idm1, ".fsx", [|"Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "netcoreapp3.1")
+        let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result2.Success)
         Assert.Equal(2, result2.Resolutions |> Seq.length)
         let expected =
@@ -232,7 +243,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
 """
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            use script = scriptHost()
+            use script = new scriptHost()
             let opt = script.Eval(text) |> getValue
             let value = opt.Value
             Assert.Equal(typeof<string>, value.ReflectionType)
@@ -243,10 +254,10 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
     [<Fact>]
     member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         let packagemanagerlines = [|
-            "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "Microsoft.ML,version=1.4.0-preview"
-            "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
         |]
 
         let reportError =
@@ -340,10 +351,10 @@ printfn ""%A"" result
     [<Fact>]
     member __.``Use NativeResolver to resolve native dlls.``() =
         let packagemanagerlines = [|
-            "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "Microsoft.ML,version=1.4.0-preview"
-            "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
         |]
 
         let reportError =
@@ -423,10 +434,10 @@ printfn ""%A"" result
     [<Fact>]
     member __.``Use AssemblyResolver to resolve assemblies``() =
         let packagemanagerlines = [|
-            "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
-            "Microsoft.ML,version=1.4.0-preview"
-            "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
+            "r", "Microsoft.ML,version=1.4.0-preview"
+            "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
+            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
         |]
 
         let reportError =
@@ -484,7 +495,7 @@ x |> Seq.iter(fun r ->
 
     [<Fact>]
     member __.``Verify that referencing FSharp.Core fails with FSharp Scripts``() =
-        let packagemanagerlines = [| "FSharp.Core,version=4.7.1" |]
+        let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
 
         let reportError =
             let report errorType code message =
@@ -510,7 +521,7 @@ x |> Seq.iter(fun r ->
 
     [<Fact>]
     member __.``Verify that referencing FSharp.Core succeeds with CSharp Scripts``() =
-        let packagemanagerlines = [| "FSharp.Core,version=4.7.1" |]
+        let packagemanagerlines = [| "r", "FSharp.Core,version=4.7.1" |]
 
         let reportError =
             let report errorType code message =
@@ -566,13 +577,13 @@ x |> Seq.iter(fun r ->
         let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-            let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "net472")
+            let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")
             Assert.Equal(true, result.Success)
             Assert.Equal(1, result.Resolutions |> Seq.length)
             Assert.Equal(1, result.SourceFiles |> Seq.length)
             Assert.Equal(1, result.Roots |> Seq.length)
 
-        let result = dp.Resolve(idm, ".fsx", [|"FSharp.Data"|], reportError, "netcoreapp3.1")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result.Success)
         Assert.Equal(1, result.Resolutions |> Seq.length)
         Assert.Equal(1, result.SourceFiles |> Seq.length)
@@ -644,12 +655,13 @@ x |> Seq.iter(fun r ->
         let expected = [|
             """  F# Interactive directives:"""
             """"""
-            """    #r "file.dll";;                   // Reference (dynamically load) the given DLL"""
-            """    #I "path";;                       // Add the given search path for referenced DLLs"""
-            """    #load "file.fs" ...;;             // Load the given file(s) as if compiled and referenced"""
-            """    #time ["on"|"off"];;              // Toggle timing on/off"""
-            """    #help;;                           // Display help"""
-            """    #quit;;                           // Exit"""
+            """    #r "file.dll";;                               // Reference (dynamically load) the given DLL"""
+            """    #i "package source uri";;                     // Include package source uri when searching for packages"""
+            """    #I "path";;                                   // Add the given search path for referenced DLLs"""
+            """    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced"""
+            """    #time ["on"|"off"];;                          // Toggle timing on/off"""
+            """    #help;;                                       // Display help"""
+            """    #quit;;                                       // Exit"""
             """"""
             """  F# Interactive command line options:"""
             """"""
@@ -690,14 +702,15 @@ x |> Seq.iter(fun r ->
         let expected = [|
             """  F# Interactive directives:"""
             """"""
-            """    #r "file.dll";;                   // Reference (dynamically load) the given DLL"""
-            """    #I "path";;                       // Add the given search path for referenced DLLs"""
-            """    #load "file.fs" ...;;             // Load the given file(s) as if compiled and referenced"""
-            """    #time ["on"|"off"];;              // Toggle timing on/off"""
-            """    #help;;                           // Display help"""
-            """    #r "nuget:FSharp.Data, 3.1.2";;   // Load Nuget Package 'FSharp.Data' version '3.1.2'"""
-            """    #r "nuget:FSharp.Data";;          // Load Nuget Package 'FSharp.Data' with the highest version"""
-            """    #quit;;                           // Exit"""
+            """    #r "file.dll";;                               // Reference (dynamically load) the given DLL"""
+            """    #i "package source uri";;                     // Include package source uri when searching for packages"""
+            """    #I "path";;                                   // Add the given search path for referenced DLLs"""
+            """    #load "file.fs" ...;;                         // Load the given file(s) as if compiled and referenced"""
+            """    #time ["on"|"off"];;                          // Toggle timing on/off"""
+            """    #help;;                                       // Display help"""
+            """    #r "nuget:FSharp.Data, 3.1.2";;               // Load Nuget Package 'FSharp.Data' version '3.1.2'"""
+            """    #r "nuget:FSharp.Data";;                      // Load Nuget Package 'FSharp.Data' with the highest version"""
+            """    #quit;;                                       // Exit"""
             """"""
             """  F# Interactive command line options:"""
             """"""
@@ -731,3 +744,4 @@ x |> Seq.iter(fun r ->
         output.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
+

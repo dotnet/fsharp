@@ -17,8 +17,8 @@ doSomething {Record.field1=0; field2=0}
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 20, Line 4, Col 1,  Line 4, Col 40, "The result of this expression has type 'int list' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
-            (Error   1,  Line 4, Col 13, Line 4, Col 40, "This expression was expected to have type\n    'Record list'    \nbut here has type\n    'Record'    ")]
+            (Error   1,  Line 4, Col 13, Line 4, Col 40, "This expression was expected to have type\n    'Record list'    \nbut here has type\n    'Record'    ")
+            (Warning 20, Line 4, Col 1,  Line 4, Col 40, "The result of this expression has type 'int list' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")]
 
     [<Fact>]
     let ``Comma In Rec Ctor``() =
@@ -46,8 +46,8 @@ let p =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 20,  Line 7, Col 12, Line 7, Col 25, "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.")
             (Error   39,  Line 7, Col 12, Line 7, Col 16, "The value or constructor 'Name' is not defined. Maybe you want one of the following:" + System.Environment.NewLine + "   nan")
+            (Warning 20,  Line 7, Col 12, Line 7, Col 25, "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.")
             (Error   39,  Line 8, Col 12, Line 8, Col 15, "The value or constructor 'Age' is not defined.")
             (Error   501, Line 7, Col 5,  Line 8, Col 21, "The object constructor 'Person' takes 0 argument(s) but is here given 1. The required signature is 'new : unit -> Person'. If some of the arguments are meant to assign values to properties, consider separating those arguments with a comma (',').")]
 

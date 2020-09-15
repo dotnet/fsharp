@@ -22,6 +22,11 @@
         <target state="translated">可用的多載:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
+        <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
+        <target state="new">A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
         <source>Known types of arguments: {0}</source>
         <target state="translated">已知的引數類型: {0}</target>
@@ -287,6 +292,11 @@
         <target state="translated">不支援演算法 '{0}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
+        <source>#i is not supported by the registered PackageManagers</source>
+        <target state="new">#i is not supported by the registered PackageManagers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">此版本的 F# 不支援此功能。您可能需要新增 /langversion:preview 才能使用此功能。</target>
@@ -305,6 +315,11 @@
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
         <target state="translated">此匿名記錄有太多欄位。請移除額外的欄位 {0}。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -510,6 +525,41 @@
       <trans-unit id="useSdkRefs">
         <source>Use reference assemblies for .NET framework references when available (Enabled by default).</source>
         <target state="translated">請在可行的情況下使用適用於 .NET 架構參考的參考組件 (預設會啟用)。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocBadlyFormed">
+        <source>This XML comment is invalid: '{0}'</source>
+        <target state="new">This XML comment is invalid: '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocDuplicateParameter">
+        <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: multiple documentation entries for parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocInvalidParameterName">
+        <source>This XML comment is invalid: unknown parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: unknown parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingCrossReference">
+        <source>This XML comment is invalid: missing 'cref' attribute for cross-reference</source>
+        <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameter">
+        <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
+        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameterName">
+        <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
+        <target state="new">This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocUnresolvedCrossReference">
+        <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
+        <target state="new">This XML comment is invalid: unresolved cross-reference '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">

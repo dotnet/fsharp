@@ -394,19 +394,13 @@ module ReflectUtils =
         | TupleValue of TupleType * (obj * Type)[]
         | FunctionClosureValue of Type 
         | RecordValue of (string * obj * Type)[]
-        | UnionCaseValue of declaringType: Type option * string * (string * (obj * Type))[]
+        | UnionCaseValue of string * (string * (obj * Type))[]
         | ExceptionValue of Type * (string * (obj * Type))[]
         | NullValue
         | UnitValue
         | ObjectValue of obj
 
     module Value =
-
-        // Returns true if a given type has the RequireQualifiedAccess attribute
-        let private requiresQualifiedAccess (declaringType: Type) =
-            let rqaAttr = declaringType.GetCustomAttribute(typeof<RequireQualifiedAccessAttribute>, false)
-            isNull rqaAttr |> not
-
         // Analyze an object to see if it the representation
         // of an F# value.
         let GetValueInfoOfObject (bindingFlags: BindingFlags) (obj: obj) =
@@ -440,10 +434,7 @@ module ReflectUtils =
                 let tag, vals = FSharpValue.GetUnionFields (obj, reprty, bindingFlags) 
                 let props = tag.GetFields()
                 let pvals = (props, vals) ||> Array.map2 (fun prop v -> prop.Name, (v, prop.PropertyType))
-                let declaringType =
-                    if requiresQualifiedAccess tag.DeclaringType then Some tag.DeclaringType
-                    else None
-                UnionCaseValue(declaringType, tag.Name, pvals)
+                UnionCaseValue(tag.Name, pvals)
 
             elif FSharpType.IsExceptionRepresentation(reprty, bindingFlags) then 
                 let props = FSharpType.GetExceptionFields(reprty, bindingFlags) 
@@ -472,17 +463,13 @@ module ReflectUtils =
                     | _ -> false
                 if isNullaryUnion then
                     let nullaryCase = FSharpType.GetUnionCases ty |> Array.filter (fun uc -> uc.GetFields().Length = 0) |> Array.item 0
-                    let declaringType =
-                        if requiresQualifiedAccess ty then Some ty
-                        else None
-                    UnionCaseValue(declaringType, nullaryCase.Name, [| |])
+                    UnionCaseValue(nullaryCase.Name, [| |])
                 elif isUnitType ty then UnitValue
                 else NullValue
             | _ -> 
                 GetValueInfoOfObject bindingFlags (obj) 
 
 module Display = 
-
     open ReflectUtils
     open LayoutOps
     open TaggedTextOps
@@ -494,12 +481,6 @@ module Display =
             let methInfo = ty.GetMethod("ToString", BindingFlags.Public ||| BindingFlags.Instance, null, [| |], null)
             methInfo.DeclaringType = typeof<System.Object>
         with _e -> false
-
-    /// If "str" ends with "ending" then remove it from "str", otherwise no change.
-    let trimEnding (ending:string) (str:string) =
-        if str.EndsWith(ending, StringComparison.Ordinal) then 
-            str.Substring(0, str.Length - ending.Length) 
-        else str
 
     let catchExn f = try Choice1Of2 (f ()) with e -> Choice2Of2 e
 
@@ -732,8 +713,8 @@ module Display =
         | null -> None 
         | _ -> 
             match Value.GetValueInfo bindingFlags (x, ty) with
-            | UnionCaseValue (_, "Cons", recd) -> Some (unpackCons recd)
-            | UnionCaseValue (_, "Empty", [| |]) -> None
+            | UnionCaseValue ("Cons", recd) -> Some (unpackCons recd)
+            | UnionCaseValue ("Empty", [| |]) -> None
             | _ -> failwith "List value had unexpected ValueInfo"
 
     let structL = wordL (tagKeyword "struct")
@@ -1025,14 +1006,9 @@ module Display =
                 countNodes 1
                 wordL (tagPunctuation "[]")
 
-        and unionCaseValueL depthLim prec (declaringType: Type option) unionCaseName recd =
+        and unionCaseValueL depthLim prec unionCaseName recd =
             countNodes 1
-            let caseName =
-                match declaringType with
-                | None ->
-                    wordL (tagMethod unionCaseName)
-                | Some declaringType ->
-                    wordL (tagClass declaringType.Name) ^^ sepL (tagPunctuation ".") ^^ wordL (tagMethod unionCaseName)
+            let caseName = wordL (tagMethod unionCaseName)
             match recd with
             | [] -> caseName
             | recd -> (caseName --- recdAtomicTupleL depthLim recd) |> bracketIfL (prec <= Precedence.BracketIfTupleOrNotAtomic)
@@ -1185,12 +1161,12 @@ module Display =
             | RecordValue items -> 
                 recordValueL depthLim (Array.toList items)
 
-            | UnionCaseValue (_,constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
+            | UnionCaseValue (constr,recd) when // x is List<T>. Note: "null" is never a valid list value. 
                                                     x<>null && isListType (x.GetType()) ->
                 listValueL depthLim constr recd
 
-            | UnionCaseValue(declaringType, unionCaseName, recd) ->
-                unionCaseValueL depthLim prec declaringType unionCaseName (Array.toList recd)
+            | UnionCaseValue(unionCaseName, recd) ->
+                unionCaseValueL depthLim prec unionCaseName (Array.toList recd)
 
             | ExceptionValue(exceptionType, recd) ->
                 fsharpExceptionL depthLim prec exceptionType (Array.toList recd)
