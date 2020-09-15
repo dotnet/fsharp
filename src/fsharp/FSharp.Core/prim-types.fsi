@@ -1395,50 +1395,50 @@ namespace Microsoft.FSharp.Core
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a nativeint value with units-of-measure</summary>
         ///
-        /// <param name="nativeint">The input nativeint.</param>
+        /// <param name="input">The input nativeint.</param>
         ///
         /// <returns>The nativeint with units-of-measure.</returns>
-        val inline IntPtrWithMeasure : nativeint -> nativeint<'Measure>
+        val inline IntPtrWithMeasure : input: nativeint -> nativeint<'Measure>
 
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint value with units-of-measure</summary>
         ///
-        /// <param name="uint">The input uint.</param>
+        /// <param name="input">The input uint.</param>
         ///
         /// <returns>The uint with units-of-measure.</returns>
-        val inline UInt32WithMeasure : uint -> uint<'Measure>
+        val inline UInt32WithMeasure : input: uint -> uint<'Measure>
         
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint64 value with units-of-measure</summary>
         ///
-        /// <param name="uint64">The input uint64.</param>
+        /// <param name="input">The input uint64.</param>
         ///
         /// <returns>The uint64 with units-of-measure.</returns>
-        val inline UInt64WithMeasure : uint64 -> uint64<'Measure>
+        val inline UInt64WithMeasure : input: uint64 -> uint64<'Measure>
         
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint16 value with units-of-measure</summary>
         ///
-        /// <param name="uint16">The input uint16.</param>
+        /// <param name="input">The input uint16.</param>
         ///
         /// <returns>The uint16 with units-of-measure.</returns>
-        val inline UInt16WithMeasure : uint16 -> uint16<'Measure>
+        val inline UInt16WithMeasure : input: uint16 -> uint16<'Measure>
         
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a byte value with units-of-measure</summary>
         ///
-        /// <param name="byte">The input byte.</param>
+        /// <param name="input">The input byte.</param>
         ///
         /// <returns>The byte with units-of-measure.</returns>
-        val inline ByteWithMeasure : byte -> byte<'Measure>
+        val inline ByteWithMeasure : input: byte -> byte<'Measure>
         
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a unativeint value with units-of-measure</summary>
         ///
-        /// <param name="unativeint">The input unativeint.</param>
+        /// <param name="input">The input unativeint.</param>
         ///
         /// <returns>The unativeint with units-of-measure.</returns>
-        val inline UIntPtrWithMeasure : unativeint -> unativeint<'Measure>
+        val inline UIntPtrWithMeasure : input: unativeint -> unativeint<'Measure>
 
         /// <summary>Parse an int32 according to the rules used by the overloaded 'int32' conversion operator when applied to strings</summary>
         ///
