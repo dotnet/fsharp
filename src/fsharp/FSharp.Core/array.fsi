@@ -1010,7 +1010,7 @@ namespace Microsoft.FSharp.Collections
         /// the remaining elements in a new array.</summary>
         ///
         /// <param name="predicate">A function that evaluates an element of the array to a boolean value.</param>
-        /// <param name="source">The input array.</param>
+        /// <param name="array">The input array.</param>
         ///
         /// <returns>The created sub array.</returns>
         ///
@@ -1293,7 +1293,7 @@ namespace Microsoft.FSharp.Collections
         /// Returns <c>None</c> if index is negative or the input array does not contain enough elements.</summary>
         ///
         /// <param name="index">The index of element to retrieve.</param>
-        /// <param name="source">The input array.</param>
+        /// <param name="array">The input array.</param>
         ///
         /// <returns>The nth element of the array or <c>None</c>.</returns>
         ///

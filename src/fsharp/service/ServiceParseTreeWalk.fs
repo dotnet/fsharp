@@ -682,7 +682,7 @@ module public AstTraversal =
             match m with
             | SynMemberDefn.Open(_longIdent, _range) -> None
             | SynMemberDefn.Member(synBinding, _range) -> traverseSynBinding path synBinding
-            | SynMemberDefn.ImplicitCtor(_synAccessOption, _synAttributes, simplePats, _identOption, _range) ->
+            | SynMemberDefn.ImplicitCtor(_synAccessOption, _synAttributes, simplePats, _identOption, _doc, _range) ->
                 match simplePats with
                 | SynSimplePats.SimplePats(simplePats, _) -> visitor.VisitSimplePats(simplePats)
                 | _ -> None

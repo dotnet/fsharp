@@ -166,15 +166,17 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
              
 // Utility functions for processing XML documentation 
 
-let trySaveXmlDoc lexbuf (buff:option<System.Text.StringBuilder>) =
+let trySaveXmlDoc (lexbuf: LexBuffer<char>) (buff: (range * StringBuilder) option) =
     match buff with 
     | None -> () 
-    | Some sb -> LexbufLocalXmlDocStore.SaveXmlDocLine (lexbuf, sb.ToString(), posOfLexPosition lexbuf.StartPos)
+    | Some (start, sb) ->
+        let xmlCommentLineRange = mkFileIndexRange start.FileIndex start.Start (posOfLexPosition lexbuf.StartPos)
+        LexbufLocalXmlDocStore.SaveXmlDocLine (lexbuf, sb.ToString(), xmlCommentLineRange)
   
-let tryAppendXmlDoc (buff:option<System.Text.StringBuilder>) (s:string) =
+let tryAppendXmlDoc (buff: (range * StringBuilder) option) (s:string) =
     match buff with 
     | None -> ()
-    | Some sb -> ignore(sb.Append s)
+    | Some (_, sb) -> ignore(sb.Append s)
 
 // Utilities for parsing #if/#else/#endif 
 
@@ -660,7 +662,7 @@ rule token args skip = parse
        let doc = lexemeTrimLeft lexbuf 3  
        let sb = (new StringBuilder(100)).Append(doc)
        if not skip then LINE_COMMENT (LexCont.SingleLineComment(args.ifdefStack, args.stringNest, 1, m)) 
-       else singleLineComment (Some sb,1,m,args) skip lexbuf }
+       else singleLineComment (Some (m, sb),1,m,args) skip lexbuf }
 
  | "//" op_char*
      { // Need to read all operator symbols too, otherwise it might be parsed by a rule below 

@@ -41,7 +41,7 @@ namespace Microsoft.FSharp.NativeInterop
         /// <param name="address">The untyped pointer.</param>
         ///
         /// <returns>A typed pointer.</returns>
-        val inline ofVoidPtr : voidptr -> nativeptr<'T>
+        val inline ofVoidPtr : address: voidptr -> nativeptr<'T>
 
         [<Unverifiable>]
         [<CompiledName("ToNativeIntInlined")>]
@@ -109,7 +109,7 @@ namespace Microsoft.FSharp.NativeInterop
         /// <returns>A typed pointer to the allocated memory.</returns>
         [<Unverifiable>]
         [<CompiledName("StackAllocate")>]
-        val inline stackalloc : count:int -> nativeptr<'T>
+        val inline stackalloc: count:int -> nativeptr<'T>
 
         /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
         ///
@@ -118,4 +118,4 @@ namespace Microsoft.FSharp.NativeInterop
         /// <returns>The managed pointer.</returns>
         [<Unverifiable>]
         [<CompiledName("ToByRefInlined")>]
-        val inline toByRef : nativeptr<'T> -> byref<'T>        
+        val inline toByRef: address: nativeptr<'T> -> byref<'T>        

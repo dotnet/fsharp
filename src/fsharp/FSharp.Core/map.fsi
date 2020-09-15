@@ -18,7 +18,8 @@ namespace Microsoft.FSharp.Collections
     type Map<[<EqualityConditionalOn>]'Key,[<EqualityConditionalOn;ComparisonConditionalOn>]'Value when 'Key : comparison> =
         /// <summary>Returns a new map with the binding added to the given map.
         /// If a binding with the given key already exists in the input map, the existing binding is replaced by the new binding in the result map.</summary>
-        /// <param name="key">The input key.</param>
+        /// <param name="key">The key to add.</param>
+        /// <param name="value">The value to add.</param>
         ///
         /// <returns>The resulting map.</returns>
         member Add: key:'Key * value:'Value -> Map<'Key,'Value>

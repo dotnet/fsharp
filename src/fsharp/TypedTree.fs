@@ -745,7 +745,9 @@ type Entity =
     member x.XmlDoc = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id)))
+        | TProvidedTypeExtensionPoint info ->
+            let lines = info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id))
+            XmlDoc (lines, x.DefinitionRange)
         | _ -> 
 #endif
         match x.entity_opt_data with
@@ -2141,7 +2143,7 @@ type Typar =
     member x.SetAttribs attribs = 
         match attribs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_constraints = [] } ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = [] } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_attribs <- attribs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
@@ -2171,7 +2173,7 @@ type Typar =
     member x.SetConstraints cs =
         match cs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_attribs = [] } ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [] } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_constraints <- cs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
@@ -4368,6 +4370,9 @@ type ValReprInfo =
             | (_ :: _ :: h) :: t -> loop t (acc + h.Length + 2) 
         loop args 0
 
+    member x.ArgNames =
+        Some [ for argtys in x.ArgInfos do for arginfo in argtys do match arginfo.Name with None -> () | Some nm -> nm.idText ]
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
@@ -5437,7 +5442,7 @@ type Construct() =
             entity_il_repr_cache = newCache()
             entity_opt_data =
                 match xml, access with
-                | XmlDoc [||], TAccess [] -> None
+                | doc, TAccess [] when doc.IsEmpty -> None
                 | _ -> Some { Entity.NewEmptyEntityOptData() with
                                  entity_xmldoc = xml
                                  entity_tycon_repr_accessibility = access
@@ -5490,7 +5495,7 @@ type Construct() =
           OtherRangeOpt = None } 
 
     /// Create a new TAST Entity node for an F# exception definition
-    static member NewExn cpath (id: Ident) access repr attribs doc = 
+    static member NewExn cpath (id: Ident) access repr attribs (doc: XmlDoc) = 
         Tycon.New "exnc"
           { entity_stamp=newStamp()
             entity_attribs=attribs
@@ -5506,7 +5511,7 @@ type Construct() =
             entity_il_repr_cache= newCache()
             entity_opt_data =
                 match doc, access, repr with
-                | XmlDoc [||], TAccess [], TExnNone -> None
+                | doc, TAccess [], TExnNone when doc.IsEmpty -> None
                 | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = doc; entity_accessibility = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
 
     /// Create a new TAST RecdField node for an F# class, struct or record field
@@ -5528,7 +5533,7 @@ type Construct() =
 
     
     /// Create a new type definition node
-    static member NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
+    static member NewTycon (cpath, nm, m, access, reprAccess, kind, typars, doc: XmlDoc, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
         let stamp = newStamp() 
         Tycon.New "tycon"
           { entity_stamp=stamp
@@ -5544,9 +5549,9 @@ type Construct() =
             entity_cpath = cpath
             entity_il_repr_cache = newCache()
             entity_opt_data =
-                match kind, docOption, reprAccess, access with
-                | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessibility=access } } 
+                match kind, doc, reprAccess, access with
+                | TyparKind.Type, doc, TAccess [], TAccess [] when doc.IsEmpty -> None
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = doc; entity_tycon_repr_accessibility = reprAccess; entity_accessibility=access } } 
 
     /// Create a new type definition node for a .NET type definition
     static member NewILTycon nlpath (nm, m) tps (scoref: ILScopeRef, enc, tdef: ILTypeDef) mtyp =
@@ -5559,7 +5564,7 @@ type Construct() =
     /// Create a new Val node
     static member NewVal 
            (logicalName: string, m: range, compiledName, ty, isMutable, isCompGen, arity, access,
-            recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc, isModuleOrMemberBinding,
+            recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc: XmlDoc, isModuleOrMemberBinding,
             isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal,
             konst, actualParent) : Val =
 
@@ -5572,7 +5577,7 @@ type Construct() =
             val_type = ty
             val_opt_data =
                 match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
-                | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
+                | None, None, None, TAccess [], doc, None, ParentNone, [] when doc.IsEmpty -> None
                 | _ -> 
                     Some { Val.NewEmptyValOptData() with
                              val_compiled_name = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)

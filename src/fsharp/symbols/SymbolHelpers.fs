@@ -227,7 +227,7 @@ type public Layout = Internal.Utilities.StructuredFormat.Layout
 [<RequireQualifiedAccess>]
 type FSharpXmlDoc =
     | None
-    | Text of string
+    | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
     | XmlDocFileSignature of (*File and Signature*) string * string
 
 /// A single data tip display element
@@ -660,20 +660,10 @@ module internal SymbolHelpers =
 
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d = 
-        let result = 
-            match xmlDoc with 
-            | None | Some (XmlDoc [| |]) -> ""
-            | Some (XmlDoc l) -> 
-                bufs (fun os -> 
-                    bprintf os "\n"
-                    l |> Array.iter (fun (s: string) -> 
-                        // Note: this code runs for local/within-project xmldoc tooltips, but not for cross-project or .XML
-                        bprintf os "\n%s" s))
-
-        if String.IsNullOrEmpty result then 
-            GetXmlDocHelpSigOfItemForLookup infoReader m d
-        else
-            FSharpXmlDoc.Text result
+        match xmlDoc with 
+        | Some xmlDoc when not xmlDoc.IsEmpty  -> 
+            FSharpXmlDoc.Text (xmlDoc.UnprocessedLines, xmlDoc.GetElaboratedXmlLines())
+        | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
     let mutable ToolTipFault  = None
     

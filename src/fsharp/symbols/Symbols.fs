@@ -78,7 +78,11 @@ module Impl =
     let makeReadOnlyCollection (arr: seq<'T>) = 
         System.Collections.ObjectModel.ReadOnlyCollection<_>(Seq.toArray arr) :> IList<_>
         
-    let makeXmlDoc (XmlDoc x) = makeReadOnlyCollection x
+    let makeXmlDoc (doc: XmlDoc) =
+        makeReadOnlyCollection doc.UnprocessedLines
+    
+    let makeElaboratedXmlDoc (doc: XmlDoc) =
+        makeReadOnlyCollection (doc.GetElaboratedXmlLines())
     
     let rescopeEntity optViewedCcu (entity: Entity) = 
         match optViewedCcu with 
@@ -646,6 +650,10 @@ and FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
         entity.XmlDoc |> makeXmlDoc
 
+    member __.ElaboratedXmlDoc = 
+        if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else
+        entity.XmlDoc |> makeElaboratedXmlDoc
+
     member x.StaticParameters = 
         match entity.TypeReprInfo with 
 #if !NO_EXTENSIONTYPING
@@ -814,6 +822,10 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
     member __.XmlDoc = 
         if isUnresolved() then XmlDoc.Empty  |> makeXmlDoc else
         v.UnionCase.XmlDoc |> makeXmlDoc
+
+    member __.ElaboratedXmlDoc = 
+        if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else
+        v.UnionCase.XmlDoc |> makeElaboratedXmlDoc
 
     member __.Attributes = 
         if isUnresolved() then makeReadOnlyCollection [] else
@@ -997,6 +1009,14 @@ and FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         | Choice3Of3 _ -> XmlDoc.Empty
         |> makeXmlDoc
 
+    member __.ElaboratedXmlDoc = 
+        if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else
+        match d.TryRecdField with 
+        | Choice1Of3 r -> r.XmlDoc 
+        | Choice2Of3 _ -> XmlDoc.Empty
+        | Choice3Of3 _ -> XmlDoc.Empty
+        |> makeElaboratedXmlDoc
+
     member __.FieldType = 
         checkIsResolved()
         let fty = 
@@ -1107,6 +1127,10 @@ and FSharpActivePatternCase(cenv, apinfo: PrettyNaming.ActivePatternInfo, ty, n,
         defaultArg (valOpt |> Option.map (fun vref -> vref.XmlDoc)) XmlDoc.Empty
         |> makeXmlDoc
 
+    member __.ElaboratedXmlDoc = 
+        defaultArg (valOpt |> Option.map (fun vref -> vref.XmlDoc)) XmlDoc.Empty
+        |> makeElaboratedXmlDoc
+
     member __.XmlDocSig = 
         let xmlsig = 
             match valOpt with
@@ -1146,7 +1170,10 @@ and FSharpGenericParameter(cenv, v:Typar) =
     member __.IsCompilerGenerated = v.IsCompilerGenerated
        
     member __.IsMeasure = (v.Kind = TyparKind.Measure)
+
     member __.XmlDoc = v.XmlDoc |> makeXmlDoc
+
+    member __.ElaboratedXmlDoc = v.XmlDoc |> makeElaboratedXmlDoc
 
     member __.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
 
@@ -1827,6 +1854,14 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | P p -> p.XmlDoc |> makeXmlDoc
         | M m | C m -> m.XmlDoc |> makeXmlDoc
         | V v -> v.XmlDoc |> makeXmlDoc
+
+    member __.ElaboratedXmlDoc = 
+        if isUnresolved() then XmlDoc.Empty  |> makeElaboratedXmlDoc else
+        match d with 
+        | E e -> e.XmlDoc |> makeElaboratedXmlDoc
+        | P p -> p.XmlDoc |> makeElaboratedXmlDoc
+        | M m | C m -> m.XmlDoc |> makeElaboratedXmlDoc
+        | V v -> v.XmlDoc |> makeElaboratedXmlDoc
 
     member x.CurriedParameterGroups = 
         checkIsResolved()
