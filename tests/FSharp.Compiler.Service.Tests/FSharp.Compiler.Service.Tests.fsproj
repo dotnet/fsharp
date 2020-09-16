@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="SurfaceArea.netstandard.fs" Condition="'$(TargetFramework)'!='net472'" />
+    <Compile Include="SurfaceArea.netstandard.fs" />
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
@@ -77,10 +77,6 @@
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
-    <NoneSubstituteText Include="App.config">
-      <Pattern1>{{FSCoreVersion}}</Pattern1>
-      <Replacement1>$(FSCoreVersion)</Replacement1>
-    </NoneSubstituteText>
   </ItemGroup>
 
   <ItemGroup>
