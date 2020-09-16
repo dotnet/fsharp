@@ -2,10 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <TargetExt>.dll</TargetExt>
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
     <RuntimeIdentifiers Condition="'$(OS)' == 'Unix'">linux-x64;osx-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
@@ -20,7 +19,6 @@
 
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="SurfaceArea.net472.fs" Condition="'$(TargetFramework)'=='net472'" />
     <Compile Include="SurfaceArea.netstandard.fs" Condition="'$(TargetFramework)'!='net472'" />
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
@@ -90,22 +88,4 @@
     <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net472'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System.Runtime" />
-    <Reference Include="System.IO" />
-    <Reference Include="System" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="WindowsBase" />
-    <Reference Include="UIAutomationTypes" />
-    <ProjectReference Include="CSharp_Analysis\CSharp_Analysis.csproj" />
-  </ItemGroup>
 </Project>
