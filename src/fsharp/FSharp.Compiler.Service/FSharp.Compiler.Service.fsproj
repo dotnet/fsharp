@@ -729,14 +729,6 @@
     </Compile>
   </ItemGroup>
 
-  <PropertyGroup>
-    <!--
-    Some users have found it easier to work on FSharp.CompilerService when referencing the nuget package rather than the fsharp.core project
-    set FSHARPCORE_USE_PACKAGE to true to use package
-  -->
-    <FSHARPCORE_USE_PACKAGE>false</FSHARPCORE_USE_PACKAGE>
-  </PropertyGroup>
-
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
