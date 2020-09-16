@@ -3,16 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
-    <TargetExt>.dll</TargetExt>
-    <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
-    <RuntimeIdentifiers Condition="'$(OS)' == 'Unix'">linux-x64;osx-x64</RuntimeIdentifiers>
-    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GenerateProgramFile>false</GenerateProgramFile>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>nunit</UnitTestType>
   </PropertyGroup>
@@ -80,7 +73,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
+    <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
     <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 
