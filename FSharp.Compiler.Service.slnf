@@ -1,0 +1,9 @@
+﻿{
+  "solution": {
+    "path": "FSharp.sln",
+    "projects": [
+      "src\\fsharp\\FSharp.Compiler.Service\\FSharp.Compiler.Service.fsproj",
+      "tests\\FSharp.Compiler.Service.Tests\\FSharp.Compiler.Service.Tests.fsproj"
+    ]
+  }
+}
