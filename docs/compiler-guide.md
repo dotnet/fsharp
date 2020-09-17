@@ -59,7 +59,7 @@ The following are the most relevant parts of the F# compiler tooling, making up 
 
 The following is a diagram of how different phases of F# compiler work:
 
-![F# compiler phases](../../../images/fsharp/fsharp-compiler-phases.png)
+![F# compiler phases](http://fsharp.github.io/img/fscomp-phases.png)
 
 The following are the key phases and high-level logical operations of the F# compiler code in its various configurations:
 
