@@ -8,7 +8,7 @@
     FSharp.Core project.
   -->
   <PropertyGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">
-    <FSHARPCORE_USE_PACKAGE Condition="'$(SolutionName)' == 'fcs'">true</FSHARPCORE_USE_PACKAGE>
+    <FSHARPCORE_USE_PACKAGE Condition="'$(SolutionName)' == 'FSharp.Compiler.Service'">true</FSHARPCORE_USE_PACKAGE>
   </PropertyGroup>
 
   <PropertyGroup>
