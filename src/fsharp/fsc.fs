@@ -1937,8 +1937,8 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
 
 // This is for the compile-from-AST feature of FCS.
-// TODO: consider removing this feature from FCS, which as far as I know is not used by anyone.
-let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
+// TODO: consider extracting TC in standalone phase to avoid duplication
+let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, disposables : DisposablesTracker, inputs : ParsedInput list) =
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
@@ -1949,7 +1949,20 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
-    tcConfigB.framework <- not noframework 
+    let primaryAssembly =
+        // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
+        // pick a primary assembly based on the current runtime.
+        // It's an ugly compromise used to avoid exposing primaryAssembly in the public api for this function.
+        let isNetCoreAppProcess = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Core"
+        if isNetCoreAppProcess then PrimaryAssembly.System_Runtime
+        else PrimaryAssembly.Mscorlib
+
+    tcConfigB.target <- target
+    tcConfigB.primaryAssembly <- primaryAssembly
+    if noframework then
+        tcConfigB.framework <- false
+        tcConfigB.implicitlyResolveAssemblies <- false
+
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch    tcConfigB None (
@@ -1957,9 +1970,10 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         | Some _ -> OptionSwitch.On
         | None -> OptionSwitch.Off)
     SetTailcallSwitch tcConfigB OptionSwitch.On
-    tcConfigB.target <- target
-        
-    let errorLogger = errorLoggerProvider.CreateErrorLoggerUpToMaxErrors (tcConfigB, exiter)
+
+    // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
+    let delayForFlagsLogger =  errorLoggerProvider.CreateDelayAndForwardLogger exiter
+    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)  
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines
 
@@ -1971,11 +1985,27 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         try
             TcConfig.Create(tcConfigB,validate=false)
         with e ->
+            delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
             exiter.Exit 1
+
+    let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
+
+    // Install the global error logger and never remove it. This logger does have all command-line flags considered.
+    let _unwindEL_2 = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+
+    // Forward all errors from flags
+    delayForFlagsLogger.CommitDelayedDiagnostics errorLogger
     
+    // Resolve assemblies
+    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
-    let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
-    let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
+    let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
+
+    // Import basic assemblies
+    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
+
+    // Register framework tcImports to be disposed in future
+    disposables.Register frameworkTcImports
 
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse) 
 
@@ -1983,37 +2013,26 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
     let tcConfig = (tcConfig,inputs) ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig (tcc, inp,meta))
     let tcConfigP = TcConfigProvider.Constant tcConfig
 
-    let tcGlobals,tcImports =  
-        let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes,knownUnresolved) |> Cancellable.runWithoutCancellation
-        tcGlobals,tcImports
+    // Import other assemblies
+    ReportTime tcConfig "Import non-system references"
+    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved)  |> Cancellable.runWithoutCancellation
 
+    // register tcImports to be disposed in future
+    disposables.Register tcImports
+
+    // Build the initial type checking environment
+    ReportTime tcConfig "Typecheck"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
+    // Type check the inputs
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs,exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
-    let generatedCcu = tcState.Ccu
-    generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
+    AbortOnError(errorLogger, exiter)
+    ReportTime tcConfig "Typechecked"
 
-    use unwindPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.CodeGen)
-    let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-
-    // Try to find an AssemblyVersion attribute 
-    let assemVerFromAttrib = 
-        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" "AssemblyVersionAttribute" topAttrs.assemblyAttrs tcConfig.deterministic with
-        | Some v -> 
-            match tcConfig.version with 
-            | VersionNone -> Some v
-            | _ -> warning(Error(FSComp.SR.fscAssemblyVersionAttributeIgnored(),Range.range0)); None
-        | _ -> None
-
-    // Pass on only the minimum information required for the next phase to ensure GC kicks in.
-    // In principle the JIT should be able to do good liveness analysis to clean things up, but the
-    // data structures involved here are so large we can't take the risk.
-    Args(ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, 
-         generatedCcu, outfile, typedAssembly, topAttrs, pdbFile, assemblyName, 
-         assemVerFromAttrib, signingInfo,exiter)
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbFile, assemblyName, errorLogger, exiter)
 
   
 /// Phase 2a: encode signature data, optimize, encode optimization data
@@ -2205,8 +2224,10 @@ let compileOfAst
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, 
         outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
 
-    main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, 
-                dllReferences, noframework, exiter, errorLoggerProvider, inputs)
+    use d = new DisposablesTracker()
+    main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, 
+                dllReferences, noframework, exiter, errorLoggerProvider, d, inputs)
+    |> main1
     |> main2a
     |> main2b (tcImportsCapture, dynamicAssemblyCreator)
     |> main3
