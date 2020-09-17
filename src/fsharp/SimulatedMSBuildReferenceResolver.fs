@@ -60,7 +60,6 @@ let private SimulatedMSBuildResolver =
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-#if MSBUILD_AT_LEAST_15
             | Net452 -> Some TargetDotNetFrameworkVersion.Version452
             | Net46 -> Some TargetDotNetFrameworkVersion.Version46
             | Net461 -> Some TargetDotNetFrameworkVersion.Version461
@@ -69,7 +68,6 @@ let private SimulatedMSBuildResolver =
             | Net471 -> Some TargetDotNetFrameworkVersion.Version471
             | Net472 -> Some TargetDotNetFrameworkVersion.Version472
             | Net48 -> Some TargetDotNetFrameworkVersion.Version48
-#endif
             | _ -> assert false; None
         match v with
         | Some v -> 
