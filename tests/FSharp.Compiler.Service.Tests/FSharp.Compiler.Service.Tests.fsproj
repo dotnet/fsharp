@@ -2,26 +2,17 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;netcoreapp3.1</TargetFrameworks>
-    <TargetExt>.dll</TargetExt>
-    <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">netcoreapp3.1</TargetFrameworks>
-    <RuntimeIdentifiers Condition="'$(OS)' == 'Unix'">linux-x64;osx-x64</RuntimeIdentifiers>
-    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GenerateProgramFile>false</GenerateProgramFile>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>nunit</UnitTestType>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="SurfaceArea.net472.fs" Condition="'$(TargetFramework)'=='net472'" />
-    <Compile Include="SurfaceArea.netstandard.fs" Condition="'$(TargetFramework)'!='net472'" />
+    <Compile Include="SurfaceArea.netstandard.fs" />
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
@@ -79,33 +70,11 @@
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
-    <NoneSubstituteText Include="App.config">
-      <Pattern1>{{FSCoreVersion}}</Pattern1>
-      <Replacement1>$(FSCoreVersion)</Replacement1>
-    </NoneSubstituteText>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dotnet.ProjInfo" Version="0.20.0" />
+    <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
     <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net472'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System.Runtime" />
-    <Reference Include="System.IO" />
-    <Reference Include="System" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="WindowsBase" />
-    <Reference Include="UIAutomationTypes" />
-    <ProjectReference Include="CSharp_Analysis\CSharp_Analysis.csproj" />
-  </ItemGroup>
 </Project>

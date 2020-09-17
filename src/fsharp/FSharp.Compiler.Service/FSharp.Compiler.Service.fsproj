@@ -2,16 +2,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;netstandard2.0</TargetFrameworks>
-    <TargetFramework Condition="'$(OS)' == 'Unix'">netstandard2.0</TargetFramework>
-    <AssemblyName>FSharp.Compiler.Service</AssemblyName>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44;62;69;65;54;61;75;62;9;2003;NU5125</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <OtherFlags>$(OtherFlags) /warnon:1182 /warnon:3390 --times</OtherFlags>
-    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <Tailcalls>true</Tailcalls>
+    <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
 
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
@@ -19,7 +18,7 @@
 
     <PackageId>FSharp.Compiler.Service</PackageId>
     <NuspecFile>FSharp.Compiler.Service.nuspec</NuspecFile>
-    <IsPackable Condition="'$(OS)' != 'Unix'">true</IsPackable>
+    <IsPackable>true</IsPackable>
     <PackageDescription>The F# Compiler Services package For F# $(FSLanguageVersion) exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Compiler-Service-$(FSharpCompilerServiceReleaseNotesVersion)</PackageReleaseNotes>
     <PackageTags>F#, fsharp, interactive, compiler, editor</PackageTags>
@@ -33,24 +32,15 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
-    <InternalsVisibleTo Include="fsi" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
-    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Service.MSBuild.v12" />
-    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
-    <InternalsVisibleTo Include="Test" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)'=='net472'">
-    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests" />
+    <InternalsVisibleTo Include="HostedCompilerServer" />
+    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+    <InternalsVisibleTo Include="LanguageServiceProfiling" />
+    <InternalsVisibleTo Include="CompilerServiceBenchmarks" />
   </ItemGroup>
 
   <ItemGroup>
@@ -254,10 +244,10 @@
       <Link>AbsIL\ilsupp.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)ilpars.fs">
-      <Link>AbsIL\ilpars.fs</Link>
+      <Link>AbsIL\FsYaccOut\ilpars.fs</Link>
     </Compile>
     <Compile Include="$(FsLexOutputFolder)illex.fs">
-      <Link>AbsIL\illex.fs</Link>
+      <Link>AbsIL\FsLexOut\illex.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilbinary.fsi">
       <Link>AbsIL\ilbinary.fsi</Link>
@@ -355,10 +345,10 @@
       <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pppars.fs">
-      <Link>ParserAndUntypedAST\pppars.fs</Link>
+      <Link>ParserAndUntypedAST\FsYaccOutput\pppars.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pars.fs">
-      <Link>ParserAndUntypedAST\pars.fs</Link>
+      <Link>ParserAndUntypedAST\FsYaccOutput\pars.fs</Link>
     </Compile>
     <Compile Include="..\lexhelp.fsi">
       <Link>ParserAndUntypedAST\lexhelp.fsi</Link>
@@ -367,10 +357,10 @@
       <Link>ParserAndUntypedAST\lexhelp.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pplex.fs">
-      <Link>ParserAndUntypedAST\pplex.fs</Link>
+      <Link>ParserAndUntypedAST\FsLex\pplex.fsl</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)lex.fs">
-      <Link>ParserAndUntypedAST\lex.fs</Link>
+      <Link>ParserAndUntypedAST\FsLex\lex.fs</Link>
     </Compile>
     <Compile Include="..\LexFilter.fs">
       <Link>ParserAndUntypedAST\LexFilter.fs</Link>
@@ -745,16 +735,8 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <PackageReference Include="System.IO.Compression" Version="$(SystemIoCompressionVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(TargetFramework.Startswith('netstandard'))">
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-  </ItemGroup>
-
   <ItemGroup>
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
     <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
