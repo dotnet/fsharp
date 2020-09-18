@@ -610,8 +610,8 @@ check "vcewweh23" $"abc{({| A=1 |})}def" "abc{ A = 1 }def"
 
 
     [<Test>]
-    let ``Basic string interpolation (no preview)`` () =
-        CompilerAssert.TypeCheckWithErrorsAndOptions  [| |]
+    let ``Basic string interpolation (4.7)`` () =
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:4.7" |]
             """
 let x = $"one" 
             """
