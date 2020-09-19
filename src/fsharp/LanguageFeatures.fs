@@ -71,10 +71,10 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
             LanguageFeature.NameOf, languageVersion50
             LanguageFeature.StringInterpolation, languageVersion50
+            LanguageFeature.OverloadsForCustomOperations, languageVersion50
 
             // F# preview
             LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.OverloadsForCustomOperations, previewVersion
         ]
 
     let specified =
