@@ -51,7 +51,7 @@ type internal FSharpFindUsagesService
         asyncMaybe {
             let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
-            let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, context.CancellationToken)
+            let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, context.CancellationToken, userOpName)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1

@@ -92,7 +92,7 @@ module internal FSharpQuickInfo =
 
         asyncMaybe {
             let! sourceText = document.GetTextAsync cancellationToken
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true)
             let idRange = lexerSymbol.Ident.idRange  

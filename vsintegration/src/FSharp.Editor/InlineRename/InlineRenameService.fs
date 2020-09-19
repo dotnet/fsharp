@@ -169,7 +169,7 @@ type internal InlineRenameService
     interface IFSharpEditorInlineRenameService with
         member __.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<IFSharpInlineRenameInfo> =
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, projectOptions)
