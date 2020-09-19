@@ -78,7 +78,7 @@ marker4"""
         let lineNumber = sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         
-        let changesOpt = FSharpEditorFormattingService.GetFormattingChanges(documentId, sourceText, filePath, checker, indentStyle, Some (parsingOptions, projectOptions), position) |> Async.RunSynchronously
+        let changesOpt = FSharpEditorFormattingService.GetFormattingChanges(documentId, sourceText, filePath, checker, indentStyle, parsingOptions, position) |> Async.RunSynchronously
         match changesOpt with
         | None -> Assert.Fail("Expected a text change, but got None")
         | Some changes ->
