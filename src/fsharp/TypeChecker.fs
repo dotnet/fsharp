@@ -9550,6 +9550,16 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             let ad = env.eAccessRights
             let result = defaultArg resultOpt (List.last longId)
             
+            // Demangle back to source operator name if the lengths in the ranges indicate the
+            // original source range matches exactly
+            let result =
+                if IsMangledOpName result.idText then
+                    let demangled = DecompileOpName result.idText
+                    if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn then
+                        ident(demangled, result.idRange) 
+                    else result
+                else result
+
             // Nameof resolution resolves to a symbol and in general we make that the same symbol as
             // would resolve if the long ident was used as an expression at the given location.
             //
