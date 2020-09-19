@@ -58,12 +58,6 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
-    <Compile Include="..\Logger.fsi">
-      <Link>Logger.fsi</Link>
-    </Compile>
-    <Compile Include="..\Logger.fs">
-      <Link>Logger.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -76,11 +70,17 @@
     <Compile Include="..\sr.fs">
       <Link>ErrorText\sr.fs</Link>
     </Compile>
+    <Compile Include="..\Logger.fsi">
+      <Link>Facilities\Logger.fsi</Link>
+    </Compile>
+    <Compile Include="..\Logger.fs">
+      <Link>Facilities\Logger.fs</Link>
+    </Compile>
     <Compile Include="..\LanguageFeatures.fsi">
-      <Link>Driver\LanguageFeatures.fsi</Link>
+      <Link>Facilities\LanguageFeatures.fsi</Link>
     </Compile>
     <Compile Include="..\LanguageFeatures.fs">
-      <Link>Driver\LanguageFeatures.fs</Link>
+      <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\prim-lexing.fsi">
       <Link>LexYaccRuntime\prim-lexing.fsi</Link>
