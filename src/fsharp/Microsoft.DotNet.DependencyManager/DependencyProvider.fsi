@@ -56,15 +56,17 @@ type ErrorReportType =
 type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
 
 /// Provides DependencyManagement functions.
-/// Class is IDisposable
+///
+/// The class incrementally collects IDependencyManagerProvider, indexed by key, and 
+/// queries them.  These are found and instantiated with respect to the compilerTools and outputDir
+/// provided each time the TryFindDependencyManagerByKey and TryFindDependencyManagerInPath are
+/// executed, which are assumed to be invariant over the lifetime of the DependencyProvider.
 type DependencyProvider =
     interface System.IDisposable
 
-    /// Construct a new DependencyProvider
+    /// Construct a new DependencyProvider. assemblyProbingPaths and nativeProbingRoots may be null
+    /// to indicate no dynamic resolution handlers should be installed.
     new: assemblyProbingPaths: AssemblyResolutionProbe * nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
-
-    /// Construct a new DependencyProvider
-    new: nativeProbingRoots: NativeResolutionProbe -> DependencyProvider
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member GetRegisteredDependencyManagerHelpText: string seq * string * ResolvingErrorReport -> string[]

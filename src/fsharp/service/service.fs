@@ -24,6 +24,8 @@ open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
 
+open Microsoft.DotNet.DependencyManager
+
 open Internal.Utilities
 open Internal.Utilities.Collections
 
@@ -274,6 +276,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let scriptClosureCacheLock = Lock<ScriptClosureCacheToken>()
     let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
 
+    // We currently share one global dependency provider for all scripts for the FSharpChecker.
+    // For projects, one is used per project.
+    // 
+    // Sharing one for all scripts is necessary for good performance from GetProjectOptionsFromScript,
+    // which requires a dependency provider to process through the project options prior to working out
+    // if the cached incremental builder can be used for the project.
+    let dependencyProviderForScripts = new DependencyProvider(null, null)
+
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     let CreateOneIncrementalBuilder (ctok, options:FSharpProjectOptions, userOpName) = 
@@ -301,12 +311,15 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         member x.FileName = nm } ]
 
         let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
+
         let! builderOpt, diagnostics = 
-            IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
+            IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
                   (ctok, legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, FSharpCheckerResultsSettings.maxTimeShareMilliseconds,
-                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification)
+                   tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
+                   enableBackgroundItemKeyStoreAndSemanticClassification,
+                   (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
 
         match builderOpt with 
         | None -> ()
@@ -817,8 +830,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
                     CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, new Lexhelp.LexResourceManager(), 
                     applyCompilerOptions, assumeDotNetFramework, 
-                    tryGetMetadataSnapshot=tryGetMetadataSnapshot, 
-                    reduceMemoryUsage=reduceMemoryUsage)
+                    tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
 
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
