@@ -18,7 +18,7 @@ type NativeResolutionProbe = delegate of Unit -> seq<string>
 // Cut down AssemblyLoadContext, for loading native libraries
 type NativeDllResolveHandler =
 
-    /// Construct a new NativeDllResolveHandler
+    /// Construct a new DependencyProvider
     new: nativeProbingRoots: NativeResolutionProbe -> NativeDllResolveHandler
 
     interface IDisposable

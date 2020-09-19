@@ -1621,7 +1621,7 @@ module internal ParseAndCheckFile =
             
         | None -> 
             // For non-scripts, check for disallow #r and #load.
-            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName, tcImports.DependencyProvider) |> ignore
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName) |> ignore
                     
     // Type check a single file against an initial context, gleaning both errors and intellisense information.
     let CheckOneFile
@@ -2161,8 +2161,8 @@ type FSharpCheckProjectResults
 type FsiInteractiveChecker(legacyReferenceResolver, 
                            reactorOps: IReactorOperations,
                            tcConfig: TcConfig,
-                           tcGlobals: TcGlobals,
-                           tcImports: TcImports,
+                           tcGlobals,
+                           tcImports,
                            tcState) =
 
     let keepAssemblyContents = false
@@ -2192,9 +2192,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
-                    tryGetMetadataSnapshot=(fun _ -> None),
-                    reduceMemoryUsage=reduceMemoryUsage,
-                    dependencyProvider=tcImports.DependencyProvider)
+                    tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
 
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile

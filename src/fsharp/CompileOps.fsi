@@ -413,6 +413,8 @@ type TcConfigBuilder =
       mutable pathMap : PathMap
 
       mutable langVersion : LanguageVersion
+
+      mutable dependencyProvider: DependencyProvider
     }
 
     static member Initial: TcConfigBuilder
@@ -440,9 +442,6 @@ type TcConfigBuilder =
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
 
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
-
-    // Directories to start probing in for native DLLs for FSI dynamic loading
-    member GetNativeProbingRoots: unit -> seq<string>
 
 [<Sealed>]
 // Immutable TcConfig
@@ -560,8 +559,8 @@ type TcConfig =
     member isInteractive: bool
     member isInvalidationSupported: bool 
 
-    member ComputeLightSyntaxInitialStatus: string -> bool
 
+    member ComputeLightSyntaxInitialStatus: string -> bool
     member GetTargetFrameworkDirectories: unit -> string list
     
     /// Get the loaded sources that exist and issue a warning for the ones that don't
@@ -576,11 +575,8 @@ type TcConfig =
     member MakePathAbsolute: string -> string
 
     member copyFSharpCore: CopyFSharpCoreFlag
-
     member shadowCopyReferences: bool
-
     member useSdkRefs: bool
-
     member langVersion: LanguageVersion
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
@@ -644,27 +640,17 @@ type TcImports =
     interface System.IDisposable
     //new: TcImports option -> TcImports
     member DllTable: NameMap<ImportedBinary> with get
-
     member GetImportedAssemblies: unit -> ImportedAssembly list
-
     member GetCcusInDeclOrder: unit -> CcuThunk list
-
     /// This excludes any framework imports (which may be shared between multiple builds)
     member GetCcusExcludingBase: unit -> CcuThunk list 
-
     member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
-
     member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> option<ImportedBinary>
-
     member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
-
 #if !NO_EXTENSIONTYPING
     member ProviderGeneratedTypeRoots: ProviderGeneratedType list
 #endif
-
     member GetImportMap: unit -> Import.ImportMap
-
-    member DependencyProvider: DependencyProvider
 
     /// Try to resolve a referenced assembly based on TcConfig settings.
     member TryResolveAssemblyReference: CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> OperationResult<AssemblyResolution list>
@@ -685,33 +671,13 @@ type TcImports =
 #endif
     /// Report unresolved references that also weren't consumed by any type providers.
     member ReportUnresolvedAssemblyReferences: UnresolvedAssemblyReference list -> unit
-
     member SystemRuntimeContainsType: string -> bool
 
     member internal Base: TcImports option
 
-    static member BuildFrameworkTcImports:
-        CompilationThreadToken *
-        TcConfigProvider *
-        AssemblyResolution list *
-        AssemblyResolution list
-            -> Cancellable<TcGlobals * TcImports>
-
-    static member BuildNonFrameworkTcImports:
-        CompilationThreadToken * 
-        TcConfigProvider * 
-        TcGlobals * 
-        TcImports * 
-        AssemblyResolution list * 
-        UnresolvedAssemblyReference list * 
-        DependencyProvider 
-            -> Cancellable<TcImports>
-
-    static member BuildTcImports:
-        CompilationThreadToken *
-        TcConfigProvider * 
-        DependencyProvider 
-            -> Cancellable<TcGlobals * TcImports>
+    static member BuildFrameworkTcImports     : CompilationThreadToken * TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> Cancellable<TcGlobals * TcImports>
+    static member BuildNonFrameworkTcImports  : CompilationThreadToken * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> Cancellable<TcImports>
+    static member BuildTcImports              : CompilationThreadToken * TcConfigProvider -> Cancellable<TcGlobals * TcImports>
 
 //----------------------------------------------------------------------------
 // Special resources in DLLs
@@ -737,22 +703,24 @@ val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk
 // #r and other directives
 //--------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------
+// #r and other directives
+//--------------------------------------------------------------------------
+
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
 val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
-/// A general routine to process hash directives
+/// Processing # commands
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * 
-     ('T -> range * string * Directive -> 'T) *
-     ('T -> range * string -> unit))
-      -> TcConfigBuilder * ParsedInput * string * 'T 
-      -> 'T
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> IDependencyManagerProvider * Directive * range * string -> 'T) * ('T -> range * string -> unit))
+    -> TcConfigBuilder * ParsedInput * string * 'T 
+    -> 'T
 
-/// Process all the #r, #I etc. in an input.  For non-scripts report warnings about ignored directives.
-val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * DependencyProvider -> TcConfig
+/// Process all the #r, #I etc. in an input
+val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
-/// Process the #nowarn in an input and integrate them into the TcConfig
+/// Process the #nowarn in an input
 val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
 //----------------------------------------------------------------------------
@@ -885,31 +853,8 @@ type LoadClosure =
     //
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
-    static member ComputeClosureOfScriptText:
-        CompilationThreadToken * 
-        legacyReferenceResolver: ReferenceResolver.Resolver * 
-        defaultFSharpBinariesDir: string * 
-        filename: string * 
-        sourceText: ISourceText * 
-        implicitDefines:CodeContext * 
-        useSimpleResolution: bool * 
-        useFsiAuxLib: bool * 
-        useSdkRefs: bool * 
-        lexResourceManager: Lexhelp.LexResourceManager * 
-        applyCompilerOptions: (TcConfigBuilder -> unit) * 
-        assumeDotNetFramework: bool * 
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
-        reduceMemoryUsage: ReduceMemoryFlag *
-        dependencyProvider: DependencyProvider
-          -> LoadClosure
+    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * sourceText: ISourceText * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * useSdkRefs: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: ReduceMemoryFlag -> LoadClosure
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
     /// Used from fsi.fs and fsc.fs, for #load and command line. 
-    static member ComputeClosureOfScriptFiles: 
-        CompilationThreadToken * 
-        tcConfig:TcConfig * 
-        (string * range) list * 
-        implicitDefines:CodeContext * 
-        lexResourceManager: Lexhelp.LexResourceManager *
-        dependencyProvider: DependencyProvider
-            -> LoadClosure
+    static member ComputeClosureOfScriptFiles: CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager: Lexhelp.LexResourceManager -> LoadClosure
