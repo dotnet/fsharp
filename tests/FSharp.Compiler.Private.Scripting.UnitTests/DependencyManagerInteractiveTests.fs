@@ -232,7 +232,7 @@ type DependencyManagerInteractiveTests() =
 
 /// Native dll resolution is not implemented on desktop
 #if NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="downloads very large ephemeral packages"); >]
     member __.``Script using TorchSharp``() =
         let text = """
 #r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"

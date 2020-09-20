@@ -1500,8 +1500,6 @@ type internal FsiDynamicCompiler
                             if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
                                 for line in Array.append result.StdOut result.StdError do
                                     errorR(Error(FSComp.SR.packageManagerError(line), m))
-                            else
-                                warning(Error(FSComp.SR.packageManagerFailedNoOutput(), m))
                             //Write outputs in F# Interactive and compiler
                             tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
                             istate // error already reported

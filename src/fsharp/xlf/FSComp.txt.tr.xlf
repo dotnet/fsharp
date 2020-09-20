@@ -247,11 +247,6 @@
         <target state="translated">Paket yönetimi özelliği dil sürümü 5.0 gerektiriyor, /langversion:preview kullanın</target>
         <note />
       </trans-unit>
-      <trans-unit id="packageManagerFailedNoOutput">
-        <source>Package manager failed without output</source>
-        <target state="new">Package manager failed without output</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="new">Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</target>

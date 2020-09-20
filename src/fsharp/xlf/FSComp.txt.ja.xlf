@@ -3857,11 +3857,6 @@
         <target state="new">{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="packageManagerFailedNoOutput">
-        <source>Package manager failed without output</source>
-        <target state="new">Package manager failed without output</target>
-        <note />
-      </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
         <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>

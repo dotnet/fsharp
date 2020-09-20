@@ -247,11 +247,6 @@
         <target state="translated">Для функции управления пакетами требуется версия языка 5.0, используйте параметр /langversion:preview</target>
         <note />
       </trans-unit>
-      <trans-unit id="packageManagerFailedNoOutput">
-        <source>Package manager failed without output</source>
-        <target state="new">Package manager failed without output</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="new">Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</target>
