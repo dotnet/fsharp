@@ -410,6 +410,7 @@ module Keywords =
           "base",      FSComp.SR.keywordDescriptionBase()
           "begin",     FSComp.SR.keywordDescriptionBegin()
           "class",     FSComp.SR.keywordDescriptionClass()
+          "const",     FSComp.SR.keywordDescriptionConst()
           "default",   FSComp.SR.keywordDescriptionDefault()
           "delegate",  FSComp.SR.keywordDescriptionDelegate()
           "do",        FSComp.SR.keywordDescriptionDo()

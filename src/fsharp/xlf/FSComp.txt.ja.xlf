@@ -2607,6 +2607,11 @@
         <target state="new">In verbose syntax, indicates the start of a class definition.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionConst">
+        <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
+        <target state="new">Keyword to specify a constant literal as a type parameter argument in Type Providers.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionDefault">
         <source>Indicates an implementation of an abstract method; used together with an abstract method declaration to create a virtual method.</source>
         <target state="new">Indicates an implementation of an abstract method; used together with an abstract method declaration to create a virtual method.</target>
