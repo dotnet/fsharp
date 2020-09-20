@@ -172,7 +172,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
@@ -232,7 +232,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
             let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, sourceText=sourceText, userOpName=userOpName)
                 
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let idRange = lexerSymbol.Ident.idRange
 
             let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature, userOpName=userOpName) |> liftAsync

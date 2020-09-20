@@ -1051,7 +1051,21 @@ type internal TypeCheckInfo
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
-            | [] -> FSharpStructuredToolTipText.FSharpToolTipText []
+            | [] -> 
+                let matches =
+                    match loadClosure with
+                    | None -> None
+                    | Some(loadClosure) -> 
+                        loadClosure.PackageReferences
+                        |> Array.tryFind (fun (m, _) -> Range.rangeContainsPos m pos)
+                match matches with 
+                | None -> FSharpStructuredToolTipText.FSharpToolTipText []
+                | Some (_, lines) -> 
+                    let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
+                    FSharpStructuredToolTipText.FSharpToolTipText 
+                       [ for line in lines -> 
+                            let tip = wordL (TaggedTextOps.tagStringLiteral line)
+                            FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
             dataTipOfReferences
@@ -1621,7 +1635,7 @@ module internal ParseAndCheckFile =
             
         | None -> 
             // For non-scripts, check for disallow #r and #load.
-            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName) |> ignore
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName, tcImports.DependencyProvider) |> ignore
                     
     // Type check a single file against an initial context, gleaning both errors and intellisense information.
     let CheckOneFile
@@ -2161,8 +2175,8 @@ type FSharpCheckProjectResults
 type FsiInteractiveChecker(legacyReferenceResolver, 
                            reactorOps: IReactorOperations,
                            tcConfig: TcConfig,
-                           tcGlobals,
-                           tcImports,
+                           tcGlobals: TcGlobals,
+                           tcImports: TcImports,
                            tcState) =
 
     let keepAssemblyContents = false
@@ -2192,7 +2206,9 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
-                    tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
+                    tryGetMetadataSnapshot=(fun _ -> None),
+                    reduceMemoryUsage=reduceMemoryUsage,
+                    dependencyProvider=tcImports.DependencyProvider)
 
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile

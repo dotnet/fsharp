@@ -54,10 +54,8 @@ type DependencyManagerInteractiveTests() =
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
 0"""
         use script = new scriptHost()
-        let opt = script.Eval(text) |> getValue
-        let value = opt.Value
-        Assert.Equal(typeof<int>, value.ReflectionType)
-        Assert.Equal(0, value.ReflectionValue :?> int)
+        let opt, errors = script.Eval(text)
+        Assert.Equal(errors.Length, 1)
 
 (*
     [<Theory>]
@@ -232,7 +230,7 @@ type DependencyManagerInteractiveTests() =
 
 /// Native dll resolution is not implemented on desktop
 #if NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="downloads very large ephemeral packages"); >]
     member __.``Script using TorchSharp``() =
         let text = """
 #r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"

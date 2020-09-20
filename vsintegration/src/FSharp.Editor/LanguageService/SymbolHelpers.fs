@@ -27,7 +27,7 @@ module internal SymbolHelpers =
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName) 
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let settings = document.FSharpOptions
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText, projectOptions, settings.LanguageServicePerformance, userOpName = userOpName) 
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
@@ -120,7 +120,7 @@ module internal SymbolHelpers =
             do! Option.guard (originalText.Length > 0)
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)

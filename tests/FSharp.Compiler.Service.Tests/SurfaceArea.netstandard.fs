@@ -42401,6 +42401,7 @@ Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.Int
 Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.String,Microsoft.DotNet.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
 Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe, Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
 Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
+Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor()
 Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Error
 Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Warning
 Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(Microsoft.DotNet.DependencyManager.ErrorReportType)
