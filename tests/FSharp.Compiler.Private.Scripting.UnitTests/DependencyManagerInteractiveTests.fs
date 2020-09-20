@@ -54,10 +54,8 @@ type DependencyManagerInteractiveTests() =
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
 0"""
         use script = new scriptHost()
-        let opt = script.Eval(text) |> getValue
-        let value = opt.Value
-        Assert.Equal(typeof<int>, value.ReflectionType)
-        Assert.Equal(0, value.ReflectionValue :?> int)
+        let opt, errors = script.Eval(text)
+        Assert.Equal(errors.Length, 1)
 
 (*
     [<Theory>]

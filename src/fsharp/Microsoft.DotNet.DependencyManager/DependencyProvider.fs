@@ -265,7 +265,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler =
-        match assemblyProbingPaths with 
+        match nativeProbingRoots with 
         | null -> { new IDisposable with member _.Dispose() = () }
         | _ -> new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
 
