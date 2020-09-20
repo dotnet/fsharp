@@ -859,6 +859,9 @@ type LoadClosure =
       /// The resolved references along with the ranges of the #r positions in each file.
       References: (string * AssemblyResolution list) list
 
+      /// The resolved pacakge references along with the ranges of the #r positions in each file.
+      PackageReferences: (range * string list)[]
+
       /// The list of references that were not resolved during load closure.
       UnresolvedReferences: UnresolvedAssemblyReference list
 

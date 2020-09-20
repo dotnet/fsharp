@@ -7577,6 +7577,11 @@
         <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocMissingParameter">
+        <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
+        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="xmlDocMissingParameterName">
         <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
         <target state="new">This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</target>

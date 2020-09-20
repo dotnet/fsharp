@@ -5274,22 +5274,34 @@ type LoadClosureInput =
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
       SourceFiles: (string * range list) list
+
       /// The resolved references along with the ranges of the #r positions in each file.
       References: (string * AssemblyResolution list) list
+
+      /// The resolved pacakge references along with the ranges of the #r positions in each file.
+      PackageReferences: (range * string list)[]
+
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences: UnresolvedAssemblyReference list
+
       /// The list of all sources in the closure with inputs when available
       Inputs: LoadClosureInput list
+
       /// The #load, including those that didn't resolve
       OriginalLoadReferences: (range * string * string) list
+
       /// The #nowarns
       NoWarns: (string * range list) list
+
       /// Diagnostics seen while processing resolutions
       ResolutionDiagnostics: (PhasedDiagnostic * bool) list
+
       /// Diagnostics seen while parsing root of closure
       AllRootFileDiagnostics: (PhasedDiagnostic * bool) list
+
       /// Diagnostics seen while processing the compiler options implied root of closure
-      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list }   
+      LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list
+    }   
 
 
 [<RequireQualifiedAccess>]
@@ -5421,6 +5433,7 @@ module ScriptPreprocessClosure =
 
         let observedSources = Observed()
         let loadScripts = HashSet<_>()
+        let packageReferences = Dictionary<range, string list>(HashIdentity.Structural)
 
         // Resolve the packages
         let rec resolveDependencyManagerSources scriptName =
@@ -5454,12 +5467,13 @@ module ScriptPreprocessClosure =
                                 let packageManagerTextLines = packageManagerLines |> List.map(fun l -> directive l.Directive, l.Line)
                                 let result = dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
                                 if result.Success then
+                                    // Resolution produced no errors
                                     //Write outputs in F# Interactive and compiler
                                     if codeContext <> CodeContext.Editing then 
                                         for line in result.StdOut do Console.Out.WriteLine(line)
                                         for line in result.StdError do Console.Error.WriteLine(line)
 
-                                    // Resolution produced no errors
+                                    packageReferences.[m] <- [ for script in result.SourceFiles do yield! File.ReadAllLines script ]
                                     if not (Seq.isEmpty result.Roots) then
                                         let tcConfigB = tcConfig.CloneOfOriginalBuilder
                                         for folder in result.Roots do 
@@ -5529,10 +5543,13 @@ module ScriptPreprocessClosure =
                         printfn "yielding non-script source %s" filename
                         yield ClosureFile(filename, m, None, [], [], []) ]
 
-        closureSources |> List.collect loop, tcConfig
+        let sources = closureSources |> List.collect loop
+        let packageReferences = packageReferences |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toArray
+        sources, tcConfig, packageReferences
+        
         
     /// Reduce the full directive closure into LoadClosure
-    let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext) = 
+    let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences) = 
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
@@ -5597,6 +5614,7 @@ module ScriptPreprocessClosure =
         let result: LoadClosure =
             { SourceFiles = List.groupBy fst sourceFiles |> List.map (map2Of2 (List.map snd))
               References = List.groupBy fst references |> List.map (map2Of2 (List.map snd))
+              PackageReferences = packageReferences
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
               NoWarns = List.groupBy fst globalNoWarns |> List.map (map2Of2 (List.map snd))
@@ -5638,8 +5656,8 @@ module ScriptPreprocessClosure =
                  tryGetMetadataSnapshot, reduceMemoryUsage)
 
         let closureSources = [ClosureSource(filename, range0, sourceText, true)]
-        let closureFiles, tcConfig = FindClosureFiles(filename, range0, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
-        GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext)
+        let closureFiles, tcConfig, packageReferences = FindClosureFiles(filename, range0, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
+        GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext, packageReferences)
 
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
@@ -5649,8 +5667,8 @@ module ScriptPreprocessClosure =
 
         let mainFile, mainFileRange = List.last files
         let closureSources = files |> List.collect (fun (filename, m) -> ClosureSourceOfFilename(filename, m,tcConfig.inputCodePage,true))
-        let closureFiles,tcConfig = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
-        GetLoadClosure(ctok, mainFile, closureFiles, tcConfig, codeContext)        
+        let closureFiles, tcConfig, packageReferences = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
+        GetLoadClosure(ctok, mainFile, closureFiles, tcConfig, codeContext, packageReferences)        
 
 type LoadClosure with
     /// Analyze a script text and find the closure of its references. 

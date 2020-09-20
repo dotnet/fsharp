@@ -1051,7 +1051,21 @@ type internal TypeCheckInfo
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
-            | [] -> FSharpStructuredToolTipText.FSharpToolTipText []
+            | [] -> 
+                let matches =
+                    match loadClosure with
+                    | None -> None
+                    | Some(loadClosure) -> 
+                        loadClosure.PackageReferences
+                        |> Array.tryFind (fun (m, _) -> Range.rangeContainsPos m pos)
+                match matches with 
+                | None -> FSharpStructuredToolTipText.FSharpToolTipText []
+                | Some (_, lines) -> 
+                    let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
+                    FSharpStructuredToolTipText.FSharpToolTipText 
+                       [ for line in lines -> 
+                            let tip = wordL (TaggedTextOps.tagStringLiteral line)
+                            FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
             dataTipOfReferences

@@ -762,7 +762,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         inputFilesAcc
 
     // We need a dependency provider with native resolution.  Managed resolution is handled by generated `#r`
-    let dependencyProvider = new DependencyProvider(null, NativeResolutionProbe(tcConfigB.GetNativeProbingRoots))
+    let dependencyProvider = new DependencyProvider(NativeResolutionProbe(tcConfigB.GetNativeProbingRoots))
 
     do 
         if tcConfigB.utf8output then
@@ -1486,6 +1486,16 @@ type internal FsiDynamicCompiler
                     try
                         let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
                         if result.Success then
+                            for line in result.StdOut do Console.Out.WriteLine(line)
+                            for line in result.StdError do Console.Error.WriteLine(line)
+                            tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
+                            for folder in result.Roots do
+                                tcConfigB.AddIncludePath(m, folder, "")
+                            let scripts = result.SourceFiles |> Seq.toList
+                            if not (isNil scripts) then
+                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
+                            else istate
+                        else
                             // Send outputs via diagnostics
                             if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
                                 for line in Array.append result.StdOut result.StdError do
@@ -1496,16 +1506,6 @@ type internal FsiDynamicCompiler
                             tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
                             istate // error already reported
 
-                        else
-                            for line in result.StdOut do Console.Out.WriteLine(line)
-                            for line in result.StdError do Console.Error.WriteLine(line)
-                            tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
-                            for folder in result.Roots do
-                                tcConfigB.AddIncludePath(m, folder, "")
-                            let scripts = result.SourceFiles |> Seq.toList
-                            if not (isNil scripts) then
-                                fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
-                            else istate
 
                     with _ ->
                         // An exception occured during processing, so remove the lines causing the error from the package manager list.
