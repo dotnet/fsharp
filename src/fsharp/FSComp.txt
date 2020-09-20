@@ -1546,4 +1546,5 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3390,xmlDocInvalidParameterName,"This XML comment is invalid: unknown parameter '%s'"
 3390,xmlDocDuplicateParameter,"This XML comment is invalid: multiple documentation entries for parameter '%s'"
 3390,xmlDocUnresolvedCrossReference,"This XML comment is invalid: unresolved cross-reference '%s'"
+3390,xmlDocMissingParameter,"This XML comment is incomplete: no documentation for parameter '%s'"
 3393,packageManagerFailedNoOutput,"Package manager failed without output"
