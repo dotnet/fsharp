@@ -3857,6 +3857,11 @@
         <target state="new">{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagerFailedNoOutput">
+        <source>Package manager failed without output</source>
+        <target state="new">Package manager failed without output</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
         <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
@@ -7570,11 +7575,6 @@
       <trans-unit id="xmlDocMissingCrossReference">
         <source>This XML comment is invalid: missing 'cref' attribute for cross-reference</source>
         <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="xmlDocMissingParameter">
-        <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
-        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingParameterName">

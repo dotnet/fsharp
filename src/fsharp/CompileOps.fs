@@ -5453,8 +5453,12 @@ module ScriptPreprocessClosure =
 
                                 let packageManagerTextLines = packageManagerLines |> List.map(fun l -> directive l.Directive, l.Line)
                                 let result = dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
-                                match result.Success with
-                                | true ->
+                                if result.Success then
+                                    //Write outputs in F# Interactive and compiler
+                                    if codeContext <> CodeContext.Editing then 
+                                        for line in result.StdOut do Console.Out.WriteLine(line)
+                                        for line in result.StdError do Console.Error.WriteLine(line)
+
                                     // Resolution produced no errors
                                     if not (Seq.isEmpty result.Roots) then
                                         let tcConfigB = tcConfig.CloneOfOriginalBuilder
@@ -5468,7 +5472,13 @@ module ScriptPreprocessClosure =
                                         let iSourceText = SourceText.ofString scriptText
                                         yield! loop (ClosureSource(script, m, iSourceText, true))
 
-                                | false ->
+                                else
+                                    // Send outputs via diagnostics
+                                    if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
+                                        for line in Array.append result.StdOut result.StdError do
+                                            errorR(Error(FSComp.SR.packageManagerError(line), m))
+                                    else
+                                        warning(Error(FSComp.SR.packageManagerFailedNoOutput(), m))
                                     // Resolution produced errors update packagerManagerLines entries to note these failure
                                     // failed resolutions will no longer be considered
                                     let tcConfigB = tcConfig.CloneOfOriginalBuilder

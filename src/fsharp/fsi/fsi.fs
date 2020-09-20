@@ -1485,12 +1485,20 @@ type internal FsiDynamicCompiler
 
                     try
                         let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
-                        match result.Success with
-                        | false ->
+                        if result.Success then
+                            // Send outputs via diagnostics
+                            if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
+                                for line in Array.append result.StdOut result.StdError do
+                                    errorR(Error(FSComp.SR.packageManagerError(line), m))
+                            else
+                                warning(Error(FSComp.SR.packageManagerFailedNoOutput(), m))
+                            //Write outputs in F# Interactive and compiler
                             tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
                             istate // error already reported
 
-                        | true ->
+                        else
+                            for line in result.StdOut do Console.Out.WriteLine(line)
+                            for line in result.StdError do Console.Error.WriteLine(line)
                             tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
                             for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")

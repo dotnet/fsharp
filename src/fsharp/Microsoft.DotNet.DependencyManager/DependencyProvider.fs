@@ -330,7 +330,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                     None
             managers
 
-    let cache = ConcurrentDictionary<_,IResolveDependenciesResult>(HashIdentity.Structural)
+    let cache = ConcurrentDictionary<_,Result<IResolveDependenciesResult, _>>(HashIdentity.Structural)
 
     new (nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(null, nativeProbingRoots)
 
@@ -399,21 +399,25 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
         
         let key = (packageManager.Key, scriptExt, Seq.toArray packageManagerTextLines, executionTfm, executionRid, implicitIncludeDir, mainScriptName, fileName)
 
-        cache.GetOrAdd(key, System.Func<_,_>(fun _ -> 
-            try
-                let executionRid =
-                    if isNull executionRid then
-                        RidHelpers.platformRid
-                    else
-                        executionRid
-                packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid)
+        let result = 
+            cache.GetOrAdd(key, System.Func<_,_>(fun _ -> 
+                try
+                    let executionRid =
+                        if isNull executionRid then
+                            RidHelpers.platformRid
+                        else
+                            executionRid
+                    Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid))
 
-            with e ->
-                let e = stripTieWrapper e
-                let err, msg = (DependencyManager.SR.packageManagerError(e.Message))
-                reportError.Invoke(ErrorReportType.Error, err, msg)
-                ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
-        ))
+                with e ->
+                    let e = stripTieWrapper e
+                    Error (DependencyManager.SR.packageManagerError(e.Message))
+            ))
+        match result with 
+        | Ok res -> res
+        | Error (errorNumber, errorData) ->
+            reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
+            ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 
     interface IDisposable with
 
