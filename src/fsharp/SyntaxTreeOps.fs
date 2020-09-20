@@ -200,7 +200,7 @@ let rec SimplePatsOfPat synArgNameGenerator p =
 
     | SynPat.Tuple (false, ps, m)
 
-    | SynPat.Paren(SynPat.Tuple (false, ps, m), _) ->
+    | SynPat.Paren(SynPat.Tuple (false, ps, _), m) ->
         let ps2, laterF =
           List.foldBack
             (fun (p', rhsf) (ps', rhsf') ->
