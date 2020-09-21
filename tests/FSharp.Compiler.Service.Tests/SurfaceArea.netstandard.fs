@@ -31673,6 +31673,8 @@ FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynExpr body
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynExpr get_body()
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynSimplePats args
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynSimplePats get_args()
+FSharp.Compiler.SyntaxTree+SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]] parsedData
+FSharp.Compiler.SyntaxTree+SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]] get_parsedData()
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: System.String ToString()
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: range Range
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: range RangeOfFirstPortion
@@ -36769,7 +36771,7 @@ FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredDowncast(SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredUpcast(SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInterpolatedString(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart], range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewJoinIn(SynExpr, range, SynExpr, range)
-FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLambda(Boolean, Boolean, SynSimplePats, SynExpr, range)
+FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLambda(Boolean, Boolean, SynSimplePats, SynExpr, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]], range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLazy(SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLetOrUse(Boolean, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynBinding], SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLetOrUseBang(DebugPointForBinding, Boolean, Boolean, SynPat, SynExpr, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`6[FSharp.Compiler.SyntaxTree+DebugPointForBinding,System.Boolean,System.Boolean,FSharp.Compiler.SyntaxTree+SynPat,FSharp.Compiler.SyntaxTree+SynExpr,FSharp.Compiler.Range+range]], SynExpr, range)
