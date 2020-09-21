@@ -636,7 +636,7 @@ module ParsedInput =
             | SynExpr.Assert (e, _)
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
-            | SynExpr.Lambda (_, _, pats, e, _) ->
+            | SynExpr.Lambda (_, _, pats, e, _, _) ->
                 walkSimplePats pats
                 walkExpr e
             | SynExpr.New (_, t, e, _)

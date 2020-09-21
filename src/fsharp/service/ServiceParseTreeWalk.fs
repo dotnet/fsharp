@@ -391,7 +391,7 @@ module public AstTraversal =
                     else
                     traverseSynExpr synExpr
 
-                | SynExpr.Lambda (_, _, synSimplePats, synExpr, _range) ->
+                | SynExpr.Lambda (_, _, synSimplePats, synExpr, _, _range) ->
                     match synSimplePats with
                     | SynSimplePats.SimplePats(pats,_) ->
                         match visitor.VisitSimplePats(pats) with
