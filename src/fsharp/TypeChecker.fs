@@ -8046,7 +8046,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
     let expectedArgCountForCustomOperator (nm: Ident) = 
         match tryGetArgInfosForCustomOperator nm with 
-        | None -> 0
+        | None -> -1
         | Some argInfos -> max (argInfos.Length - 1) 0 // drop the computation context argument
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
@@ -8936,7 +8936,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let dataCompAfterOp = 
                             match opExpr with 
                             | StripApps(SingleIdent nm, args) ->
-                                if args.Length = expectedArgCount || cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+                                if args.Length = expectedArgCount || (expectedArgCount = -1 && cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations) then
                                     // Check for the [<ProjectionParameter>] attribute on each argument position
                                     let args = args |> List.mapi (fun i arg -> 
                                         if isCustomOperationProjectionParameter (i+1) nm then 
@@ -8944,6 +8944,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                         else arg)
                                     mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
                                 else 
+                                    let expectedArgCount = max 0 expectedArgCount
                                     errorR(Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount(nm.idText, expectedArgCount, args.Length), nm.idRange))
                                     mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause)))
                             | _ -> failwith "unreachable"
