@@ -7926,7 +7926,6 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             |> Seq.map (fun (nm, group) ->
                 (nm,
                     group
-                    |> Seq.distinctBy (fun (_, _, _, _, _, _, _, _, methInfo) -> methInfo.LogicalName)
                     |> Seq.toList))
         else
             customOperationMethods
@@ -7942,7 +7941,6 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             |> Seq.map (fun (nm, group) ->
                 (nm,
                     group
-                    |> Seq.distinctBy (fun (nm, _, _, _, _, _, _, _, _) -> nm)
                     |> Seq.toList))
         else
             customOperationMethods
@@ -7953,15 +7951,16 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     /// Decide if the identifier represents a use of a custom query operator
     let tryGetDataForCustomOperation (nm: Ident) = 
         match customOperationMethodsIndexedByKeyword.TryGetValue nm.idText with 
-        | true, [opData] -> 
-            let (opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo) = opData
-            if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then 
-                 errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
-            match customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with 
-            | true, [_] -> ()
-            | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
-            Some opData
-        | true, opData :: _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some opData
+        | true, opDatas when (opDatas.Length = 1 || (opDatas.Length > 0 && cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations)) -> 
+            for opData in opDatas do
+                let (opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo) = opData
+                if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then 
+                     errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
+                match customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with 
+                | true, [_] -> ()
+                | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
+            Some opDatas
+        | true, (opData :: _) -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some [opData]
         | _ -> None
 
     /// Decide if the identifier represents a use of a custom query operator
@@ -7969,46 +7968,61 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
     let isCustomOperation nm = tryGetDataForCustomOperation nm |> Option.isSome
 
+    let customOperationCheckValidity m f opDatas = 
+        let vs = opDatas |> List.map f
+        let v0 = vs.[0]
+        let (opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) = opDatas.[0]
+        if not (vs |> List.forall (fun v -> v = v0)) then 
+            errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, m))
+        v0
+
     // Check for the MaintainsVariableSpace on custom operation
     let customOperationMaintainsVarSpace (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, _maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpace
+        | Some opDatas ->
+            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpace)
 
     let customOperationMaintainsVarSpaceUsingBind (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpaceUsingBind
+        | Some opDatas ->
+            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> maintainsVarSpaceUsingBind)
 
     let customOperationIsLikeZip (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeZip
+        | Some opDatas ->
+            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeZip)
 
     let customOperationIsLikeJoin (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeJoin
+        | Some opDatas ->
+            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeJoin)
 
     let customOperationIsLikeGroupJoin (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeGroupJoin 
+        | Some opDatas ->
+            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) -> isLikeGroupJoin)
 
     let customOperationJoinConditionWord (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, Some joinConditionWord, _methInfo) -> joinConditionWord 
+        | Some opDatas ->
+            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, joinConditionWord, _methInfo) -> joinConditionWord)
+             |> function None -> "on" | Some v -> v
         | _ -> "on"  
 
     let customOperationAllowsInto (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
         | None -> false
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> allowInto 
+        | Some opDatas ->
+            opDatas |> customOperationCheckValidity nm.idRange (fun (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) -> allowInto)
 
     let customOpUsageText nm = 
         match tryGetDataForCustomOperation nm with
-        | None -> None 
-        | Some (_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) ->
+        | Some ((_nm, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, _methInfo) :: _) ->
             if isLikeGroupJoin then
                 Some (FSComp.SR.customOperationTextLikeGroupJoin(nm.idText, customOperationJoinConditionWord nm, customOperationJoinConditionWord nm))
             elif isLikeJoin then
@@ -8017,6 +8031,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 Some (FSComp.SR.customOperationTextLikeZip(nm.idText))
             else
                 None
+        | _ -> None 
 
     /// Inside the 'query { ... }' use a modified name environment that contains fake 'CustomOperation' entries
     /// for all custom operations. This adds them to the completion lists and prevents them being used as values inside
@@ -8035,28 +8050,46 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
     // Check for the [<ProjectionParameter>] attribute on an argument position
     let tryGetArgInfosForCustomOperator (nm: Ident) = 
         match tryGetDataForCustomOperation nm with 
-        | None -> None
-        | Some (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
-            match methInfo with 
-            | FSMeth(_, _, vref, _) -> 
-                match ArgInfosOfMember cenv.g vref with
-                | [curriedArgInfo] -> Some curriedArgInfo // one for the actual argument group
-                | _ -> None
-            | _ -> None
+        | Some argInfos -> 
+            argInfos 
+            |> List.map (fun (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
+                match methInfo with 
+                | FSMeth(_, _, vref, _) -> 
+                    match ArgInfosOfMember cenv.g vref with
+                    | [curriedArgInfo] -> Some curriedArgInfo // one for the actual argument group
+                    | _ -> None
+                | _ -> None)
+            |> Some
+        | _ -> None
 
-    let expectedArgCountForCustomOperator (nm: Ident) = 
+    let tryExpectedArgCountForCustomOperator (nm: Ident) = 
         match tryGetArgInfosForCustomOperator nm with 
-        | None -> 0
-        | Some argInfos -> max (argInfos.Length - 1) 0 // drop the computation context argument
+        | None -> None
+        | Some argInfosForOverloads -> 
+            let nums = argInfosForOverloads |> List.map (function None -> -1 | Some argInfos -> List.length argInfos)
+            if nums |> List.forall (fun v -> v >= 0 && v = nums.[0]) then 
+                Some (max (nums.[0] - 1) 0) // drop the computation context argument
+            else
+                None
 
     // Check for the [<ProjectionParameter>] attribute on an argument position
     let isCustomOperationProjectionParameter i (nm: Ident) = 
         match tryGetArgInfosForCustomOperator nm with
         | None -> false
-        | Some argInfos ->
-            i < argInfos.Length && 
-            let (_, argInfo) = List.item i argInfos
-            HasFSharpAttribute cenv.g cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs
+        | Some argInfosForOverloads ->
+            let vs = 
+                argInfosForOverloads |> List.map (function 
+                    | None -> false
+                    | Some argInfos -> 
+                        i < argInfos.Length && 
+                        let (_, argInfo) = List.item i argInfos
+                        HasFSharpAttribute cenv.g cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs)
+            if List.allEqual vs then vs.[0]
+            else 
+                let opDatas = (tryGetDataForCustomOperation nm).Value
+                let (opName, _, _, _, _, _, _, _j, _) = opDatas.[0]
+                errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
+                false
 
     let (|ForEachThen|_|) e = 
         match e with 
@@ -8287,13 +8320,13 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
         match comp with 
         | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when 
                   PrettyNaming.IsInfixOperator nm.idText && 
-                  expectedArgCountForCustomOperator nm2 > 0 &&
+                  (match tryExpectedArgCountForCustomOperator nm2 with Some n -> n > 0 | _ -> false) &&
                   not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
             true
         | SynExpr.Tuple (false, (StripApps(SingleIdent nm2, args) :: _), _, m) when 
-                  expectedArgCountForCustomOperator nm2 > 0 &&
+                  (match tryExpectedArgCountForCustomOperator nm2 with Some n -> n > 0 | _ -> false) &&
                   not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range m.EndRange
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
@@ -8383,7 +8416,8 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
               // check 'join' or 'groupJoin' or 'zip' is permitted for this builder
             match tryGetDataForCustomOperation nm with 
             | None -> error(Error(FSComp.SR.tcMissingCustomOperation(nm.idText), nm.idRange))
-            | Some (opName, _, _, _, _, _, _, _, methInfo) -> 
+            | Some opDatas -> 
+            let (opName, _, _, _, _, _, _, _, methInfo) = opDatas.[0]
 
             // Record the resolution of the custom operation for posterity
             let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
@@ -8907,9 +8941,14 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 // Detect one custom operation... This clause will always match at least once...
                 | OptionalSequential
                       (CustomOperationClause
-                          (nm, (opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _, methInfo),
+                          (nm, opDatas,
                            opExpr, mClause, optionalIntoPat),
                        optionalCont) ->
+
+                    let (opName, _, _, _, _, _, _, _, methInfo) = opDatas.[0]
+                    let isLikeZip = customOperationIsLikeZip nm
+                    let isLikeJoin = customOperationIsLikeZip nm
+                    let isLikeGroupJoin = customOperationIsLikeZip nm
 
                     // Record the resolution of the custom operation for posterity
                     let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
@@ -8931,12 +8970,16 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                         let maintainsVarSpace = customOperationMaintainsVarSpace nm
                         let maintainsVarSpaceUsingBind = customOperationMaintainsVarSpaceUsingBind nm
 
-                        let expectedArgCount = expectedArgCountForCustomOperator nm
+                        let expectedArgCount = tryExpectedArgCountForCustomOperator nm
 
                         let dataCompAfterOp = 
                             match opExpr with 
                             | StripApps(SingleIdent nm, args) ->
-                                if args.Length = expectedArgCount || cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+                                let argCountsMatch =
+                                    match expectedArgCount with
+                                    | Some n -> n = args.Length
+                                    | None -> cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations
+                                if argCountsMatch then
                                     // Check for the [<ProjectionParameter>] attribute on each argument position
                                     let args = args |> List.mapi (fun i arg -> 
                                         if isCustomOperationProjectionParameter (i+1) nm then 
@@ -8944,6 +8987,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                         else arg)
                                     mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
                                 else 
+                                    let expectedArgCount = defaultArg expectedArgCount 0
                                     errorR(Error(FSComp.SR.tcCustomOperationHasIncorrectArgCount(nm.idText, expectedArgCount, args.Length), nm.idRange))
                                     mkSynCall methInfo.DisplayName mClause ([ dataCompPrior ] @ List.init expectedArgCount (fun i -> arbExpr("_arg" + string i, mClause)))
                             | _ -> failwith "unreachable"
