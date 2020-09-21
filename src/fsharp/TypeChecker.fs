@@ -7972,7 +7972,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
         let vs = opDatas |> List.map f
         let v0 = vs.[0]
         let (opName, _maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, _methInfo) = opDatas.[0]
-        if not (vs |> List.forall (fun v -> v = v0)) then 
+        if not (List.allEqual vs) then 
             errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, m))
         v0
 

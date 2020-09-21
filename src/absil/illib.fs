@@ -426,7 +426,7 @@ module List =
         |> List.filter (fun (_, elems) -> Seq.length elems > 1) 
         |> List.map fst 
 
-    let allEqual (xs: 'T list) =
+    let internal allEqual (xs: 'T list) =
         match xs with 
         | [] -> true
         | h::t -> t |> List.forall (fun h2 -> h = h2)
