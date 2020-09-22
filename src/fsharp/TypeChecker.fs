@@ -7956,9 +7956,10 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                 let (opName, maintainsVarSpaceUsingBind, maintainsVarSpace, _allowInto, isLikeZip, isLikeJoin, isLikeGroupJoin, _joinConditionWord, methInfo) = opData
                 if (maintainsVarSpaceUsingBind && maintainsVarSpace) || (isLikeZip && isLikeJoin) || (isLikeZip && isLikeGroupJoin) || (isLikeJoin && isLikeGroupJoin) then 
                      errorR(Error(FSComp.SR.tcCustomOperationInvalid opName, nm.idRange))
-                match customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with 
-                | true, [_] -> ()
-                | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
+                if not cenv.g.langVersion.SupportsFeature LanguageFeature.OverloadsForCustomOperations then
+                    match customOperationMethodsIndexedByMethodName.TryGetValue methInfo.LogicalName with 
+                    | true, [_] -> ()
+                    | _ -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange))
             Some opDatas
         | true, (opData :: _) -> errorR(Error(FSComp.SR.tcCustomOperationMayNotBeOverloaded nm.idText, nm.idRange)); Some [opData]
         | _ -> None
