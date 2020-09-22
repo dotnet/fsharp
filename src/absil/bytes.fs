@@ -544,7 +544,7 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
         if useBackingMemoryMappedFile then
             match MemoryMappedFile.TryFromByteMemory(bytes) with
             | Some mmf ->
-                ByteStorage.FromByteMemory(ByteMemory.FromMemoryMappedFile(mmf).AsReadOnly())
+                ByteStorage(fun () -> ByteMemory.FromMemoryMappedFile(mmf).AsReadOnly())
             | _ ->
                 let copiedBytes = ByteMemory.FromArray(bytes.ToArray()).AsReadOnly()
                 ByteStorage.FromByteMemory(copiedBytes)
