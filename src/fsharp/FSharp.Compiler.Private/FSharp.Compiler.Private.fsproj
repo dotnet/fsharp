@@ -559,17 +559,47 @@
     <Compile Include="..\DotNetFrameworkDependencies.fs">
       <Link>Driver\DotNetFrameworkDependencies.fs</Link>
     </Compile>
-    <Compile Include="..\CompileOps.fsi">
-      <Link>Driver\CompileOps.fsi</Link>
+    <Compile Include="..\CompilerConfig.fsi">
+      <Link>Driver\CompilerConfig.fsi</Link>
     </Compile>
-    <Compile Include="..\CompileOps.fs">
-      <Link>Driver\CompileOps.fs</Link>
+    <Compile Include="..\CompilerConfig.fs">
+      <Link>Driver\CompilerConfig.fs</Link>
     </Compile>
-    <Compile Include="..\CompileOptions.fsi">
-      <Link>Driver\CompileOptions.fsi</Link>
+    <Compile Include="..\CompilerImports.fsi">
+      <Link>Driver\CompilerImports.fsi</Link>
     </Compile>
-    <Compile Include="..\CompileOptions.fs">
-      <Link>Driver\CompileOptions.fs</Link>
+    <Compile Include="..\CompilerImports.fs">
+      <Link>Driver\CompilerImports.fs</Link>
+    </Compile>
+    <Compile Include="..\CompilerDiagnostics.fsi">
+      <Link>Driver\CompilerDiagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="..\CompilerDiagnostics.fs">
+      <Link>Driver\CompilerDiagnostics.fs</Link>
+    </Compile>
+    <Compile Include="..\ParseAndCheckInputs.fsi">
+      <Link>Driver\ParseAndCheckInputs.fsi</Link>
+    </Compile>
+    <Compile Include="..\ParseAndCheckInputs.fs">
+      <Link>Driver\ParseAndCheckInputs.fs</Link>
+    </Compile>
+    <Compile Include="..\ScriptClosure.fsi">
+      <Link>Driver\ScriptClosure.fsi</Link>
+    </Compile>
+    <Compile Include="..\ScriptClosure.fs">
+      <Link>Driver\ScriptClosure.fs</Link>
+    </Compile>
+    <Compile Include="..\CompilerOptions.fsi">
+      <Link>Driver\CompilerOptions.fsi</Link>
+    </Compile>
+    <Compile Include="..\CompilerOptions.fs">
+      <Link>Driver\CompilerOptions.fs</Link>
+    </Compile>
+    <Compile Include="..\OptimizeInputs.fsi">
+      <Link>Driver\OptimizeInputs.fsi</Link>
+    </Compile>
+    <Compile Include="..\OptimizeInputs.fs">
+      <Link>Driver\OptimizeInputs.fs</Link>
     </Compile>
     <Compile Include="..\fsc.fsi">
       <Link>Driver\fsc.fsi</Link>
