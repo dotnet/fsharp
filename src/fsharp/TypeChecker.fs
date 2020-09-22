@@ -8947,7 +8947,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
                     let (opName, _, _, _, _, _, _, _, methInfo) = opDatas.[0]
                     let isLikeZip = customOperationIsLikeZip nm
-                    let isLikeJoin = customOperationIsLikeZip nm
+                    let isLikeJoin = customOperationIsLikeJoin nm
                     let isLikeGroupJoin = customOperationIsLikeZip nm
 
                     // Record the resolution of the custom operation for posterity
