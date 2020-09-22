@@ -197,6 +197,11 @@
         <target state="new">Invalid directive '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionConst">
+        <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
+        <target state="new">Keyword to specify a constant literal as a type parameter argument in Type Providers.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="new">a byte string may not be interpolated</target>

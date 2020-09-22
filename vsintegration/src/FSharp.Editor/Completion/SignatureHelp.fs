@@ -197,7 +197,7 @@ type internal FSharpSignatureHelpProvider
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
               try
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
 

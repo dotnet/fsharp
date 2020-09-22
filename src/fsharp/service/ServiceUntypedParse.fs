@@ -278,7 +278,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
 
-                  | SynExpr.Lambda (_, _, _, e, _) -> 
+                  | SynExpr.Lambda (_, _, _, e, _, _) -> 
                       yield! walkExpr true e 
 
                   | SynExpr.Match (spBind, e, cl, _) ->
@@ -853,7 +853,7 @@ module UntypedParseImpl =
             | SynExpr.ForEach (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.ArrayOrListOfSeqExpr (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.CompExpr (_, _, e, _) -> walkExprWithKind parentKind e
-            | SynExpr.Lambda (_, _, _, e, _) -> walkExprWithKind parentKind e
+            | SynExpr.Lambda (_, _, _, e, _, _) -> walkExprWithKind parentKind e
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> 
                 List.tryPick walkClause synMatchClauseList
             | SynExpr.Match (_, e, synMatchClauseList, _) -> 

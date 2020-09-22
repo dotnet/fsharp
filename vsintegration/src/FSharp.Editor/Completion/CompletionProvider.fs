@@ -228,7 +228,7 @@ type internal FSharpCompletionProvider
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
             do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
-            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
+            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let getAllSymbols(fileCheckResults: FSharpCheckFileResults) =
                 if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules
@@ -298,7 +298,7 @@ type internal FSharpCompletionProvider
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
-                    let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+                    let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                     let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     

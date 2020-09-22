@@ -665,6 +665,8 @@ type SynExpr =
 
     /// First bool indicates if lambda originates from a method. Patterns here are always "simple"
     /// Second bool indicates if this is a "later" part of an iterated sequence of lambdas
+    /// parsedData keeps original parsed patterns and expression,
+    /// prior to transforming to "simple" patterns and iterated lambdas 
     ///
     /// F# syntax: fun pat -> expr
     | Lambda of
@@ -672,6 +674,7 @@ type SynExpr =
         inLambdaSeq: bool *
         args: SynSimplePats *
         body: SynExpr *
+        parsedData: (SynPat list * SynExpr) option *
         range: range
 
     /// F# syntax: function pat1 -> expr | ... | patN -> exprN

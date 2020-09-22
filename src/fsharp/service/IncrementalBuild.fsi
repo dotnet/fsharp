@@ -16,6 +16,8 @@ open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
+open Microsoft.DotNet.DependencyManager
+
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
@@ -178,9 +180,29 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
+      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool * keepAllBackgroundSymbolUses: bool * enableBackgroundItemKeyStoreAndSemanticClassification: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
+      /// Create the incremental builder
+      static member TryCreateIncrementalBuilderForProjectOptions:
+          CompilationThreadToken *
+          ReferenceResolver.Resolver *
+          defaultFSharpBinariesDir: string * 
+          FrameworkImportsCache *
+          scriptClosureOptions:LoadClosure option *
+          sourceFiles:string list *
+          commandLineArgs:string list *
+          projectReferences: IProjectReference list *
+          projectDirectory:string *
+          useScriptResolutionRules:bool *
+          keepAssemblyContents: bool *
+          keepAllBackgroundResolutions: bool *
+          maxTimeShareMilliseconds: int64 *
+          tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot *
+          suggestNamesForErrors: bool *
+          keepAllBackgroundSymbolUses: bool *
+          enableBackgroundItemKeyStoreAndSemanticClassification: bool *
+          dependencyProvider: DependencyProvider option
+             -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =

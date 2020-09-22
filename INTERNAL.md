@@ -17,6 +17,10 @@ navigating through an existing PR.
 
 [VS 15.0 to 15.5](https://dev.azure.com/devdiv/DevDiv/_build?definitionId=5037)
 
+## Branch auto-merge definitions
+
+Branch auto-merge definitions are specified [here](https://github.com/dotnet/roslyn-tools/blob/master/src/GitHubCreateMergePRs/config.xml).
+
 ## VS Insertion Generators
 
 VS 16.4 to current - part of the build definition.  [See below](#vs-insertions-as-part-of-the-build-definition).
