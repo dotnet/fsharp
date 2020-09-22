@@ -87,7 +87,7 @@ type internal ReadOnlyByteMemory =
     member AsStream: unit -> Stream
 
 [<AutoOpen>]
-module MemoryMappedFileExtensions =
+module internal MemoryMappedFileExtensions =
 
     type MemoryMappedFile with
 
@@ -95,7 +95,7 @@ module MemoryMappedFileExtensions =
         /// If the given ByteMemory's length is zero or a memory mapped file is not supported, the result will be None.
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
 
-type ByteMemory with
+type internal ByteMemory with
 
     member AsReadOnly: unit -> ReadOnlyByteMemory
 
@@ -151,7 +151,7 @@ type internal ByteStream =
 #endif
 
 [<Sealed>]
-type ByteStorage =
+type internal ByteStorage =
 
     member GetByteMemory : unit -> ReadOnlyByteMemory
 
