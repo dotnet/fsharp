@@ -104,6 +104,10 @@ module SurfaceArea =
                 Printf.bprintf sb "    windiff %s %s" baseline logFile
                 newLine sb
                 newLine sb
+                sb.AppendLine "To update the baseline run:" |> ignore
+                Printf.bprintf sb "    copy /y %s %s" logFile baseline
+                newLine sb
+                newLine sb
                 sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
                 for s in unexpectedlyMissing do
                     newLine sb

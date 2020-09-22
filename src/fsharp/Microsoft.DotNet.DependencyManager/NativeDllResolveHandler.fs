@@ -101,8 +101,9 @@ type NativeDllResolveHandlerCoreClr (_nativeProbingRoots: NativeResolutionProbe)
         let probe =
             match _nativeProbingRoots with
             | null -> None
-            | _ ->  _nativeProbingRoots.Invoke()
-                    |> Seq.tryPick(fun root ->
+            | _ ->  
+                _nativeProbingRoots.Invoke()
+                |> Seq.tryPick(fun root ->
                     probingFileNames name |> Seq.tryPick(fun name ->
                         let path = Path.Combine(root, name)
                         if File.Exists(path) then

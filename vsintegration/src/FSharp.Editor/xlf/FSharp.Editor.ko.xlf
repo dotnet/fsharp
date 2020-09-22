@@ -7,14 +7,19 @@
         <target state="translated">'new' 키워드 추가</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpDisposableLocalValuesClassificationType">
+        <source>F# Disposable Values (locals)</source>
+        <target state="new">F# Disposable Values (locals)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
+        <source>F# Dispostable Values (top-level)</source>
+        <target state="new">F# Dispostable Values (top-level)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
         <source>F# Disposable Types</source>
         <target state="new">F# Disposable Types</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpDisposableValuesClassificationType">
-        <source>F# Disposable Values</source>
-        <target state="new">F# Disposable Values</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFunctionsClassificationType">

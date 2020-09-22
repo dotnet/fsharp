@@ -7,9 +7,6 @@
             <group targetFramework=".NETStandard2.0">
                 <dependency id="FSharp.Core" version="$FSharpCoreVersion$" />
             </group>
-            <group targetFramework="net472">
-                <dependency id="FSharp.Core" version="$FSharpCoreVersion$" />
-            </group>
         </dependencies>
 
     </metadata>
@@ -19,11 +16,7 @@
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.dll"                  target="lib\netstandard2.0" />
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.xml"                  target="lib\netstandard2.0" />
 
-        <file src="FSharp.Compiler.Service\$Configuration$\net472\FSharp.Compiler.Service.dll"                          target="lib\net472" />
-        <file src="FSharp.Compiler.Service\$Configuration$\net472\FSharp.Compiler.Service.xml"                          target="lib\net472" />
-
         <!-- resources -->
         <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"     target="lib\netstandard2.0" />
-        <file src="FSharp.Compiler.Service\$Configuration$\net472\**\FSharp.Compiler.Service.resources.dll"             target="lib\net472" />
     </files>
 </package>

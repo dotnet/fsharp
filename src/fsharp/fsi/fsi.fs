@@ -601,7 +601,11 @@ let internal directoryName (s:string) =
 //----------------------------------------------------------------------------
 
 /// Process the command line options 
-type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: string[], tcConfigB, fsiConsoleOutput: FsiConsoleOutput) = 
+type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
+                argv: string[], 
+                tcConfigB,
+                fsiConsoleOutput: FsiConsoleOutput) = 
+
     let mutable enableConsoleKeyProcessing = 
        // Mono on Win32 doesn't implement correct console processing
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
@@ -757,6 +761,9 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
         inputFilesAcc
 
+    // We need a dependency provider with native resolution.  Managed resolution is handled by generated `#r`
+    let dependencyProvider = new DependencyProvider(NativeResolutionProbe(tcConfigB.GetNativeProbingRoots))
+
     do 
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
@@ -789,17 +796,18 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
         fsiConsoleOutput.uprintfn  ""
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader1directives())
-        fsiConsoleOutput.uprintfn  """    #r "file.dll";;                   // %s""" (FSIstrings.SR.fsiIntroTextHashrInfo())
-        fsiConsoleOutput.uprintfn  """    #I "path";;                       // %s""" (FSIstrings.SR.fsiIntroTextHashIInfo())
-        fsiConsoleOutput.uprintfn  """    #load "file.fs" ...;;             // %s""" (FSIstrings.SR.fsiIntroTextHashloadInfo())
-        fsiConsoleOutput.uprintfn  """    #time ["on"|"off"];;              // %s""" (FSIstrings.SR.fsiIntroTextHashtimeInfo())
-        fsiConsoleOutput.uprintfn  """    #help;;                           // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo())
+        fsiConsoleOutput.uprintfn  """    #r "file.dll";;                               // %s""" (FSIstrings.SR.fsiIntroTextHashrInfo())
+        fsiConsoleOutput.uprintfn  """    #i "package source uri";;                     // %s""" (FSIstrings.SR.fsiIntroPackageSourceUriInfo())
+        fsiConsoleOutput.uprintfn  """    #I "path";;                                   // %s""" (FSIstrings.SR.fsiIntroTextHashIInfo())
+        fsiConsoleOutput.uprintfn  """    #load "file.fs" ...;;                         // %s""" (FSIstrings.SR.fsiIntroTextHashloadInfo())
+        fsiConsoleOutput.uprintfn  """    #time ["on"|"off"];;                          // %s""" (FSIstrings.SR.fsiIntroTextHashtimeInfo())
+        fsiConsoleOutput.uprintfn  """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo())
 
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-            for msg in tcConfigB.dependencyProvider.GetRegisteredDependencyManagerHelpText(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
+            for msg in dependencyProvider.GetRegisteredDependencyManagerHelpText(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
                 fsiConsoleOutput.uprintfn "%s" msg
 
-        fsiConsoleOutput.uprintfn  """    #quit;;                           // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo())   (* last thing you want to do, last thing in the list - stands out more *)
+        fsiConsoleOutput.uprintfn  """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo())   (* last thing you want to do, last thing in the list - stands out more *)
         fsiConsoleOutput.uprintfn  "";
         fsiConsoleOutput.uprintfnn "%s" (FSIstrings.SR.fsiIntroTextHeader2commandLine())
         fsiConsoleOutput.uprintfn  "%s" (FSIstrings.SR.fsiIntroTextHeader3(helpLine))
@@ -822,6 +830,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     member __.PeekAheadOnConsoleToPermitTyping = peekAheadOnConsoleToPermitTyping
     member __.SourceFiles = sourceFiles
     member __.Gui = gui
+
+    member _.DependencyProvider = dependencyProvider
 
 /// Set the current ui culture for the current thread.
 let internal SetCurrentUICultureForThread (lcid : int option) =
@@ -1457,23 +1467,27 @@ type internal FsiDynamicCompiler
             let packageManagerKey, packageManagerLines = kv.Key, kv.Value
             match packageManagerLines with
             | [] -> istate
-            | { LineType=_; LineStatus=_; Line=_; Range=m } :: _ ->
+            | { Directive=_; LineStatus=_; Line=_; Range=m } :: _ ->
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
-                match tcConfigB.dependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
+                match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
                 | null ->
-                    errorR(Error(tcConfigB.dependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
+                    errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
                     istate
                 | dependencyManager ->
-                    let packageManagerTextLines = packageManagerLines |> List.map (fun line -> line.Line)
-                    try
-                        let result = tcConfigB.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
-                        match result.Success with
-                        | false ->
-                            tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
-                            istate // error already reported
+                    let directive d =
+                        match d with
+                        | Directive.Resolution -> "r"
+                        | Directive.Include -> "i"
 
-                        | true ->
+                    let packageManagerTextLines =
+                        packageManagerLines |> List.map (fun line -> directive line.Directive, line.Line)
+
+                    try
+                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
+                        if result.Success then
+                            for line in result.StdOut do Console.Out.WriteLine(line)
+                            for line in result.StdError do Console.Error.WriteLine(line)
                             tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
                             for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")
@@ -1481,6 +1495,15 @@ type internal FsiDynamicCompiler
                             if not (isNil scripts) then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
                             else istate
+                        else
+                            // Send outputs via diagnostics
+                            if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
+                                for line in Array.append result.StdOut result.StdError do
+                                    errorR(Error(FSComp.SR.packageManagerError(line), m))
+                            //Write outputs in F# Interactive and compiler
+                            tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
+                            istate // error already reported
+
 
                     with _ ->
                         // An exception occured during processing, so remove the lines causing the error from the package manager list.
@@ -1494,8 +1517,27 @@ type internal FsiDynamicCompiler
            (fun () ->
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
-                    (fun st (m,nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
-                    (fun st (packageManagerPrefix, lt, m, nm) -> fsiDynamicCompiler.EvalDependencyManagerTextFragment (packageManagerPrefix, lt, m, nm); st),
+                    (fun st (m, path, directive) -> 
+
+                        let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
+
+                        match dm with
+                        | _, dependencyManager when not(isNull dependencyManager) ->
+                            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                                fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
+                                st
+                            else
+                                errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                                st
+
+                        | _, _ when directive = Directive.Include ->
+                            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+                            st
+
+                        // #r "Assembly"
+                        | path, _ ->
+                            snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
+                    ),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
 
@@ -1509,7 +1551,11 @@ type internal FsiDynamicCompiler
          
           // Close the #load graph on each file and gather the inputs from the scripts.
           let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-          let closure = LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig, sourceFiles, CodeContext.CompilationAndEvaluation, lexResourceManager=lexResourceManager)
+
+          let closure =
+              LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig,
+                 sourceFiles, CodeContext.CompilationAndEvaluation,
+                 lexResourceManager, fsiOptions.DependencyProvider)
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
@@ -2097,6 +2143,48 @@ type internal FsiInteractionProcessor
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
+        let packageManagerDirective directive path m =
+            let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
+            match dm with
+            | null, null ->
+                // error already reported
+                istate, CompletedWithAlreadyReportedError
+
+            | _, dependencyManager when not(isNull dependencyManager) ->
+               if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                   fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
+                   istate, Completed None
+               else
+                   errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                   istate, Completed None
+
+            | _, _ when directive = Directive.Include ->
+                errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+                istate,Completed None
+
+            | p, _ ->
+                let path =
+                    if String.IsNullOrWhiteSpace(p) then ""
+                    else p
+                let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
+                resolutions |> List.iter (fun ar -> 
+                    let format =
+                        if tcConfig.shadowCopyReferences then
+                            let resolvedPath = ar.resolvedPath.ToUpperInvariant()
+                            let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
+                            match referencedAssemblies.TryGetValue resolvedPath with
+                            | false, _ -> 
+                                referencedAssemblies.Add(resolvedPath, fileTime)
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                            | true, time when time <> fileTime ->
+                                FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
+                            | _ ->
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                        else
+                            FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
+                    fsiConsoleOutput.uprintnfnn "%s" format)
+                istate,Completed None
+
         istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 
             | IDefns ([], _) ->
@@ -2116,42 +2204,10 @@ type internal FsiInteractionProcessor
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
             | IHash (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
-                let dm = tcConfigB.dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
-                match dm with
-                | null, null ->
-                    // error already reported
-                    istate, CompletedWithAlreadyReportedError
+                packageManagerDirective Directive.Resolution path m
 
-                | _, dependencyManager when not(isNull dependencyManager) ->
-                   if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                       fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, LType.Resolution, m, path)
-                       istate, Completed None
-                   else
-                       errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
-                       istate, Completed None
-
-                | p, _ ->
-                    let path =
-                        if String.IsNullOrWhiteSpace(p) then ""
-                        else p
-                    let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
-                    resolutions |> List.iter (fun ar -> 
-                        let format =
-                            if tcConfig.shadowCopyReferences then
-                                let resolvedPath = ar.resolvedPath.ToUpperInvariant()
-                                let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
-                                match referencedAssemblies.TryGetValue resolvedPath with
-                                | false, _ -> 
-                                    referencedAssemblies.Add(resolvedPath, fileTime)
-                                    FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                                | true, time when time <> fileTime ->
-                                    FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
-                                | _ ->
-                                    FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                            else
-                                FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-                        fsiConsoleOutput.uprintnfnn "%s" format)
-                    istate,Completed None
+            | IHash (ParsedHashDirective("i", [path], m), _) -> 
+                packageManagerDirective Directive.Include path m
 
             | IHash (ParsedHashDirective("I", [path], m), _) -> 
                 tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
@@ -2731,7 +2787,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
   
     do updateBannerText() // setting the correct banner so that 'fsi -?' display the right thing
 
-    let fsiOptions       = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
+    let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
+
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 
     do
@@ -2773,7 +2830,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let tcImports =  
       try 
-          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) |> Cancellable.runWithoutCancellation
+          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Cancellable.runWithoutCancellation
       with e -> 
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 

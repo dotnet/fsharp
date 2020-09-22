@@ -370,7 +370,7 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
 
-    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    /// <summary>Represents a managed pointer in F# code.</summary>
     type byref<'T> = (# "!0&" #)
 
     /// <summary>Represents a managed pointer in F# code.</summary>
@@ -3435,7 +3435,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-    [<DebuggerDisplay("{DebugDisplay,nq}")>]
+    [<DebuggerDisplay("{get_DebugDisplay(this),nq}")>]
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]

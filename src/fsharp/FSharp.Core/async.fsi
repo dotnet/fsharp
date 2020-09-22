@@ -229,6 +229,7 @@ namespace Microsoft.FSharp.Control
         /// for the other child computations to complete.</remarks>
         ///
         /// <param name="computations">A sequence of distinct computations to be parallelized.</param>
+        /// <param name="maxDegreeOfParallelism">The maximum degree of parallelism in the parallel execution.</param>
         ///
         /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
         ///

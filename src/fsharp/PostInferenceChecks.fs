@@ -2224,7 +2224,6 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 for (argty, _) in argtys do 
                      CheckTypeNoInnerByrefs cenv env vref.Range argty
             CheckTypeNoInnerByrefs cenv env vref.Range rty
-                
         | None -> ()
 
     // Supported interface may not have byrefs

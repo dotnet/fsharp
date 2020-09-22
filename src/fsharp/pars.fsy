@@ -1512,7 +1512,9 @@ tyconDefn:
        let nameRange = rhs parseState 1
        let (tcDefRepr, members) = $8 nameRange
        let (ComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
-       let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, az, rangeOfLid lid)
+       // Gets the XML doc comments prior to the implicit constructor
+       let xmlDoc = grabXmlDoc(parseState, 5)
+       let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis, $2, spats, az, xmlDoc, rangeOfLid lid)
        let tcDefRepr = 
          match tcDefRepr with
          | SynTypeDefnRepr.ObjectModel (k, cspec, m) -> SynTypeDefnRepr.ObjectModel (k, memberCtorPattern :: cspec, m)
@@ -5042,7 +5044,7 @@ atomType:
 
   | CONST atomicExpr
      {  let e, _ = $2
-        SynType.StaticConstantExpr(e, e.Range) }
+        SynType.StaticConstantExpr(e, lhs parseState) }
 
   | FALSE  
       { SynType.StaticConstant(SynConst.Bool false, lhs parseState) } 

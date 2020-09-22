@@ -10,9 +10,8 @@
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);MSBUILD_AT_LEAST_15</DefineConstants>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:1182 /warnon:3390 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
 
@@ -59,12 +58,6 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
-    <Compile Include="..\Logger.fsi">
-      <Link>Logger.fsi</Link>
-    </Compile>
-    <Compile Include="..\Logger.fs">
-      <Link>Logger.fs</Link>
-    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -77,11 +70,17 @@
     <Compile Include="..\sr.fs">
       <Link>ErrorText\sr.fs</Link>
     </Compile>
+    <Compile Include="..\Logger.fsi">
+      <Link>Facilities\Logger.fsi</Link>
+    </Compile>
+    <Compile Include="..\Logger.fs">
+      <Link>Facilities\Logger.fs</Link>
+    </Compile>
     <Compile Include="..\LanguageFeatures.fsi">
-      <Link>Driver\LanguageFeatures.fsi</Link>
+      <Link>Facilities\LanguageFeatures.fsi</Link>
     </Compile>
     <Compile Include="..\LanguageFeatures.fs">
-      <Link>Driver\LanguageFeatures.fs</Link>
+      <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\prim-lexing.fsi">
       <Link>LexYaccRuntime\prim-lexing.fsi</Link>
@@ -238,7 +237,10 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition="$(TargetFramework.StartsWith('netstandard'))">
+    <Compile Include="..\..\absil\ilsign.fsi">
+      <Link>AbsIL\ilsign.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilsign.fs">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilnativeres.fsi">

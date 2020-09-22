@@ -220,6 +220,10 @@ let ``Test multi project 1 xmldoc`` () =
     | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is"; " x3"|] |> toIList)
     | _ -> failwith "odd symbol!"
 
+    match x3FromProject1A with 
+    | :? FSharpMemberOrFunctionOrValue as v -> v.ElaboratedXmlDoc |> shouldEqual ([|"<summary>"; " This is"; " x3"; "</summary>" |] |> toIList)
+    | _ -> failwith "odd symbol!"
+
     match x1FromProjectMultiProject with 
     | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
     | _ -> failwith "odd symbol!"
@@ -773,6 +777,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 
     let divisibleByActivePatternCase = divisibleBySymbol :?> FSharpActivePatternCase
     divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual [ "A parameterized active pattern of divisibility" ]
+    divisibleByActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual [ "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" ]
     divisibleByActivePatternCase.XmlDocSig |> shouldEqual "M:Project3A.|DivisibleBy|_|(System.Int32,System.Int32)"
     let divisibleByGroup = divisibleByActivePatternCase.Group
     divisibleByGroup.IsTotal |> shouldEqual false

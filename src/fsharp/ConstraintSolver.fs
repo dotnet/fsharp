@@ -2136,6 +2136,8 @@ and SolveTypeIsNonNullableValueType (csenv: ConstraintSolverEnv) ndeep m2 trace 
             if isStructTy g underlyingTy then
                 if isNullableTy g underlyingTy then
                     return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeParameterCannotBeNullable(), m, m))
+                else
+                    return! CompleteD
             else
                 return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructType(NicePrint.minimalStringOfType denv ty), m, m2))
     }            
@@ -2184,11 +2186,20 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
     let denv = csenv.DisplayEnv
     let ty = stripTyEqnsAndMeasureEqns g origTy
     match tryDestTyparTy g ty with
-    | ValueSome destTypar ->
-        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.RequiresDefaultConstructor m)
+    | ValueSome tp ->
+        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.RequiresDefaultConstructor m)
     | _ ->
-        if isStructTy g ty && TypeHasDefaultValue g m ty then 
-            CompleteD
+        if isStructTy g ty then
+            if isStructTupleTy g ty then 
+                destStructTupleTy g ty |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
+            elif isStructAnonRecdTy g ty then 
+                match tryDestAnonRecdTy g ty with
+                | ValueNone -> CompleteD
+                | ValueSome (_, ptys) -> ptys |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
+            elif TypeHasDefaultValue g m ty then
+                CompleteD
+            else
+                ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
                |> List.exists (fun x -> x.IsNullary && IsMethInfoAccessible amap m AccessibleFromEverywhere x)
@@ -2207,6 +2218,27 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
                     CompleteD
                 | _ -> 
                     ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
+
+// Note, this constraint arises structurally when processing the element types of struct tuples and struct anonymous records.
+//
+// In the case of type variables, it requires that the type variable already have been pre-established to be either a (non-nullable) struct
+// or a reference type.
+and SolveTypeRequiresDefaultValue (csenv: ConstraintSolverEnv) ndeep m2 trace origTy =
+    let g = csenv.g
+    let m = csenv.m
+    let ty = stripTyEqnsAndMeasureEqns g origTy
+    if isTyparTy g ty then
+        if isNonNullableStructTyparTy g ty then
+            SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
+        elif isReferenceTyparTy g ty then
+            SolveTypeSupportsNull csenv ndeep m2 trace ty
+        else
+            ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructOrReferenceConstraint(), m, m2))
+    else
+        if isStructTy g ty then
+             SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
+        else
+             SolveTypeSupportsNull csenv ndeep m2 trace ty
 
 // Parameterized compatibility relation between member signatures.  The real work
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"

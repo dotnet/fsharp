@@ -85,7 +85,7 @@ module LexbufLocalXmlDocStore =
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
-    let internal SaveXmlDocLine (lexbuf: Lexbuf, lineText, pos) =
+    let internal SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
         let collector =
             match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
             | true, collector -> collector
@@ -94,7 +94,7 @@ module LexbufLocalXmlDocStore =
                 lexbuf.BufferLocalStore.[xmlDocKey] <- collector
                 collector
         let collector = unbox<XmlDocCollector>(collector)
-        collector.AddXmlDocLine(lineText, pos)
+        collector.AddXmlDocLine(lineText, range)
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.

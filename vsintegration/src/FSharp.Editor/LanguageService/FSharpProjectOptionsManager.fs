@@ -75,7 +75,7 @@ module private FSharpProjectOptionsHelpers =
 
 [<RequireQualifiedAccess>]
 type private FSharpProjectOptionsMessage =
-    | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
+    | TryGetOptionsByDocument of Document * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken * userOpName: string
     | TryGetOptionsByProject of Project * AsyncReplyChannel<(FSharpParsingOptions * FSharpProjectOptions) option> * CancellationToken
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
@@ -92,13 +92,13 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
     let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
-    let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) =
+    let rec tryComputeOptionsByFile (document: Document) (ct: CancellationToken) userOpName =
         async {
             let! fileStamp = document.GetTextVersionAsync(ct) |> Async.AwaitTask
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), SessionsProperties.fsiPreview)
+                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), SessionsProperties.fsiPreview, userOpName=userOpName)
                 let projectOptions =
                     if isScriptFile document.FilePath then
                         scriptProjectOptions
@@ -129,7 +129,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
             | true, (fileStamp2, parsingOptions, projectOptions) ->
                 if fileStamp <> fileStamp2 then
                     singleFileCache.TryRemove(document.Id) |> ignore
-                    return! tryComputeOptionsByFile document ct
+                    return! tryComputeOptionsByFile document ct userOpName
                 else
                     return Some(parsingOptions, projectOptions)
         }
@@ -244,7 +244,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
         async {
             while true do
                 match! agent.Receive() with
-                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct) ->
+                | FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName) ->
                     if ct.IsCancellationRequested then
                         reply.Reply None
                     else
@@ -253,7 +253,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             if document.Project.Solution.Workspace.Kind = WorkspaceKind.MiscellaneousFiles then
                                 reply.Reply None
                             elif document.Project.Name = FSharpConstants.FSharpMiscellaneousFilesName then
-                                let! options = tryComputeOptionsByFile document ct
+                                let! options = tryComputeOptionsByFile document ct userOpName
                                 reply.Reply options
                             else
                                 // We only care about the latest project in the workspace's solution.
@@ -300,8 +300,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     member __.TryGetOptionsByProjectAsync(project, ct) =
         agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct))
 
-    member __.TryGetOptionsByDocumentAsync(document, ct) =
-        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct))
+    member __.TryGetOptionsByDocumentAsync(document, ct, userOpName) =
+        agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName))
 
     member __.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
@@ -379,22 +379,28 @@ type internal FSharpProjectOptionsManager
         reactor.TryGetOptionsByProjectAsync(project)
 
     /// Get the exact options for a document or project
-    member this.TryGetOptionsForDocumentOrProject(document: Document, cancellationToken) =
+    member this.TryGetOptionsForDocumentOrProject(document: Document, cancellationToken, userOpName) =
         async { 
-            match! reactor.TryGetOptionsByDocumentAsync(document, cancellationToken) with
+            match! reactor.TryGetOptionsByDocumentAsync(document, cancellationToken, userOpName) with
             | Some(parsingOptions, projectOptions) ->
                 return Some(parsingOptions, None, projectOptions)
             | _ ->
                 return None
         }
 
-    /// Get the options for a document or project relevant for syntax processing.
-    /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.
-    member this.TryGetOptionsForEditingDocumentOrProject(document:Document, cancellationToken) = 
+    /// Get the exact options for a document or project relevant for syntax processing.
+    member this.TryGetOptionsForEditingDocumentOrProject(document:Document, cancellationToken, userOpName) = 
         async {
-            let! result = this.TryGetOptionsForDocumentOrProject(document, cancellationToken) 
+            let! result = this.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
             return result |> Option.map(fun (parsingOptions, _, projectOptions) -> parsingOptions, projectOptions)
         }
+
+    /// Get the options for a document or project relevant for syntax processing.
+    /// Quicker it doesn't need to recompute the exact project options for a script.
+    member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(document:Document) = 
+        match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
+        | Some (_, parsingOptions, _) -> parsingOptions
+        | _ -> { FSharpParsingOptions.Default with IsInteractive = FSharpFileUtilities.isScriptFile document.Name }
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system

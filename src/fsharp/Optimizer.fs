@@ -413,7 +413,7 @@ type IncrementalOptimizationEnv =
       dontSplitVars: ValMap<unit>
 
       /// Disable method splitting in loops
-      inLoop: bool
+      disableMethodSplitting: bool
 
       /// The Val for the function binding being generated, if any. 
       functionVal: (Val * ValReprInfo) option
@@ -431,7 +431,7 @@ type IncrementalOptimizationEnv =
           typarInfos = []
           functionVal = None 
           dontSplitVars = ValMap.Empty
-          inLoop = false
+          disableMethodSplitting = false
           localExternalVals = LayeredMap.Empty 
           globalModuleInfos = LayeredMap.Empty }
 
@@ -2015,9 +2015,12 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
           when IsILMethodRefSystemStringConcat mref ->
             optimizeArgs args accArgs
 
+// String constant folding requires a bit more work as we cannot quadratically concat strings at compile time.
+#if STRING_CONSTANT_FOLDING
         // Optimize string constants, e.g. "1" + "2" will turn into "12"
         | Expr.Const (Const.String str1, _, _), Expr.Const (Const.String str2, _, _) :: accArgs ->
             mkString cenv.g m (str1 + str2) :: accArgs
+#endif
 
         | arg, _ -> arg :: accArgs
 
@@ -2082,10 +2085,10 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
     // Handle these as special cases since mutables are allowed inside their bodies 
     | TOp.While (spWhile, marker), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _)] ->
-        OptimizeWhileLoop cenv { env with inLoop=true } (spWhile, marker, e1, e2, m) 
+        OptimizeWhileLoop cenv { env with disableMethodSplitting=true } (spWhile, marker, e1, e2, m) 
 
     | TOp.For (spStart, dir), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)] -> 
-        OptimizeFastIntegerForLoop cenv { env with inLoop=true } (spStart, v, e1, dir, e2, e3, m) 
+        OptimizeFastIntegerForLoop cenv { env with disableMethodSplitting=true } (spStart, v, e1, dir, e2, e3, m) 
 
     | TOp.TryFinally (spTry, spFinally), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
         OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
@@ -3034,11 +3037,9 @@ and OptimizeExprThenConsiderSplit cenv env e =
 /// Decide whether to List.unzip a sub-expression into a new method
 and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) = 
     flag &&
-    // REVIEW: The method splitting optimization is completely disabled if we are not taking tailcalls.
-    // REVIEW: This should only apply to methods that actually make self-tailcalls (tested further below).
-    // Old comment "don't mess with taking guaranteed tailcalls if used with --no-tailcalls!" 
+    // NOTE: The method splitting optimization is completely disabled if we are not taking tailcalls.
     cenv.emitTailcalls &&
-    not env.inLoop &&
+    not env.disableMethodSplitting &&
     einfo.FunctionSize >= threshold &&
 
      // We can only split an expression out as a method if certain conditions are met. 
@@ -3063,7 +3064,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
 
 and ConsiderSplitToMethod flag threshold cenv env (e, einfo) = 
     if ComputeSplitToMethodCondition flag threshold cenv env (e, einfo) then
-        let m = (e.Range)
+        let m = e.Range
         let uv, _ue = mkCompGenLocal m "unitVar" cenv.g.unit_ty
         let ty = tyOfExpr cenv.g e
         let nm = 
@@ -3467,8 +3468,13 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=new Dictionary<Stamp, bool>() }
-    let (optEnvNew, _, _, _ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
-    let optimizeDuringCodeGen expr = OptimizeExpr cenv optEnvNew expr |> fst
+
+    let (env, _, _, _ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
+
+    let optimizeDuringCodeGen disableMethodSplitting expr =
+        let env = { env with disableMethodSplitting = env.disableMethodSplitting || disableMethodSplitting }
+        OptimizeExpr cenv env expr |> fst
+
     results, optimizeDuringCodeGen
 
 

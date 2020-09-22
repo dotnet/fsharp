@@ -83,7 +83,7 @@ type CompilerAssert private () =
 
     static let _ = config |> ignore
 
-    // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
+// Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
     static let projectFile = """
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -499,6 +499,58 @@ let main argv = 0"""
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output)))
 
     /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
+    static member CompileOfAst isExe source =
+        let outputFilePath = Path.ChangeExtension (Path.GetTempFileName(), if isExe then "exe" else ".dll")
+        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
+
+        let parseResults = 
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+            |> Async.RunSynchronously
+
+        Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+        Assert.IsTrue(parseResults.ParseTree.IsSome, "no parse tree returned")
+
+        let dependencies =
+        #if NETCOREAPP
+            Array.toList getNetCoreAppReferences
+        #else
+            []
+        #endif
+
+        let compileErrors, statusCode = 
+            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, noframework = true) 
+            |> Async.RunSynchronously
+
+        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
+        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
+        outputFilePath
+
+    static member CompileOfAstToDynamicAssembly source =
+        let assemblyName = sprintf "test-%O" (Guid.NewGuid())
+        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
+        let parseResults = 
+            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions) 
+            |> Async.RunSynchronously
+    
+        Assert.IsEmpty(parseResults.Errors, sprintf "Parse errors: %A" parseResults.Errors)
+        Assert.IsTrue(parseResults.ParseTree.IsSome, "no parse tree returned")
+
+        let dependencies =
+            #if NETCOREAPP
+                Array.toList getNetCoreAppReferences
+            #else
+                []
+            #endif
+
+        let compileErrors, statusCode, assembly = 
+            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, noframework = true) 
+            |> Async.RunSynchronously
+
+        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
+        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
+        Assert.IsTrue(assembly.IsSome, "no assembly returned")
+        Option.get assembly
+
     static member Pass (source: string) =
         lock gate <| fun () ->
             let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunSynchronously
@@ -665,35 +717,39 @@ let main argv = 0"""
     static member CompileLibraryAndVerifyIL (source: string) (f: ILVerifier -> unit) =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions [||] source f
 
+    static member RunScriptWithOptionsAndReturnResult options (source: string) =
+        // Intialize output and input streams
+        use inStream = new StringReader("")
+        use outStream = new StringWriter()
+        use errStream = new StringWriter()
+
+        // Build command line arguments & start FSI session
+        let argv = [| "C:\\fsi.exe" |]
+#if NETCOREAPP
+        let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
+#else
+        let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
+#endif
+        let allArgs = Array.append args options
+
+        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+        use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
+
+        let ch, errors = fsiSession.EvalInteractionNonThrowing source
+
+        let errorMessages = ResizeArray()
+        errors
+        |> Seq.iter (fun error -> errorMessages.Add(error.Message))
+
+        match ch with
+        | Choice2Of2 ex -> errorMessages.Add(ex.Message)
+        | _ -> ()
+
+        errorMessages
+
     static member RunScriptWithOptions options (source: string) (expectedErrorMessages: string list) =
         lock gate <| fun () ->
-            // Intialize output and input streams
-            use inStream = new StringReader("")
-            use outStream = new StringWriter()
-            use errStream = new StringWriter()
-
-            // Build command line arguments & start FSI session
-            let argv = [| "C:\\fsi.exe" |]
-    #if NETCOREAPP
-            let args = Array.append argv [|"--noninteractive"; "--targetprofile:netcore"|]
-    #else
-            let args = Array.append argv [|"--noninteractive"; "--targetprofile:mscorlib"|]
-    #endif
-            let allArgs = Array.append args options
-
-            let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-            use fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream, collectible = true)
-
-            let ch, errors = fsiSession.EvalInteractionNonThrowing source
-
-            let errorMessages = ResizeArray()
-            errors
-            |> Seq.iter (fun error -> errorMessages.Add(error.Message))
-
-            match ch with
-            | Choice2Of2 ex -> errorMessages.Add(ex.Message)
-            | _ -> ()
-
+            let errorMessages = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
             if expectedErrorMessages.Length <> errorMessages.Count then
                 Assert.Fail(sprintf "Expected error messages: %A \n\n Actual error messages: %A" expectedErrorMessages errorMessages)
             else

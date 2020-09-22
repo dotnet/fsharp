@@ -79,7 +79,6 @@ module LegacyMSBuildReferenceResolver
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-#if MSBUILD_AT_LEAST_15
             | Net452 -> Some TargetDotNetFrameworkVersion.Version452
             | Net46 -> Some TargetDotNetFrameworkVersion.Version46
             | Net461 -> Some TargetDotNetFrameworkVersion.Version461
@@ -88,7 +87,6 @@ module LegacyMSBuildReferenceResolver
             | Net471 -> Some TargetDotNetFrameworkVersion.Version471
             | Net472 -> Some TargetDotNetFrameworkVersion.Version472
             | Net48 -> Some TargetDotNetFrameworkVersion.Version48
-#endif
             | _ -> assert false; None
         match v with
         | Some v -> 
@@ -112,8 +110,6 @@ module LegacyMSBuildReferenceResolver
     let HighestInstalledRefAssembliesOrDotNETFramework () =
         let getHighestInstalledDotNETFramework () =
             try
-// The Mono build still uses an ancient version of msbuild from around Dev 14
-#if MSBUILD_AT_LEAST_15
                 if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version48)) <> null then Net48
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version472)) <> null then Net472
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version471)) <> null then Net471
@@ -124,9 +120,6 @@ module LegacyMSBuildReferenceResolver
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then Net46
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)) <> null then Net452
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451
-#else
-                if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451
-#endif
                 elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then Net45
                 else Net45 // version is 4.5 assumed since this code is running.
             with _ -> Net45

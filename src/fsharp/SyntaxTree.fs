@@ -665,6 +665,8 @@ type SynExpr =
 
     /// First bool indicates if lambda originates from a method. Patterns here are always "simple"
     /// Second bool indicates if this is a "later" part of an iterated sequence of lambdas
+    /// parsedData keeps original parsed patterns and expression,
+    /// prior to transforming to "simple" patterns and iterated lambdas 
     ///
     /// F# syntax: fun pat -> expr
     | Lambda of
@@ -672,6 +674,7 @@ type SynExpr =
         inLambdaSeq: bool *
         args: SynSimplePats *
         body: SynExpr *
+        parsedData: (SynPat list * SynExpr) option *
         range: range
 
     /// F# syntax: function pat1 -> expr | ... | patN -> exprN
@@ -1434,6 +1437,8 @@ type SynAttributes = SynAttributeList list
 type SynValData =
     | SynValData of MemberFlags option * SynValInfo * Ident option
 
+    member x.SynValInfo = (let (SynValData(_flags, synValInfo, _)) = x in synValInfo)
+
 /// Represents a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
 type SynBinding =
@@ -1764,9 +1769,16 @@ type SynValSig =
 type SynValInfo =
 
     /// SynValInfo(curriedArgInfos, returnInfo)
-    | SynValInfo of SynArgInfo list list * SynArgInfo
+    | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
 
-    member x.ArgInfos = (let (SynValInfo(args, _)) = x in args)
+    member x.CurriedArgInfos = (let (SynValInfo(args, _)) = x in args)
+
+    member x.ArgNames =
+        x.CurriedArgInfos 
+        |> List.concat 
+        |> List.map (fun info -> info.Ident) 
+        |> List.choose id 
+        |> List.map (fun id -> id.idText)
 
 /// Represents the argument names and other metadata for a parameter for a member or function
 [<NoEquality; NoComparison>]
@@ -1776,6 +1788,8 @@ type SynArgInfo =
         attributes: SynAttributes *
         optional: bool *
         ident: Ident option
+
+    member x.Ident : Ident option = let (SynArgInfo(_,_,id)) = x in id
 
 /// Represents the names and other metadata for the type parameters for a member or function
 [<NoEquality; NoComparison>]
@@ -1882,6 +1896,7 @@ type SynMemberDefn =
         attributes: SynAttributes *
         ctorArgs: SynSimplePats *
         selfIdentifier: Ident option *
+        doc: PreXmlDoc *
         range: range
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'

@@ -117,6 +117,70 @@ stacktype.Name = "Stack"
         | Ok(_) -> Assert.False(true, "expected a failure")
         | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
+    [<Theory>]
+    [<InlineData("""#i""", "input.fsx (1,1)-(1,3) interactive warning Invalid directive '#i '")>]                                               // No argument
+    [<InlineData("""#i "" """, "input.fsx (1,1)-(1,6) interactive error #i is not supported by the registered PackageManagers")>]               // empty argument
+    [<InlineData("""#i "        " """, "input.fsx (1,1)-(1,14) interactive error #i is not supported by the registered PackageManagers")>]      // whitespace only argument
+    member _.``Script with #i syntax errors fail``(code, error0) =
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.NotEmpty(errors)
+        Assert.Equal(errors.[0].ToString(), error0)
+
+    [<Theory>]
+    [<InlineData("""#i " """,                                                                           // Single quote
+                 "input.fsx (1,4)-(1,5) parse error End of file in string begun at or before here",
+                 "input.fsx (1,1)-(1,6) interactive warning Invalid directive '#i '")>]
+    member _.``Script with more #i syntax errors fail``(code, error0, error1) =
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.NotEmpty(errors)
+        Assert.Equal(errors.Length, 2)
+        Assert.Equal(error0, errors.[0].ToString())
+        Assert.Equal(error1, errors.[1].ToString())
+
+    [<Theory>]
+    [<InlineData("""#i "Obviously I am not a package manager" """,
+                 "input.fsx (1,1)-(1,42) interactive error #i is not supported by the registered PackageManagers")>]
+    member _.``Script with #i and no package manager specified``(code, error0) =
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.NotEmpty(errors)
+        Assert.Equal(errors.Length, 1)
+        Assert.Equal(errors.[0].ToString(), error0)
+
+    [<Theory>]
+    [<InlineData("""#i "nuget:foo" """,
+                 "input.fsx (1,1)-(1,15) interactive error Invalid URI: The format of the URI could not be determined.")>]
+    member _.``Script with #i and forgot to add quotes``(code, error) =
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.NotEmpty(errors)
+        Assert.Equal(1, errors.Length)
+        Assert.Equal(error, errors.[0].ToString())
+
+    [<Fact>]
+    member _.``#i to a directory that exists``() =
+        let path = Path.GetTempPath()
+        let code = sprintf "#i @\"nuget:%s\" " path
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.Empty(errors)
+        Assert.Equal(0, errors.Length)
+
+    [<Fact>]
+    member _.``#i to a directory that doesn't exist``() =
+        let path =
+            let newGuid() = Guid.NewGuid().ToString().Replace("{", "").Replace("}", "")
+            Path.Combine(Path.GetTempPath(), newGuid(), newGuid())
+        let code = sprintf "#i @\"nuget:%s\"" path
+        let error = sprintf "interactive error The source directory '%s' not found" path
+        use script = new FSharpScript()
+        let result, errors = script.Eval(code)
+        Assert.NotEmpty(errors)
+        Assert.Equal(1, errors.Length)
+        Assert.True(errors.[0].ToString().EndsWith(error))
+
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
     [<Fact>]
@@ -185,21 +249,26 @@ printfn ""%A"" result
                 if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then
                     found <- found + 1
                 outp.Add(line))
-        let _result, _errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
-        Assert.True( (found = 1), "Expected to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+        let result, errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
+        Assert.True( (found = 0), "Did not expect to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+        Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("error NU1101:")), "Expect to error containing 'error NU1101:'")
+        Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")), "Expect to error containing 'FSharp.Really.Not.A.Package'")
 
     [<Fact>]
     member __.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let mutable foundResolve = 0
-        output.OutputProduced.Add (fun line -> if line.Contains("Microsoft (R) Build Engine version") then foundResolve <- foundResolve + 1)
-        let _result, _errors =
+        output.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") then foundResolve <- foundResolve + 1)
+        let result, errors =
             script.Eval("""
 #r "nuget:FSharp.Really.Not.A.Package"
 #r "nuget:FSharp.Really.Not.Another.Package"
                 """)
-        Assert.True( (foundResolve = 1), (sprintf "Expected to see 'Microsoft (R) Build Engine version' only once actually resolved %d times" foundResolve))
+        Assert.True( (foundResolve = 0), (sprintf "Did not expected to see 'error NU1101:' in output" ))
+        Assert.Equal(2, (errors |> Seq.filter (fun error -> error.Message.Contains("error NU1101:")) |> Seq.length))
+        Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")) |> Seq.length))
+        Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.Another.Package")) |> Seq.length))
 
     [<Fact>]
     member __.``ML - use assembly with ref dependencies``() =
