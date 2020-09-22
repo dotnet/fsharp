@@ -2203,7 +2203,7 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation =
-    | Local of ReadOnlyByteMemory
+    | Local of ByteStorage
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
@@ -2217,7 +2217,7 @@ type ILResource =
     /// Read the bytes from a resource local to an assembly
     member r.GetBytes() =
         match r.Location with
-        | ILResourceLocation.Local bytes -> bytes
+        | ILResourceLocation.Local bytes -> bytes.GetByteMemory()
         | _ -> failwith "GetBytes"
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
