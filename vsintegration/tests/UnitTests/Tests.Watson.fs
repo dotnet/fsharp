@@ -4,18 +4,12 @@ namespace Tests.Compiler.Watson
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
 open NUnit.Framework
-open System
-open System.Text.RegularExpressions 
-open System.Diagnostics
-open System.Collections.Generic
 open System.IO
-open System.Reflection
 
 type Check = 
     static member public FscLevelException<'TException when 'TException :> exn>(simulationCode)  =
