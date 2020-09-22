@@ -17,6 +17,7 @@ open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Range
@@ -57,7 +58,6 @@ val IsScript: string -> bool
 
 /// File suffixes where #light is the default
 val FSharpLightSyntaxFileSuffixes: string list
-
 
 /// Get the name used for FSharp.Core
 val GetFSharpCoreLibraryName: unit -> string
@@ -155,20 +155,29 @@ type IRawFSharpAssemblyData =
     abstract GetAutoOpenAttributes: ILGlobals -> string list
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
+
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
     abstract TryGetILModuleDef: unit -> ILModuleDef option
+
     abstract HasAnyFSharpSignatureDataAttribute: bool
+
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
+
     ///  The raw F# signature data in the assembly, if any
     abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
+
     /// The identity of the module
     abstract ILScopeRef: ILScopeRef
+
     abstract ILAssemblyRefs: ILAssemblyRef list
+
     abstract ShortAssemblyName: string
 
 type TimeStampCache = 
@@ -273,6 +282,26 @@ type PackageManagerLine =
     static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
 
+/// A target profile option specified on the command line
+/// Valid values are "mscorlib", "netcore" or "netstandard"
+type TargetProfileCommandLineOption = TargetProfileCommandLineOption of string
+
+/// A target framework option specified in a script
+/// Current valid values are "netcore", "netfx" 
+type TargetFrameworkForScripts =
+    | TargetFrameworkForScripts of string
+    member Value: string
+    member PrimaryAssembly: PrimaryAssembly
+    member UseDotNetFramework: bool
+
+type InferredTargetFrameworkForScripts =
+    { 
+      InferredFramework: TargetFrameworkForScripts
+      WhereInferred: range option 
+    }
+    static member Infer: fileName: string * sourceText: ISourceText * defaultToDotNetFramework: bool -> InferredTargetFrameworkForScripts
+    member UseDotNetFramework: bool
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -286,6 +315,7 @@ type TcConfigBuilder =
       mutable includes: string list
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
+      mutable inferredTargetFrameworkForScripts : InferredTargetFrameworkForScripts option
       mutable framework: bool
       mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
@@ -356,6 +386,7 @@ type TcConfigBuilder =
       mutable includewin32manifest: bool
       mutable linkResources: string list
       mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable fxResolver: FxResolver
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
       mutable utf8output: bool
@@ -419,24 +450,37 @@ type TcConfigBuilder =
 
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *
+        fxResolver: FxResolver *
         defaultFSharpBinariesDir: string * 
         reduceMemoryUsage: ReduceMemoryFlag * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
+        inferredTargetFrameworkForScripts: InferredTargetFrameworkForScripts option
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
+
     member TurnWarningOff: range * string -> unit
+
     member TurnWarningOn: range * string -> unit
+
+    member CheckExplicitFrameworkDirective: fx: TargetFrameworkForScripts * m: range -> unit
+
     member AddIncludePath: range * string * string -> unit
+
     member AddCompilerToolsByPath: string -> unit
+
     member AddReferencedAssemblyByPath: range * string -> unit
+
     member RemoveReferencedAssemblyByPath: range * string -> unit
+
     member AddEmbeddedSourceFile: string -> unit
+
     member AddEmbeddedResource: string -> unit
+
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
 
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
@@ -458,6 +502,7 @@ type TcConfig =
     member includes: string list
     member implicitOpens: string list
     member useFsiAuxLib: bool
+    member inferredTargetFrameworkForScripts: InferredTargetFrameworkForScripts option
     member framework: bool
     member implicitlyResolveAssemblies: bool
     /// Set if the user has explicitly turned indentation-aware syntax on/off
@@ -584,6 +629,8 @@ type TcConfig =
     member langVersion: LanguageVersion
 
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
+
+    member CloneToBuilder: unit -> TcConfigBuilder
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
@@ -744,6 +791,7 @@ val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: s
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
     (('T -> range * string -> 'T) * 
+     ('T -> range * TargetFrameworkForScripts -> 'T) *
      ('T -> range * string * Directive -> 'T) *
      ('T -> range * string -> unit))
       -> TcConfigBuilder * ParsedInput * string * 'T 
@@ -764,9 +812,6 @@ val GetScopedPragmasForInput: ParsedInput -> ScopedPragma list
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetErrorLoggerFilteringByScopedPragmas: checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
-
-/// This list is the default set of references for "non-project" files. 
-val DefaultReferencesForScriptsAndOutOfProjectSources: bool -> string list
 
 //----------------------------------------------------------------------------
 // Parsing
@@ -865,6 +910,9 @@ type LoadClosure =
       /// The list of references that were not resolved during load closure.
       UnresolvedReferences: UnresolvedAssemblyReference list
 
+      /// Whether an explicit #netfx or #netcore has been given
+      InferredTargetFramework: InferredTargetFrameworkForScripts
+
       /// The list of all sources in the closure with inputs when available, with associated parse errors and warnings
       Inputs: LoadClosureInput list
 
@@ -900,7 +948,7 @@ type LoadClosure =
         useSdkRefs: bool * 
         lexResourceManager: Lexhelp.LexResourceManager * 
         applyCompilerOptions: (TcConfigBuilder -> unit) * 
-        assumeDotNetFramework: bool * 
+        defaultToDotNetFramework: bool * 
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
         reduceMemoryUsage: ReduceMemoryFlag *
         dependencyProvider: DependencyProvider

@@ -35,7 +35,6 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
     member x.ExplicitlySet = status.IsSome
     member x.WarnOnMultipleTokens = warn
     
-
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =

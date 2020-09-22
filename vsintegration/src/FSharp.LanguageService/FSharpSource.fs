@@ -367,6 +367,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   LoadTime = new System.DateTime(2000,1,1)   // dummy data, just enough to get a parse
                   UnresolvedReferences = None
                   OriginalLoadReferences = []
+                  InferredTargetFrameworkForScripts = None
                   ExtraProjectInfo=None 
                   Stamp = None }
                 |> ic.GetParsingOptionsFromProjectOptions

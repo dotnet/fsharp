@@ -1484,7 +1484,7 @@ type internal FsiDynamicCompiler
                         packageManagerLines |> List.map (fun line -> directive line.Directive, line.Line)
 
                     try
-                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
+                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, tcConfigB.fxResolver.GetTfm(), tcConfigB.fxResolver.GetRid(), tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
                         if result.Success then
                             for line in result.StdOut do Console.Out.WriteLine(line)
                             for line in result.StdError do Console.Error.WriteLine(line)
@@ -1517,6 +1517,7 @@ type internal FsiDynamicCompiler
            (fun () ->
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
+                    (fun st (m,nm) -> tcConfigB.CheckExplicitFrameworkDirective(nm, m); st),
                     (fun st (m, path, directive) -> 
 
                         let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
@@ -2209,6 +2210,18 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("i", [path], m), _) -> 
                 packageManagerDirective Directive.Include path m
 
+            | IHash (ParsedHashDirective("targetfx", [fx], m), _) -> 
+                match fx with 
+                | "netfx" -> 
+                    if FSharpEnvironment.isRunningOnCoreClr then
+                        warning(Error(FSComp.SR.fsiWrongFrameworkNetCore(), m))
+                | "netcore" -> 
+                    if not FSharpEnvironment.isRunningOnCoreClr then
+                        warning(Error(FSComp.SR.fsiWrongFrameworkNetFx(), m))
+                | _ -> 
+                   errorR(Error(FSComp.SR.buildInvalidHashtimeDirective(), m))
+                istate,Completed None
+
             | IHash (ParsedHashDirective("I", [path], m), _) -> 
                 tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
@@ -2744,15 +2757,25 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | None -> SimulatedMSBuildReferenceResolver.getResolver()
         | Some rr -> rr
 
+    // We know the target framework up front
+    let inferredTargetFramework =
+        { InferredFramework = TargetFrameworkForScripts (if FSharpEnvironment.isRunningOnCoreClr then "netcore" else "netfx")
+          WhereInferred = None }
+
+    let fxResolver = FxResolver(ReduceMemoryFlag.Yes, tryGetMetadataSnapshot, Some inferredTargetFramework.UseDotNetFramework)
+
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+            fxResolver,
             defaultFSharpBinariesDir=defaultFSharpBinariesDir, 
             reduceMemoryUsage=ReduceMemoryFlag.Yes, 
             implicitIncludeDir=currentDirectory, 
             isInteractive=true, 
             isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+            inferredTargetFrameworkForScripts=Some inferredTargetFramework
+         )
 
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
@@ -2761,7 +2784,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 #if NETSTANDARD
     do tcConfigB.useSdkRefs <- true
     do tcConfigB.useSimpleResolution <- true
-    do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
+    do if FSharpEnvironment.isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)

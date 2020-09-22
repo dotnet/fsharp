@@ -324,6 +324,7 @@ type internal ProjectSitesAndFiles() =
                 LoadTime = projectSite.LoadTime
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
+                InferredTargetFrameworkForScripts = None
                 ExtraProjectInfo=extraProjectInfo 
                 Stamp = if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None 
             }

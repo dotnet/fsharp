@@ -23474,6 +23474,7 @@ FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 Great
 FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 Hash
 FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 HashElse
 FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 HashEndIf
+FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 HashFx
 FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 HashIf
 FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 HashLight
 FSharp.Compiler.SourceCodeServices.Lexer+FSharpSyntaxTokenKind+Tags: Int32 HashLine

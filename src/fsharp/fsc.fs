@@ -37,6 +37,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
@@ -44,6 +45,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -203,7 +205,7 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, a
         exiter.Exit 1
 
 /// Check for .fsx and, if present, compute the load closure for of #loaded files.
-let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager, dependencyProvider) =
+let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, dependencyProvider) =
 
     let combineFilePath file =
         try
@@ -218,30 +220,36 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
         
     let mutable allSources = []       
     
-    let tcConfig = TcConfig.Create(tcConfigB, validate=false) 
-    
     let AddIfNotPresent(filename: string) =
         if not(allSources |> List.contains filename) then
             allSources <- filename :: allSources
     
     let AppendClosureInformation filename =
         if IsScript filename then 
-            let closure = 
-                LoadClosure.ComputeClosureOfScriptFiles
-                   (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, 
-                    lexResourceManager, dependencyProvider)
 
-            // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
-            // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
-            let references =
-                closure.References
-                |> List.collect snd
-                |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
+            // Pre-infer the target framework from the script
+            let sourceText = File.ReadAllText filename
+            let source = SourceText.ofString sourceText
+            let defaultToDotNetFramework = true
+
+            let loadClosure = 
+                LoadClosure.ComputeClosureOfScriptText(ctok, tcConfigB.legacyReferenceResolver, 
+                    tcConfigB.defaultFSharpBinariesDir, filename, source, 
+                    CodeContext.Compilation, tcConfigB.useSimpleResolution, tcConfigB.useFsiAuxLib,
+                    tcConfigB.useSdkRefs, new Lexhelp.LexResourceManager(), 
+                    (fun _ -> ()), defaultToDotNetFramework, 
+                    tcConfigB.tryGetMetadataSnapshot, tcConfigB.reduceMemoryUsage, dependencyProvider)
+
+            // Record the references from the analysis of the script.
+            let references = loadClosure.References |> List.collect snd
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
-            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
-            closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
-            closure.AllRootFileDiagnostics |> List.iter diagnosticSink
+            loadClosure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
+            loadClosure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
+            loadClosure.AllRootFileDiagnostics |> List.iter diagnosticSink
+            tcConfigB.inferredTargetFrameworkForScripts <- Some loadClosure.InferredTargetFramework
+            tcConfigB.primaryAssembly <- loadClosure.InferredTargetFramework.InferredFramework.PrimaryAssembly
+            tcConfigB.fxResolver <- FxResolver(tcConfigB.reduceMemoryUsage, tcConfigB.tryGetMetadataSnapshot, Some loadClosure.InferredTargetFramework.UseDotNetFramework)
             
         else AddIfNotPresent filename
          
@@ -1746,12 +1754,19 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
+    let fxResolver = FxResolver(reduceMemoryUsage, tryGetMetadataSnapshot, None)
+
     let tcConfigB = 
-       TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, 
-          reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
-          isInteractive=false, isInvalidationSupported=false, 
-          defaultCopyFSharpCore=defaultCopyFSharpCore, 
-          tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+        TcConfigBuilder.CreateNew(legacyReferenceResolver,
+            fxResolver,
+            DefaultFSharpBinariesDir, 
+            reduceMemoryUsage=reduceMemoryUsage,
+            implicitIncludeDir=directoryBuildingFrom, 
+            isInteractive=false, isInvalidationSupported=false, 
+            defaultCopyFSharpCore=defaultCopyFSharpCore, 
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+            // note - this may later be updated via script closure
+            inferredTargetFrameworkForScripts=None)
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -1775,7 +1790,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         try 
             let sourceFiles = 
                 let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
-                AdjustForScriptCompile(ctok, tcConfigB, files, lexResourceManager, dependencyProvider)
+                AdjustForScriptCompile(ctok, tcConfigB, files, dependencyProvider)
             sourceFiles
 
         with e -> 
@@ -1946,12 +1961,17 @@ let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
+    let fxResolver = FxResolver(reduceMemoryUsage, tryGetMetadataSnapshot, None)
+
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, 
+        TcConfigBuilder.CreateNew(legacyReferenceResolver,
+            fxResolver,
+            DefaultFSharpBinariesDir, 
             reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=Directory.GetCurrentDirectory(), 
             isInteractive=false, isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+            inferredTargetFrameworkForScripts=None)
 
     let primaryAssembly =
         // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:

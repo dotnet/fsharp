@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hant" original="../FSComp.resx">
     <body>
+      <trans-unit id="buildInvalidHashNetDirective">
+        <source>Explicit framework declarations may only occur in F# script files.</source>
+        <target state="new">Explicit framework declarations may only occur in F# script files.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">F# {1} 中無法使用 '{0}' 功能。請使用語言版本 {2} 或更新的版本。</target>
@@ -197,6 +202,16 @@
         <target state="new">Invalid directive '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiWrongFrameworkNetCore">
+        <source>This script is executing using .NET Core, but .NET Framework has been specified.</source>
+        <target state="new">This script is executing using .NET Core, but .NET Framework has been specified.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiWrongFrameworkNetFx">
+        <source>This script is executing using .NET Framework, but .NET Core has been specified.</source>
+        <target state="new">This script is executing using .NET Framework, but .NET Core has been specified.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="new">Keyword to specify a constant literal as a type parameter argument in Type Providers.</target>
@@ -230,6 +245,16 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">從位移 {0} 開始的資源標頭格式錯誤。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsExplicitFrameworkNotFirstDeclaration">
+        <source>Scripts requiring explicit frameworks should have '#netfx' or '#netcore' as their first non-whitespace, non-comment line.</source>
+        <target state="new">Scripts requiring explicit frameworks should have '#netfx' or '#netcore' as their first non-whitespace, non-comment line.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsIncompatibleFrameworks">
+        <source>This script is using framework '{0}' but requires framework '{1}'.</source>
+        <target state="new">This script is using framework '{0}' but requires framework '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">

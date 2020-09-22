@@ -617,6 +617,11 @@
         <target state="new">Invalid directive. Expected '#I \"&lt;path&gt;\"'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="buildInvalidHashNetDirective">
+        <source>Explicit framework declarations may only occur in F# script files.</source>
+        <target state="new">Explicit framework declarations may only occur in F# script files.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
         <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
         <target state="new">Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</target>
@@ -2292,6 +2297,16 @@
         <target state="new">Invalid directive '#{0} {1}'</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiWrongFrameworkNetCore">
+        <source>This script is executing using .NET Core, but .NET Framework has been specified.</source>
+        <target state="new">This script is executing using .NET Core, but .NET Framework has been specified.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiWrongFrameworkNetFx">
+        <source>This script is executing using .NET Framework, but .NET Core has been specified.</source>
+        <target state="new">This script is executing using .NET Framework, but .NET Core has been specified.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ifExpression">
         <source>The 'if' expression needs to have type '{0}' to satisfy context type requirements. It currently has type '{1}'.</source>
         <target state="new">The 'if' expression needs to have type '{0}' to satisfy context type requirements. It currently has type '{1}'.</target>
@@ -3507,6 +3522,11 @@
         <target state="new">Emit debug information in quotations</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsExplicitFrameworkNotFirstDeclaration">
+        <source>Scripts requiring explicit frameworks should have '#netfx' or '#netcore' as their first non-whitespace, non-comment line.</source>
+        <target state="new">Scripts requiring explicit frameworks should have '#netfx' or '#netcore' as their first non-whitespace, non-comment line.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsFullpaths">
         <source>Output messages with fully qualified paths</source>
         <target state="new">Output messages with fully qualified paths</target>
@@ -3555,6 +3575,11 @@
       <trans-unit id="optsHelpBannerResources">
         <source>- RESOURCES -</source>
         <target state="new">- RESOURCES -</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsIncompatibleFrameworks">
+        <source>This script is using framework '{0}' but requires framework '{1}'.</source>
+        <target state="new">This script is using framework '{0}' but requires framework '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">

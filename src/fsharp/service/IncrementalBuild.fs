@@ -6,6 +6,7 @@ namespace FSharp.Compiler
 open System
 open System.Collections.Generic
 open System.IO
+open System.Runtime.InteropServices
 open System.Threading
 
 open FSharp.Compiler
@@ -16,6 +17,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
@@ -28,6 +30,7 @@ open FSharp.Compiler.TypedTreeOps
 
 open Microsoft.DotNet.DependencyManager
 
+open Internal.Utilities
 open Internal.Utilities.Collections
 
 [<AutoOpen>]
@@ -1753,15 +1756,21 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     static member TryCreateIncrementalBuilderForProjectOptions
-                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
+                      (ctok,
+                       legacyReferenceResolver,
+                       defaultFSharpBinariesDir,
                        frameworkTcImportsCache: FrameworkImportsCache,
                        loadClosureOpt: LoadClosure option,
                        sourceFiles: string list,
                        commandLineArgs: string list,
-                       projectReferences, projectDirectory,
-                       useScriptResolutionRules, keepAssemblyContents,
-                       keepAllBackgroundResolutions, maxTimeShareMilliseconds,
-                       tryGetMetadataSnapshot, suggestNamesForErrors,
+                       projectReferences,
+                       projectDirectory,
+                       useScriptResolutionRules,
+                       keepAssemblyContents,
+                       keepAllBackgroundResolutions,
+                       maxTimeShareMilliseconds,
+                       tryGetMetadataSnapshot,
+                       suggestNamesForErrors,
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
                        dependencyProviderOpt) =
@@ -1791,16 +1800,25 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
                     | _ -> None
 
+                let preInferredUseDotNetFramework =
+                    match loadClosureOpt with 
+                    | None -> None
+                    | Some loadClosure -> Some loadClosure.InferredTargetFramework.UseDotNetFramework
+
+                let fxResolver = FxResolver(ReduceMemoryFlag.Yes, tryGetMetadataSnapshot, preInferredUseDotNetFramework)
+
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 
                     TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+                         fxResolver,
                          defaultFSharpBinariesDir, 
                          implicitIncludeDir=projectDirectory, 
                          reduceMemoryUsage=ReduceMemoryFlag.Yes, 
                          isInteractive=useScriptResolutionRules, 
                          isInvalidationSupported=true, 
                          defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-                         tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
+                         tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+                         inferredTargetFrameworkForScripts=None) 
 
                 tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
 
@@ -1828,6 +1846,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                 tcConfigB, sourceFilesNew
 
+            // If this is a builder for a script, re-apply the settings inferred from the
+            // script and its load closure to the configuration.
+            //
+            // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
             match loadClosureOpt with
             | Some loadClosure ->
                 let dllReferences =
@@ -1839,6 +1861,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
                 tcConfigB.referencedDLLs <- []
+                tcConfigB.inferredTargetFrameworkForScripts <- Some loadClosure.InferredTargetFramework
+                tcConfigB.primaryAssembly <- loadClosure.InferredTargetFramework.InferredFramework.PrimaryAssembly
                 // Add one by one to remove duplicates
                 dllReferences |> List.iter (fun dllReference ->
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))

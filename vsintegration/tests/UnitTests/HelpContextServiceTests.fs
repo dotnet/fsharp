@@ -32,6 +32,7 @@ type HelpContextServiceTests() =
         UnresolvedReferences = None
         ExtraProjectInfo = None
         OriginalLoadReferences = []
+        ExplicitFrameworkForScript = None
         Stamp = None
     }
 

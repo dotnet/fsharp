@@ -2146,6 +2146,58 @@ type PackageManagerLine =
     static member StripDependencyManagerKey (packageKey: string) (line: string): string =
         line.Substring(packageKey.Length + 1).Trim()
 
+/// A target profile option specified on the command line
+/// Valid values are "mscorlib", "netcore" or "netstandard"
+type TargetProfileCommandLineOption = TargetProfileCommandLineOption of string
+
+/// A target framework option specified in a script
+/// Current valid values are "netcore", "netfx" 
+type TargetFrameworkForScripts =
+    | TargetFrameworkForScripts of string
+
+    member fx.Value  = (let (TargetFrameworkForScripts v) = fx in v)
+
+    member fx.PrimaryAssembly =
+        match fx.Value with
+        | "netcore" -> PrimaryAssembly.System_Runtime
+        | "netfx"  -> PrimaryAssembly.Mscorlib
+        | _  -> failwith "invalid value"
+        // // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
+        // | "netstandard"  -> PrimaryAssembly.NetStandard
+        // | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
+
+    member fx.UseDotNetFramework =
+        not (fx.Value.StartsWith ("netcore"))
+
+type InferredTargetFrameworkForScripts =
+    { 
+      InferredFramework: TargetFrameworkForScripts
+      WhereInferred: range option 
+    }
+    static member Infer (fileName, sourceText: ISourceText, defaultToDotNetFramework: bool) =
+        let res =
+            [| 0 .. sourceText.GetLineCount() - 1 |] 
+            |> Array.tryPick (fun i -> 
+                let text = sourceText.GetLineString(i).TrimEnd()
+                let m = mkRange fileName (mkPos (i+1) 0) (mkPos (i+1) text.Length)
+                if text = "#targetfx \"netcore\"" then Some (Some { InferredFramework = TargetFrameworkForScripts "netcore"; WhereInferred = Some m })
+                elif text = "#targetfx \"netfx\"" then Some (Some { InferredFramework = TargetFrameworkForScripts "netfx"; WhereInferred = Some m })
+                elif String.IsNullOrWhiteSpace(text) then None
+                elif text.StartsWith("#!") then None
+                elif text.StartsWith("//") then None
+                else Some None)
+            |> Option.flatten
+
+        // The inferred framework effectively acts as the explicit framework, ruling out
+        // any incompatible changes.
+        match res with 
+        | Some fx -> fx
+        | None -> 
+           let dflt = TargetFrameworkForScripts (if defaultToDotNetFramework then "netfx" else "netcore")
+           { InferredFramework = dflt; WhereInferred = None }
+
+    member fx.UseDotNetFramework = fx.InferredFramework.UseDotNetFramework
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -2159,6 +2211,7 @@ type TcConfigBuilder =
       mutable includes: string list
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
+      mutable inferredTargetFrameworkForScripts: InferredTargetFrameworkForScripts option
       mutable framework: bool
       mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
@@ -2232,6 +2285,7 @@ type TcConfigBuilder =
       mutable includewin32manifest: bool
       mutable linkResources: string list
       mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable fxResolver: FxResolver 
 
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
@@ -2323,6 +2377,7 @@ type TcConfigBuilder =
           compilingFslib = false
           useIncrementalBuilder = false
           useFsiAuxLib = false
+          inferredTargetFrameworkForScripts = None
           implicitOpens = []
           includes = []
           resolutionEnvironment = ResolutionEnvironment.EditingOrCompilation false
@@ -2400,6 +2455,7 @@ type TcConfigBuilder =
           includewin32manifest = true
           linkResources = []
           legacyReferenceResolver = null
+          fxResolver = Unchecked.defaultof<_>
           showFullPaths = false
           errorStyle = ErrorStyle.DefaultErrors
 
@@ -2468,8 +2524,11 @@ type TcConfigBuilder =
         } 
         |> Seq.distinct
 
-    static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
-                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
+    static member CreateNew(legacyReferenceResolver, 
+        fxResolver,
+        defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
+        isInteractive, isInvalidationSupported,
+        defaultCopyFSharpCore, tryGetMetadataSnapshot, inferredTargetFrameworkForScripts) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
@@ -2482,11 +2541,13 @@ type TcConfigBuilder =
                 defaultFSharpBinariesDir = defaultFSharpBinariesDir
                 reduceMemoryUsage = reduceMemoryUsage
                 legacyReferenceResolver = legacyReferenceResolver
+                fxResolver = fxResolver
                 isInteractive = isInteractive
                 isInvalidationSupported = isInvalidationSupported
                 copyFSharpCore = defaultCopyFSharpCore
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
                 useFsiAuxLib = isInteractive
+                inferredTargetFrameworkForScripts = inferredTargetFrameworkForScripts
             }
         tcConfigBuilder
 
@@ -2630,6 +2691,21 @@ type TcConfigBuilder =
 
     member tcConfigB.AddPathMapping (oldPrefix, newPrefix) =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
+
+    member tcConfigB.CheckExplicitFrameworkDirective (fx: TargetFrameworkForScripts, m: range) =
+        match tcConfigB.inferredTargetFrameworkForScripts with
+        | Some fx0 ->
+            if  fx0.InferredFramework <> fx then
+                warning(Error(FSComp.SR.optsIncompatibleFrameworks(fx0.InferredFramework.Value, fx.Value), m))
+            let m2 = defaultArg  fx0.WhereInferred m
+            // If the directive is in the same file as the explicit directive used for inference
+            // then report a warning
+            if m2.FileName = m.FileName && m2 <> m then
+                warning(Error(FSComp.SR.optsExplicitFrameworkNotFirstDeclaration(), m))
+        | None ->
+            // If the explicit framework has not been inferred by the first-non-comment rule
+            // then it can't be set by any other means.
+            warning(Error(FSComp.SR.optsExplicitFrameworkNotFirstDeclaration(), m))
     
     static member SplitCommandLineResourceInfo (ri: string) =
         let p = ri.IndexOf ','
@@ -2782,10 +2858,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.primaryAssembly.Name)
     let fslibReference =
         // Look for explicit FSharp.Core reference otherwise use version that was referenced by compiler
-        let dllReference, fileNameOpt = computeKnownDllReference getFSharpCoreLibraryName
+        let dllReference, fileNameOpt = computeKnownDllReference fsharpCoreLibraryName
         match fileNameOpt with
         | Some _ -> dllReference
-        | None -> AssemblyReference(range0, getDefaultFSharpCoreLocation, None)
+        | None -> AssemblyReference(range0, getDefaultFSharpCoreLocation(), None)
 
     // clrRoot: the location of the primary assembly (mscorlib.dll or netstandard.dll or System.Runtime.dll)
     //
@@ -2814,8 +2890,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
                 None, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
 
-    let systemAssemblies = systemAssemblies
+    let systemAssemblies = data.fxResolver.GetSystemAssemblies()
 
+    member x.FxResolver = data.fxResolver
     member x.primaryAssembly = data.primaryAssembly
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
@@ -2827,6 +2904,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.includes = data.includes
     member x.implicitOpens = data.implicitOpens
     member x.useFsiAuxLib = data.useFsiAuxLib
+    member x.inferredTargetFrameworkForScripts = data.inferredTargetFrameworkForScripts
     member x.framework = data.framework
     member x.implicitlyResolveAssemblies = data.implicitlyResolveAssemblies
     member x.resolutionEnvironment = data.resolutionEnvironment
@@ -2946,7 +3024,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member x.legacyReferenceResolver = data.legacyReferenceResolver
 
-    member tcConfig.CloneOfOriginalBuilder = 
+    member _.CloneToBuilder() = 
         { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) = 
@@ -2988,7 +3066,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                     if Directory.Exists runtimeRootWPF then
                         yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
 
-                    match frameworkRefsPackDirectory with
+                    match tcConfig.FxResolver.GetFrameworkRefsPackDirectory() with
                     | Some path when Directory.Exists(path) ->
                         yield path
                     | _ -> ()
@@ -3023,7 +3101,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
                         if Directory.Exists facades then
                             yield facades
-                        match frameworkRefsPackDirectory with
+                        match tcConfig.FxResolver.GetFrameworkRefsPackDirectory() with
                         | Some path when Directory.Exists(path) ->
                             yield path
                         | _ -> ()
@@ -3074,7 +3152,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             FileSystem.SafeExists filename &&
             ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
              (systemAssemblies.Contains (fileNameWithoutExtension filename)) ||
-             isInReferenceAssemblyPackDirectory filename)
+             tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory filename)
         with _ ->
             false
 
@@ -3316,7 +3394,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member tcConfig.GetNativeProbingRoots() = data.GetNativeProbingRoots()
 
-
 let ReportWarning options err = 
     warningOn err (options.WarnLevel) (options.WarnOn) && not (List.contains (GetDiagnosticNumber err) (options.WarnOff))
 
@@ -3345,8 +3422,6 @@ let GetScopedPragmasForInput input =
     match input with 
     | ParsedInput.SigFile (ParsedSigFileInput (scopedPragmas=pragmas)) -> pragmas
     | ParsedInput.ImplFile (ParsedImplFileInput (scopedPragmas=pragmas)) -> pragmas
-
-
 
 /// Build an ErrorLogger that delegates to another ErrorLogger but filters warnings turned off by the given pragma declarations
 //
@@ -3731,11 +3806,11 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
     static member GetAllDllReferences (tcConfig: TcConfig) = [
             let primaryReference = tcConfig.PrimaryAssemblyDllReference()
 
-            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
+            let useDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
 
             if not tcConfig.compilingFslib then 
                 yield tcConfig.CoreLibraryDllReference()
-                if assumeDotNetFramework then
+                if useDotNetFramework then
                     // When building desktop then we need these additional dependencies
                     yield AssemblyReference(rangeStartup, "System.Numerics.dll", None)
                     yield AssemblyReference(rangeStartup, "System.dll", None)
@@ -3751,7 +3826,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     if found then yield asm
 
             if tcConfig.framework then
-                for s in defaultReferencesForScriptsAndOutOfProjectSources tcConfig.useFsiAuxLib assumeDotNetFramework tcConfig.useSdkRefs do
+                for s in tcConfig.FxResolver.GetDefaultReferencesForScriptsAndOutOfProjectSources(tcConfig.useFsiAuxLib, useDotNetFramework, tcConfig.useSdkRefs) do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             yield! tcConfig.referencedDLLs
@@ -3847,7 +3922,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName
+    let rName = if ccu.AssemblyName = fsharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName
 
     let includeDir =
         if String.IsNullOrEmpty tcConfig.implicitIncludeDir then ""
@@ -3867,7 +3942,7 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) =
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
+    let rName = if ccu.AssemblyName = fsharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     PickleToResource inMem file tcGlobals ccu (rName+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
 //----------------------------------------------------------------------------
@@ -3877,8 +3952,11 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
          member __.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
+
          member __.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
+
          member __.TryGetILModuleDef() = Some ilModule 
+
          member __.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
             let resources = ilModule.Resources.AsList
             let sigDataReaders = 
@@ -3896,6 +3974,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                 else
                     sigDataReaders
             sigDataReaders
+
          member __.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
             let optDataReaders = 
                 ilModule.Resources.AsList
@@ -3911,6 +3990,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                 else
                     optDataReaders
             optDataReaders
+
          member __.GetRawTypeForwarders() =
             match ilModule.Manifest with 
             | Some manifest -> manifest.ExportedTypes
@@ -5003,7 +5083,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let fslibCcu = 
             if tcConfig.compilingFslib then 
                 // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
-                CcuThunk.CreateDelayed getFSharpCoreLibraryName
+                CcuThunk.CreateDelayed fsharpCoreLibraryName
             else
                 let fslibCcuInfo =
                     let coreLibraryReference = tcConfig.CoreLibraryDllReference()
@@ -5015,7 +5095,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             // Are we using a "non-canonical" FSharp.Core?
                             match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
-                            | _ -> tcResolutions.TryFindByOriginalReferenceText (getFSharpCoreLibraryName)  // was the ".dll" elided?
+                            | _ -> tcResolutions.TryFindByOriginalReferenceText (fsharpCoreLibraryName)  // was the ".dll" elided?
                     
                     match resolvedAssemblyRef with 
                     | Some coreLibraryResolution -> 
@@ -5105,6 +5185,7 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, m, file) =
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
+      frameworkF: 'state -> range * TargetFrameworkForScripts -> 'state,
       hashReferenceF: 'state -> range * string * Directive -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder, 
@@ -5150,8 +5231,14 @@ let ProcessMetaCommandsFromInput
                | _ -> 
                    errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
                    state
+
             | ParsedHashDirective("nowarn",numbers,m) ->
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
+
+            | ParsedHashDirective("targetfx", [("netfx" | "netcore") as d],m) ->
+               if not canHaveScriptMetaCommands then 
+                   errorR(Error(FSComp.SR.buildInvalidHashNetDirective(), m))
+               frameworkF state (m, TargetFrameworkForScripts d)
 
             | ParsedHashDirective(("reference" | "r"), args, m) -> 
                 matchedm<-m
@@ -5233,23 +5320,25 @@ let ProcessMetaCommandsFromInput
 
 let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource) = 
     // Clone
-    let tcConfigB = tcConfig.CloneOfOriginalBuilder 
+    let tcConfigB = tcConfig.CloneToBuilder() 
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
-    let addReference = fun () (_m, _s, _) -> ()
+    let addFramework = fun () (_m, _s) -> ()
+    let addReferenceDirective = fun () (_m, _s, _) -> ()
     let addLoadedSource = fun () (_m, _s) -> ()
     ProcessMetaCommandsFromInput
-        (addNoWarn, addReference, addLoadedSource)
+        (addNoWarn, addFramework, addReferenceDirective, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
 let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource, dependencyProvider) = 
     // Clone
-    let tcConfigB = tcConfig.CloneOfOriginalBuilder 
-    let getWarningNumber = fun () _ -> () 
-    let addReferenceDirective = fun () (m, path, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
-    let addLoadedSource = fun () (m,s) -> tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
+    let tcConfigB = tcConfig.CloneToBuilder() 
+    let addNoWarn () _ = () 
+    let addFramework () (m, fx) = tcConfigB.CheckExplicitFrameworkDirective(fx, m)
+    let addReferenceDirective () (m, path, directive) = tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
+    let addLoadedSource () (m,s) = tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
     ProcessMetaCommandsFromInput
-        (getWarningNumber, addReferenceDirective, addLoadedSource)
+        (addNoWarn, addFramework, addReferenceDirective, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
@@ -5283,6 +5372,9 @@ type LoadClosure =
 
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences: UnresolvedAssemblyReference list
+
+      /// Whether an explicit #netfx or #netcore has been given
+      InferredTargetFramework: InferredTargetFrameworkForScripts
 
       /// The list of all sources in the closure with inputs when available
       Inputs: LoadClosureInput list
@@ -5352,28 +5444,42 @@ module ScriptPreprocessClosure =
 
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig 
-           (legacyReferenceResolver, defaultFSharpBinariesDir, 
-            filename: string, codeContext, 
-            useSimpleResolution, useFsiAuxLib, 
-            basicReferences, applyCommandLineArgs, 
-            assumeDotNetFramework, useSdkRefs,
-            tryGetMetadataSnapshot, reduceMemoryUsage) =  
+           (legacyReferenceResolver,
+            defaultFSharpBinariesDir, 
+            filename: string,
+            codeContext, 
+            useSimpleResolution,
+            useFsiAuxLib, 
+            basicReferences,
+            applyCommandLineArgs, 
+            inferredTargetFramework: InferredTargetFrameworkForScripts,
+            useDotNetFramework: bool,
+            useSdkRefs,
+            tryGetMetadataSnapshot,
+            reduceMemoryUsage) =  
 
         let projectDir = Path.GetDirectoryName filename
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
+        let fxResolver = FxResolver(reduceMemoryUsage, tryGetMetadataSnapshot, Some inferredTargetFramework.UseDotNetFramework)
+
         let tcConfigB = 
             TcConfigBuilder.CreateNew
-                (legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, 
+                (legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, 
                  isInteractive, isInvalidationSupported, CopyFSharpCoreFlag.No, 
-                 tryGetMetadataSnapshot) 
+                 tryGetMetadataSnapshot, Some inferredTargetFramework) 
 
         applyCommandLineArgs tcConfigB
 
         match basicReferences with 
-        | None -> (basicReferencesForScriptLoadClosure useFsiAuxLib useSdkRefs assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
-        | Some rs -> for m, r in rs do tcConfigB.AddReferencedAssemblyByPath(m, r)
+        | None ->
+             // Add script references
+             for reference in fxResolver.GetBasicReferencesForScriptLoadClosure useFsiAuxLib useSdkRefs useDotNetFramework do
+                tcConfigB.AddReferencedAssemblyByPath(range0, reference)
+        | Some rs ->
+            for m, reference in rs do
+                tcConfigB.AddReferencedAssemblyByPath(m, reference)
 
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
@@ -5386,6 +5492,7 @@ module ScriptPreprocessClosure =
         // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
         tcConfigB.useSdkRefs <- useSdkRefs
+        tcConfigB.primaryAssembly <- inferredTargetFramework.InferredFramework.PrimaryAssembly
 
         TcConfig.Create(tcConfigB, validate=true)
 
@@ -5407,13 +5514,14 @@ module ScriptPreprocessClosure =
            (tcConfig: TcConfig, inp: ParsedInput,
             pathOfMetaCommandSource, dependencyProvider) = 
 
-        let tcConfigB = tcConfig.CloneOfOriginalBuilder 
+        let tcConfigB = tcConfig.CloneToBuilder()
         let mutable nowarns = [] 
-        let getWarningNumber = fun () (m, s) -> nowarns <- (s, m) :: nowarns
+        let addNoWarn = fun () (m, s) -> nowarns <- (s, m) :: nowarns
+        let addFramework = fun () (m, fx) -> tcConfigB.CheckExplicitFrameworkDirective(fx, m)
         let addReferenceDirective = fun () (m, s, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, s, directive)
         let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
         try 
-            ProcessMetaCommandsFromInput (getWarningNumber, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+            ProcessMetaCommandsFromInput (addNoWarn, addFramework, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
         with ReportedError _ ->
             // Recover by using whatever did end up in the tcConfig
             ()
@@ -5422,7 +5530,7 @@ module ScriptPreprocessClosure =
             TcConfig.Create(tcConfigB, validate=false), nowarns
         with ReportedError _ ->
             // Recover by using a default TcConfig.
-            let tcConfigB = tcConfig.CloneOfOriginalBuilder 
+            let tcConfigB = tcConfig.CloneToBuilder()
             TcConfig.Create(tcConfigB, validate=false), nowarns
 
     let FindClosureFiles
@@ -5465,7 +5573,7 @@ module ScriptPreprocessClosure =
                                     | Directive.Include -> "i"
 
                                 let packageManagerTextLines = packageManagerLines |> List.map(fun l -> directive l.Directive, l.Line)
-                                let result = dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, executionTfm, executionRid, tcConfig.implicitIncludeDir, mainFile, scriptName)
+                                let result = dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError, tcConfig.FxResolver.GetTfm(), tcConfig.FxResolver.GetRid(), tcConfig.implicitIncludeDir, mainFile, scriptName)
                                 if result.Success then
                                     // Resolution produced no errors
                                     //Write outputs in F# Interactive and compiler
@@ -5475,7 +5583,7 @@ module ScriptPreprocessClosure =
 
                                     packageReferences.[m] <- [ for script in result.SourceFiles do yield! File.ReadAllLines script ]
                                     if not (Seq.isEmpty result.Roots) then
-                                        let tcConfigB = tcConfig.CloneOfOriginalBuilder
+                                        let tcConfigB = tcConfig.CloneToBuilder()
                                         for folder in result.Roots do 
                                             tcConfigB.AddIncludePath(m, folder, "")
                                         tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
@@ -5493,7 +5601,7 @@ module ScriptPreprocessClosure =
                                             errorR(Error(FSComp.SR.packageManagerError(line), m))
                                     // Resolution produced errors update packagerManagerLines entries to note these failure
                                     // failed resolutions will no longer be considered
-                                    let tcConfigB = tcConfig.CloneOfOriginalBuilder
+                                    let tcConfigB = tcConfig.CloneToBuilder()
                                     tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines 
                                     tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
@@ -5547,7 +5655,7 @@ module ScriptPreprocessClosure =
         
         
     /// Reduce the full directive closure into LoadClosure
-    let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences) = 
+    let GetLoadClosure (ctok, rootFilename, closureFiles, tcConfig: TcConfig, codeContext, packageReferences) = 
     
         // Mark the last file as isLastCompiland. 
         let closureFiles =
@@ -5614,6 +5722,7 @@ module ScriptPreprocessClosure =
               References = List.groupBy fst references |> List.map (map2Of2 (List.map snd))
               PackageReferences = packageReferences
               UnresolvedReferences = unresolvedReferences
+              InferredTargetFramework = tcConfig.inferredTargetFrameworkForScripts.Value
               Inputs = sourceInputs
               NoWarns = List.groupBy fst globalNoWarns |> List.map (map2Of2 (List.map snd))
               OriginalLoadReferences = tcConfig.loadedSources
@@ -5623,24 +5732,31 @@ module ScriptPreprocessClosure =
 
         result
 
-    /// Given source text, find the full load closure. Used from service.fs, when editing a script file
+    /// Given source text, find the full load closure. Used from service.fs, when editing a script file.
     let GetFullClosureOfScriptText
            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-            filename, sourceText, codeContext, 
+            filename, sourceText: ISourceText, codeContext, 
             useSimpleResolution, useFsiAuxLib, useSdkRefs,
             lexResourceManager: Lexhelp.LexResourceManager, 
-            applyCommandLineArgs, assumeDotNetFramework,
+            applyCommandLineArgs, defaultToDotNetFramework,
             tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider) =
 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
         // first, then #I and other directives are processed.
+        //
+        // We first infer the explicit framework from the root script.
+        let inferredTargetFramework =
+            InferredTargetFrameworkForScripts.Infer (filename, sourceText, defaultToDotNetFramework)
+
+        let useDotNetFramework = inferredTargetFramework.InferredFramework.UseDotNetFramework
+
         let references0 = 
             let tcConfig = 
                 CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, 
                     filename, codeContext, useSimpleResolution, 
-                    useFsiAuxLib, None, applyCommandLineArgs, assumeDotNetFramework, 
+                    useFsiAuxLib, None, applyCommandLineArgs, inferredTargetFramework, useDotNetFramework, 
                     useSdkRefs, tryGetMetadataSnapshot, reduceMemoryUsage)
 
             let resolutions0, _unresolvedReferences = GetAssemblyResolutionInformation(ctok, tcConfig)
@@ -5650,7 +5766,7 @@ module ScriptPreprocessClosure =
         let tcConfig = 
             CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, 
                  codeContext, useSimpleResolution, useFsiAuxLib, Some references0, 
-                 applyCommandLineArgs, assumeDotNetFramework, useSdkRefs,
+                 applyCommandLineArgs, inferredTargetFramework, useDotNetFramework, useSdkRefs,
                  tryGetMetadataSnapshot, reduceMemoryUsage)
 
         let closureSources = [ClosureSource(filename, range0, sourceText, true)]
@@ -5663,6 +5779,8 @@ module ScriptPreprocessClosure =
             (ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, 
              lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
+        // Check we have already pre-inferred the target framework
+        assert tcConfig.inferredTargetFrameworkForScripts.IsSome 
         let mainFile, mainFileRange = List.last files
         let closureSources = files |> List.collect (fun (filename, m) -> ClosureSourceOfFilename(filename, m,tcConfig.inputCodePage,true))
         let closureFiles, tcConfig, packageReferences = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
@@ -5678,14 +5796,14 @@ type LoadClosure with
                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
                       filename: string, sourceText: ISourceText, codeContext, useSimpleResolution: bool, 
                       useFsiAuxLib, useSdkRefs, lexResourceManager: Lexhelp.LexResourceManager, 
-                      applyCommandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot,
+                      applyCommandLineArgs, defaultToDotNetFramework, tryGetMetadataSnapshot,
                       reduceMemoryUsage, dependencyProvider) = 
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
             (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, 
              codeContext, useSimpleResolution, useFsiAuxLib, useSdkRefs, lexResourceManager, 
-             applyCommandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
+             applyCommandLineArgs, defaultToDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
 
     /// Analyze a set of script files and find the closure of their references.
     static member ComputeClosureOfScriptFiles
@@ -5989,5 +6107,5 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
 // Existing public APIs delegate to newer implementations
-let GetFSharpCoreLibraryName () = getFSharpCoreLibraryName
-let DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework = defaultReferencesForScriptsAndOutOfProjectSources (*useFsiAuxLib*)false assumeDotNetFramework (*useSdkRefs*)false
+let GetFSharpCoreLibraryName () = fsharpCoreLibraryName
+

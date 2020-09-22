@@ -43,6 +43,9 @@ type public FSharpProjectOptions =
       /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
       UseScriptResolutionRules : bool
 
+      /// Whether an explicit framework has been given for scripts, e.g. "netfx" or "netcore"
+      InferredTargetFrameworkForScripts: string option
+
       /// Timestamp of project/script load, used to differentiate between different instances of a project load.
       /// This ensures that a complete reload of the project or script type checking
       /// context occurs on project or script unload/reload.
@@ -498,11 +501,14 @@ type public CompilerEnvironment =
 /// Information about the compilation environment
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module public CompilerEnvironment =
+
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
     val DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
+
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
+
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     val IsCheckerSupportedSubcategory: string -> bool
 

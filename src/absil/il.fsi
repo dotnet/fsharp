@@ -69,6 +69,7 @@ type ILAssemblyRef =
     static member Create: name: string * hash: byte[] option * publicKey: PublicKey option * retargetable: bool * version: ILVersionInfo option * locale: string option -> ILAssemblyRef
     static member FromAssemblyName: System.Reflection.AssemblyName -> ILAssemblyRef
     member Name: string
+    member ToAssemblyName: unit -> System.Reflection.AssemblyName
 
     /// The fully qualified name of the assembly reference, e.g. mscorlib, Version=1.0.3705 etc.
     member QualifiedName: string 

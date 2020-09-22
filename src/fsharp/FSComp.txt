@@ -1548,3 +1548,8 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3390,xmlDocDuplicateParameter,"This XML comment is invalid: multiple documentation entries for parameter '%s'"
 3390,xmlDocUnresolvedCrossReference,"This XML comment is invalid: unresolved cross-reference '%s'"
 3390,xmlDocMissingParameter,"This XML comment is incomplete: no documentation for parameter '%s'"
+3394,buildInvalidHashNetDirective,"Explicit framework declarations may only occur in F# script files."
+3395,fsiWrongFrameworkNetCore,"This script is executing using .NET Core, but .NET Framework has been specified."
+3395,fsiWrongFrameworkNetFx,"This script is executing using .NET Framework, but .NET Core has been specified."
+3396,optsIncompatibleFrameworks,"This script is using framework '%s' but requires framework '%s'."
+3397,optsExplicitFrameworkNotFirstDeclaration,"Scripts requiring explicit frameworks should have '#netfx' or '#netcore' as their first non-whitespace, non-comment line."
