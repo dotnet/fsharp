@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Functions to retrieve framework dependencies
-module internal FSharp.Compiler.DotNetFrameworkDependencies
+namespace FSharp.Compiler
 
 open System
 open System.Collections.Generic
@@ -13,27 +13,6 @@ open System.Runtime.InteropServices
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-
-type private TypeInThisAssembly = class end
-
-let fsharpCoreLibraryName = "FSharp.Core"
-let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
-
-let fsharpCompilerLocation =
-    let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-    match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some location) with
-    | Some path -> path
-    | None ->
-#if DEBUG
-        Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
-            customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
-            location)
-#endif
-        // Use the location of this dll
-        location
-
-let getDefaultFSharpCoreLocation() = Path.Combine(fsharpCompilerLocation, fsharpCoreLibraryName + ".dll")
-let getDefaultFsiLibraryLocation() = Path.Combine(fsharpCompilerLocation, fsiLibraryName + ".dll")
 
 /// Resolves the references for a chosen or currently-executing framework, for
 ///   - script execution
@@ -48,10 +27,9 @@ type FxResolver(_reduceMemoryUsage, _tryGetMetadataSnapshot, preInferredUseDotNe
         | Some useDotNetFramework ->
             FxResolver.TryGetDefaultSdkDirAndRid(useDotNetFramework)
 
-    let ifEmptyUse alternative filename = if String.IsNullOrWhiteSpace filename then alternative else filename
-    
     let getRunningImplementationAssemblyDir() =
-        Path.GetDirectoryName(typeof<obj>.Assembly.Location) |> ifEmptyUse fsharpCompilerLocation
+        let filename = Path.GetDirectoryName(typeof<obj>.Assembly.Location) 
+        if String.IsNullOrWhiteSpace filename then getFSharpCompilerLocation() else filename
 
     let chosenRuntimeVersion, chosenRuntimeDir =
         match sdkDir with 
@@ -86,7 +64,7 @@ type FxResolver(_reduceMemoryUsage, _tryGetMetadataSnapshot, preInferredUseDotNe
             if asm.FullName.StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
                 Some asm.Location
             else
-                let valueTuplePath = Path.Combine(fsharpCompilerLocation, "System.ValueTuple.dll")
+                let valueTuplePath = Path.Combine(getFSharpCompilerLocation(), "System.ValueTuple.dll")
                 if File.Exists(valueTuplePath) then
                     Some valueTuplePath
                 else

@@ -16,7 +16,6 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib

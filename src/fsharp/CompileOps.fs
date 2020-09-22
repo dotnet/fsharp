@@ -14,6 +14,7 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Internal.Utilities.Text
+open Internal.Utilities.FSharpEnvironment
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
@@ -29,7 +30,6 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticMessage
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Import
@@ -2477,7 +2477,7 @@ type TcConfigBuilder =
           deterministic = false
           preferredUiLang = None
           lcid = None
-          productNameForBannerText = FSharpEnvironment.FSharpProductName
+          productNameForBannerText = FSharpProductName
           showBanner = true
           showTimes = false
           showLoadedAssemblies = false
@@ -4003,7 +4003,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             List.exists IsSignatureDataVersionAttr attrs
          member __.HasMatchingFSharpSignatureDataAttribute ilg = 
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+            List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion FSharpBinaryMetadataFormatRevision)) attrs
 
 
 //----------------------------------------------------------------------------

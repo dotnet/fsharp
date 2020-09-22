@@ -17,7 +17,6 @@ open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Range

@@ -17,7 +17,6 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution

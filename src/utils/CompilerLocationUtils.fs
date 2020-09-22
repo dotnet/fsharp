@@ -14,6 +14,8 @@ open Microsoft.FSharp.Core
 
 module internal FSharpEnvironment =
 
+    type private TypeInThisAssembly = class end
+
     /// The F# version reported in the banner
     let FSharpBannerVersion = UtilsStrings.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
 
@@ -342,3 +344,23 @@ module internal FSharpEnvironment =
 
     let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = 
         searchToolPaths None compilerToolPaths
+
+    let fsharpCoreLibraryName = "FSharp.Core"
+    let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
+
+    let getFSharpCompilerLocation() =
+        let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
+        match BinFolderOfDefaultFSharpCompiler (Some location) with
+        | Some path -> path
+        | None ->
+    #if DEBUG
+            Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
+                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
+                location)
+    #endif
+            // Use the location of this dll
+            location
+
+    let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocation(), fsharpCoreLibraryName + ".dll")
+    let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
+

@@ -32,7 +32,6 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompileOptions
 open FSharp.Compiler.CompileOps
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen

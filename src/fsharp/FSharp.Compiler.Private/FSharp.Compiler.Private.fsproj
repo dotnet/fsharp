@@ -556,8 +556,8 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
-    <Compile Include="..\DotNetFrameworkDependencies.fs">
-      <Link>Driver\DotNetFrameworkDependencies.fs</Link>
+    <Compile Include="..\FxResolver.fs">
+      <Link>Driver\FxResolver.fs</Link>
     </Compile>
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
