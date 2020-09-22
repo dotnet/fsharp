@@ -8,6 +8,11 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 
+#if DEBUG
+module internal CompilerService =
+    val showAssertForUnexpectedException: bool ref
+#endif // DEBUG
+
 /// This exception is an old-style way of reporting a diagnostic
 exception HashIncludeNotAllowedInNonScript of range
 
