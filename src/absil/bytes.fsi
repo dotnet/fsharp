@@ -163,3 +163,6 @@ type ByteStorage =
 
     /// Creates a ByteStorage that has a copy of the given ByteMemory.
     static member FromByteMemoryAndCopy : ReadOnlyByteMemory * useBackingMemoryMappedFile: bool -> ByteStorage
+
+    /// Creates a ByteStorage that has a copy of the given byte array.
+    static member FromByteArrayAndCopy : byte [] * useBackingMemoryMappedFile: bool -> ByteStorage

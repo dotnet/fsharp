@@ -3836,7 +3836,7 @@ let PickleToResource inMem file (g: TcGlobals) scope rName p x =
     let bytes = pickleObjWithDanglingCcus inMem file g scope p x
     let byteStorage =
         if inMem then
-            ByteStorage.FromByteMemoryAndCopy(ByteMemory.FromArray(bytes).AsReadOnly(), useBackingMemoryMappedFile = true)
+            ByteStorage.FromByteArrayAndCopy(bytes, useBackingMemoryMappedFile = true)
         else
             ByteStorage.FromByteArray(bytes)
     let location = ILResourceLocation.Local(byteStorage)

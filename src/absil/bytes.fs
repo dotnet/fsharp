@@ -323,6 +323,7 @@ module MemoryMappedFileExtensions =
             else
                 if Utils.runningOnMono
                 then
+                    // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
                     None
                 else
                     let mmf =
