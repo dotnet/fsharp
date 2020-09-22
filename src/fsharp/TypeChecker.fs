@@ -2670,7 +2670,7 @@ module EventDeclarationNormalization =
 
                    match rhsExpr with 
                    // Detect 'fun () -> e' which results from the compilation of a property getter
-                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), trueRhsExpr, m) ->
+                   | SynExpr.Lambda (_, _, SynSimplePats.SimplePats([], _), trueRhsExpr, _, m) ->
                        let rhsExpr = mkSynApp1 (SynExpr.DotGet (SynExpr.Paren (trueRhsExpr, range0, None, m), range0, LongIdentWithDots([ident(target, m)], []), m)) (SynExpr.Ident (ident(argName, m))) m
                        
                        // reconstitute rhsExpr
@@ -6414,7 +6414,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e = 
     match e with 
-    | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, m) when isMember || isFirst || isSubsequent ->
+    | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names 
@@ -8241,7 +8241,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
             Some (nm, Option.get (tryGetDataForCustomOperation nm), core, core.Range, optIntoInfo)
         | _ -> None
 
-    let mkSynLambda p e m = SynExpr.Lambda (false, false, p, e, m)
+    let mkSynLambda p e m = SynExpr.Lambda (false, false, p, e, None, m)
 
     let mkExprForVarSpace m (patvs: Val list) = 
         match patvs with 
@@ -8940,7 +8940,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
                                     // Check for the [<ProjectionParameter>] attribute on each argument position
                                     let args = args |> List.mapi (fun i arg -> 
                                         if isCustomOperationProjectionParameter (i+1) nm then 
-                                            SynExpr.Lambda (false, false, varSpaceSimplePat, arg, arg.Range.MakeSynthetic())
+                                            SynExpr.Lambda (false, false, varSpaceSimplePat, arg, None, arg.Range.MakeSynthetic())
                                         else arg)
                                     mkSynCall methInfo.DisplayName mClause (dataCompPrior :: args)
                                 else 
@@ -9180,7 +9180,7 @@ and TcComputationExpression cenv env overallTy mWhole (interpExpr: Expr) builder
 
     let lambdaExpr = 
         let mBuilderVal = mBuilderVal.MakeSynthetic()
-        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), runExpr, mBuilderVal)
+        SynExpr.Lambda (false, false, SynSimplePats.SimplePats ([mkSynSimplePatVar false (mkSynId mBuilderVal builderValName)], mBuilderVal), runExpr, None, mBuilderVal)
 
     let env =
         match comp with
@@ -9550,6 +9550,16 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             let ad = env.eAccessRights
             let result = defaultArg resultOpt (List.last longId)
             
+            // Demangle back to source operator name if the lengths in the ranges indicate the
+            // original source range matches exactly
+            let result =
+                if IsMangledOpName result.idText then
+                    let demangled = DecompileOpName result.idText
+                    if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn then
+                        ident(demangled, result.idRange) 
+                    else result
+                else result
+
             // Nameof resolution resolves to a symbol and in general we make that the same symbol as
             // would resolve if the long ident was used as an expression at the given location.
             //
@@ -10564,7 +10574,7 @@ and GetNewInferenceTypeForMethodArg cenv env tpenv x =
     match x with 
     | SynExprParen(a, _, _, _) -> GetNewInferenceTypeForMethodArg cenv env tpenv a
     | SynExpr.AddressOf (true, a, _, m) -> mkByrefTyWithInference cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType cenv.g m)
-    | SynExpr.Lambda (_, _, _, a, _) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
+    | SynExpr.Lambda (_, _, _, a, _, _) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote (_, raw, a, _, _) -> 
         if raw then mkRawQuotedExprTy cenv.g
         else mkQuotedExprTy cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a)

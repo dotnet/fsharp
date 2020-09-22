@@ -183,11 +183,6 @@ module internal Utilities =
 
             p.WaitForExit()
 
-            if p.ExitCode <> 0 then
-                //Write StandardError.txt to err stream
-                for line in stdOut do Console.Out.WriteLine(line)
-                for line in stdErr do Console.Error.WriteLine(line)
-
             p.ExitCode = 0, stdOut, stdErr
 
         | None -> false, Array.empty, Array.empty
@@ -203,7 +198,7 @@ module internal Utilities =
             | None -> ""
 
         let arguments prefix =
-            sprintf "%s -restore %s %c%s%c /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
+            sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
 

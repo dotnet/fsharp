@@ -8,6 +8,7 @@ open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities.FSharpEnvironment
 open Microsoft.FSharp.Reflection
+open System.Collections.Concurrent
 
 [<AutoOpen>]
 module ReflectionHelper =
@@ -67,18 +68,13 @@ module ReflectionHelper =
             e.InnerException
         | _ -> e
 
-open ReflectionHelper
-open RidHelpers
-
 /// Indicate the type of error to report
 [<RequireQualifiedAccess>]
 type ErrorReportType =
     | Warning
     | Error
 
-
 type ResolvingErrorReport = delegate of ErrorReportType * int * string -> unit
-
 
 (* Shape of Dependency Manager contract, resolved using reflection *)
 /// The results of ResolveDependencies
@@ -88,19 +84,19 @@ type IResolveDependenciesResult =
     abstract Success: bool
 
     /// The resolution output log
-    abstract StdOut: string array
+    abstract StdOut: string[]
 
     /// The resolution error log (* process stderror *)
-    abstract StdError: string array
+    abstract StdError: string[]
 
     /// The resolution paths
-    abstract Resolutions: string seq
+    abstract Resolutions: seq<string>
 
     /// The source code file paths
-    abstract SourceFiles: string seq
+    abstract SourceFiles: seq<string>
 
     /// The roots to package directories
-    abstract Roots: string seq
+    abstract Roots: seq<string>
 
 
 [<AllowNullLiteralAttribute>]
@@ -267,9 +263,17 @@ type ReflectionDependencyManagerProvider(theType: Type,
 /// Class is IDisposable
 type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
 
-    let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
+    // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
+    let dllResolveHandler =
+        match nativeProbingRoots with 
+        | null -> { new IDisposable with member _.Dispose() = () }
+        | _ -> new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
 
-    let assemblyResolveHandler = new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
+    // Note: creating a AssemblyResolveHandler currently installs process-wide handlers
+    let assemblyResolveHandler = 
+        match assemblyProbingPaths with 
+        | null -> { new IDisposable with member _.Dispose() = () }
+        | _ -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
     // Resolution Path = Location of FSharp.Compiler.Private.dll
     let assemblySearchPaths = lazy (
@@ -326,9 +330,11 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                     None
             managers
 
-    /// Returns a formatted error message for the host to presentconstruct with just nativeProbing handler
-    new (nativeProbingRoots: NativeResolutionProbe) =
-        new DependencyProvider(Unchecked.defaultof<AssemblyResolutionProbe>, nativeProbingRoots)
+    let cache = ConcurrentDictionary<_,Result<IResolveDependenciesResult, _>>(HashIdentity.Structural)
+
+    new (nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(null, nativeProbingRoots)
+
+    new () = new DependencyProvider(null, null)
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member _.GetRegisteredDependencyManagerHelpText (compilerTools, outputDir, errorReport) = [|
@@ -390,19 +396,27 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
                        [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
+        
+        let key = (packageManager.Key, scriptExt, Seq.toArray packageManagerTextLines, executionTfm, executionRid, implicitIncludeDir, mainScriptName, fileName)
 
-        try
-            let executionRid =
-                if isNull executionRid then
-                    RidHelpers.platformRid
-                else
-                    executionRid
-            packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid)
+        let result = 
+            cache.GetOrAdd(key, System.Func<_,_>(fun _ -> 
+                try
+                    let executionRid =
+                        if isNull executionRid then
+                            RidHelpers.platformRid
+                        else
+                            executionRid
+                    Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid))
 
-        with e ->
-            let e = stripTieWrapper e
-            let err, msg = (DependencyManager.SR.packageManagerError(e.Message))
-            reportError.Invoke(ErrorReportType.Error, err, msg)
+                with e ->
+                    let e = stripTieWrapper e
+                    Error (DependencyManager.SR.packageManagerError(e.Message))
+            ))
+        match result with 
+        | Ok res -> res
+        | Error (errorNumber, errorData) ->
+            reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
             ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
 
     interface IDisposable with

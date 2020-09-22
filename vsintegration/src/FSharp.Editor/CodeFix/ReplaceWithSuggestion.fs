@@ -33,7 +33,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             do! Option.guard settings.CodeFixes.SuggestNamesForErrors
 
             let document = context.Document
-            let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken)
+            let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
 
             // This is all needed to get a declaration list
