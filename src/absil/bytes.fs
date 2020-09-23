@@ -326,14 +326,20 @@ module MemoryMappedFileExtensions =
                     // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
                     None
                 else
-                    let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
+                    // Try to create a memory mapped file and copy the contents of the given bytes to it.
+                    // If this fails, then we clean up and return None.
                     try
-                        use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
-                        bytes.CopyTo stream
-                        Some mmf
+                        let mmf = MemoryMappedFile.CreateNew(null, length, MemoryMappedFileAccess.ReadWrite, MemoryMappedFileOptions.None, HandleInheritability.None)
+                        try
+                            use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
+                            bytes.CopyTo stream
+                            Some mmf
+                        with
+                        | _ ->
+                            mmf.Dispose()
+                            None
                     with
                     | _ ->
-                        mmf.Dispose()
                         None
 
 type ByteMemory with
