@@ -3,22 +3,16 @@
 module internal FSharp.Compiler.CommandLineMain
 
 open System
-open System.Diagnostics
-open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.ILBinaryReader 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Driver
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open Internal.Utilities
 
 [<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] 
 do ()
