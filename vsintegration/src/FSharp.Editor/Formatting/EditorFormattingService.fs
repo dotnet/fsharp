@@ -138,8 +138,12 @@ type internal FSharpEditorFormattingService
                 let removeIndentation =
                     let nextLineIndent = fixedPasteText.Lines.[1].ToString() |> getIndentation
 
-                    if nextLineShouldBeIndented then nextLineIndent - tabSize
-                    else nextLineIndent
+                    let res =
+                        if nextLineShouldBeIndented then
+                            nextLineIndent - tabSize
+                        else nextLineIndent
+
+                    max 0 res
                 
                 return stripIndentation removeIndentation
         }
