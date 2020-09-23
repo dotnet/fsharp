@@ -2201,7 +2201,7 @@ type ILResourceAccess =
     | Public
     | Private
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoEquality;NoComparison>]
 type ILResourceLocation =
     | Local of ByteStorage
     | File of ILModuleRef * int32

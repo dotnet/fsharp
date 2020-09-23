@@ -1407,7 +1407,7 @@ type ILResourceAccess =
     | Public 
     | Private 
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoEquality;NoComparison>]
 type ILResourceLocation = 
     internal
     /// Represents a manifest resource that can be read or written to a PE file
