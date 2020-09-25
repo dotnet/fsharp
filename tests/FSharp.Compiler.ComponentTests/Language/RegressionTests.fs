@@ -1,15 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.UnitTests
+namespace FSharp.Compiler.ComponentTests.Language
 
-open NUnit.Framework
+open Xunit
 open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
 
-[<TestFixture>]
 module RegressionTests =
 
-    [<Test>]
+    [<Fact>]
     let ``No internal errors should be raised``() =
         FSharp """
 namespace FSharpBug
