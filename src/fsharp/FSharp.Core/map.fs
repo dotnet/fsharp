@@ -98,13 +98,7 @@ module MapTree =
             MapTreeNode(k,v,l,r,m+1) :> MapTree<'Key, 'Value>  // new map is higher by 1 than the highest
     
     let inline private asNode(value:MapTree<'Key,'Value>) : MapTreeNode<'Key,'Value> =
-        // F# is "too smart" and eliminates the inlined IL call, but that should be left to JIT, otherwise stuff breaks
-        // (# "ret" value: MapTreeNode<'Key,'Value> #)
-        // Ideally we need ldarg.0;ret without S.R.CS.U dependency
-        // :?> also works, but it's not free, while the usage guarantees correct unsafe casts
-        // when this is implemented, S.R.CS.U could be removed for inline IL: https://github.com/fsharp/fslang-suggestions/issues/838 
-        // Unsafe.As<MapTreeNode<'Key,'Value>>(value)
-        value :?> MapTreeNode<'Key,'Value> // this is not visible for performance
+        value :?> MapTreeNode<'Key,'Value>
         
     let rebalance t1 (k: 'Key) (v: 'Value) t2 : MapTree<'Key, 'Value> =
         let t1h = height t1
