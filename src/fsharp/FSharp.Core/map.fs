@@ -12,21 +12,19 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 [<NoEquality; NoComparison>]
 [<AllowNullLiteral>]
-type internal MapTree<'Key, 'Value> =
-    val Key: 'Key
-    val Value: 'Value
-    new(k:'Key, v:'Value) = {Key = k; Value = v}
+type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value) =
+    member _.Key = k
+    member _.Value = v
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
 [<AllowNullLiteral>]
-type internal MapTreeNode<'Key, 'Value> =
-    inherit MapTree<'Key,'Value>
-    val Left: MapTree<'Key, 'Value>
-    val Right: MapTree<'Key, 'Value>
-    val Height: int
-    new(k:'Key, v:'Value, left:MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) = 
-        {inherit MapTree<'Key,'Value>(k,v); Left = left; Right = right; Height = h}
+type internal MapTreeNode<'Key, 'Value>(k:'Key, v:'Value, left:MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
+    inherit MapTree<'Key,'Value>(k, v)
+
+    member _.Left = left
+    member _.Right = right
+    member _.Height = h
     
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MapTree = 
