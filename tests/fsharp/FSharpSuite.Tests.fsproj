@@ -58,6 +58,7 @@
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
+    <Compile Include="Compiler\Regressions\RegressionTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\ForInDoMutableRegressionTest.fs" />
     <Compile Include="Compiler\Libraries\Core\LanguagePrimitives\CastToUnitsTests.fs" />
