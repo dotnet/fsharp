@@ -105,6 +105,11 @@ These and transformations used to build the following:
 
 * _The F# Compiler Shell_, see [fsc.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/fsc.fs) and [fscmain.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/fscmain.fs).
 
+## Tools to help work with the compiler
+
+* [sharplab.io](https://sharplab.io/) can be used to decompile code.
+* [fantomas-tools](https://fsprojects.github.io/fantomas-tools/#/ast) can be used to view the Untyped & Typed Abstract Syntax Tree.
+
 ## Coding standards and idioms
 
 The compiler codebase uses various abbreviations. Here are some of the most common ones.
