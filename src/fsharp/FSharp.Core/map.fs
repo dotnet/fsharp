@@ -199,7 +199,7 @@ module MapTree =
         else
             match m with
             | :? MapTreeNode<'Key, 'Value> as mn ->
-                if isEmpty mn then mn.Key, mn.Value, mn.Right
+                if isEmpty mn.Left then mn.Key, mn.Value, mn.Right
                 else let k3, v3, l' = spliceOutSuccessor mn.Left in k3, v3, mk l' mn.Key mn.Value mn.Right
             | _ -> m.Key, m.Value, empty
 
