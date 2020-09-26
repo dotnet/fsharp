@@ -40,6 +40,7 @@
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
+    <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\XmlComments.fs" />
     <Compile Include="Language\CompilerDirectiveTests.fs" />
     <Compile Include="Language\CodeQuotationTests.fs" />
