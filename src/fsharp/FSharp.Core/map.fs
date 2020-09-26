@@ -5,7 +5,6 @@ namespace Microsoft.FSharp.Collections
 open System
 open System.Collections.Generic
 open System.Diagnostics
-open System.Runtime.CompilerServices
 open System.Text
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
