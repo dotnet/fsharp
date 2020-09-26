@@ -1,14 +1,49 @@
 # CI and PR triggers
 trigger:
-- main
-- dev16.1
-- feature/*
-- release/*
+  branches:
+    include:
+    - main
+    - dev16.1
+    - feature/*
+    - release/*
+  paths:
+    include:
+    - '*'
+    exclude:
+    - .github/*
+    - docs/compiler-guide.md
+    - attributions.md
+    - CODE_OF_CONDUCT.md
+    - DEVGUIDE.md
+    - INTERNAL.md
+    - Language-Version-History.md
+    - License.txt
+    - README.md
+    - release-notes.md
+    - TESTGUIDE.md
+
 pr:
-- main
-- dev16.1
-- feature/*
-- release/*
+  branches:
+    include:
+    - main
+    - dev16.1
+    - feature/*
+    - release/*
+  paths:
+    include:
+    - '*'
+    exclude:
+    - .github/*
+    - docs/compiler-guide.md
+    - attributions.md
+    - CODE_OF_CONDUCT.md
+    - DEVGUIDE.md
+    - INTERNAL.md
+    - Language-Version-History.md
+    - License.txt
+    - README.md
+    - release-notes.md
+    - TESTGUIDE.md
 
 variables:
   - name: _TeamName
