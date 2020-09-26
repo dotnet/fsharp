@@ -66,13 +66,13 @@ module MapTree =
                (totalSizeOnMapLookup / float numLookups))
            System.Console.WriteLine("#largestMapSize = {0}, largestMapStackTrace = {1}", largestMapSize, largestMapStackTrace)
 
-    let MapOne n = 
+    let MapTree n = 
         report()
         numOnes <- numOnes + 1
         totalSizeOnNodeCreation <- totalSizeOnNodeCreation + 1.0
         MapTree n
 
-    let MapNode (x, l, v, r, h) = 
+    let MapTreeNode (x, l, v, r, h) = 
         report()
         numNodes <- numNodes + 1
         let n = MapTreeNode (x, l, v, r, h)
@@ -87,10 +87,13 @@ module MapTree =
             | :? MapTreeNode<'Key, 'Value> as mn -> mn.Height
             | _ -> 1
     
+    [<Literal>]
+    let tolerance = 2
+    
     let mk l k v r : MapTree<'Key, 'Value> = 
         let hl = height l
         let hr = height r
-        let m = max hl hr
+        let m = if hl < hr then hr else hl
         if m = 0 then // m=0 ~ isEmpty l && isEmpty r 
             MapTree(k,v)
         else
@@ -102,7 +105,7 @@ module MapTree =
     let rebalance t1 (k: 'Key) (v: 'Value) t2 : MapTree<'Key, 'Value> =
         let t1h = height t1
         let t2h = height t2 
-        if  t2h > t1h + 2 then (* right is heavier than left *)
+        if  t2h > t1h + tolerance then (* right is heavier than left *)
             let t2' = asNode(t2)
             (* one of the nodes must have height > height t1 + 1 *)
             if height t2'.Left > t1h + 1 then  (* balance left: combination *)
@@ -111,7 +114,7 @@ module MapTree =
             else (* rotate left *)
                 mk (mk t1 k v t2'.Left) t2'.Key t2'.Value t2'.Right
         else
-            if  t1h > t2h + 2 then (* left is heavier than right *)
+            if  t1h > t2h + tolerance then (* left is heavier than right *)
                 let t1' = asNode(t1)
                 (* one of the nodes must have height > height t2 + 1 *)
                 if height t1'.Right > t2h + 1 then 
@@ -461,7 +464,7 @@ module MapTree =
     let current i =
         if i.started then
             match i.stack with
-            | []            -> alreadyFinished()
+            | []     -> alreadyFinished()
             | m :: _ ->
                 match m with
                 | :? MapTreeNode<'Key, 'Value> -> failwith "Please report error: Map iterator, unexpected stack for current"
