@@ -126,7 +126,7 @@ module internal SetTree =
             if height t2'.Left > t1h + 1 then  // balance left: combination 
                 let t2l = asNode(t2'.Left)
                 mk (mk t1 v t2l.Left) t2l.Key (mk t2l.Right t2'.Key t2'.Right) 
-            else // rotate left 
+            else // rotate left
                 mk (mk t1 v t2'.Left) t2.Key t2'.Right
         else
             if  t1h > t2h + tolerance then // left is heavier than right
@@ -144,7 +144,7 @@ module internal SetTree =
         if isEmpty t then SetTree k
         else
             let c = comparer.Compare(k, t.Key)
-            match t with 
+            match t with
             | :? SetTreeNode<'T> as tn ->
                 if   c < 0 then rebalance (add comparer k tn.Left) tn.Key tn.Right
                 elif c = 0 then t
@@ -224,11 +224,11 @@ module internal SetTree =
             | :? SetTreeNode<'T> as tn ->
                 if   c < 0 then rebalance (remove comparer k tn.Left) tn.Key tn.Right
                 elif c = 0 then
-                  if isEmpty tn.Left then tn.Right
-                  elif isEmpty tn.Right then tn.Left
-                  else
-                      let sk, r' = spliceOutSuccessor tn.Right 
-                      mk tn.Left sk r'
+                    if isEmpty tn.Left then tn.Right
+                    elif isEmpty tn.Right then tn.Left
+                    else
+                        let sk, r' = spliceOutSuccessor tn.Right 
+                        mk tn.Left sk r'
                 else rebalance tn.Left tn.Key (remove comparer k tn.Right)
             | _ ->  
                 if   c = 0 then empty
@@ -329,11 +329,11 @@ module internal SetTree =
                     //   Split t2 using pivot k1 into lo and hi.
                     //   Union disjoint subproblems and then combine. 
                     if t1n.Height > t2n.Height then
-                      let lo, _, hi = split comparer t1n.Key t2 in
-                      balance comparer (union comparer t1n.Left lo) t1n.Key (union comparer t1n.Right hi)
+                        let lo, _, hi = split comparer t1n.Key t2 in
+                        balance comparer (union comparer t1n.Left lo) t1n.Key (union comparer t1n.Right hi)
                     else
-                      let lo, _, hi = split comparer t2n.Key t1 in
-                      balance comparer (union comparer t2n.Left lo) t2n.Key (union comparer t2n.Right hi)
+                        let lo, _, hi = split comparer t2n.Key t1 in
+                        balance comparer (union comparer t2n.Left lo) t2n.Key (union comparer t2n.Right hi)
                 | _ -> add comparer t2.Key t1
             | _ -> add comparer t1.Key t2
 
@@ -431,8 +431,8 @@ module internal SetTree =
     let current i =
         if i.started then
             match i.stack with
-              | k :: _ -> k.Key
-              | []     -> alreadyFinished()
+            | k :: _ -> k.Key
+            | []     -> alreadyFinished()
         else
             notStarted()
 
