@@ -576,7 +576,7 @@ type TcState =
  
     member x.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput = 
         { x with tcsTcSigEnv = tcEnvAtEndOfLastInput
-                 tcsTcImplEnv = tcEnvAtEndOfLastInput } 
+                 tcsTcImplEnv = tcEnvAtEndOfLastInput }
 
  
 /// Create the initial type checking state for compiling an assembly
@@ -621,7 +621,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
+let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, quickCheck: bool) =
 
     eventually {
         try 
@@ -686,11 +686,21 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               let conditionalDefines =
                   if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
 
-              // Typecheck the implementation file 
-              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                  TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
-
               let hadSig = rootSigOpt.IsSome
+
+              // Typecheck the implementation file 
+              let typeCheckOne = 
+                  if quickCheck && hadSig then
+                    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSigOpt.Value, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
+                    let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [])
+
+                    (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)
+                    |> Eventually.Done
+                  else
+                    TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
+
+              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
+
               let implFileSigType = SigTypeOfImplFile implFile
 
               let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
@@ -741,7 +751,7 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
-    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp) 
+    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false) 
         |> Eventually.force ctok
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
@@ -756,7 +766,7 @@ let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
 let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     eventually {
         Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
-        let! results, tcState = TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
+        let! results, tcState = TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
         let result = TypeCheckMultipleInputsFinish([results], tcState)
         Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return result
@@ -780,3 +790,60 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
+let TryQuickTypeCheckOneInputEventually (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) : Eventually<((TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState) option> =
+
+    eventually {
+        try 
+          let! ctok = Eventually.token
+          RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
+
+          CheckSimulateException tcConfig
+
+          let m = inp.Range
+          let amap = tcImports.GetImportMap()
+          match inp with 
+          | ParsedInput.SigFile _ -> return None
+
+          | ParsedInput.ImplFile (ParsedImplFileInput (_, _, qualNameOfFile, _, _, _, _)) ->
+
+              // Check if we've got an interface for this fragment 
+              let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
+
+              // Check if we've already seen an implementation for this fragment 
+              if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
+                  errorR(Error(FSComp.SR.buildImplementationAlreadyGiven(qualNameOfFile.Text), m))
+
+              match rootSigOpt with
+              | None -> return None
+              | Some rootSig ->
+
+                  let tcImplEnv = tcState.tcsTcImplEnv
+
+                  let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSig, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
+                  let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [])
+                  let dummyImplFileSigType = SigTypeOfImplFile dummyImplFile
+
+                  let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
+
+                  // Only add it to the environment if it didn't have a signature 
+                  let m = qualNameOfFile.Range
+
+                  // Add the implementation as to the implementation env
+                  let tcImplEnv = AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv dummyImplFileSigType
+
+                  // Open the prefixPath for fsi.exe (tcImplEnv)
+                  let tcImplEnv = 
+                      match prefixPathOpt with 
+                      | Some prefixPath -> TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcImplEnv (prefixPath, m)
+                      | _ -> tcImplEnv 
+
+                  let tcState = 
+                       { tcState with 
+                            tcsTcImplEnv=tcImplEnv
+                            tcsRootImpls=rootImpls }
+                  return Some ((tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.CcuSig), tcState)
+
+        with e -> 
+            errorRecovery e range0 
+            return None
+    }

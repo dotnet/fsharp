@@ -1408,11 +1408,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                         TypeCheckOneInputEventually 
                             ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
-                             tcConfig, tcAcc.tcImports, 
-                             tcAcc.tcGlobals, 
-                             None, 
-                             TcResultsSink.WithSink sink, 
-                             tcAcc.tcState, input)
+                                tcConfig, tcAcc.tcImports, 
+                                tcAcc.tcGlobals, 
+                                None, 
+                                TcResultsSink.WithSink sink, 
+                                tcAcc.tcState, input,
+                                true)
                     Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         
                     /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
