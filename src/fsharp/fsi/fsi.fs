@@ -29,8 +29,10 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
@@ -40,9 +42,12 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Range
 open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
@@ -750,7 +755,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     /// Rather than start processing, just collect names, then process them. 
     let sourceFiles = 
         let collect name = 
-            let fsx = CompileOps.IsScript name
+            let fsx = IsScript name
             inputFilesAcc <- inputFilesAcc @ [(name,fsx)] // O(n^2), but n small...
         try 
            let fsiCompilerOptions = fsiUsagePrefix tcConfigB @ GetCoreFsiCompilerOptions tcConfigB @ fsiUsageSuffix tcConfigB

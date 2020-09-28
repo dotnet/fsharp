@@ -14,12 +14,16 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.CompileOps
-open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Range
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
@@ -834,8 +838,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 #endif
             let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
             let applyCompilerOptions tcConfigB  = 
-                let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
-                CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
+                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
+                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
 
             let loadClosure = 
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
@@ -1378,4 +1382,4 @@ module PrettyNaming =
     let KeywordNames = Lexhelp.Keywords.keywordNames
 
 module FSharpFileUtilities =
-    let isScriptFile (fileName: string) = CompileOps.IsScript fileName
+    let isScriptFile (fileName: string) = ParseAndCheckInputs.IsScript fileName
