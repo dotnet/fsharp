@@ -5044,7 +5044,7 @@ atomType:
 
   | CONST atomicExpr
      {  let e, _ = $2
-        SynType.StaticConstantExpr(e, e.Range) }
+        SynType.StaticConstantExpr(e, lhs parseState) }
 
   | FALSE  
       { SynType.StaticConstant(SynConst.Bool false, lhs parseState) } 
