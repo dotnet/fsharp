@@ -1,49 +1,21 @@
 
-#if FETCH_PACKAGES
-open System
-open System.IO
- 
-Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
- 
-if not (File.Exists "paket.exe") then let url = "https://github.com/fsprojects/Paket/releases/download/3.4.0/paket.exe" in use wc = new Net.WebClient() in let tmp = Path.GetTempFileName() in wc.DownloadFile(url, tmp); File.Move(tmp,Path.GetFileName url);;
- 
-// Step 1. Resolve and install the packages
- 
-#r "paket.exe"
- 
-if not (Directory.Exists "script-packages") then Directory.CreateDirectory("script-packages") |> ignore
-Paket.Dependencies.Install("""
-source https://nuget.org/api/v2
-nuget FSharp.Data
-nuget FAKE
-""","script-packages");;
- 
-#else
-
-
-
-#I "script-packages/packages/FAKE/tools"
-#I "script-packages/packages/FSharp.Data/lib/net45"
-#r "script-packages/packages/FAKE/tools/FakeLib.dll"
-#r "script-packages/packages/FSharp.Data/lib/net45/FSharp.Data.dll"
+#r "nuget: FSharp.Data, 3.3.3"
 
 open System
 open System.IO
-open Fake
-open Fake.Git
+open System.Diagnostics
 open FSharp.Data
 
-Fake.Git.Information.describe
 
 [<Literal>]
-let repo = "https://github.com/Microsoft/visualfsharp"
+let repo = "https://github.com/dotnet/fsharp"
 [<Literal>]
-let repoApi = "https://api.github.com/repos/Microsoft/visualfsharp"
+let repoApi = "https://api.github.com/repos/dotnet/fsharp"
 type Commits = JsonProvider< const (repoApi + "/commits")>
 
 type Pulls = JsonProvider< const (repoApi + "/pulls")>
 
-//type Comments = JsonProvider< "https://api.github.com/repos/Microsoft/visualfsharp/issues/848/comments">
+//type Comments = JsonProvider< "https://api.github.com/repos/dotnet/fsharp/issues/848/comments">
 //let comments = Comments.GetSamples()
 
 let commits = Commits.GetSamples()
@@ -53,13 +25,13 @@ let repoHeadSha = commits.[0].Sha
 
 // Do performance testing on all open PRs that have [CompilerPerf] in the title
 let buildSpecs = 
-    [ for pr in pulls do
-         //let comments =  Comments.Load(pr.CommentsUrl) 
-         if pr.Title.Contains("[CompilerPerf]") then
-             yield (pr.Head.Repo.CloneUrl, pr.Head.Sha, repoHeadSha, pr.Head.Ref, pr.Number) 
-      //    ("https://github.com/dsyme/visualfsharp.git","53d633d6dba0d8f5fcd80f47f588d21cd7a2cff9", repoHeadSha, "no-casts", 1308);
-      //yield ("https://github.com/forki/visualfsharp.git", "d0ab5fec77482e1280578f47e3257cf660d7f1b2", repoHeadSha, "foreach_optimization", 1303);
-      yield (repo, repoHeadSha, repoHeadSha, "master", 0);
+    [ //for pr in pulls do
+      //   if pr.Title.Contains("[CompilerPerf]") then
+      //       yield (pr.Head.Repo.CloneUrl, pr.Head.Sha, repoHeadSha, pr.Head.Ref, pr.Number) 
+      //    ("https://github.com/dsyme/fsharp.git","53d633d6dba0d8f5fcd80f47f588d21cd7a2cff9", repoHeadSha, "no-casts", 1308);
+      //yield ("https://github.com/forki/fsharp.git", "d0ab5fec77482e1280578f47e3257cf660d7f1b2", repoHeadSha, "foreach_optimization", 1303);
+      yield (repo, repoHeadSha, repoHeadSha, "main", 0);
+      yield (repo, repoHeadSha, repoHeadSha, "af6ff33b5bc15951a6854bdf3b226db8f0e28b56", 0);
     ]
 
 
@@ -69,10 +41,34 @@ let time f =
    let finish = DateTime.UtcNow
    res, finish - start
 
+let runProc filename args startDir = 
+    let timer = Stopwatch.StartNew()
+    let procStartInfo = 
+        ProcessStartInfo(
+            UseShellExecute = false,
+            FileName = filename,
+            Arguments = args
+        )
+    match startDir with | Some d -> procStartInfo.WorkingDirectory <- d | _ -> ()
+
+    let p = new Process(StartInfo = procStartInfo)
+    let started = 
+        try
+            p.Start()
+        with | ex ->
+            ex.Data.Add("filename", filename)
+            reraise()
+    if not started then
+        failwithf "Failed to start process %s" filename
+    printfn "Started %s with pid %i" p.ProcessName p.Id
+    p.WaitForExit()
+    timer.Stop()
+    printfn "Finished %s after %A milliseconds" filename timer.ElapsedMilliseconds
+    p.ExitCode
 
 let exec cmd args dir = 
     printfn "%s> %s %s" dir cmd args
-    let result = Shell.Exec(cmd,args,dir) 
+    let result = runProc cmd args (Some dir)
     if result <> 0 then failwith (sprintf "FAILED: %s> %s %s" dir cmd args)
 
 /// Build a specific version of the repo, run compiler perf tests and record the result
@@ -85,12 +81,12 @@ let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
     if not (Directory.Exists dir) then 
        exec "git" ("clone " + repo + " " + dirBuild) dirBase  |> ignore
     let result = exec "git"  "reset --merge" dir
-    let result = exec "git" "checkout master" dir
-    let result = exec "git" "clean -f -x" dir
-    let result = exec "git" ("checkout -B " + branch + " master") dir
+    let result = exec "git" "checkout main" dir
+    let result = exec "git" "clean -f -x artifacts src" dir
+    let result = exec "git" ("checkout -B " + branch + " main") dir
     let result = exec "git" ("pull  " + cloneUrl + " " + ref) dir
-    let result, buildTime = time (fun () -> exec "cmd" "/C build.cmd release proto net40 notests" dir )
-    let result, ngenTime = time (fun () -> exec "ngen" @"install Release\net40\bin\fsc.exe" dir )
+    let result, buildTime = time (fun () -> exec "cmd" "/C build.cmd -c Release" dir )
+    let result, ngenTime = time (fun () -> exec "ngen" @"install artifacts\bin\fsc\Release\net472\fsc.exe" dir )
 
     let runPhase (test:string)  (flags:string)=
         printfn "copying compiler-perf-%s.cmd to %s" test dir
@@ -139,4 +135,3 @@ for info in buildSpecs do
         printfn "ERROR: %A - %s" info e.Message
        
 
-#endif
