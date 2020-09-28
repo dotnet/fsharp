@@ -58,6 +58,7 @@ val IsScript: string -> bool
 /// File suffixes where #light is the default
 val FSharpLightSyntaxFileSuffixes: string list
 
+
 /// Get the name used for FSharp.Core
 val GetFSharpCoreLibraryName: unit -> string
 
@@ -154,29 +155,20 @@ type IRawFSharpAssemblyData =
     abstract GetAutoOpenAttributes: ILGlobals -> string list
     ///  The raw list InternalsVisibleToAttribute attributes in the assembly
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
-
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
     abstract TryGetILModuleDef: unit -> ILModuleDef option
-
     abstract HasAnyFSharpSignatureDataAttribute: bool
-
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
-
     ///  The raw F# signature data in the assembly, if any
     abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
-
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
-
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
-
     /// The identity of the module
     abstract ILScopeRef: ILScopeRef
-
     abstract ILAssemblyRefs: ILAssemblyRef list
-
     abstract ShortAssemblyName: string
 
 type TimeStampCache = 
@@ -461,25 +453,15 @@ type TcConfigBuilder =
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
-
     member TurnWarningOff: range * string -> unit
-
     member TurnWarningOn: range * string -> unit
-
     member CheckExplicitFrameworkDirective: fx: TargetFrameworkForScripts * m: range -> unit
-
     member AddIncludePath: range * string * string -> unit
-
     member AddCompilerToolsByPath: string -> unit
-
     member AddReferencedAssemblyByPath: range * string -> unit
-
     member RemoveReferencedAssemblyByPath: range * string -> unit
-
     member AddEmbeddedSourceFile: string -> unit
-
     member AddEmbeddedResource: string -> unit
-
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
 
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess

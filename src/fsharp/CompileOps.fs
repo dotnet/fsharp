@@ -2858,7 +2858,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     let primaryAssemblyReference, primaryAssemblyExplicitFilenameOpt = computeKnownDllReference(data.primaryAssembly.Name)
     let fslibReference =
         // Look for explicit FSharp.Core reference otherwise use version that was referenced by compiler
-        let dllReference, fileNameOpt = computeKnownDllReference fsharpCoreLibraryName
+        let dllReference, fileNameOpt = computeKnownDllReference getFSharpCoreLibraryName
         match fileNameOpt with
         | Some _ -> dllReference
         | None -> AssemblyReference(range0, getDefaultFSharpCoreLocation(), None)
@@ -3024,7 +3024,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member x.legacyReferenceResolver = data.legacyReferenceResolver
 
-    member _.CloneToBuilder() = 
+    member _.CloneOfOriginalBuilder = 
         { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) = 
@@ -3922,7 +3922,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rName = if ccu.AssemblyName = fsharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName
+    let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName
 
     let includeDir =
         if String.IsNullOrEmpty tcConfig.implicitIncludeDir then ""
@@ -3942,7 +3942,7 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) =
 let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rName = if ccu.AssemblyName = fsharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
+    let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     PickleToResource inMem file tcGlobals ccu (rName+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
 //----------------------------------------------------------------------------
@@ -3952,11 +3952,8 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
          member __.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
-
          member __.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
-
          member __.TryGetILModuleDef() = Some ilModule 
-
          member __.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
             let resources = ilModule.Resources.AsList
             let sigDataReaders = 
@@ -3974,7 +3971,6 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                 else
                     sigDataReaders
             sigDataReaders
-
          member __.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
             let optDataReaders = 
                 ilModule.Resources.AsList
@@ -3990,7 +3986,6 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                 else
                     optDataReaders
             optDataReaders
-
          member __.GetRawTypeForwarders() =
             match ilModule.Manifest with 
             | Some manifest -> manifest.ExportedTypes
@@ -5083,7 +5078,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let fslibCcu = 
             if tcConfig.compilingFslib then 
                 // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
-                CcuThunk.CreateDelayed fsharpCoreLibraryName
+                CcuThunk.CreateDelayed getFSharpCoreLibraryName
             else
                 let fslibCcuInfo =
                     let coreLibraryReference = tcConfig.CoreLibraryDllReference()
@@ -5095,7 +5090,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             // Are we using a "non-canonical" FSharp.Core?
                             match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
-                            | _ -> tcResolutions.TryFindByOriginalReferenceText (fsharpCoreLibraryName)  // was the ".dll" elided?
+                            | _ -> tcResolutions.TryFindByOriginalReferenceText (getFSharpCoreLibraryName)  // was the ".dll" elided?
                     
                     match resolvedAssemblyRef with 
                     | Some coreLibraryResolution -> 
@@ -5320,7 +5315,7 @@ let ProcessMetaCommandsFromInput
 
 let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource) = 
     // Clone
-    let tcConfigB = tcConfig.CloneToBuilder() 
+    let tcConfigB = tcConfig.CloneOfOriginalBuilder 
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
     let addFramework = fun () (_m, _s) -> ()
     let addReferenceDirective = fun () (_m, _s, _) -> ()
@@ -5332,7 +5327,7 @@ let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaComm
 
 let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource, dependencyProvider) = 
     // Clone
-    let tcConfigB = tcConfig.CloneToBuilder() 
+    let tcConfigB = tcConfig.CloneOfOriginalBuilder 
     let addNoWarn () _ = () 
     let addFramework () (m, fx) = tcConfigB.CheckExplicitFrameworkDirective(fx, m)
     let addReferenceDirective () (m, path, directive) = tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
@@ -5514,7 +5509,7 @@ module ScriptPreprocessClosure =
            (tcConfig: TcConfig, inp: ParsedInput,
             pathOfMetaCommandSource, dependencyProvider) = 
 
-        let tcConfigB = tcConfig.CloneToBuilder()
+        let tcConfigB = tcConfig.CloneOfOriginalBuilder
         let mutable nowarns = [] 
         let addNoWarn = fun () (m, s) -> nowarns <- (s, m) :: nowarns
         let addFramework = fun () (m, fx) -> tcConfigB.CheckExplicitFrameworkDirective(fx, m)
@@ -5530,7 +5525,7 @@ module ScriptPreprocessClosure =
             TcConfig.Create(tcConfigB, validate=false), nowarns
         with ReportedError _ ->
             // Recover by using a default TcConfig.
-            let tcConfigB = tcConfig.CloneToBuilder()
+            let tcConfigB = tcConfig.CloneOfOriginalBuilder
             TcConfig.Create(tcConfigB, validate=false), nowarns
 
     let FindClosureFiles
@@ -5583,7 +5578,7 @@ module ScriptPreprocessClosure =
 
                                     packageReferences.[m] <- [ for script in result.SourceFiles do yield! File.ReadAllLines script ]
                                     if not (Seq.isEmpty result.Roots) then
-                                        let tcConfigB = tcConfig.CloneToBuilder()
+                                        let tcConfigB = tcConfig.CloneOfOriginalBuilder
                                         for folder in result.Roots do 
                                             tcConfigB.AddIncludePath(m, folder, "")
                                         tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
@@ -5601,7 +5596,7 @@ module ScriptPreprocessClosure =
                                             errorR(Error(FSComp.SR.packageManagerError(line), m))
                                     // Resolution produced errors update packagerManagerLines entries to note these failure
                                     // failed resolutions will no longer be considered
-                                    let tcConfigB = tcConfig.CloneToBuilder()
+                                    let tcConfigB = tcConfig.CloneOfOriginalBuilder
                                     tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines 
                                     tcConfig <- TcConfig.Create(tcConfigB, validate=false)]
             else []
@@ -6107,5 +6102,5 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
 // Existing public APIs delegate to newer implementations
-let GetFSharpCoreLibraryName () = fsharpCoreLibraryName
+let GetFSharpCoreLibraryName () = getFSharpCoreLibraryName
 

@@ -337,7 +337,7 @@ type FxResolver(_reduceMemoryUsage, _tryGetMetadataSnapshot, preInferredUseDotNe
         yield "System.Drawing"
         yield "System.Core"
 
-        yield fsharpCoreLibraryName
+        yield getFSharpCoreLibraryName
         if useFsiAuxLib then yield fsiLibraryName
 
         // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
@@ -403,7 +403,7 @@ type FxResolver(_reduceMemoryUsage, _tryGetMetadataSnapshot, preInferredUseDotNe
             yield "mscorlib"
             yield "netstandard"
             yield "System.Runtime"
-            yield fsharpCoreLibraryName
+            yield getFSharpCoreLibraryName
 
             yield "System"
             yield "System.Xml" 
