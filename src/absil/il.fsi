@@ -1407,11 +1407,11 @@ type ILResourceAccess =
     | Public 
     | Private 
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoEquality;NoComparison>]
 type ILResourceLocation = 
     internal
     /// Represents a manifest resource that can be read or written to a PE file
-    | Local of ReadOnlyByteMemory
+    | Local of ByteStorage
 
     /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32
