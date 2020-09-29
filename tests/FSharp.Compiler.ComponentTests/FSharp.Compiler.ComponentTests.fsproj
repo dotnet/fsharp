@@ -19,9 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="EmittedIL\Operators.fs" />
-    <Compile Include="EmittedIL\Literals.fs" />
-    <Compile Include="EmittedIL\TailCalls.fs" />
+    <Compile Include="CodeGen\EmittedIL\AsyncExpressionStepping.fs" />
+    <Compile Include="CodeGen\EmittedIL\Operators.fs" />
+    <Compile Include="CodeGen\EmittedIL\Literals.fs" />
+    <Compile Include="CodeGen\EmittedIL\TailCalls.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />

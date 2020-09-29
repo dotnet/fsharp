@@ -1,4 +1,3 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Test.Utilities
 
@@ -519,7 +518,7 @@ module rec Compiler =
         | _ -> failwith "Baseline tests are only supported for F#."
 
         cUnit
-
+        
     let verifyIL (il: string list) (result: TestResult) : unit =
         match result with
         | Success s ->
@@ -539,7 +538,10 @@ module rec Compiler =
                         match bsl.ILBaseline with
                         | Some b -> b.Replace("\r\n","\n")
                         | None ->  String.Empty
-                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
+
+                    let expectedILList = expectedIL.Split('\n') |> List.ofArray
+
+                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedILList
 
                     if not success then
                         createBaselineErrors bsl actualIL "fs.il.err"
