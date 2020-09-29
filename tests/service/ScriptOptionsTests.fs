@@ -31,4 +31,4 @@ let ``can generate options for different frameworks regardless of execution envi
         |> Async.RunSynchronously
     match errors with
     | [] -> ()
-    | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" defaultToDotNetFramework useSdk flags errors
+    | errors -> failwithf "Error while parsing script with defaultToDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" defaultToDotNetFramework useSdk flags errors

@@ -505,7 +505,7 @@ module public CompilerEnvironment =
 
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
-    val DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
+    val DefaultReferencesForOrphanSources: useDotNetFramework: bool -> string list
 
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list

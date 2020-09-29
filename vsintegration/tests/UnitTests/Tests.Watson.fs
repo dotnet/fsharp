@@ -28,7 +28,7 @@ type Check =
                     |]
 
                 let ctok = AssumeCompilationThreadWithoutEvidence ()
-                let _code = mainCompile (ctok, argv, LegacyMSBuildReferenceResolver.getResolver(), false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
+                let _code = mainCompile (ctok, argv, LegacyMSBuildReferenceResolver.getResolver(), false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, None, FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
                 ()
             with 
             | :? 'TException as e -> 
