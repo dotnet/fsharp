@@ -456,7 +456,6 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
                      let scope2 = getScopedTypeRef o2
                      match scope1, scope2 with
                      | Some s1, Some s2 -> s1 = s2
-                       
                      |_ -> o1 = o2
 
                 let compareMethodDefKeys =
