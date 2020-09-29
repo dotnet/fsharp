@@ -221,7 +221,7 @@ type ILTypeSpec =
     member FullName: string
     
     /// The basic qualified name of the type in the assembly.
-    member BasicQualifiedName: string
+    member internal BasicQualifiedName: string
 
     interface System.IComparable
 
