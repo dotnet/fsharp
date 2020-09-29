@@ -238,13 +238,13 @@ type public FSharpChecker =
     /// <param name="otherFlags">Other flags for compilation.</param>
     /// <param name="useFsiAuxLib">Add a default reference to the FSharp.Compiler.Interactive.Settings library.</param>
     /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
-    /// <param name="assumeDotNetFramework">Set up compilation and analysis for .NET Framework scripts.</param>
+    /// <param name="defaultToDotNetFramework">Indicates scripts without explicit target framework declarations should be assumed to be .NET Framework scripts.</param>
     /// <param name="extraProjectInfo">An extra data item added to the returned FSharpProjectOptions.</param>
     /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member GetProjectOptionsFromScript:
         filename: string * sourceText: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime *
-        ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool *
+        ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?defaultToDotNetFramework: bool *
         ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string
             -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
@@ -333,8 +333,9 @@ type public FSharpChecker =
     /// </summary>
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
+    /// <param name="defaultToDotNetFramework">Indicates scripts without explicit target framework declarations should be assumed to be .NET Framework scripts.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile: argv:string[] * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
+    member Compile: argv:string[] * ?defaultToDotNetFramework: bool * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
 
     /// <summary>
     /// TypeCheck and compile provided AST

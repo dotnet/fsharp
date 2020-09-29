@@ -35,19 +35,6 @@ val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:
 //---------------------------------------------------------------------------
 // The entry point used by fsc.exe
 
-val typecheckAndCompile : 
-    ctok: CompilationThreadToken *
-    argv : string[] * 
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
-    bannerAlreadyPrinted : bool * 
-    reduceMemoryUsage: ReduceMemoryFlag * 
-    defaultCopyFSharpCore: CopyFSharpCoreFlag * 
-    exiter : Exiter *
-    loggerProvider: ErrorLoggerProvider *
-    tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
-      -> unit
-
 val mainCompile : 
     ctok: CompilationThreadToken *
     argv: string[] * 
@@ -55,6 +42,7 @@ val mainCompile :
     bannerAlreadyPrinted: bool * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     defaultCopyFSharpCore: CopyFSharpCoreFlag * 
+    defaultToDotNetFramework: bool option *
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
     tcImportsCapture: (TcImports -> unit) option *

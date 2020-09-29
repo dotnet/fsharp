@@ -169,12 +169,12 @@ module CompileHelpers =
             1
 
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag. 
-    let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)  = 
+    let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, defaultToDotNetFramework, tcImportsCapture, dynamicAssemblyCreator)  = 
     
         let errors, errorLogger, loggerProvider = mkCompilationErrorHandlers()
         let result = 
             tryCompile errorLogger (fun exiter -> 
-                mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.No, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
+                mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.No, defaultToDotNetFramework, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
     
         errors.ToArray(), result
 
@@ -822,8 +822,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
             let previewEnabled = defaultArg previewEnabled false
 
-            // Do we assume .NET Framework references for scripts?
-            let defaultToDotNetFramework = defaultArg defaultToDotNetFramework true
+            // Do we assume .NET Framework references for scripts? In the absence of either explicit argument
+            // or an explicit #targetfx declaration, then for compilation and analysis the default
+            // depends on the toolchain the tooling is are running on.
+            let defaultToDotNetFramework = defaultArg defaultToDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
             let extraFlags =
                 if previewEnabled then
                     [| "--langversion:preview" |]
@@ -1076,11 +1078,11 @@ type FSharpChecker(legacyReferenceResolver,
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.TryGetRecentCheckResultsForFile(filename,options,sourceText, userOpName)
 
-    member __.Compile(argv: string[], ?userOpName: string) =
+    member __.Compile(argv: string[], ?defaultToDotNetFramework: bool, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.Reactor.EnqueueAndAwaitOpAsync (userOpName, "Compile", "", fun ctok -> 
             cancellable {
-                return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
+                return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, defaultToDotNetFramework, None, None)
             })
 
     member __.Compile (ast:ParsedInput list, assemblyName:string, outFile:string, dependencies:string list, ?pdbFile:string, ?executable:bool, ?noframework:bool, ?userOpName: string) =
@@ -1107,8 +1109,12 @@ type FSharpChecker(legacyReferenceResolver,
         let debugInfo =  otherFlags |> Array.exists (fun arg -> arg = "-g" || arg = "--debug:+" || arg = "/debug:+")
         let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (ctok, debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
 
+        // Do we assume .NET Framework references for scripts? For dynamic compilation this
+        // depends only on the toolchain the tooling is are running on.
+        let defaultToDotNetFramework = Some (not FSharpEnvironment.isRunningOnCoreClr)
+
         // Perform the compilation, given the above capturing function.
-        let errorsAndWarnings, result = CompileHelpers.compileFromArgs (ctok, otherFlags, legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)
+        let errorsAndWarnings, result = CompileHelpers.compileFromArgs (ctok, otherFlags, legacyReferenceResolver, defaultToDotNetFramework, tcImportsCapture, dynamicAssemblyCreator)
 
         // Retrieve and return the results
         let assemblyOpt = 

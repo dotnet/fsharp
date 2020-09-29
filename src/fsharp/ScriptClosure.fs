@@ -404,6 +404,28 @@ module ScriptPreprocessClosure =
 
         result
 
+    let InferTargetFrameworkForScript (fileName, sourceText: ISourceText, defaultToDotNetFramework: bool) =
+        let res =
+            [| 0 .. sourceText.GetLineCount() - 1 |] 
+            |> Array.tryPick (fun i -> 
+                let text = sourceText.GetLineString(i).TrimEnd()
+                let m = mkRange fileName (mkPos (i+1) 0) (mkPos (i+1) text.Length)
+                if text = "#targetfx \"netcore\"" then Some (Some { InferredFramework = TargetFrameworkForScripts "netcore"; WhereInferred = Some m })
+                elif text = "#targetfx \"netfx\"" then Some (Some { InferredFramework = TargetFrameworkForScripts "netfx"; WhereInferred = Some m })
+                elif String.IsNullOrWhiteSpace(text) then None
+                elif text.StartsWith("#!") then None
+                elif text.StartsWith("//") then None
+                else Some None)
+            |> Option.flatten
+
+        // The inferred framework effectively acts as the explicit framework, ruling out
+        // any incompatible changes.
+        match res with 
+        | Some fx -> fx
+        | None -> 
+           let dflt = TargetFrameworkForScripts (if defaultToDotNetFramework then "netfx" else "netcore")
+           { InferredFramework = dflt; WhereInferred = None }
+
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
@@ -419,8 +441,7 @@ module ScriptPreprocessClosure =
         // first, then #I and other directives are processed.
         //
         // We first infer the explicit framework from the root script.
-        let inferredTargetFramework =
-            InferredTargetFrameworkForScripts.Infer (filename, sourceText, defaultToDotNetFramework)
+        let inferredTargetFramework = InferTargetFrameworkForScript (filename, sourceText, defaultToDotNetFramework)
 
         let useDotNetFramework = inferredTargetFramework.InferredFramework.UseDotNetFramework
 

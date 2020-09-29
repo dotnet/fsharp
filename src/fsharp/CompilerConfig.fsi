@@ -147,16 +147,27 @@ type TargetProfileCommandLineOption = TargetProfileCommandLineOption of string
 /// Current valid values are "netcore", "netfx" 
 type TargetFrameworkForScripts =
     | TargetFrameworkForScripts of string
+
+    /// The string for the inferred target framework
     member Value: string
+
+    /// The kind of primary assembly associated with the compilation
     member PrimaryAssembly: PrimaryAssembly
+
+    /// Indicates if the target framework is a .NET Framework target
     member UseDotNetFramework: bool
 
+/// Indicates the inferred or declared target framework for a script
 type InferredTargetFrameworkForScripts =
     { 
+      /// The inferred framework
       InferredFramework: TargetFrameworkForScripts
+
+      /// The source location of the explicit declaration from which the framework was inferred, if anywhere
       WhereInferred: range option 
     }
-    static member Infer: fileName: string * sourceText: ISourceText * defaultToDotNetFramework: bool -> InferredTargetFrameworkForScripts
+
+    /// Indicates if the inferred target framework is a .NET Framework target
     member UseDotNetFramework: bool
 
 [<NoEquality; NoComparison>]
