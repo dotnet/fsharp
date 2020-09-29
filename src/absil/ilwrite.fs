@@ -443,24 +443,20 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
         match obj with
         | :? MethodDefKey as y ->
                 let compareILTypes o1 o2 =
-                     let getScopeAssemblyRef (o:ILType) =
+                     let getScopedTypeRef (o:ILType) =
                          match o with
                          | ILType.Value v ->
                              match v.Scope with
-                             | ILScopeRef.PrimaryAssembly -> Some (ilg.primaryAssemblyRef.QualifiedName)
-                             | ILScopeRef.Assembly aref -> Some (aref.QualifiedName)
+                             | ILScopeRef.PrimaryAssembly -> Some (sprintf "%s, %s" (v.BasicQualifiedName) (ilg.primaryAssemblyRef.QualifiedName))
+                             | ILScopeRef.Assembly aref -> Some (sprintf "%s, %s" (v.BasicQualifiedName) (aref.QualifiedName))
                              | _ -> None
                          | _ -> None
 
-                     let scope1 = getScopeAssemblyRef o1
-                     let scope2 = getScopeAssemblyRef o2
+                     let scope1 = getScopedTypeRef o1
+                     let scope2 = getScopedTypeRef o2
                      match scope1, scope2 with
-                     | Some s1, Some s2 ->
-                        printfn "s1 = %s" (s1.ToString())
-                        printfn "s2 = %s" (s2.ToString())
-                        let result = s1 = s2
-                        printfn "result = %b" result
-                        result
+                     | Some s1, Some s2 -> s1 = s2
+                       
                      |_ -> o1 = o2
 
                 let compareMethodDefKeys =
@@ -1098,19 +1094,19 @@ and GenFieldDefPass2 cenv tidx fd =
 and GetKeyForMethodDef cenv tidx (md: ILMethodDef) = 
     MethodDefKey (cenv.ilg, tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
 
-and GenMethodDefPass2 cenv tidx md = 
-    let idx = 
+and GenMethodDefPass2 cenv tidx md =
+    let idx =
       cenv.methodDefIdxsByKey.AddUniqueEntry
-         "method" 
-         (fun (key: MethodDefKey) -> 
+         "method"
+         (fun (key: MethodDefKey) ->
            dprintn "Duplicate in method table is:"
            dprintn (" Type index: "+string key.TypeIdx)
            dprintn (" Method name: "+key.Name)
            dprintn (" Method arity (num generic params): "+string key.GenericArity)
            key.Name
          )
-         (GetKeyForMethodDef cenv tidx md) 
-    
+         (GetKeyForMethodDef cenv tidx md)
+
     cenv.methodDefIdxs.[md] <- idx
 
 and GetKeyForPropertyDef tidx (x: ILPropertyDef) = 
@@ -1199,7 +1195,7 @@ let FindMethodDefIdx cenv mdkey =
               let (TdKey (tenc2, tname2)) = typeNameOfIdx mdkey2.TypeIdx
               dprintn ("A method in '"+(String.concat "." (tenc2@[tname2]))+"' had the right name but the wrong signature:")
               dprintn ("generic arity: "+string mdkey2.GenericArity) 
-              dprintn (sprintf "mdkey2: %+A" mdkey2)) 
+              dprintn (sprintf "mdkey2: %+A" mdkey2))
       raise MethodDefNotFound
 
 

@@ -220,6 +220,9 @@ type ILTypeSpec =
     /// The name of the type in the assembly using the '.' notation for nested types.
     member FullName: string
     
+    /// The basic qualified name of the type in the assembly.
+    member BasicQualifiedName: string
+
     interface System.IComparable
 
 and 
