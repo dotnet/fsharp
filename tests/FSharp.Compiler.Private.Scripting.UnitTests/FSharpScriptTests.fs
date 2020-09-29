@@ -130,7 +130,7 @@ stacktype.Name = "Stack"
     [<Theory>]
     [<InlineData("""#i " """,                                                                           // Single quote
                  "input.fsx (1,4)-(1,5) parse error End of file in string begun at or before here",
-                 "input.fsx (1,1)-(1,6) interactive warning Invalid directive '#i '")>]
+                 "input.fsx (1,1)-(1,3) interactive warning Invalid directive '#i '")>]
     member _.``Script with more #i syntax errors fail``(code, error0, error1) =
         use script = new FSharpScript()
         let result, errors = script.Eval(code)
