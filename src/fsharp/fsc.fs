@@ -911,7 +911,7 @@ module MainModuleBuilder =
                         [  ]
                 let reflectedDefinitionResource = 
                   { Name=reflectedDefinitionResourceName
-                    Location = ILResourceLocation.Local(ByteMemory.FromArray(reflectedDefinitionBytes).AsReadOnly())
+                    Location = ILResourceLocation.Local(ByteStorage.FromByteArray(reflectedDefinitionBytes))
                     Access= ILResourceAccess.Public
                     CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
                     MetadataIndex = NoMetadataIdx }
@@ -955,7 +955,7 @@ module MainModuleBuilder =
                          let bytes = FileSystem.ReadAllBytesShim file
                          name, bytes, pub
                  yield { Name=name 
-                         Location=ILResourceLocation.Local(ByteMemory.FromArray(bytes).AsReadOnly())
+                         Location=ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
                          Access=pub 
                          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs 
                          MetadataIndex = NoMetadataIdx }

@@ -138,3 +138,5 @@ msbuild.binlog
 _NCrunch_*
 .*crunch*.local.xml
 nCrunchTemp_*
+
+.idea

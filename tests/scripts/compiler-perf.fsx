@@ -84,8 +84,13 @@ let build(cloneUrl, baseSha, ref, prNumber) =
        exec "git" ("clone " + repo + " " + dirBuild) dirBase  |> ignore
     let result = exec "git"  "reset --merge" dir
     let result = exec "git" "checkout main" dir
+<<<<<<< HEAD
     let result = exec "git" "clean -xfd artifacts src vsintegration tests" dir
     let result = exec "git" ("checkout -B " + branch + " " + baseSha) dir
+=======
+    let result = exec "git" "clean -f -x artifacts src" dir
+    let result = exec "git" ("checkout -B " + branch + " main") dir
+>>>>>>> 83c6440d759a2097618d46d1aabb374fe4140afd
     let result = exec "git" ("pull  " + cloneUrl + " " + ref) dir
     let result, buildTime = time (fun () -> exec "cmd" "/C build.cmd -c Release" dir )
     let result, ngenTime = time (fun () -> exec "ngen" @"install artifacts\bin\fsc\Release\net472\fsc.exe" dir )

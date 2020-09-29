@@ -9,21 +9,36 @@ open System.Text
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
-[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
 [<NoEquality; NoComparison>]
-type MapTree<'Key, 'Value when 'Key : comparison > = 
-    | MapEmpty 
-    | MapOne of 'Key * 'Value
-    | MapNode of 'Key * 'Value * MapTree<'Key, 'Value> *  MapTree<'Key, 'Value> * int
+[<AllowNullLiteral>]
+type internal MapTree<'Key, 'Value>(k: 'Key, v: 'Value) =
+    member _.Key = k
+    member _.Value = v
 
+[<NoEquality; NoComparison>]
+[<Sealed>]
+[<AllowNullLiteral>]
+type internal MapTreeNode<'Key, 'Value>(k:'Key, v:'Value, left:MapTree<'Key, 'Value>, right: MapTree<'Key, 'Value>, h: int) =
+    inherit MapTree<'Key,'Value>(k, v)
+
+    member _.Left = left
+    member _.Right = right
+    member _.Height = h
+    
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MapTree = 
-
-    let rec sizeAux acc m = 
-        match m with 
-        | MapEmpty -> acc
-        | MapOne _ -> acc + 1
-        | MapNode (_, _, l, r, _) -> sizeAux (sizeAux (acc+1) l) r 
+    
+    let empty = null
+    
+    let inline isEmpty (m:MapTree<'Key, 'Value>) = isNull m
+        
+    let rec sizeAux acc (m:MapTree<'Key, 'Value>) = 
+        if isEmpty m then
+            acc
+        else
+            match m with
+            | :? MapTreeNode<'Key, 'Value> as mn -> sizeAux (sizeAux (acc+1) mn.Left) mn.Right 
+            | _ -> acc + 1
 
     let size x = sizeAux 0 x
 
@@ -51,101 +66,89 @@ module MapTree =
                (totalSizeOnMapLookup / float numLookups))
            System.Console.WriteLine("#largestMapSize = {0}, largestMapStackTrace = {1}", largestMapSize, largestMapStackTrace)
 
-    let MapOne n = 
+    let MapTree n = 
         report()
         numOnes <- numOnes + 1
         totalSizeOnNodeCreation <- totalSizeOnNodeCreation + 1.0
-        MapTree.MapOne n
+        MapTree n
 
-    let MapNode (x, l, v, r, h) = 
+    let MapTreeNode (x, l, v, r, h) = 
         report()
         numNodes <- numNodes + 1
-        let n = MapTree.MapNode (x, l, v, r, h)
+        let n = MapTreeNode (x, l, v, r, h)
         totalSizeOnNodeCreation <- totalSizeOnNodeCreation + float (size n)
         n
 #endif
 
-    let empty = MapEmpty 
-
-    let height (m: MapTree<'Key, 'Value>) = 
-        match m with
-        | MapEmpty -> 0
-        | MapOne _ -> 1
-        | MapNode (_, _, _, _, h) -> h
-
-    let isEmpty (m: MapTree<'Key, 'Value>) = 
-        match m with 
-        | MapEmpty -> true
-        | _ -> false
-
-    let mk l k v r : MapTree<'Key, 'Value> = 
-        match l, r with 
-        | MapEmpty, MapEmpty -> MapOne (k, v)
-        | _ -> 
-            let hl = height l 
-            let hr = height r 
-            let m = if hl < hr then hr else hl 
-            MapNode (k, v, l, r, m+1)
-
-    let rebalance t1 (k: 'Key) (v: 'Value) t2 =
-        let t1h = height t1 
-        let t2h = height t2 
-        if  t2h > t1h + 2 then (* right is heavier than left *)
-            match t2 with 
-            | MapNode (t2k, t2v, t2l, t2r, _) -> 
-               // one of the nodes must have height > height t1 + 1 
-               if height t2l > t1h + 1 then 
-                   // balance left: combination 
-                   match t2l with 
-                   | MapNode (t2lk, t2lv, t2ll, t2lr, _) ->
-                      mk (mk t1 k v t2ll) t2lk t2lv (mk t2lr t2k t2v t2r) 
-                   | _ -> failwith "rebalance"
-               else 
-                   // rotate left 
-                   mk (mk t1 k v t2l) t2k t2v t2r
-            | _ -> failwith "rebalance"
+    let inline height (m: MapTree<'Key, 'Value>) = 
+        if isEmpty m then 0
         else
-            if  t1h > t2h + 2 then (* left is heavier than right *)
-                match t1 with 
-                | MapNode (t1k, t1v, t1l, t1r, _) -> 
-                    // one of the nodes must have height > height t2 + 1 
-                    if height t1r > t2h + 1 then 
-                        // balance right: combination 
-                        match t1r with 
-                        | MapNode (t1rk, t1rv, t1rl, t1rr, _) ->
-                            mk (mk t1l t1k t1v t1rl) t1rk t1rv (mk t1rr k v t2)
-                        | _ -> failwith "rebalance"
-                    else
-                        mk t1l t1k t1v (mk t1r k v t2)
-                | _ -> failwith "rebalance"
+            match m with
+            | :? MapTreeNode<'Key, 'Value> as mn -> mn.Height
+            | _ -> 1
+    
+    [<Literal>]
+    let tolerance = 2
+    
+    let mk l k v r : MapTree<'Key, 'Value> = 
+        let hl = height l
+        let hr = height r
+        let m = if hl < hr then hr else hl
+        if m = 0 then // m=0 ~ isEmpty l && isEmpty r 
+            MapTree(k,v)
+        else
+            MapTreeNode(k,v,l,r,m+1) :> MapTree<'Key, 'Value>  // new map is higher by 1 than the highest
+    
+    let inline private asNode(value:MapTree<'Key,'Value>) : MapTreeNode<'Key,'Value> =
+        value :?> MapTreeNode<'Key,'Value>
+        
+    let rebalance t1 (k: 'Key) (v: 'Value) t2 : MapTree<'Key, 'Value> =
+        let t1h = height t1
+        let t2h = height t2 
+        if  t2h > t1h + tolerance then (* right is heavier than left *)
+            let t2' = asNode(t2)
+            (* one of the nodes must have height > height t1 + 1 *)
+            if height t2'.Left > t1h + 1 then  (* balance left: combination *)
+                let t2l = asNode(t2'.Left)
+                mk (mk t1 k v t2l.Left) t2l.Key t2l.Value (mk t2l.Right t2'.Key t2'.Value t2'.Right)
+            else (* rotate left *)
+                mk (mk t1 k v t2'.Left) t2'.Key t2'.Value t2'.Right
+        else
+            if  t1h > t2h + tolerance then (* left is heavier than right *)
+                let t1' = asNode(t1)
+                (* one of the nodes must have height > height t2 + 1 *)
+                if height t1'.Right > t2h + 1 then 
+                (* balance right: combination *)
+                    let t1r = asNode(t1'.Right)
+                    mk (mk t1'.Left t1'.Key t1'.Value t1r.Left) t1r.Key t1r.Value (mk t1r.Right k v t2)
+                else
+                    mk t1'.Left t1'.Key t1'.Value (mk t1'.Right k v t2)
             else mk t1 k v t2
+            
+    let rec add (comparer: IComparer<'Key>) k (v: 'Value) (m: MapTree<'Key, 'Value>) : MapTree<'Key, 'Value> = 
+        if isEmpty m then MapTree(k,v)
+        else
+            let c = comparer.Compare(k,m.Key)
+            match m with
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                if c < 0 then rebalance (add comparer k v mn.Left) mn.Key mn.Value mn.Right
+                elif c = 0 then MapTreeNode(k,v,mn.Left,mn.Right,mn.Height) :> MapTree<'Key, 'Value>
+                else rebalance mn.Left mn.Key mn.Value (add comparer k v mn.Right)
+            | _ ->
+                if c < 0   then MapTreeNode (k,v,empty,m,2) :> MapTree<'Key, 'Value>
+                elif c = 0 then MapTree(k,v)
+                else            MapTreeNode (k,v,m,empty,2) :> MapTree<'Key, 'Value> 
 
-    let rec add (comparer: IComparer<'Key>) k (v: 'Value) (m: MapTree<'Key, 'Value>) = 
-        match m with 
-        | MapEmpty -> MapOne (k, v)
-        | MapOne (k2, _) -> 
-            let c = comparer.Compare(k, k2) 
-            if c < 0   then MapNode (k, v, MapEmpty, m, 2)
-            elif c = 0 then MapOne (k, v)
-            else            MapNode (k, v, m, MapEmpty, 2)
-        | MapNode (k2, v2, l, r, h) -> 
-            let c = comparer.Compare(k, k2) 
-            if c < 0 then rebalance (add comparer k v l) k2 v2 r
-            elif c = 0 then MapNode (k, v, l, r, h)
-            else rebalance l k2 v2 (add comparer k v r) 
-
-    let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) = 
-        match m with 
-        | MapEmpty -> false
-        | MapOne (k2, v2) -> 
-            let c = comparer.Compare(k, k2) 
-            if c = 0 then v <- v2; true
-            else false
-        | MapNode (k2, v2, l, r, _) -> 
-            let c = comparer.Compare(k, k2) 
-            if c < 0 then tryGetValue comparer k &v l
-            elif c = 0 then v <- v2; true
-            else tryGetValue comparer k &v r
+    let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) =                     
+        if isEmpty m then false
+        else
+            let c = comparer.Compare(k, m.Key)
+            if c = 0 then v <- m.Value; true
+            else
+                match m with
+                | :? MapTreeNode<'Key, 'Value> as mn ->
+                    tryGetValue comparer k &v (if c < 0 then mn.Left else mn.Right)
+                | _ -> false
 
     let find (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
         let mutable v = Unchecked.defaultof<'Value>
@@ -164,14 +167,15 @@ module MapTree =
     let partition1 (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) k v (acc1, acc2) = 
         if f.Invoke (k, v) then (add comparer k v acc1, acc2) else (acc1, add comparer k v acc2) 
 
-    let rec partitionAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) m acc = 
-        match m with 
-        | MapEmpty -> acc
-        | MapOne (k, v) -> partition1 comparer f k v acc
-        | MapNode (k, v, l, r, _) -> 
-            let acc = partitionAux comparer f r acc 
-            let acc = partition1 comparer f k v acc
-            partitionAux comparer f l acc
+    let rec partitionAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc = 
+        if isEmpty m then acc
+        else
+            match m with        
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                let acc = partitionAux comparer f mn.Right acc 
+                let acc = partition1 comparer f mn.Key mn.Value acc
+                partitionAux comparer f mn.Left acc
+            | _ -> partition1 comparer f m.Key m.Value acc
 
     let partition (comparer: IComparer<'Key>) f m =
         partitionAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m (empty, empty)
@@ -179,209 +183,221 @@ module MapTree =
     let filter1 (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) k v acc =
         if f.Invoke (k, v) then add comparer k v acc else acc 
 
-    let rec filterAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) m acc = 
-        match m with 
-        | MapEmpty -> acc
-        | MapOne (k, v) -> filter1 comparer f k v acc
-        | MapNode (k, v, l, r, _) ->
-            let acc = filterAux comparer f l acc
-            let acc = filter1 comparer f k v acc
-            filterAux comparer f r acc
+    let rec filterAux (comparer: IComparer<'Key>) (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) acc = 
+        if isEmpty m then acc
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                let acc = filterAux comparer f mn.Left acc
+                let acc = filter1 comparer f mn.Key mn.Value acc
+                filterAux comparer f mn.Right acc
+            | _ -> filter1 comparer f m.Key m.Value acc
 
     let filter (comparer: IComparer<'Key>) f m =
         filterAux comparer (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m empty
 
     let rec spliceOutSuccessor (m: MapTree<'Key, 'Value>) = 
-        match m with 
-        | MapEmpty -> failwith "internal error: Map.spliceOutSuccessor"
-        | MapOne (k2, v2) -> k2, v2, MapEmpty
-        | MapNode (k2, v2, l, r, _) ->
-            match l with 
-            | MapEmpty -> k2, v2, r
-            | _ -> let k3, v3, l' = spliceOutSuccessor l in k3, v3, mk l' k2 v2 r
+        if isEmpty m then failwith "internal error: Map.spliceOutSuccessor"
+        else
+            match m with
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                if isEmpty mn.Left then mn.Key, mn.Value, mn.Right
+                else let k3, v3, l' = spliceOutSuccessor mn.Left in k3, v3, mk l' mn.Key mn.Value mn.Right
+            | _ -> m.Key, m.Value, empty
 
     let rec remove (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
-        match m with 
-        | MapEmpty -> empty
-        | MapOne (k2, _) -> 
-            let c = comparer.Compare(k, k2) 
-            if c = 0 then MapEmpty else m
-        | MapNode (k2, v2, l, r, _) -> 
-            let c = comparer.Compare(k, k2) 
-            if c < 0 then rebalance (remove comparer k l) k2 v2 r
-            elif c = 0 then 
-                match l, r with 
-                | MapEmpty, _ -> r
-                | _, MapEmpty -> l
-                | _ -> 
-                    let sk, sv, r' = spliceOutSuccessor r 
-                    mk l sk sv r'
-            else rebalance l k2 v2 (remove comparer k r) 
+        if isEmpty m then empty
+        else
+            let c = comparer.Compare(k, m.Key)
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                if c < 0 then rebalance (remove comparer k mn.Left) mn.Key mn.Value mn.Right
+                elif c = 0 then
+                    if isEmpty mn.Left then mn.Right
+                    elif isEmpty mn.Right then mn.Left
+                    else
+                        let sk, sv, r' = spliceOutSuccessor mn.Right 
+                        mk mn.Left sk sv r'
+                else rebalance mn.Left mn.Key mn.Value (remove comparer k mn.Right)
+            | _ ->
+                if c = 0 then empty else m
 
-    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value option) (m: MapTree<'Key, 'Value>) =
-        match m with
-        | MapEmpty ->
+    let rec change (comparer: IComparer<'Key>) k (u: 'Value option -> 'Value option) (m: MapTree<'Key, 'Value>) : MapTree<'Key,'Value> =
+        if isEmpty m then
             match u None with
-            | None -> m
-            | Some v -> MapOne (k, v)
-        | MapOne (k2, v2) ->
-            let c = comparer.Compare(k, k2)
-            if c < 0 then
-                match u None with
                 | None -> m
-                | Some v -> MapNode (k, v, MapEmpty, m, 2)
-            elif c = 0 then
-                match u (Some v2) with
-                | None -> MapEmpty
-                | Some v -> MapOne (k, v)
-            else
-                match u None with
-                | None -> m
-                | Some v -> MapNode (k, v, m, MapEmpty, 2)
-        | MapNode (k2, v2, l, r, h) ->
-            let c = comparer.Compare(k, k2)
-            if c < 0 then
-                rebalance (change comparer k u l) k2 v2 r
-            elif c = 0 then
-                match u (Some v2) with
-                | None ->
-                    match l, r with
-                    | MapEmpty, _ -> r
-                    | _, MapEmpty -> l
-                    | _ ->
-                        let sk, sv, r' = spliceOutSuccessor r
-                        mk l sk sv r'
-                | Some v -> MapNode (k, v, l, r, h)
-            else
-                rebalance l k2 v2 (change comparer k u r)
+                | Some v -> MapTree (k, v)
+        else
+            match m with
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                let c = comparer.Compare(k, mn.Key)
+                if c < 0 then
+                    rebalance (change comparer k u mn.Left) mn.Key mn.Value mn.Right
+                elif c = 0 then
+                    match u (Some mn.Value) with
+                    | None ->
+                        if isEmpty mn.Left then mn.Right
+                        elif isEmpty mn.Right then mn.Left
+                        else
+                            let sk, sv, r' = spliceOutSuccessor mn.Right
+                            mk mn.Left sk sv r'
+                    | Some v -> MapTreeNode (k, v, mn.Left, mn.Right, mn.Height) :> MapTree<'Key,'Value>
+                else
+                    rebalance mn.Left mn.Key mn.Value (change comparer k u mn.Right)
+            | _ ->
+                let c = comparer.Compare(k, m.Key)
+                if c < 0 then
+                    match u None with
+                    | None -> m
+                    | Some v -> MapTreeNode (k, v, empty, m, 2) :> MapTree<'Key,'Value>
+                elif c = 0 then
+                    match u (Some m.Value) with
+                    | None -> empty
+                    | Some v -> MapTree (k, v)
+                else
+                    match u None with
+                    | None -> m
+                    | Some v -> MapTreeNode (k, v, m, empty, 2) :> MapTree<'Key,'Value>
 
     let rec mem (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
-        match m with 
-        | MapEmpty -> false
-        | MapOne (k2, _) -> (comparer.Compare(k, k2) = 0)
-        | MapNode (k2, _, l, r, _) -> 
-            let c = comparer.Compare(k, k2) 
-            if c < 0 then mem comparer k l
-            else (c = 0 || mem comparer k r)
+        if isEmpty m then false
+        else
+            let c = comparer.Compare(k, m.Key)
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                if c < 0 then mem comparer k mn.Left
+                else (c = 0 || mem comparer k mn.Right)
+            | _ -> c = 0
 
     let rec iterOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) =
-        match m with 
-        | MapEmpty -> ()
-        | MapOne (k2, v2) -> f.Invoke (k2, v2)
-        | MapNode (k2, v2, l, r, _) -> iterOpt f l; f.Invoke (k2, v2); iterOpt f r
+        if isEmpty m then ()
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn -> iterOpt f mn.Left; f.Invoke (mn.Key, mn.Value); iterOpt f mn.Right
+            | _ -> f.Invoke (m.Key, m.Value)
 
     let iter f m =
         iterOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-    let rec tryPickOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m =
-        match m with 
-        | MapEmpty -> None
-        | MapOne (k2, v2) -> f.Invoke (k2, v2) 
-        | MapNode (k2, v2, l, r, _) -> 
-            match tryPickOpt f l with 
-            | Some _ as res -> res 
-            | None -> 
-            match f.Invoke (k2, v2) with 
-            | Some _ as res -> res 
-            | None -> 
-            tryPickOpt f r
+    let rec tryPickOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) =
+        if isEmpty m then None
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                match tryPickOpt f mn.Left with 
+                | Some _ as res -> res 
+                | None -> 
+                match f.Invoke (mn.Key, mn.Value) with 
+                | Some _ as res -> res 
+                | None -> 
+                tryPickOpt f mn.Right
+            | _ -> f.Invoke (m.Key, m.Value)
 
     let tryPick f m =
         tryPickOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-    let rec existsOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m = 
-        match m with 
-        | MapEmpty -> false
-        | MapOne (k2, v2) -> f.Invoke (k2, v2)
-        | MapNode (k2, v2, l, r, _) -> existsOpt f l || f.Invoke (k2, v2) || existsOpt f r
+    let rec existsOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) = 
+        if isEmpty m then false
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn -> existsOpt f mn.Left || f.Invoke (mn.Key, mn.Value) || existsOpt f mn.Right
+            | _ -> f.Invoke (m.Key, m.Value)
 
     let exists f m =
         existsOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-    let rec forallOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m = 
-        match m with 
-        | MapEmpty -> true
-        | MapOne (k2, v2) -> f.Invoke (k2, v2)
-        | MapNode (k2, v2, l, r, _) -> forallOpt f l && f.Invoke (k2, v2) && forallOpt f r
+    let rec forallOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) (m: MapTree<'Key, 'Value>) = 
+        if isEmpty m then true
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn -> forallOpt f mn.Left && f.Invoke (mn.Key, mn.Value) && forallOpt f mn.Right
+            | _ -> f.Invoke (m.Key, m.Value)
+            
 
     let forall f m =
         forallOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-    let rec map f m = 
-        match m with 
-        | MapEmpty -> empty
-        | MapOne (k, v) -> MapOne (k, f v)
-        | MapNode (k, v, l, r, h) -> 
-            let l2 = map f l 
-            let v2 = f v 
-            let r2 = map f r 
-            MapNode (k, v2, l2, r2, h)
+    let rec map (f:'Value -> 'Result) (m: MapTree<'Key, 'Value>) : MapTree<'Key, 'Result> = 
+        if isEmpty m then empty
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn -> 
+                let l2 = map f mn.Left 
+                let v2 = f mn.Value
+                let r2 = map f mn.Right
+                MapTreeNode (mn.Key, v2, l2, r2, mn.Height) :> MapTree<'Key, 'Result>
+            | _ -> MapTree (m.Key, f m.Value)
 
-    let rec mapiOpt (f: OptimizedClosures.FSharpFunc<_, _, _>) m = 
-        match m with
-        | MapEmpty -> empty
-        | MapOne (k, v) -> MapOne (k, f.Invoke (k, v))
-        | MapNode (k, v, l, r, h) -> 
-            let l2 = mapiOpt f l 
-            let v2 = f.Invoke (k, v) 
-            let r2 = mapiOpt f r 
-            MapNode (k, v2, l2, r2, h)
+    let rec mapiOpt (f: OptimizedClosures.FSharpFunc<'Key, 'Value, 'Result>) (m: MapTree<'Key, 'Value>) = 
+        if isEmpty m then empty
+        else
+            match m with
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                let l2 = mapiOpt f mn.Left
+                let v2 = f.Invoke (mn.Key, mn.Value) 
+                let r2 = mapiOpt f mn.Right
+                MapTreeNode (mn.Key, v2, l2, r2, mn.Height) :> MapTree<'Key, 'Result>
+            | _ -> MapTree (m.Key, f.Invoke (m.Key, m.Value))
 
     let mapi f m =
         mapiOpt (OptimizedClosures.FSharpFunc<_, _, _>.Adapt f) m
 
-    let rec foldBackOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) m x = 
-        match m with 
-        | MapEmpty -> x
-        | MapOne (k, v) -> f.Invoke (k, v, x)
-        | MapNode (k, v, l, r, _) -> 
-            let x = foldBackOpt f r x
-            let x = f.Invoke (k, v, x)
-            foldBackOpt f l x
+    let rec foldBackOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x = 
+        if isEmpty m then x
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                let x = foldBackOpt f mn.Right x
+                let x = f.Invoke (mn.Key, mn.Value, x)
+                foldBackOpt f mn.Left x
+            | _ -> f.Invoke (m.Key, m.Value, x)
 
     let foldBack f m x =
         foldBackOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
-    let rec foldOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) x m  = 
-        match m with 
-        | MapEmpty -> x
-        | MapOne (k, v) -> f.Invoke (x, k, v)
-        | MapNode (k, v, l, r, _) -> 
-            let x = foldOpt f x l
-            let x = f.Invoke (x, k, v)
-            foldOpt f x r
+    let rec foldOpt (f: OptimizedClosures.FSharpFunc<_, _, _, _>) x (m: MapTree<'Key, 'Value>) = 
+        if isEmpty m then x
+        else
+            match m with 
+            | :? MapTreeNode<'Key, 'Value> as mn ->
+                let x = foldOpt f x mn.Left
+                let x = f.Invoke (x, mn.Key, mn.Value)
+                foldOpt f x mn.Right
+            | _ -> f.Invoke (x, m.Key, m.Value)
 
     let fold f x m =
         foldOpt (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) x m
 
-    let foldSectionOpt (comparer: IComparer<'Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) m x =
-        let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) m x = 
-            match m with 
-            | MapEmpty -> x
-            | MapOne (k, v) ->
-                let cLoKey = comparer.Compare(lo, k)
-                let cKeyHi = comparer.Compare(k, hi)
-                let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (k, v, x) else x
-                x
-            | MapNode (k, v, l, r, _) ->
-                let cLoKey = comparer.Compare(lo, k)
-                let cKeyHi = comparer.Compare(k, hi)
-                let x = if cLoKey < 0 then foldFromTo f l x else x
-                let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (k, v, x) else x
-                let x = if cKeyHi < 0 then foldFromTo f r x else x
-                x
+    let foldSectionOpt (comparer: IComparer<'Key>) lo hi (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x =
+        let rec foldFromTo (f: OptimizedClosures.FSharpFunc<_, _, _, _>) (m: MapTree<'Key, 'Value>) x = 
+            if isEmpty m then x
+            else
+                match m with 
+                | :? MapTreeNode<'Key, 'Value> as mn ->
+                    let cLoKey = comparer.Compare(lo, mn.Key)
+                    let cKeyHi = comparer.Compare(mn.Key, hi)
+                    let x = if cLoKey < 0 then foldFromTo f mn.Left x else x
+                    let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (mn.Key, mn.Value, x) else x
+                    let x = if cKeyHi < 0 then foldFromTo f mn.Right x else x
+                    x
+                | _ ->
+                    let cLoKey = comparer.Compare(lo, m.Key)
+                    let cKeyHi = comparer.Compare(m.Key, hi)
+                    let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke (m.Key, m.Value, x) else x
+                    x
 
         if comparer.Compare(lo, hi) = 1 then x else foldFromTo f m x
 
     let foldSection (comparer: IComparer<'Key>) lo hi f m x =
         foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt f) m x
 
-    let toList m = 
-        let rec loop m acc = 
-            match m with 
-            | MapEmpty -> acc
-            | MapOne (k, v) -> (k, v) :: acc
-            | MapNode (k, v, l, r, _) -> loop l ((k, v) :: loop r acc)
+    let toList (m: MapTree<'Key, 'Value>) = 
+        let rec loop (m: MapTree<'Key, 'Value>) acc = 
+            if isEmpty m then acc
+            else
+                match m with
+                | :? MapTreeNode<'Key, 'Value> as mn -> loop mn.Left ((mn.Key, mn.Value) :: loop mn.Right acc)
+                | _ -> (m.Key, m.Value) :: acc
         loop m []
 
     let toArray m =
@@ -396,7 +412,7 @@ module MapTree =
             mkFromEnumerator comparer (add comparer x y acc) e
         else acc
 
-    let ofArray comparer (arr : array<_>) =
+    let ofArray comparer (arr : array<'Key * 'Value>) =
         let mutable res = empty
         for (x, y) in arr do
             res <- add comparer x y res 
@@ -426,12 +442,15 @@ module MapTree =
     // collapseLHS:
     // a) Always returns either [] or a list starting with MapOne.
     // b) The "fringe" of the set stack is unchanged. 
-    let rec collapseLHS stack =
+    let rec collapseLHS (stack:MapTree<'Key, 'Value> list) =
         match stack with
         | [] -> []
-        | MapEmpty :: rest -> collapseLHS rest
-        | MapOne _ :: _ -> stack
-        | (MapNode (k, v, l, r, _)) :: rest -> collapseLHS (l :: MapOne (k, v) :: r :: rest)
+        | m :: rest ->
+            if isEmpty m then collapseLHS rest
+            else
+                match m with
+                | :? MapTreeNode<'Key, 'Value> as mn -> collapseLHS (mn.Left :: MapTree (mn.Key, mn.Value) :: mn.Right :: rest)
+                | _ -> stack
 
     let mkIterator m =
         { stack = collapseLHS [m]; started = false }
@@ -445,20 +464,24 @@ module MapTree =
     let current i =
         if i.started then
             match i.stack with
-              | MapOne (k, v) :: _ -> new KeyValuePair<_, _>(k, v)
-              | []            -> alreadyFinished()
-              | _             -> failwith "Please report error: Map iterator, unexpected stack for current"
+            | []     -> alreadyFinished()
+            | m :: _ ->
+                match m with
+                | :? MapTreeNode<'Key, 'Value> -> failwith "Please report error: Map iterator, unexpected stack for current"
+                | _ -> new KeyValuePair<_, _>(m.Key, m.Value)
         else
             notStarted()
 
     let rec moveNext i =
         if i.started then
             match i.stack with
-            | MapOne _ :: rest ->
-                i.stack <- collapseLHS rest
-                not i.stack.IsEmpty
             | [] -> false
-            | _ -> failwith "Please report error: Map iterator, unexpected stack for moveNext"
+            | m :: rest ->
+                match m with
+                | :? MapTreeNode<'Key, 'Value> -> failwith "Please report error: Map iterator, unexpected stack for moveNext"
+                | _ ->
+                    i.stack <- collapseLHS rest
+                    not i.stack.IsEmpty
         else
             i.started <- true  (* The first call to MoveNext "starts" the enumeration. *)
             not i.stack.IsEmpty
@@ -501,7 +524,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
     static let empty = 
         let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
-        new Map<'Key, 'Value>(comparer, MapTree<_, _>.MapEmpty)
+        new Map<'Key, 'Value>(comparer, MapTree.empty)
 
     [<System.Runtime.Serialization.OnSerializingAttribute>]
     member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
@@ -517,7 +540,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member __.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         comparer <- LanguagePrimitives.FastGenericComparer<'Key>
-        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer
+        tree <- serializedData |> Array.map (fun kvp -> kvp.Key, kvp.Value) |> MapTree.ofArray comparer
         serializedData <- null
 
     static member Empty : Map<'Key, 'Value> =
@@ -585,8 +608,8 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member m.Iterate f =
         MapTree.iter f tree
 
-    member m.MapRange f =
-        new Map<'Key, 'b>(comparer, MapTree.map f tree)
+    member m.MapRange (f:'Value->'Result) =
+        new Map<'Key, 'Result>(comparer, MapTree.map f tree)
 
     member m.Map f =
         new Map<'Key, 'b>(comparer, MapTree.mapi f tree)
@@ -647,7 +670,8 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
                 let m1 = e1.MoveNext() 
                 let m2 = e2.MoveNext()
                 (m1 = m2) && (not m1 || 
-                                 (let e1c, e2c = e1.Current, e2.Current
+                                 (let e1c = e1.Current
+                                  let e2c = e2.Current
                                   ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop())))
             loop()
         | _ -> false
@@ -829,7 +853,7 @@ module Map =
 
     [<CompiledName("FoldBack")>]
     let foldBack<'Key, 'T, 'State  when 'Key : comparison> folder (table: Map<'Key, 'T>) (state:'State) =
-        MapTree.foldBack  folder table.Tree state
+        MapTree.foldBack folder table.Tree state
 
     [<CompiledName("ToSeq")>]
     let toSeq (table: Map<_, _>) =
@@ -837,11 +861,11 @@ module Map =
 
     [<CompiledName("FindKey")>]
     let findKey predicate (table : Map<_, _>) =
-        table |> toSeq |> Seq.pick (fun (k, v) -> if predicate k v then Some k else None)
+        table |> Seq.pick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
 
     [<CompiledName("TryFindKey")>]
     let tryFindKey predicate (table : Map<_, _>) =
-        table |> toSeq |> Seq.tryPick (fun (k, v) -> if predicate k v then Some k else None)
+        table |> Seq.tryPick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
 
     [<CompiledName("OfList")>]
     let ofList (elements: ('Key * 'Value) list) =
