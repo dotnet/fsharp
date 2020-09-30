@@ -1129,14 +1129,15 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (
             enableBackgroundItemKeyStoreAndSemanticClassification,
             beforeFileChecked, fileChecked, tcConfig, initialState, Some tcAcc, input, None, None)
 
-    member this.Finish(finalTcErrorsRev, finalTopAttribs) =
-        TypeCheckAccumulator(
-            keepAssemblyContents, 
-            keepAllBackgroundResolutions, 
-            maxTimeShareMilliseconds, 
-            keepAllBackgroundSymbolUses, 
-            enableBackgroundItemKeyStoreAndSemanticClassification,
-            beforeFileChecked, fileChecked, tcConfig, initialState, None, input, Some finalTcErrorsRev, Some finalTopAttribs)
+    member this.Finish(_finalTcErrorsRev, _finalTopAttribs) =
+        this
+        //TypeCheckAccumulator(
+        //    keepAssemblyContents, 
+        //    keepAllBackgroundResolutions, 
+        //    maxTimeShareMilliseconds, 
+        //    keepAllBackgroundSymbolUses, 
+        //    enableBackgroundItemKeyStoreAndSemanticClassification,
+        //    beforeFileChecked, fileChecked, tcConfig, initialState, None, input, Some finalTcErrorsRev, Some finalTopAttribs)
 
     member this.InitialState = initialState
 
@@ -1208,6 +1209,11 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (
                         let! tcState = tcAcc.tcState
                         let! tcErrorsRev = tcAcc.tcErrorsRev
 
+                        lazyTcState := Some tcState
+                        lazyTcGlobals := Some tcGlobals
+                        lazyTcImports := Some tcImports
+                        lazyTcConfig := Some tcConfig
+
                         ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
                         let sink = TcResultsSinkImpl(tcGlobals)
                         let hadParseErrors = not (Array.isEmpty parseErrors)
@@ -1266,6 +1272,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (
                         lazyTopAttribs := Some(Some topAttribs)
                         lazyLatestCcuSigForFile := Some(Some ccuSigForFile)
                         lazyTcErrorsRev := Some(newErrors :: tcErrorsRev)
+                        lazyTcState := Some(tcState)
 
                         if not quickCheck then
                             let! tcOpenDeclarationsRev = tcAcc.tcOpenDeclarationsRev
