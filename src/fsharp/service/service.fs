@@ -307,8 +307,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         member x.EvaluateRawContents(ctok) = 
                           cancellable {
                             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckProjectImpl", nm)
-                            let! r = self.ParseAndCheckProjectImpl(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
-                            return r.RawFSharpAssemblyData 
+                            let phase1, phase2 = self.ParseAndCheckProjectImpl(opts, userOpName + ".CheckReferencedProject("+nm+")")
+                            let! result = phase1 ctok
+                            let result2: FSharpCheckProjectResults = phase2 result |> Async.RunSynchronously
+                            return result2.RawFSharpAssemblyData
                           }
                         member x.TryGetLogicalTimeStamp(cache, ctok) = 
                             self.TryGetLogicalTimeStampForProject(cache, ctok, opts, userOpName + ".TimeStampReferencedProject("+nm+")")
@@ -824,22 +826,43 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         | None -> parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
-    member private __.ParseAndCheckProjectImpl(options, ctok, userOpName) : Cancellable<FSharpCheckProjectResults> =
-      cancellable {
-        let! builderOpt,creationErrors = getOrCreateBuilder (ctok, options, userOpName)
-        match builderOpt with 
-        | None -> 
-            return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationErrors, None)
-        | Some builder -> 
-            let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)  = builder.GetCheckResultsAndImplementationsForProject(ctok)
+    member private __.ParseAndCheckProjectImpl(options, userOpName) =
+      let phase1 ctok =
+        cancellable {
+          let! builderOpt,creationErrors = getOrCreateBuilder (ctok, options, userOpName)
+          match builderOpt with 
+          | None -> 
+              return creationErrors, None
+          | Some builder -> 
+              let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) = builder.GetCheckResultsAndImplementationsForProject(ctok)
+              return creationErrors, Some(tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)
+        }
+
+      let phase2 (creationErrors, resultOpt) =
+        match resultOpt with
+        | None ->
+            async { return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationErrors, None) }
+        | Some(tcProj: PartialCheckResults, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) ->
             let errorOptions = tcProj.TcConfig.errorSeverityOptions
             let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
-            let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, true, fileName, tcProj.TcErrors, suggestNamesForErrors) |]
-            return FSharpCheckProjectResults (options.ProjectFileName, Some tcProj.TcConfig, keepAssemblyContents, errors, 
-                                              Some(tcProj.TcGlobals, tcProj.TcImports, tcProj.TcState.Ccu, tcProj.TcState.CcuSig, 
-                                                   tcProj.TcSymbolUses, tcProj.TopAttribs, tcAssemblyDataOpt, ilAssemRef, 
-                                                   tcProj.TcEnvAtEnd.AccessRights, tcAssemblyExprOpt, Array.ofList tcProj.TcDependencyFiles))
-      }
+            async {
+                let! tcTopAttribsOpt = tcProj.TopAttribs
+                let! tcStateOpt = tcProj.TcState
+                let! tcEnvAtEnd = tcProj.TcEnvAtEnd
+                match tcTopAttribsOpt, tcStateOpt, tcEnvAtEnd with
+                | Some topAttribs, Some tcState, Some tcEnvAtEnd ->
+                    let! tcSymbolUses = tcProj.TcSymbolUses
+                    let! tcErrors = tcProj.TcErrors
+                    let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, true, fileName, tcErrors, suggestNamesForErrors) |]
+                    return FSharpCheckProjectResults (options.ProjectFileName, Some tcProj.TcConfig, keepAssemblyContents, errors, 
+                                                      Some(tcProj.TcGlobals, tcProj.TcImports, tcState.Ccu, tcState.CcuSig, 
+                                                           tcSymbolUses, topAttribs, tcAssemblyDataOpt, ilAssemRef, 
+                                                           tcEnvAtEnd.AccessRights, tcAssemblyExprOpt, Array.ofList tcProj.TcDependencyFiles))
+                | _ ->
+                    return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationErrors, None)
+            }
+
+      phase1, phase2
 
     /// Get the timestamp that would be on the output if fully built immediately
     member private __.TryGetLogicalTimeStampForProject(cache, ctok, options, userOpName: string) =
@@ -853,7 +876,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options, userOpName) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok, userOpName))
+        let phase1, phase2 = bc.ParseAndCheckProjectImpl(options, userOpName)
+        async {
+            let! result = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> phase1 ctok)
+            return! phase2 result
+        }
 
     member __.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, assumeDotNetFramework: bool option, extraProjectInfo: obj option, optionsStamp: int64 option, userOpName) = 
         reactor.EnqueueAndAwaitOpAsync (userOpName, "GetProjectOptionsFromScript", filename, fun ctok -> 
