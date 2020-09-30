@@ -764,20 +764,32 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         }
 
     member __.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
-          cancellable {
-            let! builderOpt, _ = getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName)
-            match builderOpt with
+        let phase1 =
+            reactor.EnqueueAndAwaitOpAsync(userOpName, "FindReferencesInFile", filename, fun ctok -> 
+              cancellable {
+                let! builderOpt, _ = getOrCreateBuilderWithInvalidationFlag (ctok, options, canInvalidateProject, userOpName)
+                match builderOpt with
+                | None -> return None
+                | Some builder -> 
+                    if builder.ContainsFile filename then
+                        let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                        return Some checkResults
+                    else
+                        return None })
+
+        async {
+            match! phase1 with
             | None -> return Seq.empty
-            | Some builder -> 
-                if builder.ContainsFile filename then
-                    let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                    return 
-                        match checkResults.ItemKeyStore with
-                        | None -> Seq.empty
-                        | Some reader -> reader.FindAll symbol.Item
-                else
-                    return Seq.empty })
+            | Some checkResults ->
+                let! itemKeyStoreOpt = checkResults.ItemKeyStore
+                match itemKeyStoreOpt with
+                | Some itemKeyStore ->
+                    match itemKeyStore with
+                    | None -> return Seq.empty
+                    | Some reader -> return reader.FindAll symbol.Item
+                | _ ->
+                    return Seq.empty
+        }
 
 
     member __.GetSemanticClassificationForFile(filename: string, options: FSharpProjectOptions, userOpName: string) =
