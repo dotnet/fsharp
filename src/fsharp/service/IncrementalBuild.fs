@@ -1038,6 +1038,8 @@ type TypeCheckAccumulatorMinimumState =
 
         /// Accumulated errors, last file first
         tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
+
+        tcDependencyFiles: string list
     }
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
@@ -1078,7 +1080,6 @@ type TypeCheckAccumulatorState =
 and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                                        tcGlobals: TcGlobals,
                                                        tcImports: TcImports,
-                                                       tcDependencyFiles: string list,
                                                        keepAssemblyContents, keepAllBackgroundResolutions,
                                                        maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
                                                        enableBackgroundItemKeyStoreAndSemanticClassification,
@@ -1124,7 +1125,6 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     tcConfig,
                     tcGlobals,
                     tcImports,
-                    tcDependencyFiles,
                     keepAssemblyContents, 
                     keepAllBackgroundResolutions, 
                     maxTimeShareMilliseconds, 
@@ -1151,7 +1151,6 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     tcConfig,
                     tcGlobals,
                     tcImports,
-                    tcDependencyFiles,
                     keepAssemblyContents, 
                     keepAllBackgroundResolutions, 
                     maxTimeShareMilliseconds, 
@@ -1219,7 +1218,10 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
         }
 
     member _.tcDependencyFiles =
-        tcDependencyFiles
+        eventually {
+            let! state = this.GetState(true)
+            return state.Minimum.tcDependencyFiles
+        }
 
     member _.tcModuleNamesDict =
         eventually {
@@ -1266,6 +1268,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                         let tcModuleNamesDict = prevTcMinAccState.tcModuleNamesDict
                         let tcState = prevTcMinAccState.tcState
                         let tcErrorsRev = prevTcMinAccState.tcErrorsRev
+                        let tcDependencyFiles = prevTcMinAccState.tcDependencyFiles
 
                         ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
                         let sink = TcResultsSinkImpl(tcGlobals)
@@ -1297,6 +1300,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                 latestCcuSigForFile = Some ccuSigForFile
                                 tcErrorsRev = newErrors :: tcErrorsRev
                                 topAttribs = Some topAttribs
+                                tcDependencyFiles = filename :: tcDependencyFiles
                             }
 
                         if quickCheck then
@@ -1456,7 +1460,7 @@ type PartialCheckResults private (tcAcc: TypeCheckAccumulator, timeStamp: DateTi
     /// Disambiguation table for module names
     member _.ModuleNamesDict ctok = tcAcc.tcModuleNamesDict |> eval ctok
 
-    member _.TcDependencyFiles = tcAcc.tcDependencyFiles
+    member _.TcDependencyFiles ctok = tcAcc.tcDependencyFiles |> eval ctok
 
     member _.TopAttribs ctok = tcAcc.topAttribs |> eval ctok
 
@@ -1673,6 +1677,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               latestCcuSigForFile=None
               tcErrorsRev = [ initialErrors ] 
               tcModuleNamesDict = Map.empty
+              tcDependencyFiles = basicDependencies
             }
         let tcAccFullState =
             {
@@ -1688,7 +1693,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 tcConfig,
                 tcGlobals,
                 tcImports,
-                basicDependencies,
                 keepAssemblyContents, 
                 keepAllBackgroundResolutions, 
                 maxTimeShareMilliseconds, 

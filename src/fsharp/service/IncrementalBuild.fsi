@@ -73,7 +73,7 @@ type internal PartialCheckResults =
       /// Disambiguation table for module names
     member ModuleNamesDict: CompilationThreadToken -> ModuleNamesDict
 
-    member TcDependencyFiles: string list
+    member TcDependencyFiles: CompilationThreadToken -> string list
 
       /// Represents the collected attributes to apply to the module of assembly generates
     member TopAttribs: CompilationThreadToken -> TypeChecker.TopAttribs option
