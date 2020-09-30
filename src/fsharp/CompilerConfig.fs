@@ -337,6 +337,7 @@ type TargetFrameworkForScripts =
         match fx.Value with
         | "netcore" -> PrimaryAssembly.System_Runtime
         | "netfx"  -> PrimaryAssembly.Mscorlib
+        | "netstandard"  -> PrimaryAssembly.NetStandard
         | _  -> failwith "invalid value"
         // // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
         // | "netstandard"  -> PrimaryAssembly.NetStandard

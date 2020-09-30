@@ -333,9 +333,8 @@ type public FSharpChecker =
     /// </summary>
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
-    /// <param name="defaultToDotNetFramework">Indicates scripts without explicit target framework declarations should be assumed to be .NET Framework scripts.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile: argv:string[] * ?defaultToDotNetFramework: bool * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
+    member Compile: argv:string[] * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
 
     /// <summary>
     /// TypeCheck and compile provided AST

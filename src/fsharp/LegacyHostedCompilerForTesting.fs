@@ -65,7 +65,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
             { new Exiter with
                  member this.Exit n = exitCode <- n; raise StopProcessing }
         try 
-            mainCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, None, exiter, loggerProvider.Provider, None, None)
+            mainCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->

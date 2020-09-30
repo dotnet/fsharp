@@ -219,7 +219,7 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, a
 /// copied to the output folder, for example (except perhaps FSharp.Core.dll).
 ///
 /// NOTE: there is similar code in IncrementalBuilder.fs and this code should really be reconciled with that
-let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, defaultToDotNetFramework, commandLineSourceFiles, dependencyProvider) =
+let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager, dependencyProvider) =
 
     let combineFilePath file =
         try
@@ -234,7 +234,26 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, defaultToDotNetFram
         
     // Script compilation is active if the last item being compiled is a script and --noframework has not been specified
     let mutable allSources = []       
-    
+
+    // In script compilation, we pre-infer the kind of scripts expected based on the compilation flags coming in on the command line.
+    //
+    // This has the following effect:
+    //    If --targetprofile:netcore has been specified, and a #netfx declaration exists in a script, then give a warning
+    //    If --targetprofile:mscorlib has been specified, and a #netcore declaration exists in a script, then give a warning
+    //    If --targetprofile:netstandard has been specified, and either a #netcore or #netfx declaration exists in a script, then give a warning
+    if commandLineSourceFiles |> List.exists IsScript && tcConfigB.inferredTargetFrameworkForScripts.IsNone then
+        let targetFrameworkForScripts =
+            match tcConfigB.primaryAssembly with
+            | PrimaryAssembly.Mscorlib -> 
+                TargetFrameworkForScripts "netfx"
+            | PrimaryAssembly.System_Runtime ->
+                TargetFrameworkForScripts "netcore"
+            | PrimaryAssembly.NetStandard -> 
+                TargetFrameworkForScripts "netstandard"
+        tcConfigB.inferredTargetFrameworkForScripts <- Some { InferredFramework = targetFrameworkForScripts; WhereInferred = None }
+        
+    let tcConfig = TcConfig.Create(tcConfigB, validate=false) 
+
     let AddIfNotPresent(filename: string) =
         if not(allSources |> List.contains filename) then
             allSources <- filename :: allSources
@@ -242,46 +261,34 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, defaultToDotNetFram
     let AppendClosureInformation filename =
         if IsScript filename then 
 
-            // Get the source to infer the target framework from any #targetfx declarations in the script
-            let source = SourceText.ofString (File.ReadAllText filename)
-
-            // Do we assume .NET Framework references for scripts? In the absence of either explicit argument
-            // or an explicit #targetfx declaration, then for compilation and analysis the default
-            // depends on the toolchain the tooling is are running on.
-            let defaultToDotNetFramework = defaultArg defaultToDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
-
-            let loadClosure = 
-                LoadClosure.ComputeClosureOfScriptText(ctok, tcConfigB.legacyReferenceResolver, 
-                    tcConfigB.defaultFSharpBinariesDir, filename, source, 
-                    CodeContext.Compilation, tcConfigB.useSimpleResolution, tcConfigB.useFsiAuxLib,
-                    tcConfigB.useSdkRefs, new Lexhelp.LexResourceManager(), 
-                    (fun _ -> ()), defaultToDotNetFramework, 
-                    tcConfigB.tryGetMetadataSnapshot, tcConfigB.reduceMemoryUsage, dependencyProvider)
+            let closure = 
+                LoadClosure.ComputeClosureOfScriptFiles
+                   (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, 
+                    lexResourceManager, dependencyProvider)
 
             // Record the new references (non-framework) references from the analysis of the script. (The full resolutions are recorded
             // as the corresponding #I paths used to resolve them are local to the scripts and not added to the tcConfigB - they are
             // added to localized clones of the tcConfigB).
             let references =
-                loadClosure.References
+                closure.References
                 |> List.collect snd
                 |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
 
             // Also record the other declarations from the script.
-            loadClosure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
-            loadClosure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
-            loadClosure.AllRootFileDiagnostics |> List.iter diagnosticSink
+            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
+            closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
+            closure.AllRootFileDiagnostics |> List.iter diagnosticSink
 
             // If there was an explicit #targetfx in the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
-            match loadClosure.InferredTargetFramework.WhereInferred with
+            match closure.InferredTargetFramework.WhereInferred with
             | Some m ->
-                tcConfigB.CheckExplicitFrameworkDirective(loadClosure.InferredTargetFramework.InferredFramework, m)
-                tcConfigB.primaryAssembly <- loadClosure.InferredTargetFramework.InferredFramework.PrimaryAssembly
-                tcConfigB.fxResolver <- FxResolver(tcConfigB.reduceMemoryUsage, tcConfigB.tryGetMetadataSnapshot, Some loadClosure.InferredTargetFramework.UseDotNetFramework)
+                tcConfigB.CheckExplicitFrameworkDirective(closure.InferredTargetFramework.InferredFramework, m)
+                tcConfigB.primaryAssembly <- closure.InferredTargetFramework.InferredFramework.PrimaryAssembly
                 if tcConfigB.framework then
-                    let references = loadClosure.References |> List.collect snd
+                    let references = closure.References |> List.collect snd
                     references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             | None -> ()
             
@@ -1762,7 +1769,6 @@ type Args<'T> = Args  of 'T
 let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, 
           reduceMemoryUsage: ReduceMemoryFlag, defaultCopyFSharpCore: CopyFSharpCoreFlag, 
           exiter: Exiter, errorLoggerProvider : ErrorLoggerProvider,
-          defaultToDotNetFramework: bool option,
           disposables : DisposablesTracker) = 
 
     // See Bug 735819 
@@ -1826,7 +1832,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         try 
             let sourceFiles = 
                 let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
-                AdjustForScriptCompile(ctok, tcConfigB, defaultToDotNetFramework, files, dependencyProvider)
+                AdjustForScriptCompile(ctok, tcConfigB, files, lexResourceManager, dependencyProvider)
             sourceFiles
 
         with e -> 
@@ -1834,6 +1840,9 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
             exiter.Exit 1 
     
+    let useDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
+    tcConfigB.fxResolver <- FxResolver(tcConfigB.reduceMemoryUsage, tcConfigB.tryGetMetadataSnapshot, Some useDotNetFramework)
+
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
     displayBannerIfNeeded tcConfigB
 
@@ -2266,7 +2275,6 @@ let mainCompile
          bannerAlreadyPrinted,
          reduceMemoryUsage, 
          defaultCopyFSharpCore,
-         defaultToDotNetFramework,
          exiter: Exiter,
          errorLoggerProvider,
          tcImportsCapture,
@@ -2281,7 +2289,7 @@ let mainCompile
                     System.Console.SetOut(savedOut)
                 with _ -> ()}
 
-    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, defaultToDotNetFramework, d)
+    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, d)
     |> main1
     |> main2a
     |> main2b (tcImportsCapture,dynamicAssemblyCreator)
