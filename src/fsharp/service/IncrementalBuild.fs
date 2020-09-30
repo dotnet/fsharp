@@ -1157,7 +1157,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    beforeFileChecked, fileChecked, prevMinState, lazyPrevFullState, input)
+                    beforeFileChecked, fileChecked, prevMinState, lazyPrevFullState, (None, range0, String.Empty, [||]))
         }
 
     member this.tcState =
@@ -1331,7 +1331,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                     else
                                         None, [||]
 
-                                return
+                                let fullState =
                                     {
                                         latestImplFile = if keepAssemblyContents then implFile else None
                                         tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: tcResolutionsRev
@@ -1340,7 +1340,8 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                         itemKeyStore = itemKeyStore
                                         semanticClassification = semanticClassification
                                     }
-                                    |> FullState
+
+                                return FullState(minState, fullState)
               
                     }
                             
@@ -1359,7 +1360,11 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                 f ctok)
                 return! timeSlicedComputation
             | _ -> 
-                return MinimumState prevTcMinAccState
+                match! prevTcFullAccState with
+                | Some prevFullState ->
+                    return FullState(prevTcMinAccState, prevFullState)
+                | _ ->
+                    return MinimumState prevTcMinAccState
         }
       
 /// Global service state
