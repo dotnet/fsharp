@@ -1060,10 +1060,54 @@ type TypeCheckAccumulatorState =
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
       semanticClassification: struct (range * SemanticClassificationType) [] }
 
+/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
+[<NoEquality; NoComparison>]
+type TypeCheckAccumulatorMinimumState =
+    {
+        tcState: TcState
+        tcEnvAtEndOfFile: TcEnv
+
+        /// Disambiguation table for module names
+        tcModuleNamesDict: ModuleNamesDict
+
+        topAttribs: TopAttribs option
+
+        latestCcuSigForFile: ModuleOrNamespaceType option
+
+        /// Accumulated errors, last file first
+        tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
+    }
+
+/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
+[<NoEquality; NoComparison>]
+type TypeCheckAccumulatorFullState =
+    {
+      tcAccMin: TypeCheckAccumulatorMinimumState
+
+      /// Accumulated resolutions, last file first
+      tcResolutionsRev: TcResolutions list
+
+      /// Accumulated symbol uses, last file first
+      tcSymbolUsesRev: TcSymbolUses list
+
+      /// Accumulated 'open' declarations, last file first
+      tcOpenDeclarationsRev: OpenDeclaration[] list
+
+      /// Result of checking most recent file, if any
+      latestImplFile: TypedImplFile option
+      
+      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
+      itemKeyStore: ItemKeyStore option
+      
+      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
+      semanticClassification: struct (range * SemanticClassificationType) []
+    }
+
 /// Accumulated results of type checking.
 and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                                        tcGlobals: TcGlobals,
                                                        tcImports: TcImports,
+                                                       tcDependencyFiles: string list,
                                                        keepAssemblyContents, keepAllBackgroundResolutions,
                                                        maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
                                                        enableBackgroundItemKeyStoreAndSemanticClassification,
@@ -1121,6 +1165,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
             tcConfig,
             tcGlobals,
             tcImports,
+            tcDependencyFiles,
             keepAssemblyContents, 
             keepAllBackgroundResolutions, 
             maxTimeShareMilliseconds, 
@@ -1203,14 +1248,10 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                         let! tcState = tcAcc.tcState
                         let! tcErrorsRev = tcAcc.tcErrorsRev
 
-                        lazyTcState := Some tcState
-
                         ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
                         let sink = TcResultsSinkImpl(tcGlobals)
                         let hadParseErrors = not (Array.isEmpty parseErrors)
                         let input, moduleNamesDict = DeduplicateParsedInputModuleName tcModuleNamesDict input
-
-                        lazyTcModuleNamesDict := Some moduleNamesDict
 
                         Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
                         let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
@@ -1260,6 +1301,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                         fileChecked.Trigger filename
                         let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
 
+                        lazyTcModuleNamesDict := Some moduleNamesDict
                         lazyTopAttribs := Some(Some topAttribs)
                         lazyLatestCcuSigForFile := Some(Some ccuSigForFile)
                         lazyTcErrorsRev := Some(newErrors :: tcErrorsRev)
@@ -1604,6 +1646,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 tcConfig,
                 tcGlobals,
                 tcImports,
+                basicDependencies,
                 keepAssemblyContents, 
                 keepAllBackgroundResolutions, 
                 maxTimeShareMilliseconds, 
