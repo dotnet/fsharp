@@ -439,36 +439,29 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
     member key.ArgTypes = argtys
     member key.IsStatic = isStatic
     override x.GetHashCode() = hashCode
-    override x.Equals(obj: obj) = 
+    override x.Equals(obj: obj) =
         match obj with
         | :? MethodDefKey as y ->
-                let compareILTypes o1 o2 =
-                     let getScopedTypeRef (o:ILType) =
-                         match o with
-                         | ILType.Value v ->
-                             match v.Scope with
-                             | ILScopeRef.PrimaryAssembly -> Some (sprintf "%s, %s" (v.BasicQualifiedName) (ilg.primaryAssemblyRef.QualifiedName))
-                             | ILScopeRef.Assembly aref -> Some (sprintf "%s, %s" (v.BasicQualifiedName) (aref.QualifiedName))
-                             | _ -> None
-                         | _ -> None
+            let compareILTypes o1 o2 =
+                let getScope (v:ILTypeSpec) =
+                    match v.Scope with
+                    | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyScopeRef
+                    | _ -> v.Scope
 
-                     let scope1 = getScopedTypeRef o1
-                     let scope2 = getScopedTypeRef o2
-                     match scope1, scope2 with
-                     | Some s1, Some s2 -> s1 = s2
-                     |_ -> o1 = o2
+                match o1, o2 with
+                | ILType.Value v1, ILType.Value v2 ->
+                    let s1 = getScope v1
+                    let s2 = getScope v2
+                    (s1 = s2) && (v1.BasicQualifiedName = v2.BasicQualifiedName)
+                | _ -> o1 = o2
 
-                let compareMethodDefKeys =
-                    tidx = y.TypeIdx &&
-                    garity = y.GenericArity &&
-                    nm = y.Name &&
-                    isStatic = y.IsStatic
-
-                let compareReturnType = compareILTypes rty y.ReturnType
-                let compareArgumentTypes = List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes
-                let result = compareMethodDefKeys && compareReturnType && compareArgumentTypes
-                result
-
+            tidx = y.TypeIdx &&
+            garity = y.GenericArity &&
+            nm = y.Name &&
+            // note: these next two use structural equality on AbstractIL ILType values
+            rty = y.ReturnType &&
+            List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes &&
+            isStatic = y.IsStatic
         | _ -> false
 
 /// We use this key type to help find ILFieldDefs for FieldRefs
