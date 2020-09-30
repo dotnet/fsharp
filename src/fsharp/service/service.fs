@@ -793,15 +793,25 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
 
     member __.GetSemanticClassificationForFile(filename: string, options: FSharpProjectOptions, userOpName: string) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
-            cancellable {
-            let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
-            match builderOpt with
-            | None -> return [||]
-            | Some builder -> 
-                let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                return checkResults.SemanticClassification })
+        let phase1 =
+            reactor.EnqueueAndAwaitOpAsync(userOpName, "GetSemanticClassificationForFile", filename, fun ctok -> 
+              cancellable {
+                  let! builderOpt, _ = getOrCreateBuilder (ctok, options, userOpName)
+                  match builderOpt with
+                  | None -> return None
+                  | Some builder -> 
+                      let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                      return Some checkResults })
 
+        async {
+            match! phase1 with
+            | None -> return [||]
+            | Some checkResults ->
+                let! semanticClassificationOpt = checkResults.SemanticClassification
+                match semanticClassificationOpt with
+                | Some semanticClassification -> return semanticClassification
+                | _ -> return [||]
+        }
 
     /// Try to get recent approximate type check results for a file. 
     member __.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
