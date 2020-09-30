@@ -42,12 +42,56 @@ module internal IncrementalBuilderEventTesting =
   val GetMostRecentIncrementalBuildEvents : int -> IBEvent list
   val GetCurrentIncrementalBuildEventNum : unit -> int
 
+/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
+[<NoEquality; NoComparison>]
+type internal TcInfo =
+    {
+        tcState: TcState
+        tcEnvAtEndOfFile: TypeChecker.TcEnv
+
+        /// Disambiguation table for module names
+        moduleNamesDict: ModuleNamesDict
+
+        topAttribs: TypeChecker.TopAttribs option
+
+        latestCcuSigForFile: ModuleOrNamespaceType option
+
+        /// Accumulated errors, last file first
+        tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
+
+        tcDependencyFiles: string list
+    }
+
+     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+
+/// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for tooling.
+[<NoEquality; NoComparison>]
+type internal TcInfoOptional =
+    {
+      /// Accumulated resolutions, last file first
+      tcResolutionsRev: TcResolutions list
+
+      /// Accumulated symbol uses, last file first
+      tcSymbolUsesRev: TcSymbolUses list
+
+      /// Accumulated 'open' declarations, last file first
+      tcOpenDeclarationsRev: OpenDeclaration[] list
+
+      /// Result of checking most recent file, if any
+      latestImplFile: TypedImplFile option
+      
+      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
+      itemKeyStore: ItemKeyStore option
+      
+      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
+      semanticClassification: struct (range * SemanticClassificationType) []
+    }
+
+    member TcSymbolUses: TcSymbolUses list
+
 /// Represents the state in the incremental graph associated with checking a file
 [<Sealed>]
 type internal PartialCheckResults = 
-    
-      /// This field is None if a major unrecovered error occurred when preparing the initial state
-    member TcState : CompilationThreadToken -> TcState
 
     member TcImports: TcImports 
 
@@ -55,47 +99,13 @@ type internal PartialCheckResults =
 
     member TcConfig: TcConfig 
 
-      /// This field is None if a major unrecovered error occurred when preparing the initial state
-    member TcEnvAtEnd : CompilationThreadToken -> TypeChecker.TcEnv
+    member TimeStamp: DateTime 
 
-      /// Represents the collected errors from type checking
-    member TcErrorsRev : CompilationThreadToken -> (PhasedDiagnostic * FSharpErrorSeverity)[] list
+    member TcInfo: CompilationThreadToken -> TcInfo
 
-      /// Represents the collected name resolutions from type checking
-    member TcResolutionsRev: CompilationThreadToken -> TcResolutions list
-
-      /// Represents the collected uses of symbols from type checking
-    member TcSymbolUsesRev: CompilationThreadToken -> TcSymbolUses list
-
-      /// Represents open declarations
-    member TcOpenDeclarationsRev: CompilationThreadToken -> OpenDeclaration[] list
-
-      /// Disambiguation table for module names
-    member ModuleNamesDict: CompilationThreadToken -> ModuleNamesDict
-
-    member TcDependencyFiles: CompilationThreadToken -> string list
-
-      /// Represents the collected attributes to apply to the module of assembly generates
-    member TopAttribs: CompilationThreadToken -> TypeChecker.TopAttribs option
+    member TcInfoFull: CompilationThreadToken -> TcInfo * TcInfoOptional
 
     member TimeStamp: DateTime 
-      
-      /// Represents latest complete typechecked implementation file, including its typechecked signature if any.
-      /// Empty for a signature file.
-    member LatestImplementationFile: CompilationThreadToken -> TypedImplFile option
-      
-      /// Represents latest inferred signature contents.
-    member LatestCcuSigForFile: CompilationThreadToken -> ModuleOrNamespaceType option
-      
-      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
-    member ItemKeyStore: CompilationThreadToken -> ItemKeyStore option
-      
-      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-    member SemanticClassification: CompilationThreadToken -> struct (range * SemanticClassificationType) []   
-
-    member TcErrors: CompilationThreadToken -> (PhasedDiagnostic * FSharpErrorSeverity)[]
-
-    member TcSymbolUses: CompilationThreadToken -> TcSymbolUses list
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
