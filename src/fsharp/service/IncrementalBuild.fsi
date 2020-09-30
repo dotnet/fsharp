@@ -43,55 +43,56 @@ module internal IncrementalBuilderEventTesting =
   val GetCurrentIncrementalBuildEventNum : unit -> int
 
 /// Represents the state in the incremental graph associated with checking a file
+[<Sealed>]
 type internal PartialCheckResults = 
-    {
+    
       /// This field is None if a major unrecovered error occurred when preparing the initial state
-      TcState : TcState
+    member TcState : TcState
 
-      TcImports: TcImports 
+    member TcImports: TcImports 
 
-      TcGlobals: TcGlobals 
+    member TcGlobals: TcGlobals 
 
-      TcConfig: TcConfig 
+    member TcConfig: TcConfig 
 
       /// This field is None if a major unrecovered error occurred when preparing the initial state
-      TcEnvAtEnd : TypeChecker.TcEnv
+    member TcEnvAtEnd : TypeChecker.TcEnv
 
       /// Represents the collected errors from type checking
-      TcErrorsRev : (PhasedDiagnostic * FSharpErrorSeverity)[] list 
+    member TcErrorsRev : (PhasedDiagnostic * FSharpErrorSeverity)[] list 
 
       /// Represents the collected name resolutions from type checking
-      TcResolutionsRev: TcResolutions list 
+    member TcResolutionsRev: TcResolutions list 
 
       /// Represents the collected uses of symbols from type checking
-      TcSymbolUsesRev: TcSymbolUses list 
+    member TcSymbolUsesRev: TcSymbolUses list 
 
       /// Represents open declarations
-      TcOpenDeclarationsRev: OpenDeclaration[] list
+    member TcOpenDeclarationsRev: OpenDeclaration[] list
 
       /// Disambiguation table for module names
-      ModuleNamesDict: ModuleNamesDict
+    member ModuleNamesDict: ModuleNamesDict
 
-      TcDependencyFiles: string list
+    member TcDependencyFiles: string list
 
       /// Represents the collected attributes to apply to the module of assembly generates
-      TopAttribs: TypeChecker.TopAttribs option
+    member TopAttribs: TypeChecker.TopAttribs option
 
-      TimeStamp: DateTime 
+    member TimeStamp: DateTime 
       
       /// Represents latest complete typechecked implementation file, including its typechecked signature if any.
       /// Empty for a signature file.
-      LatestImplementationFile: TypedImplFile option 
+    member LatestImplementationFile: TypedImplFile option 
       
       /// Represents latest inferred signature contents.
-      LatestCcuSigForFile: ModuleOrNamespaceType option
+    member LatestCcuSigForFile: ModuleOrNamespaceType option
       
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
-      ItemKeyStore: ItemKeyStore option
+    member ItemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      SemanticClassification: struct (range * SemanticClassificationType) []
-    }
+    member SemanticClassification: struct (range * SemanticClassificationType) []
+    
 
     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
 

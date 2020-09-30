@@ -246,6 +246,8 @@ type ICompilationThread =
     /// Enqueue work to be done on a compilation thread.
     abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
 
+    abstract RunEventually: Eventually<'T> -> 'T option
+
 type ImportedAssembly =
     { ILScopeRef: ILScopeRef 
       FSharpViewOfMetadata: CcuThunk
@@ -605,7 +607,12 @@ type TcConfigBuilder =
 #endif
           compilationThread = 
                 let ctok = CompilationThreadToken ()
-                { new ICompilationThread with member __.EnqueueWork work = work ctok }
+                { new ICompilationThread with 
+                    member __.EnqueueWork work = work ctok 
+                    member __.RunEventually work = 
+                        work
+                        |> Eventually.forceWhile ctok (fun _ -> true)
+                }
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
