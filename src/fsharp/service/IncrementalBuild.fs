@@ -1027,9 +1027,7 @@ module Tc = FSharp.Compiler.TypeChecker
 [<NoEquality; NoComparison>]
 type TypeCheckAccumulatorState =
     { tcState: TcState
-      tcImports: TcImports
-      tcGlobals: TcGlobals
-      tcConfig: TcConfig
+
       tcEnvAtEndOfFile: TcEnv
 
       /// Accumulated resolutions, last file first
@@ -1063,13 +1061,14 @@ type TypeCheckAccumulatorState =
       semanticClassification: struct (range * SemanticClassificationType) [] }
 
 /// Accumulated results of type checking.
-and [<NoEquality; NoComparison>] TypeCheckAccumulator (
+and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
+                                                       tcGlobals: TcGlobals,
+                                                       tcImports: TcImports,
                                                        keepAssemblyContents, keepAllBackgroundResolutions,
                                                        maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
                                                        enableBackgroundItemKeyStoreAndSemanticClassification,
                                                        beforeFileChecked: Event<string>,
                                                        fileChecked: Event<string>,
-                                                       tcConfig: TcConfig,
                                                        initialState: TypeCheckAccumulatorState,
                                                        prevTcAcc: TypeCheckAccumulator option,
                                                        input,
@@ -1077,9 +1076,6 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (
                                                        finalTopAttribs: _ option) as this =
 
     let lazyTcState: TcState option ref = ref None
-    let lazyTcImports: TcImports option ref = ref None
-    let lazyTcGlobals: TcGlobals option ref = ref None
-    let lazyTcConfig: TcConfig option ref = ref None
     let lazyTcEnvAtEndOfFile: TcEnv option ref = ref None
     let lazyTcResolutionsRev: TcResolutions list option ref = ref None
     let lazyTcSymbolUsesRev: TcSymbolUses list option ref = ref None
@@ -1122,12 +1118,15 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (
 
     member this.Next(tcAcc: TypeCheckAccumulator, input) =
         TypeCheckAccumulator(
+            tcConfig,
+            tcGlobals,
+            tcImports,
             keepAssemblyContents, 
             keepAllBackgroundResolutions, 
             maxTimeShareMilliseconds, 
             keepAllBackgroundSymbolUses, 
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            beforeFileChecked, fileChecked, tcConfig, initialState, Some tcAcc, input, None, None)
+            beforeFileChecked, fileChecked, initialState, Some tcAcc, input, None, None)
 
     member this.Finish(_finalTcErrorsRev, _finalTopAttribs) =
         this
@@ -1144,14 +1143,11 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (
     member this.tcState =
         eval initialState.tcState lazyTcState true
 
-    member _.tcImports =
-        eval initialState.tcImports lazyTcImports true
+    member _.tcImports = tcImports
 
-    member _.tcGlobals =
-        eval initialState.tcGlobals lazyTcGlobals true
+    member _.tcGlobals = tcGlobals
 
-    member _.tcConfig =
-        eval initialState.tcConfig lazyTcConfig true
+    member _.tcConfig = tcConfig
 
     member _.tcEnvAtEndOfFile =
         eval initialState.tcEnvAtEndOfFile lazyTcEnvAtEndOfFile true
@@ -1203,16 +1199,11 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (
                 let fullComputation = 
                     eventually {
                         beforeFileChecked.Trigger filename
-                        let! tcImports = tcAcc.tcImports
-                        let! tcGlobals = tcAcc.tcGlobals
                         let! tcModuleNamesDict = tcAcc.tcModuleNamesDict
                         let! tcState = tcAcc.tcState
                         let! tcErrorsRev = tcAcc.tcErrorsRev
 
                         lazyTcState := Some tcState
-                        lazyTcGlobals := Some tcGlobals
-                        lazyTcImports := Some tcImports
-                        lazyTcConfig := Some tcConfig
 
                         ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
                         let sink = TcResultsSinkImpl(tcGlobals)
@@ -1369,9 +1360,9 @@ type PartialCheckResults private (tcAcc: TypeCheckAccumulator, timeStamp: DateTi
             | _ -> defaultState
 
     member _.TcState = tcAcc.tcState |> eval tcAcc.InitialState.tcState
-    member _.TcImports = tcAcc.tcImports |> eval tcAcc.InitialState.tcImports
-    member _.TcGlobals = tcAcc.tcGlobals |> eval tcAcc.InitialState.tcGlobals
-    member _.TcConfig = tcAcc.tcConfig |> eval tcAcc.InitialState.tcConfig
+    member _.TcImports = tcAcc.tcImports
+    member _.TcGlobals = tcAcc.tcGlobals
+    member _.TcConfig = tcAcc.tcConfig
     member _.TcEnvAtEnd = tcAcc.tcEnvAtEndOfFile |> eval tcAcc.InitialState.tcEnvAtEndOfFile
 
     /// Kept in a stack so that each incremental update shares storage with previous files
@@ -1594,10 +1585,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
         let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
         let tcAcc = 
-            { tcGlobals=tcGlobals
-              tcImports=tcImports
+            {
               tcState=tcState
-              tcConfig=tcConfig
               tcEnvAtEndOfFile=tcInitial
               tcResolutionsRev=[]
               tcSymbolUsesRev=[]
@@ -1612,12 +1601,15 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               semanticClassification = [||] }   
         return 
             TypeCheckAccumulator(
+                tcConfig,
+                tcGlobals,
+                tcImports,
                 keepAssemblyContents, 
                 keepAllBackgroundResolutions, 
                 maxTimeShareMilliseconds, 
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
-                beforeFileChecked, fileChecked, tcConfig, tcAcc, None, (None, range0, String.Empty, [||]), None, None) }
+                beforeFileChecked, fileChecked, tcAcc, None, (None, range0, String.Empty, [||]), None, None) }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
     ///
