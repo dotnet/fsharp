@@ -47,7 +47,7 @@ module internal IncrementalBuilderEventTesting =
 type internal PartialCheckResults = 
     
       /// This field is None if a major unrecovered error occurred when preparing the initial state
-    member TcState : TcState
+    member TcState : Async<TcState option>
 
     member TcImports: TcImports 
 
@@ -56,47 +56,47 @@ type internal PartialCheckResults =
     member TcConfig: TcConfig 
 
       /// This field is None if a major unrecovered error occurred when preparing the initial state
-    member TcEnvAtEnd : TypeChecker.TcEnv
+    member TcEnvAtEnd : Async<TypeChecker.TcEnv option>
 
       /// Represents the collected errors from type checking
-    member TcErrorsRev : (PhasedDiagnostic * FSharpErrorSeverity)[] list 
+    member TcErrorsRev : Async<(PhasedDiagnostic * FSharpErrorSeverity)[] list option>
 
       /// Represents the collected name resolutions from type checking
-    member TcResolutionsRev: TcResolutions list 
+    member TcResolutionsRev: Async<TcResolutions list option>
 
       /// Represents the collected uses of symbols from type checking
-    member TcSymbolUsesRev: TcSymbolUses list 
+    member TcSymbolUsesRev: Async<TcSymbolUses list option>
 
       /// Represents open declarations
-    member TcOpenDeclarationsRev: OpenDeclaration[] list
+    member TcOpenDeclarationsRev: Async<OpenDeclaration[] list option>
 
       /// Disambiguation table for module names
-    member ModuleNamesDict: ModuleNamesDict
+    member ModuleNamesDict: Async<ModuleNamesDict option>
 
     member TcDependencyFiles: string list
 
       /// Represents the collected attributes to apply to the module of assembly generates
-    member TopAttribs: TypeChecker.TopAttribs option
+    member TopAttribs: Async<TypeChecker.TopAttribs option option>
 
     member TimeStamp: DateTime 
       
       /// Represents latest complete typechecked implementation file, including its typechecked signature if any.
       /// Empty for a signature file.
-    member LatestImplementationFile: TypedImplFile option 
+    member LatestImplementationFile: Async<TypedImplFile option option>
       
       /// Represents latest inferred signature contents.
-    member LatestCcuSigForFile: ModuleOrNamespaceType option
+    member LatestCcuSigForFile: Async<ModuleOrNamespaceType option option>
       
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
-    member ItemKeyStore: ItemKeyStore option
+    member ItemKeyStore: Async<ItemKeyStore option option>
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-    member SemanticClassification: struct (range * SemanticClassificationType) []
+    member SemanticClassification: Async<struct (range * SemanticClassificationType) [] option>
     
 
-    member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+    member TcErrors: Async<(PhasedDiagnostic * FSharpErrorSeverity)[]>
 
-    member TcSymbolUses: TcSymbolUses list
+    member TcSymbolUses: Async<TcSymbolUses list>
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]

@@ -1022,44 +1022,6 @@ module IncrementalBuilderEventTesting =
 
 module Tc = FSharp.Compiler.TypeChecker
 
-
-/// Accumulated results of type checking.
-[<NoEquality; NoComparison>]
-type TypeCheckAccumulatorState =
-    { tcState: TcState
-
-      tcEnvAtEndOfFile: TcEnv
-
-      /// Accumulated resolutions, last file first
-      tcResolutionsRev: TcResolutions list
-
-      /// Accumulated symbol uses, last file first
-      tcSymbolUsesRev: TcSymbolUses list
-
-      /// Accumulated 'open' declarations, last file first
-      tcOpenDeclarationsRev: OpenDeclaration[] list
-
-      topAttribs: TopAttribs option
-
-      /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
-
-      latestCcuSigForFile: ModuleOrNamespaceType option
-
-      tcDependencyFiles: string list
-
-      /// Disambiguation table for module names
-      tcModuleNamesDict: ModuleNamesDict
-
-      /// Accumulated errors, last file first
-      tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
-      
-      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
-      itemKeyStore: ItemKeyStore option
-      
-      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) [] }
-
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
 type TypeCheckAccumulatorMinimumState =
@@ -1082,7 +1044,7 @@ type TypeCheckAccumulatorMinimumState =
 [<NoEquality; NoComparison>]
 type TypeCheckAccumulatorFullState =
     {
-      tcAccMin: TypeCheckAccumulatorMinimumState
+      tcAccMinState: TypeCheckAccumulatorMinimumState
 
       /// Accumulated resolutions, last file first
       tcResolutionsRev: TcResolutions list
@@ -1104,6 +1066,17 @@ type TypeCheckAccumulatorFullState =
     }
 
 /// Accumulated results of type checking.
+[<NoEquality; NoComparison>]
+type TypeCheckAccumulatorState =
+    | MinimumState of TypeCheckAccumulatorMinimumState
+    | FullState of TypeCheckAccumulatorFullState
+
+    member this.Minimum =
+        match this with
+        | MinimumState tcAccMinState -> tcAccMinState
+        | FullState tcAccFullState -> tcAccFullState.tcAccMinState
+
+/// Accumulated results of type checking.
 and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                                        tcGlobals: TcGlobals,
                                                        tcImports: TcImports,
@@ -1113,65 +1086,42 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                                        enableBackgroundItemKeyStoreAndSemanticClassification,
                                                        beforeFileChecked: Event<string>,
                                                        fileChecked: Event<string>,
-                                                       initialState: TypeCheckAccumulatorState,
-                                                       prevTcAcc: TypeCheckAccumulator option,
-                                                       input,
-                                                       finalErrorsRev: _ option,
-                                                       finalTopAttribs: _ option) as this =
+                                                       prevTcMinAccState: TypeCheckAccumulatorMinimumState,
+                                                       prevTcFullAccState: Lazy<Eventually<TypeCheckAccumulatorFullState option>>,
+                                                       input) as this =
 
-    let lazyTcState: TcState option ref = ref None
-    let lazyTcEnvAtEndOfFile: TcEnv option ref = ref None
-    let lazyTcResolutionsRev: TcResolutions list option ref = ref None
-    let lazyTcSymbolUsesRev: TcSymbolUses list option ref = ref None
-    let lazyTcOpenDeclarationsRev: OpenDeclaration[] list option ref = ref None
-    let lazyTopAttribs: TopAttribs option option ref = ref None
-    let lazyLatestImplFile: TypedImplFile option option ref = ref None
-    let lazyLatestCcuSigForFile: ModuleOrNamespaceType option option ref = ref None
-    let lazyTcDependencyFiles: string list option ref = ref None
-    let lazyTcModuleNamesDict: ModuleNamesDict option ref = ref None
-    let lazyTcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list option ref = ref None
-    let lazyItemKeyStore: ItemKeyStore option option ref = ref None
-    let lazySemanticClassification: struct (range * SemanticClassificationType) [] option ref = ref None
+    let lazyTcAccState: TypeCheckAccumulatorState option ref = ref None
 
-    let mutable isFullyChecked: bool option = None
-
-    let eval (initialItem: 'T) (lazyItem: 'T option ref) (quickCheck: bool) =
-        let mustCheck =
-            match isFullyChecked, quickCheck with
-            | None, _ ->
-                isFullyChecked <- Some(not quickCheck)
-                true
-            | Some false, true -> false
-            | Some false, false ->
-                isFullyChecked <- Some true
-                true
-            | Some true, _ -> true
-
-        if mustCheck then
-            lazyItem := None
-
-        match !lazyItem with
-        | Some item -> item |> Eventually.Done
+    member this.GetState(quickCheck: bool) =
+        match !lazyTcAccState with
+        | Some tcAccState -> tcAccState |> Eventually.Done
         | _ -> 
             eventually {
-                do! this.TypeCheck(quickCheck)
-                match !lazyItem with
-                | Some item -> return item
-                | _ -> return initialItem
+                let! tcAccState = this.TypeCheck(quickCheck)
+                lazyTcAccState := Some tcAccState
+                return tcAccState
             }
 
-    member this.Next(tcAcc: TypeCheckAccumulator, input) =
-        TypeCheckAccumulator(
-            tcConfig,
-            tcGlobals,
-            tcImports,
-            tcDependencyFiles,
-            keepAssemblyContents, 
-            keepAllBackgroundResolutions, 
-            maxTimeShareMilliseconds, 
-            keepAllBackgroundSymbolUses, 
-            enableBackgroundItemKeyStoreAndSemanticClassification,
-            beforeFileChecked, fileChecked, initialState, Some tcAcc, input, None, None)
+    member this.Next(input) =
+        eventually {
+            let! state = this.GetState(false)
+            let fullStateOpt =
+                match state with
+                | FullState fullState -> Some fullState
+                | _ -> None
+            return
+                TypeCheckAccumulator(
+                    tcConfig,
+                    tcGlobals,
+                    tcImports,
+                    tcDependencyFiles,
+                    keepAssemblyContents, 
+                    keepAllBackgroundResolutions, 
+                    maxTimeShareMilliseconds, 
+                    keepAllBackgroundSymbolUses, 
+                    enableBackgroundItemKeyStoreAndSemanticClassification,
+                    beforeFileChecked, fileChecked, state.Minimum, lazy Eventually.Done(fullStateOpt), input)
+        }
 
     member this.Finish(_finalTcErrorsRev, _finalTopAttribs) =
         this
@@ -1183,10 +1133,11 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
         //    enableBackgroundItemKeyStoreAndSemanticClassification,
         //    beforeFileChecked, fileChecked, tcConfig, initialState, None, input, Some finalTcErrorsRev, Some finalTopAttribs)
 
-    member this.InitialState = initialState
-
     member this.tcState =
-        eval initialState.tcState lazyTcState true
+        eventually {
+            let! state = this.GetState(true)
+            return state.Minimum.tcState
+        }
 
     member _.tcImports = tcImports
 
@@ -1195,58 +1146,99 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
     member _.tcConfig = tcConfig
 
     member _.tcEnvAtEndOfFile =
-        eval initialState.tcEnvAtEndOfFile lazyTcEnvAtEndOfFile true
+        eventually {
+            let! state = this.GetState(true)
+            return state.Minimum.tcEnvAtEndOfFile
+        }
 
     member _.tcResolutionsRev =
-        eval initialState.tcResolutionsRev lazyTcResolutionsRev false
+        eventually {
+            match! this.GetState(false) with
+            | FullState state -> return state.tcResolutionsRev
+            | _ -> return []
+        }
 
     member _.tcSymbolUsesRev =
-        eval initialState.tcSymbolUsesRev lazyTcSymbolUsesRev false
+        eventually {
+            match! this.GetState(false) with
+            | FullState state -> return state.tcSymbolUsesRev
+            | _ -> return []
+        }
 
     member _.tcOpenDeclarationsRev =
-        eval initialState.tcOpenDeclarationsRev lazyTcOpenDeclarationsRev false
+        eventually {
+            match! this.GetState(false) with
+            | FullState state -> return state.tcOpenDeclarationsRev
+            | _ -> return []
+        }
 
     member _.topAttribs =
-        match finalTopAttribs with
-        | Some topAttribs -> Eventually.Done topAttribs
-        | _ -> eval initialState.topAttribs lazyTopAttribs true
+        eventually {
+            let! state = this.GetState(true)
+            return state.Minimum.topAttribs
+        }
 
     member _.latestImplFile =
-        eval initialState.latestImplFile lazyLatestImplFile false
+        eventually {
+            match! this.GetState(false) with
+            | FullState state -> return state.latestImplFile
+            | _ -> return None
+        }
 
     member _.latestCcuSigForFile =
-        eval initialState.latestCcuSigForFile lazyLatestCcuSigForFile true
+        eventually {
+            let! state = this.GetState(true)
+            return state.Minimum.latestCcuSigForFile
+        }
 
     member _.tcDependencyFiles =
-        eval initialState.tcDependencyFiles lazyTcDependencyFiles true
+        tcDependencyFiles
 
     member _.tcModuleNamesDict =
-        eval initialState.tcModuleNamesDict lazyTcModuleNamesDict true
+        eventually {
+            let! state = this.GetState(true)
+            return state.Minimum.tcModuleNamesDict
+        }
 
     member _.tcErrorsRev =
-        match finalErrorsRev with
-        | Some errorsRev -> Eventually.Done errorsRev
-        | _ -> eval initialState.tcErrorsRev lazyTcErrorsRev true
+        eventually {
+            let! state = this.GetState(true)
+            return state.Minimum.tcErrorsRev
+        }
 
     member _.itemKeyStore =
-        eval initialState.itemKeyStore lazyItemKeyStore false
+        eventually {
+            match! this.GetState(false) with
+            | FullState state -> return state.itemKeyStore
+            | _ -> return None
+        }
 
     member _.semanticClassification =
-        eval initialState.semanticClassification lazySemanticClassification false
-
-    member this.TypeCheck (quickCheck: bool) =  
         eventually {
-            match prevTcAcc, input with 
-            | Some tcAcc, (Some input, _sourceRange, filename, parseErrors) ->
+            match! this.GetState(false) with
+            | FullState state -> return state.semanticClassification
+            | _ -> return [||]
+        }
+
+    member _.TypeCheck (quickCheck: bool) =  
+        match quickCheck, !lazyTcAccState with
+        | true, Some (MinimumState _ as state)
+        | true, Some (FullState _ as state) -> state |> Eventually.Done
+        | false, Some (FullState _ as state) -> state |> Eventually.Done
+        | _ ->
+
+        eventually {
+            match input with 
+            | Some input, _sourceRange, filename, parseErrors ->
                 IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
                 let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions)
                 let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, capturingErrorLogger)
                 let fullComputation = 
                     eventually {
                         beforeFileChecked.Trigger filename
-                        let! tcModuleNamesDict = tcAcc.tcModuleNamesDict
-                        let! tcState = tcAcc.tcState
-                        let! tcErrorsRev = tcAcc.tcErrorsRev
+                        let tcModuleNamesDict = prevTcMinAccState.tcModuleNamesDict
+                        let tcState = prevTcMinAccState.tcState
+                        let tcErrorsRev = prevTcMinAccState.tcErrorsRev
 
                         ApplyMetaCommandsFromInputToTcConfig (tcConfig, input, Path.GetDirectoryName filename, tcImports.DependencyProvider) |> ignore
                         let sink = TcResultsSinkImpl(tcGlobals)
@@ -1264,52 +1256,67 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                     tcState, input,
                                     quickCheck)
                         Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
-                                
-                        /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                        if not quickCheck then
-                            let! tcResolutionsRev = tcAcc.tcResolutionsRev
-                            let! tcSymbolUsesRev = tcAcc.tcSymbolUsesRev
-                            lazyLatestImplFile := Some(if keepAssemblyContents then implFile else None)
-                            lazyTcResolutionsRev := Some((if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: tcResolutionsRev)
-                            lazyTcEnvAtEndOfFile := Some(if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
-                            lazyTcSymbolUsesRev := Some((if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: tcSymbolUsesRev)
-                            
-                            // Build symbol keys
-                            let itemKeyStore, semanticClassification =
-                                if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                    Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                    let sResolutions = sink.GetResolutions()
-                                    let builder = ItemKeyStoreBuilder()
-                                    let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
-                                                                        member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Range.posEq s1 s2 && Range.posEq e1 e2
-                                                                        member _.GetHashCode o = o.GetHashCode() })
-                                    sResolutions.CapturedNameResolutions
-                                    |> Seq.iter (fun cnr ->
-                                        let r = cnr.Range
-                                        if preventDuplicates.Add struct(r.Start, r.End) then
-                                            builder.Write(cnr.Range, cnr.Item))
-
-                                    let res = builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
-                                    Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
-                                    res
-                                else
-                                    None, [||]
-
-                            lazyItemKeyStore := Some(itemKeyStore)
-                            lazySemanticClassification := Some(semanticClassification)
 
                         fileChecked.Trigger filename
                         let newErrors = Array.append parseErrors (capturingErrorLogger.GetErrors())
 
-                        lazyTcModuleNamesDict := Some moduleNamesDict
-                        lazyTopAttribs := Some(Some topAttribs)
-                        lazyLatestCcuSigForFile := Some(Some ccuSigForFile)
-                        lazyTcErrorsRev := Some(newErrors :: tcErrorsRev)
-                        lazyTcState := Some(tcState)
+                        let tcEnvAtEndOfFile = if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls
 
-                        if not quickCheck then
-                            let! tcOpenDeclarationsRev = tcAcc.tcOpenDeclarationsRev
-                            lazyTcOpenDeclarationsRev := Some(sink.GetOpenDeclarations() :: tcOpenDeclarationsRev)
+                        let minState =
+                            {
+                                tcState = tcState
+                                tcEnvAtEndOfFile = tcEnvAtEndOfFile
+                                tcModuleNamesDict = moduleNamesDict
+                                latestCcuSigForFile = Some ccuSigForFile
+                                tcErrorsRev = newErrors :: tcErrorsRev
+                                topAttribs = Some topAttribs
+                            }
+
+                        if quickCheck then
+                            return MinimumState minState
+                        else
+                            match! prevTcFullAccState.Value with
+                            | None -> return MinimumState minState
+                            | Some fullState ->
+                                /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
+                                let tcResolutionsRev = fullState.tcResolutionsRev
+                                let tcSymbolUsesRev = fullState.tcSymbolUsesRev
+                                let tcOpenDeclarationsRev = fullState.tcOpenDeclarationsRev
+                            
+                                // Build symbol keys
+                                let itemKeyStore, semanticClassification =
+                                    if enableBackgroundItemKeyStoreAndSemanticClassification then
+                                        Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                        let sResolutions = sink.GetResolutions()
+                                        let builder = ItemKeyStoreBuilder()
+                                        let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
+                                                                            member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Range.posEq s1 s2 && Range.posEq e1 e2
+                                                                            member _.GetHashCode o = o.GetHashCode() })
+                                        sResolutions.CapturedNameResolutions
+                                        |> Seq.iter (fun cnr ->
+                                            let r = cnr.Range
+                                            if preventDuplicates.Add struct(r.Start, r.End) then
+                                                builder.Write(cnr.Range, cnr.Item))
+
+                                        let res = builder.TryBuildAndReset(), sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None)
+                                        Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                        res
+                                    else
+                                        None, [||]
+
+                                return
+                                    {
+                                        tcAccMinState = minState
+
+                                        latestImplFile = if keepAssemblyContents then implFile else None
+                                        tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: tcResolutionsRev
+                                        tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: tcSymbolUsesRev
+                                        tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcOpenDeclarationsRev
+                                        itemKeyStore = itemKeyStore
+                                        semanticClassification = semanticClassification
+                                    }
+                                    |> FullState
+              
                     }
                             
                 // Run part of the Eventually<_> computation until a timeout is reached. If not complete, 
@@ -1325,9 +1332,9 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                 // Reinstall the compilation globals each time we start or restart
                                 use unwind = new CompilationGlobalsScope (errorLogger, BuildPhase.TypeCheck) 
                                 f ctok)
-                do! timeSlicedComputation
+                return! timeSlicedComputation
             | _ -> 
-                ()
+                return MinimumState prevTcMinAccState
         }
       
 /// Global service state
@@ -1393,51 +1400,63 @@ type FrameworkImportsCache(keepStrongly) =
 [<Sealed>]
 type PartialCheckResults private (tcAcc: TypeCheckAccumulator, timeStamp: DateTime, thread: ICompilationThread) = 
 
-    let eval (defaultState: 'T) (work: Eventually<'T>) =
+    let eval (work: Eventually<'T>) =
         match work with
-        | Eventually.Done res -> res
-        | _ -> 
-            match thread.RunEventually work with
-            | Some res -> res
-            | _ -> defaultState
+        | Eventually.Done res -> async { return Some res }
+        | _ -> thread.RunEventually work
 
-    member _.TcState = tcAcc.tcState |> eval tcAcc.InitialState.tcState
+    member _.TcState = tcAcc.tcState |> eval
     member _.TcImports = tcAcc.tcImports
     member _.TcGlobals = tcAcc.tcGlobals
     member _.TcConfig = tcAcc.tcConfig
-    member _.TcEnvAtEnd = tcAcc.tcEnvAtEndOfFile |> eval tcAcc.InitialState.tcEnvAtEndOfFile
+    member _.TcEnvAtEnd = tcAcc.tcEnvAtEndOfFile |> eval
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcErrorsRev = tcAcc.tcErrorsRev |> eval tcAcc.InitialState.tcErrorsRev
+    member _.TcErrorsRev = tcAcc.tcErrorsRev |> eval
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcResolutionsRev = tcAcc.tcResolutionsRev |> eval tcAcc.InitialState.tcResolutionsRev
+    member _.TcResolutionsRev = tcAcc.tcResolutionsRev |> eval
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcSymbolUsesRev = tcAcc.tcSymbolUsesRev |> eval tcAcc.InitialState.tcSymbolUsesRev
+    member _.TcSymbolUsesRev = tcAcc.tcSymbolUsesRev |> eval
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcOpenDeclarationsRev = tcAcc.tcOpenDeclarationsRev |> eval tcAcc.InitialState.tcOpenDeclarationsRev
+    member _.TcOpenDeclarationsRev = tcAcc.tcOpenDeclarationsRev |> eval
 
     /// Disambiguation table for module names
-    member _.ModuleNamesDict = tcAcc.tcModuleNamesDict |> eval tcAcc.InitialState.tcModuleNamesDict
+    member _.ModuleNamesDict = tcAcc.tcModuleNamesDict |> eval
 
-    member _.TcDependencyFiles = tcAcc.tcDependencyFiles |> eval tcAcc.InitialState.tcDependencyFiles
+    member _.TcDependencyFiles = tcAcc.tcDependencyFiles
 
-    member _.TopAttribs = tcAcc.topAttribs |> eval tcAcc.InitialState.topAttribs
+    member _.TopAttribs = tcAcc.topAttribs |> eval
 
     member _.TimeStamp = timeStamp
     
-    member _.LatestImplementationFile = tcAcc.latestImplFile |> eval tcAcc.InitialState.latestImplFile
+    member _.LatestImplementationFile = tcAcc.latestImplFile |> eval
 
-    member _.LatestCcuSigForFile = tcAcc.latestCcuSigForFile |> eval tcAcc.InitialState.latestCcuSigForFile
+    member _.LatestCcuSigForFile = tcAcc.latestCcuSigForFile |> eval
 
-    member _.ItemKeyStore = tcAcc.itemKeyStore |> eval tcAcc.InitialState.itemKeyStore
+    member _.ItemKeyStore = tcAcc.itemKeyStore |> eval
 
-    member _.SemanticClassification = tcAcc.semanticClassification |> eval tcAcc.InitialState.semanticClassification
+    member _.SemanticClassification = tcAcc.semanticClassification |> eval
 
-    member x.TcErrors  = Array.concat (List.rev x.TcErrorsRev)
-    member x.TcSymbolUses  = List.rev x.TcSymbolUsesRev
+    member x.TcErrors  = 
+        async {
+            match! x.TcErrorsRev with
+            | Some tcErrorsRev ->
+                return Array.concat (List.rev tcErrorsRev)
+            | _ ->
+                return [||]
+        }
+
+    member x.TcSymbolUses = 
+        async {
+            match! x.TcSymbolUsesRev with
+            | Some tcSymbolUsesRev ->
+                return List.rev tcSymbolUsesRev
+            | _ ->
+                return []
+        }
 
     static member Create (tcAcc: TypeCheckAccumulator, timestamp, thread) = 
         PartialCheckResults(tcAcc, timestamp, thread)
@@ -1626,21 +1645,25 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
         let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
-        let tcAcc = 
+        let tcAccMinState = 
             {
               tcState=tcState
               tcEnvAtEndOfFile=tcInitial
-              tcResolutionsRev=[]
-              tcSymbolUsesRev=[]
-              tcOpenDeclarationsRev=[]
               topAttribs=None
-              latestImplFile=None
               latestCcuSigForFile=None
-              tcDependencyFiles=basicDependencies
               tcErrorsRev = [ initialErrors ] 
               tcModuleNamesDict = Map.empty
-              itemKeyStore = None
-              semanticClassification = [||] }   
+            }
+        let tcAccFullState =
+            {
+                tcAccMinState = tcAccMinState
+                tcResolutionsRev=[]
+                tcSymbolUsesRev=[]
+                tcOpenDeclarationsRev=[]
+                latestImplFile=None
+                itemKeyStore = None
+                semanticClassification = [||] 
+            }
         return 
             TypeCheckAccumulator(
                 tcConfig,
@@ -1652,15 +1675,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 maxTimeShareMilliseconds, 
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
-                beforeFileChecked, fileChecked, tcAcc, None, (None, range0, String.Empty, [||]), None, None) }
+                beforeFileChecked, fileChecked, tcAccMinState, lazy Eventually.Done (Some tcAccFullState), (None, range0, String.Empty, [||])) }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
     ///
     /// Type check all files.     
     let TypeCheckTask ctok (tcAcc: TypeCheckAccumulator) input: Eventually<TypeCheckAccumulator> =
-        RequireCompilationThread ctok
-        Eventually.Done(tcAcc.Next(tcAcc, input))
-
+        eventually {
+            RequireCompilationThread ctok
+            return! tcAcc.Next(input)
+        }
 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
     ///
@@ -2017,19 +2041,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 work ctok
                             )
                         member __.RunEventually work =
-                            let workAsync =
-                                work
-                                |> Eventually.forceAsync  
-                                    (fun work ->
-                                        Reactor.Singleton.EnqueueAndAwaitOpAsync("Unknown", "ICompilationThread.RunEventually", "work", 
-                                            fun ctok -> cancellable.Return(work ctok)
-                                                ))
-
-                            let res =
-                                workAsync
-                                |> Async.RunSynchronously
-
-                            res
+                            work
+                            |> Eventually.forceAsync  
+                                (fun work ->
+                                    Reactor.Singleton.EnqueueAndAwaitOpAsync("Unknown", "ICompilationThread.RunEventually", "work", 
+                                        fun ctok -> cancellable.Return(work ctok)
+                                            ))
                     }
 
                 tcConfigB, sourceFilesNew
