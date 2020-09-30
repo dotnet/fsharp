@@ -209,6 +209,16 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, a
         exiter.Exit 1
 
 /// Check for .fsx and, if present, compute the load closure for of #loaded files.
+///
+/// This is the "script compilation" feature that has always been present in the F# compiler, that allows you to compile scripts
+/// and get the load closure and references from them. This applies even if the script is in a project (with 'Compile' action), for example.
+///
+/// Any DLL references implied by package references are also retrieved from the script.
+///
+/// When script compilation is invoked, the outputs are not necessarily a functioning application - the referenced DLLs are not
+/// copied to the output folder, for example (except perhaps FSharp.Core.dll).
+///
+/// NOTE: there is similar code in IncrementalBuilder.fs and this code should really be reconciled with that
 let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, defaultToDotNetFramework, commandLineSourceFiles, dependencyProvider) =
 
     let combineFilePath file =
@@ -223,13 +233,6 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, defaultToDotNetFram
         |> List.map combineFilePath
         
     // Script compilation is active if the last item being compiled is a script and --noframework has not been specified
-    let isScriptCompilation = 
-        let lastIsScript =
-            match List.tryLast commandLineSourceFiles with 
-            | Some f -> IsScript f
-            | _ -> false
-        lastIsScript && tcConfigB.framework
-
     let mutable allSources = []       
     
     let AddIfNotPresent(filename: string) =
@@ -237,11 +240,10 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, defaultToDotNetFram
             allSources <- filename :: allSources
     
     let AppendClosureInformation filename =
-        if isScriptCompilation && IsScript filename then 
+        if IsScript filename then 
 
-            // Pre-infer the target framework from the script
-            let sourceText = File.ReadAllText filename
-            let source = SourceText.ofString sourceText
+            // Get the source to infer the target framework from any #targetfx declarations in the script
+            let source = SourceText.ofString (File.ReadAllText filename)
 
             // Do we assume .NET Framework references for scripts? In the absence of either explicit argument
             // or an explicit #targetfx declaration, then for compilation and analysis the default
@@ -256,16 +258,32 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, defaultToDotNetFram
                     (fun _ -> ()), defaultToDotNetFramework, 
                     tcConfigB.tryGetMetadataSnapshot, tcConfigB.reduceMemoryUsage, dependencyProvider)
 
-            // Record the references from the analysis of the script.
-            let references = loadClosure.References |> List.collect snd
+            // Record the new references (non-framework) references from the analysis of the script. (The full resolutions are recorded
+            // as the corresponding #I paths used to resolve them are local to the scripts and not added to the tcConfigB - they are
+            // added to localized clones of the tcConfigB).
+            let references =
+                loadClosure.References
+                |> List.collect snd
+                |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
+
+            // Also record the other declarations from the script.
             loadClosure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
             loadClosure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             loadClosure.AllRootFileDiagnostics |> List.iter diagnosticSink
-            tcConfigB.inferredTargetFrameworkForScripts <- Some loadClosure.InferredTargetFramework
-            tcConfigB.primaryAssembly <- loadClosure.InferredTargetFramework.InferredFramework.PrimaryAssembly
-            tcConfigB.fxResolver <- FxResolver(tcConfigB.reduceMemoryUsage, tcConfigB.tryGetMetadataSnapshot, Some loadClosure.InferredTargetFramework.UseDotNetFramework)
+
+            // If there was an explicit #targetfx in the script then push that as a requirement into the overall compilation and add all the framework references implied
+            // by the script too.
+            match loadClosure.InferredTargetFramework.WhereInferred with
+            | Some m ->
+                tcConfigB.CheckExplicitFrameworkDirective(loadClosure.InferredTargetFramework.InferredFramework, m)
+                tcConfigB.primaryAssembly <- loadClosure.InferredTargetFramework.InferredFramework.PrimaryAssembly
+                tcConfigB.fxResolver <- FxResolver(tcConfigB.reduceMemoryUsage, tcConfigB.tryGetMetadataSnapshot, Some loadClosure.InferredTargetFramework.UseDotNetFramework)
+                if tcConfigB.framework then
+                    let references = loadClosure.References |> List.collect snd
+                    references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
+            | None -> ()
             
         else AddIfNotPresent filename
          
