@@ -1139,11 +1139,12 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
         eventually {
             let! state = this.GetState(true)
 
+            let minState = { state.Minimum with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
             let lazyFullState =
                 eventually {
                     let! state = this.GetState(false)
                     match state with
-                    | FullState fullState -> return Some fullState
+                    | FullState fullState -> return Some { fullState with tcAccMinState = minState }
                     | _ -> return None
                 }
 
@@ -1158,7 +1159,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    beforeFileChecked, fileChecked, { state.Minimum with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }, lazyFullState, input)
+                    beforeFileChecked, fileChecked, minState, lazyFullState, input)
         }
 
     member this.tcState =
