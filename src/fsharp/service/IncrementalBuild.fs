@@ -1044,8 +1044,6 @@ type TypeCheckAccumulatorMinimumState =
 [<NoEquality; NoComparison>]
 type TypeCheckAccumulatorFullState =
     {
-      tcAccMinState: TypeCheckAccumulatorMinimumState
-
       /// Accumulated resolutions, last file first
       tcResolutionsRev: TcResolutions list
 
@@ -1069,12 +1067,12 @@ type TypeCheckAccumulatorFullState =
 [<NoEquality; NoComparison>]
 type TypeCheckAccumulatorState =
     | MinimumState of TypeCheckAccumulatorMinimumState
-    | FullState of TypeCheckAccumulatorFullState
+    | FullState of TypeCheckAccumulatorMinimumState * TypeCheckAccumulatorFullState
 
     member this.Minimum =
         match this with
         | MinimumState tcAccMinState -> tcAccMinState
-        | FullState tcAccFullState -> tcAccFullState.tcAccMinState
+        | FullState(tcAccMinState, _) -> tcAccMinState
 
 /// Accumulated results of type checking.
 and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
@@ -1113,12 +1111,12 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
 
     member this.Next(input) =
         eventually {
-            let! state = this.GetState(true)
-            let lazyFullState =
+            let! prevState = this.GetState(true)
+            let lazyPrevFullState =
                 eventually {
-                    let! state = this.GetState(false)
-                    match state with
-                    | FullState fullState -> return Some fullState
+                    let! prevState = this.GetState(false)
+                    match prevState with
+                    | FullState(_, prevFullState) -> return Some prevFullState
                     | _ -> return None
                 }
             return
@@ -1132,19 +1130,19 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    beforeFileChecked, fileChecked, state.Minimum, lazyFullState, input)
+                    beforeFileChecked, fileChecked, prevState.Minimum, lazyPrevFullState, input)
         }
 
     member this.Finish(finalTcErrorsRev, finalTopAttribs) =
         eventually {
-            let! state = this.GetState(true)
+            let! prevState = this.GetState(true)
 
-            let minState = { state.Minimum with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
-            let lazyFullState =
+            let prevMinState = { prevState.Minimum with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
+            let lazyPrevFullState =
                 eventually {
-                    let! state = this.GetState(false)
-                    match state with
-                    | FullState fullState -> return Some { fullState with tcAccMinState = minState }
+                    let! prevState = this.GetState(false)
+                    match prevState with
+                    | FullState (_, prevFullState) -> return Some prevFullState
                     | _ -> return None
                 }
 
@@ -1159,7 +1157,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    beforeFileChecked, fileChecked, minState, lazyFullState, input)
+                    beforeFileChecked, fileChecked, prevMinState, lazyPrevFullState, input)
         }
 
     member this.tcState =
@@ -1183,21 +1181,21 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
     member _.tcResolutionsRev =
         eventually {
             match! this.GetState(false) with
-            | FullState state -> return state.tcResolutionsRev
+            | FullState(_, state) -> return state.tcResolutionsRev
             | _ -> return []
         }
 
     member _.tcSymbolUsesRev =
         eventually {
             match! this.GetState(false) with
-            | FullState state -> return state.tcSymbolUsesRev
+            | FullState(_, state) -> return state.tcSymbolUsesRev
             | _ -> return []
         }
 
     member _.tcOpenDeclarationsRev =
         eventually {
             match! this.GetState(false) with
-            | FullState state -> return state.tcOpenDeclarationsRev
+            | FullState(_, state) -> return state.tcOpenDeclarationsRev
             | _ -> return []
         }
 
@@ -1210,7 +1208,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
     member _.latestImplFile =
         eventually {
             match! this.GetState(false) with
-            | FullState state -> return state.latestImplFile
+            | FullState(_, state) -> return state.latestImplFile
             | _ -> return None
         }
 
@@ -1238,14 +1236,14 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
     member _.itemKeyStore =
         eventually {
             match! this.GetState(false) with
-            | FullState state -> return state.itemKeyStore
+            | FullState(_, state) -> return state.itemKeyStore
             | _ -> return None
         }
 
     member _.semanticClassification =
         eventually {
             match! this.GetState(false) with
-            | FullState state -> return state.semanticClassification
+            | FullState(_, state) -> return state.semanticClassification
             | _ -> return [||]
         }
 
@@ -1306,11 +1304,11 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                         else
                             match! prevTcFullAccState with
                             | None -> return MinimumState minState
-                            | Some fullState ->
+                            | Some prevFullState ->
                                 /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                                let tcResolutionsRev = fullState.tcResolutionsRev
-                                let tcSymbolUsesRev = fullState.tcSymbolUsesRev
-                                let tcOpenDeclarationsRev = fullState.tcOpenDeclarationsRev
+                                let tcResolutionsRev = prevFullState.tcResolutionsRev
+                                let tcSymbolUsesRev = prevFullState.tcSymbolUsesRev
+                                let tcOpenDeclarationsRev = prevFullState.tcOpenDeclarationsRev
                             
                                 // Build symbol keys
                                 let itemKeyStore, semanticClassification =
@@ -1335,8 +1333,6 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
 
                                 return
                                     {
-                                        tcAccMinState = minState
-
                                         latestImplFile = if keepAssemblyContents then implFile else None
                                         tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: tcResolutionsRev
                                         tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: tcSymbolUsesRev
@@ -1675,7 +1671,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             }
         let tcAccFullState =
             {
-                tcAccMinState = tcAccMinState
                 tcResolutionsRev=[]
                 tcSymbolUsesRev=[]
                 tcOpenDeclarationsRev=[]
