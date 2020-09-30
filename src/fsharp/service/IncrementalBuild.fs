@@ -1087,12 +1087,21 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                                        beforeFileChecked: Event<string>,
                                                        fileChecked: Event<string>,
                                                        prevTcMinAccState: TypeCheckAccumulatorMinimumState,
-                                                       prevTcFullAccState: Lazy<Eventually<TypeCheckAccumulatorFullState option>>,
+                                                       prevTcFullAccState: Eventually<TypeCheckAccumulatorFullState option>,
                                                        input) as this =
 
     let lazyTcAccState: TypeCheckAccumulatorState option ref = ref None
 
     member this.GetState(quickCheck: bool) =
+        let mustCheck =
+            match !lazyTcAccState, quickCheck with
+            | None, _ -> true
+            | Some(MinimumState _), false -> true
+            | _ -> false
+
+        if mustCheck then
+            lazyTcAccState := None
+
         match !lazyTcAccState with
         | Some tcAccState -> tcAccState |> Eventually.Done
         | _ -> 
@@ -1104,11 +1113,14 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
 
     member this.Next(input) =
         eventually {
-            let! state = this.GetState(false)
-            let fullStateOpt =
-                match state with
-                | FullState fullState -> Some fullState
-                | _ -> None
+            let! state = this.GetState(true)
+            let lazyFullState =
+                eventually {
+                    let! state = this.GetState(false)
+                    match state with
+                    | FullState fullState -> return Some fullState
+                    | _ -> return None
+                }
             return
                 TypeCheckAccumulator(
                     tcConfig,
@@ -1120,18 +1132,34 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    beforeFileChecked, fileChecked, state.Minimum, lazy Eventually.Done(fullStateOpt), input)
+                    beforeFileChecked, fileChecked, state.Minimum, lazyFullState, input)
         }
 
-    member this.Finish(_finalTcErrorsRev, _finalTopAttribs) =
-        this
-        //TypeCheckAccumulator(
-        //    keepAssemblyContents, 
-        //    keepAllBackgroundResolutions, 
-        //    maxTimeShareMilliseconds, 
-        //    keepAllBackgroundSymbolUses, 
-        //    enableBackgroundItemKeyStoreAndSemanticClassification,
-        //    beforeFileChecked, fileChecked, tcConfig, initialState, None, input, Some finalTcErrorsRev, Some finalTopAttribs)
+    member this.Finish(finalTcErrorsRev, finalTopAttribs) =
+        eventually {
+            let! state = this.GetState(true)
+
+            let lazyFullState =
+                eventually {
+                    let! state = this.GetState(false)
+                    match state with
+                    | FullState fullState -> return Some fullState
+                    | _ -> return None
+                }
+
+            return
+                TypeCheckAccumulator(
+                    tcConfig,
+                    tcGlobals,
+                    tcImports,
+                    tcDependencyFiles,
+                    keepAssemblyContents, 
+                    keepAllBackgroundResolutions, 
+                    maxTimeShareMilliseconds, 
+                    keepAllBackgroundSymbolUses, 
+                    enableBackgroundItemKeyStoreAndSemanticClassification,
+                    beforeFileChecked, fileChecked, { state.Minimum with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }, lazyFullState, input)
+        }
 
     member this.tcState =
         eventually {
@@ -1275,7 +1303,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                         if quickCheck then
                             return MinimumState minState
                         else
-                            match! prevTcFullAccState.Value with
+                            match! prevTcFullAccState with
                             | None -> return MinimumState minState
                             | Some fullState ->
                                 /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
@@ -1398,65 +1426,55 @@ type FrameworkImportsCache(keepStrongly) =
 
 /// Represents the interim state of checking an assembly
 [<Sealed>]
-type PartialCheckResults private (tcAcc: TypeCheckAccumulator, timeStamp: DateTime, thread: ICompilationThread) = 
+type PartialCheckResults private (tcAcc: TypeCheckAccumulator, timeStamp: DateTime, _thread: ICompilationThread) = 
 
-    let eval (work: Eventually<'T>) =
+    let eval ctok (work: Eventually<'T>) =
         match work with
-        | Eventually.Done res -> async { return Some res }
-        | _ -> thread.RunEventually work
+        | Eventually.Done res -> res
+        | _ -> Eventually.force ctok work
 
-    member _.TcState = tcAcc.tcState |> eval
+    member _.TcState ctok = tcAcc.tcState |> eval ctok
     member _.TcImports = tcAcc.tcImports
     member _.TcGlobals = tcAcc.tcGlobals
     member _.TcConfig = tcAcc.tcConfig
-    member _.TcEnvAtEnd = tcAcc.tcEnvAtEndOfFile |> eval
+    member _.TcEnvAtEnd ctok = tcAcc.tcEnvAtEndOfFile |> eval ctok
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcErrorsRev = tcAcc.tcErrorsRev |> eval
+    member _.TcErrorsRev ctok = tcAcc.tcErrorsRev |> eval ctok
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcResolutionsRev = tcAcc.tcResolutionsRev |> eval
+    member _.TcResolutionsRev ctok = tcAcc.tcResolutionsRev |> eval ctok
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcSymbolUsesRev = tcAcc.tcSymbolUsesRev |> eval
+    member _.TcSymbolUsesRev ctok = tcAcc.tcSymbolUsesRev |> eval ctok
 
     /// Kept in a stack so that each incremental update shares storage with previous files
-    member _.TcOpenDeclarationsRev = tcAcc.tcOpenDeclarationsRev |> eval
+    member _.TcOpenDeclarationsRev ctok = tcAcc.tcOpenDeclarationsRev |> eval ctok
 
     /// Disambiguation table for module names
-    member _.ModuleNamesDict = tcAcc.tcModuleNamesDict |> eval
+    member _.ModuleNamesDict ctok = tcAcc.tcModuleNamesDict |> eval ctok
 
     member _.TcDependencyFiles = tcAcc.tcDependencyFiles
 
-    member _.TopAttribs = tcAcc.topAttribs |> eval
+    member _.TopAttribs ctok = tcAcc.topAttribs |> eval ctok
 
     member _.TimeStamp = timeStamp
     
-    member _.LatestImplementationFile = tcAcc.latestImplFile |> eval
+    member _.LatestImplementationFile ctok = tcAcc.latestImplFile |> eval ctok
 
-    member _.LatestCcuSigForFile = tcAcc.latestCcuSigForFile |> eval
+    member _.LatestCcuSigForFile ctok = tcAcc.latestCcuSigForFile |> eval ctok
 
-    member _.ItemKeyStore = tcAcc.itemKeyStore |> eval
+    member _.ItemKeyStore ctok = tcAcc.itemKeyStore |> eval ctok
 
-    member _.SemanticClassification = tcAcc.semanticClassification |> eval
+    member _.SemanticClassification ctok = tcAcc.semanticClassification |> eval ctok
 
-    member x.TcErrors  = 
-        async {
-            match! x.TcErrorsRev with
-            | Some tcErrorsRev ->
-                return Array.concat (List.rev tcErrorsRev)
-            | _ ->
-                return [||]
-        }
+    member x.TcErrors ctok = 
+        let tcErrorsRev = x.TcErrorsRev ctok
+        Array.concat (List.rev tcErrorsRev)
 
-    member x.TcSymbolUses = 
-        async {
-            match! x.TcSymbolUsesRev with
-            | Some tcSymbolUsesRev ->
-                return List.rev tcSymbolUsesRev
-            | _ ->
-                return []
-        }
+    member x.TcSymbolUses ctok = 
+        let tcSymbolUsesRev = x.TcSymbolUsesRev ctok
+        List.rev tcSymbolUsesRev
 
     static member Create (tcAcc: TypeCheckAccumulator, timestamp, thread) = 
         PartialCheckResults(tcAcc, timestamp, thread)
@@ -1675,7 +1693,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 maxTimeShareMilliseconds, 
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
-                beforeFileChecked, fileChecked, tcAccMinState, lazy Eventually.Done (Some tcAccFullState), (None, range0, String.Empty, [||])) }
+                beforeFileChecked, fileChecked, tcAccMinState, Eventually.Done (Some tcAccFullState), (None, range0, String.Empty, [||])) }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
     ///
@@ -1770,7 +1788,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 errorRecoveryNoRange e
                 mkSimpleAssemblyRef assemblyName, None, None
 
-        let finalAccWithErrors = finalAcc.Finish((errorLogger.GetErrors() :: finalAccTcErrorsRev), Some topAttrs)
+        let finalAccWithErrors = finalAcc.Finish((errorLogger.GetErrors() :: finalAccTcErrorsRev), Some topAttrs) |> Eventually.force ctok
         return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalAccWithErrors
       }
 
