@@ -1089,6 +1089,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                                        keepAssemblyContents, keepAllBackgroundResolutions,
                                                        maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
                                                        enableBackgroundItemKeyStoreAndSemanticClassification,
+                                                       enableLazyTypeChecking,
                                                        beforeFileChecked: Event<string>,
                                                        fileChecked: Event<string>,
                                                        prevTcInfo: TcInfo,
@@ -1104,6 +1105,11 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
     member _.TcImports = tcImports
 
     member this.GetState(quickCheck: bool) =
+        let quickCheck =
+            // Only enable quick checks if we have enabled lazy type checking.
+            if enableLazyTypeChecking then quickCheck
+            else false
+
         let mustCheck =
             match !lazyTcInfoState, quickCheck with
             | None, _ -> true
@@ -1142,6 +1148,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enableLazyTypeChecking,
                     beforeFileChecked, fileChecked, prevState.Minimum, lazyPrevFullState, input)
         }
 
@@ -1168,6 +1175,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enableLazyTypeChecking,
                     beforeFileChecked, fileChecked, prevMinState, lazyPrevFullState, (None, range0, String.Empty, [||]))
         }
 
@@ -1446,6 +1454,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         keepAssemblyContents, keepAllBackgroundResolutions,
         maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
+        enableLazyTypeChecking,
         dependencyProviderOpt: DependencyProvider option) =
 
     let tcConfigP = TcConfigProvider.Constant tcConfig
@@ -1611,6 +1620,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 maxTimeShareMilliseconds, 
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
+                enableLazyTypeChecking,
                 beforeFileChecked, fileChecked, tcAccMinState, Eventually.Done (Some tcAccFullState), (None, range0, String.Empty, [||])) }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1912,6 +1922,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                        tryGetMetadataSnapshot, suggestNamesForErrors,
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
+                       enableLazyTypeChecking: bool,
                        dependencyProviderOpt) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -2037,6 +2048,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     maxTimeShareMilliseconds,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
+                    enableLazyTypeChecking,
                     dependencyProviderOpt)
             return Some builder
           with e -> 
