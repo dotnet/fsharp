@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.Scripting.DependencyManager.UnitTests
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
@@ -13,7 +12,10 @@ open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Scripting.UnitTests
+open FSharp.DependencyManager.Nuget
 open Microsoft.DotNet.DependencyManager
+
+open Internal.Utilities
 
 open Xunit
 
@@ -743,3 +745,16 @@ x |> Seq.iter(fun r ->
         let opt = script.Eval(text) |> getValue
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
 
+    [<Fact>]
+    member __.``Ensure resolutions file doesn't contain lines with only empty values``() =
+        use tempDir = getTempDir ()
+        let dpm = new FSharpDependencyManager(Some(tempDir.ToString()))
+        let resolutionResult = dpm.PrepareDependencyResolutionFiles(".fsx", [("r", "FParsec,Version=1.1.1")], "netcoreapp3.1", RidHelpers.platformRid)
+        let resolutionLines =
+            match resolutionResult.resolutionsFile with
+            | Some path -> File.ReadAllLines(path)
+            | None -> failwith "Expected resolutions file to be created."
+        let improperResolutionLines =
+            resolutionLines
+            |> Array.filter (fun l -> l.StartsWith(","))
+        Assert.Empty(improperResolutionLines)

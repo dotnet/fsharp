@@ -23,6 +23,7 @@
   <ItemGroup>
     <EmbeddedText Include="DependencyManager.txt" />
     <EmbeddedText Include="..\..\utils\UtilsStrings.txt" />
+    <Compile Include="..\..\utils\RidHelpers.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="AssemblyResolveHandler.fsi" />
     <Compile Include="AssemblyResolveHandler.fs" />
