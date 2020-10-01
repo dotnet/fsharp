@@ -216,7 +216,7 @@ type internal IncrementalBuilder =
           suggestNamesForErrors: bool *
           keepAllBackgroundSymbolUses: bool *
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
-          enableLazyTypeChecking: bool *
+          enablePartialTypeChecking: bool *
           dependencyProvider: DependencyProvider option
              -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 

@@ -61,7 +61,7 @@ type internal FSharpCheckerProvider
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                     keepAllBackgroundSymbolUses = false,
                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                    enableLazyTypeChecking = true)
+                    enablePartialTypeChecking = true)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,

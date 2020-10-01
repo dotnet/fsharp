@@ -1023,6 +1023,62 @@ module IncrementalBuilderEventTesting =
 
 module Tc = FSharp.Compiler.TypeChecker
 
+[<AutoOpen>]
+module IncrementalBuildSyntaxTree =
+
+    [<Sealed>]
+    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, filename: string, isLastCompiland) =
+
+        let mutable weakCache: WeakReference<_> option = None
+
+        let parse(sigNameOpt: SyntaxTree.QualifiedNameOfFile option) =
+            let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
+            // Return the disposable object that cleans up
+            use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
+
+            try  
+                IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
+                let lower = String.lowercase filename
+                let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)
+                let input = 
+                    if canSkip then
+                        SyntaxTree.ParsedInput.ImplFile(
+                            SyntaxTree.ParsedImplFileInput(
+                                filename, 
+                                false, 
+                                sigNameOpt.Value,
+                                [],
+                                [],
+                                [],
+                                isLastCompiland
+                            )
+                        ) |> Some
+                    else
+                        ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
+
+                fileParsed.Trigger filename
+
+                let res = input, sourceRange, filename, errorLogger.GetErrors ()
+                // If we do not skip parsing the file, then we can cache the real result.
+                if not canSkip then
+                    weakCache <- Some(WeakReference<_>(res))
+                res
+            with exn -> 
+                let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
+                System.Diagnostics.Debug.Assert(false, msg)
+                failwith msg
+
+        /// Parse the given file and return the given input.
+        member _.Parse sigNameOpt =
+            match weakCache with
+            | Some weakCache ->
+                match weakCache.TryGetTarget() with
+                | true, res -> res
+                | _ -> parse sigNameOpt
+            | _ -> parse sigNameOpt
+
+        member _.FileName = filename
+
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
 [<NoEquality; NoComparison>]
 type TcInfo =
@@ -1077,70 +1133,17 @@ type TcInfoOptional =
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>]
 type TcInfoState =
-    | MinimumState of TcInfo
+    | PartialState of TcInfo
     | FullState of TcInfo * TcInfoOptional
 
     member this.Minimum =
         match this with
-        | MinimumState tcInfo -> tcInfo
+        | PartialState tcInfo -> tcInfo
         | FullState(tcInfo, _) -> tcInfo
 
-[<Sealed>]
-type SyntaxTreeAccumulator (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, filename: string, isLastCompiland) =
-
-    let mutable weakCache: WeakReference<_> option = None
-
-    let parse(sigNameOpt: SyntaxTree.QualifiedNameOfFile option) =
-        let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
-        // Return the disposable object that cleans up
-        use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
-
-        try  
-            IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-            let lower = String.lowercase filename
-            let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)
-            let input = 
-                if canSkip then
-                    SyntaxTree.ParsedInput.ImplFile(
-                        SyntaxTree.ParsedImplFileInput(
-                            filename, 
-                            false, 
-                            sigNameOpt.Value,
-                            [],
-                            [],
-                            [],
-                            isLastCompiland
-                        )
-                    ) |> Some
-                else
-                    ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
-
-            fileParsed.Trigger filename
-
-            let res = input, sourceRange, filename, errorLogger.GetErrors ()
-            // If we do not skip parsing the file, then we can cache the real result.
-            if not canSkip then
-                weakCache <- Some(WeakReference<_>(res))
-            res
-        with exn -> 
-            let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
-            System.Diagnostics.Debug.Assert(false, msg)
-            failwith msg
-
-    /// Parse the given file and return the given input.
-    member _.Parse sigNameOpt =
-        match weakCache with
-        | Some weakCache ->
-            match weakCache.TryGetTarget() with
-            | true, res -> res
-            | _ -> parse sigNameOpt
-        | _ -> parse sigNameOpt
-
-    member _.FileName = filename
-
-/// Accumulated results of type checking.
+/// Semantic model of an underlying syntax tree.
 [<NoEquality; NoComparison>] 
-type TypeCheckAccumulator ( tcConfig: TcConfig,
+type SemanticModel (        tcConfig: TcConfig,
                             tcGlobals: TcGlobals,
                             tcImports: TcImports,
                             keepAssemblyContents, keepAllBackgroundResolutions,
@@ -1151,17 +1154,17 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                             fileChecked: Event<string>,
                             prevTcInfo: TcInfo,
                             prevTcInfoOptional: Eventually<TcInfoOptional option>,
-                            syntaxTreeOpt: SyntaxTreeAccumulator option) =
+                            syntaxTreeOpt: SyntaxTree option) =
 
     let lazyTcInfoState: TcInfoState option ref = ref None
 
     let defaultTypeCheck () =
         eventually {
-            match! prevTcInfoOptional with
-            | Some prevTcInfoOptional ->
+            match prevTcInfoOptional with
+            | Eventually.Done(Some prevTcInfoOptional) ->
                 return FullState(prevTcInfo, prevTcInfoOptional)
             | _ ->
-                return MinimumState prevTcInfo
+                return PartialState prevTcInfo
         }
 
     member _.TcConfig = tcConfig
@@ -1170,16 +1173,16 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
 
     member _.TcImports = tcImports
 
-    member this.GetState(quickCheck: bool) =
-        let quickCheck =
-            // Only enable quick checks if we have enabled lazy type checking.
-            if enablePartialTypeChecking then quickCheck
+    member this.GetState(partialCheck: bool) =
+        let partialCheck =
+            // Only enable partial checks if we have enabled lazy type checking.
+            if enablePartialTypeChecking then partialCheck
             else false
 
         let mustCheck =
-            match !lazyTcInfoState, quickCheck with
+            match !lazyTcInfoState, partialCheck with
             | None, _ -> true
-            | Some(MinimumState _), false -> true
+            | Some(PartialState _), false -> true
             | _ -> false
 
         if mustCheck then
@@ -1189,7 +1192,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
         | Some tcInfoState -> tcInfoState |> Eventually.Done
         | _ -> 
             eventually {
-                let! tcInfoState = this.TypeCheck(quickCheck)
+                let! tcInfoState = this.TypeCheck(partialCheck)
                 lazyTcInfoState := Some tcInfoState
                 return tcInfoState
             }
@@ -1205,7 +1208,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                     | _ -> return None
                 }
             return
-                TypeCheckAccumulator(
+                SemanticModel(
                     tcConfig,
                     tcGlobals,
                     tcImports,
@@ -1232,7 +1235,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                 }
 
             return
-                TypeCheckAccumulator(
+                SemanticModel(
                     tcConfig,
                     tcGlobals,
                     tcImports,
@@ -1256,7 +1259,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
             let! state = this.GetState(false)
             match state with
             | FullState(tcInfo, tcInfoOptional) -> return tcInfo, tcInfoOptional
-            | MinimumState tcInfo ->
+            | PartialState tcInfo ->
                 return
                     tcInfo,
                     {
@@ -1269,9 +1272,9 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                     }
         }
 
-    member _.TypeCheck (quickCheck: bool) =  
-        match quickCheck, !lazyTcInfoState with
-        | true, Some (MinimumState _ as state)
+    member private _.TypeCheck (partialCheck: bool) =  
+        match partialCheck, !lazyTcInfoState with
+        | true, Some (PartialState _ as state)
         | true, Some (FullState _ as state) -> state |> Eventually.Done
         | false, Some (FullState _ as state) -> state |> Eventually.Done
         | _ ->
@@ -1281,7 +1284,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
             | None -> return! defaultTypeCheck ()
             | Some syntaxTree ->
                 let sigNameOpt =
-                    if quickCheck then
+                    if partialCheck then
                         let sigFileName = Path.ChangeExtension(syntaxTree.FileName, ".fsi")
                         match prevTcInfo.sigNameOpt with
                         | Some (expectedSigFileName, sigName) when String.Equals(expectedSigFileName, sigFileName, StringComparison.OrdinalIgnoreCase) ->
@@ -1315,9 +1318,9 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                                         tcConfig, tcImports, 
                                         tcGlobals, 
                                         None, 
-                                        (if quickCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink), 
+                                        (if partialCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink), 
                                         prevTcState, input,
-                                        quickCheck)
+                                        partialCheck)
                             Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
                             fileChecked.Trigger filename
@@ -1342,11 +1345,11 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                                             None
                                 }
 
-                            if quickCheck then
-                                return MinimumState tcInfo
+                            if partialCheck then
+                                return PartialState tcInfo
                             else
                                 match! prevTcInfoOptional with
-                                | None -> return MinimumState tcInfo
+                                | None -> return PartialState tcInfo
                                 | Some prevTcInfoOptional ->
                                     /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                                     let tcResolutionsRev = prevTcInfoOptional.tcResolutionsRev
@@ -1467,25 +1470,25 @@ type FrameworkImportsCache(keepStrongly) =
 
 /// Represents the interim state of checking an assembly
 [<Sealed>]
-type PartialCheckResults private (tcAcc: TypeCheckAccumulator, timeStamp: DateTime) = 
+type PartialCheckResults private (semanticModel: SemanticModel, timeStamp: DateTime) = 
 
     let eval ctok (work: Eventually<'T>) =
         match work with
         | Eventually.Done res -> res
         | _ -> Eventually.force ctok work
 
-    member _.TcImports = tcAcc.TcImports
-    member _.TcGlobals = tcAcc.TcGlobals
-    member _.TcConfig = tcAcc.TcConfig
+    member _.TcImports = semanticModel.TcImports
+    member _.TcGlobals = semanticModel.TcGlobals
+    member _.TcConfig = semanticModel.TcConfig
 
     member _.TimeStamp = timeStamp
 
-    member _.TcInfo ctok = tcAcc.TcInfo |> eval ctok
+    member _.TcInfo ctok = semanticModel.TcInfo |> eval ctok
 
-    member _.TcInfoFull ctok = tcAcc.TcInfoFull |> eval ctok
+    member _.TcInfoFull ctok = semanticModel.TcInfoFull |> eval ctok
 
-    static member Create (tcAcc: TypeCheckAccumulator, timestamp) = 
-        PartialCheckResults(tcAcc, timestamp)
+    static member Create (semanticModel: SemanticModel, timestamp) = 
+        PartialCheckResults(semanticModel, timestamp)
 
 [<AutoOpen>]
 module Utilities = 
@@ -1593,7 +1596,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// Parse the given file and return the given input.
     let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
-        SyntaxTreeAccumulator(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
+        SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
         
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Stamp
     ///
@@ -1605,7 +1608,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
     ///
     // Link all the assemblies together and produce the input typecheck accumulator               
-    let CombineImportedAssembliesTask ctok _ : Cancellable<TypeCheckAccumulator> =
+    let CombineImportedAssembliesTask ctok _ : Cancellable<SemanticModel> =
       cancellable {
         let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
@@ -1677,7 +1680,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 semanticClassification = [||] 
             }
         return 
-            TypeCheckAccumulator(
+            SemanticModel(
                 tcConfig,
                 tcGlobals,
                 tcImports,
@@ -1692,18 +1695,18 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
     ///
     /// Type check all files.     
-    let TypeCheckTask ctok (tcAcc: TypeCheckAccumulator) syntaxTree: Eventually<TypeCheckAccumulator> =
+    let TypeCheckTask ctok (prevSemanticModel: SemanticModel) syntaxTree: Eventually<SemanticModel> =
         eventually {
             RequireCompilationThread ctok
-            let! nextTcAcc = tcAcc.Next(syntaxTree)
-            let! _ = nextTcAcc.TypeCheck(if enablePartialTypeChecking then true else false) // Eagerly type check
-            return nextTcAcc
+            let! semanticModel = prevSemanticModel.Next(syntaxTree)
+            let! _ = semanticModel.GetState(if enablePartialTypeChecking then true else false) // Eagerly type check
+            return semanticModel
         }
 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
     ///
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask ctok (tcStates: TypeCheckAccumulator[]) = 
+    let FinalizeTypeCheckTask ctok (semanticModels: SemanticModel[]) = 
       cancellable {
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
@@ -1711,17 +1714,17 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         // Get the state at the end of the type-checking of the last file
-        let finalAcc = tcStates.[tcStates.Length-1]
+        let finalSemanticModel = semanticModels.[semanticModels.Length-1]
 
-        let finalInfo = finalAcc.TcInfo |> Eventually.force ctok
+        let finalInfo = finalSemanticModel.TcInfo |> Eventually.force ctok
 
         // Finish the checking
         let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
             let results = 
-                tcStates 
+                semanticModels 
                 |> List.ofArray 
-                |> List.map (fun acc -> 
-                    let tcInfo, tcInfoOptional = acc.TcInfoFull |> Eventually.force ctok
+                |> List.map (fun semanticModel -> 
+                    let tcInfo, tcInfoOptional = semanticModel.TcInfoFull |> Eventually.force ctok
                     tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, tcInfoOptional.latestImplFile, tcInfo.latestCcuSigForFile)
             TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
   
@@ -1780,8 +1783,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 errorRecoveryNoRange e
                 mkSimpleAssemblyRef assemblyName, None, None
 
-        let finalAccWithErrors = finalAcc.Finish((errorLogger.GetErrors() :: finalInfo.tcErrorsRev), Some topAttrs) |> Eventually.force ctok
-        return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalAccWithErrors
+        let finalSemanticModelWithErrors = finalSemanticModel.Finish((errorLogger.GetErrors() :: finalInfo.tcErrorsRev), Some topAttrs) |> Eventually.force ctok
+        return ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, finalSemanticModelWithErrors
       }
 
     // END OF BUILD TASK FUNCTIONS
@@ -1797,18 +1800,18 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // Build
     let stampedFileNamesNode        = Vector.Stamp "SourceFileTimeStamps" StampFileNameTask fileNamesNode
     let stampedReferencedAssembliesNode = Vector.Stamp "StampReferencedAssembly" StampReferencedAssemblyTask referencedAssembliesNode
-    let initialTcAccNode            = Vector.Demultiplex "CombineImportedAssemblies" CombineImportedAssembliesTask stampedReferencedAssembliesNode
-    let tcStatesNode                = Vector.ScanLeft "TypeCheckingStates" (fun ctok tcAcc n -> TypeCheckTask ctok tcAcc (ParseTask ctok n)) initialTcAccNode stampedFileNamesNode
-    let finalizedTypeCheckNode      = Vector.Demultiplex "FinalizeTypeCheck" FinalizeTypeCheckTask tcStatesNode
+    let initialSemanticModelNode            = Vector.Demultiplex "CombineImportedAssemblies" CombineImportedAssembliesTask stampedReferencedAssembliesNode
+    let semanticModelNodes                = Vector.ScanLeft "TypeCheckingStates" (fun ctok semanticModel n -> TypeCheckTask ctok semanticModel (ParseTask ctok n)) initialSemanticModelNode stampedFileNamesNode
+    let finalizedSemanticModelNode      = Vector.Demultiplex "FinalizeTypeCheck" FinalizeTypeCheckTask semanticModelNodes
 
     // Outputs
     let buildDescription            = new BuildDescriptionScope ()
 
     do buildDescription.DeclareVectorOutput stampedFileNamesNode
     do buildDescription.DeclareVectorOutput stampedReferencedAssembliesNode
-    do buildDescription.DeclareVectorOutput tcStatesNode
-    do buildDescription.DeclareScalarOutput initialTcAccNode
-    do buildDescription.DeclareScalarOutput finalizedTypeCheckNode
+    do buildDescription.DeclareVectorOutput semanticModelNodes
+    do buildDescription.DeclareScalarOutput initialSemanticModelNode
+    do buildDescription.DeclareScalarOutput finalizedSemanticModelNode
 
     // END OF BUILD DESCRIPTION
     // ---------------------------------------------------------------------------------------------            
@@ -1849,7 +1852,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member __.Step (ctok: CompilationThreadToken) =  
       cancellable {
         let cache = TimeStampCache defaultTimeStamp // One per step
-        let! res = IncrementalBuild.Step cache ctok SavePartialBuild (Target(tcStatesNode, None)) partialBuild
+        let! res = IncrementalBuild.Step cache ctok SavePartialBuild (Target(semanticModelNodes, None)) partialBuild
         match res with 
         | None -> 
             projectChecked.Trigger()
@@ -1862,11 +1865,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let slotOfFile = builder.GetSlotOfFileName filename
         let result = 
             match slotOfFile with
-            | (*first file*) 0 -> GetScalarResult(initialTcAccNode, partialBuild)
-            | _ -> GetVectorResultBySlot(tcStatesNode, slotOfFile-1, partialBuild)  
+            | (*first file*) 0 -> GetScalarResult(initialSemanticModelNode, partialBuild)
+            | _ -> GetVectorResultBySlot(semanticModelNodes, slotOfFile-1, partialBuild)  
         
         match result with
-        | Some (tcAcc, timestamp) -> Some (PartialCheckResults.Create (tcAcc, timestamp))
+        | Some (semanticModel, timestamp) -> Some (PartialCheckResults.Create (semanticModel, timestamp))
         | _ -> None
         
     
@@ -1874,8 +1877,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let slotOfFile = builder.GetSlotOfFileName filename
         let cache = TimeStampCache defaultTimeStamp
         match slotOfFile with
-        | (*first file*) 0 -> IncrementalBuild.IsReady cache (Target(initialTcAccNode, None)) partialBuild 
-        | _ -> IncrementalBuild.IsReady cache (Target(tcStatesNode, Some (slotOfFile-1))) partialBuild  
+        | (*first file*) 0 -> IncrementalBuild.IsReady cache (Target(initialSemanticModelNode, None)) partialBuild 
+        | _ -> IncrementalBuild.IsReady cache (Target(semanticModelNodes, Some (slotOfFile-1))) partialBuild  
         
     member __.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
       cancellable {
@@ -1884,15 +1887,15 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
           cancellable {
             match slotOfFile with
             | (*first file*) 0 -> 
-                let! build = IncrementalBuild.Eval cache ctok SavePartialBuild initialTcAccNode partialBuild
-                return GetScalarResult(initialTcAccNode, build)
+                let! build = IncrementalBuild.Eval cache ctok SavePartialBuild initialSemanticModelNode partialBuild
+                return GetScalarResult(initialSemanticModelNode, build)
             | _ -> 
-                let! build = IncrementalBuild.EvalUpTo cache ctok SavePartialBuild (tcStatesNode, (slotOfFile-1)) partialBuild
-                return GetVectorResultBySlot(tcStatesNode, slotOfFile-1, build)  
+                let! build = IncrementalBuild.EvalUpTo cache ctok SavePartialBuild (semanticModelNodes, (slotOfFile-1)) partialBuild
+                return GetVectorResultBySlot(semanticModelNodes, slotOfFile-1, build)  
           }
         
         match result with
-        | Some (tcAcc, timestamp) -> return PartialCheckResults.Create (tcAcc, timestamp)
+        | Some (semanticModel, timestamp) -> return PartialCheckResults.Create (semanticModel, timestamp)
         | None -> return! failwith "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsBeforeSlotInProject)."
       }
 
@@ -1910,14 +1913,14 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
-        let! build = IncrementalBuild.Eval cache ctok SavePartialBuild finalizedTypeCheckNode partialBuild
-        match GetScalarResult(finalizedTypeCheckNode, build) with
-        | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, tcAcc), timestamp) -> 
-            return PartialCheckResults.Create (tcAcc, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
+        let! build = IncrementalBuild.Eval cache ctok SavePartialBuild finalizedSemanticModelNode partialBuild
+        match GetScalarResult(finalizedSemanticModelNode, build) with
+        | Some ((ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, semanticModel), timestamp) -> 
+            return PartialCheckResults.Create (semanticModel, timestamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
         | None -> 
             // helpers to diagnose https://github.com/Microsoft/visualfsharp/pull/2460/
-            let brname = match GetTopLevelExprByName(build, finalizedTypeCheckNode.Name) with  ScalarBuildRule se ->se.Id | _ -> Id 0xdeadbeef
-            let data = (finalizedTypeCheckNode.Name, 
+            let brname = match GetTopLevelExprByName(build, finalizedSemanticModelNode.Name) with  ScalarBuildRule se ->se.Id | _ -> Id 0xdeadbeef
+            let data = (finalizedSemanticModelNode.Name, 
                         ((build.Results :> IDictionary<_, _>).Keys |> Seq.toArray), 
                         brname, 
                         build.Results.ContainsKey brname, 
