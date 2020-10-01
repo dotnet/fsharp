@@ -1136,14 +1136,14 @@ type TcInfoState =
     | PartialState of TcInfo
     | FullState of TcInfo * TcInfoOptional
 
-    member this.Minimum =
+    member this.Partial =
         match this with
         | PartialState tcInfo -> tcInfo
         | FullState(tcInfo, _) -> tcInfo
 
 /// Semantic model of an underlying syntax tree.
 [<Sealed>]
-type SemanticModel (        tcConfig: TcConfig,
+type SemanticModel private (tcConfig: TcConfig,
                             tcGlobals: TcGlobals,
                             tcImports: TcImports,
                             keepAssemblyContents, keepAllBackgroundResolutions,
@@ -1154,9 +1154,8 @@ type SemanticModel (        tcConfig: TcConfig,
                             fileChecked: Event<string>,
                             prevTcInfo: TcInfo,
                             prevTcInfoOptional: Eventually<TcInfoOptional option>,
-                            syntaxTreeOpt: SyntaxTree option) =
-
-    let lazyTcInfoState: TcInfoState option ref = ref None
+                            syntaxTreeOpt: SyntaxTree option,
+                            lazyTcInfoState: TcInfoState option ref) =
 
     let defaultTypeCheck () =
         eventually {
@@ -1200,11 +1199,11 @@ type SemanticModel (        tcConfig: TcConfig,
     member this.Next(syntaxTree) =
         eventually {
             let! prevState = this.GetState(true)
-            let lazyPrevFullState =
+            let lazyPrevTcInfoOptional =
                 eventually {
                     let! prevState = this.GetState(false)
                     match prevState with
-                    | FullState(_, prevFullState) -> return Some prevFullState
+                    | FullState(_, prevTcInfoOptional) -> return Some prevTcInfoOptional
                     | _ -> return None
                 }
             return
@@ -1218,21 +1217,23 @@ type SemanticModel (        tcConfig: TcConfig,
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
-                    beforeFileChecked, fileChecked, prevState.Minimum, lazyPrevFullState, Some syntaxTree)
+                    beforeFileChecked, 
+                    fileChecked, 
+                    prevState.Partial, 
+                    lazyPrevTcInfoOptional, 
+                    Some syntaxTree,
+                    ref None)
         }
 
     member this.Finish(finalTcErrorsRev, finalTopAttribs) =
         eventually {
-            let! prevState = this.GetState(true)
+            let! state = this.GetState(true)
 
-            let prevMinState = { prevState.Minimum with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
-            let lazyPrevFullState =
-                eventually {
-                    let! prevState = this.GetState(false)
-                    match prevState with
-                    | FullState (_, prevFullState) -> return Some prevFullState
-                    | _ -> return None
-                }
+            let finishTcInfo = { state.Partial with tcErrorsRev = finalTcErrorsRev; topAttribs = finalTopAttribs }
+            let finishState =
+                match state with
+                | PartialState(_) -> PartialState(finishTcInfo)
+                | FullState(_, tcInfoOptional) -> FullState(finishTcInfo, tcInfoOptional)
 
             return
                 SemanticModel(
@@ -1245,13 +1246,18 @@ type SemanticModel (        tcConfig: TcConfig,
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
-                    beforeFileChecked, fileChecked, prevMinState, lazyPrevFullState, None)
+                    beforeFileChecked, 
+                    fileChecked, 
+                    prevTcInfo, 
+                    prevTcInfoOptional, 
+                    syntaxTreeOpt,
+                    ref (Some finishState))
         }
 
     member this.TcInfo =
         eventually {
             let! state = this.GetState(true)
-            return state.Minimum
+            return state.Partial
         }
 
     member this.TcInfoFull =
@@ -1404,6 +1410,30 @@ type SemanticModel (        tcConfig: TcConfig,
                 | _ -> 
                     return! defaultTypeCheck ()
         }
+
+    static member Create(tcConfig: TcConfig,
+                         tcGlobals: TcGlobals,
+                         tcImports: TcImports,
+                         keepAssemblyContents, keepAllBackgroundResolutions,
+                         maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
+                         enableBackgroundItemKeyStoreAndSemanticClassification,
+                         enablePartialTypeChecking,
+                         beforeFileChecked: Event<string>,
+                         fileChecked: Event<string>,
+                         prevTcInfo: TcInfo,
+                         prevTcInfoOptional: Eventually<TcInfoOptional option>,
+                         syntaxTreeOpt: SyntaxTree option) =
+        SemanticModel(tcConfig, tcGlobals, tcImports, 
+                      keepAssemblyContents, keepAllBackgroundResolutions, 
+                      maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
+                      enableBackgroundItemKeyStoreAndSemanticClassification,
+                      enablePartialTypeChecking,
+                      beforeFileChecked,
+                      fileChecked,
+                      prevTcInfo,
+                      prevTcInfoOptional,
+                      syntaxTreeOpt,
+                      ref None)
       
 /// Global service state
 type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list * (*fsharpBinaries*)string * (*langVersion*)decimal
@@ -1676,7 +1706,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 semanticClassification = [||] 
             }
         return 
-            SemanticModel(
+            SemanticModel.Create(
                 tcConfig,
                 tcGlobals,
                 tcImports,
