@@ -1724,8 +1724,14 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 semanticModels 
                 |> List.ofArray 
                 |> List.map (fun semanticModel -> 
-                    let tcInfo, tcInfoOptional = semanticModel.TcInfoFull |> Eventually.force ctok
-                    tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, tcInfoOptional.latestImplFile, tcInfo.latestCcuSigForFile)
+                    let tcInfo, latestImplFile =
+                        if enablePartialTypeChecking then
+                            let tcInfo = semanticModel.TcInfo |> Eventually.force ctok
+                            tcInfo, None
+                        else
+                            let tcInfo, tcInfoOptional = semanticModel.TcInfoFull |> Eventually.force ctok
+                            tcInfo, tcInfoOptional.latestImplFile
+                    tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
             TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
   
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 

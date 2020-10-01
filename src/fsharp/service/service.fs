@@ -1057,6 +1057,10 @@ type FSharpChecker(legacyReferenceResolver,
         let keepAllBackgroundSymbolUses = defaultArg keepAllBackgroundSymbolUses true
         let enableBackgroundItemKeyStoreAndSemanticClassification = defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
+
+        if keepAssemblyContents && enablePartialTypeChecking then
+            invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
+
         new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking)
 
     member __.ReferenceResolver = legacyReferenceResolver
