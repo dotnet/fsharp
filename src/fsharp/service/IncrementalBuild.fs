@@ -1236,7 +1236,7 @@ and [<NoEquality; NoComparison>] TypeCheckAccumulator (tcConfig: TcConfig,
                                     tcConfig, tcImports, 
                                     tcGlobals, 
                                     None, 
-                                    TcResultsSink.WithSink sink, 
+                                    (if quickCheck then TcResultsSink.NoSink else TcResultsSink.WithSink sink), 
                                     prevTcState, input,
                                     quickCheck)
                         Logger.LogBlockMessageStop filename LogCompilerFunctionId.IncrementalBuild_TypeCheck
