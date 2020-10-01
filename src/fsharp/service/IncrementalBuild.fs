@@ -1351,11 +1351,6 @@ type SemanticModel (        tcConfig: TcConfig,
                                 match! prevTcInfoOptional with
                                 | None -> return PartialState tcInfo
                                 | Some prevTcInfoOptional ->
-                                    /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                                    let tcResolutionsRev = prevTcInfoOptional.tcResolutionsRev
-                                    let tcSymbolUsesRev = prevTcInfoOptional.tcSymbolUsesRev
-                                    let tcOpenDeclarationsRev = prevTcInfoOptional.tcOpenDeclarationsRev
-                            
                                     // Build symbol keys
                                     let itemKeyStore, semanticClassification =
                                         if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -1379,10 +1374,11 @@ type SemanticModel (        tcConfig: TcConfig,
 
                                     let tcInfoOptional =
                                         {
+                                            /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                                             latestImplFile = if keepAssemblyContents then implFile else None
-                                            tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: tcResolutionsRev
-                                            tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: tcSymbolUsesRev
-                                            tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcOpenDeclarationsRev
+                                            tcResolutionsRev = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty) :: prevTcInfoOptional.tcResolutionsRev
+                                            tcSymbolUsesRev = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty) :: prevTcInfoOptional.tcSymbolUsesRev
+                                            tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: prevTcInfoOptional.tcOpenDeclarationsRev
                                             itemKeyStore = itemKeyStore
                                             semanticClassification = semanticClassification
                                         }
