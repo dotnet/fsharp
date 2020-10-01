@@ -29,7 +29,7 @@ type ResolveDependenciesResult =
     /// The roots to package directories
     member Roots: seq<string>
 
-[<DependencyManagerAttribute>] 
+[<DependencyManagerAttribute>]
 type FSharpDependencyManager =
     new: outputDir:string option -> FSharpDependencyManager
 
@@ -39,4 +39,6 @@ type FSharpDependencyManager =
 
     member HelpMessages:string[]
 
-    member ResolveDependencies: scriptExt:string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string -> obj
+    member PrepareDependencyResolutionFiles: scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string -> PackageBuildResolutionResult
+
+    member ResolveDependencies: scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string -> obj

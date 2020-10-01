@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
+open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent

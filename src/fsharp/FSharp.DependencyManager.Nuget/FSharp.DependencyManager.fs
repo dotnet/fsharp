@@ -125,7 +125,6 @@ module FSharpDependencyManager =
         |> List.distinct
         |> (fun l -> l, binLogPath)
 
-
 /// The results of ResolveDependencies
 type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
@@ -195,12 +194,12 @@ type FSharpDependencyManager (outputDir:string option) =
         sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
         |]
 
-    member _.ResolveDependencies(scriptExt:string, packageManagerTextLines: (string *string) seq, tfm: string, rid: string) : obj =
+    member _.PrepareDependencyResolutionFiles(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string): PackageBuildResolutionResult =
 
-        let scriptExt, poundRprefix  =
+        let scriptExt =
             match scriptExt with
-            | ".csx" -> csxExt, "#r \"" 
-            | _ -> fsxExt, "#r @\"" 
+            | ".csx" -> csxExt
+            | _ -> fsxExt
 
         let packageReferences, binLogPath =
             packageManagerTextLines
@@ -214,39 +213,50 @@ type FSharpDependencyManager (outputDir:string option) =
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
-        // Generate a project files
+        let projectPath = Path.Combine(scriptsPath, "Project.fsproj")
+
+        // Generate project files
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
                 if not (generatedScripts.ContainsKey(body.GetHashCode().ToString())) then
                     emitFile path  body
 
-            let projectPath = Path.Combine(scriptsPath, "Project.fsproj")
-
             let generateProjBody =
-                generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
-                                   .Replace("$(RUNTIMEIDENTIFIER)", rid)
+                generateProjectBody.Replace("$(TARGETFRAMEWORK)", targetFrameworkMoniker)
+                                   .Replace("$(RUNTIMEIDENTIFIER)", runtimeIdentifier)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                                    .Replace("$(SCRIPTEXTENSION)", scriptExt)
 
             writeFile projectPath generateProjBody
+            buildProject projectPath binLogPath
 
-            let result, stdOut, stdErr,  resolutionsFile = buildProject projectPath binLogPath
-            match resolutionsFile with
+        generateAndBuildProjectArtifacts
+
+    member this.ResolveDependencies(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFramework: string, runtimeIdentifier: string) : obj =
+        let poundRprefix  =
+            match scriptExt with
+            | ".csx" -> "#r \""
+            | _ -> "#r @\""
+
+        let generateAndBuildProjectArtifacts =
+
+            let resolutionResult = this.PrepareDependencyResolutionFiles(scriptExt, packageManagerTextLines, targetFramework, runtimeIdentifier)
+            match resolutionResult.resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
                 let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
                 let scripts =
-                    let scriptPath = projectPath + scriptExt
+                    let scriptPath = resolutionResult.projectPath + scriptExt
                     let scriptBody =  makeScriptFromReferences references poundRprefix
                     emitFile scriptPath scriptBody
                     let loads = (findLoadsFromResolutions resolutions) |> Array.toList
                     List.concat [ [scriptPath]; loads] |> List.toSeq
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
 
-                ResolveDependenciesResult(result, stdOut, stdErr, references, scripts, includes)
+                ResolveDependenciesResult(resolutionResult.success, resolutionResult.stdOut, resolutionResult.stdErr, references, scripts, includes)
 
             | None ->
                 let empty = Seq.empty<string>
-                ResolveDependenciesResult(result, stdOut, stdErr, empty, empty, empty)
+                ResolveDependenciesResult(resolutionResult.success, resolutionResult.stdOut, resolutionResult.stdErr, empty, empty, empty)
 
         generateAndBuildProjectArtifacts :> obj
