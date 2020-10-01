@@ -1142,7 +1142,7 @@ type TcInfoState =
         | FullState(tcInfo, _) -> tcInfo
 
 /// Semantic model of an underlying syntax tree.
-[<NoEquality; NoComparison>] 
+[<Sealed>]
 type SemanticModel (        tcConfig: TcConfig,
                             tcGlobals: TcGlobals,
                             tcImports: TcImports,
@@ -1175,7 +1175,7 @@ type SemanticModel (        tcConfig: TcConfig,
 
     member this.GetState(partialCheck: bool) =
         let partialCheck =
-            // Only enable partial checks if we have enabled lazy type checking.
+            // Only partial check if we have enabled it.
             if enablePartialTypeChecking then partialCheck
             else false
 
@@ -1699,7 +1699,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         eventually {
             RequireCompilationThread ctok
             let! semanticModel = prevSemanticModel.Next(syntaxTree)
-            let! _ = semanticModel.GetState(if enablePartialTypeChecking then true else false) // Eagerly type check
+            let! _ = semanticModel.GetState(enablePartialTypeChecking) // Eagerly type check
             return semanticModel
         }
 
