@@ -60,6 +60,8 @@ type internal TcInfo =
         tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
 
         tcDependencyFiles: string list
+
+        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
     }
 
      member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]

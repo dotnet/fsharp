@@ -31,6 +31,7 @@ open FSharp.Compiler.TypedTreeOps
 
 open Microsoft.DotNet.DependencyManager
 
+open Internal.Utilities
 open Internal.Utilities.Collections
 
 [<AutoOpen>]
@@ -1040,6 +1041,8 @@ type TcInfo =
         tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
 
         tcDependencyFiles: string list
+
+        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
     }
 
     member x.TcErrors = 
@@ -1087,18 +1090,38 @@ type SyntaxTreeAccumulator (tcConfig: TcConfig, fileParsed: Event<string>, lexRe
 
     let mutable weakCache: WeakReference<_> option = None
 
-    let parse () =
+    let parse(sigNameOpt: SyntaxTree.QualifiedNameOfFile option) =
         let errorLogger = CompilationErrorLogger("Parse", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
 
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-            let input = ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
-            fileParsed.Trigger filename
+            let lower = String.lowercase filename
+            let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)
+            let input = 
+                if canSkip then
+                    SyntaxTree.ParsedInput.ImplFile(
+                        SyntaxTree.ParsedImplFileInput(
+                            filename, 
+                            false, 
+                            sigNameOpt.Value,
+                            [],
+                            [],
+                            [],
+                            isLastCompiland
+                        )
+                    ) |> Some
+                else
+                    ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
+
+            if not canSkip then
+                fileParsed.Trigger filename
 
             let res = input, sourceRange, filename, errorLogger.GetErrors ()
-            weakCache <- Some(WeakReference<_>(res))
+            // If we do not skip parsing the file, then we can cache the real result.
+            if not canSkip then
+                weakCache <- Some(WeakReference<_>(res))
             res
         with exn -> 
             let msg = sprintf "unexpected failure in SyntaxTree.parse\nerror = %s" (exn.ToString())
@@ -1106,13 +1129,15 @@ type SyntaxTreeAccumulator (tcConfig: TcConfig, fileParsed: Event<string>, lexRe
             failwith msg
 
     /// Parse the given file and return the given input.
-    member _.Parse () =
+    member _.Parse sigNameOpt =
         match weakCache with
         | Some weakCache ->
             match weakCache.TryGetTarget() with
             | true, res -> res
-            | _ -> parse ()
-        | _ -> parse ()
+            | _ -> parse sigNameOpt
+        | _ -> parse sigNameOpt
+
+    member _.FileName = filename
 
 /// Accumulated results of type checking.
 [<NoEquality; NoComparison>] 
@@ -1256,7 +1281,17 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
             match syntaxTreeOpt with 
             | None -> return! defaultTypeCheck ()
             | Some syntaxTree ->
-                match syntaxTree.Parse () with
+                let sigNameOpt =
+                    if quickCheck then
+                        let sigFileName = Path.ChangeExtension(syntaxTree.FileName, ".fsi")
+                        match prevTcInfo.sigNameOpt with
+                        | Some (expectedSigFileName, sigName) when String.Equals(expectedSigFileName, sigFileName, StringComparison.OrdinalIgnoreCase) ->
+                            Some sigName
+                        | _ ->
+                            None
+                    else
+                        None
+                match syntaxTree.Parse sigNameOpt with
                 | Some input, _sourceRange, filename, parseErrors ->
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
                     let capturingErrorLogger = CompilationErrorLogger("TypeCheck", tcConfig.errorSeverityOptions)
@@ -1300,6 +1335,12 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                                     tcErrorsRev = newErrors :: prevTcErrorsRev
                                     topAttribs = Some topAttribs
                                     tcDependencyFiles = filename :: prevTcDependencyFiles
+                                    sigNameOpt =
+                                        match input with
+                                        | SyntaxTree.ParsedInput.SigFile(SyntaxTree.ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
+                                            Some(fileName, qualName)
+                                        | _ ->
+                                            None
                                 }
 
                             if quickCheck then
@@ -1616,7 +1657,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                         yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
 
         let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
-        let tcAccMinState = 
+        let tcInfo = 
             {
               tcState=tcState
               tcEnvAtEndOfFile=tcInitial
@@ -1625,8 +1666,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               tcErrorsRev = [ initialErrors ] 
               moduleNamesDict = Map.empty
               tcDependencyFiles = basicDependencies
+              sigNameOpt = None
             }
-        let tcAccFullState =
+        let tcInfoOptional =
             {
                 tcResolutionsRev=[]
                 tcSymbolUsesRev=[]
@@ -1646,7 +1688,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 enableLazyTypeChecking,
-                beforeFileChecked, fileChecked, tcAccMinState, Eventually.Done (Some tcAccFullState), None) }
+                beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
     ///
@@ -1929,7 +1971,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
           }
         // re-parse on demand instead of retaining
         let syntaxTree = ParseTask ctok results
-        return syntaxTree.Parse ()
+        return syntaxTree.Parse None
       }
 
     member __.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
