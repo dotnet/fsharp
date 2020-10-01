@@ -451,8 +451,7 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
             garity = y.GenericArity &&
             nm = y.Name &&
             // note: these next two use structural equality on AbstractIL ILType values
-            rty = y.ReturnType &&
-            List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes &&
+            rty = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
