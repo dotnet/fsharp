@@ -619,6 +619,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     let mutable showILCode = false // show modul il code 
 #endif
     let mutable showTypes  = true  // show types after each interaction?
+    let mutable useServerPrompt = false
     let mutable fsiServerName = ""
     let mutable interact = true
     let mutable explicitArgs = []
@@ -690,6 +691,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        PublicOptions(FSIstrings.SR.fsiAdvanced(),[]);
        PrivateOptions(
         [// Make internal fsi-server* options. Do not print in the help. They are used by VFSI. 
+         CompilerOption("fsi-server-prompt","", OptionUnit (fun () -> useServerPrompt <- true), None, None); // "FSI server prompt");
          CompilerOption("fsi-server","", OptionString (fun s -> fsiServerName <- s), None, None); // "FSI server mode on given named channel");
          CompilerOption("fsi-server-input-codepage","",OptionInt (fun n -> fsiServerInputCodePage <- Some(n)), None, None); // " Set the input codepage for the console"); 
          CompilerOption("fsi-server-output-codepage","",OptionInt (fun n -> fsiServerOutputCodePage <- Some(n)), None, None); // " Set the output codepage for the console"); 
@@ -826,6 +828,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member __.FsiServerInputCodePage = fsiServerInputCodePage
     member __.FsiServerOutputCodePage = fsiServerOutputCodePage
     member __.FsiLCID with get() = fsiLCID and set v = fsiLCID <- v
+    member __.UseServerPrompt = useServerPrompt
     member __.IsInteractiveServer = isInteractiveServer()
     member __.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
     member __.EnableConsoleKeyProcessing = enableConsoleKeyProcessing
@@ -895,7 +898,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     let mutable dropPrompt = 0
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere 
     // uses to identify the prompt, see service\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
-    let prompt = if fsiOptions.IsInteractiveServer then "SERVER-PROMPT>\n" else "> "  
+    let prompt = if fsiOptions.UseServerPrompt then "SERVER-PROMPT>\n" else "> "  
 
     member __.Print()      = if dropPrompt = 0 then fsiConsoleOutput.uprintf "%s" prompt else dropPrompt <- dropPrompt - 1
     member __.PrintAhead() = dropPrompt <- dropPrompt + 1; fsiConsoleOutput.uprintf "%s" prompt
@@ -931,7 +934,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
          if fsiOptions.PeekAheadOnConsoleToPermitTyping then 
           (new Thread(fun () -> 
               match consoleOpt with 
-              | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.IsInteractiveServer ->
+              | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
                   if List.isEmpty fsiOptions.SourceFiles then 
                       if progress then fprintfn outWriter "first-line-reader-thread reading first line...";
                       firstLine <- Some(console()); 
@@ -2030,7 +2033,7 @@ type internal FsiStdinLexerProvider
     member __.CreateStdinLexer (errorLogger) =
         let lexbuf = 
             match fsiConsoleInput.TryGetConsole() with 
-            | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.IsInteractiveServer -> 
+            | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt -> 
                 LexbufFromLineReader fsiStdinSyphon (fun () -> 
                     match fsiConsoleInput.TryGetFirstLine() with 
                     | Some firstLine -> firstLine

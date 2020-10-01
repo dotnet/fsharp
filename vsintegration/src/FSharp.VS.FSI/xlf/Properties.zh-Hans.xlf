@@ -3,13 +3,28 @@
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../Properties.resx">
     <body>
       <trans-unit id="FSharpInteractive64Bit">
-        <source>64-bit F# Interactive</source>
-        <target state="translated">64 位 F# 交互窗口</target>
+        <source>64-bit for .NET Framework</source>
+        <target state="needs-review-translation">64 位 F# 交互窗口</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
-        <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">如果设为 true，且当前计算机是 64 位的，则将 F# 交互窗口作为 64 位进程运行。(否则，F# 交互为 32 位进程。)</target>
+        <source>If set to true, then run F# Interactive as a 64-bit process when using .NET Framework scripting on a 64-bit machine, otherwise, use a 32-bit process. If .NET Core scripting is enabled, F# Interactive is always a 64-bit process.</source>
+        <target state="needs-review-translation">如果设为 true，且当前计算机是 64 位的，则将 F# 交互窗口作为 64 位进程运行。(否则，F# 交互为 32 位进程。)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveDotNetFramework">
+        <source>.NET Framework Options</source>
+        <target state="new">.NET Framework Options</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveExe">
+        <source>F# Interactive executable</source>
+        <target state="new">F# Interactive executable</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveExeDescr">
+        <source>Select executable to use for F# Interactive</source>
+        <target state="new">Select executable to use for F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
@@ -20,11 +35,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">其他命令行参数传递到 Visual Studio 执行的 F# 交互窗口可执行文件。(若已启动脚本调试，则忽略优化和调试标志)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">杂项</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -48,8 +58,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
-        <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">防止被引用的程序集被 F# 交互窗口进程锁定。</target>
+        <source>Prevents referenced assemblies from being locked by the F# Interactive process (.NET Framework only).</source>
+        <target state="needs-review-translation">防止被引用的程序集被 F# 交互窗口进程锁定。</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">
@@ -58,13 +68,28 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
-        <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">启用 F# 脚本的调试(可能会影响脚本性能，需要重置 F# 交互窗口)</target>
+        <source>Enable debugging of F# scripts (.NET Framework only, may impact script performance, requires reset of F# Interactive)</source>
+        <target state="needs-review-translation">启用 F# 脚本的调试(可能会影响脚本性能，需要重置 F# 交互窗口)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">正在调试</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveStartup">
+        <source>Startup</source>
+        <target state="new">Startup</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core</source>
+        <target state="new">Use .NET Core</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Use F# Interactive for .NET Core</source>
+        <target state="new">Use F# Interactive for .NET Core</target>
         <note />
       </trans-unit>
     </body>

@@ -3,13 +3,28 @@
   <file datatype="xml" source-language="en" target-language="ru" original="../Properties.resx">
     <body>
       <trans-unit id="FSharpInteractive64Bit">
-        <source>64-bit F# Interactive</source>
-        <target state="translated">F# Interactive, 64-разрядная версия</target>
+        <source>64-bit for .NET Framework</source>
+        <target state="needs-review-translation">F# Interactive, 64-разрядная версия</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
-        <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">Если задано значение true и текущий компьютер является 64-разрядным, F# Interactive запускается как 64-разрядный процесс.  (В остальных случая F# Interactive является 32-разрядным процессом.)</target>
+        <source>If set to true, then run F# Interactive as a 64-bit process when using .NET Framework scripting on a 64-bit machine, otherwise, use a 32-bit process. If .NET Core scripting is enabled, F# Interactive is always a 64-bit process.</source>
+        <target state="needs-review-translation">Если задано значение true и текущий компьютер является 64-разрядным, F# Interactive запускается как 64-разрядный процесс.  (В остальных случая F# Interactive является 32-разрядным процессом.)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveDotNetFramework">
+        <source>.NET Framework Options</source>
+        <target state="new">.NET Framework Options</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveExe">
+        <source>F# Interactive executable</source>
+        <target state="new">F# Interactive executable</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveExeDescr">
+        <source>Select executable to use for F# Interactive</source>
+        <target state="new">Select executable to use for F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
@@ -20,11 +35,6 @@
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
         <target state="translated">Дополнительные аргументы командной строки, передаваемые исполняемому файлу F# Interactive из Visual Studio. Оптимизация и флаги отладки игнорируются, если включена отладка скриптов.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveMisc">
-        <source>Misc</source>
-        <target state="translated">Прочее</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreview">
@@ -48,8 +58,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
-        <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="translated">Предотвращает блокировку сборок, на которые указаны ссылки, интерактивным процессом F#.</target>
+        <source>Prevents referenced assemblies from being locked by the F# Interactive process (.NET Framework only).</source>
+        <target state="needs-review-translation">Предотвращает блокировку сборок, на которые указаны ссылки, интерактивным процессом F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">
@@ -58,13 +68,28 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
-        <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="translated">Включение отладки скриптов F# (может повлиять на их производительность, необходим сброс F# Interactive).</target>
+        <source>Enable debugging of F# scripts (.NET Framework only, may impact script performance, requires reset of F# Interactive)</source>
+        <target state="needs-review-translation">Включение отладки скриптов F# (может повлиять на их производительность, необходим сброс F# Interactive).</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
         <target state="translated">Отладка</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveStartup">
+        <source>Startup</source>
+        <target state="new">Startup</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core</source>
+        <target state="new">Use .NET Core</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Use F# Interactive for .NET Core</source>
+        <target state="new">Use F# Interactive for .NET Core</target>
         <note />
       </trans-unit>
     </body>

@@ -119,10 +119,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="FSharpInteractive64Bit" xml:space="preserve">
-    <value>64-bit F# Interactive</value>
+    <value>64-bit for .NET Framework</value>
   </data>
   <data name="FSharpInteractive64BitDescr" xml:space="preserve">
-    <value>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</value>
+    <value>If set to true, then run F# Interactive as a 64-bit process when using .NET Framework scripting on a 64-bit machine, otherwise, use a 32-bit process. If .NET Core scripting is enabled, F# Interactive is always a 64-bit process.</value>
   </data>
   <data name="FSharpInteractiveOptions" xml:space="preserve">
     <value>F# Interactive options</value>
@@ -130,20 +130,23 @@
   <data name="FSharpInteractiveOptionsDescr" xml:space="preserve">
     <value>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</value>
   </data>
-  <data name="FSharpInteractiveMisc" xml:space="preserve">
-    <value>Misc</value>
+  <data name="FSharpInteractiveStartup" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="FSharpInteractiveDotNetFramework" xml:space="preserve">
+    <value>.NET Framework Options</value>
   </data>
   <data name="FSharpInteractiveShadowCopy" xml:space="preserve">
     <value>Shadow copy assemblies</value>
   </data>
   <data name="FSharpInteractiveShadowCopyDescr" xml:space="preserve">
-    <value>Prevents referenced assemblies from being locked by the F# Interactive process.</value>
+    <value>Prevents referenced assemblies from being locked by the F# Interactive process (.NET Framework only).</value>
   </data>
   <data name="FSharpInteractiveDebugMode" xml:space="preserve">
     <value>Enable script debugging</value>
   </data>
   <data name="FSharpInteractiveDebugModeDescr" xml:space="preserve">
-    <value>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</value>
+    <value>Enable debugging of F# scripts (.NET Framework only, may impact script performance, requires reset of F# Interactive)</value>
   </data>
   <data name="FSharpInteractiveDebugging" xml:space="preserve">
     <value>Debugging</value>
@@ -156,6 +159,18 @@
   </data>
   <data name="FSharpInteractivePreviewMode" xml:space="preserve">
     <value>Enable preview language features</value>
+  </data>
+  <data name="FSharpInteractiveUseNetCore" xml:space="preserve">
+    <value>Use .NET Core</value>
+  </data>
+  <data name="FSharpInteractiveUseNetCoreDescr" xml:space="preserve">
+    <value>Use F# Interactive for .NET Core</value>
+  </data>
+  <data name="FSharpInteractiveExe" xml:space="preserve">
+    <value>F# Interactive executable</value>
+  </data>
+  <data name="FSharpInteractiveExeDescr" xml:space="preserve">
+    <value>Select executable to use for F# Interactive</value>
   </data>
 
 </root>

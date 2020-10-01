@@ -4,10 +4,8 @@ namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
 open System.Diagnostics
-open System.Globalization
 open System.Runtime.InteropServices
 open System.ComponentModel.Design
-open Microsoft.Win32
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.OLE.Interop
@@ -19,7 +17,6 @@ open EnvDTE
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
 
 type VSStd2KCmdID = VSConstants.VSStd2KCmdID // nested type

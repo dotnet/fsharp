@@ -2,15 +2,12 @@
 
 module internal Microsoft.VisualStudio.FSharp.Interactive.Session
 
-open FSharp.Compiler
 open System
 open System.IO
 open System.Text
 open System.Diagnostics
 open System.Runtime.Remoting
 open System.Runtime.Remoting.Lifetime
-open System.Windows.Forms
-open Internal.Utilities
 
 #nowarn "52" //  The value has been copied to ensure the original is not mutated by this operation
 
@@ -67,7 +64,9 @@ let timeoutApp descr timeoutMS (f : 'a -> 'b) (arg:'a) =
 
 module SessionsProperties = 
     let mutable useAnyCpuVersion = true // 64-bit by default
+    let mutable fsiUseNetCore = false
     let mutable fsiArgs = "--optimize"
+    let mutable fsiExe : string = null
     let mutable fsiShadowCopy = true
     let mutable fsiDebugMode = false
     let mutable fsiPreview = false
@@ -130,37 +129,61 @@ let catchAll trigger x =
     try trigger x  
     with err -> System.Windows.Forms.MessageBox.Show(err.ToString()) |> ignore
 
-let fsiExeName () = 
-    if SessionsProperties.useAnyCpuVersion then "fsiAnyCpu.exe" else "fsi.exe"
-
-// Use the VS-extension-installed development path if available, relative to the location of this assembly
-let determineFsiRelativePath1 () =
-    let thisAssemblyDirectory = typeof<EventWrapper>.Assembly.Location |> Path.GetDirectoryName
-    Path.Combine(thisAssemblyDirectory,fsiExeName() )
-
-// This path is relative to the location of "FSharp.Compiler.Interactive.Settings.dll"
-let determineFsiRelativePath2 () =
-    let thisAssembly : System.Reflection.Assembly = typeof<FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
-    let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
-    // Use the quick-development path if available    
-    Path.Combine(thisAssemblyDirectory,fsiExeName() )
-
 let determineFsiPath () =    
-    // Choose VS extension path, if it exists (for developers)
-    let fsiRelativePath1 = determineFsiRelativePath1()
-    if  File.Exists fsiRelativePath1 then fsiRelativePath1 else
+    if SessionsProperties.fsiUseNetCore then 
+        let exe = @"c:\Program Files\dotnet\dotnet.exe"
+        let arg = 
+            if String.IsNullOrWhiteSpace SessionsProperties.fsiExe then
+                "fsi"
+            else
+                if File.Exists SessionsProperties.fsiExe then
+                        SessionsProperties.fsiExe
+                else
+                    raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe SessionsProperties.fsiExe))
 
-    // Choose relative path, if it exists (for developers), otherwise, the installed path.    
-    let fsiRelativePath2 = determineFsiRelativePath2()
-    if  File.Exists fsiRelativePath2 then fsiRelativePath2 else
+        if not (File.Exists exe) then
+            raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe exe))
+        exe, arg, false, false
+    else
+        let fsiExeName () = 
+            if SessionsProperties.useAnyCpuVersion then "fsiAnyCpu.exe" else "fsi.exe"
 
-    // Try the registry key
-    let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with Some(s) -> s | None -> ""
-    let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
-    if File.Exists(fsiRegistryPath) then fsiRegistryPath else
+        // Use the VS-extension-installed development path if available, relative to the location of this assembly
+        let determineFsiRelativePath1 () =
+            let thisAssemblyDirectory = typeof<EventWrapper>.Assembly.Location |> Path.GetDirectoryName
+            Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
-    // Otherwise give up
-    raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
+        // This path is relative to the location of "FSharp.Compiler.Interactive.Settings.dll"
+        let determineFsiRelativePath2 () =
+            let thisAssembly : System.Reflection.Assembly = typeof<FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
+            let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
+            // Use the quick-development path if available    
+            Path.Combine(thisAssemblyDirectory,fsiExeName() )
+
+        let fsiExe =
+            if not (String.IsNullOrWhiteSpace SessionsProperties.fsiExe) then
+                if File.Exists SessionsProperties.fsiExe then
+                    SessionsProperties.fsiExe
+                else
+                    raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe SessionsProperties.fsiExe))
+            else
+
+            // Choose VS extension path, if it exists (for developers)
+            let fsiRelativePath1 = determineFsiRelativePath1()
+            if  File.Exists fsiRelativePath1 then fsiRelativePath1 else
+
+            // Choose relative path, if it exists (for developers), otherwise, the installed path.    
+            let fsiRelativePath2 = determineFsiRelativePath2()
+            if  File.Exists fsiRelativePath2 then fsiRelativePath2 else
+
+            // Try the registry key
+            let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with Some(s) -> s | None -> ""
+            let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
+            if File.Exists(fsiRegistryPath) then fsiRegistryPath else
+
+            // Otherwise give up
+            raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
+        fsiExe, "", true, true
 
 let readLinesAsync (reader: StreamReader) trigger =
     let buffer = StringBuilder(1024)
@@ -208,7 +231,7 @@ let readLinesAsync (reader: StreamReader) trigger =
 
 let fsiStartInfo channelName =
     let procInfo = new ProcessStartInfo()
-    let fsiPath  = determineFsiPath () 
+    let fsiPath, fsiFirstArgs, fsiSupportsServer, fsiSupportsShadowcopy  = determineFsiPath () 
 
     procInfo.FileName  <- fsiPath
     // Mismatched encoding on I/O streams between VS addin and it's FSI session.
@@ -217,29 +240,22 @@ let fsiStartInfo channelName =
     // We also need to send fsi.exe the locale of the VS process
     let inCP,outCP = Encoding.UTF8.CodePage,Encoding.UTF8.CodePage
 
-    let addBoolOption name value args = sprintf "%s --%s%s" args name (if value then "+" else "-")
-    let addStringOption name value args = sprintf "%s --%s:%O" args name value
+    let addBoolOption b name value args = if b then sprintf "%s --%s%s" args name (if value then "+" else "-") else args
+    let addStringOption b name value args = if b then sprintf "%s --%s:%O" args name value else args
 
     let procArgs =
-        ""
-        |> addStringOption "fsi-server-output-codepage" outCP
-        |> addStringOption "fsi-server-input-codepage" inCP
-        |> addStringOption "fsi-server-lcid" System.Threading.Thread.CurrentThread.CurrentUICulture.LCID
-        |> addStringOption "fsi-server" channelName
+        fsiFirstArgs
+        |> addStringOption true "fsi-server-output-codepage" outCP
+        |> addStringOption true "fsi-server-input-codepage" inCP
+        |> addStringOption true "fsi-server-lcid" System.Threading.Thread.CurrentThread.CurrentUICulture.LCID
+        |> addStringOption true "fsi-server" channelName
         |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
-        |> addBoolOption "shadowcopyreferences" SessionsProperties.fsiShadowCopy
-        |> (fun args ->
-            // for best debug experience, need optimizations OFF and debug info ON
-            // tack these on the the end, they will override whatever comes earlier
-            if SessionsProperties.fsiDebugMode then
-                args |> addBoolOption "optimize" false |> addBoolOption "debug" true
-            else
-                args)
-        |> (fun args ->
-            if SessionsProperties.fsiPreview then
-                args |> addStringOption "langversion" "preview"
-            else
-                args)
+        |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" SessionsProperties.fsiShadowCopy
+        // For best debug experience, need optimizations OFF and debug info ON
+        // tack these on the the end, they will override whatever comes earlier
+        |> addBoolOption SessionsProperties.fsiDebugMode "optimize" false
+        |> addBoolOption SessionsProperties.fsiDebugMode "debug" true
+        |> addStringOption SessionsProperties.fsiPreview "langversion" "preview"
 
     procInfo.Arguments <- procArgs
     procInfo.CreateNoWindow <- true
@@ -252,7 +268,7 @@ let fsiStartInfo channelName =
     let tmpPath = Path.GetTempPath()
     if Directory.Exists(tmpPath) then
         procInfo.WorkingDirectory <- tmpPath
-    procInfo
+    procInfo, fsiSupportsServer
 
 
 let nonNull = function null -> false | (s:string) -> true
@@ -266,7 +282,7 @@ type FsiSession() =
         let salt = randomSalt.Next()
         sprintf "FSIChannel_%d_%d_%d" pid tick salt
 
-    let procInfo = fsiStartInfo channelName
+    let procInfo, fsiSupportsServer = fsiStartInfo channelName
     let cmdProcess = new Process(StartInfo=procInfo)
     let fsiOutput = Event<_>()
     let fsiError = Event<_>()
@@ -293,9 +309,12 @@ type FsiSession() =
 
     do cmdProcess.EnableRaisingEvents <- true
 
-    let client   = 
-        try FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName)
-        with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
+    let clientConnection   = 
+        if fsiSupportsServer then
+            try Some (FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName))
+            with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
+        else
+            None
 
     /// interrupt timeout in miliseconds 
     let interruptTimeoutMS   = 1000 
@@ -329,10 +348,13 @@ type FsiSession() =
 
     // Create session object 
     member x.Interrupt() = 
-       checkLeaseStatus client
-       match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
-       | Some () -> true
-       | None    -> false
+       match clientConnection with
+       | None -> false
+       | Some client ->
+           checkLeaseStatus client
+           match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
+           | Some () -> true
+           | None    -> false
 
     member x.SendInput (str: string) = inputQueue.Post(str)
 

@@ -3,18 +3,11 @@
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
-open System.IO
-open System.Diagnostics
-open System.Globalization
-open System.Windows.Forms
 open System.Runtime.InteropServices
-open System.ComponentModel.Design
-open Microsoft.Win32
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Interactive
 open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Package
 open Microsoft.VisualStudio.TextManager.Interop
 open System.ComponentModel.Composition
@@ -38,25 +31,35 @@ module internal ContentType =
 type FsiPropertyPage() = 
     inherit DialogPage()
 
-    [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
-    [<ResourceDisplayName(SRProperties.FSharpInteractive64Bit)>]
-    [<ResourceDescription(SRProperties.FSharpInteractive64BitDescr)>]
-    member this.FsiPreferAnyCPUVersion with get() = SessionsProperties.useAnyCpuVersion and set (x:bool) = SessionsProperties.useAnyCpuVersion <- x
+    [<ResourceCategory(SRProperties.FSharpInteractiveStartup)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveUseNetCore)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveUseNetCoreDescr)>]
+    member this.FsiUseNetCore with get() = SessionsProperties.fsiUseNetCore and set (x:bool) = SessionsProperties.fsiUseNetCore <- x
 
-    [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
+    [<ResourceCategory(SRProperties.FSharpInteractiveStartup)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveExe)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveExeDescr)>]
+    member this.FsiExe with get() = SessionsProperties.fsiExe and set (x:string) = SessionsProperties.fsiExe <- x
+
+    [<ResourceCategory(SRProperties.FSharpInteractiveStartup)>]
     [<ResourceDisplayName(SRProperties.FSharpInteractiveOptions)>]
     [<ResourceDescription(SRProperties.FSharpInteractiveOptionsDescr)>]
     member this.FsiCommandLineArgs with get() = SessionsProperties.fsiArgs and set (x:string) = SessionsProperties.fsiArgs <- x
 
-    [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
-    [<ResourceDisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
-    [<ResourceDescription(SRProperties.FSharpInteractiveShadowCopyDescr)>]
-    member this.FsiShadowCopy with get() = SessionsProperties.fsiShadowCopy and set (x:bool) = SessionsProperties.fsiShadowCopy <- x
-
-    [<ResourceCategory(SRProperties.FSharpInteractiveDebugging)>]
+    [<ResourceCategory(SRProperties.FSharpInteractiveDotNetFramework)>]
     [<ResourceDisplayName(SRProperties.FSharpInteractiveDebugMode)>]
     [<ResourceDescription(SRProperties.FSharpInteractiveDebugModeDescr)>]
     member this.FsiDebugMode with get() = SessionsProperties.fsiDebugMode and set (x:bool) = SessionsProperties.fsiDebugMode <- x
+
+    [<ResourceCategory(SRProperties.FSharpInteractiveDotNetFramework)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractive64Bit)>]
+    [<ResourceDescription(SRProperties.FSharpInteractive64BitDescr)>]
+    member this.FsiPreferAnyCPUVersion with get() = SessionsProperties.useAnyCpuVersion and set (x:bool) = SessionsProperties.useAnyCpuVersion <- x
+
+    [<ResourceCategory(SRProperties.FSharpInteractiveDotNetFramework)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveShadowCopyDescr)>]
+    member this.FsiShadowCopy with get() = SessionsProperties.fsiShadowCopy and set (x:bool) = SessionsProperties.fsiShadowCopy <- x
 
     [<ResourceCategory(SRProperties.FSharpInteractivePreview)>]
     [<ResourceDisplayName(SRProperties.FSharpInteractivePreviewMode)>]

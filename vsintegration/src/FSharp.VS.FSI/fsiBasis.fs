@@ -1,36 +1,12 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
-#if DESIGNER
-#r "FSharp.Compiler.Server.Shared.dll" 
-#I @"C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\Assemblies"
-#I @"C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5"
-#r "System.Core.dll"
-#r "system.windows.forms.dll"
-#r "Microsoft.VisualStudio.OLE.Interop.dll"
-#r "Microsoft.VisualStudio.Package.LanguageService.9.0.dll"
-#r "Microsoft.VisualStudio.Shell.9.0.dll"
-#r "Microsoft.VisualStudio.Shell.Interop.dll"
-#r "Microsoft.VisualStudio.Shell.Interop.8.0.dll"
-#r "Microsoft.VisualStudio.Shell.Interop.9.0.dll"
-#r "Microsoft.VisualStudio.TextManager.Interop.dll"
-#r "Microsoft.VisualStudio.TextManager.Interop.8.0.dll"
-#endif  
-
 open System
-open System.IO
-open System.Diagnostics
-open System.Globalization
 open System.Text.RegularExpressions
-open System.Windows.Forms
 open System.Runtime.InteropServices
-open System.ComponentModel.Design
 open Microsoft.Win32
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.TextManager.Interop
 
 module internal AssemblyAttributes = 
     [<assembly:ComVisible(true)>]
