@@ -1115,8 +1115,7 @@ type SyntaxTreeAccumulator (tcConfig: TcConfig, fileParsed: Event<string>, lexRe
                 else
                     ParseOneInputFile(tcConfig, lexResourceManager, [], filename, isLastCompiland, errorLogger, (*retryLocked*)true)
 
-            if not canSkip then
-                fileParsed.Trigger filename
+            fileParsed.Trigger filename
 
             let res = input, sourceRange, filename, errorLogger.GetErrors ()
             // If we do not skip parsing the file, then we can cache the real result.
@@ -1147,7 +1146,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                             keepAssemblyContents, keepAllBackgroundResolutions,
                             maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
                             enableBackgroundItemKeyStoreAndSemanticClassification,
-                            enableLazyTypeChecking,
+                            enablePartialTypeChecking,
                             beforeFileChecked: Event<string>,
                             fileChecked: Event<string>,
                             prevTcInfo: TcInfo,
@@ -1174,7 +1173,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
     member this.GetState(quickCheck: bool) =
         let quickCheck =
             // Only enable quick checks if we have enabled lazy type checking.
-            if enableLazyTypeChecking then quickCheck
+            if enablePartialTypeChecking then quickCheck
             else false
 
         let mustCheck =
@@ -1215,7 +1214,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enableLazyTypeChecking,
+                    enablePartialTypeChecking,
                     beforeFileChecked, fileChecked, prevState.Minimum, lazyPrevFullState, Some syntaxTree)
         }
 
@@ -1242,7 +1241,7 @@ type TypeCheckAccumulator ( tcConfig: TcConfig,
                     maxTimeShareMilliseconds, 
                     keepAllBackgroundSymbolUses, 
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enableLazyTypeChecking,
+                    enablePartialTypeChecking,
                     beforeFileChecked, fileChecked, prevMinState, lazyPrevFullState, None)
         }
 
@@ -1535,7 +1534,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         keepAssemblyContents, keepAllBackgroundResolutions,
         maxTimeShareMilliseconds, keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
-        enableLazyTypeChecking,
+        enablePartialTypeChecking,
         dependencyProviderOpt: DependencyProvider option) =
 
     let tcConfigP = TcConfigProvider.Constant tcConfig
@@ -1687,7 +1686,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 maxTimeShareMilliseconds, 
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
-                enableLazyTypeChecking,
+                enablePartialTypeChecking,
                 beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1696,7 +1695,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let TypeCheckTask ctok (tcAcc: TypeCheckAccumulator) syntaxTree: Eventually<TypeCheckAccumulator> =
         eventually {
             RequireCompilationThread ctok
-            return! tcAcc.Next(syntaxTree)
+            let! nextTcAcc = tcAcc.Next(syntaxTree)
+            let! _ = nextTcAcc.TypeCheck(if enablePartialTypeChecking then true else false) // Eagerly type check
+            return nextTcAcc
         }
 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
@@ -1990,7 +1991,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                        tryGetMetadataSnapshot, suggestNamesForErrors,
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
-                       enableLazyTypeChecking: bool,
+                       enablePartialTypeChecking: bool,
                        dependencyProviderOpt) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -2116,7 +2117,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     maxTimeShareMilliseconds,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enableLazyTypeChecking,
+                    enablePartialTypeChecking,
                     dependencyProviderOpt)
             return Some builder
           with e -> 
