@@ -1,6 +1,6 @@
 
   #blaaaaaa // blaaaaaa is not a known command;;
-  ^
+  ^^^^^^^^^
 
 stdin(220,1): warning FS3353: Invalid directive '#blaaaaaa '
 
