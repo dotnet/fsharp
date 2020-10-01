@@ -78,6 +78,7 @@ type public FSharpChecker =
     /// <param name="suggestNamesForErrors">Indicate whether name suggestion should be enabled</param>
     /// <param name="keepAllBackgroundSymbolUses">Indicate whether all symbol uses should be kept in background checking</param>
     /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
+    /// <param name="enableLazyTypeChecking">Indicates whether to perform partial type checking. Performance will vary depending on how existing APIs are used.</param>
     static member Create: 
         ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  *
         ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
