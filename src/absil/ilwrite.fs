@@ -443,16 +443,8 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
         match obj with
         | :? MethodDefKey as y ->
             let compareILTypes o1 o2 =
-                let getScope (v:ILTypeSpec) =
-                    match v.Scope with
-                    | ILScopeRef.PrimaryAssembly -> ilg.primaryAssemblyScopeRef
-                    | _ -> v.Scope
-
                 match o1, o2 with
-                | ILType.Value v1, ILType.Value v2 ->
-                    let s1 = getScope v1
-                    let s2 = getScope v2
-                    (s1 = s2) && (v1.BasicQualifiedName = v2.BasicQualifiedName)
+                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef ilg.primaryAssemblyScopeRef v2
                 | _ -> o1 = o2
 
             tidx = y.TypeIdx &&

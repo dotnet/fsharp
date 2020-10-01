@@ -194,6 +194,8 @@ type ILTypeRef =
 
     member QualifiedName: string
 
+    member internal EqualsWithPrimaryScopeRef: ILScopeRef -> obj -> bool
+
     interface System.IComparable
     
 /// Type specs and types.  
@@ -222,6 +224,8 @@ type ILTypeSpec =
     
     /// The basic qualified name of the type in the assembly.
     member internal BasicQualifiedName: string
+
+    member internal EqualsWithPrimaryScopeRef: ILScopeRef -> obj -> bool
 
     interface System.IComparable
 
