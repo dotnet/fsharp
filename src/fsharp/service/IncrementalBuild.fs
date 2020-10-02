@@ -1104,7 +1104,7 @@ type TcInfo =
     member x.TcErrors = 
         Array.concat (List.rev x.tcErrorsRev)
 
-/// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for tooling.
+/// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
 type TcInfoOptional =
     {
