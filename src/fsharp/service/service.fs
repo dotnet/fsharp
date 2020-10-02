@@ -307,8 +307,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         member x.EvaluateRawContents(ctok) = 
                           cancellable {
                             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckProjectImpl", nm)
-                            let! (r : FSharpCheckProjectResults) = self.ParseAndCheckProjectImpl(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
-                            return r.RawFSharpAssemblyData
+                            return! self.GetAssemblyData(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
                           }
                         member x.TryGetLogicalTimeStamp(cache, ctok) = 
                             self.TryGetLogicalTimeStampForProject(cache, ctok, opts, userOpName + ".TimeStampReferencedProject("+nm+")")
@@ -832,6 +831,17 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                                             tcEnvAtEnd.AccessRights, tcAssemblyExprOpt, Array.ofList tcDependencyFiles))
       }
 
+    member _.GetAssemblyData(options, ctok, userOpName) =
+        cancellable {
+            let! builderOpt,_ = getOrCreateBuilder (ctok, options, userOpName)
+            match builderOpt with 
+            | None -> 
+                return None
+            | Some builder -> 
+                let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject(ctok)
+                return tcAssemblyDataOpt
+        }
+
     /// Get the timestamp that would be on the output if fully built immediately
     member private __.TryGetLogicalTimeStampForProject(cache, ctok, options, userOpName: string) =
 
@@ -1023,9 +1033,9 @@ type FSharpChecker(legacyReferenceResolver,
                     suggestNamesForErrors,
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
-                    enableLazyTypeChecking) =
+                    enablePartialTypeChecking) =
 
-    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enableLazyTypeChecking)
+    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions, tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses, enableBackgroundItemKeyStoreAndSemanticClassification, enablePartialTypeChecking)
 
     static let globalInstance = lazy FSharpChecker.Create()
             
