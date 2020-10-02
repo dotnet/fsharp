@@ -306,7 +306,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     { new IProjectReference with 
                         member x.EvaluateRawContents(ctok) = 
                           cancellable {
-                            Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckProjectImpl", nm)
+                            Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
                             return! self.GetAssemblyData(opts, ctok, userOpName + ".CheckReferencedProject("+nm+")")
                           }
                         member x.TryGetLogicalTimeStamp(cache, ctok) = 
@@ -851,6 +851,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         match builderOpt with 
         | None -> None
         | Some builder -> Some (builder.GetLogicalTimeStampForProject(cache, ctok))
+
 
     /// Parse and typecheck the whole project.
     member bc.ParseAndCheckProject(options, userOpName) =

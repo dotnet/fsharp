@@ -1725,7 +1725,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         eventually {
             RequireCompilationThread ctok
             let! semanticModel = prevSemanticModel.Next(syntaxTree)
-            let! _ = semanticModel.GetState(enablePartialTypeChecking) // Eagerly type check
+            // Eagerly type check
+            // We need to do this to keep the expected behavior of events (namely fileChecked) when checking a file/project.
+            let! _ = semanticModel.GetState(enablePartialTypeChecking)
             return semanticModel
         }
 
