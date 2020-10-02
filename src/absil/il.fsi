@@ -209,21 +209,18 @@ type ILTypeSpec =
 
     /// The type instantiation if the type is generic, otherwise empty
     member GenericArgs: ILGenericArgs
-    
-    /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly? 
+
+    /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly?
     member Scope: ILScopeRef
     
     /// The list of enclosing type names for a nested type. If non-nil then the first of these also contains the namespace.
     member Enclosing: string list
-    
+
     /// The name of the type. This also contains the namespace if Enclosing is empty.
     member Name: string
-    
+
     /// The name of the type in the assembly using the '.' notation for nested types.
     member FullName: string
-    
-    /// The basic qualified name of the type in the assembly.
-    member internal BasicQualifiedName: string
 
     member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
 
