@@ -605,9 +605,7 @@ type TcConfigBuilder =
 #endif
           compilationThread = 
                 let ctok = CompilationThreadToken ()
-                { new ICompilationThread with 
-                    member __.EnqueueWork work = work ctok 
-                }
+                { new ICompilationThread with member __.EnqueueWork work = work ctok }
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
