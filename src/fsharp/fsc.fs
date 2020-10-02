@@ -1844,11 +1844,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
             let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofSeq
             
-            let parallelOptions = ParallelOptions()
-            parallelOptions.MaxDegreeOfParallelism <- Environment.ProcessorCount
-
-            if parallelOptions.MaxDegreeOfParallelism > sourceFiles.Length then
-                parallelOptions.MaxDegreeOfParallelism <- sourceFiles.Length
+            let parallelOptions = ParallelOptions(MaxDegreeOfParallelism=min Environment.ProcessorCount sourceFiles.Length)
 
             let results = Array.zeroCreate sourceFiles.Length
             Parallel.For(0, sourceFiles.Length, parallelOptions, fun i ->
@@ -2262,4 +2258,3 @@ let mainCompile
     typecheckAndCompile
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
         defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
-
