@@ -444,7 +444,7 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType
         | :? MethodDefKey as y ->
             let compareILTypes o1 o2 =
                 match o1, o2 with
-                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef ilg.primaryAssemblyScopeRef v2
+                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj )
                 | _ -> o1 = o2
 
             tidx = y.TypeIdx &&

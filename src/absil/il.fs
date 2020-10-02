@@ -619,7 +619,7 @@ type ILTypeRef =
         (x.Name = y.Name) &&
         (x.Enclosing = y.Enclosing)
 
-    member x.EqualsWithPrimaryScopeRef (primaryScopeRef:ILScopeRef) (yobj:obj) =
+    member x.EqualsWithPrimaryScopeRef(primaryScopeRef:ILScopeRef, yobj:obj) =
         let y = (yobj :?> ILTypeRef)
         let isPrimary (v:ILTypeRef) =
             match v.Scope with
@@ -705,9 +705,9 @@ and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugT
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    member x.EqualsWithPrimaryScopeRef (primaryScopeRef:ILScopeRef) (yobj:obj) =
+    member x.EqualsWithPrimaryScopeRef(primaryScopeRef:ILScopeRef, yobj:obj) =
         let y = (yobj :?> ILTypeSpec)
-        (x.tspecTypeRef.EqualsWithPrimaryScopeRef primaryScopeRef y.TypeRef) && (x.GenericArgs = y.GenericArgs)
+        x.tspecTypeRef.EqualsWithPrimaryScopeRef(primaryScopeRef, y.TypeRef) && (x.GenericArgs = y.GenericArgs)
 
     override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
 
