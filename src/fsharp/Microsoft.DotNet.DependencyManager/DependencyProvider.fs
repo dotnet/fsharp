@@ -103,9 +103,9 @@ type IResolveDependenciesResult =
     ///     however, the dependency manager dll understands the nuget package layout
     ///     and so if the package contains folders similar to the nuget layout then
     ///     the dependency manager will be able to probe and resolve any native dependencies
-    ///     required by the buget package.
+    ///     required by the nuget package.
     ///
-    /// This path is also equivant to
+    /// This path is also equivalent to
     ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
 

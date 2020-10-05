@@ -20,7 +20,7 @@ type ResolveDependenciesResult =
     /// The resolution error log (process stderr)
     member StdError: string[]
 
-    /// The resolution paths - the full paths to selcted resolved dll's.
+    /// The resolution paths - the full paths to selected resolved dll's.
     /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
     member Resolutions: seq<string>
 
@@ -33,7 +33,7 @@ type ResolveDependenciesResult =
     ///     however, the dependency manager dll understands the nuget package layout
     ///     and so if the package contains folders similar to the nuget layout then
     ///     the dependency manager will be able to probe and resolve any native dependencies
-    ///     required by the buget package.
+    ///     required by the nuget package.
     ///
     /// This path is also equivant to
     ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
