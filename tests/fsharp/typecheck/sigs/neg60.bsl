@@ -57,6 +57,12 @@ neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refe
 
 neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
+neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
 neg60.fs(65,19,65,38): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
@@ -118,7 +124,11 @@ neg60.fs(128,9,128,13): typecheck error FS3087: The custom operation 'body' refe
 
 neg60.fs(128,9,128,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
-neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+neg60.fs(128,9,128,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(128,9,128,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(128,9,128,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
 neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
@@ -129,6 +139,20 @@ neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refe
 neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
 neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(129,9,129,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(130,9,130,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(130,9,130,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(130,9,130,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
 neg60.fs(130,9,130,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
@@ -141,6 +165,12 @@ neg60.fs(130,9,130,13): typecheck error FS3087: The custom operation 'body' refe
 neg60.fs(130,9,130,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
 neg60.fs(130,9,130,13): typecheck error FS3099: 'body' is used with an incorrect number of arguments. This is a custom operation in this query or computation expression. Expected 1 argument(s), but given 3.
+
+neg60.fs(131,9,131,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(131,9,131,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
+
+neg60.fs(131,9,131,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
 neg60.fs(131,9,131,13): typecheck error FS3087: The custom operation 'body' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
