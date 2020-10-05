@@ -4626,8 +4626,8 @@ type TOp =
     /// An operation representing a lambda-encoded for loop
     | For of DebugPointAtFor * ForLoopStyle (* count up or down? *)
 
-    /// An operation representing a lambda-encoded try/catch
-    | TryCatch of DebugPointAtTry * DebugPointAtWith
+    /// An operation representing a lambda-encoded try/with
+    | TryWith of DebugPointAtTry * DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
     | TryFinally of DebugPointAtTry * DebugPointAtFinally
@@ -4725,7 +4725,7 @@ type TOp =
         | UInt16s _ -> "UInt16s(..)"
         | While _ -> "While"
         | For _ -> "For"
-        | TryCatch _ -> "TryCatch"
+        | TryWith _ -> "TryWith"
         | TryFinally _ -> "TryFinally"
         | Recd (_, tcref) -> "Recd(" + tcref.LogicalName + ")"
         | ValFieldSet rfref -> "ValFieldSet(" + rfref.FieldName + ")"

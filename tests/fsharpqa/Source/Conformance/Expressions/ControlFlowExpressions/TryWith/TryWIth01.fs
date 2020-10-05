@@ -1,7 +1,7 @@
 // #Conformance #ControlFlow #Exceptions 
 #light
 
-// Verify simple try catch blogs work
+// Verify simple try with blogs work
 
 let testPassed =
     try

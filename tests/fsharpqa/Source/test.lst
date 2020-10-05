@@ -126,7 +126,7 @@ Conformance03			Conformance\Expressions\ControlFlowExpressions\PatternMatching
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SequenceIteration
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SequentialExecution
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SimpleFor
-Conformance03			Conformance\Expressions\ControlFlowExpressions\TryCatch
+Conformance03			Conformance\Expressions\ControlFlowExpressions\TryWith
 Conformance03			Conformance\Expressions\ControlFlowExpressions\TryFinally
 Conformance03			Conformance\Expressions\ControlFlowExpressions\While
 Conformance03			Conformance\Expressions\DataExpressions\AddressOf

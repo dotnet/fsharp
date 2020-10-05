@@ -5795,7 +5795,7 @@ and TcExprFlex cenv flex compat ty (env: TcEnv) tpenv (e: SynExpr) =
 
 and TcExpr cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
     // Start an error recovery handler 
-    // Note the try/catch can lead to tail-recursion problems for iterated constructs, e.g. let... in... 
+    // Note the try/with can lead to tail-recursion problems for iterated constructs, e.g. let... in...
     // So be careful! 
     try 
         TcExprNoRecover cenv ty env tpenv expr 
