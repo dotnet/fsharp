@@ -297,8 +297,8 @@ function BuildCompiler() {
     if ($bootstrapTfm -eq "netcoreapp3.1") {
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-        $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
-        $fsiProject = "$RepoRoot\src\fsharp\fsi\fsi.fsproj"
+        $fscProject = "`"$RepoRoot\src\fsharp\fsc\fsc.fsproj`""
+        $fsiProject = "`"$RepoRoot\src\fsharp\fsi\fsi.fsproj`""
 
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }

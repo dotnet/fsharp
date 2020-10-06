@@ -55,16 +55,6 @@ If you don't have everything installed yet, you'll get prompted by Visual Studio
 
 If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
-### Developing the F# Compiler (Linux/macOS)
-
-For Linux/Mac:
-
-    ./build.sh
-
-Running tests:
-
-    ./build.sh --test
-
 We recommend installing the latest released Visual Studio and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
 * [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
