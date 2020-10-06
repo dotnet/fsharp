@@ -709,7 +709,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     /// Fetch the check information from the background compiler (which checks w.r.t. the FileSystem API)
     member __.GetBackgroundCheckResultsForFileInProject(filename, options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "GetBackgroundCheckResultsForFileInProject", filename, fun ctok -> 
-            cancellable {
+          cancellable {
             let! builderOpt, creationErrors = getOrCreateBuilder (ctok, options, userOpName)
             match builderOpt with
             | None ->
@@ -720,7 +720,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 let! (parseTreeOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (ctok, filename)
                 let! tcProj = builder.GetCheckResultsAfterFileInProject (ctok, filename)
 
-                let tcInfo, tcInfoOptional = tcProj.TcInfoFull ctok
+                let tcInfo, tcInfoOptional = tcProj.TcInfoWithOptional ctok
 
                 let tcResolutionsRev = tcInfoOptional.tcResolutionsRev
                 let tcSymbolUsesRev = tcInfoOptional.tcSymbolUsesRev
@@ -730,9 +730,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                 let latestImplementationFile = tcInfoOptional.latestImplFile
                 let tcDependencyFiles = tcInfo.tcDependencyFiles
-
                 let tcErrors = tcInfo.TcErrors
-
                 let errorOptions = builder.TcConfig.errorSeverityOptions
                 let untypedErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, false, filename, untypedErrors, suggestNamesForErrors) |]
                 let tcErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, false, filename, tcErrors, suggestNamesForErrors) |]
@@ -763,7 +761,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                             latestImplementationFile,
                             List.head tcOpenDeclarationsRev) 
                 return (parseResults, typedResults)
-            }
+          }
         )
 
     member __.FindReferencesInFile(filename: string, options: FSharpProjectOptions, symbol: FSharpSymbol, canInvalidateProject: bool, userOpName: string) =
@@ -775,7 +773,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             | Some builder -> 
                 if builder.ContainsFile filename then
                     let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                    let _, tcInfoOptional = checkResults.TcInfoFull ctok
+                    let _, tcInfoOptional = checkResults.TcInfoWithOptional ctok
                     match tcInfoOptional.itemKeyStore with
                     | None -> return Seq.empty
                     | Some reader -> return reader.FindAll symbol.Item
@@ -791,7 +789,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 | None -> return [||]
                 | Some builder -> 
                     let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                    let _, tcInfoOptional = checkResults.TcInfoFull ctok
+                    let _, tcInfoOptional = checkResults.TcInfoWithOptional ctok
                     return tcInfoOptional.semanticClassification })
 
     /// Try to get recent approximate type check results for a file. 
@@ -816,7 +814,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
               let errorOptions = tcProj.TcConfig.errorSeverityOptions
               let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
-              let tcInfo, tcInfoOptional = tcProj.TcInfoFull ctok
+              let tcInfo, tcInfoOptional = tcProj.TcInfoWithOptional ctok
 
               let tcSymbolUses = tcInfoOptional.TcSymbolUses
               let topAttribs = tcInfo.topAttribs

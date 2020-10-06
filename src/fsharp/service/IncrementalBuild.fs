@@ -1023,9 +1023,11 @@ module IncrementalBuilderEventTesting =
 
 module Tc = FSharp.Compiler.TypeChecker
 
+// This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.SyntaxTree.
 [<AutoOpen>]
 module IncrementalBuildSyntaxTree =
 
+    /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
     type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, filename: string, isLastCompiland) =
 
@@ -1260,7 +1262,7 @@ type SemanticModel private (tcConfig: TcConfig,
             return state.Partial
         }
 
-    member this.TcInfoFull =
+    member this.TcInfoWithOptional =
         eventually {
             let! state = this.GetState(false)
             match state with
@@ -1511,7 +1513,7 @@ type PartialCheckResults private (semanticModel: SemanticModel, timeStamp: DateT
 
     member _.TcInfo ctok = semanticModel.TcInfo |> eval ctok
 
-    member _.TcInfoFull ctok = semanticModel.TcInfoFull |> eval ctok
+    member _.TcInfoWithOptional ctok = semanticModel.TcInfoWithOptional |> eval ctok
 
     static member Create (semanticModel: SemanticModel, timestamp) = 
         PartialCheckResults(semanticModel, timestamp)
@@ -1757,7 +1759,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                             let tcInfo = semanticModel.TcInfo |> Eventually.force ctok
                             tcInfo, None
                         else
-                            let tcInfo, tcInfoOptional = semanticModel.TcInfoFull |> Eventually.force ctok
+                            let tcInfo, tcInfoOptional = semanticModel.TcInfoWithOptional |> Eventually.force ctok
                             tcInfo, tcInfoOptional.latestImplFile
                     tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile)
             TypeCheckMultipleInputsFinish (results, finalInfo.tcState)
