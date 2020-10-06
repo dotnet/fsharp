@@ -9,17 +9,17 @@
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="new">with the highest version</target>
+        <target state="translated">mit der höchsten Version</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="new">Load Nuget Package</target>
+        <target state="translated">NuGet-Paket laden</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="needs-review-translation">Nicht verwendet.</target>
+        <target state="translated">Nicht verwendet</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="new">The source directory '{0}' not found</target>
+        <target state="translated">Das Quellverzeichnis "{0}" wurde nicht gefunden.</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="new">version</target>
+        <target state="translated">Version</target>
         <note />
       </trans-unit>
     </body>

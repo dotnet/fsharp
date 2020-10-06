@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="LearnMore">
         <source>Learn more about F# at http://docs.microsoft.com/dotnet/fsharp</source>
-        <target state="needs-review-translation">F# hakkında daha fazla bilgi edinmek için bkz. https://fsharp.org</target>
+        <target state="translated">F# hakkında daha fazla bilgi için bkz. http://docs.microsoft.com/dotnet/fsharp</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">
