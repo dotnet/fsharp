@@ -186,15 +186,14 @@ stacktype.Name = "Stack"
     [<Fact>]
     member __.``ML - use assembly with native dependencies``() =
         let code = @"
-#r ""nuget:RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json""
 #r ""nuget:Microsoft.ML,version=1.4.0-preview""
 #r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
-#r ""nuget:Microsoft.Data.DataFrame,version=0.1.1-e191008-1""
+#r ""nuget:Microsoft.Data.Analysis,version=0.4.0""
 
 open System
 open System.IO
 open System.Linq
-open Microsoft.Data
+open Microsoft.Data.Analysis
 
 let Shuffle (arr:int[]) =
     let rnd = Random()
@@ -206,9 +205,9 @@ let Shuffle (arr:int[]) =
     arr
 
 let housingPath = ""housing.csv""
-let housingData = DataFrame.ReadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
-let testSize = int (float (housingData.RowCount) * 0.1)
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
 let trainRows = randomIndices.[testSize..]
 let testRows = randomIndices.[..testSize]
 let housing_train = housingData.[trainRows]
