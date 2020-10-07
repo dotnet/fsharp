@@ -51,8 +51,8 @@ let [<Literal>] callSize = 1
 /// size of a for/while loop
 let [<Literal>] forAndWhileLoopSize = 5 
 
-/// size of a try/catch 
-let [<Literal>] tryCatchSize = 5  
+/// size of a try/with
+let [<Literal>] tryWithSize = 5
 
 /// size of a try/finally
 let [<Literal>] tryFinallySize = 5 
@@ -226,7 +226,7 @@ type Summary<'Info> =
       
       /// Meaning: could mutate, could non-terminate, could raise exception 
       /// One use: an effect expr can not be eliminated as dead code (e.g. sequencing)
-      /// One use: an effect=false expr can not throw an exception? so try-catch is removed.
+      /// One use: an effect=false expr can not throw an exception? so try-with is removed.
       HasEffect: bool  
       
       /// Indicates that a function may make a useful tailcall, hence when called should itself be tailcalled
@@ -356,7 +356,7 @@ type OptimizationSettings =
     member x.EliminateUnusedBindings () = x.localOpt () 
 
     /// eliminate try around expr with no effect 
-    member x.EliminateTryCatchAndTryFinally () = false // deemed too risky, given tiny overhead of including try/catch. See https://github.com/Microsoft/visualfsharp/pull/376
+    member x.EliminateTryWithAndTryFinally () = false // deemed too risky, given tiny overhead of including try/with. See https://github.com/Microsoft/visualfsharp/pull/376
 
     /// eliminate first part of seq if no effect 
     member x.EliminateSequential () = x.localOpt () 
@@ -1395,7 +1395,7 @@ and OpHasEffect g m op =
     | TOp.Reraise
     | TOp.For _ 
     | TOp.While _
-    | TOp.TryCatch _ (* conservative *)
+    | TOp.TryWith _ (* conservative *)
     | TOp.TryFinally _ (* conservative *)
     | TOp.TraitCall _
     | TOp.Goto _
@@ -2093,8 +2093,8 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.TryFinally (spTry, spFinally), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
         OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
 
-    | TOp.TryCatch (spTry, spWith), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] ->
-        OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
+    | TOp.TryWith (spTry, spWith), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] ->
+        OptimizeTryWith cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
 
     | TOp.TraitCall traitInfo, [], args ->
         OptimizeTraitCall cenv env (traitInfo, args, m) 
@@ -2183,7 +2183,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
       | TOp.Bytes bytes -> bytes.Length/10, valu
       | TOp.UInt16s bytes -> bytes.Length/10, valu
       | TOp.ValFieldGetAddr _     
-      | TOp.Array | TOp.For _ | TOp.While _ | TOp.TryCatch _ | TOp.TryFinally _
+      | TOp.Array | TOp.For _ | TOp.While _ | TOp.TryWith _ | TOp.TryFinally _
       | TOp.ILCall _ | TOp.TraitCall _ | TOp.LValueOp _ | TOp.ValFieldSet _
       | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet _ | TOp.Coerce | TOp.Reraise
       | TOp.UnionCaseFieldGetAddr _   
@@ -2407,7 +2407,7 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
           MightMakeCriticalTailcall = false // no tailcalls from inside in try/finally
           Info = UnknownValue } 
     // try-finally, so no effect means no exception can be raised, so just sequence the finally
-    if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
+    if cenv.settings.EliminateTryWithAndTryFinally () && not e1info.HasEffect then 
         let sp = 
             match spTry with 
             | DebugPointAtTry.Yes _ -> DebugPointAtSequential.Both 
@@ -2418,19 +2418,19 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 
         info
 
-/// Optimize/analyze a try/catch construct.
-and OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, ty, spTry, spWith) =
+/// Optimize/analyze a try/with construct.
+and OptimizeTryWith cenv env (e1, vf, ef, vh, eh, m, ty, spTry, spWith) =
     let e1R, e1info = OptimizeExpr cenv env e1    
-    // try-catch, so no effect means no exception can be raised, so discard the catch 
-    if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
+    // try-with, so no effect means no exception can be raised, so discard the with 
+    if cenv.settings.EliminateTryWithAndTryFinally () && not e1info.HasEffect then 
         e1R, e1info 
     else
         let envinner = BindInternalValToUnknown cenv vf (BindInternalValToUnknown cenv vh env)
         let efR, efinfo = OptimizeExpr cenv envinner ef 
         let ehR, ehinfo = OptimizeExpr cenv envinner eh 
         let info = 
-            { TotalSize = e1info.TotalSize + efinfo.TotalSize+ ehinfo.TotalSize + tryCatchSize
-              FunctionSize = e1info.FunctionSize + efinfo.FunctionSize+ ehinfo.FunctionSize + tryCatchSize
+            { TotalSize = e1info.TotalSize + efinfo.TotalSize+ ehinfo.TotalSize + tryWithSize
+              FunctionSize = e1info.FunctionSize + efinfo.FunctionSize+ ehinfo.FunctionSize + tryWithSize
               HasEffect = e1info.HasEffect || efinfo.HasEffect || ehinfo.HasEffect
               MightMakeCriticalTailcall = false
               Info = UnknownValue } 
