@@ -9,17 +9,17 @@
       </trans-unit>
       <trans-unit id="highestVersion">
         <source>with the highest version</source>
-        <target state="new">with the highest version</target>
+        <target state="translated">具有最高版本</target>
         <note />
       </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
-        <target state="new">Load Nuget Package</target>
+        <target state="translated">載入 Nuget 套件</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">
         <source>Not used</source>
-        <target state="needs-review-translation">沒有使用。</target>
+        <target state="translated">未使用</target>
         <note />
       </trans-unit>
       <trans-unit id="requiresAValue">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="sourceDirectoryDoesntExist">
         <source>The source directory '{0}' not found</source>
-        <target state="new">The source directory '{0}' not found</target>
+        <target state="translated">找不到來源目錄 '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="version">
         <source>version</source>
-        <target state="new">version</target>
+        <target state="translated">版本</target>
         <note />
       </trans-unit>
     </body>
