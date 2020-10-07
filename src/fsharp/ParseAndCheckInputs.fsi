@@ -87,7 +87,8 @@ val TypeCheckOneInputEventually :
     LongIdent option *
     NameResolution.TcResultsSink *
     TcState *
-    ParsedInput  
+    ParsedInput *
+    skipImplIfSigExists: bool
       -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
