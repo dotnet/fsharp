@@ -70,7 +70,4 @@ a package from every build of `main` to the [Nightly VSIX feed](README.md#using-
 a package from every build of the branch that corresponds to the current Visual Studio preview to the
 [Preview VSIX feed](README.md#using-nightly-releases-in-visual-studio).
 
-[MyGet package uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=69).  Uploads various
-packages for internal consumption.  Feed URL is `https://dotnet.myget.org/F/fsharp/api/v3/index.json`.
-
 [Internal source mirror](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp).
