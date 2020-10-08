@@ -5,7 +5,7 @@
 
 module M
 
-// Unterminated try-catch
+// Unterminated try-with
 let h1 =
     try
         ()
@@ -13,7 +13,7 @@ let h1 =
     with
     | :? System.NotFiniteNumberException -> ()
 
-// Unterminated try-catch in a computation expr
+// Unterminated try-with in a computation expr
 let a = 
     async {
         try

@@ -1225,7 +1225,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env [e1;e2;e3]
 
-    | TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
         ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref

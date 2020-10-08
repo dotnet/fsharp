@@ -1396,7 +1396,7 @@ let mkFor (g: TcGlobals) (spFor, v, e1, dir, e2, e3: Expr, m) =
     Expr.Op (TOp.For (spFor, dir), [], [mkDummyLambda g (e1, g.int_ty) ;mkDummyLambda g (e2, g.int_ty);mkLambda e3.Range v (e3, g.unit_ty)], m)
 
 let mkTryWith g (e1, vf, ef: Expr, vh, eh: Expr, m, ty, spTry, spWith) = 
-    Expr.Op (TOp.TryCatch (spTry, spWith), [ty], [mkDummyLambda g (e1, ty);mkLambda ef.Range vf (ef, ty);mkLambda eh.Range vh (eh, ty)], m)
+    Expr.Op (TOp.TryWith (spTry, spWith), [ty], [mkDummyLambda g (e1, ty);mkLambda ef.Range vf (ef, ty);mkLambda eh.Range vh (eh, ty)], m)
 
 let mkTryFinally (g: TcGlobals) (e1, e2, m, ty, spTry, spFinally) = 
     Expr.Op (TOp.TryFinally (spTry, spFinally), [ty], [mkDummyLambda g (e1, ty);mkDummyLambda g (e2, g.unit_ty)], m)
@@ -3941,8 +3941,8 @@ module DebugPrint =
                 (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
             | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
-            | Expr.Op (TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) -> 
-                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh) 
+            | Expr.Op (TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) ->
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh)
             | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
                 (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
             | Expr.Op (TOp.Bytes _, _, _, _) -> 
@@ -3953,7 +3953,7 @@ module DebugPrint =
             | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
             | Expr.Op (TOp.TryFinally _, _tyargs, _args, _) -> wordL(tagText "TOp.TryFinally...")
-            | Expr.Op (TOp.TryCatch _, _tyargs, _args, _) -> wordL(tagText "TOp.TryCatch...")
+            | Expr.Op (TOp.TryWith _, _tyargs, _args, _) -> wordL(tagText "TOp.TryWith...")
             | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
@@ -4696,7 +4696,7 @@ and accFreeInExprNonLinear opts x acc =
             let acc = accFreeInDecisionTree opts dtree acc
             accFreeInTargets opts targets acc
             
-    | Expr.Op (TOp.TryCatch _, tinst, [expr1; expr2; expr3], _) ->
+    | Expr.Op (TOp.TryWith _, tinst, [expr1; expr2; expr3], _) ->
         unionFreeVars 
           (accFreeVarsInTys opts tinst
             (accFreeInExprs opts [expr1; expr2] acc))
@@ -4716,7 +4716,7 @@ and accFreeInOp opts op acc =
     // Things containing no references
     | TOp.Bytes _ 
     | TOp.UInt16s _ 
-    | TOp.TryCatch _ 
+    | TOp.TryWith _
     | TOp.TryFinally _ 
     | TOp.For _ 
     | TOp.Coerce 
@@ -5685,7 +5685,7 @@ let rec remarkExpr m x =
         let op = 
             match op with 
             | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
-            | TOp.TryCatch (_, _) -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
+            | TOp.TryWith (_, _) -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5871,7 +5871,7 @@ let rec tyOfExpr g e =
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
-        | (TOp.TryCatch _ | TOp.TryFinally _) -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
+        | (TOp.TryWith _ | TOp.TryFinally _) -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
         | TOp.ValFieldGetAddr (fref, readonly) -> mkByrefTyWithFlag g readonly (actualTyOfRecdFieldRef fref tinst)
         | TOp.ValFieldGet fref -> actualTyOfRecdFieldRef fref tinst
         | (TOp.ValFieldSet _ | TOp.UnionCaseFieldSet _ | TOp.ExnFieldSet _ | TOp.LValueOp ((LSet | LByrefSet), _)) ->g.unit_ty
@@ -9329,9 +9329,9 @@ let (|ForLoopExpr|_|) expr =
         Some (sp1, sp2, e1, e2, v, e3, m)
     | _ -> None
 
-let (|TryCatchExpr|_|) expr = 
+let (|TryWithExpr|_|) expr =
     match expr with 
-    | Expr.Op (TOp.TryCatch (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) -> 
+    | Expr.Op (TOp.TryWith (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) ->
         Some (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
     | _ -> None
 
