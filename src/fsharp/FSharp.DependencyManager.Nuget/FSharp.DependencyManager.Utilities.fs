@@ -184,7 +184,7 @@ module internal Utilities =
             let stdOut = drainStreamToMemory p.StandardOutput
             let stdErr = drainStreamToMemory p.StandardError
 
-#if Debug
+#if DEBUG
             File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), stdOut)
             File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), stdErr)
 #endif

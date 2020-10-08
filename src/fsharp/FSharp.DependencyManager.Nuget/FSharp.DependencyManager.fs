@@ -193,19 +193,7 @@ type FSharpDependencyManager (outputDir:string option) =
             sw.WriteLine(body)
         with | _ -> ()
 
-    do if deleteAtExit then AppDomain.CurrentDomain.ProcessExit |> Event.add(fun _ -> deleteScripts () )
-
-    member _.Name = name
-
-    member _.Key = key
-
-    member _.HelpMessages = [|
-        sprintf """    #r "nuget:FSharp.Data, 3.1.2";;               // %s 'FSharp.Data' %s '3.1.2'""" (SR.loadNugetPackage()) (SR.version())
-        sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
-        |]
-
-    member _.PrepareDependencyResolutionFiles(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string): PackageBuildResolutionResult =
-
+    let prepareDependencyResolutionFiles (scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string): PackageBuildResolutionResult =
         let scriptExt =
             match scriptExt with
             | ".csx" -> csxExt
@@ -242,6 +230,18 @@ type FSharpDependencyManager (outputDir:string option) =
 
         generateAndBuildProjectArtifacts
 
+
+    do if deleteAtExit then AppDomain.CurrentDomain.ProcessExit |> Event.add(fun _ -> deleteScripts () )
+
+    member _.Name = name
+
+    member _.Key = key
+
+    member _.HelpMessages = [|
+        sprintf """    #r "nuget:FSharp.Data, 3.1.2";;               // %s 'FSharp.Data' %s '3.1.2'""" (SR.loadNugetPackage()) (SR.version())
+        sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
+        |]
+
     member this.ResolveDependencies(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFramework: string, runtimeIdentifier: string) : obj =
         let poundRprefix  =
             match scriptExt with
@@ -249,8 +249,7 @@ type FSharpDependencyManager (outputDir:string option) =
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-
-            let resolutionResult = this.PrepareDependencyResolutionFiles(scriptExt, packageManagerTextLines, targetFramework, runtimeIdentifier)
+            let resolutionResult = prepareDependencyResolutionFiles (scriptExt, packageManagerTextLines, targetFramework, runtimeIdentifier)
             match resolutionResult.resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
