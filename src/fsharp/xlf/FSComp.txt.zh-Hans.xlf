@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="chkFeatureNotSupportedInLibrary">
         <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="new">Feature '{0}' requires the F# library for language version {1} or greater.</target>
+        <target state="translated">功能“{0}”需要 {1} 或更高语言版本的 F# 库。</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
-        <target state="new">A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</target>
+        <target state="translated">泛型构造要求泛型类型参数被视为结构或引用类型。请考虑添加类型注释。</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
-        <target state="new">interfaces with multiple generic instantiation</target>
+        <target state="translated">具有多个泛型实例化的接口</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">
         <source>open type declaration</source>
-        <target state="new">open type declaration</target>
+        <target state="translated">开放类型声明</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
-        <target state="new">overloads for custom operations</target>
+        <target state="translated">自定义操作的重载</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
-        <target state="new">string interpolation</target>
+        <target state="translated">字符串内插</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -164,22 +164,22 @@
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
         <source>Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</source>
-        <target state="new">Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</target>
+        <target state="translated">内插字符串不会使用 "%" 格式说明符，除非为每个字符串提供诸如 "%d{{1+1}}" 之类的表达式。</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated2">
         <source>.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</source>
-        <target state="new">.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</target>
+        <target state="translated">.NET 样式的格式说明符(如 "{{x,3}}" 或 "{{x:N5}}")不能与 "%" 格式说明符混合使用。</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated3">
         <source>The '%P' specifier may not be used explicitly.</source>
-        <target state="new">The '%P' specifier may not be used explicitly.</target>
+        <target state="translated">不能显式使用 "%P" 说明符。</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated4">
         <source>Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</source>
-        <target state="new">Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</target>
+        <target state="translated">作为类型 IFormattable 或类型 FormattableString 使用的内插字符串不能使用 "%" 说明符，只能使用 .NET 样式的插植，如 "{{expr}}"、"{{expr,3}}" 或 "{{expr:N5}}"。</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -194,32 +194,32 @@
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
-        <target state="new">Invalid directive '#{0} {1}'</target>
+        <target state="translated">无效的指令“#{0} {1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
-        <target state="new">Keyword to specify a constant literal as a type parameter argument in Type Providers.</target>
+        <target state="translated">用于将常量文本指定为类型提供程序中的类型形参实参的关键字。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
-        <target state="new">a byte string may not be interpolated</target>
+        <target state="translated">不能内插字节字符串</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
-        <target state="new">A '}}' character must be escaped (by doubling) in an interpolated string.</target>
+        <target state="translated">在内插字符串中，必需对 "}}" 字符进行转义(通过加倍)。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexSingleQuoteInSingleQuote">
         <source>Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</source>
-        <target state="new">Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</target>
+        <target state="translated">内插字符串无效。在单引号字符串或逐字字符串的内插表达式中不能使用单引号或逐字字符串文本。请考虑对内插表达式使用显式 "let" 绑定，或使用三重引号字符串作为外部字符串文本。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
-        <target state="new">Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</target>
+        <target state="translated">内插字符串无效。在内插表达式中不能使用三重引号字符串文字。请考虑对内插表达式使用显式的 "let" 绑定。</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -259,27 +259,27 @@
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
-        <target state="new">Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</target>
+        <target state="translated">内插字符串无效。此内插字符串表达式填充为空，应为表达式。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedString">
         <source>Incomplete interpolated string begun at or before here</source>
-        <target state="new">Incomplete interpolated string begun at or before here</target>
+        <target state="translated">在此处或之前开始的内插字符串不完整</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedStringFill">
         <source>Incomplete interpolated string expression fill begun at or before here</source>
-        <target state="new">Incomplete interpolated string expression fill begun at or before here</target>
+        <target state="translated">在此处或之前开始的内插字符串表达式不完整</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedTripleQuoteString">
         <source>Incomplete interpolated triple-quote string begun at or before here</source>
-        <target state="new">Incomplete interpolated triple-quote string begun at or before here</target>
+        <target state="translated">在此处或之前开始的内插三重引号字符串不完整</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
-        <target state="new">Incomplete interpolated verbatim string begun at or before here</target>
+        <target state="translated">在此处或之前开始的内插逐字字符串不完整</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -299,7 +299,7 @@
       </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
-        <target state="new">#i is not supported by the registered PackageManagers</target>
+        <target state="translated">注册的 PackageManager 不支持 #i</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
-        <target state="new">Invalid Anonymous Record type declaration.</target>
+        <target state="translated">匿名记录类型声明无效。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -334,17 +334,17 @@
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
-        <target state="new">Byref types are not allowed in an open type declaration.</target>
+        <target state="translated">在开放类型声明中不允许使用 Byref 类型。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
-        <target state="new">Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</target>
+        <target state="translated">在内插字符串中不匹配。内插字符串不会使用 "%" 格式说明符，除非为每个字符串提供像 "'%d{{1+1}}" 这样的表达式</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
-        <target state="new">Invalid alignment in interpolated string</target>
+        <target state="translated">内插字符串中的对齐无效</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -354,12 +354,12 @@
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
         <source>Cannot assign a value to another value marked literal</source>
-        <target state="new">Cannot assign a value to another value marked literal</target>
+        <target state="translated">无法将值分配给标记为文本的其他值</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
-        <target state="new">Cannot assign '{0}' to a value marked literal</target>
+        <target state="translated">无法将“{0}”分配给标记为文本的值</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -369,7 +369,7 @@
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
-        <target state="new">Invalid interpolated string. {0}</target>
+        <target state="translated">内插字符串无效。{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -379,12 +379,12 @@
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariable">
         <source>'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</source>
-        <target state="new">'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</target>
+        <target state="translated">“{0}”无法实现具有两个实例化“{2}”和“{3}”的接口“{1}”，因为它们可能会统一。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
         <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
-        <target state="new">You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</target>
+        <target state="translated">你无法实现具有两个实例化“{1}”和“{2}”的接口“{0}”，因为它们可能会统一。</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -534,37 +534,37 @@
       </trans-unit>
       <trans-unit id="xmlDocBadlyFormed">
         <source>This XML comment is invalid: '{0}'</source>
-        <target state="new">This XML comment is invalid: '{0}'</target>
+        <target state="translated">此 XML 注释无效:“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocDuplicateParameter">
         <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
-        <target state="new">This XML comment is invalid: multiple documentation entries for parameter '{0}'</target>
+        <target state="translated">此 XML 注释无效: 参数“{0}”有多个文档条目</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
         <source>This XML comment is invalid: unknown parameter '{0}'</source>
-        <target state="new">This XML comment is invalid: unknown parameter '{0}'</target>
+        <target state="translated">此 XML 注释无效: 未知参数“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingCrossReference">
         <source>This XML comment is invalid: missing 'cref' attribute for cross-reference</source>
-        <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
+        <target state="translated">此 XML 注释无效: 交叉引用缺少 "cref" 属性</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingParameter">
         <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
-        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
+        <target state="translated">此 XML 注释不完整: 参数“{0}”没有文档</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingParameterName">
         <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
-        <target state="new">This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</target>
+        <target state="translated">此 XML 注释无效: 参数或参数引用缺少 "name" 属性</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
-        <target state="new">This XML comment is invalid: unresolved cross-reference '{0}'</target>
+        <target state="translated">此 XML 注释无效: 交叉引用“{0}”无法解析</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -3894,7 +3894,7 @@
       </trans-unit>
       <trans-unit id="tcOnlyRecordFieldsAndSimpleLetCanBeMutable">
         <source>Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</source>
-        <target state="new">Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</target>
+        <target state="translated">可变 "let" 绑定不能在递归模块或命名空间中递归或定义</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberIsNotSufficientlyGeneric">

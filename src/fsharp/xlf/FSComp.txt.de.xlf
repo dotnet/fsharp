@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="chkFeatureNotSupportedInLibrary">
         <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="new">Feature '{0}' requires the F# library for language version {1} or greater.</target>
+        <target state="translated">Für das Feature "{0}" ist die F#-Bibliothek für die Sprachversion {1} oder höher erforderlich.</target>
         <note />
       </trans-unit>
       <trans-unit id="csAvailableOverloads">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
-        <target state="new">A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</target>
+        <target state="translated">Für ein generisches Konstrukt muss ein generischer Typparameter als Struktur- oder Verweistyp bekannt sein. Erwägen Sie das Hinzufügen einer Typanmerkung.</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
-        <target state="new">interfaces with multiple generic instantiation</target>
+        <target state="translated">Schnittstellen mit mehrfacher generischer Instanziierung</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -124,12 +124,12 @@
       </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">
         <source>open type declaration</source>
-        <target state="new">open type declaration</target>
+        <target state="translated">Deklaration für offene Typen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOverloadsForCustomOperations">
         <source>overloads for custom operations</source>
-        <target state="new">overloads for custom operations</target>
+        <target state="translated">Überladungen für benutzerdefinierte Vorgänge</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
-        <target state="new">string interpolation</target>
+        <target state="translated">Zeichenfolgeninterpolation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -164,22 +164,22 @@
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
         <source>Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</source>
-        <target state="new">Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</target>
+        <target state="translated">Interpolierte Zeichenfolgen dürfen keine Formatbezeichner vom Typ "%" verwenden, es sei denn, jeder erhält einen Ausdruck, z. B. "%d{{1+1}}".</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated2">
         <source>.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</source>
-        <target state="new">.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</target>
+        <target state="translated">Formatbezeichner im .NET-Format, z. B. "{{x,3}}" oder "{{x:N5}}", dürfen nicht mit Formatbezeichnern vom Typ "%" gemischt werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated3">
         <source>The '%P' specifier may not be used explicitly.</source>
-        <target state="new">The '%P' specifier may not be used explicitly.</target>
+        <target state="translated">Der Bezeichner "%P" darf nicht explizit verwendet werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated4">
         <source>Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</source>
-        <target state="new">Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</target>
+        <target state="translated">Interpolierte Zeichenfolgen, die als Typ "IFormattable" oder "FormattableString" verwendet werden, dürfen keine Spezifizierer vom Typ "%" verwenden. Es dürfen nur Interpolanten im .NET-Format wie "{{expr}}", "{{expr,3}}" oder "{{expr:N5}}" verwendet werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -194,32 +194,32 @@
       </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
-        <target state="new">Invalid directive '#{0} {1}'</target>
+        <target state="translated">Ungültige Direktive "#{0} {1}"</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
-        <target state="new">Keyword to specify a constant literal as a type parameter argument in Type Providers.</target>
+        <target state="translated">Schlüsselwort, um ein konstantes Literal als Typparameterargument in Typanbietern anzugeben.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
-        <target state="new">a byte string may not be interpolated</target>
+        <target state="translated">Eine Bytezeichenfolge darf nicht interpoliert werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
         <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
-        <target state="new">A '}}' character must be escaped (by doubling) in an interpolated string.</target>
+        <target state="translated">Ein }}-Zeichen muss in einer interpolierten Zeichenfolge (durch Verdoppeln) mit Escapezeichen versehen werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexSingleQuoteInSingleQuote">
         <source>Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</source>
-        <target state="new">Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</target>
+        <target state="translated">Ungültige interpolierte Zeichenfolge. Literale mit einzelnen Anführungszeichen oder ausführliche Zeichenfolgenliterale dürfen nicht in interpolierten Ausdrücken in Zeichenfolgen mit einfachen Anführungszeichen oder ausführlichen Zeichenfolgen verwendet werden. Erwägen Sie die Verwendung einer expliziten let-Bindung für den Interpolationsausdruck, oder verwenden Sie eine Zeichenfolge mit dreifachen Anführungszeichen als äußeres Zeichenfolgenliteral.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
-        <target state="new">Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</target>
+        <target state="translated">Ungültige interpolierte Zeichenfolge. Zeichenfolgenliterale mit dreifachen Anführungszeichen dürfen in interpolierten Ausdrücken nicht verwendet werden. Erwägen Sie die Verwendung einer expliziten let-Bindung für den Interpolationsausdruck.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -259,27 +259,27 @@
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
-        <target state="new">Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</target>
+        <target state="translated">Ungültige interpolierte Zeichenfolge. Die Ausdrucksfüllung der interpolierten Zeichenfolge ist leer. Es wurde ein Ausdruck erwartet.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedString">
         <source>Incomplete interpolated string begun at or before here</source>
-        <target state="new">Incomplete interpolated string begun at or before here</target>
+        <target state="translated">Unvollständige interpolierte Zeichenfolge, die an oder vor dieser Stelle begonnen wurde</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedStringFill">
         <source>Incomplete interpolated string expression fill begun at or before here</source>
-        <target state="new">Incomplete interpolated string expression fill begun at or before here</target>
+        <target state="translated">Unvollständige interpolierte Zeichenfolgen-Ausdrucksauffüllung, die an oder vor dieser Stelle begonnen wurde.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedTripleQuoteString">
         <source>Incomplete interpolated triple-quote string begun at or before here</source>
-        <target state="new">Incomplete interpolated triple-quote string begun at or before here</target>
+        <target state="translated">Unvollständige interpolierte Zeichenfolge mit dreifachen Anführungszeichen, die an oder vor dieser Stelle begonnen wurde.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
-        <target state="new">Incomplete interpolated verbatim string begun at or before here</target>
+        <target state="translated">Unvollständige interpolierte ausführliche Zeichenfolge, die an oder vor dieser Stelle begonnen wurde.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -299,7 +299,7 @@
       </trans-unit>
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
-        <target state="new">#i is not supported by the registered PackageManagers</target>
+        <target state="translated">#i wird von den registrierten PackageManagers nicht unterstützt.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
-        <target state="new">Invalid Anonymous Record type declaration.</target>
+        <target state="translated">Ungültige Deklaration für anonymen Datensatztyp.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -334,17 +334,17 @@
       </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
-        <target state="new">Byref types are not allowed in an open type declaration.</target>
+        <target state="translated">Byref-Typen sind in einer Deklaration für offene Typen nicht zulässig.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
-        <target state="new">Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</target>
+        <target state="translated">Konflikt in interpolierter Zeichenfolge. Interpolierte Zeichenfolgen dürfen keine Formatbezeichner vom Typ "%" verwenden, es sei denn, jeder erhält einen Ausdruck, z. B. "%d{{1+1}}"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
-        <target state="new">Invalid alignment in interpolated string</target>
+        <target state="translated">Ungültige Ausrichtung in interpolierter Zeichenfolge.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -354,12 +354,12 @@
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
         <source>Cannot assign a value to another value marked literal</source>
-        <target state="new">Cannot assign a value to another value marked literal</target>
+        <target state="translated">Ein Wert kann keinem anderen als Literal markierten Wert zugewiesen werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
-        <target state="new">Cannot assign '{0}' to a value marked literal</target>
+        <target state="translated">"{0}" kann keinem als Literal markierten Wert zugewiesen werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -369,7 +369,7 @@
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
-        <target state="new">Invalid interpolated string. {0}</target>
+        <target state="translated">Ungültige interpolierte Zeichenfolge. {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -379,12 +379,12 @@
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariable">
         <source>'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</source>
-        <target state="new">'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</target>
+        <target state="translated">"{0}" kann die Schnittstelle "{1}" mit den beiden Instanziierungen "{2}" und "{3}" nicht implementieren, weil sie möglicherweise zusammengeführt werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
         <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
-        <target state="new">You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</target>
+        <target state="translated">Sie können die Schnittstelle "{0}" mit den beiden Instanziierungen "{1}" und "{2}" nicht implementieren, weil sie möglicherweise zusammengeführt werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
@@ -534,37 +534,37 @@
       </trans-unit>
       <trans-unit id="xmlDocBadlyFormed">
         <source>This XML comment is invalid: '{0}'</source>
-        <target state="new">This XML comment is invalid: '{0}'</target>
+        <target state="translated">Dieser XML-Kommentar ist ungültig: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocDuplicateParameter">
         <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
-        <target state="new">This XML comment is invalid: multiple documentation entries for parameter '{0}'</target>
+        <target state="translated">Dieser XML-Kommentar ist ungültig: mehrere Dokumentationseinträge für Parameter "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocInvalidParameterName">
         <source>This XML comment is invalid: unknown parameter '{0}'</source>
-        <target state="new">This XML comment is invalid: unknown parameter '{0}'</target>
+        <target state="translated">Dieser XML-Kommentar ist ungültig: unbekannter Parameter "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingCrossReference">
         <source>This XML comment is invalid: missing 'cref' attribute for cross-reference</source>
-        <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
+        <target state="translated">Dieser XML-Kommentar ist ungültig: Attribut "cref" für Querverweis fehlt.</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingParameter">
         <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
-        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
+        <target state="translated">Dieser XML-Kommentar ist unvollständig: keine Dokumentation für Parameter "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocMissingParameterName">
         <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
-        <target state="new">This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</target>
+        <target state="translated">Dieser XML-Kommentar ist ungültig: Attribut "name" für Parameter oder Parameterverweis fehlt.</target>
         <note />
       </trans-unit>
       <trans-unit id="xmlDocUnresolvedCrossReference">
         <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
-        <target state="new">This XML comment is invalid: unresolved cross-reference '{0}'</target>
+        <target state="translated">Dieser XML-Kommentar ist ungültig: nicht aufgelöster Querverweis "{0}".</target>
         <note />
       </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
@@ -3894,7 +3894,7 @@
       </trans-unit>
       <trans-unit id="tcOnlyRecordFieldsAndSimpleLetCanBeMutable">
         <source>Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</source>
-        <target state="new">Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</target>
+        <target state="translated">Änderbare let-Bindungen können nicht rekursiv sein oder in rekursiven Modulen oder Namespaces definiert werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberIsNotSufficientlyGeneric">
