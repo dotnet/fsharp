@@ -125,7 +125,6 @@ module FSharpDependencyManager =
         |> List.distinct
         |> (fun l -> l, binLogPath)
 
-
 /// The results of ResolveDependencies
 type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: string array, resolutions: string seq, sourceFiles: string seq, roots: string seq) =
 
@@ -138,13 +137,23 @@ type ResolveDependenciesResult (success: bool, stdOut: string array, stdError: s
     /// The resolution error log (* process stderror *)
     member _.StdError = stdError
 
-    /// The resolution paths
+    /// The resolution paths - the full paths to selected resolved dll's.
+    /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
     member _.Resolutions = resolutions
 
     /// The source code file paths
     member _.SourceFiles = sourceFiles
 
     /// The roots to package directories
+    ///     This points to the root of each located package.
+    ///     The layout of the package manager will be package manager specific.
+    ///     however, the dependency manager dll understands the nuget package layout
+    ///     and so if the package contains folders similar to the nuget layout then
+    ///     the dependency manager will be able to probe and resolve any native dependencies
+    ///     required by the nuget package.
+    ///
+    /// This path is also equivalent to
+    ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
     member _.Roots = roots
 
 [<DependencyManagerAttribute>] 
@@ -195,12 +204,12 @@ type FSharpDependencyManager (outputDir:string option) =
         sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
         |]
 
-    member _.ResolveDependencies(scriptExt:string, packageManagerTextLines: (string *string) seq, tfm: string, rid: string) : obj =
+    member _.PrepareDependencyResolutionFiles(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string): PackageBuildResolutionResult =
 
-        let scriptExt, poundRprefix  =
+        let scriptExt =
             match scriptExt with
-            | ".csx" -> csxExt, "#r \"" 
-            | _ -> fsxExt, "#r @\"" 
+            | ".csx" -> csxExt
+            | _ -> fsxExt
 
         let packageReferences, binLogPath =
             packageManagerTextLines
@@ -214,39 +223,50 @@ type FSharpDependencyManager (outputDir:string option) =
 
         let packageReferenceText = String.Join(Environment.NewLine, packageReferenceLines)
 
-        // Generate a project files
+        let projectPath = Path.Combine(scriptsPath, "Project.fsproj")
+
+        // Generate project files
         let generateAndBuildProjectArtifacts =
             let writeFile path body =
                 if not (generatedScripts.ContainsKey(body.GetHashCode().ToString())) then
                     emitFile path  body
 
-            let projectPath = Path.Combine(scriptsPath, "Project.fsproj")
-
             let generateProjBody =
-                generateProjectBody.Replace("$(TARGETFRAMEWORK)", tfm)
-                                   .Replace("$(RUNTIMEIDENTIFIER)", rid)
+                generateProjectBody.Replace("$(TARGETFRAMEWORK)", targetFrameworkMoniker)
+                                   .Replace("$(RUNTIMEIDENTIFIER)", runtimeIdentifier)
                                    .Replace("$(PACKAGEREFERENCES)", packageReferenceText)
                                    .Replace("$(SCRIPTEXTENSION)", scriptExt)
 
             writeFile projectPath generateProjBody
+            buildProject projectPath binLogPath
 
-            let result, stdOut, stdErr,  resolutionsFile = buildProject projectPath binLogPath
-            match resolutionsFile with
+        generateAndBuildProjectArtifacts
+
+    member this.ResolveDependencies(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFramework: string, runtimeIdentifier: string) : obj =
+        let poundRprefix  =
+            match scriptExt with
+            | ".csx" -> "#r \""
+            | _ -> "#r @\""
+
+        let generateAndBuildProjectArtifacts =
+
+            let resolutionResult = this.PrepareDependencyResolutionFiles(scriptExt, packageManagerTextLines, targetFramework, runtimeIdentifier)
+            match resolutionResult.resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
                 let references = (findReferencesFromResolutions resolutions) |> Array.toSeq
                 let scripts =
-                    let scriptPath = projectPath + scriptExt
+                    let scriptPath = resolutionResult.projectPath + scriptExt
                     let scriptBody =  makeScriptFromReferences references poundRprefix
                     emitFile scriptPath scriptBody
                     let loads = (findLoadsFromResolutions resolutions) |> Array.toList
                     List.concat [ [scriptPath]; loads] |> List.toSeq
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toSeq
 
-                ResolveDependenciesResult(result, stdOut, stdErr, references, scripts, includes)
+                ResolveDependenciesResult(resolutionResult.success, resolutionResult.stdOut, resolutionResult.stdErr, references, scripts, includes)
 
             | None ->
                 let empty = Seq.empty<string>
-                ResolveDependenciesResult(result, stdOut, stdErr, empty, empty, empty)
+                ResolveDependenciesResult(resolutionResult.success, resolutionResult.stdOut, resolutionResult.stdErr, empty, empty, empty)
 
         generateAndBuildProjectArtifacts :> obj

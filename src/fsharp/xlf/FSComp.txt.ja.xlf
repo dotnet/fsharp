@@ -247,6 +247,21 @@
         <target state="translated">--langversion の値 '{0}' が認識されません。完全なリストについては、--langversion:? を使用してください</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="needs-review-translation">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FieldNotContainedTypesDiffer">
+        <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
+        <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
@@ -3860,6 +3875,11 @@
       <trans-unit id="tcConcreteMembersIllegalInInterface">
         <source>Interfaces cannot contain definitions of concrete members. You may need to define a constructor on your type to indicate that the type is a class.</source>
         <target state="translated">インターフェイスに具象メンバーの定義を含めることはできません。必要に応じて、型にコンストラクターを定義して、型がクラスであることを示してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">

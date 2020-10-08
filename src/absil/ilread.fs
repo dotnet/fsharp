@@ -3107,14 +3107,10 @@ and seekReadManifestResources (ctxt: ILMetadataReader) canReduceMemory (mdv: Bin
                     let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
                     let resourceLength = seekReadInt32 pevEager start
                     let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
-                    let bytes = 
+                    let byteStorage =                
                         let bytes = pevEager.Slice(offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
-                        // If we are trying to reduce memory, create a memory mapped file based on the contents.
-                        if canReduceMemory then
-                            ByteMemory.CreateMemoryMappedFile bytes
-                        else
-                            ByteMemory.FromArray(bytes.ToArray())
-                    ILResourceLocation.Local(bytes.AsReadOnly())
+                        ByteStorage.FromByteMemoryAndCopy(bytes, useBackingMemoryMappedFile = canReduceMemory)
+                    ILResourceLocation.Local(byteStorage)
 
                 | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
                 | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref

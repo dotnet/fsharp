@@ -34,14 +34,19 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOps
-open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.OptimizeInputs
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
@@ -906,7 +911,7 @@ module MainModuleBuilder =
                         [  ]
                 let reflectedDefinitionResource = 
                   { Name=reflectedDefinitionResourceName
-                    Location = ILResourceLocation.Local(ByteMemory.FromArray(reflectedDefinitionBytes).AsReadOnly())
+                    Location = ILResourceLocation.Local(ByteStorage.FromByteArray(reflectedDefinitionBytes))
                     Access= ILResourceAccess.Public
                     CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
                     MetadataIndex = NoMetadataIdx }
@@ -950,7 +955,7 @@ module MainModuleBuilder =
                          let bytes = FileSystem.ReadAllBytesShim file
                          name, bytes, pub
                  yield { Name=name 
-                         Location=ILResourceLocation.Local(ByteMemory.FromArray(bytes).AsReadOnly())
+                         Location=ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
                          Access=pub 
                          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs 
                          MetadataIndex = NoMetadataIdx }

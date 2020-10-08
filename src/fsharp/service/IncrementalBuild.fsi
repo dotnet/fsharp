@@ -7,10 +7,13 @@ open System
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Range
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
@@ -39,60 +42,74 @@ module internal IncrementalBuilderEventTesting =
   val GetMostRecentIncrementalBuildEvents : int -> IBEvent list
   val GetCurrentIncrementalBuildEventNum : unit -> int
 
-/// Represents the state in the incremental graph associated with checking a file
-type internal PartialCheckResults = 
+/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
+[<NoEquality; NoComparison>]
+type internal TcInfo =
     {
-      /// This field is None if a major unrecovered error occurred when preparing the initial state
-      TcState : TcState
+        tcState: TcState
+        tcEnvAtEndOfFile: TypeChecker.TcEnv
 
-      TcImports: TcImports 
+        /// Disambiguation table for module names
+        moduleNamesDict: ModuleNamesDict
 
-      TcGlobals: TcGlobals 
+        topAttribs: TypeChecker.TopAttribs option
 
-      TcConfig: TcConfig 
+        latestCcuSigForFile: ModuleOrNamespaceType option
 
-      /// This field is None if a major unrecovered error occurred when preparing the initial state
-      TcEnvAtEnd : TypeChecker.TcEnv
+        /// Accumulated errors, last file first
+        tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
 
-      /// Represents the collected errors from type checking
-      TcErrorsRev : (PhasedDiagnostic * FSharpErrorSeverity)[] list 
+        tcDependencyFiles: string list
 
-      /// Represents the collected name resolutions from type checking
-      TcResolutionsRev: TcResolutions list 
-
-      /// Represents the collected uses of symbols from type checking
-      TcSymbolUsesRev: TcSymbolUses list 
-
-      /// Represents open declarations
-      TcOpenDeclarationsRev: OpenDeclaration[] list
-
-      /// Disambiguation table for module names
-      ModuleNamesDict: ModuleNamesDict
-
-      TcDependencyFiles: string list
-
-      /// Represents the collected attributes to apply to the module of assembly generates
-      TopAttribs: TypeChecker.TopAttribs option
-
-      TimeStamp: DateTime 
-      
-      /// Represents latest complete typechecked implementation file, including its typechecked signature if any.
-      /// Empty for a signature file.
-      LatestImplementationFile: TypedImplFile option 
-      
-      /// Represents latest inferred signature contents.
-      LatestCcuSigForFile: ModuleOrNamespaceType option
-      
-      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
-      ItemKeyStore: ItemKeyStore option
-      
-      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      SemanticClassification: struct (range * SemanticClassificationType) []
+        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
     }
 
-    member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+
+/// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
+[<NoEquality; NoComparison>]
+type internal TcInfoOptional =
+    {
+      /// Accumulated resolutions, last file first
+      tcResolutionsRev: TcResolutions list
+
+      /// Accumulated symbol uses, last file first
+      tcSymbolUsesRev: TcSymbolUses list
+
+      /// Accumulated 'open' declarations, last file first
+      tcOpenDeclarationsRev: OpenDeclaration[] list
+
+      /// Result of checking most recent file, if any
+      latestImplFile: TypedImplFile option
+      
+      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
+      itemKeyStore: ItemKeyStore option
+      
+      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
+      semanticClassification: struct (range * SemanticClassificationType) []
+    }
 
     member TcSymbolUses: TcSymbolUses list
+
+/// Represents the state in the incremental graph associated with checking a file
+[<Sealed>]
+type internal PartialCheckResults = 
+
+    member TcImports: TcImports 
+
+    member TcGlobals: TcGlobals 
+
+    member TcConfig: TcConfig 
+
+    member TimeStamp: DateTime 
+
+    member TcInfo: CompilationThreadToken -> TcInfo
+
+    /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
+    /// Only use when it's absolutely necessary to get rich information on a file.
+    member TcInfoWithOptional: CompilationThreadToken -> TcInfo * TcInfoOptional
+
+    member TimeStamp: DateTime 
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
@@ -201,6 +218,7 @@ type internal IncrementalBuilder =
           suggestNamesForErrors: bool *
           keepAllBackgroundSymbolUses: bool *
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
+          enablePartialTypeChecking: bool *
           dependencyProvider: DependencyProvider option
              -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 

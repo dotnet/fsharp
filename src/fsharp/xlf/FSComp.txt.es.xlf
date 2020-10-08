@@ -247,6 +247,11 @@
         <target state="translated">Valor no reconocido "{0}" para --langversion, use --langversion:? para una lista completa</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">La característica de administración de paquetes requiere la versión de lenguaje 5.0; use /langversion:preview</target>

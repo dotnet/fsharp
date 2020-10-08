@@ -6,7 +6,7 @@ open System.Collections.Generic
 
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution

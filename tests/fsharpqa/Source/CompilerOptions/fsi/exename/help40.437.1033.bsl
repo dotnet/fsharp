@@ -64,6 +64,8 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
 
 		- MISCELLANEOUS -
 --nologo                                 Suppress compiler copyright message
+--version                                Display compiler version banner and
+                                         exit
 --help                                   Display this usage message (Short
                                          form: -?)
 
