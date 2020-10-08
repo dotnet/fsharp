@@ -49,12 +49,19 @@ module ILChecker =
         |> replaceRe @"(.*\.line[^'$]*)('.+)?" ""
         |> replaceRe @"(.*\.ver )(.+)" "$1"
         |> replaceRe @"(.*\.publickeytoken )(.+)" "$1"
+        |> replaceRe "\.language.+$" ""
+
+        |> replaceRe " = \([0-9a-hA-H\s]+\)" ""
 
         // Filter 'indexed' locals:
-        |> replaceRe "\[\(\d+\)\]\s(\s.+)" "$1"
+        |> replaceRe "\[\d+\]\s" ""
 
         // Unify assembly names:
         |> replaceRe "\[System.Diagnostics.Debug\]|\[System.Runtime\]|\[System.Runtime.Extensions\]|\[mscorlib\]" "[runtime]"
+        |> replaceRe "\.assembly extern (System\.Runtime|mscorlib)$" ".assembly extern runtime"
+        |> replaceRe "\.assembly '?(\S+)'?$" ".assembly assembly"
+        |> replaceRe ".module '(\S+)'$" ".module $1"
+        |> replaceRe "\.mresource public '?(FSharpSignatureData|FSharpOptimizationData)\.\S+'?$" ".mresource public $1.assembly"
 
         // Replace comments: 
         |> replaceRe @"//.+$" "\n"
@@ -78,6 +85,13 @@ module ILChecker =
         // Trim any trailing spaces and tabs
         |> trimEnd [|' '; '\t'|]
 
+    let private normalizeAssemblyName (assemblyName: string) (il: string) : string =
+        il.Replace(assemblyName, "assembly")
+
+    let private tryGetAssemblyName (il: string) : string option =
+        let m = Regex.Match(il, ".module '?(\S+)'?\.dll")
+        if m.Success then Some(m.Groups.[1].Value) else None
+        
     let private checkILAux' ildasmArgs dllFilePath expectedIL =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
 
@@ -99,11 +113,13 @@ module ILChecker =
                     "\[System.Diagnostics.Debug\]|\[System.Runtime\]|\[System.Runtime.Extensions\]|\[mscorlib\]","[runtime]",
                     System.Text.RegularExpressions.RegexOptions.Singleline)
 
+            let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
+            
             let text =
-                let raw = File.ReadAllText(ilFilePath)
-                let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
-                raw.Replace(asmName, "assembly")
+                File.ReadAllText(ilFilePath)
+                |> normalizeAssemblyName asmName
                 |> unifyRuntimeAssemblyName
+                
             let blockComments = @"/\*(.*?)\*/"
             let lineComments = @"//(.*?)\r?\n"
             let strings = @"""((\\[^\n]|[^""\n])*)"""
@@ -124,13 +140,17 @@ module ILChecker =
                 |> List.ofSeq
                 |> String.concat "\n"
                 
-            // failwith <| sprintf "%A" textNoComments
-
             expectedIL
-            |> List.map (fun (ilCode: string) -> ilCode.Trim() |> unifyRuntimeAssemblyName )
+            |> List.map (fun (ilCode: string) ->
+                         let il = ilCode.Trim() |> unifyRuntimeAssemblyName
+                         match tryGetAssemblyName il with
+                         | Some name -> il |> normalizeAssemblyName name
+                         | None -> il)
+                         
             |> List.iter (fun (ilCode: string) ->
+
                 let expectedLines = ilCode.Split('\n') |> Array.map cleanupIL
-                          
+
                 let startIL = expectedLines.[0].Trim()
                 let startIndex = textNoComments.IndexOf(startIL)
                           
