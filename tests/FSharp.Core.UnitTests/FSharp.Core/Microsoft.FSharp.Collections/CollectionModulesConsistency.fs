@@ -1,13 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-[<NUnit.Framework.Category "FSharp.Core.Collections">]
-[<NUnit.Framework.Category "Collections.Seq">]
-[<NUnit.Framework.Category "Collections.List">]
-[<NUnit.Framework.Category "Collections.Array">]
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.CollectionModulesConsistency
+module FSharp.Core.UnitTests.Collections.CollectionModulesConsistency
 
 open System
 open System.Collections.Generic
-open NUnit.Framework
+open Xunit
 open FsCheck
 open Utils
 
@@ -25,7 +21,7 @@ let allPairs<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let a = xs |> List.toArray |> Array.allPairs (List.toArray xs2)    
     consistency "allPairs" s l a
 
-[<Test>]
+[<Fact>]
 let ``allPairs is consistent`` () =
     smallerSizeCheck allPairs<int>
     smallerSizeCheck allPairs<string>
@@ -38,7 +34,7 @@ let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     consistency "append" s l a
 
 
-[<Test>]
+[<Fact>]
 let ``append is consistent`` () =
     smallerSizeCheck append<int>
     smallerSizeCheck append<string>
@@ -51,7 +47,7 @@ let averageFloat (xs : NormalFloat []) =
     let a = runAndCheckErrorType (fun () -> xs |> Array.average)    
     consistency "average" s l a
 
-[<Test>]
+[<Fact>]
 let ``average is consistent`` () =
     smallerSizeCheck averageFloat
 
@@ -64,7 +60,7 @@ let averageBy (xs : float []) f =
     consistency "averageBy" s l a
 
 
-[<Test>]
+[<Fact>]
 let ``averageBy is consistent`` () =
     smallerSizeCheck averageBy
 
@@ -75,7 +71,7 @@ let contains<'a when 'a : equality> (xs : 'a []) x  =
     consistency "contains" s l a
 
 
-[<Test>]
+[<Fact>]
 let ``contains is consistent`` () =
     smallerSizeCheck contains<int>
     smallerSizeCheck contains<string>
@@ -87,7 +83,7 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
     let a = xs |> Array.choose f
     consistency "contains" s l a
 
-[<Test>]
+[<Fact>]
 let ``choose is consistent`` () =
     smallerSizeCheck choose<int>
     smallerSizeCheck choose<string>
@@ -106,7 +102,7 @@ let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
         consistency "chunkBySize" s l a
 
 
-[<Test>]
+[<Fact>]
 let ``chunkBySize is consistent`` () =
     smallerSizeCheck chunkBySize<int>
     smallerSizeCheck chunkBySize<string>
@@ -120,7 +116,7 @@ let collect<'a> (xs : 'a []) f  =
 
 
 
-[<Test>]
+[<Fact>]
 let ``collect is consistent`` () =
     smallerSizeCheck collect<int>
     smallerSizeCheck collect<string>
@@ -134,7 +130,7 @@ let compareWith<'a>(xs : 'a []) (xs2 : 'a []) f  =
 
 
 
-[<Test>]
+[<Fact>]
 let ``compareWith is consistent`` () =
     smallerSizeCheck compareWith<int>
     smallerSizeCheck compareWith<string>
@@ -146,7 +142,7 @@ let concat<'a when 'a : equality> (xs : 'a [][]) =
     let a = xs |> Array.concat
     consistency "concat" s l a
 
-[<Test>]
+[<Fact>]
 let ``concat is consistent`` () =
     smallerSizeCheck concat<int>
     smallerSizeCheck concat<string>
@@ -158,7 +154,7 @@ let countBy<'a> (xs : 'a []) f =
     let a = xs |> Array.countBy f
     consistency "countBy" s l a
 
-[<Test>]
+[<Fact>]
 let ``countBy is consistent`` () =
     smallerSizeCheck countBy<int>
     smallerSizeCheck countBy<string>
@@ -170,7 +166,7 @@ let distinct<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.distinct 
     consistency "distinct" s l a
 
-[<Test>]
+[<Fact>]
 let ``distinct is consistent`` () =
     smallerSizeCheck distinct<int>
     smallerSizeCheck distinct<string>
@@ -182,7 +178,7 @@ let distinctBy<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.distinctBy f 
     consistency "distinctBy" s l a
 
-[<Test>]
+[<Fact>]
 let ``distinctBy is consistent`` () =
     smallerSizeCheck distinctBy<int>
     smallerSizeCheck distinctBy<string>
@@ -194,7 +190,7 @@ let exactlyOne<'a when 'a : comparison> (xs : 'a []) =
     let a = runAndCheckErrorType (fun () -> xs |> Array.exactlyOne)
     consistency "exactlyOne" s l a
 
-[<Test>]
+[<Fact>]
 let ``exactlyOne is consistent`` () =
     smallerSizeCheck exactlyOne<int>
     smallerSizeCheck exactlyOne<string>
@@ -206,7 +202,7 @@ let tryExactlyOne<'a when 'a : comparison> (xs : 'a []) =
     let a = runAndCheckErrorType (fun () -> xs |> Array.tryExactlyOne)
     consistency "tryExactlyOne" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryExactlyOne is consistent`` () =
     smallerSizeCheck tryExactlyOne<int>
     smallerSizeCheck tryExactlyOne<string>
@@ -218,7 +214,7 @@ let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
     let a = xs |> Array.except itemsToExclude
     consistency "except" s l a
 
-[<Test>]
+[<Fact>]
 let ``except is consistent`` () =
     smallerSizeCheck except<int>
     smallerSizeCheck except<string>
@@ -230,7 +226,7 @@ let exists<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.exists f
     consistency "exists" s l a
 
-[<Test>]
+[<Fact>]
 let ``exists is consistent`` () =
     smallerSizeCheck exists<int>
     smallerSizeCheck exists<string>
@@ -244,7 +240,7 @@ let exists2<'a when 'a : equality> (xs':('a*'a) []) f =
     let a = runAndCheckErrorType (fun () -> Array.exists2 f (Array.ofSeq xs) (Array.ofSeq xs2))
     consistency "exists2" s l a
     
-[<Test>]
+[<Fact>]
 let ``exists2 is consistent for collections with equal length`` () =
     smallerSizeCheck exists2<int>
     smallerSizeCheck exists2<string>
@@ -256,7 +252,7 @@ let filter<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.filter predicate
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Fact>]
 let ``filter is consistent`` () =
     smallerSizeCheck filter<int>
     smallerSizeCheck filter<string>
@@ -268,7 +264,7 @@ let find<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.find predicate)
     consistency "find" s l a
 
-[<Test>]
+[<Fact>]
 let ``find is consistent`` () =
     smallerSizeCheck find<int>
     smallerSizeCheck find<string>
@@ -280,7 +276,7 @@ let findBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.findBack predicate)
     consistency "findBack" s l a
 
-[<Test>]
+[<Fact>]
 let ``findBack is consistent`` () =
     smallerSizeCheck findBack<int>
     smallerSizeCheck findBack<string>
@@ -292,7 +288,7 @@ let findIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.findIndex predicate)
     consistency "findIndex" s l a
 
-[<Test>]
+[<Fact>]
 let ``findIndex is consistent`` () =
     smallerSizeCheck findIndex<int>
     smallerSizeCheck findIndex<string>
@@ -304,7 +300,7 @@ let findIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = run (fun () -> xs |> Array.findIndexBack predicate)
     consistency "findIndexBack" s l a
 
-[<Test>]
+[<Fact>]
 let ``findIndexBack is consistent`` () =
     smallerSizeCheck findIndexBack<int>
     smallerSizeCheck findIndexBack<string>
@@ -316,7 +312,7 @@ let fold<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> xs |> Array.fold f start)
     consistency "fold" s l a
 
-[<Test>]
+[<Fact>]
 let ``fold is consistent`` () =
     smallerSizeCheck fold<int,int>
     smallerSizeCheck fold<string,string>
@@ -331,7 +327,7 @@ let fold2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let a = run (fun () -> Array.fold2 f start xs xs2)
     consistency "fold2" s l a
 
-[<Test>]
+[<Fact>]
 let ``fold2 is consistent`` () =
     smallerSizeCheck fold2<int,int,int>
     smallerSizeCheck fold2<string,string,string>
@@ -346,7 +342,7 @@ let foldBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> Array.foldBack f xs start)
     consistency "foldBack" s l a
 
-[<Test>]
+[<Fact>]
 let ``foldBack is consistent`` () =
     smallerSizeCheck foldBack<int,int>
     smallerSizeCheck foldBack<string,string>
@@ -361,7 +357,7 @@ let foldBack2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
     let a = run (fun () -> Array.foldBack2 f xs xs2 start)
     consistency "foldBack2" s l a
 
-[<Test>]
+[<Fact>]
 let ``foldBack2 is consistent`` () =
     smallerSizeCheck foldBack2<int,int,int>
     smallerSizeCheck foldBack2<string,string,string>
@@ -376,7 +372,7 @@ let forall<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.forall f
     consistency "forall" s l a
 
-[<Test>]
+[<Fact>]
 let ``forall is consistent`` () =
     smallerSizeCheck forall<int>
     smallerSizeCheck forall<string>
@@ -390,7 +386,7 @@ let forall2<'a when 'a : equality> (xs':('a*'a) []) f =
     let a = runAndCheckErrorType (fun () -> Array.forall2 f (Array.ofSeq xs) (Array.ofSeq xs2))
     consistency "forall2" s l a
     
-[<Test>]
+[<Fact>]
 let ``forall2 is consistent for collections with equal length`` () =
     smallerSizeCheck forall2<int>
     smallerSizeCheck forall2<string>
@@ -402,7 +398,7 @@ let groupBy<'a when 'a : equality> (xs : 'a []) f =
     let a = run (fun () -> xs |> Array.groupBy f |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
     consistency "groupBy" s l a
 
-[<Test>]
+[<Fact>]
 let ``groupBy is consistent`` () =
     smallerSizeCheck groupBy<int>
     smallerSizeCheck groupBy<string>
@@ -414,7 +410,7 @@ let head<'a when 'a : equality> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.head)
     consistency "head" s l a
 
-[<Test>]
+[<Fact>]
 let ``head is consistent`` () =
     smallerSizeCheck head<int>
     smallerSizeCheck head<string>
@@ -426,7 +422,7 @@ let indexed<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.indexed
     consistency "indexed" s l a
 
-[<Test>]
+[<Fact>]
 let ``indexed is consistent`` () =
     smallerSizeCheck indexed<int>
     smallerSizeCheck indexed<string>
@@ -438,7 +434,7 @@ let init<'a when 'a : equality> count f =
     let a = runAndCheckErrorType (fun () -> Array.init count f)
     consistency "init" s l a
 
-[<Test>]
+[<Fact>]
 let ``init is consistent`` () =
     smallerSizeCheck init<int>
     smallerSizeCheck init<string>
@@ -450,7 +446,7 @@ let isEmpty<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.isEmpty
     consistency "isEmpty" s l a
 
-[<Test>]
+[<Fact>]
 let ``isEmpty is consistent`` () =
     smallerSizeCheck isEmpty<int>
     smallerSizeCheck isEmpty<string>
@@ -462,7 +458,7 @@ let item<'a when 'a : equality> (xs : 'a []) index =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.item index)
     consistency "item" s l a
 
-[<Test>]
+[<Fact>]
 let ``item is consistent`` () =
     smallerSizeCheck item<int>
     smallerSizeCheck item<string>
@@ -481,7 +477,7 @@ let iter<'a when 'a : equality> (xs : 'a []) f' =
     let xs = Seq.toList xs
     list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Fact>]
 let ``iter looks at every element exactly once and in order - consistenly over all collections`` () =
     smallerSizeCheck iter<int>
     smallerSizeCheck iter<string>
@@ -502,7 +498,7 @@ let iter2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     let xs = Seq.toList xs'
     list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Fact>]
 let ``iter2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     smallerSizeCheck iter2<int>
     smallerSizeCheck iter2<string>
@@ -524,7 +520,7 @@ let iteri<'a when 'a : equality> (xs : 'a []) f' =
     list |> Seq.toList = (xs @ xs @ xs) &&
       indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
-[<Test>]
+[<Fact>]
 let ``iteri looks at every element exactly once and in order - consistenly over all collections`` () =
     smallerSizeCheck iteri<int>
     smallerSizeCheck iteri<string>
@@ -548,7 +544,7 @@ let iteri2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     list |> Seq.toList = (xs @ xs @ xs) &&
       indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
-[<Test>]
+[<Fact>]
 let ``iteri2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     smallerSizeCheck iteri2<int>
     smallerSizeCheck iteri2<string>
@@ -560,7 +556,7 @@ let last<'a when 'a : equality> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.last)
     consistency "last" s l a
 
-[<Test>]
+[<Fact>]
 let ``last is consistent`` () =
     smallerSizeCheck last<int>
     smallerSizeCheck last<string>
@@ -572,7 +568,7 @@ let length<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.length
     consistency "length" s l a
 
-[<Test>]
+[<Fact>]
 let ``length is consistent`` () =
     smallerSizeCheck length<int>
     smallerSizeCheck length<string>
@@ -584,7 +580,7 @@ let map<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.map f
     consistency "map" s l a
 
-[<Test>]
+[<Fact>]
 let ``map is consistent`` () =
     smallerSizeCheck map<int>
     smallerSizeCheck map<string>
@@ -606,7 +602,7 @@ let map2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
     Seq.toArray s = a && List.toArray l = a &&
       list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Fact>]
 let ``map2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     smallerSizeCheck map2<int>
     smallerSizeCheck map2<string>
@@ -629,7 +625,7 @@ let map3<'a when 'a : equality> (xs' : ('a*'a*'a) []) f' =
     Seq.toArray s = a && List.toArray l = a &&
       list |> Seq.toList = (xs @ xs @ xs)
 
-[<Test>]
+[<Fact>]
 let ``map3 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     smallerSizeCheck map3<int>
     smallerSizeCheck map3<string>
@@ -642,7 +638,7 @@ let mapFold<'a when 'a : equality> (xs : 'a []) f start =
     Seq.toArray s = a && List.toArray l = a &&
       sr = lr && sr = ar
 
-[<Test>]
+[<Fact>]
 let ``mapFold is consistent`` () =
     smallerSizeCheck mapFold<int>
     smallerSizeCheck mapFold<string>
@@ -655,7 +651,7 @@ let mapFoldBack<'a when 'a : equality> (xs : 'a []) f start =
     Seq.toArray s = a && List.toArray l = a &&
       sr = lr && sr = ar
 
-[<Test>]
+[<Fact>]
 let ``mapFold2 is consistent`` () =
     smallerSizeCheck mapFoldBack<int>
     smallerSizeCheck mapFoldBack<string>
@@ -667,7 +663,7 @@ let mapi<'a when 'a : equality> (xs : 'a []) f =
     let a = xs |> Array.mapi f
     Seq.toArray s = a && List.toArray l = a
 
-[<Test>]
+[<Fact>]
 let ``mapi is consistent`` () =
     smallerSizeCheck mapi<int>
     smallerSizeCheck mapi<string>
@@ -692,7 +688,7 @@ let mapi2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
       list |> Seq.toList = (xs @ xs @ xs) &&
       (Seq.toList indices = [0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
 
-[<Test>]
+[<Fact>]
 let ``mapi2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
     smallerSizeCheck mapi2<int>
     smallerSizeCheck mapi2<string>
@@ -704,7 +700,7 @@ let max<'a when 'a : comparison> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.max)
     consistency "max" s l a
 
-[<Test>]
+[<Fact>]
 let ``max is consistent`` () =
     smallerSizeCheck max<int>
     smallerSizeCheck max<string>
@@ -716,7 +712,7 @@ let maxBy<'a when 'a : comparison> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.maxBy f)
     consistency "maxBy" s l a
 
-[<Test>]
+[<Fact>]
 let ``maxBy is consistent`` () =
     smallerSizeCheck maxBy<int>
     smallerSizeCheck maxBy<string>
@@ -728,7 +724,7 @@ let min<'a when 'a : comparison> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.min)
     consistency "min" s l a
 
-[<Test>]
+[<Fact>]
 let ``min is consistent`` () =
     smallerSizeCheck min<int>
     smallerSizeCheck min<string>
@@ -740,7 +736,7 @@ let minBy<'a when 'a : comparison> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.minBy f)
     consistency "minBy" s l a
 
-[<Test>]
+[<Fact>]
 let ``minBy is consistent`` () =
     smallerSizeCheck minBy<int>
     smallerSizeCheck minBy<string>
@@ -752,7 +748,7 @@ let pairwise<'a when 'a : comparison> (xs : 'a []) =
     let a = run (fun () -> xs |> Array.pairwise)
     consistency "pairwise" s l a
 
-[<Test>]
+[<Fact>]
 let ``pairwise is consistent`` () =
     smallerSizeCheck pairwise<int>
     smallerSizeCheck pairwise<string>
@@ -765,7 +761,7 @@ let partition<'a when 'a : comparison> (xs : 'a []) f =
     List.toArray l1 = a1 &&
       List.toArray l2 = a2
 
-[<Test>]
+[<Fact>]
 let ``partition is consistent`` () =
     smallerSizeCheck partition<int>
     smallerSizeCheck partition<string>
@@ -789,7 +785,7 @@ let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let a = run (fun () -> xs |> Array.ofSeq |> Array.permute permutation)
     consistency "partition" s l a
 
-[<Test>]
+[<Fact>]
 let ``permute is consistent`` () =
     smallerSizeCheck permute<int>
     smallerSizeCheck permute<string>
@@ -801,7 +797,7 @@ let pick<'a when 'a : comparison> (xs : 'a []) f =
     let a = run (fun () -> xs |> Array.pick f)
     consistency "pick" s l a
 
-[<Test>]
+[<Fact>]
 let ``pick is consistent`` () =
     smallerSizeCheck pick<int>
     smallerSizeCheck pick<string>
@@ -813,7 +809,7 @@ let reduce<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)
     consistency "reduce" s l a
 
-[<Test>]
+[<Fact>]
 let ``reduce is consistent`` () =
     smallerSizeCheck reduce<int>
     smallerSizeCheck reduce<string>
@@ -825,7 +821,7 @@ let reduceBack<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckErrorType (fun () -> xs |> Array.reduceBack f)
     consistency "reduceBack" s l a
 
-[<Test>]
+[<Fact>]
 let ``reduceBack is consistent`` () =
     smallerSizeCheck reduceBack<int>
     smallerSizeCheck reduceBack<string>
@@ -837,7 +833,7 @@ let replicate<'a when 'a : equality> x count =
     let a = runAndCheckIfAnyError (fun () -> Array.replicate count x)
     consistency "replicate" s l a
 
-[<Test>]
+[<Fact>]
 let ``replicate is consistent`` () =
     smallerSizeCheck replicate<int>
     smallerSizeCheck replicate<string>
@@ -849,7 +845,7 @@ let rev<'a when 'a : equality> (xs : 'a []) =
     let a = Array.rev xs
     consistency "rev" s l a
 
-[<Test>]
+[<Fact>]
 let ``rev is consistent`` () =
     smallerSizeCheck rev<int>
     smallerSizeCheck rev<string>
@@ -861,7 +857,7 @@ let scan<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> xs |> Array.scan f start)
     consistency "scan" s l a
 
-[<Test>]
+[<Fact>]
 let ``scan is consistent`` () =
     smallerSizeCheck scan<int,int>
     smallerSizeCheck scan<string,string>
@@ -874,7 +870,7 @@ let scanBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let a = run (fun () -> Array.scanBack f xs start)
     consistency "scanback" s l a
 
-[<Test>]
+[<Fact>]
 let ``scanBack is consistent`` () =
     smallerSizeCheck scanBack<int,int>
     smallerSizeCheck scanBack<string,string>
@@ -887,7 +883,7 @@ let singleton<'a when 'a : equality> (x : 'a) =
     let a = Array.singleton x
     consistency "singleton" s l a
 
-[<Test>]
+[<Fact>]
 let ``singleton is consistent`` () =
     smallerSizeCheck singleton<int>
     smallerSizeCheck singleton<string>
@@ -899,7 +895,7 @@ let skip<'a when 'a : equality> (xs : 'a []) count =
     let a = runAndCheckIfAnyError (fun () -> Array.skip count xs)
     consistency "skip" s l a
 
-[<Test>]
+[<Fact>]
 let ``skip is consistent`` () =
     smallerSizeCheck skip<int>
     smallerSizeCheck skip<string>
@@ -911,7 +907,7 @@ let skipWhile<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> Array.skipWhile f xs)
     consistency "skipWhile" s l a
 
-[<Test>]
+[<Fact>]
 let ``skipWhile is consistent`` () =
     smallerSizeCheck skipWhile<int>
     smallerSizeCheck skipWhile<string>
@@ -923,7 +919,7 @@ let sort<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.sort
     consistency "sort" s l a
 
-[<Test>]
+[<Fact>]
 let ``sort is consistent`` () =
     smallerSizeCheck sort<int>
     smallerSizeCheck sort<string>
@@ -937,7 +933,7 @@ let sortBy<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a ->
     isSorted (Seq.map f s) && isSorted (Seq.map f l) && isSorted (Seq.map f a) &&
       haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
 
-[<Test>]
+[<Fact>]
 let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
     smallerSizeCheck sortBy<int,int>
     smallerSizeCheck sortBy<int,string>
@@ -960,7 +956,7 @@ let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) =
     isSorted s && isSorted l && isSorted a &&
         haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
 
-[<Test>]
+[<Fact>]
 let ``sortWith actually sorts (but is inconsistent in regards of stability)`` () =
     smallerSizeCheck sortWith<int,int>
     smallerSizeCheck sortWith<int,string>
@@ -974,7 +970,7 @@ let sortDescending<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.sortDescending
     consistency "sortDescending" s l a
 
-[<Test>]
+[<Fact>]
 let ``sortDescending is consistent`` () =
     smallerSizeCheck sortDescending<int>
     smallerSizeCheck sortDescending<string>
@@ -988,7 +984,7 @@ let sortByDescending<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []
     isSorted (Seq.map f s |> Seq.rev) && isSorted (Seq.map f l |> Seq.rev) && isSorted (Seq.map f a |> Seq.rev) &&
       haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
 
-[<Test>]
+[<Fact>]
 let ``sortByDescending actually sorts (but is inconsistent in regards of stability)`` () =
     smallerSizeCheck sortByDescending<int,int>
     smallerSizeCheck sortByDescending<int,string>
@@ -1002,7 +998,7 @@ let sum (xs : int []) =
     let a = run (fun () -> xs |> Array.sum)
     consistency "sum" s l a
 
-[<Test>]
+[<Fact>]
 let ``sum is consistent`` () =
     smallerSizeCheck sum
 
@@ -1012,7 +1008,7 @@ let sumBy<'a> (xs : 'a []) (f:'a -> int) =
     let a = run (fun () -> xs |> Array.sumBy f)
     consistency "sumBy" s l a
 
-[<Test>]
+[<Fact>]
 let ``sumBy is consistent`` () =
     smallerSizeCheck sumBy<int>
     smallerSizeCheck sumBy<string>
@@ -1032,7 +1028,7 @@ let splitAt<'a when 'a : equality> (xs : 'a []) index =
         let a = run (fun () -> xs |> Array.splitAt index)
         (l = a) |@ "splitAt"
 
-[<Test>]
+[<Fact>]
 let ``splitAt is consistent`` () =
     smallerSizeCheck splitAt<int>
     smallerSizeCheck splitAt<string>
@@ -1050,7 +1046,7 @@ let splitInto<'a when 'a : equality> (xs : 'a []) count =
         let a = run (fun () -> xs |> Array.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
         consistency "splitInto" s l a
 
-[<Test>]
+[<Fact>]
 let ``splitInto is consistent`` () =
     smallerSizeCheck splitInto<int>
     smallerSizeCheck splitInto<string>
@@ -1062,7 +1058,7 @@ let tail<'a when 'a : equality> (xs : 'a []) =
     let a = runAndCheckIfAnyError (fun () -> xs |> Array.tail)
     consistency "tail" s l a
 
-[<Test>]
+[<Fact>]
 let ``tail is consistent`` () =
     smallerSizeCheck tail<int>
     smallerSizeCheck tail<string>
@@ -1074,7 +1070,7 @@ let take<'a when 'a : equality> (xs : 'a []) count =
     let a = runAndCheckIfAnyError (fun () -> Array.take count xs)
     consistency "take" s l a
 
-[<Test>]
+[<Fact>]
 let ``take is consistent`` () =
     smallerSizeCheck take<int>
     smallerSizeCheck take<string>
@@ -1086,7 +1082,7 @@ let takeWhile<'a when 'a : equality> (xs : 'a []) f =
     let a = runAndCheckIfAnyError (fun () -> Array.takeWhile f xs)
     consistency "takeWhile" s l a
 
-[<Test>]
+[<Fact>]
 let ``takeWhile is consistent`` () =
     smallerSizeCheck takeWhile<int>
     smallerSizeCheck takeWhile<string>
@@ -1098,7 +1094,7 @@ let truncate<'a when 'a : equality> (xs : 'a []) count =
     let a = runAndCheckIfAnyError (fun () -> Array.truncate count xs)
     consistency "truncate" s l a
 
-[<Test>]
+[<Fact>]
 let ``truncate is consistent`` () =
     smallerSizeCheck truncate<int>
     smallerSizeCheck truncate<string>
@@ -1110,7 +1106,7 @@ let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFind predicate
     consistency "tryFind" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryFind is consistent`` () =
     smallerSizeCheck tryFind<int>
     smallerSizeCheck tryFind<string>
@@ -1122,7 +1118,7 @@ let tryFindBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFindBack predicate
     consistency "tryFindBack" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryFindBack is consistent`` () =
     smallerSizeCheck tryFindBack<int>
     smallerSizeCheck tryFindBack<string>
@@ -1134,7 +1130,7 @@ let tryFindIndex<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFindIndex predicate
     consistency "tryFindIndex" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryFindIndex is consistent`` () =
     smallerSizeCheck tryFindIndex<int>
     smallerSizeCheck tryFindIndex<string>
@@ -1146,7 +1142,7 @@ let tryFindIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.tryFindIndexBack predicate
     consistency "tryFindIndexBack" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryFindIndexBack is consistent`` () =
     smallerSizeCheck tryFindIndexBack<int>
     smallerSizeCheck tryFindIndexBack<string>
@@ -1158,7 +1154,7 @@ let tryHead<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.tryHead
     consistency "tryHead" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryHead is consistent`` () =
     smallerSizeCheck tryHead<int>
     smallerSizeCheck tryHead<string>
@@ -1170,7 +1166,7 @@ let tryItem<'a when 'a : equality> (xs : 'a []) index =
     let a = xs |> Array.tryItem index
     consistency "tryItem" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryItem is consistent`` () =
     smallerSizeCheck tryItem<int>
     smallerSizeCheck tryItem<string>
@@ -1182,7 +1178,7 @@ let tryLast<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.tryLast
     consistency "tryLast" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryLast is consistent`` () =
     smallerSizeCheck tryLast<int>
     smallerSizeCheck tryLast<string>
@@ -1194,7 +1190,7 @@ let tryPick<'a when 'a : comparison> (xs : 'a []) f =
     let a = xs |> Array.tryPick f
     consistency "tryPick" s l a
 
-[<Test>]
+[<Fact>]
 let ``tryPick is consistent`` () =
     smallerSizeCheck tryPick<int>
     smallerSizeCheck tryPick<string>
@@ -1213,7 +1209,7 @@ let unfold<'a,'b when 'b : equality> f (start:'a) =
     consistency "unfold" s l a
 
 
-[<Test>]
+[<Fact>]
 let ``unfold is consistent`` () =
     smallerSizeCheck unfold<int,int>
 
@@ -1232,7 +1228,7 @@ let unzip<'a when 'a : equality> (xs:('a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.unzip xs)
     l = a
     
-[<Test>]
+[<Fact>]
 let ``unzip is consistent`` () =
     smallerSizeCheck unzip<int>
     smallerSizeCheck unzip<string>
@@ -1244,7 +1240,7 @@ let unzip3<'a when 'a : equality> (xs:('a*'a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.unzip3 xs)
     l = a
     
-[<Test>]
+[<Fact>]
 let ``unzip3 is consistent`` () =
     smallerSizeCheck unzip3<int>
     smallerSizeCheck unzip3<string>
@@ -1256,7 +1252,7 @@ let where<'a when 'a : equality> (xs : 'a []) predicate =
     let a = xs |> Array.where predicate
     consistency "where" s l a
 
-[<Test>]
+[<Fact>]
 let ``where is consistent`` () =
     smallerSizeCheck where<int>
     smallerSizeCheck where<string>
@@ -1274,7 +1270,7 @@ let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
         let a = run (fun () -> xs |> Array.windowed windowSize)
         consistency "windowed" s l a
 
-[<Test>]
+[<Fact>]
 let ``windowed is consistent`` () =
     smallerSizeCheck windowed<int>
     smallerSizeCheck windowed<string>
@@ -1288,7 +1284,7 @@ let zip<'a when 'a : equality> (xs':('a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.zip (Array.ofSeq xs) (Array.ofSeq xs2))
     consistency "zip" s l a
     
-[<Test>]
+[<Fact>]
 let ``zip is consistent for collections with equal length`` () =
     smallerSizeCheck zip<int>
     smallerSizeCheck zip<string>
@@ -1303,7 +1299,7 @@ let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =
     let a = runAndCheckErrorType (fun () -> Array.zip3 (Array.ofSeq xs) (Array.ofSeq xs2) (Array.ofSeq xs3))
     consistency "zip3" s l a
     
-[<Test>]
+[<Fact>]
 let ``zip3 is consistent for collections with equal length`` () =
     smallerSizeCheck zip3<int>
     smallerSizeCheck zip3<string>

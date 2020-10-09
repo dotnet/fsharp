@@ -3,22 +3,32 @@
 namespace FSharp.Compiler
 
 open System
+
 open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Tast
+open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.Range
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+
+open Microsoft.DotNet.DependencyManager
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
+
     member Get : CompilationThreadToken * TcConfig -> Cancellable<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
+
     member Clear: CompilationThreadToken -> unit
+
     member Downsize: CompilationThreadToken -> unit
   
 /// Used for unit testing
@@ -32,49 +42,74 @@ module internal IncrementalBuilderEventTesting =
   val GetMostRecentIncrementalBuildEvents : int -> IBEvent list
   val GetCurrentIncrementalBuildEventNum : unit -> int
 
-/// Represents the state in the incremental graph associated with checking a file
-type internal PartialCheckResults = 
-    { /// This field is None if a major unrecovered error occurred when preparing the initial state
-      TcState : TcState
-      TcImports: TcImports 
-      TcGlobals: TcGlobals 
-      TcConfig: TcConfig 
+/// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
+[<NoEquality; NoComparison>]
+type internal TcInfo =
+    {
+        tcState: TcState
+        tcEnvAtEndOfFile: TypeChecker.TcEnv
 
-      /// This field is None if a major unrecovered error occurred when preparing the initial state
-      TcEnvAtEnd : TypeChecker.TcEnv
+        /// Disambiguation table for module names
+        moduleNamesDict: ModuleNamesDict
 
-      /// Represents the collected errors from type checking
-      TcErrorsRev : (PhasedDiagnostic * FSharpErrorSeverity)[] list 
+        topAttribs: TypeChecker.TopAttribs option
 
-      /// Represents the collected name resolutions from type checking
-      TcResolutionsRev: TcResolutions list 
+        latestCcuSigForFile: ModuleOrNamespaceType option
 
-      /// Represents the collected uses of symbols from type checking
-      TcSymbolUsesRev: TcSymbolUses list 
+        /// Accumulated errors, last file first
+        tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
 
-      /// Represents open declarations
-      TcOpenDeclarationsRev: OpenDeclaration[] list
+        tcDependencyFiles: string list
 
-      /// Disambiguation table for module names
-      ModuleNamesDict: ModuleNamesDict
+        sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
+    }
 
-      TcDependencyFiles: string list
+     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
 
-      /// Represents the collected attributes to apply to the module of assembly generates
-      TopAttribs: TypeChecker.TopAttribs option
+/// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
+[<NoEquality; NoComparison>]
+type internal TcInfoOptional =
+    {
+      /// Accumulated resolutions, last file first
+      tcResolutionsRev: TcResolutions list
 
-      TimeStamp: DateTime 
+      /// Accumulated symbol uses, last file first
+      tcSymbolUsesRev: TcSymbolUses list
+
+      /// Accumulated 'open' declarations, last file first
+      tcOpenDeclarationsRev: OpenDeclaration[] list
+
+      /// Result of checking most recent file, if any
+      latestImplFile: TypedImplFile option
       
-      /// Represents latest complete typechecked implementation file, including its typechecked signature if any.
-      /// Empty for a signature file.
-      LatestImplementationFile: TypedImplFile option 
+      /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
+      itemKeyStore: ItemKeyStore option
       
-      /// Represents latest inferred signature contents.
-      LatestCcuSigForFile: ModuleOrNamespaceType option}
-
-    member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+      /// If enabled, holds semantic classification information for Item(symbol)s in a file.
+      semanticClassification: struct (range * SemanticClassificationType) []
+    }
 
     member TcSymbolUses: TcSymbolUses list
+
+/// Represents the state in the incremental graph associated with checking a file
+[<Sealed>]
+type internal PartialCheckResults = 
+
+    member TcImports: TcImports 
+
+    member TcGlobals: TcGlobals 
+
+    member TcConfig: TcConfig 
+
+    member TimeStamp: DateTime 
+
+    member TcInfo: CompilationThreadToken -> TcInfo
+
+    /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
+    /// Only use when it's absolutely necessary to get rich information on a file.
+    member TcInfoWithOptional: CompilationThreadToken -> TcInfo * TcInfoOptional
+
+    member TimeStamp: DateTime 
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
@@ -156,12 +191,36 @@ type internal IncrementalBuilder =
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
 
+      /// Does the given file exist in the builder's pipeline?
+      member ContainsFile: filename: string -> bool
+
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
+      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 * tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot * suggestNamesForErrors: bool -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
+      /// Create the incremental builder
+      static member TryCreateIncrementalBuilderForProjectOptions:
+          CompilationThreadToken *
+          ReferenceResolver.Resolver *
+          defaultFSharpBinariesDir: string * 
+          FrameworkImportsCache *
+          scriptClosureOptions:LoadClosure option *
+          sourceFiles:string list *
+          commandLineArgs:string list *
+          projectReferences: IProjectReference list *
+          projectDirectory:string *
+          useScriptResolutionRules:bool *
+          keepAssemblyContents: bool *
+          keepAllBackgroundResolutions: bool *
+          maxTimeShareMilliseconds: int64 *
+          tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot *
+          suggestNamesForErrors: bool *
+          keepAllBackgroundSymbolUses: bool *
+          enableBackgroundItemKeyStoreAndSemanticClassification: bool *
+          enablePartialTypeChecking: bool *
+          dependencyProvider: DependencyProvider option
+             -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =
@@ -245,10 +304,13 @@ module internal IncrementalBuild =
     /// Only required for unit testing.
     type BuildDescriptionScope = 
         new : unit -> BuildDescriptionScope
+
         /// Declare a named scalar output.
         member DeclareScalarOutput : output:Scalar<'T> -> unit
+
         /// Declare a named vector output.
         member DeclareVectorOutput : output:Vector<'T> -> unit
+
         /// Set the concrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 

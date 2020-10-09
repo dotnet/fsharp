@@ -3,8 +3,8 @@
 #if INTERACTIVE
 //#r @"../../release/net40/bin/FSharp.Compiler.dll"
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
-#load "../../src/scripts/scriptlib.fsx" 
-#load "test-framework.fs" 
+#load "../../src/scripts/scriptlib.fsx"
+#load "../FSharp.Test.Utilities/TestFramework.fs"
 #load "single-test.fs"
 #else
 [<NUnit.Framework.Category "Type Provider">]
@@ -19,24 +19,28 @@ open TestFramework
 open Scripting
 open SingleTest
 
-#if FSHARP_SUITE_DRIVES_CORECLR_TESTS
+#if !NETCOREAPP
+// All tests which do a manual invoke of the F# compiler are disabled
+
+#if NETCOREAPP
 // Use these lines if you want to test CoreCLR
 let FSC_BASIC = FSC_CORECLR
 let FSI_BASIC = FSI_CORECLR
-let FSIANYCPU_BASIC = FSI_CORECLR
 #else
 let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
 #endif
 
-(*
+let inline getTestsDirectory dir = __SOURCE_DIRECTORY__ ++ dir
+let testConfig' = getTestsDirectory >> testConfig
+
 [<Test>]
-let diamondAssembly () = 
-    let cfg = testConfig "typeProviders/diamondAssembly"
+let diamondAssembly () =
+    let cfg = testConfig' "typeProviders/diamondAssembly"
 
     rm cfg "provider.dll"
 
-    // Add a version flag to make this generate native resources. The native resources aren't important and 
+    // Add a version flag to make this generate native resources. The native resources aren't important and
     // can be dropped when the provided.dll is linked but we need to tolerate generated DLLs that have them
     fsc cfg "%s" "--out:provided.dll -a --version:0.0.0.1" [".." ++ "helloWorld" ++ "provided.fs"]
 
@@ -65,17 +69,17 @@ let diamondAssembly () =
     fsi cfg "%s" cfg.fsi_flags ["test3.fsx"]
 
     testOkFile.CheckExists()
-                
-[<Test>]
-let globalNamespace () = 
-    let cfg = testConfig "typeProviders/globalNamespace"
 
-    csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
+[<Test>]
+let globalNamespace () =
+    let cfg = testConfig' "typeProviders/globalNamespace"
+
+    csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:netstandard.dll /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
 
     fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
-                
-let helloWorld p = 
-    let cfg = testConfig "typeProviders/helloWorld"
+
+let helloWorld p =
+    let cfg = testConfig' "typeProviders/helloWorld"
 
     fsc cfg "%s" "--out:provided1.dll -g -a" [".." ++ "helloWorld" ++ "provided.fs"]
 
@@ -99,7 +103,7 @@ let helloWorld p =
 
     fsc cfg "--out:provider.dll -a" ["provider.fsx"]
 
-    SingleTest.singleTestBuildAndRunAux cfg p 
+    SingleTest.singleTestBuildAndRunAux cfg p
 
 
     rm cfg "provider_with_binary_compat_changes.dll"
@@ -119,7 +123,7 @@ let helloWorld p =
     log "popd"
 
     mkdir cfg "bincompat2"
-        
+
     log "pushd bincompat2"
     let bincompat2 = getfullpath cfg "bincompat2"
 
@@ -143,13 +147,14 @@ let helloWorld p =
 [<Test>]
 let ``helloWorld fsc`` () = helloWorld FSC_BASIC
 
+#if !NETCOREAPP
 [<Test>]
 let ``helloWorld fsi`` () = helloWorld FSI_STDIN
-
+#endif
 
 [<Test>]
-let helloWorldCSharp () = 
-    let cfg = testConfig "typeProviders/helloWorldCSharp"
+let helloWorldCSharp () =
+    let cfg = testConfig' "typeProviders/helloWorldCSharp"
 
     rm cfg "magic.dll"
 
@@ -157,7 +162,7 @@ let helloWorldCSharp () =
 
     rm cfg "provider.dll"
 
-    csc cfg """/out:provider.dll /target:library "/r:%s" /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
+    csc cfg """/out:provider.dll /target:library "/r:%s" /r:netstandard.dll /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
 
     fsc cfg "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
 
@@ -168,14 +173,14 @@ let helloWorldCSharp () =
     peverify cfg "test.exe"
 
     exec cfg ("." ++ "test.exe") ""
-                
+
 
 [<TestCase("neg1")>]
 [<TestCase("neg2")>]
 [<TestCase("neg2c")>]
 [<TestCase("neg2e")>]
 [<TestCase("neg2g")>]
-[<TestCase("neg2h")>]    
+[<TestCase("neg2h")>]
 [<TestCase("neg4")>]
 [<TestCase("neg6")>]
 [<TestCase("InvalidInvokerExpression")>]
@@ -198,7 +203,7 @@ let helloWorldCSharp () =
 [<TestCase("EVIL_PROVIDER_ConstructorThrows")>]
 [<TestCase("EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments")>]
 let ``negative type provider tests`` (name:string) =
-    let cfg = testConfig "typeProviders/negTests"
+    let cfg = testConfig' "typeProviders/negTests"
     let dir = cfg.Directory
 
     if requireENCulture () then
@@ -233,18 +238,19 @@ let ``negative type provider tests`` (name:string) =
 
         fsc cfg "--out:MostBasicProvider.dll -a" ["MostBasicProvider.fsx"]
 
-        let preprocess name pref = 
+        let preprocess name pref =
             let dirp = (dir |> Commands.pathAddBackslash)
             do
             File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
                 .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
+                .Replace("<FILEPATH>",dirp)
                 .Replace("<URIPATH>",sprintf "file:///%s" dirp)
                 |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
 
         if name = "ProviderAttribute_EmptyConsume" || name = "providerAttributeErrorConsume" then ()
         else fsc cfg "--define:%s --out:provider_%s.dll -a" name name ["provider.fsx"]
 
-        if fileExists (sprintf "%s.bslpp" name) then preprocess name "" 
+        if fileExists (sprintf "%s.bslpp" name) then preprocess name ""
 
         if fileExists (sprintf "%s.vsbslpp" name) then preprocess name "vs"
 
@@ -252,9 +258,9 @@ let ``negative type provider tests`` (name:string) =
 
 let splitAssembly subdir project =
 
-    let cfg = testConfig project
+    let cfg = testConfig' project
 
-    let clean() = 
+    let clean() =
         rm cfg "providerDesigner.dll"
         rmdir cfg "typeproviders"
         rmdir cfg "tools"
@@ -267,20 +273,29 @@ let splitAssembly subdir project =
 
     fsc cfg "--out:providerDesigner.dll -a" ["providerDesigner.fsx"]
 
-    SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
+    fsc cfg "--out:test.exe -r:provider.dll" ["test.fsx"]
 
-    SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+    begin
+        use testOkFile = fileguard cfg "test.ok"
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    SingleTest.singleTestBuildAndRunAux cfg FSIANYCPU_BASIC
-#endif
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+    end
+
+    begin
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+        testOkFile.CheckExists()
+    end
 
     // Do the same thing with different load locations for the type provider design-time component
 
     clean()
 
     // check a few load locations
-    let someLoadPaths = 
+    let someLoadPaths =
         [ subdir ++ "fsharp41" ++ "net461"
           subdir ++ "fsharp41" ++ "net45"
           // include up one directory
@@ -289,35 +304,43 @@ let splitAssembly subdir project =
 
     for dir in someLoadPaths do
 
+        printfn ""
+        printfn "Checking load path '%s'" dir
         clean()
 
         // put providerDesigner.dll into a different place
         mkdir cfg dir
         fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
 
-        SingleTest.singleTestBuildAndRunAux cfg FSC_BASIC
+        fsc cfg "--out:test.exe -r:provider.dll" ["test.fsx"]
 
-    for dir in someLoadPaths do
+        begin
+            use testOkFile = fileguard cfg "test.ok"
 
-        clean()
+            exec cfg ("." ++ "test.exe") ""
 
-        // put providerDesigner.dll into a different place
-        mkdir cfg dir
-        fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
+            testOkFile.CheckExists()
+        end
 
-        SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+            testOkFile.CheckExists()
+        end
 
     clean()
+let splitAssembly' = getTestsDirectory >> splitAssembly
 
 [<Test>]
-let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
+let splitAssemblyTools () = splitAssembly' "tools" "typeProviders/splitAssemblyTools"
 
 [<Test>]
-let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
+let splitAssemblyTypeProviders () = splitAssembly' "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
 [<Test>]
-let wedgeAssembly () = 
-    let cfg = testConfig "typeProviders/wedgeAssembly"
+let wedgeAssembly () =
+    let cfg = testConfig' "typeProviders/wedgeAssembly"
 
     rm cfg "provider.dll"
 
@@ -360,4 +383,4 @@ let wedgeAssembly () =
     peverify cfg "test3.exe"
 
     exec cfg ("." ++ "test3.exe") ""
-*)
+#endif

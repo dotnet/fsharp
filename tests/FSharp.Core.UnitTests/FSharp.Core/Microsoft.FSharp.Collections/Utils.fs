@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.Utils
+module FSharp.Core.UnitTests.Collections.Utils
 
-open NUnit.Framework
+open Xunit
 
 type Result<'a> = 
 | Success of 'a

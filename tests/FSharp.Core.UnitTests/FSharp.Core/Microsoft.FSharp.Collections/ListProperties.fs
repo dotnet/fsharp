@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-[<NUnit.Framework.Category "Collections.List">][<NUnit.Framework.Category "FSharp.Core.Collections">]
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.ListProperties
+module FSharp.Core.UnitTests.Collections.ListProperties
 
 open System
 open System.Collections.Generic
-open NUnit.Framework
+open Xunit
 open FsCheck
 open Utils
 
@@ -14,7 +13,7 @@ let chunkBySize_and_collect<'a when 'a : equality> (xs : 'a list) size =
         let b = List.collect id a
         b = xs)
 
-[<Test>]
+[<Fact>]
 let ``chunkBySize is reversable with collect`` () =
     Check.QuickThrowOnFailure chunkBySize_and_collect<int>
     Check.QuickThrowOnFailure chunkBySize_and_collect<string>
@@ -26,7 +25,7 @@ let windowed_and_length<'a when 'a : equality> (xs : 'a list) size =
         |> List.forall (fun x -> x.Length = size))
 
 
-[<Test>]
+[<Fact>]
 let ``windowed returns list with correct length`` () =
     Check.QuickThrowOnFailure windowed_and_length<int>
     Check.QuickThrowOnFailure windowed_and_length<string>
@@ -39,7 +38,7 @@ let windowed_and_order<'a when 'a : equality> (listsize:PositiveInt) size =
         List.windowed size xs
         |> List.forall (fun w -> w = List.sort w))
 
-[<Test>]
+[<Fact>]
 let ``windowed returns succeeding elements`` () =
     Check.QuickThrowOnFailure windowed_and_order<int>
     Check.QuickThrowOnFailure windowed_and_order<string>
@@ -55,7 +54,7 @@ let partition_and_sort<'a when 'a : comparison> (xs : 'a list) =
 
     qsort xs = (List.sort xs)
 
-[<Test>]
+[<Fact>]
 let ``partition can be used to sort`` () =
     Check.QuickThrowOnFailure partition_and_sort<int>
     Check.QuickThrowOnFailure partition_and_sort<string>
@@ -67,13 +66,13 @@ let windowed_and_pairwise<'a when 'a : equality> (xs : 'a list) =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``windowed 2 is like pairwise`` () =
     Check.QuickThrowOnFailure windowed_and_pairwise<int>
     Check.QuickThrowOnFailure windowed_and_pairwise<string>
     Check.QuickThrowOnFailure windowed_and_pairwise<NormalFloat>
 
-[<Test>]
+[<Fact>]
 let ``chunkBySize produces chunks exactly of size `chunkSize`, except the last one, which can be smaller, but not empty``() =
     let prop (a: _ list) (PositiveInt chunkSize) =   
         match a |> List.chunkBySize chunkSize |> Seq.toList with
@@ -97,7 +96,7 @@ let splitInto_and_collect<'a when 'a : equality> (xs : 'a list) count =
         let b = List.collect id a
         b = xs)
 
-[<Test>]
+[<Fact>]
 let ``splitInto is reversable with collect`` () =
     Check.QuickThrowOnFailure splitInto_and_collect<int>
     Check.QuickThrowOnFailure splitInto_and_collect<string>
@@ -109,7 +108,7 @@ let splitAt_and_append<'a when 'a : equality> (xs : 'a list) index =
         let b = List.append a1 a2
         b = xs && a1.Length = index)
 
-[<Test>]
+[<Fact>]
 let ``splitAt is reversable with append`` () =
     Check.QuickThrowOnFailure splitAt_and_append<int>
     Check.QuickThrowOnFailure splitAt_and_append<string>
@@ -120,7 +119,7 @@ let indexed_and_zip<'a when 'a : equality> (xs : 'a list) =
     let b = List.indexed xs
     b = List.zip a xs
 
-[<Test>]
+[<Fact>]
 let ``indexed is adding correct indexes`` () =
     Check.QuickThrowOnFailure indexed_and_zip<int>
     Check.QuickThrowOnFailure indexed_and_zip<string>
@@ -135,7 +134,7 @@ let zip_and_zip3<'a when 'a : equality> (xs' : ('a*'a*'a) list) =
     let b = List.zip (List.zip xs xs2) xs3 |> List.map (fun ((a,b),c) -> a,b,c)
     a = b
 
-[<Test>]
+[<Fact>]
 let ``two zips can be used for zip3`` () =
     Check.QuickThrowOnFailure zip_and_zip3<int>
     Check.QuickThrowOnFailure zip_and_zip3<string>
@@ -145,7 +144,7 @@ let zip_and_unzip<'a when 'a : equality> (xs' : ('a*'a) list) =
     let xs,xs2 = List.unzip xs'
     List.zip xs xs2 = xs'
 
-[<Test>]
+[<Fact>]
 let ``zip and unzip are dual`` () =
     Check.QuickThrowOnFailure zip_and_unzip<int>
     Check.QuickThrowOnFailure zip_and_unzip<string>
@@ -155,13 +154,13 @@ let zip3_and_unzip3<'a when 'a : equality> (xs' : ('a*'a*'a) list) =
     let xs,xs2,xs3 = List.unzip3 xs'
     List.zip3 xs xs2 xs3 = xs'
 
-[<Test>]
+[<Fact>]
 let ``zip3 and unzip3 are dual`` () =
     Check.QuickThrowOnFailure zip3_and_unzip3<int>
     Check.QuickThrowOnFailure zip3_and_unzip3<string>
     Check.QuickThrowOnFailure zip3_and_unzip3<NormalFloat>
 
-[<Test>]
+[<Fact>]
 let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``() =
     let prop (a: _ list) (PositiveInt count') =
         let count = min a.Length count'
@@ -188,7 +187,7 @@ let sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
                 result := false
     !result 
 
-[<Test>]
+[<Fact>]
 let ``sort behaves like sortby id`` () =   
     Check.QuickThrowOnFailure sort_and_sortby
 
@@ -197,7 +196,7 @@ let filter_and_except<'a when 'a : comparison>  (xs : list<'a>) (itemsToExclude 
     let b = List.except itemsToExclude xs
     a = b
 
-[<Test>]
+[<Fact>]
 let ``filter and except work similar`` () =   
     Check.QuickThrowOnFailure filter_and_except<int>
     Check.QuickThrowOnFailure filter_and_except<string>
@@ -208,7 +207,7 @@ let filter_and_where<'a when 'a : comparison>  (xs : list<'a>) predicate =
     let b = List.where predicate xs
     a = b
 
-[<Test>]
+[<Fact>]
 let ``filter and where work similar`` () =   
     Check.QuickThrowOnFailure filter_and_where<int>
     Check.QuickThrowOnFailure filter_and_where<string>
@@ -219,7 +218,7 @@ let find_and_pick<'a when 'a : comparison>  (xs : list<'a>) predicate =
     let b = runAndCheckIfAnyError (fun () -> List.pick (fun x -> if predicate x then Some x else None) xs)
     a = b
 
-[<Test>]
+[<Fact>]
 let ``pick works like find`` () =   
     Check.QuickThrowOnFailure find_and_pick<int>
     Check.QuickThrowOnFailure find_and_pick<string>
@@ -230,7 +229,7 @@ let choose_and_pick<'a when 'a : comparison>  (xs : list<'a>) predicate =
     let b = runAndCheckIfAnyError (fun () -> List.pick predicate xs)
     a = b
 
-[<Test>]
+[<Fact>]
 let ``pick works like choose + head`` () =   
     Check.QuickThrowOnFailure choose_and_pick<int>
     Check.QuickThrowOnFailure choose_and_pick<string>
@@ -242,7 +241,7 @@ let head_and_tail<'a when 'a : comparison>  (xs : list<'a>) =
         let t = List.tail xs
         xs = h :: t)
 
-[<Test>]
+[<Fact>]
 let ``head and tail gives the list`` () =   
     Check.QuickThrowOnFailure head_and_tail<int>
     Check.QuickThrowOnFailure head_and_tail<string>
@@ -256,7 +255,7 @@ let tryHead_and_tail<'a when 'a : comparison>  (xs : list<'a>) =
         let t = List.tail xs
         xs = h :: t
 
-[<Test>]
+[<Fact>]
 let ``tryHead and tail gives the list`` () =   
     Check.QuickThrowOnFailure tryHead_and_tail<int>
     Check.QuickThrowOnFailure tryHead_and_tail<string>
@@ -270,7 +269,7 @@ let skip_and_take<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegativeIn
         xs = t @ s
     else true
 
-[<Test>]
+[<Fact>]
 let ``skip and take gives the list`` () =   
     Check.QuickThrowOnFailure skip_and_take<int>
     Check.QuickThrowOnFailure skip_and_take<string>
@@ -284,7 +283,7 @@ let truncate_and_take<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegati
         a = b
     else true
 
-[<Test>]
+[<Fact>]
 let ``truncate and take work similar`` () =   
     Check.QuickThrowOnFailure truncate_and_take<int>
     Check.QuickThrowOnFailure truncate_and_take<string>
@@ -297,7 +296,7 @@ let skipWhile_and_takeWhile<'a when 'a : comparison>  (xs : list<'a>) f =
         xs = t @ s
     else true
 
-[<Test>]
+[<Fact>]
 let ``skipWhile and takeWhile gives the list`` () =   
     Check.QuickThrowOnFailure skipWhile_and_takeWhile<int>
     Check.QuickThrowOnFailure skipWhile_and_takeWhile<string>
@@ -313,7 +312,7 @@ let find_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let b = List.exists f xs
     a = b
 
-[<Test>]
+[<Fact>]
 let ``find and exists work similar`` () =   
     Check.QuickThrowOnFailure find_and_exists<int>
     Check.QuickThrowOnFailure find_and_exists<string>
@@ -324,7 +323,7 @@ let exists_and_forall<'a when 'a : comparison>  (xs : list<'a>) (F (_, predicate
     let b = List.exists predicate xs
     a = not b
 
-[<Test>]
+[<Fact>]
 let ``exists and forall are dual`` () =   
     Check.QuickThrowOnFailure exists_and_forall<int>
     Check.QuickThrowOnFailure exists_and_forall<string>
@@ -341,7 +340,7 @@ let head_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
 
     a = not b
 
-[<Test>]
+[<Fact>]
 let ``head fails when list isEmpty`` () =   
     Check.QuickThrowOnFailure head_and_isEmpty<int>
     Check.QuickThrowOnFailure head_and_isEmpty<string>
@@ -353,7 +352,7 @@ let head_and_last<'a when 'a : comparison>  (xs : list<'a>) =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``head is the same as last of a reversed list`` () =   
     Check.QuickThrowOnFailure head_and_last<int>
     Check.QuickThrowOnFailure head_and_last<string>
@@ -365,7 +364,7 @@ let head_and_item<'a when 'a : comparison>  (xs : list<'a>) =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``head is the same as item 0`` () =   
     Check.QuickThrowOnFailure head_and_item<int>
     Check.QuickThrowOnFailure head_and_item<string>
@@ -379,7 +378,7 @@ let item_and_tryItem<'a when 'a : comparison>  (xs : list<'a>) pos =
     | Success a -> b.Value = a
     | _ -> b = None
 
-[<Test>]
+[<Fact>]
 let ``tryItem is safe item`` () =   
     Check.QuickThrowOnFailure item_and_tryItem<int>
     Check.QuickThrowOnFailure item_and_tryItem<string>
@@ -393,7 +392,7 @@ let pick_and_tryPick<'a when 'a : comparison>  (xs : list<'a>) f =
     | Success a -> b.Value = a
     | _ -> b = None
 
-[<Test>]
+[<Fact>]
 let ``tryPick is safe pick`` () =   
     Check.QuickThrowOnFailure pick_and_tryPick<int>
     Check.QuickThrowOnFailure pick_and_tryPick<string>
@@ -407,7 +406,7 @@ let last_and_tryLast<'a when 'a : comparison>  (xs : list<'a>) =
     | Success a -> b.Value = a
     | _ -> b = None
 
-[<Test>]
+[<Fact>]
 let ``tryLast is safe last`` () =   
     Check.QuickThrowOnFailure last_and_tryLast<int>
     Check.QuickThrowOnFailure last_and_tryLast<string>
@@ -419,7 +418,7 @@ let length_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``list isEmpty if and only if length is 0`` () =   
     Check.QuickThrowOnFailure length_and_isEmpty<int>
     Check.QuickThrowOnFailure length_and_isEmpty<string>
@@ -431,7 +430,7 @@ let min_and_max (xs : list<int>) =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``min is opposite of max`` () =   
     Check.QuickThrowOnFailure min_and_max
 
@@ -441,7 +440,7 @@ let minBy_and_maxBy (xs : list<int>) f =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``minBy is opposite of maxBy`` () =   
     Check.QuickThrowOnFailure minBy_and_maxBy
 
@@ -451,7 +450,7 @@ let minBy_and_min (xs : list<int>) =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``minBy id is same as min`` () =   
     Check.QuickThrowOnFailure minBy_and_min
 
@@ -461,7 +460,7 @@ let min_and_sort<'a when 'a : comparison>  (xs : list<'a>) =
 
     a = b
 
-[<Test>]
+[<Fact>]
 let ``head element after sort is min element`` () =   
     Check.QuickThrowOnFailure min_and_sort<int>
     Check.QuickThrowOnFailure min_and_sort<string>
@@ -481,7 +480,7 @@ let pairwise<'a when 'a : comparison>  (xs : list<'a>) =
           f = (xs |> List.rev |> List.tail |> List.rev) && // all elements but last one
           s = (xs |> List.tail) // all elements but first one
 
-[<Test>]
+[<Fact>]
 let ``pairwise works as expected`` () =   
     Check.QuickThrowOnFailure pairwise<int>
     Check.QuickThrowOnFailure pairwise<string>
@@ -512,7 +511,7 @@ let permute<'a when 'a : comparison>  (xs' : list<int*'a>) =
         true
     | _ -> true
 
-[<Test>]
+[<Fact>]
 let ``permute works as expected`` () =   
     Check.QuickThrowOnFailure permute<int>
     Check.QuickThrowOnFailure permute<string>
@@ -528,7 +527,7 @@ let mapi_and_map<'a when 'a : comparison>  (xs : list<'a>) f =
 
     a = b && (Seq.toList indices = [0..xs.Length-1])
 
-[<Test>]
+[<Fact>]
 let ``mapi behaves like map with correct order`` () =   
     Check.QuickThrowOnFailure mapi_and_map<int>
     Check.QuickThrowOnFailure mapi_and_map<string>
@@ -542,7 +541,7 @@ let reduce_and_fold<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
         let br = seed :: xs  |> List.reduce f
         ar = br
 
-[<Test>]
+[<Fact>]
 let ``reduce works like fold with given seed`` () =
     Check.QuickThrowOnFailure reduce_and_fold<int>
     Check.QuickThrowOnFailure reduce_and_fold<string>
@@ -558,7 +557,7 @@ let scan_and_fold<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
     ar = List.rev br
 
 
-[<Test>]
+[<Fact>]
 let ``scan works like fold but returns intermediate values`` () =
     Check.QuickThrowOnFailure scan_and_fold<int>
     Check.QuickThrowOnFailure scan_and_fold<string>
@@ -574,7 +573,7 @@ let scanBack_and_foldBack<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f
     ar = br
 
 
-[<Test>]
+[<Fact>]
 let ``scanBack works like foldBack but returns intermediate values`` () =
     Check.QuickThrowOnFailure scanBack_and_foldBack<int>
     Check.QuickThrowOnFailure scanBack_and_foldBack<string>
@@ -588,7 +587,7 @@ let reduceBack_and_foldBack<'a when 'a : comparison> (xs : list<'a>) seed (F (_,
         let br = List.reduceBack f (xs @ [seed])
         ar = br
 
-[<Test>]
+[<Fact>]
 let ``reduceBack works like foldBack with given seed`` () =
     Check.QuickThrowOnFailure reduceBack_and_foldBack<int>
     Check.QuickThrowOnFailure reduceBack_and_foldBack<string>
@@ -599,7 +598,7 @@ let replicate<'a when 'a : comparison> (x:'a) (count:NonNegativeInt) =
     let xs = List.replicate count x
     xs.Length = count && List.forall ((=) x) xs
 
-[<Test>]
+[<Fact>]
 let ``replicate creates n instances of the given element`` () =
     Check.QuickThrowOnFailure replicate<int>
     Check.QuickThrowOnFailure replicate<string>
@@ -611,7 +610,7 @@ let singleton_and_replicate<'a when 'a : comparison> (x:'a) (count:NonNegativeIn
     let ys = [for i in 1..count -> List.singleton x] |> List.concat
     xs = ys
 
-[<Test>]
+[<Fact>]
 let ``singleton can be used to replicate`` () =
     Check.QuickThrowOnFailure singleton_and_replicate<int>
     Check.QuickThrowOnFailure singleton_and_replicate<string>
@@ -628,7 +627,7 @@ let mapFold_and_map_and_fold<'a when 'a : comparison> (xs : list<'a>) mapF foldF
     let br = b |> List.fold foldF start
     a = b && ar = br
 
-[<Test>]
+[<Fact>]
 let ``mapFold works like map + fold`` () =   
     Check.QuickThrowOnFailure mapFold_and_map_and_fold<int>
     Check.QuickThrowOnFailure mapFold_and_map_and_fold<string>
@@ -645,7 +644,7 @@ let mapFoldBack_and_map_and_foldBack<'a when 'a : comparison> (xs : list<'a>) ma
     let br = List.foldBack foldF b start
     a = b && ar = br
 
-[<Test>]
+[<Fact>]
 let ``mapFoldBack works like map + foldBack`` () =   
     Check.QuickThrowOnFailure mapFoldBack_and_map_and_foldBack<int>
     Check.QuickThrowOnFailure mapFoldBack_and_map_and_foldBack<string>
@@ -661,7 +660,7 @@ let findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let b = List.exists f xs
     a = b
 
-[<Test>]
+[<Fact>]
 let ``findBack and exists work similar`` () =   
     Check.QuickThrowOnFailure findBack_and_exists<int>
     Check.QuickThrowOnFailure findBack_and_exists<string>
@@ -672,7 +671,7 @@ let findBack_and_find<'a when 'a : comparison>  (xs : list<'a>) predicate =
     let b = run (fun () -> xs |> List.rev |> List.find predicate)
     a = b
 
-[<Test>]
+[<Fact>]
 let ``findBack and find work in reverse`` () =   
     Check.QuickThrowOnFailure findBack_and_find<int>
     Check.QuickThrowOnFailure findBack_and_find<string>
@@ -683,7 +682,7 @@ let tryFindBack_and_tryFind<'a when 'a : comparison>  (xs : list<'a>) predicate 
     let b = xs |> List.rev |> List.tryFind predicate
     a = b
 
-[<Test>]
+[<Fact>]
 let ``tryFindBack and tryFind work in reverse`` () =   
     Check.QuickThrowOnFailure tryFindBack_and_tryFind<int>
     Check.QuickThrowOnFailure tryFindBack_and_tryFind<string>
@@ -696,7 +695,7 @@ let tryFindIndexBack_and_tryFindIndex<'a when 'a : comparison>  (xs : list<'a>) 
     | Some a, Some b -> a = (xs.Length - b - 1)
     | _ -> a = b
 
-[<Test>]
+[<Fact>]
 let ``tryFindIndexBack and tryIndexFind work in reverse`` () =   
     Check.QuickThrowOnFailure tryFindIndexBack_and_tryFindIndex<int>
     Check.QuickThrowOnFailure tryFindIndexBack_and_tryFindIndex<string>
@@ -709,7 +708,7 @@ let rev<'a when 'a : comparison>  (xs : list<'a>) =
 
     xs |> List.rev |> List.rev = xs && Seq.toList list = List.rev xs
 
-[<Test>]
+[<Fact>]
 let ``rev reverses a list`` () =   
     Check.QuickThrowOnFailure rev<int>
     Check.QuickThrowOnFailure rev<string>
@@ -722,7 +721,7 @@ let findIndexBack_and_findIndex<'a when 'a : comparison>  (xs : list<'a>) (F (_,
     | Success a, Success b -> a = (xs.Length - b - 1)
     | _ -> a = b
 
-[<Test>]
+[<Fact>]
 let ``findIndexBack and findIndex work in reverse`` () =
     Check.QuickThrowOnFailure findIndexBack_and_findIndex<int>
     Check.QuickThrowOnFailure findIndexBack_and_findIndex<string>
@@ -737,7 +736,7 @@ let skip_and_skipWhile<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegat
 
         a = b)
 
-[<Test>]
+[<Fact>]
 let ``skip and skipWhile are consistent`` () =   
     Check.QuickThrowOnFailure skip_and_skipWhile<int>
     Check.QuickThrowOnFailure skip_and_skipWhile<string>
@@ -757,7 +756,7 @@ let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
             result := false
     !result
 
-[<Test>]
+[<Fact>]
 let ``distinct creates same elements like a set`` () =
     Check.QuickThrowOnFailure distinct_works_like_set<int>
     Check.QuickThrowOnFailure distinct_works_like_set<string>
@@ -768,7 +767,7 @@ let sort_and_sortDescending<'a when 'a : comparison>  (xs : list<'a>) =
     let b = run (fun () -> xs |> List.sortDescending |> List.rev)
     a = b
 
-[<Test>]
+[<Fact>]
 let ``sort and sortDescending work in reverse`` () =   
     Check.QuickThrowOnFailure sort_and_sortDescending<int>
     Check.QuickThrowOnFailure sort_and_sortDescending<string>
@@ -779,7 +778,7 @@ let sortByStable<'a when 'a : comparison> (xs : 'a []) =
     let sorted = indexed |> List.sortBy snd
     isStable sorted
     
-[<Test>]
+[<Fact>]
 let ``List.sortBy is stable`` () =
     Check.QuickThrowOnFailure sortByStable<int>
     Check.QuickThrowOnFailure sortByStable<string>
@@ -789,7 +788,7 @@ let sortWithStable<'a when 'a : comparison> (xs : 'a []) =
     let sorted = indexed |> List.sortWith (fun x y -> compare (snd x) (snd y))
     isStable sorted
     
-[<Test>]
+[<Fact>]
 let ``List.sortWithStable is stable`` () =
     Check.QuickThrowOnFailure sortWithStable<int>
     Check.QuickThrowOnFailure sortWithStable<string>
@@ -799,12 +798,12 @@ let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
     let sorted = indexed |> List.distinctBy snd
     isStable sorted
     
-[<Test>]
+[<Fact>]
 let ``List.distinctBy is stable`` () =
     Check.QuickThrowOnFailure distinctByStable<int>
     Check.QuickThrowOnFailure distinctByStable<string>
     
-[<Test>]
+[<Fact>]
 let ``List.sum calculates the sum`` () =
     let sum (xs : int list) =
         let s = List.sum xs
@@ -818,7 +817,7 @@ let sumBy<'a> (xs : 'a list) (f:'a -> int) =
     let r = List.sumBy f xs
     r = s
 
-[<Test>]
+[<Fact>]
 let ``List.sumBy calculates the sum of the mapped list`` () =
     Check.QuickThrowOnFailure sumBy<int>
     Check.QuickThrowOnFailure sumBy<string> 
@@ -828,7 +827,7 @@ let allPairsCount<'a, 'b> (xs : 'a list) (ys : 'b list) =
     let pairs = List.allPairs xs ys
     pairs.Length = xs.Length * ys.Length
 
-[<Test>]
+[<Fact>]
 let ``List.allPairs produces the correct number of pairs`` () =
     Check.QuickThrowOnFailure allPairsCount<int, int>
     Check.QuickThrowOnFailure allPairsCount<string, string>
@@ -839,7 +838,7 @@ let allPairsFst<'a, 'b when 'a : equality> (xs : 'a list) (ys : 'b list) =
     let check = xs |> List.collect (List.replicate ys.Length)
     pairsFst = check
 
-[<Test>]
+[<Fact>]
 let ``List.allPairs first elements are correct`` () =
     Check.QuickThrowOnFailure allPairsFst<int, int>
     Check.QuickThrowOnFailure allPairsFst<string, string>
@@ -850,7 +849,7 @@ let allPairsSnd<'a, 'b when 'b : equality> (xs : 'a list) (ys : 'b list) =
     let check = [ for i in 1 .. xs.Length do yield! ys ]
     pairsSnd = check
 
-[<Test>]
+[<Fact>]
 let ``List.allPairs second elements are correct`` () =
     Check.QuickThrowOnFailure allPairsFst<int, int>
     Check.QuickThrowOnFailure allPairsFst<string, string>

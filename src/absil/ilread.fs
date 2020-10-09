@@ -2336,15 +2336,10 @@ module rec ILBinaryReaderImpl =
                     reader.Offset <- int resource.Offset
                     let length = reader.ReadInt32()
                     let mutable reader = block.GetReader(int resource.Offset + 4, length)
-                    let bytes =
-                        // If we are trying to reduce memory, create a memory mapped file based on the contents.
-                        if cenv.CanReduceMemory then
-                            ByteMemory.FromUnsafePointer(reader.CurrentPointer |> NativePtr.toNativeInt, reader.RemainingBytes, null).AsReadOnly()
-                            |> ByteMemory.CreateMemoryMappedFile
-                        else
-                            let bytes = reader.ReadBytes(reader.RemainingBytes)
-                            ByteMemory.FromArray bytes
-                    ILResourceLocation.Local(bytes.AsReadOnly())
+                    let byteStorage =
+                        let bytes = ByteMemory.FromUnsafePointer(reader.CurrentPointer |> NativePtr.toNativeInt, reader.RemainingBytes, null).AsReadOnly()
+                        ByteStorage.FromByteMemoryAndCopy(bytes, useBackingMemoryMappedFile = cenv.CanReduceMemory)
+                    ILResourceLocation.Local(byteStorage)
                 else
                     match readILScopeRef cenv resource.Implementation with
                     | ILScopeRef.Module mref -> ILResourceLocation.File (mref, int resource.Offset)

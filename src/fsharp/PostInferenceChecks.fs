@@ -11,18 +11,20 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Lib
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
-open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Lib
+open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeBasics
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeRelations
 
 //--------------------------------------------------------------------------
@@ -213,9 +215,12 @@ type cenv =
       isInternalTestSpanStackReferring: bool
 
       // outputs
-      mutable usesQuotations : bool
+      mutable usesQuotations: bool
 
-      mutable entryPointGiven: bool  }
+      mutable entryPointGiven: bool 
+      
+      /// Callback required for quotation generation
+      tcVal: ConstraintSolver.TcValF }
 
     override x.ToString() = "<cenv>"
 
@@ -477,7 +482,7 @@ let CheckTypeForAccess (cenv: cenv) env objName valAcc m ty =
         let visitType ty =         
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
-            match tryDestAppTy cenv.g ty with 
+            match tryTcrefOfAppTy cenv.g ty with 
             | ValueNone -> ()
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
@@ -493,7 +498,7 @@ let WarnOnWrongTypeForAccess (cenv: cenv) env objName valAcc m ty =
         let visitType ty =         
             // We deliberately only check the fully stripped type for accessibility, 
             // because references to private type abbreviations are permitted
-            match tryDestAppTy cenv.g ty with 
+            match tryTcrefOfAppTy cenv.g ty with 
             | ValueNone -> ()
             | ValueSome tcref ->
                 let thisCompPath = compPathOfCcu cenv.viewCcu
@@ -618,7 +623,7 @@ let CheckTypeAux permitByRefLike (cenv: cenv) env m ty onInnerByrefError =
         let visitAppTy (tcref, tinst) = 
             if isByrefLikeTyconRef cenv.g m tcref then
                 let visitType ty0 =
-                    match tryDestAppTy cenv.g ty0 with
+                    match tryTcrefOfAppTy cenv.g ty0 with
                     | ValueNone -> ()
                     | ValueSome tcref2 ->  
                         if isByrefTyconRef cenv.g tcref2 then 
@@ -677,23 +682,62 @@ let CheckNoReraise cenv freesOpt (body: Expr) =
 /// Check if a function is a quotation splice operator
 let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref 
 
-/// Check conditions associated with implementing multiple instantiations of a generic interface
-let CheckMultipleInterfaceInstantiations cenv interfaces m = 
+
+/// Examples:
+/// I<int> & I<int> => ExactlyEqual.
+/// I<int> & I<string> => NotEqual.
+/// I<int> & I<'T> => FeasiblyEqual.
+/// with '[<Measure>] type kg': I< int<kg> > & I<int> => FeasiblyEqual.
+/// with 'type MyInt = int': I<MyInt> & I<int> => FeasiblyEqual.
+///
+/// The differences could also be nested, example:
+/// I<List<int*string>> vs I<List<int*'T>> => FeasiblyEqual.
+type TTypeEquality =
+    | ExactlyEqual
+    | FeasiblyEqual
+    | NotEqual
+
+let compareTypesWithRegardToTypeVariablesAndMeasures g amap m typ1 typ2 =
+    
+    if (typeEquiv g typ1 typ2) then
+        ExactlyEqual
+    else
+        if (typeEquiv g typ1 typ2 || TypesFeasiblyEquivStripMeasures g amap m typ1 typ2) then 
+            FeasiblyEqual
+        else
+            NotEqual
+
+let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
     let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
-    let table = interfaces |> MultiMap.initBy keyf
-    let firstInterfaceWithMultipleGenericInstantiations = 
-        interfaces |> List.tryPick (fun typ1 -> 
-            table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
-                   if // same nominal type
-                       tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
-                       // different instantiations
-                       not (typeEquivAux EraseNone cenv.g typ1 typ2) 
-                    then Some (typ1, typ2)
-                    else None))
-    match firstInterfaceWithMultipleGenericInstantiations with 
+    let groups = interfaces |> List.groupBy keyf
+    let errors = seq {
+        for (_, items) in groups do
+            for i1 in 0 .. items.Length - 1 do
+                for i2 in i1 + 1 .. items.Length - 1 do
+                    let typ1 = items.[i1]
+                    let typ2 = items.[i2]
+                    let tcRef1 = tcrefOfAppTy cenv.g typ1
+                    match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
+                    | ExactlyEqual -> ()
+                    | FeasiblyEqual ->
+                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
+                        | None -> ()
+                        | Some e -> yield e
+                        let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
+                        let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+                        if isObjectExpression then
+                            yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                        else
+                            let typStr = NicePrint.minimalStringOfType cenv.denv typ
+                            yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                    | NotEqual ->
+                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
+                        | None -> ()
+                        | Some e -> yield e
+    }
+    match Seq.tryHead errors with
     | None -> ()
-    | Some (typ1, typ2) -> 
-         errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)), m))
+    | Some e -> errorR(e)
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
@@ -798,7 +842,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) expr =
             | OptionalCoerce(Expr.Val (failwithfFunc, _, funcRange)) when valRefEq g failwithfFunc g.failwithf_vref  ->
                 match argsl with
                 | Expr.App (Expr.Val (newFormat, _, _), _, [_; typB; typC; _; _], [Expr.Const (Const.String formatString, formatRange, _)], _) :: xs when valRefEq g newFormat g.new_format_vref ->
-                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g formatString typB typC with
+                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g false formatString typB typC with
                     | Some n ->
                         let expected = n + 1
                         let actual = List.length xs + 1
@@ -970,13 +1014,18 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
         if cenv.reportErrors then 
             cenv.usesQuotations <- true
 
-            // Translate to quotation data
+            // Translate the quotation to quotation data
             try 
-                let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No) 
-                let qdata = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast  
-                let typeDefs, spliceTypes, spliceExprs = qscope.Close()
+                let doData suppressWitnesses = 
+                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.No) 
+                    let qdata = QuotationTranslator.ConvExprPublic qscope suppressWitnesses ast  
+                    let typeDefs, spliceTypes, spliceExprs = qscope.Close()
+                    typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata
+
+                let data1 = doData true
+                let data2 = doData false
                 match savedConv.Value with 
-                | None -> savedConv:= Some (typeDefs, List.map fst spliceTypes, List.map fst spliceExprs, qdata)
+                | None -> savedConv:= Some (data1, data2)
                 | Some _ -> ()
             with QuotationTranslator.InvalidQuotedTerm e -> 
                 errorRecovery e m
@@ -997,7 +1046,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                   yield! AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
             |> List.filter (isInterfaceTy g)
 
-        CheckMultipleInterfaceInstantiations cenv interfaces m
+        CheckMultipleInterfaceInstantiations cenv ty interfaces true m
         NoLimit
 
     // Allow base calls to F# methods
@@ -1024,7 +1073,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
           when not virt && baseVal.BaseOrThisInfo = BaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
-        match tryDestAppTy g baseVal.Type with
+        match tryTcrefOfAppTy g baseVal.Type with
         | ValueSome tcref when tcref.IsILTycon ->
             try
                 // This is awkward - we have to explicitly re-resolve back to the IL metadata to determine if the method is abstract.
@@ -1122,6 +1171,9 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                 CheckTypeNoByrefs cenv env m ty1)
         NoLimit
 
+    | Expr.WitnessArg _ ->
+        NoLimit
+
     | Expr.Link _ -> 
         failwith "Unexpected reclink"
 
@@ -1173,7 +1225,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env [e1;e2;e3]
 
-    | TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
         ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
@@ -1584,6 +1636,7 @@ and CheckDecisionTreeTest cenv env m discrim =
     | DecisionTreeTest.IsNull -> ()
     | DecisionTreeTest.IsInst (srcTy, tgtTy)    -> CheckTypeNoInnerByrefs cenv env m srcTy; CheckTypeNoInnerByrefs cenv env m tgtTy
     | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)     -> CheckExprNoByrefs cenv env exp
+    | DecisionTreeTest.Error _ -> ()
 
 and CheckAttrib cenv env (Attrib(_, _, args, props, _, _, _)) = 
     props |> List.iter (fun (AttribNamedArg(_, _, _, expr)) -> CheckAttribExpr cenv env expr)
@@ -1747,23 +1800,19 @@ and CheckBinding cenv env alwaysCheckNoReraise context (TBind(v, bindRhs, _) as 
                 match v.ReflectedDefinition with 
                 | None -> v.SetValDefn bindRhs
                 | Some _ -> ()
+
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's
                 // no real need for that except that it helps us to bundle all reflected definitions up into 
                 // one blob for pickling to the binary format
                 try
-                    let ety = tyOfExpr g bindRhs
-                    let tps, taue, _ = 
-                      match bindRhs with 
-                      | Expr.TyLambda (_, tps, b, _, _) -> tps, b, applyForallTy g ety (List.map mkTyparTy tps)
-                      | _ -> [], bindRhs, ety
-                    let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
-                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes) 
-                    QuotationTranslator.ConvExprPublic qscope env taue  |> ignore
-                    let _, _, argExprs = qscope.Close()
-                    if not (isNil argExprs) then 
+                    let qscope = QuotationTranslator.QuotationGenerationScope.Create (g, cenv.amap, cenv.viewCcu, cenv.tcVal, QuotationTranslator.IsReflectedDefinition.Yes) 
+                    let methName = v.CompiledName g.CompilerGlobalState
+                    QuotationTranslator.ConvReflectedDefinition qscope methName v bindRhs |> ignore
+                    
+                    let _, _, exprSplices = qscope.Close()
+                    if not (isNil exprSplices) then 
                         errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
-                    QuotationTranslator.ConvMethodBase qscope env (v.CompiledName g.CompilerGlobalState, v) |> ignore
                 with 
                   | QuotationTranslator.InvalidQuotedTerm e -> 
                           errorR e
@@ -1926,8 +1975,8 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     let m = rfield.Range
     let fieldTy = stripTyEqns cenv.g rfield.FormalType
     let isHidden = 
-        IsHiddenTycon cenv.g env.sigToImplRemapInfo tycon || 
-        IsHiddenTyconRepr cenv.g env.sigToImplRemapInfo tycon || 
+        IsHiddenTycon env.sigToImplRemapInfo tycon || 
+        IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
@@ -2175,7 +2224,6 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 for (argty, _) in argtys do 
                      CheckTypeNoInnerByrefs cenv env vref.Range argty
             CheckTypeNoInnerByrefs cenv env vref.Range rty
-                
         | None -> ()
 
     // Supported interface may not have byrefs
@@ -2189,7 +2237,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
             uc.RecdFieldsArray |> Array.iter (CheckRecdField true cenv env tycon))
 
     // Access checks
-    let access =  AdjustAccess (IsHiddenTycon g env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
+    let access =  AdjustAccess (IsHiddenTycon env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
     let visitType ty = CheckTypeForAccess cenv env (fun () -> tycon.DisplayNameWithStaticParametersAndUnderscoreTypars) access tycon.Range ty    
 
     abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> visitType) 
@@ -2223,11 +2271,11 @@ let CheckEntityDefn cenv env (tycon: Entity) =
  
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 
-            let immediateInterfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m ty
-            let interfaces = 
-              [ for ty in immediateInterfaces do
-                    yield! AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
-            CheckMultipleInterfaceInstantiations cenv interfaces m
+            let interfaces =
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m ty
+                |> List.collect (AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes)
+                |> List.filter (isInterfaceTy g)
+            CheckMultipleInterfaceInstantiations cenv ty interfaces false m
         
         // Check struct fields. We check these late because we have to have first checked that the structs are
         // free of cycles
@@ -2296,7 +2344,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 
@@ -2312,6 +2360,7 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           viewCcu= viewCcu
           isLastCompiland=isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
+          tcVal = tcVal
           entryPointGiven=false}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
@@ -2339,6 +2388,6 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
 
     CheckModuleExpr cenv env mexpr
     CheckAttribs cenv env extraAttribs
-    if cenv.usesQuotations && QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat g = QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus then 
+    if cenv.usesQuotations && not (QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(g).SupportsDeserializeEx) then 
         viewCcu.UsesFSharp20PlusQuotations <- true
     cenv.entryPointGiven, cenv.anonRecdTypes

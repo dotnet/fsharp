@@ -9,7 +9,9 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     open System.Globalization
     open System.IO
     open System.Reflection
+    open System.Runtime.InteropServices
     open Internal.Utilities
+    open Internal.Utilities.FSharpEnvironment
 
     type private TypeInThisAssembly = class end
 
@@ -19,17 +21,20 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | Some path -> path
         | None ->
 #if DEBUG
-            Debug.Print(sprintf "FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171" location)
+            Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
+                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
+                location)
 #endif
             // Use the location of this dll
             location
 
+    let inline ifEmptyUse alternative filename = if String.IsNullOrWhiteSpace filename then alternative else filename
+    
     let getFSharpCoreLibraryName = "FSharp.Core"
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
     let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
     let getDefaultFsiLibraryLocation = Path.Combine(fSharpCompilerLocation, getFsiLibraryName + ".dll")
-    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location)
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
+    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location) |> ifEmptyUse fSharpCompilerLocation
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
@@ -100,7 +105,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | _, -1 ->
             if isRunningOnCoreClr then
                 // Running on coreclr but no deps.json was deployed with the host so default to 3.0
-                Some "netcoreapp3.0"
+                Some "netcoreapp3.1"
             else
                 // Running on desktop
                 None
@@ -115,13 +120,19 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         let desktopProductVersionMonikers = [|
             // major, minor, build, revision, moniker
                4,     8,      3815,     0,    "net48"
+               4,     8,      3761,     0,    "net48"
                4,     7,      3190,     0,    "net472"
+               4,     7,      3062,     0,    "net472"
                4,     7,      2600,     0,    "net471"
+               4,     7,      2558,     0,    "net471"
                4,     7,      2053,     0,    "net47"
+               4,     7,      2046,     0,    "net47"
                4,     6,      1590,     0,    "net462"
+               4,     6,        57,     0,    "net462"
                4,     6,      1055,     0,    "net461"
                4,     6,        81,     0,    "net46"
                4,     0,     30319, 34209,    "net452"
+               4,     0,     30319, 17020,    "net452"
                4,     0,     30319, 18408,    "net451"
                4,     0,     30319, 17929,    "net45"
                4,     0,     30319,     1,    "net4"
@@ -138,20 +149,42 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             with _ -> defaultMscorlibVersion
 
         // Get the ProductVersion of this framework compare with table yield compatible monikers
-        let _, _, _, _, moniker =
-            desktopProductVersionMonikers
-            |> Array.find (fun (major, minor, build, revision, _) ->
-                (majorPart >= major) &&
-                (minorPart >= minor) &&
-                (buildPart >= build) &&
-                (privatePart >= revision))
-        moniker
+        match desktopProductVersionMonikers
+              |> Array.tryFind (fun (major, minor, build, revision, _) ->
+                    (majorPart >= major) &&
+                    (minorPart >= minor) &&
+                    (buildPart >= build) &&
+                    (privatePart >= revision)) with
+        | Some (_,_,_,_,moniker) ->
+            moniker
+        | None ->
+            // no TFM could be found, assume latest stable?
+            "net48"
 
     /// Gets the tfm E.g netcore3.0, net472
     let executionTfm =
         match netcoreTfm with
         | Some tfm -> tfm
         | _ -> getWindowsDesktopTfm ()
+
+    // Computer valid dotnet-rids for this environment:
+    //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+    //
+    // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
+    let executionRid =
+        let processArchitecture = RuntimeInformation.ProcessArchitecture
+        let baseRid =
+            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "win"
+            elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "osx"
+            else "linux"
+        let platformRid =
+            match processArchitecture with
+            | Architecture.X64 ->  baseRid + "-x64"
+            | Architecture.X86 -> baseRid + "-x86"
+            | Architecture.Arm64 -> baseRid + "-arm64"
+            | _ -> baseRid + "-arm"
+        platformRid
+
     let isInReferenceAssemblyPackDirectory filename =
         match frameworkRefsPackDirectoryRoot with
         | Some root ->
@@ -226,10 +259,23 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             if not (assemblies.ContainsKey(referenceName)) then
                 try
                     if File.Exists(path) then
-                        // System.Private.CoreLib doesn't load with reflection
-                        if referenceName = "System.Private.CoreLib" then
+                        match referenceName with
+                        | "System.Runtime.WindowsRuntime"
+                        | "System.Runtime.WindowsRuntime.UI.Xaml" ->
+                            // The Windows compatibility pack included in the runtime contains a reference to
+                            // System.Runtime.WindowsRuntime, but to properly use that type the runtime also needs a
+                            // reference to the Windows.md meta-package, which isn't referenced by default.  To avoid
+                            // a bug where types from `Windows, Version=255.255.255.255` can't be found we're going to
+                            // not default include this assembly.  It can still be manually referenced if it's needed
+                            // via the System.Runtime.WindowsRuntime NuGet package.
+                            //
+                            // In the future this branch can be removed because WinRT support is being removed from the
+                            // .NET 5 SDK (https://github.com/dotnet/runtime/pull/36715)
+                            ()
+                        | "System.Private.CoreLib" ->
+                            // System.Private.CoreLib doesn't load with reflection
                             assemblies.Add(referenceName, path)
-                        else
+                        | _ ->
                             try
                                 let asm = System.Reflection.Assembly.LoadFrom(path)
                                 assemblies.Add(referenceName, path)

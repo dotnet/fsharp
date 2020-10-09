@@ -11,12 +11,6 @@ open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open FSharp.Compiler.AbstractIL.IL 
 
 // -------------------------------------------------------------------- 
-// IL Parser state - must be initialized before parsing a module
-// -------------------------------------------------------------------- 
-
-val mutable parseILGlobals: ILGlobals
-
-// -------------------------------------------------------------------- 
 // IL Lexer and pretty-printer tables
 // -------------------------------------------------------------------- 
 

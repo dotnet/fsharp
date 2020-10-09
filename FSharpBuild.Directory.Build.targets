@@ -2,8 +2,8 @@
 
   <Import Project="Sdk.targets" Sdk="Microsoft.DotNet.Arcade.Sdk" />
   <Import Project="eng\targets\Imports.targets" />
-  <Import Project="eng\targets\NuGet.targets" />
   <Import Project="eng\targets\NGenBinaries.targets" />
+  <Import Project="eng\targets\NuGet.targets" />
   <Import Project="FSharp.Profiles.props" />
 
   <Target Name="NoneSubstituteTextFiles"
@@ -19,6 +19,7 @@
       <_ReplacementText>$([System.IO.File]::ReadAllText('%(NoneSubstituteText.FullPath)'))</_ReplacementText>
       <_ReplacementText Condition="'%(NoneSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern1)', '%(NoneSubstituteText.Replacement1)'))</_ReplacementText>
       <_ReplacementText Condition="'%(NoneSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern2)', '%(NoneSubstituteText.Replacement2)'))</_ReplacementText>
+      <_ReplacementText Condition="'%(NoneSubstituteText.Pattern3)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern3)', '%(NoneSubstituteText.Replacement3)'))</_ReplacementText>
 
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' != ''">%(NoneSubstituteText.CopyToOutputDirectory)</_CopyToOutputDirectory>
       <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' == ''">Never</_CopyToOutputDirectory>
@@ -61,32 +62,73 @@
 
     <!-- Make sure it will get cleaned  -->
     <ItemGroup>
-      <FileWrites Include="$(IntermediateOutputPath)buildproperties.fs" />
       <CompileBefore Include="$(IntermediateOutputPath)buildproperties.fs" />
+      <FsGeneratedSource Include="$(IntermediateOutputPath)buildproperties.fs" />
+      <FileWrites Include="$(IntermediateOutputPath)buildproperties.fs" />
     </ItemGroup>
   </Target>
 
   <Target Name="BeforeResGen"
           Inputs="@(EmbeddedResource->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
           Outputs="@(EmbeddedResource->'$(IntermediateOutputPath)resources\%(Filename)%(Extension)')"
-          DependsOnTargets="CopyVsixResources"
           Condition="'$(Configuration)' != 'Proto' and '$(Language)'=='F#' and '$(DisableCompilerRedirection)' != 'true' ">
+
+    <MakeDir Directories="$(IntermediateOutputPath)" Condition="!Exists('$(IntermediateOutputPath)')" />
+    <MakeDir Directories="$(IntermediateOutputPath)resources\" Condition="!Exists('$(IntermediateOutputPath)resources\')" />
 
     <SubstituteText EmbeddedResources="@(EmbeddedResource)">
       <Output TaskParameter="CopiedFiles" ItemName="CopiedFiles" />
     </SubstituteText>
 
     <ItemGroup>
+      <IntermediateFiles Include="$(IntermediateOutputPath)\*.resx" />
+      <IntermediateResourcesFiles Include="$(IntermediateOutputPath)resources\*.resx" />
+    </ItemGroup>
+
+    <!-- IntermediateFiles Hashes -->
+    <GetFileHash Files="@(IntermediateFiles)">
+      <Output
+          TaskParameter="Items"
+          ItemName="IntermediateFilesHashes" />
+    </GetFileHash>
+
+    <Hash ItemsToHash="@(IntermediateFilesHashes->'%(FileHash)')">
+      <Output TaskParameter="HashResult" PropertyName="IntermediateFilesHash" />
+    </Hash>
+
+    <!-- CopiedFilesForHash Hashes -->
+    <GetFileHash Files="@(IntermediateResourceFilesForHash)">
+      <Output
+          TaskParameter="Items"
+          ItemName="IntermediateResourceFilesHashes" />
+    </GetFileHash>
+
+    <Hash ItemsToHash="@(IntermediateResourceFilesHashes->'%(FileHash)')">
+      <Output TaskParameter="HashResult" PropertyName="IntermediateResourceFilesHash" />
+    </Hash>
+
+    <!-- Update EmbeddedResources -->
+    <ItemGroup Condition="'$(IntermediateFilesHash)' != '$(IntermediateResourceFilesHash)'">
         <EmbeddedResource Remove="@(EmbeddedResource)"/>
         <EmbeddedResource Include="@(CopiedFiles)"/>
     </ItemGroup>
 
-    <MakeDir Directories="$(IntermediateOutputPath)" Condition="!Exists('$(IntermediateOutputPath)')" />
-    <MakeDir Directories="$(IntermediateOutputPath)resources\" Condition="!Exists('$(IntermediateOutputPath)resources\')" />
+    <Copy SourceFiles="@(CopyVsixResources)" DestinationFolder="$(IntermediateOutputPath)\resources\Resources" Condition="'$(IntermediateFilesHash)' != '$(IntermediateResourceFilesHash)'" />
   </Target>
 
-  <Target Name="CopyVsixResources">
-    <Copy SourceFiles="@(CopyVsixResources)" DestinationFolder="$(IntermediateOutputPath)\resources\Resources" />
+  <PropertyGroup>
+    <CoreBuildDependsOn>$(CoreBuildDependsOn);PrefixRepoToReleaseNotes</CoreBuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="PrefixRepoToReleaseNotes"
+          BeforeTargets="InitializeStandardNuspecProperties"
+          DependsOnTargets="InitializeSourceControlInformationFromSourceControlManager"
+          Condition="'$(IsPackable)'=='true'">
+
+    <PropertyGroup Condition="$(ScmRepositoryUrl.EndsWith('.git'))">
+        <_GitUrl>$([System.Text.RegularExpressions.Regex]::Replace($(ScmRepositoryUrl), ".git$", ""))</_GitUrl>
+        <PackageReleaseNotes>$(_GitUrl)$(PackageReleaseNotes)</PackageReleaseNotes>
+    </PropertyGroup>
   </Target>
 
 </Project>

@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array4D module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 open Utils
 
 (*
@@ -20,7 +20,6 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array4Module() =
 
     let VerifyDimensions arr x y z u =
@@ -55,7 +54,7 @@ type Array4Module() =
                            [| 1009.0;2009.0;3009.0;4009.0;5009.0;6009.0 |]  |] |]
                 |]
 
-    [<Test>]
+    [<Fact>]
     member this.Create() =
         // integer array  
         let intArr = Array4D.create 3 4 5 6 168
@@ -73,7 +72,7 @@ type Array4Module() =
         if eptArr1 <> eptArr2 then Assert.Fail()
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.Init() =
             
         // integer array  
@@ -89,7 +88,7 @@ type Array4Module() =
         VerifyDimensions intArr 3 3 3 3
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Get() =
         
         // integer array  
@@ -119,7 +118,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.get nullArr 1 1 1 1 |> ignore)  
         ()
     
-    [<Test>]
+    [<Fact>]
     member this.Length1() =
     
         // integer array  
@@ -143,7 +142,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length1 nullArr |> ignore)  
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Length2() =
     
         // integer array  
@@ -167,7 +166,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length2 nullArr |> ignore)  
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Length3() = 
     
         // integer array  
@@ -190,7 +189,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length3 nullArr |> ignore)  
         ()  
         
-    [<Test>]
+    [<Fact>]
     member this.Length4() = 
     
         // integer array  
@@ -213,22 +212,22 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.length4 nullArr |> ignore)  
         ()          
 
-    [<Test>]
+    [<Fact>]
     member this.Set() =
 
         // integer array  
         let intArr = Array4D.init 2 3 2 2 (fun i j k l -> i*1000 + j*100 + k*10 + l)
         
-        Assert.IsFalse(intArr.[1,1,1,1] = -1)
+        Assert.False(intArr.[1,1,1,1] = -1)
         Array4D.set intArr 1 1 1 1 -1
-        Assert.IsTrue(intArr.[1,1,1,1] = -1)
+        Assert.True(intArr.[1,1,1,1] = -1)
 
         // string array 
         let strArr = Array4D.init 2 3 2 2 (fun i j k l -> i.ToString() + "-" + j.ToString()+ "-" + k.ToString() + "-" + l.ToString())
         
-        Assert.IsFalse(strArr.[1,1,1,1] = "custom")
+        Assert.False(strArr.[1,1,1,1] = "custom")
         Array4D.set strArr 1 1 1 1 "custom"
-        Assert.IsTrue(strArr.[1,1,1,1] = "custom")
+        Assert.True(strArr.[1,1,1,1] = "custom")
 
         // Out of bounds checks
         CheckThrowsIndexOutRangException(fun () -> Array4D.set strArr 2 0 0 0 "out of bounds")
@@ -245,7 +244,7 @@ type Array4Module() =
         CheckThrowsNullRefException (fun () -> Array4D.set  nullArr 0 0 0 0 "")  
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.ZeroCreate() =
             
         let intArr : int[,,,] = Array4D.zeroCreate 2 3 2 2
@@ -254,7 +253,7 @@ type Array4Module() =
             
         let structArray : DateTime[,,,] = Array4D.zeroCreate 1 1 1 1
         let defaultVal = new DateTime()
-        Assert.IsTrue(Array4D.get structArray 0 0 0 0 = defaultVal)
+        Assert.True(Array4D.get structArray 0 0 0 0 = defaultVal)
 
         let strArr : string[,,,] = Array4D.zeroCreate 2 3 2 2
         for i in 0 .. 1 do
@@ -271,7 +270,7 @@ type Array4Module() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingTripleFixed1() = 
         let m1 = array4d [|
               [| 
@@ -291,7 +290,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,0,1,0], 11.0)
         Assert.AreEqual(m1.[0,0,0,*], newSlice)
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingTripleFixed2() = 
         let m1 = array4d [|
               [| 
@@ -311,7 +310,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,0,0,1], 2.0)
         Assert.AreEqual(m1.[0,0,*,0], newSlice)
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingTripleFixed3() = 
         let m1 = array4d [|
               [| 
@@ -331,7 +330,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[1,0,0,0], 19.0)
         Assert.AreEqual(m1.[0,*,0,0], newSlice)
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingTripleFixed4() = 
         let m1 = array4d [|
               [| 
@@ -351,7 +350,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,1,0,0], 10.0)
         Assert.AreEqual(m1.[*,0,0,0], newSlice)
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingDoubleFixed1() = 
         let m1 = array4d [|
               [| 
@@ -374,7 +373,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[1,1,0,0], 109.0)
         if m1.[0,0,*,*] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingDoubleFixed2() = 
         let m1 = array4d [|
               [| 
@@ -397,7 +396,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[1,0,1,0], 119.0)
         if m1.[0,*,0,*] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingDoubleFixed3() = 
         let m1 = array4d [|
               [| 
@@ -420,7 +419,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[1,0,0,1], 29.0)
         if m1.[0,*,*,0] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingDoubleFixed4() = 
         let m1 = array4d [|
               [| 
@@ -445,7 +444,7 @@ type Array4Module() =
         if m1.[*,0,0,*] <> newSlice then Assert.Fail()
 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingDoubleFixed5() = 
         let m1 = array4d [|
               [| 
@@ -469,7 +468,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,1,0,1], 20.0)
         if m1.[*,0,*,0] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingDoubleFixed6() = 
         let m1 = array4d [|
               [| 
@@ -493,7 +492,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,0,1,1], 21.0)
         if m1.[*,*,0,0] <> newSlice then Assert.Fail()
     
-    [<Test>]
+    [<Fact>]
     member this.SlicingSingleFixed1() = 
         let m1 = array4d [|
               [| 
@@ -519,7 +518,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,0,0,1], 2.0)
         if m1.[*,*,*,0] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingSingleFixed2() = 
         let m1 = array4d [|
               [| 
@@ -546,7 +545,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,0,1,0], 11.0)
         if m1.[*,*,0,*] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingSingleFixed3() = 
         let m1 = array4d [|
               [| 
@@ -573,7 +572,7 @@ type Array4Module() =
         Assert.AreEqual(m1.[0,1,0,0], 10.0)
         if m1.[*,0,*,*] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingSingleFixed4() = 
         let m1 = array4d [|
               [| 
@@ -600,13 +599,13 @@ type Array4Module() =
         Assert.AreEqual(m1.[1,0,0,0], 19.0)
         if m1.[0,*,*,*] <> newSlice then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.``Slicing with reverse index in all slice expr behaves as expected``()  = 
         let arr = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l)
 
-        Assert.That(arr.[..^1, ^1..^0, ^2.., ^1..], Is.EquivalentTo(arr.[..3, 3..4, 2.., 3..]))
+        Assert.Equal(arr.[..^1, ^1..^0, ^2.., ^1..], arr.[..3, 3..4, 2.., 3..])
 
-    [<Test>]
+    [<Fact>]
     member this.``Set slice with reverse index in all slice expr behaves as expected``()  = 
         let arr1 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l)
         let arr2 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l)
@@ -616,28 +615,28 @@ type Array4Module() =
         arr1.[^1..^0, ^2..3, 1..^2, ^2..^1] <- setSlice
         arr2.[3..4, 2..3, 1..2, 2..3] <- setSlice
 
-        Assert.That(arr1, Is.EquivalentTo(arr2))
+        Assert.Equal(arr1, arr2)
 
-    [<Test>]
+    [<Fact>]
     member this.``Indexer with reverse index in one dim behaves as expected``() = 
         let arr1 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l) 
 
-        Assert.That(arr1.[^1,0,0,0], Is.EqualTo(3000))
+        Assert.AreEqual(arr1.[^1,0,0,0], 3000)
 
-    [<Test>]
+    [<Fact>]
     member this.``Indexer with reverse index in all dim behaves as expected``() = 
         let arr1 = Array4D.init 5 5 5 5 (fun i j k l -> i*1000 + j*100 + k*10 + l) 
  
-        Assert.That(arr1.[^0,^0,^1,^0], Is.EqualTo(4434))
+        Assert.AreEqual(arr1.[^0,^0,^1,^0], 4434)
 
-    [<Test>]
+    [<Fact>]
     member this.``Set item with reverse index in all dims behave as expected``() = 
         let arr1 = Array4D.create 5 5 5 5 2
 
         arr1.[^1,^0,^0,^0] <- 9
-        Assert.That(arr1.[3,4,4,4], Is.EqualTo(9))
+        Assert.AreEqual(arr1.[3,4,4,4], 9)
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingBoundedStartEnd() = 
         shouldEqual m1.[*,*,*,*]  m1
         shouldEqual m1.[0..,*,*,*]   m1
@@ -717,7 +716,7 @@ type Array4Module() =
                |])
 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingOutOfBounds() = 
         shouldBeEmpty m1.[*,*,*,7..]  
         shouldBeEmpty m1.[*,*,*,.. -1]  

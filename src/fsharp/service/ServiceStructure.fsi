@@ -2,8 +2,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Ast
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 
 module public Structure =
 

@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
-        <target state="needs-review-translation">Herramientas de Microsoft Visual F# {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Herramientas de Microsoft Visual F#</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
-        <target state="needs-review-translation">Herramientas de Microsoft Visual F# {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Herramientas de Microsoft Visual F#</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</source>
-        <target state="needs-review-translation">Visual F# Tools {{FSProductVersion}} para F# {{FSLanguageVersion}}</target>
+        <source>Visual F# Tools</source>
+        <target state="translated">Herramientas de Visual F#</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

@@ -24,6 +24,7 @@ open System.Runtime.InteropServices
 #else
 open System.Diagnostics.SymbolStore
 #endif
+
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
@@ -109,21 +110,3 @@ val pdbSetMethodRange: PdbWriter -> PdbDocumentWriter -> int -> int -> PdbDocume
 val pdbDefineSequencePoints: PdbWriter -> PdbDocumentWriter -> (int * int * int * int * int) array -> unit
 val pdbWriteDebugInfo: PdbWriter -> idd
 #endif
-
-//---------------------------------------------------------------------
-// Strong name signing
-//---------------------------------------------------------------------
-
-type keyContainerName = string
-type keyPair = byte[]
-type pubkey = byte[]
-type pubkeyOptions = byte[] * bool
-
-val signerOpenPublicKeyFile: string -> pubkey 
-val signerOpenKeyPairFile: string -> keyPair 
-val signerSignatureSize: pubkey -> int 
-val signerGetPublicKeyForKeyPair: keyPair -> pubkey 
-val signerGetPublicKeyForKeyContainer: string -> pubkey 
-val signerCloseKeyContainer: keyContainerName -> unit 
-val signerSignFileWithKeyPair: string -> keyPair -> unit 
-val signerSignFileWithKeyContainer: string -> keyContainerName -> unit

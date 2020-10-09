@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array2D module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 open Utils
 
 (*
@@ -19,7 +19,6 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
-[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array2Module() =
 
     let shouldBeEmpty arr = 
@@ -27,7 +26,7 @@ type Array2Module() =
         && Array2D.length1 arr <> 0 then 
             Assert.Fail("Array2D is not empty.")
 
-    [<Test>]
+    [<Fact>]
     member this.Base1() =
         // integer array  
         let intArr = 
@@ -54,7 +53,7 @@ type Array2Module() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Base2() =
         // integer array  
         let intArr = 
@@ -86,7 +85,7 @@ type Array2Module() =
         Assert.AreEqual(expected, actual)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Blit() =
         // integer array  
         let intArr = 
@@ -132,7 +131,7 @@ type Array2Module() =
         CheckThrowsArgumentException(fun () -> Array2D.blit  intArr 0 0 intArr2 0 10 2 2 |> ignore)  
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.BlitWithNonZeroBase() =
         let a = Array2D.createBased 1 1 3 3 0
         a.[1,1] <- 11
@@ -185,7 +184,7 @@ type Array2Module() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Copy() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -209,7 +208,7 @@ type Array2Module() =
         
         ()          
     
-    [<Test>]
+    [<Fact>]
     member this.Create() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> 100)
@@ -229,7 +228,7 @@ type Array2Module() =
   
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.createBased() =
         // integer array  
         let intArr = Array2D.create 2 3 100
@@ -248,7 +247,7 @@ type Array2Module() =
         if resultEpt   <> eptArr  then Assert.Fail()
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Get() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -266,7 +265,7 @@ type Array2Module() =
         CheckThrowsNullRefException (fun () -> nullArr.[2,2] |> ignore)
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.GetAndSetAPI() =
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
         let resultInt = Array2D.get intArr 1 1
@@ -276,7 +275,7 @@ type Array2Module() =
         Assert.AreEqual(1, resultInt)
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Init() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -287,7 +286,7 @@ type Array2Module() =
         if strArr.[1,1] <> "1-1" then Assert.Fail()
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Init_Based() =
         // integer array  
         let intArr = Array2D.initBased 1 1 2 3 (fun i j -> i*100 + j)
@@ -298,7 +297,7 @@ type Array2Module() =
         if strArr.[2,2] <> "2-2" then Assert.Fail()        
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Iter() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -323,7 +322,7 @@ type Array2Module() =
         CheckThrowsArgumentNullException (fun () -> Array2D.iter funStr nullArr |> ignore)   
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.IterNonZeroBased() =
         let a = Array2D.createBased 1 5 10 10 1
         let result = ref 0
@@ -334,7 +333,7 @@ type Array2Module() =
         if !result <> 1600 then Assert.Fail()
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Iteri() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -360,7 +359,7 @@ type Array2Module() =
         
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.Length1() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -383,7 +382,7 @@ type Array2Module() =
         
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.Length2() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -407,7 +406,7 @@ type Array2Module() =
         
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Map() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -433,7 +432,7 @@ type Array2Module() =
         
         ()   
 
-    [<Test>]
+    [<Fact>]
     member this.Mapi() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -459,7 +458,7 @@ type Array2Module() =
         
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Rebase() =
         // integer array  
         let intArr = Array2D.createBased 2 3 2 3 168
@@ -483,7 +482,7 @@ type Array2Module() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Set() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
@@ -502,7 +501,7 @@ type Array2Module() =
         
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.ZeroCreate() =
         // integer array  
         let intArr = Array2D.zeroCreate 2 3 
@@ -519,7 +518,7 @@ type Array2Module() =
         () 
 
     // Note: This is a top level primitive, not in the Array2D module
-    [<Test>]
+    [<Fact>]
     member this.array2D() = 
 
         let m1 : int[,] = array2D []
@@ -579,31 +578,31 @@ type Array2Module() =
         let m16 :string[,] = array2D [[null]]
         if m16.[0,0] <> null then Assert.Fail()
 
-    [<Test>]
+    [<Fact>]
     member this.``Slicing with reverse index in one slice expr behaves as expected``()  = 
         let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
 
-        Assert.That(arr.[*, ^1..^0], Is.EquivalentTo(arr.[*, 3..4]))
+        Assert.Equal(arr.[*, ^1..^0], arr.[*, 3..4])
 
-    [<Test>]
+    [<Fact>]
     member this.``Slicing with reverse index in both slice expr behaves as expected``()  = 
         let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
 
-        Assert.That(arr.[..^1, ^1..^0], Is.EquivalentTo(arr.[..0, 3..4]))
+        Assert.Equal(arr.[..^1, ^1..^0], arr.[..0, 3..4])
 
-    [<Test>]
+    [<Fact>]
     member this.``Slicing with reverse index in fixed index behaves as expected``()  = 
         let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
 
-        Assert.That(arr.[^1, ^1..^0], Is.EquivalentTo(arr.[0, 3..4]))
+        Assert.AreEqual(arr.[^1, ^1..^0], arr.[0, 3..4])
 
-    [<Test>]
+    [<Fact>]
     member this.``Slicing with reverse index and non reverse fixed index behaves as expected``()  = 
         let arr = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
 
-        Assert.That(arr.[1, ^1..^0], Is.EquivalentTo(arr.[1, 3..4]))
+        Assert.AreEqual(arr.[1, ^1..^0], arr.[1, 3..4])
 
-    [<Test>]
+    [<Fact>]
     member this.``Set slice with reverse index in one slice expr behaves as expected``()  = 
         let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
         let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
@@ -612,9 +611,9 @@ type Array2Module() =
         arr1.[*, ^1..^0] <- setArray
         arr2.[*, ^1..^0] <- setArray
 
-        Assert.That(arr1, Is.EquivalentTo(arr2))
+        Assert.Equal(arr1, arr2)
 
-    [<Test>]
+    [<Fact>]
     member this.``Set slice with reverse index in both slice expr behaves as expected``()  = 
         let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
         let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
@@ -623,9 +622,9 @@ type Array2Module() =
         arr1.[0..^0, ^1..^0] <- setArray
         arr2.[0..^0, ^1..^0] <- setArray
 
-        Assert.That(arr1, Is.EquivalentTo(arr2))
+        Assert.Equal(arr1, arr2)
 
-    [<Test>]
+    [<Fact>]
     member this.``Set slice with reverse index in fixed index behaves as expected``()  = 
         let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
         let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
@@ -634,9 +633,9 @@ type Array2Module() =
         arr1.[^1, ^1..^0] <- setArray
         arr2.[^1, ^1..^0] <- setArray
 
-        Assert.That(arr1, Is.EquivalentTo(arr2))
+        Assert.Equal(arr1, arr2)
 
-    [<Test>]
+    [<Fact>]
     member this.``Set slice with reverse index in and non reverse fixed index behaves as expected``()  = 
         let arr1 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
         let arr2 = array2D [[ 1;2;3;4;5 ]; [ 5;4;3;2;1 ]]
@@ -645,35 +644,35 @@ type Array2Module() =
         arr1.[1, ^1..^0] <- setArray
         arr2.[1, ^1..^0] <- setArray
 
-        Assert.That(arr1, Is.EquivalentTo(arr2))
+        Assert.Equal(arr1, arr2)
 
-    [<Test>]
+    [<Fact>]
     member this.``Set item with reverse index in one dim behaves as expected``() =
         let arr = array2D [[1;2;3]; [3;2;1]]
 
         arr.[^1, 0] <- 9
-        Assert.That(arr.[0, 0], Is.EqualTo(9))
+        Assert.AreEqual(arr.[0, 0], 9)
 
-    [<Test>]
+    [<Fact>]
     member this.``Set item with reverse index in all dims behaves as expected``()=
         let arr = array2D [[1;2;3]; [3;2;1]]
 
         arr.[^0, ^0] <- 9
-        Assert.That(arr.[1,2], Is.EqualTo(9))
+        Assert.AreEqual(arr.[1,2], 9)
 
-    [<Test>]
+    [<Fact>]
     member this.``Get item with reverse index in one dim behaves as expected``() =
         let arr = array2D [[1;2;3]; [4;5;6]]
 
-        Assert.That(arr.[^0, 0], Is.EqualTo(4))
+        Assert.AreEqual(arr.[^0, 0], 4)
 
-    [<Test>]
+    [<Fact>]
     member this.``Get item with reverse index in all dims behaves as expected``()=
         let arr = array2D [[1;2;3]; [4;5;6]]
 
-        Assert.That(arr.[^1, ^1], Is.EqualTo(2))
+        Assert.AreEqual(arr.[^1, ^1], 2)
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingBoundedStartEnd() =
         let m1 = array2D [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
                             [| 10.0;20.0;30.0;40.0;50.0;60.0 |]  |]
@@ -709,7 +708,7 @@ type Array2Module() =
         shouldEqual m1.[0, ..3]  [| 1.0;2.0;3.0;4.0 |]
         
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingUnboundedEnd() = 
         let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
 
@@ -719,7 +718,7 @@ type Array2Module() =
         shouldBeEmpty arr.[2.., 6..] 
 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingUnboundedStart() = 
         let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
 
@@ -729,7 +728,7 @@ type Array2Module() =
         shouldEqual arr.[..2, ..6] arr
 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingOutOfBounds() = 
         let arr = array2D [ [1;2;3;4;5;6]; [6;5;4;3;2;1]]
        
@@ -754,7 +753,7 @@ type Array2Module() =
         shouldEqual arr.[1, .. -1] [| |] 
         shouldEqual arr.[.. -1, 1] [| |] 
 
-    [<Test>]
+    [<Fact>]
     member this.SlicingMutation() = 
         let arr2D1 = array2D [| [| 1.; 2.; 3.; 4. |];
            [| 5.; 6.; 7.; 8. |];

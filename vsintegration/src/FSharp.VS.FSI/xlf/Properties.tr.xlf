@@ -27,6 +27,21 @@
         <target state="translated">Çeşitli</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractivePreview">
+        <source>FSI Preview</source>
+        <target state="translated">FSI Önizleme</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewMode">
+        <source>Enable preview language features</source>
+        <target state="translated">Önizlemedeki dil özelliklerini etkinleştir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewModeDescr">
+        <source>Enable preview of in-development language features in F# Interactive</source>
+        <target state="translated">F# Interactive'deki geliştirme aşamasında olan dil özelliklerinin önizlemesini etkinleştir</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
         <source>Shadow copy assemblies</source>
         <target state="translated">Gölge kopya bütünleştirilmiş kodları</target>

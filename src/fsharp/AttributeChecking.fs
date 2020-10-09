@@ -13,8 +13,8 @@ open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
@@ -265,9 +265,10 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     | _ -> 
         CompleteD
 
+let langVersionPrefix = "--langversion:preview"
+
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let langVersionPrefix = "--langversion:preview"
 let CheckFSharpAttributes (g:TcGlobals) attribs m =
     let isExperimentalAttributeDisabled (s:string) =
         if g.compilingFslib then
@@ -298,7 +299,11 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
-            if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
+            // If we are using a compiler that supports nameof then error 3501 is always suppressed.
+            // See attribute on FSharp.Core 'nameof'
+            if n = 3501 then CompleteD
+            elif isError && (not g.compilingFslib || n <> 1204) then ErrorD msg 
+            else WarnD msg
         | _ -> 
             CompleteD
         ) ++ (fun () -> 

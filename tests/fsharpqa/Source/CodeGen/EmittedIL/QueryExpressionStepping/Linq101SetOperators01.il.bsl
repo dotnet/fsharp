@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,11 +13,16 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
+  .ver 5:0:0:0
 }
 .assembly extern Utils
 {
   .ver 0:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly Linq101SetOperators01
 {
@@ -33,20 +38,20 @@
 }
 .mresource public FSharpSignatureData.Linq101SetOperators01
 {
-  // Offset: 0x00000000 Length: 0x00000398
+  // Offset: 0x00000000 Length: 0x0000038A
 }
 .mresource public FSharpOptimizationData.Linq101SetOperators01
 {
-  // Offset: 0x000003A0 Length: 0x0000011E
+  // Offset: 0x00000390 Length: 0x0000011E
 }
 .module Linq101SetOperators01.exe
-// MVID: {5B9A632A-4EE5-349F-A745-03832A639A5B}
+// MVID: {5F1FA088-4EE5-349F-A745-038388A01F5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x026A0000
+// Image base: 0x053D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,7 +60,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'uniqueFactors@13-1'
+  .class auto autochar serializable sealed nested assembly beforefieldinit specialname uniqueFactors@13
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -80,17 +85,17 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'uniqueFactors@13-1'::'enum'
+      IL_0002:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/uniqueFactors@13::'enum'
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_0009:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::current
+      IL_0010:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::current
       IL_0015:  ldarg.0
       IL_0016:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_001b:  ret
-    } // end of method 'uniqueFactors@13-1'::.ctor
+    } // end of method uniqueFactors@13::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
@@ -100,9 +105,9 @@
       .locals init ([0] int32 V_0,
                [1] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101SetOperators01.fs'
+      .line 100001,100001 : 0,0 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101SetOperators01.fs'
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_0001:  ldfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -135,18 +140,18 @@
       IL_002b:  ldarg.0
       IL_002c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101SetOperators01::get_factorsOf300()
       IL_0031:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'uniqueFactors@13-1'::'enum'
+      IL_0036:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/uniqueFactors@13::'enum'
       IL_003b:  ldarg.0
       IL_003c:  ldc.i4.1
-      IL_003d:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_003d:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       .line 13,13 : 9,33 ''
       IL_0042:  ldarg.0
-      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'uniqueFactors@13-1'::'enum'
+      IL_0043:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/uniqueFactors@13::'enum'
       IL_0048:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_004d:  brfalse.s  IL_0070
 
       IL_004f:  ldarg.0
-      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'uniqueFactors@13-1'::'enum'
+      IL_0050:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/uniqueFactors@13::'enum'
       IL_0055:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_005a:  stloc.0
       .line 13,13 : 9,33 ''
@@ -154,11 +159,11 @@
       IL_005c:  stloc.1
       IL_005d:  ldarg.0
       IL_005e:  ldc.i4.2
-      IL_005f:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_005f:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       .line 14,14 : 9,17 ''
       IL_0064:  ldarg.0
       IL_0065:  ldloc.1
-      IL_0066:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::current
+      IL_0066:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::current
       IL_006b:  ldc.i4.1
       IL_006c:  ret
 
@@ -168,24 +173,24 @@
 
       IL_0070:  ldarg.0
       IL_0071:  ldc.i4.3
-      IL_0072:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_0072:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       .line 13,13 : 9,33 ''
       IL_0077:  ldarg.0
-      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'uniqueFactors@13-1'::'enum'
+      IL_0078:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/uniqueFactors@13::'enum'
       IL_007d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_0082:  nop
       IL_0083:  ldarg.0
       IL_0084:  ldnull
-      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'uniqueFactors@13-1'::'enum'
+      IL_0085:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/uniqueFactors@13::'enum'
       IL_008a:  ldarg.0
       IL_008b:  ldc.i4.3
-      IL_008c:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_008c:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       IL_0091:  ldarg.0
       IL_0092:  ldc.i4.0
-      IL_0093:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::current
+      IL_0093:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::current
       IL_0098:  ldc.i4.0
       IL_0099:  ret
-    } // end of method 'uniqueFactors@13-1'::GenerateNext
+    } // end of method uniqueFactors@13::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -197,7 +202,7 @@
                [2] class [mscorlib]System.Exception e)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_0001:  ldfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       IL_0006:  ldc.i4.3
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -213,7 +218,7 @@
       .try
       {
         IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+        IL_001b:  ldfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
         IL_0020:  switch     ( 
                               IL_0037,
                               IL_0039,
@@ -251,19 +256,19 @@
         IL_004c:  nop
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+        IL_004f:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
         IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'uniqueFactors@13-1'::'enum'
+        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/uniqueFactors@13::'enum'
         IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_005f:  nop
         .line 100001,100001 : 0,0 ''
         IL_0060:  nop
         IL_0061:  ldarg.0
         IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+        IL_0063:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
         IL_0068:  ldarg.0
         IL_0069:  ldc.i4.0
-        IL_006a:  stfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::current
+        IL_006a:  stfld      int32 Linq101SetOperators01/uniqueFactors@13::current
         IL_006f:  ldnull
         IL_0070:  stloc.1
         IL_0071:  leave.s    IL_007f
@@ -303,7 +308,7 @@
 
       .line 100001,100001 : 0,0 ''
       IL_0093:  ret
-    } // end of method 'uniqueFactors@13-1'::Close
+    } // end of method uniqueFactors@13::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -312,7 +317,7 @@
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
+      IL_0001:  ldfld      int32 Linq101SetOperators01/uniqueFactors@13::pc
       IL_0006:  switch     ( 
                             IL_001d,
                             IL_001f,
@@ -354,7 +359,7 @@
 
       IL_0036:  ldc.i4.0
       IL_0037:  ret
-    } // end of method 'uniqueFactors@13-1'::get_CheckClose
+    } // end of method uniqueFactors@13::get_CheckClose
 
     .method public strict virtual instance int32 
             get_LastGenerated() cil managed
@@ -364,9 +369,9 @@
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::current
+      IL_0001:  ldfld      int32 Linq101SetOperators01/uniqueFactors@13::current
       IL_0006:  ret
-    } // end of method 'uniqueFactors@13-1'::get_LastGenerated
+    } // end of method uniqueFactors@13::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
             GetFreshEnumerator() cil managed
@@ -378,13 +383,13 @@
       IL_0000:  ldnull
       IL_0001:  ldc.i4.0
       IL_0002:  ldc.i4.0
-      IL_0003:  newobj     instance void Linq101SetOperators01/'uniqueFactors@13-1'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                           int32,
-                                                                                           int32)
+      IL_0003:  newobj     instance void Linq101SetOperators01/uniqueFactors@13::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                       int32,
+                                                                                       int32)
       IL_0008:  ret
-    } // end of method 'uniqueFactors@13-1'::GetFreshEnumerator
+    } // end of method uniqueFactors@13::GetFreshEnumerator
 
-  } // end of class 'uniqueFactors@13-1'
+  } // end of class uniqueFactors@13
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'categoryNames@22-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>
@@ -885,7 +890,7 @@
       IL_0070:  ldloc.0
       IL_0071:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
       IL_0076:  ldc.i4.0
-      IL_0077:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
+      IL_0077:  callvirt   instance char [netstandard]System.String::get_Chars(int32)
       IL_007c:  stfld      char Linq101SetOperators01/productFirstChars@33::current
       IL_0081:  ldc.i4.1
       IL_0082:  ret
@@ -1250,7 +1255,7 @@
       IL_0070:  ldloc.0
       IL_0071:  callvirt   instance string [Utils]Utils/Customer::get_CompanyName()
       IL_0076:  ldc.i4.0
-      IL_0077:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
+      IL_0077:  callvirt   instance char [netstandard]System.String::get_Chars(int32)
       IL_007c:  stfld      char Linq101SetOperators01/customerFirstChars@39::current
       IL_0081:  ldc.i4.1
       IL_0082:  ret
@@ -1484,7 +1489,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'factorsOf300@9-2'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::factorsOf300@9
     IL_0005:  ret
   } // end of method Linq101SetOperators01::get_factorsOf300
 
@@ -1493,7 +1498,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'uniqueFactors@11-2'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::uniqueFactors@11
     IL_0005:  ret
   } // end of method Linq101SetOperators01::get_uniqueFactors
 
@@ -1502,7 +1507,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'products@18-14'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::products@18
     IL_0005:  ret
   } // end of method Linq101SetOperators01::get_products
 
@@ -1520,7 +1525,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'customers@28-6'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::customers@28
     IL_0005:  ret
   } // end of method Linq101SetOperators01::get_customers
 
@@ -1589,15 +1594,15 @@
 .class private abstract auto ansi sealed '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01
        extends [mscorlib]System.Object
 {
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'factorsOf300@9-2'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> factorsOf300@9
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'uniqueFactors@11-2'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> uniqueFactors@11
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 'products@18-14'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> products@18
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> categoryNames@20
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> 'customers@28-6'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> customers@28
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [mscorlib]System.Collections.Generic.IEnumerable`1<char> productFirstChars@30
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -1641,7 +1646,7 @@
     IL_001e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0023:  dup
-    IL_0024:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'factorsOf300@9-2'
+    IL_0024:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::factorsOf300@9
     IL_0029:  stloc.0
     .line 11,15 : 1,20 ''
     IL_002a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -1650,20 +1655,20 @@
     IL_0033:  ldnull
     IL_0034:  ldc.i4.0
     IL_0035:  ldc.i4.0
-    IL_0036:  newobj     instance void Linq101SetOperators01/'uniqueFactors@13-1'::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                                         int32,
-                                                                                         int32)
+    IL_0036:  newobj     instance void Linq101SetOperators01/uniqueFactors@13::.ctor(class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                                     int32,
+                                                                                     int32)
     IL_003b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
     IL_0040:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Distinct<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
     IL_0045:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
     IL_004a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_004f:  dup
-    IL_0050:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'uniqueFactors@11-2'
+    IL_0050:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::uniqueFactors@11
     IL_0055:  stloc.1
     .line 18,18 : 1,32 ''
     IL_0056:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
     IL_005b:  dup
-    IL_005c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'products@18-14'
+    IL_005c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::products@18
     IL_0061:  stloc.2
     .line 20,25 : 1,20 ''
     IL_0062:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
@@ -1685,7 +1690,7 @@
     .line 28,28 : 1,34 ''
     IL_008e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
     IL_0093:  dup
-    IL_0094:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::'customers@28-6'
+    IL_0094:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101SetOperators01>'.$Linq101SetOperators01::customers@28
     IL_0099:  stloc.s    customers
     IL_009b:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00a0:  stloc.s    V_9

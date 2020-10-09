@@ -1,7 +1,7 @@
 Microsoft (R) F# Interactive version 10.2.3 for F# 4.5
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
-Usage: fsi.exe <options> [script.fsx [<arguments>]]
+Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 
 
 		- INPUT FILES -
@@ -66,6 +66,8 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 
 		- MISCELLANEOUS -
 --nologo                                 Suppress compiler copyright message
+--version                                Display compiler version banner and
+                                         exit
 --help                                   Display this usage message (Short
                                          form: -?)
 

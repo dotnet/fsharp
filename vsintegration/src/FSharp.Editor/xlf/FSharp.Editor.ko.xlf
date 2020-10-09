@@ -7,6 +7,26 @@
         <target state="translated">'new' 키워드 추가</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpDisposableLocalValuesClassificationType">
+        <source>F# Disposable Values (locals)</source>
+        <target state="new">F# Disposable Values (locals)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
+        <source>F# Dispostable Values (top-level)</source>
+        <target state="new">F# Dispostable Values (top-level)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposableTypesClassificationType">
+        <source>F# Disposable Types</source>
+        <target state="new">F# Disposable Types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFunctionsClassificationType">
+        <source>F# Functions</source>
+        <target state="new">F# Functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
         <target state="translated">인터페이스 구현</target>
@@ -37,11 +57,6 @@
         <target state="translated">이름을 간단하게 줄일 수 있습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
-        <source>F# Functions / Methods</source>
-        <target state="translated">F# 함수/메서드</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FSharpMutableVarsClassificationType">
         <source>F# Mutable Variables / Reference Cells</source>
         <target state="translated">F# 변경할 수 있는 변수/참조 셀</target>
@@ -55,11 +70,6 @@
       <trans-unit id="FSharpPropertiesClassificationType">
         <source>F# Properties</source>
         <target state="translated">F# 속성</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpDisposablesClassificationType">
-        <source>F# Disposable Types</source>
-        <target state="translated">F# 삭제 가능한 형식</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedOpens">

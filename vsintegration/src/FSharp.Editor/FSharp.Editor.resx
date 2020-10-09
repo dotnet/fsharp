@@ -138,8 +138,8 @@
   <data name="NameCanBeSimplified" xml:space="preserve">
     <value>Name can be simplified.</value>
   </data>
-  <data name="FSharpFunctionsOrMethodsClassificationType" xml:space="preserve">
-    <value>F# Functions / Methods</value>
+  <data name="FSharpFunctionsClassificationType" xml:space="preserve">
+    <value>F# Functions</value>
   </data>
   <data name="FSharpMutableVarsClassificationType" xml:space="preserve">
     <value>F# Mutable Variables / Reference Cells</value>
@@ -147,10 +147,7 @@
   <data name="FSharpPrintfFormatClassificationType" xml:space="preserve">
     <value>F# Printf Format</value>
   </data>
-  <data name="FSharpPropertiesClassificationType" xml:space="preserve">
-    <value>F# Properties</value>
-  </data>
-  <data name="FSharpDisposablesClassificationType" xml:space="preserve">
+  <data name="FSharpDisposableTypesClassificationType" xml:space="preserve">
     <value>F# Disposable Types</value>
   </data>
   <data name="RemoveUnusedOpens" xml:space="preserve">
@@ -212,5 +209,14 @@
   </data>
   <data name="RenameValueToDoubleUnderscore" xml:space="preserve">
     <value>Rename '{0}' to '__'</value>
+  </data>
+  <data name="FSharpDisposableLocalValuesClassificationType" xml:space="preserve">
+    <value>F# Disposable Values (locals)</value>
+  </data>
+  <data name="FSharpPropertiesClassificationType" xml:space="preserve">
+    <value>F# Properties</value>
+  </data>
+  <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
+    <value>F# Dispostable Values (top-level)</value>
   </data>
 </root>

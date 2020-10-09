@@ -3,11 +3,11 @@
 // Various tests for:
 // Microsoft.FSharp.Core.Result
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core
+namespace FSharp.Core.UnitTests
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 type EmailValidation=
     | Empty
@@ -15,7 +15,6 @@ type EmailValidation=
 
 open Result
 
-[<TestFixture>]
 type ResultTests() =
 
     let fail_if_empty email=
@@ -40,43 +39,43 @@ type ResultTests() =
 
     let addOneOk (v:int) = Ok (v+1)
 
-    [<Test>]
+    [<Fact>]
     member this.CanChainTogetherSuccessiveValidations() =
         test_validate_email "" (Error Empty)
         test_validate_email "something_else" (Error NoAt)
         test_validate_email "some@email.com" (Ok "some@email.com")
 
-    [<Test>]
+    [<Fact>]
     member this.MapWillTransformOkValues() =
         Ok "some@email.com" 
         |> map toUpper
         |> shouldBeOkWithValue "SOME@EMAIL.COM"
 
-    [<Test>]
+    [<Fact>]
     member this.MapWillNotTransformErrorValues() =
         Error "my error" 
         |> map toUpper
         |> shouldBeErrorWithValue "my error"
 
-    [<Test>]
+    [<Fact>]
     member this.MapErrorWillTransformErrorValues() =
         Error "my error" 
         |> mapError toUpper
         |> shouldBeErrorWithValue "MY ERROR"
 
-    [<Test>]
+    [<Fact>]
     member this.MapErrorWillNotTransformOkValues() =
         Ok "some@email.com" 
         |> mapError toUpper
         |> shouldBeOkWithValue "some@email.com"
 
-    [<Test>]
+    [<Fact>]
     member this.BindShouldModifyOkValue() =
         Ok 42
         |> bind addOneOk
         |> shouldBeOkWithValue 43
 
-    [<Test>]
+    [<Fact>]
     member this.BindErrorShouldNotModifyError() =
         Error "Error"
         |> bind addOneOk

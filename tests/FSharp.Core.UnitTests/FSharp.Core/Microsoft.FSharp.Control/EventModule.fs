@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.Event module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -30,10 +30,9 @@ type MultiArgDelegate4 = delegate of obj * int * string * bool * int -> unit
 type MultiArgDelegate5 = delegate of obj * int * string * bool * int * string -> unit
 type MultiArgDelegate6 = delegate of obj * int * string * bool * int * string * bool -> unit
 
-[<TestFixture>]
 type EventModule() =
     
-    [<Test>]
+    [<Fact>]
     member this.Choose() = 
         
         let coffeeCup = new EventfulCoffeeCup(10.0<ml>, 10.0<ml>)
@@ -64,7 +63,7 @@ type EventModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Filter() = 
     
         let kexp = new RadioStation(90.3, "KEXP")
@@ -89,7 +88,7 @@ type EventModule() =
                                       "Flight of the Penguins - song 1"])
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Listen() = 
     
         let kqfc = new RadioStation(90.3, "KEXP")
@@ -111,7 +110,7 @@ type EventModule() =
     
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Map() = 
     
         let numEvent = new Event<int>()
@@ -131,7 +130,7 @@ type EventModule() =
         Assert.AreEqual(!results, "333221")
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Merge() =
         
         let evensEvent = new Event<int>()
@@ -151,7 +150,7 @@ type EventModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Pairwise() = 
     
         let numEvent = new Event<int>()
@@ -173,7 +172,7 @@ type EventModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Partition() = 
     
         let numEvent = new Event<int>()
@@ -196,7 +195,7 @@ type EventModule() =
 
         ()
  
-    [<Test>]
+    [<Fact>]
     member this.Scan() = 
     
         let numEvent = new Event<int>()
@@ -219,7 +218,7 @@ type EventModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Split() = 
     
         let numEvent = new Event<int>()
@@ -241,14 +240,14 @@ type EventModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.InternalDelegate() = 
         let event = new Event<InternalDelegate, unit>()
         let p = event.Publish
         use s = p.Subscribe(fun _ -> ())
         event.Trigger(null, ())
 
-    [<Test>]
+    [<Fact>]
     member this.MultipleArguments() =  
         let count = ref 0
         let test (evt : Event<_, _>) arg = 

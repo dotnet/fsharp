@@ -2,7 +2,7 @@
 
 ## Layout
 
-The tests are NUNIT test cases..  They test a very wide range of compiler, interactive and FSharp.Core scenarios.
+The tests are NUNIT test cases. They test a very wide range of compiler, interactive and FSharp.Core scenarios.
 
 The bulk of the test cases are enumerated in tests.fs, these are the old cambridge test suite.  They build on a test-suite ported from windows batch files.  They run the compiler and fsi as seperate processes, when built for the coreclr it runs the coreclr versions using dotnet.exe 
 
@@ -16,7 +16,7 @@ test cases look similar to:
 This test case builds and runs the test case in the folder core/array
 
 this #define is used to exclude from the build tests that run will not run correctly on the coreclr
-__#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS__
+__#if !NETCOREAPP__
 
 There are some older tests in this section that looks similar to:
 ````
@@ -60,8 +60,6 @@ let changeX() =
 
 When a test is run, .err/.vserr output files are created and compared to their matching .bsl files.
 
-When many tests fail due to a change being worked on, the [update.base.line.with.actuals.fsx](update.base.line.with.actuals.fsx) script helps updating the .bsl against the actuals.
-
-After editing the folder list, evaluating the script should replace the .bsl files with actual .err/.vserr, after which the same test is supposed to pass.
+Refer to [Test Guide](../../TESTGUIDE.md#baselines) to know more about how to update them.
 
 Tests are organized under modules as functions bearing NUnit `[<Test>]` attribute and can be run from an IDE or the command line (see the [Test Guide](../../TESTGUIDE.md)).

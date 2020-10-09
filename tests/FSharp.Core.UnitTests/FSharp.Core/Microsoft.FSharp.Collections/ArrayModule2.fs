@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -26,10 +26,9 @@ type ArrayWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type ArrayModule2() =
 
-    [<Test>]
+    [<Fact>]
     member this.Length() =
         // integer array  
         let resultInt = Array.length [|1..8|]
@@ -49,7 +48,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Indexed() =
         // integer array
         let resultInt = Array.indexed [|10..2..20|]
@@ -71,7 +70,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Map() = 
         // integer array
         let funcInt x = 
@@ -96,7 +95,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Map2() = 
         // integer array 
         let funcInt x y = x+y
@@ -124,7 +123,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Map3() =
         // Integer array
         let funcInt a b c = (a + b) * c
@@ -156,7 +155,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.MapFold() =
         // integer array
         let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
@@ -181,7 +180,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.MapFoldBack() =
         // integer array
         let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
@@ -206,7 +205,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Mapi() = 
         // integer array 
         let funcInt x y = x+y
@@ -229,7 +228,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.mapi2() = 
         // integer array 
         let funcInt x y z = x+y+z
@@ -257,7 +256,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Max() = 
         // integer array 
         let resultInt = Array.max  [|2..2..20|]
@@ -278,7 +277,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.MaxBy()= 
         // integer array 
         let funcInt x = x%8
@@ -301,7 +300,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Min() =
         // integer array 
         let resultInt = Array.min  [|3;7;8;9;4;1;1;2|]
@@ -322,7 +321,7 @@ type ArrayModule2() =
         
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.MinBy()= 
         // integer array 
         let funcInt x = x%8
@@ -346,7 +345,7 @@ type ArrayModule2() =
         ()
         
 
-    [<Test>]
+    [<Fact>]
     member this.Of_List() =
         // integer array  
         let resultInt = Array.ofList [1..10]
@@ -364,7 +363,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Of_Seq() =
         // integer array  
         let resultInt = Array.ofSeq {1..10}
@@ -382,7 +381,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Partition() =
         // integer array  
         let resultInt = Array.partition (fun x -> x%3 = 0) [|1..10|]
@@ -402,7 +401,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Permute() =
         // integer array  
         let resultInt = Array.permute (fun i -> (i+1) % 4) [|1;2;3;4|]
@@ -422,7 +421,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Reduce() =
         // integer array  
         let resultInt = Array.reduce (fun x y -> x/y) [|5*4*3*2; 4;3;2;1|]
@@ -442,7 +441,7 @@ type ArrayModule2() =
         ()
 
         
-    [<Test>]
+    [<Fact>]
     member this.ReduceBack() =
         // integer array  
         let resultInt = Array.reduceBack (fun x y -> x/y) [|5*4*3*2; 4;3;2;1|]
@@ -462,7 +461,7 @@ type ArrayModule2() =
         ()
     
 
-    [<Test>]
+    [<Fact>]
     member this.Rev() =
         // integer array  
         let resultInt = Array.rev  [|1..10|]
@@ -481,7 +480,7 @@ type ArrayModule2() =
         CheckThrowsArgumentNullException (fun () -> Array.rev  nullArr  |> ignore) 
         ()
 
-    [<Test>] 
+    [<Fact>] 
     member this.Scan() =
         // integer array
         let funcInt x y = x+y
@@ -503,7 +502,7 @@ type ArrayModule2() =
         
         ()   
     
-    [<Test>]
+    [<Fact>]
     member this.ScanBack() =
         // integer array 
         let funcInt x y = x+y
@@ -525,7 +524,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Skip() =
         // integer array
         let resultInt = Array.skip 2 [|1..10|]
@@ -551,7 +550,7 @@ type ArrayModule2() =
         CheckThrowsArgumentException (fun () -> Array.skip 1 [||] |> ignore)
         CheckThrowsArgumentException (fun () -> Array.skip 4 [|1; 2; 3|] |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.SkipWhile() =
         // integer array
         let funcInt x = (x < 4)
@@ -582,7 +581,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Set() =
         // integer array  
         let intArr = [|10;9;8;7|]
@@ -602,7 +601,7 @@ type ArrayModule2() =
         
         ()    
 
-    [<Test>]
+    [<Fact>]
     member this.sortInPlaceWith() =
         // integer array  
         let intArr = [|3;5;7;2;4;8|]
@@ -641,7 +640,7 @@ type ArrayModule2() =
         ()   
         
 
-    [<Test>]
+    [<Fact>]
     member this.sortInPlaceBy() =
         // integer array  
         let intArr = [|3;5;7;2;4;8|]
@@ -671,7 +670,7 @@ type ArrayModule2() =
         
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.SortDescending() =
         // integer array  
         let intArr = [|3;5;7;2;4;8|]
@@ -707,7 +706,7 @@ type ArrayModule2() =
 
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.SortByDescending() =
         // integer array  
         let intArr = [|3;5;7;2;4;8|]
@@ -746,7 +745,7 @@ type ArrayModule2() =
 
         ()  
          
-    [<Test>]
+    [<Fact>]
     member this.Sub() =
         // integer array  
         let resultInt = Array.sub [|1..8|] 3 3
@@ -771,7 +770,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Sum() =
         // empty integer array 
         let resultEptInt = Array.sum ([||]:int[]) 
@@ -817,7 +816,7 @@ type ArrayModule2() =
         CheckThrowsArgumentNullException (fun () -> Array.sum  nullArr  |> ignore) 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.SumBy() =
         // empty integer array         
         let resultEptInt = Array.sumBy int ([||]:int[]) 
@@ -862,7 +861,7 @@ type ArrayModule2() =
         CheckThrowsArgumentNullException (fun () -> Array.sumBy float32  nullArr  |> ignore) 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Tl() =
         // integer array  
         let resultInt = Array.tail [|1..10|]        
@@ -881,7 +880,7 @@ type ArrayModule2() =
         CheckThrowsArgumentNullException(fun () -> Array.tail null |> ignore)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.To_List() =
         // integer array  
         let resultInt = Array.toList [|1..10|]
@@ -901,7 +900,7 @@ type ArrayModule2() =
         
         ()    
         
-    [<Test>]
+    [<Fact>]
     member this.To_Seq() =
         // integer array  
         let resultInt = [|1..10|] |> Array.toSeq  |> Array.ofSeq
@@ -921,7 +920,7 @@ type ArrayModule2() =
         
         ()   
 
-    [<Test>]
+    [<Fact>]
     member this.Transpose() =
         // integer array
         Assert.AreEqual([|[|1;4|]; [|2;5|]; [|3;6|]|], Array.transpose (seq [[|1..3|]; [|4..6|]]))
@@ -946,7 +945,7 @@ type ArrayModule2() =
         CheckThrowsArgumentException (fun () -> Array.transpose [| [|1; 2|]; [|3|] |] |> ignore)
         CheckThrowsArgumentException (fun () -> Array.transpose [| [|1|]; [|2; 3|] |] |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.Truncate() =
         // integer array
         Assert.AreEqual([|1..3|], Array.truncate 3 [|1..5|])
@@ -969,7 +968,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.TryFind() =
         // integer array  
         let resultInt = [|1..10|] |> Array.tryFind (fun x -> x%7 = 0)  
@@ -989,7 +988,7 @@ type ArrayModule2() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.TryFindBack() =
         // integer array
         let funcInt x = x%5 = 0
@@ -1013,7 +1012,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.TryFindIndex() =
         // integer array  
         let resultInt = [|1..10|] |> Array.tryFindIndex (fun x -> x%7 = 0)  
@@ -1033,7 +1032,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.TryFindIndexBack() =
         // integer array
         let funcInt x = x%5 = 0
@@ -1057,7 +1056,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Unfold() =
         // integer Seq
         let resultInt = Array.unfold (fun x -> if x < 20 then Some (x+1,x*2) else None) 1
@@ -1073,7 +1072,7 @@ type ArrayModule2() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Unzip() =
         // integer array  
         let resultInt =  Array.unzip [|(1,2);(2,4);(3,6)|] 
@@ -1092,7 +1091,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Unzip3() =
         // integer array  
         let resultInt =  Array.unzip3 [|(1,2,3);(2,4,6);(3,6,9)|]
@@ -1110,13 +1109,13 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Windowed() =
         let testWindowed config =
             try
                 config.InputArray
                 |> Array.windowed config.WindowSize
-                |> (fun actual -> Assert.IsTrue(config.ExpectedArray = actual))
+                |> (fun actual -> Assert.True(config.ExpectedArray = actual))
             with
             | _ when Option.isNone config.Exception -> Assert.Fail()
             | e when e.GetType() = (Option.get config.Exception) -> ()
@@ -1194,13 +1193,13 @@ type ArrayModule2() =
                 if windowSize <= 0 then
                     CheckThrowsArgumentException (fun () -> Array.windowed windowSize [|1..arraySize|] |> ignore)
                 elif arraySize < windowSize then
-                    Assert.IsTrue([||] = Array.windowed windowSize [|1..arraySize|])
+                    Assert.True([||] = Array.windowed windowSize [|1..arraySize|])
                 else
-                    Assert.IsTrue(expectedArrays.[arraySize, windowSize] = Array.windowed windowSize [|1..arraySize|])
+                    Assert.True(expectedArrays.[arraySize, windowSize] = Array.windowed windowSize [|1..arraySize|])
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Zero_Create() =
         
         // Check for bogus input
@@ -1220,12 +1219,12 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.BadCreateArguments() =
         // negative number
         CheckThrowsArgumentException (fun () -> Array.create -1 0 |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.Zip() =
         // integer array  
         let resultInt =  Array.zip [|1..3|] [|2..2..6|] 
@@ -1248,7 +1247,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Zip3() =
         // integer array  
         let resultInt =  Array.zip3 [|1..3|] [|2..2..6|] [|3;6;9|]
@@ -1274,7 +1273,7 @@ type ArrayModule2() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Item() =
         // integer array
         let resultInt = Array.item 3 [|1..8|]
@@ -1299,7 +1298,7 @@ type ArrayModule2() =
         for i = 11 to 20 do
            CheckThrowsIndexOutRangException (fun () -> Array.item i [|1..8|] |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.tryItem() =
         // integer array
         let intArr = [| 3;4;7;8;10 |]

@@ -11,12 +11,18 @@ type LanguageFeature =
     | RelaxWhitespace
     | NameOf
     | ImplicitYield
-    | OpenStaticClasses
+    | OpenTypeDeclaration
     | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
     | FixedIndexSlice3d4d
-
+    | AndBang
+    | NullableOptionalInterop
+    | DefaultInterfaceMemberConsumption
+    | WitnessPassing
+    | InterfacesWithMultipleGenericInstantiation
+    | StringInterpolation
+    | OverloadsForCustomOperations
 
 /// LanguageVersion management
 type LanguageVersion =
@@ -41,3 +47,12 @@ type LanguageVersion =
 
     /// Get the specified LanguageVersion
     member SpecifiedVersion: decimal
+
+    /// Get the specified LanguageVersion as a string
+    member SpecifiedVersionString: string
+
+    /// Get a string name for the given feature.
+    member GetFeatureString: feature: LanguageFeature -> string
+
+    /// Get a version string associated with the given feature.
+    member GetFeatureVersionString: feature: LanguageFeature -> string

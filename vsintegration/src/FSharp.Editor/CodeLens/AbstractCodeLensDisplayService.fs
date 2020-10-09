@@ -20,7 +20,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
         buffer.Changed.Add self.HandleBufferChanged
         view.LayoutChanged.Add self.HandleLayoutChanged
        )
-
+       
     /// <summary>
     /// Enqueing an unit signals to the tagger that all visible line lens must be layouted again,
     /// to respect single line changes.
@@ -159,10 +159,9 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 #else
             ignore e
 #endif
-    
+
     /// Public non-thread-safe method to add line lens for a given tracking span.
     /// Returns an UIElement which can be used to add Ui elements and to remove the line lens later.
-
     member self.AddCodeLens (trackingSpan:ITrackingSpan) =
         if trackingSpan.TextBuffer <> buffer then failwith "TrackingSpan text buffer does not equal with CodeLens text buffer"
         let Grid = self.AddTrackingSpan trackingSpan
@@ -220,8 +219,12 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
     
      member self.HandleLayoutChanged (e:TextViewLayoutChangedEventArgs) =
         try
+            // We can cancel existing stuff because the algorithm supports abortion without any data loss
+            self.LayoutChangedCts.Cancel()
+            self.LayoutChangedCts.Dispose()
+            self.LayoutChangedCts <- new CancellationTokenSource()
             let buffer = e.NewSnapshot
-            let recentVisibleLineNumbers = Set [self.RecentLastVsblLineNmbr .. self.RecentLastVsblLineNmbr]
+            let recentVisibleLineNumbers = Set [self.RecentFirstVsblLineNmbr .. self.RecentLastVsblLineNmbr]
             let firstVisibleLineNumber, lastVisibleLineNumber =
                 let first, last = 
                     view.TextViewLines.FirstVisibleLine, 
@@ -286,10 +289,6 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
             // Save the new first and last visible lines for tracking
             self.RecentFirstVsblLineNmbr <- firstVisibleLineNumber
             self.RecentLastVsblLineNmbr <- lastVisibleLineNumber
-            // We can cancel existing stuff because the algorithm supports abortion without any data loss
-            self.LayoutChangedCts.Cancel()
-            self.LayoutChangedCts.Dispose()
-            self.LayoutChangedCts <- new CancellationTokenSource()
 
             self.AsyncCustomLayoutOperation visibleLineNumbers buffer
             |> RoslynHelpers.StartAsyncSafe self.LayoutChangedCts.Token "HandleLayoutChanged"

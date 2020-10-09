@@ -42,8 +42,7 @@ module AssemblyCheck =
     let verifyAssemblies (binariesPath:string) =
 
         let excludedAssemblies =
-            [ "FSharp.Data.TypeProviders.dll" ]
-            |> Set.ofList
+            [ ] |> Set.ofList
 
         let fsharpAssemblies =
             [ "FSharp*.dll"

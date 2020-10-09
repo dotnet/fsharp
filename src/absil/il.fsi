@@ -98,7 +98,7 @@ type ILScopeRef =
     /// A reference to the type in the current module
     | Local 
     /// A reference to a type in a module in the same assembly
-    | Module of ILModuleRef   
+    | Module of ILModuleRef
     /// A reference to a type in another assembly
     | Assembly of ILAssemblyRef
     /// A reference to a type in the primary assembly
@@ -194,6 +194,8 @@ type ILTypeRef =
 
     member QualifiedName: string
 
+    member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
+
     interface System.IComparable
     
 /// Type specs and types.  
@@ -207,19 +209,21 @@ type ILTypeSpec =
 
     /// The type instantiation if the type is generic, otherwise empty
     member GenericArgs: ILGenericArgs
-    
-    /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly? 
+
+    /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly?
     member Scope: ILScopeRef
     
     /// The list of enclosing type names for a nested type. If non-nil then the first of these also contains the namespace.
     member Enclosing: string list
-    
+
     /// The name of the type. This also contains the namespace if Enclosing is empty.
     member Name: string
-    
+
     /// The name of the type in the assembly using the '.' notation for nested types.
     member FullName: string
-    
+
+    member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
+
     interface System.IComparable
 
 and 
@@ -1065,6 +1069,7 @@ type ILMethodDefs =
     member AsArray: ILMethodDef[]
     member AsList: ILMethodDef list
     member FindByName: string -> ILMethodDef list
+    member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
 /// Field definitions.
 [<NoComparison; NoEquality>]
@@ -1408,11 +1413,11 @@ type ILResourceAccess =
     | Public 
     | Private 
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoEquality;NoComparison>]
 type ILResourceLocation = 
     internal
     /// Represents a manifest resource that can be read or written to a PE file
-    | Local of ReadOnlyByteMemory
+    | Local of ByteStorage
 
     /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32
@@ -1615,6 +1620,7 @@ type ILGlobals =
 val mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list -> ILGlobals
 
 val EcmaMscorlibILGlobals: ILGlobals
+val PrimaryAssemblyILGlobals: ILGlobals
 
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned 
@@ -2015,8 +2021,6 @@ type ILPropertyRef =
      member DeclaringTypeRef: ILTypeRef
      member Name: string
      interface System.IComparable
-
-val runningOnMono: bool
 
 type ILReferences = 
     { AssemblyReferences: ILAssemblyRef list 

@@ -6,15 +6,14 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Range
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
-
-open System.Collections.Generic
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]
 type TcEnv =
@@ -25,7 +24,9 @@ type TcEnv =
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
 val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
-val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> LongIdent -> TcEnv 
+val AddLocalVal : NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalSubModule : TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespace -> TcEnv
+val TcOpenModuleOrNamespaceDecl: NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> TcEnv -> (LongIdent * range) -> TcEnv 
 
 type TopAttribs =
     { mainMethodAttrs : Attribs;
@@ -41,9 +42,9 @@ val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 val TypeCheckOneImplFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * NameResolution.TcResultsSink * bool
       -> TcEnv 
-      -> Tast.ModuleOrNamespaceType option
+      -> ModuleOrNamespaceType option
       -> ParsedImplFileInput
-      -> Eventually<TopAttribs * Tast.TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+      -> Eventually<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines option * NameResolution.TcResultsSink * bool
@@ -60,7 +61,7 @@ exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
 exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
-exception Recursion of DisplayEnv * Ast.Ident * TType * TType * range
+exception Recursion of DisplayEnv * Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
 exception LetRecCheckedAtRuntime of range
@@ -77,7 +78,7 @@ exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * str
 exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
 exception FunctionValueUnexpected of DisplayEnv * TType * range
 exception UnionPatternsBindDifferentNames of range
-exception VarBoundTwice of Ast.Ident
+exception VarBoundTwice of Ident
 exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
 exception ValNotMutable of DisplayEnv * ValRef * range
 exception ValNotLocal of DisplayEnv * ValRef * range
@@ -104,6 +105,6 @@ exception StandardOperatorRedefinitionWarning of string * range
 exception ParameterlessStructCtor of range
 exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
-val TcFieldInit : range -> ILFieldInit -> Tast.Const
+val TcFieldInit : range -> ILFieldInit -> Const
 
 val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType

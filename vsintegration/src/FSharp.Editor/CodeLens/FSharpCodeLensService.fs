@@ -52,6 +52,7 @@ type internal FSharpCodeLensService
     ) as self =
 
     let lineLens = codeLens
+    let userOpName = "FSharpCodeLensService"
 
     let visit pos parseTree = 
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
@@ -62,7 +63,15 @@ type internal FSharpCodeLensService
 
             override __.VisitTypeAbbrev( _, range) = Some range
 
-            override __.VisitLetOrUse(_, _, _, range) = Some range
+            override __.VisitLetOrUse(_, _, bindings, range) =
+                match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPat.StartLine = pos.Line) with
+                | Some entry ->
+                    Some entry.RangeOfBindingAndRhs
+                | None ->
+                    // We choose to use the default range because
+                    // it wasn't possible to find the complete range
+                    // including implementation code.
+                    Some range
 
             override __.VisitBinding (fn, binding) =
                 Some binding.RangeOfBindingAndRhs
@@ -146,7 +155,7 @@ type internal FSharpCodeLensService
             logInfof "Rechecking code due to buffer edit!"
 #endif
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
-            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token)
+            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token, userOpName)
             let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
 #if DEBUG
             logInfof "Getting uses of all symbols!"
@@ -179,8 +188,7 @@ type internal FSharpCodeLensService
                             
                                 let displayContext = Option.defaultValue displayContext maybeContext
                                 let typeLayout = func.FormatLayout displayContext
-                                let taggedText = ResizeArray()
-                                    
+                                let taggedText = ResizeArray()        
                                 Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
                                 let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
@@ -192,7 +200,7 @@ type internal FSharpCodeLensService
 #endif
                                 return None
                         else return None
-                    with e -> 
+                    with e ->
 #if DEBUG
                         logErrorf "Error in lazy line lens computation. %A" e
 #else
@@ -200,29 +208,29 @@ type internal FSharpCodeLensService
 #endif
                         return None
                 }
-            
+                
             let inline setNewResultsAndWarnIfOverriden fullDeclarationText value = 
 #if DEBUG
                 if newResults.ContainsKey fullDeclarationText then
                     logWarningf "New results already contains: %A" fullDeclarationText
 #endif
                 newResults.[fullDeclarationText] <- value
-
+                
             for symbolUse in symbolUses do
                 if symbolUse.IsFromDefinition then
                     match symbolUse.Symbol with
                     | :? FSharpMemberOrFunctionOrValue as func when func.IsModuleValueOrMember || func.IsProperty ->
-                        let funcID = func.FullName
-                        let fullDeclarationText = funcID
+                        let funcID = func.LogicalName + (func.FullType.ToString() |> hash |> string)
+                        // Use a combination of the the function name + the hashed value of the type signature
                         let fullTypeSignature = func.FullType.ToString()
                         // Try to re-use the last results
-                        if lastResults.ContainsKey fullDeclarationText then
+                        if lastResults.ContainsKey funcID then
                             // Make sure that the results are usable
-                            let inline setNewResultsAndWarnIfOverridenLocal value = setNewResultsAndWarnIfOverriden fullDeclarationText value
-                            let lastTrackingSpan, codeLens as lastResult = lastResults.[fullDeclarationText]
+                            let inline setNewResultsAndWarnIfOverridenLocal value = setNewResultsAndWarnIfOverriden funcID value
+                            let lastTrackingSpan, codeLens as lastResult = lastResults.[funcID]
                             if codeLens.FullTypeSignature = fullTypeSignature then
                                 setNewResultsAndWarnIfOverridenLocal lastResult
-                                oldResults.Remove fullDeclarationText |> ignore
+                                oldResults.Remove funcID |> ignore
                             else
                                 let declarationLine, range = 
                                     match visit func.DeclarationLocation.Start parsedInput with
@@ -242,19 +250,19 @@ type internal FSharpCodeLensService
                                             fullTypeSignature,
                                             null)
                                 // The old results aren't computed at all, because the line might have changed create new results
-                                tagsToUpdate.[lastTrackingSpan] <- (newTrackingSpan, fullDeclarationText, res)
+                                tagsToUpdate.[lastTrackingSpan] <- (newTrackingSpan, funcID, res)
                                 setNewResultsAndWarnIfOverridenLocal (newTrackingSpan, res)
                                         
-                                oldResults.Remove fullDeclarationText |> ignore
+                                oldResults.Remove funcID |> ignore
                         else
                             // The symbol might be completely new or has slightly changed. 
                             // We need to track this and iterate over the left entries to ensure that there isn't anything
-                            unattachedSymbols.Add((symbolUse, func, fullDeclarationText, fullTypeSignature))
+                            unattachedSymbols.Add((symbolUse, func, funcID, fullTypeSignature))
                     | _ -> ()
             
             // In best case this works quite `covfefe` fine because often enough we change only a small part of the file and not the complete.
             for unattachedSymbol in unattachedSymbols do
-                let symbolUse, func, fullDeclarationText, fullTypeSignature = unattachedSymbol
+                let symbolUse, func, funcID, fullTypeSignature = unattachedSymbol
                 let declarationLine, range = 
                     match visit func.DeclarationLocation.Start parsedInput with
                     | Some range -> range.StartLine - 1, range
@@ -273,8 +281,8 @@ type internal FSharpCodeLensService
                     let newTrackingSpan = 
                         textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                     if codeLens.Computed && (isNull codeLens.UiElement |> not) then
-                        newResults.[fullDeclarationText] <- (newTrackingSpan, codeLens)
-                        tagsToUpdate.[trackingSpan] <- (newTrackingSpan, fullDeclarationText, codeLens)
+                        newResults.[funcID] <- (newTrackingSpan, codeLens)
+                        tagsToUpdate.[trackingSpan] <- (newTrackingSpan, funcID, codeLens)
                     else
                         let res = 
                             CodeLens(
@@ -283,8 +291,8 @@ type internal FSharpCodeLensService
                                 fullTypeSignature,
                                 null)
                         // The tag might be still valid but it hasn't been computed yet so create fresh results
-                        tagsToUpdate.[trackingSpan] <- (newTrackingSpan, fullDeclarationText, res)
-                        newResults.[fullDeclarationText] <- (newTrackingSpan, res)
+                        tagsToUpdate.[trackingSpan] <- (newTrackingSpan, funcID, res)
+                        newResults.[funcID] <- (newTrackingSpan, res)
                     let key = res.Key
                     oldResults.Remove key |> ignore // no need to check this entry again
                 | None ->
@@ -305,7 +313,7 @@ type internal FSharpCodeLensService
                         let trackingSpan = 
                             textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                         codeLensToAdd.Add (trackingSpan, res)
-                        newResults.[fullDeclarationText] <- (trackingSpan, res)
+                        newResults.[funcID] <- (trackingSpan, res)
                     with e ->
 #if DEBUG
                         logExceptionWithContext (e, "Line Lens tracking tag span creation")

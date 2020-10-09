@@ -1,8 +1,8 @@
-﻿namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+﻿namespace FSharp.Core.UnitTests.Collections
 
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
+
 module SeqMultipleIteration =
     let makeNewSeq () =
         let haveCalled = false |> ref
@@ -12,36 +12,36 @@ module SeqMultipleIteration =
             yield 3
         }, haveCalled
 
-    [<Test>]
+    [<Fact>]
     let ``Seq.distinct only evaluates the seq once`` () =
         let s, haveCalled = makeNewSeq ()
         let distincts = Seq.distinct s
-        Assert.IsFalse !haveCalled
+        Assert.False !haveCalled
         CollectionAssert.AreEqual (distincts |> Seq.toList, [3])
-        Assert.IsTrue !haveCalled
+        Assert.True !haveCalled
 
-    [<Test>]
+    [<Fact>]
     let ``Seq.distinctBy only evaluates the seq once`` () =
         let s, haveCalled = makeNewSeq ()
         let distincts = Seq.distinctBy id s
-        Assert.IsFalse !haveCalled
+        Assert.False !haveCalled
         CollectionAssert.AreEqual (distincts |> Seq.toList, [3])
-        Assert.IsTrue !haveCalled
+        Assert.True !haveCalled
 
-    [<Test>]
+    [<Fact>]
     let ``Seq.groupBy only evaluates the seq once`` () =
         let s, haveCalled = makeNewSeq ()
         let groups : seq<int * seq<int>> = Seq.groupBy id s
-        Assert.IsFalse !haveCalled
+        Assert.False !haveCalled
         let groups : list<int * seq<int>> = Seq.toList groups
         // Seq.groupBy iterates the entire sequence as soon as it begins iteration.
-        Assert.IsTrue !haveCalled
+        Assert.True !haveCalled
 
-    [<Test>]
+    [<Fact>]
     let ``Seq.countBy only evaluates the seq once`` () =
         let s, haveCalled = makeNewSeq ()
         let counts : seq<int * int> = Seq.countBy id s
-        Assert.IsFalse !haveCalled
+        Assert.False !haveCalled
         let counts : list<int * int> = Seq.toList counts
-        Assert.IsTrue !haveCalled
+        Assert.True !haveCalled
         CollectionAssert.AreEqual (counts |> Seq.toList, [(3, 1)])

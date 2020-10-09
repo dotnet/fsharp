@@ -25,24 +25,6 @@ open Internal.Utilities
 
 let logging = false
 
-let runningOnMono =
-#if ENABLE_MONO_SUPPORT
-// Officially supported way to detect if we are running on Mono.
-// See http://www.mono-project.com/FAQ:_Technical
-// "How can I detect if am running in Mono?" section
-    try
-        System.Type.GetType ("Mono.Runtime") <> null
-    with e->
-        // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
-        // that is not reliable.
-        // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
-        // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
-        // their issue fixed but we need to be robust here anyway.
-        false
-#else
-    false
-#endif
-
 let _ = if logging then dprintn "* warning: Il.logging is on"
 
 let int_order = LanguagePrimitives.FastGenericComparer<int>
@@ -327,6 +309,10 @@ type ILVersionInfo =
     new (major, minor, build, revision) =
         { Major = major; Minor = minor; Build = build; Revision = revision }
 
+    /// For debugging
+    override x.ToString() = sprintf "ILVersionInfo: %u %u %u %u" (x.Major) (x.Minor) (x.Build) (x.Revision)
+
+
 type Locale = string
 
 [<StructuralEquality; StructuralComparison>]
@@ -368,8 +354,17 @@ let isMscorlib data =
 
 [<Sealed>]
 type ILAssemblyRef(data) =
-    let uniqueStamp = AssemblyRefUniqueStampGenerator.Encode data
-    let uniqueIgnoringVersionStamp = AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None }
+    let pkToken key =
+        match key with
+        | Some (PublicKey bytes) -> Some (PublicKey (SHA1.sha1HashBytes bytes))
+        | Some (PublicKeyToken token) -> Some (PublicKey (token))
+        | None -> None
+
+    let uniqueStamp =
+        AssemblyRefUniqueStampGenerator.Encode { data with assemRefPublicKeyInfo = pkToken (data.assemRefPublicKeyInfo) }
+
+    let uniqueIgnoringVersionStamp =
+        AssemblyRefUniqueStampGenerator.Encode { data with assemRefVersion = None; assemRefPublicKeyInfo = pkToken (data.assemRefPublicKeyInfo) }
 
     member x.Name=data.assemRefName
 
@@ -584,8 +579,11 @@ type ILTypeRef =
       hashCode : int
       mutable asBoxedType: ILType }
 
+    static member ComputeHash(scope, enclosing, name) =
+        hash scope * 17 ^^^ (hash enclosing * 101 <<< 1) ^^^ (hash name * 47 <<< 2)
+
     static member Create (scope, enclosing, name) =
-        let hashCode = hash scope * 17 ^^^ (hash enclosing * 101 <<< 1) ^^^ (hash name * 47 <<< 2)
+        let hashCode = ILTypeRef.ComputeHash(scope, enclosing, name)
         { trefScope=scope
           trefEnclosing=enclosing
           trefName=name
@@ -615,11 +613,31 @@ type ILTypeRef =
     override x.GetHashCode() = x.hashCode
 
     override x.Equals yobj =
-         let y = (yobj :?> ILTypeRef)
-         (x.ApproxId = y.ApproxId) &&
-         (x.Scope = y.Scope) &&
-         (x.Name = y.Name) &&
-         (x.Enclosing = y.Enclosing)
+        let y = (yobj :?> ILTypeRef)
+        (x.ApproxId = y.ApproxId) &&
+        (x.Scope = y.Scope) &&
+        (x.Name = y.Name) &&
+        (x.Enclosing = y.Enclosing)
+
+    member x.EqualsWithPrimaryScopeRef(primaryScopeRef:ILScopeRef, yobj:obj) =
+        let y = (yobj :?> ILTypeRef)
+        let isPrimary (v:ILTypeRef) =
+            match v.Scope with
+            | ILScopeRef.PrimaryAssembly -> true
+            | _ -> false
+
+        // Since we can remap the scope, we need to recompute hash ... this is not an expensive operation
+        let isPrimaryX = isPrimary x
+        let isPrimaryY = isPrimary y
+        let xApproxId = if isPrimaryX && not(isPrimaryY) then ILTypeRef.ComputeHash(primaryScopeRef, x.Enclosing, x.Name) else x.ApproxId
+        let yApproxId = if isPrimaryY && not(isPrimaryX) then ILTypeRef.ComputeHash(primaryScopeRef, y.Enclosing, y.Name) else y.ApproxId
+        let xScope = if isPrimaryX then primaryScopeRef else x.Scope
+        let yScope = if isPrimaryY then primaryScopeRef else y.Scope
+
+        (xApproxId = yApproxId) &&
+        (xScope = yScope) &&
+        (x.Name = y.Name) &&
+        (x.Enclosing = y.Enclosing)
 
     interface IComparable with
 
@@ -686,6 +704,10 @@ and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugT
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
+
+    member x.EqualsWithPrimaryScopeRef(primaryScopeRef:ILScopeRef, yobj:obj) =
+        let y = (yobj :?> ILTypeSpec)
+        x.tspecTypeRef.EqualsWithPrimaryScopeRef(primaryScopeRef, y.TypeRef) && (x.GenericArgs = y.GenericArgs)
 
     override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
 
@@ -1739,6 +1761,10 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.FindByNameAndArity (nm, arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
+    member x.TryFindInstanceByNameAndCallingSignature (nm, callingSig) = 
+        x.FindByName nm 
+        |> List.tryFind (fun x -> not x.IsStatic && x.CallingSignature = callingSig)
+
 [<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILEventDef(eventType: ILType option, name: string, attributes: EventAttributes,
                 addMethod: ILMethodRef, removeMethod: ILMethodRef, fireMethod: ILMethodRef option,
@@ -1955,22 +1981,17 @@ type ILTypeDefKind =
     | Enum
     | Delegate
 
-let typeKindOfFlags nm _mdefs _fdefs (super: ILType option) flags =
+let typeKindOfFlags nm (super: ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface
     else
-         let isEnum, isDelegate, isMulticastDelegate, isValueType =
-            match super with
-            | None -> false, false, false, false
-            | Some ty ->
-                ty.TypeSpec.Name = "System.Enum",
-                ty.TypeSpec.Name = "System.Delegate",
-                ty.TypeSpec.Name = "System.MulticastDelegate",
-                ty.TypeSpec.Name = "System.ValueType" && nm <> "System.Enum"
-         let selfIsMulticastDelegate = nm = "System.MulticastDelegate"
-         if isEnum then ILTypeDefKind.Enum
-         elif (isDelegate && not selfIsMulticastDelegate) || isMulticastDelegate then ILTypeDefKind.Delegate
-         elif isValueType then ILTypeDefKind.ValueType
-         else ILTypeDefKind.Class
+        match super with
+        | None -> ILTypeDefKind.Class
+        | Some ty ->
+            let name = ty.TypeSpec.Name
+            if name = "System.Enum" then ILTypeDefKind.Enum
+            elif (name = "System.Delegate" && nm <> "System.MulticastDelegate") || name = "System.MulticastDelegate" then ILTypeDefKind.Delegate
+            elif name = "System.ValueType" && nm <> "System.Enum" then ILTypeDefKind.ValueType
+            else ILTypeDefKind.Class
 
 let convertTypeAccessFlags access =
     match access with
@@ -2072,11 +2093,11 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
 
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
-    member x.IsClass = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
-    member x.IsStruct = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
-    member x.IsInterface = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
-    member x.IsEnum = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
-    member x.IsDelegate = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
+    member x.IsClass = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Class
+    member x.IsStruct = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
+    member x.IsInterface = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
+    member x.IsEnum = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
+    member x.IsDelegate = (typeKindOfFlags x.Name x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
     member x.Access = typeAccessOfFlags (int x.Attributes)
     member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
     member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
@@ -2207,9 +2228,9 @@ type ILResourceAccess =
     | Public
     | Private
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoEquality;NoComparison>]
 type ILResourceLocation =
-    | Local of ReadOnlyByteMemory
+    | Local of ByteStorage
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
@@ -2223,7 +2244,7 @@ type ILResource =
     /// Read the bytes from a resource local to an assembly
     member r.GetBytes() =
         match r.Location with
-        | ILResourceLocation.Local bytes -> bytes
+        | ILResourceLocation.Local bytes -> bytes.GetByteMemory()
         | _ -> failwith "GetBytes"
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
@@ -3577,7 +3598,7 @@ let formatILVersion (version: ILVersionInfo) = sprintf "%d.%d.%d.%d" (int versio
 
 let encodeCustomAttrString s =
     let arr = string_as_utf8_bytes s
-    Array.concat [ z_unsigned_int arr.Length; arr ]
+    Array.append (z_unsigned_int arr.Length) arr
 
 let rec encodeCustomAttrElemType x =
     match x with
@@ -3716,6 +3737,7 @@ let getCustomAttrData (ilg: ILGlobals) cattr =
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create ("mscorlib", None, Some ecmaPublicKey, true, None, None))
 
 let EcmaMscorlibILGlobals = mkILGlobals (MscorlibScopeRef, [])
+let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [])
 
 // ILSecurityDecl is a 'blob' having the following format:
 // - A byte containing a period (.).

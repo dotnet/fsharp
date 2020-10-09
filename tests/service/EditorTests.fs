@@ -545,6 +545,62 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
                      (4, 82, 4, 84, 1); 
                      (4, 108, 4, 110, 1)|]
 
+#if ASSUME_PREVIEW_FSHARP_CORE
+[<Test>]
+let ``Printf specifiers for regular and verbatim interpolated strings`` () = 
+    let input = 
+      """let os = System.Text.StringBuilder() // line 1
+let _ = $"{0}"                                // line 2
+let _ = $"%A{0}"                              // line 3
+let _ = $"%7.1f{1.0}"                         // line 4
+let _ = $"%-8.1e{1.0}+567"                    // line 5
+let s = "value"                               // line 6
+let _ = $@"%-5s{s}"                           // line 7
+let _ = $@"%-A{-10}"                          // line 8
+let _ = @$"
+            %-O{-10}"                         // line 10
+let _ = $"
+
+            %-O{-10}"                         // line 13
+let _ = List.map (fun x -> sprintf $@"%A{x}
+                                      ")      // line 15
+let _ = $"\n%-8.1e{1.0}+567"                  // line 16
+let _ = $@"%O{1}\n%-5s{s}"                    // line 17
+let _ = $"%%"                                 // line 18
+let s2 = $"abc %d{s.Length} and %d{s.Length}def" // line 19
+let s3 = $"abc %d{s.Length} 
+                and %d{s.Length}def"          // line 21
+"""
+
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
+
+    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
+    |> shouldEqual
+        [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
+          (8, 11, 8, 14, 1); (10, 12, 10, 15, 1); (13, 12, 13, 15, 1);
+          (14, 38, 14, 40, 1); (16, 12, 16, 18, 1); (17, 11, 17, 13, 1);
+          (17, 18, 17, 22, 1); (18, 10, 18, 12, 0); (19, 15, 19, 17, 1);
+          (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
+
+[<Test>]
+let ``Printf specifiers for triple quote interpolated strings`` () = 
+    let input = 
+      "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"  "
+
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
+
+    typeCheckResults.Errors |> shouldEqual [||]
+    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
+    |> shouldEqual
+        [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)|]
+#endif // ASSUME_PREVIEW_FSHARP_CORE
+
+
 [<Test>]
 let ``should not report format specifiers for illformed format strings`` () = 
     let input = 
@@ -1328,18 +1384,18 @@ let ``FSharpField.IsNameGenerated`` () =
 
 [<Test>]
 let ``ValNoMutable recovery`` () =
-    let source = """
+    let _, checkResults = getParseAndCheckResults """
 let x = 1
 x <-
     let y = 1
     y
 """
-    assertContainsSymbolWithName "y" source
+    assertHasSymbolUsages ["y"] checkResults
 
 
 [<Test>]
 let ``PropertyCannotBeSet recovery`` () =
-    let source = """
+    let _, checkResults = getParseAndCheckResults """
 type T =
     static member P = 1
 
@@ -1347,12 +1403,12 @@ T.P <-
     let y = 1
     y
 """
-    assertContainsSymbolWithName "y" source
+    assertHasSymbolUsages ["y"] checkResults
 
 
 [<Test>]
 let ``FieldNotMutable recovery`` () =
-    let source = """
+    let _, checkResults = getParseAndCheckResults """
 type R =
     { F: int }
 
@@ -1360,4 +1416,64 @@ type R =
     let y = 1
     y
 """
-    assertContainsSymbolWithName "y" source
+    assertHasSymbolUsages ["y"] checkResults
+
+
+[<Test>]
+let ``Inherit ctor arg recovery`` () =
+    let _, checkResults = getParseAndCheckResults """
+    type T() as this =
+        inherit System.Exception('a', 'a')
+
+        let x = this
+    """
+    assertHasSymbolUsages ["x"] checkResults
+
+[<Test>]
+let ``Brace matching smoke test`` () = 
+    let input = 
+      """
+let x1 = { contents = 1 }
+let x2 = {| contents = 1 |}
+let x3 = [ 1 ]
+let x4 = [| 1 |]
+let x5 = $"abc{1}def"
+"""
+    let file = "/home/user/Test.fsx"
+    let braces = matchBraces(file, input) 
+
+    braces
+    |> Array.map (fun (r1,r2) -> 
+        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn), 
+        (r2.StartLine, r2.StartColumn, r2.EndLine, r2.EndColumn))
+    |> shouldEqual
+         [|((2, 9, 2, 10), (2, 24, 2, 25));
+           ((3, 9, 3, 11), (3, 25, 3, 27));
+           ((4, 9, 4, 10), (4, 13, 4, 14));
+           ((5, 9, 5, 11), (5, 14, 5, 16));
+           ((6, 14, 6, 15), (6, 16, 6, 17))|]
+     
+
+[<Test>]
+let ``Brace matching in interpolated strings`` () = 
+    let input = 
+      "
+let x5 = $\"abc{1}def\"
+let x6 = $\"abc{1}def{2}hij\"
+let x7 = $\"\"\"abc{1}def{2}hij\"\"\"
+let x8 = $\"\"\"abc{  {contents=1} }def{2}hij\"\"\"
+"
+    let file = "/home/user/Test.fsx"
+    let braces = matchBraces(file, input) 
+
+    braces
+    |> Array.map (fun (r1,r2) -> 
+        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn), 
+        (r2.StartLine, r2.StartColumn, r2.EndLine, r2.EndColumn))
+    |> shouldEqual
+        [|((2, 14, 2, 15), (2, 16, 2, 17)); ((3, 14, 3, 15), (3, 16, 3, 17));
+          ((3, 20, 3, 21), (3, 22, 3, 23)); ((4, 16, 4, 17), (4, 18, 4, 19));
+          ((4, 22, 4, 23), (4, 24, 4, 25)); ((5, 19, 5, 20), (5, 30, 5, 31));
+          ((5, 16, 5, 17), (5, 32, 5, 33)); ((5, 36, 5, 37), (5, 38, 5, 39))|]
+         
+

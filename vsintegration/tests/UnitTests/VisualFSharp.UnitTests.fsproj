@@ -7,13 +7,13 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
-    <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DefaultValueTuplePackageVersion>$(SystemValueTupleVersion)</DefaultValueTuplePackageVersion>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <UnitTestType>nunit</UnitTestType>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
@@ -25,6 +25,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fs">
       <Link>Internal.Utilities.Collections.fs</Link>
     </Compile>
+    <EmbeddedText Include="$(FSharpSourcesRoot)\utils\UtilsStrings.txt" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>Internal.Utilities.CompilerLocationUtils.fs</Link>
     </Compile>
@@ -57,58 +58,8 @@
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.References.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
-    <Compile Include="..\..\..\tests\service\FsUnit.fs">
-      <Link>CompilerService\FsUnit.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\Common.fs">
-      <Link>CompilerService\Common.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\Symbols.fs">
-      <Link>CompilerService\Symbols.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\EditorTests.fs">
-      <Link>CompilerService\EditorTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\FileSystemTests.fs">
-      <Link>CompilerService\FileSystemTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\ProjectAnalysisTests.fs">
-      <Link>CompilerService\ProjectAnalysisTests.fs</Link>
-    </Compile>
-<!-- TODO:  Fix this test
-    <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
-      <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
-    </Compile>
--->
-    <Compile Include="..\..\..\tests\service\PerfTests.fs">
-      <Link>CompilerService\PerfTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\InteractiveCheckerTests.fs">
-      <Link>CompilerService\InteractiveCheckerTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\ExprTests.fs">
-      <Link>CompilerService\ExprTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
-      <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
-      <Link>CompilerService\ProjectOptionsTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\StructureTests.fs">
-      <Link>CompilerService\StructureTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\AssemblyContentProviderTests.fs">
-      <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\ServiceUntypedParseTests.fs">
-      <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
-    </Compile>
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\tests\service\TreeVisitorTests.fs">
-      <Link>CompilerService\TreeVisitorTests.fs</Link>
     </Compile>
     <Compile Include="ProjectOptionsBuilder.fs">
       <Link>Roslyn\ProjectOptionsBuilder.fs</Link>
@@ -141,9 +92,6 @@
     </Compile>
     <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
       <Link>Roslyn\DocumentDiagnosticAnalyzerTests.fs</Link>
-    </Compile>
-    <Compile Include="ProjectDiagnosticAnalyzerTests.fs">
-      <Link>Roslyn\ProjectDiagnosticAnalyzerTests.fs</Link>
     </Compile>
     <Compile Include="CompletionProviderTests.fs">
       <Link>Roslyn\CompletionProviderTests.fs</Link>
@@ -185,7 +133,6 @@
     <ProjectReference Include="..\..\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
-    <ProjectReference Include="..\..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 
   <!-- assemblies used during tests -->

@@ -99,10 +99,10 @@ let ``Test project1 whole project errors`` () =
     wholeProjectResults.Errors.[1].Message.Contains("Incomplete pattern matches on this expression") |> shouldEqual true // yes it does
     wholeProjectResults.Errors.[1].ErrorNumber |> shouldEqual 25
 
-    wholeProjectResults.Errors.[0].StartLineAlternate |> shouldEqual 10
-    wholeProjectResults.Errors.[0].EndLineAlternate |> shouldEqual 10
-    wholeProjectResults.Errors.[0].StartColumn |> shouldEqual 43
-    wholeProjectResults.Errors.[0].EndColumn |> shouldEqual 44
+    wholeProjectResults.Errors.[0].Range.StartLine |> shouldEqual 10
+    wholeProjectResults.Errors.[0].Range.EndLine |> shouldEqual 10
+    wholeProjectResults.Errors.[0].Range.StartColumn |> shouldEqual 43
+    wholeProjectResults.Errors.[0].Range.EndColumn |> shouldEqual 44
 
 [<Test;NonParallelizable>]
 let ``Test project1 and make sure TcImports gets cleaned up`` () = 
@@ -729,22 +729,13 @@ let ``Test project2 all uses of all signature symbols`` () =
                  ("file1", ((22, 45), (22, 47))); ("file1", ((22, 50), (22, 52)))]);
                ("DUWithNormalFields", [("file1", ((3, 5), (3, 23)))]);
                ("DU1", [("file1", ((4, 6), (4, 9))); ("file1", ((8, 8), (8, 11)))]);
-               ("field Item1", [("file1", ((4, 6), (4, 9))); ("file1", ((8, 8), (8, 11)))]);
-               ("field Item2", [("file1", ((4, 6), (4, 9))); ("file1", ((8, 8), (8, 11)))]);
+               ("field Item1", []); ("field Item2", []);
                ("DU2", [("file1", ((5, 6), (5, 9))); ("file1", ((9, 8), (9, 11)))]);
-               ("field Item1", [("file1", ((5, 6), (5, 9))); ("file1", ((9, 8), (9, 11)))]);
-               ("field Item2", [("file1", ((5, 6), (5, 9))); ("file1", ((9, 8), (9, 11)))]);
                ("D", [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
-               ("field Item1",
-                [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
-               ("field Item2",
-                [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
                ("DUWithNamedFields", [("file1", ((12, 5), (12, 22)))]);
                ("DU", [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
-               ("field x",
-                [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
-               ("field y",
-                [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
+               ("field x", [("file1", ((12, 31), (12, 32))); ("file1", ((14, 11), (14, 12)))]);
+               ("field y", [("file1", ((12, 41), (12, 42))); ("file1", ((14, 16), (14, 17)))]);
                ("GenericClass`1",
                 [("file1", ((16, 5), (16, 17))); ("file1", ((19, 8), (19, 20)))]);
                ("generic parameter T",
@@ -789,14 +780,14 @@ let ``Test project2 all uses of all symbols`` () =
            ("int", "file1", ((12, 35), (12, 38)), ["abbrev"]);
            ("int", "file1", ((12, 45), (12, 48)), ["abbrev"]);
            ("int", "file1", ((12, 35), (12, 38)), ["abbrev"]);
-           ("x", "file1", ((12, 31), (12, 32)), []);
+           ("x", "file1", ((12, 31), (12, 32)), ["field"]);
            ("int", "file1", ((12, 45), (12, 48)), ["abbrev"]);
-           ("y", "file1", ((12, 41), (12, 42)), []);
+           ("y", "file1", ((12, 41), (12, 42)), ["field"]);
            ("DU", "file1", ((12, 25), (12, 27)), []);
            ("DUWithNamedFields", "file1", ((12, 5), (12, 22)), ["union"]);
            ("DU", "file1", ((14, 8), (14, 10)), []);
-           ("x", "file1", ((14, 11), (14, 12)), []);
-           ("y", "file1", ((14, 16), (14, 17)), []);
+           ("x", "file1", ((14, 11), (14, 12)), ["field"]);
+           ("y", "file1", ((14, 16), (14, 17)), ["field"]);
            ("T", "file1", ((16, 18), (16, 20)), []);
            ("GenericClass", "file1", ((16, 5), (16, 17)), ["class"]);
            ("( .ctor )", "file1", ((16, 5), (16, 17)), ["member"; "ctor"]);
@@ -1529,9 +1520,9 @@ let ``Test project 5 all symbols`` () =
             ("val |Float|_|", "ActivePatterns.( |Float|_| )", "file1", ((13, 5), (13, 14)),
              ["defn"]); ("val str", "str", "file1", ((19, 17), (19, 20)), ["defn"]);
             ("val str", "str", "file1", ((20, 9), (20, 12)), []);
-            ("val f", "f", "file1", ((21, 11), (21, 12)), ["defn"]);
             ("symbol Float", "ActivePatterns.( |Float|_| ).Float", "file1",
              ((21, 5), (21, 10)), ["pattern"]);
+            ("val f", "f", "file1", ((21, 11), (21, 12)), ["defn"]);
             ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
              "file1", ((21, 16), (21, 23)), []);
             ("val f", "f", "file1", ((21, 46), (21, 47)), []);
@@ -1557,6 +1548,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
 
     let oddActivePatternCase = oddSymbol :?> FSharpActivePatternCase
     oddActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
+    oddActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
     oddActivePatternCase.XmlDocSig |> shouldEqual ""
     let oddGroup = oddActivePatternCase.Group
     oddGroup.IsTotal |> shouldEqual true
@@ -1571,6 +1563,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     evenSymbol.ToString() |> shouldEqual "symbol Even"
     let evenActivePatternCase = evenSymbol :?> FSharpActivePatternCase
     evenActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
+    evenActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
     evenActivePatternCase.XmlDocSig |> shouldEqual ""
     let evenGroup = evenActivePatternCase.Group
     evenGroup.IsTotal |> shouldEqual true
@@ -1615,6 +1608,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
 
     let floatActivePatternCase = floatSymbol :?> FSharpActivePatternCase
     floatActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Partial active pattern for floats"]
+    floatActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Partial active pattern for floats"; "</summary>"]
     floatActivePatternCase.XmlDocSig |> shouldEqual ""
     let floatGroup = floatActivePatternCase.Group
     floatGroup.IsTotal |> shouldEqual false
@@ -1804,22 +1798,22 @@ let ``Test project 8 all symbols`` () =
       |> shouldEqual
               [|("int", "int", "file1", ((4, 19), (4, 22)), ["type"], ["abbrev"]);
                 ("int", "int", "file1", ((4, 31), (4, 34)), ["type"], ["abbrev"]);
+                ("field xxx", "xxx", "file1", ((4, 14), (4, 17)), ["defn"], ["field"]);
                 ("int", "int", "file1", ((4, 19), (4, 22)), ["type"], ["abbrev"]);
-                ("parameter xxx", "xxx", "file1", ((4, 14), (4, 17)), ["defn"], []);
+                ("field yyy", "yyy", "file1", ((4, 25), (4, 28)), ["defn"], ["field"]);
                 ("int", "int", "file1", ((4, 31), (4, 34)), ["type"], ["abbrev"]);
-                ("parameter yyy", "yyy", "file1", ((4, 25), (4, 28)), ["defn"], []);
                 ("B", "B", "file1", ((4, 9), (4, 10)), ["defn"], []);
                 ("A", "A", "file1", ((4, 5), (4, 6)), ["defn"], ["union"]);
                 ("B", "B", "file1", ((5, 8), (5, 9)), [], []);
-                ("parameter xxx", "xxx", "file1", ((5, 10), (5, 13)), [], []);
-                ("parameter yyy", "yyy", "file1", ((5, 17), (5, 20)), [], []);
+                ("field xxx", "xxx", "file1", ((5, 10), (5, 13)), [], ["field"]);
+                ("field yyy", "yyy", "file1", ((5, 17), (5, 20)), [], ["field"]);
                 ("val b", "b", "file1", ((5, 4), (5, 5)), ["defn"], ["val"]);
                 ("val b", "b", "file1", ((8, 10), (8, 11)), [], ["val"]);
-                ("parameter xxx", "xxx", "file1", ((10, 9), (10, 12)), ["pattern"], []);
-                ("parameter yyy", "yyy", "file1", ((10, 18), (10, 21)), ["pattern"], []);
+                ("B", "B", "file1", ((10, 6), (10, 7)), ["pattern"], []);
+                ("field xxx", "xxx", "file1", ((10, 9), (10, 12)), ["pattern"], ["field"]);
+                ("field yyy", "yyy", "file1", ((10, 18), (10, 21)), ["pattern"], ["field"]);
                 ("val b", "b", "file1", ((10, 24), (10, 25)), ["defn"], []);
                 ("val a", "a", "file1", ((10, 15), (10, 16)), ["defn"], []);
-                ("B", "B", "file1", ((10, 6), (10, 7)), ["pattern"], []);
                 ("val x", "x", "file1", ((7, 4), (7, 5)), ["defn"], ["val"]);
                 ("NamedUnionFields", "NamedUnionFields", "file1", ((2, 7), (2, 23)),
                  ["defn"], ["module"])|]
@@ -3809,7 +3803,7 @@ let ``Test Project26 parameter symbols`` () =
     
     let rec isByRef (ty: FSharpType) = 
         if ty.IsAbbreviation then isByRef ty.AbbreviatedType 
-        else ty.IsNamedType && ty.NamedEntity.IsByRef
+        else ty.HasTypeDefinition && ty.TypeDefinition.IsByRef
 
     // check we can get the CurriedParameterGroups
     let objMethodsCurriedParameterGroups = 
@@ -3940,7 +3934,7 @@ type Use() =
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 #if !NO_EXTENSIONTYPING
 [<Test>]
-let ``Test project28 all symbols in signature`` () = 
+let ``Test project28 all symbols in signature`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project28.options) |> Async.RunSynchronously
     let allSymbols = allSymbolsInEntities true wholeProjectResults.AssemblySignature.Entities
     let xmlDocSigs =
@@ -3970,9 +3964,9 @@ let ``Test project28 all symbols in signature`` () =
               ("FSharpMemberOrFunctionOrValue", "TestNumber", "M:M.TestNumber(System.Int32)");
               ("FSharpEntity", "DU", "T:M.DU"); 
               ("FSharpUnionCase", "A", "T:M.DU.A");
-              ("FSharpField", "A", "T:M.DU.A"); 
+              ("FSharpField", "Item", "T:M.DU.A"); 
               ("FSharpUnionCase", "B", "T:M.DU.B");
-              ("FSharpField", "B", "T:M.DU.B");
+              ("FSharpField", "Item", "T:M.DU.B");
               ("FSharpEntity", "XmlDocSigTest", "T:M.XmlDocSigTest");
               ("FSharpMemberOrFunctionOrValue", "( .ctor )", "M:M.XmlDocSigTest.#ctor");
               ("FSharpMemberOrFunctionOrValue", "AMethod", "M:M.XmlDocSigTest.AMethod");
@@ -4871,15 +4865,15 @@ let ``Test project38 abstract slot information`` () =
         [|
             ".ctor", []
             "Generic", ["type OverrideTests.B<'YY> original generics: <'Y> with member Generic : 'Y -> Microsoft.FSharp.Core.unit"]
-            "OverrideTests-I`1-Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic : named:'X -> Microsoft.FSharp.Core.unit"]
-            "OverrideTests-I`1-Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic<'Y> : 'X * 'Y -> Microsoft.FSharp.Core.unit"]
+            "OverrideTests.I<'XX>.Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic : named:'X -> Microsoft.FSharp.Core.unit"]
+            "OverrideTests.I<'XX>.Generic", ["type OverrideTests.I<'XX> original generics: <'X> with member Generic<'Y> : 'X * 'Y -> Microsoft.FSharp.Core.unit"]
             "Method", ["type OverrideTests.B<'YY> original generics: <'Y> with member Method : () -> Microsoft.FSharp.Core.unit"]
-            "OverrideTests-I`1-Method", ["type OverrideTests.I<'XX> original generics: <'X> with member Method : () -> Microsoft.FSharp.Core.unit"]
+            "OverrideTests.I<'XX>.Method", ["type OverrideTests.I<'XX> original generics: <'X> with member Method : () -> Microsoft.FSharp.Core.unit"]
             "NotOverride", []
             "add_Event", ["type OverrideTests.B<'YY> original generics: <'Y> with member add_Event : Microsoft.FSharp.Control.Handler<Microsoft.FSharp.Core.unit> -> Microsoft.FSharp.Core.unit"]
             "get_Event", ["type OverrideTests.B<'YY> with member get_Event : () -> Microsoft.FSharp.Core.unit"]
             "get_Property", ["type OverrideTests.B<'YY> original generics: <'Y> with member get_Property : () -> Microsoft.FSharp.Core.int"]
-            "OverrideTests-I`1-get_Property", ["type OverrideTests.I<'XX> original generics: <'X> with member get_Property : () -> Microsoft.FSharp.Core.int"]
+            "OverrideTests.I<'XX>.get_Property", ["type OverrideTests.I<'XX> original generics: <'X> with member get_Property : () -> Microsoft.FSharp.Core.int"]
             "remove_Event", ["type OverrideTests.B<'YY> original generics: <'Y> with member remove_Event : Microsoft.FSharp.Control.Handler<Microsoft.FSharp.Core.unit> -> Microsoft.FSharp.Core.unit"]
             "get_Property", ["type OverrideTests.B<'YY> original generics: <'Y> with member get_Property : () -> Microsoft.FSharp.Core.int"]
             "get_Event", ["type OverrideTests.B<'YY> with member get_Event : () -> Microsoft.FSharp.Core.unit"]
@@ -5231,9 +5225,9 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
     // In background analysis and normal compiler checking, the errors are reported w.r.t. the line directives
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunSynchronously
     for e in wholeProjectResults.Errors do 
-        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.FileName
+        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in wholeProjectResults.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
+    [ for e in wholeProjectResults.Errors -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
 
     // In foreground analysis routines, used by visual editing tools, the errors are reported w.r.t. the source
     // file, which is assumed to be in the editor, not the other files referred to by line directives.
@@ -5243,9 +5237,9 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
         |> function (_,FSharpCheckFileAnswer.Succeeded x) ->  x | _ -> failwith "unexpected aborted"
 
     for e in checkResults1.Errors do 
-        printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.FileName
+        printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in checkResults1.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
+    [ for e in checkResults1.Errors -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
 
@@ -5577,7 +5571,7 @@ module Nested =
     |> List.ofSeq
     |> List.map(fun openDeclaration -> tups openDeclaration.AppliedScope)
     |> shouldEqual
-           [ (4, 5), (7, 15)
+           [ (4, 0), (7, 15)
              (6, 0), (7, 15)
-             (11, 5), (14, 15)
+             (11, 0), (14, 15)
              (13, 0), (14, 15) ]

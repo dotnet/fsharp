@@ -4,11 +4,13 @@
 namespace FSharp.Compiler.AbstractIL.Internal
 
 open System.IO
+open System.IO.MemoryMappedFiles
 open Internal.Utilities
-
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.Internal 
 
+module Utils =
+    val runningOnMono: bool
 
 module internal Bytes = 
     /// returned int will be 0 <= x <= 255
@@ -23,6 +25,7 @@ module internal Bytes =
     val stringAsUnicodeNullTerminated: string -> byte[]
     val stringAsUtf8NullTerminated: string -> byte[]
 
+/// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
 [<AbstractClass>]
 type internal ByteMemory =
@@ -83,19 +86,31 @@ type internal ReadOnlyByteMemory =
 
     member AsStream: unit -> Stream
 
-type ByteMemory with
+[<AutoOpen>]
+module internal MemoryMappedFileExtensions =
+
+    type MemoryMappedFile with
+
+        /// Create a memory mapped file based on the given ByteMemory's contents.
+        /// If the given ByteMemory's length is zero or a memory mapped file is not supported, the result will be None.
+        static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
+
+type internal ByteMemory with
 
     member AsReadOnly: unit -> ReadOnlyByteMemory
 
-    /// Create another ByteMemory object that has a backing memory mapped file based on another ByteMemory's contents.
-    static member CreateMemoryMappedFile: ReadOnlyByteMemory -> ByteMemory
+    /// Empty byte memory.
+    static member Empty: ByteMemory
+
+    /// Create a ByteMemory object that has a backing memory mapped file.
+    static member FromMemoryMappedFile: MemoryMappedFile -> ByteMemory
 
     /// Creates a ByteMemory object that has a backing memory mapped file from a file on-disk.
     static member FromFile: path: string * FileAccess * ?canShadowCopy: bool -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a raw pointer.
     /// Use with care.
-    static member FromUnsafePointer: addr: nativeint * length: int * hold: obj -> ByteMemory
+    static member FromUnsafePointer: addr: nativeint * length: int * holder: obj -> ByteMemory
 
     /// Creates a ByteMemory object that is backed by a byte array with the specified offset and length.
     static member FromArray: bytes: byte[] * offset: int * length: int -> ByteMemory
@@ -134,3 +149,20 @@ type internal ByteStream =
     member CloneAndSeek : int -> ByteStream
     member Skip : int -> unit
 #endif
+
+[<Sealed>]
+type internal ByteStorage =
+
+    member GetByteMemory : unit -> ReadOnlyByteMemory
+
+    /// Creates a ByteStorage whose backing bytes are the given ByteMemory. Does not make a copy.
+    static member FromByteMemory : ReadOnlyByteMemory -> ByteStorage
+
+    /// Creates a ByteStorage whose backing bytes are the given byte array. Does not make a copy.
+    static member FromByteArray : byte [] -> ByteStorage
+
+    /// Creates a ByteStorage that has a copy of the given ByteMemory.
+    static member FromByteMemoryAndCopy : ReadOnlyByteMemory * useBackingMemoryMappedFile: bool -> ByteStorage
+
+    /// Creates a ByteStorage that has a copy of the given byte array.
+    static member FromByteArrayAndCopy : byte [] * useBackingMemoryMappedFile: bool -> ByteStorage

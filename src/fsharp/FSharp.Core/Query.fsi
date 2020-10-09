@@ -11,19 +11,28 @@ namespace Microsoft.FSharp.Linq
     open System.Collections.Generic
 
     [<NoComparison; NoEquality; Sealed>]
+    /// <summary>
     /// A partial input or result in an F# query. This type is used to support the F# query syntax.
+    /// </summary>
+    ///
+    /// <namespacedoc><summary>
+    ///   Library functionality for F# query syntax and interoperability with .NET LINQ Expressions. See 
+    ///   also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
+    /// </summary></namespacedoc>
     type QuerySource<'T, 'Q> =
         /// <summary>
         /// A method used to support the F# query syntax.  
         /// </summary>
         new : seq<'T> -> QuerySource<'T,'Q>
+
         /// <summary>
         /// A property used to support the F# query syntax.  
         /// </summary>
         member Source : seq<'T>
 
     [<Class>]
-    /// The type used to support the F# query syntax. Use 'query { ... }' to use the query syntax.
+    /// The type used to support the F# query syntax. Use 'query { ... }' to use the query syntax. See 
+    /// also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/query-expressions">F# Query Expressions</a> in the F# Language Guide.
     type QueryBuilder =
         /// <summary>Create an instance of this builder. Use 'query { ... }' to use the query syntax.</summary>
         new : unit -> QueryBuilder
@@ -350,6 +359,13 @@ namespace Microsoft.FSharp.Linq.QueryRunExtensions
 
     open Microsoft.FSharp.Core
 
+    /// <summary>
+    /// A module used to support the F# query syntax.  
+    /// </summary>
+    ///
+    /// <namespacedoc><summary>
+    ///    Contains modules used to support the F# query syntax.  
+    /// </summary></namespacedoc>
     module LowPriority = 
         type Microsoft.FSharp.Linq.QueryBuilder with
             /// <summary>
@@ -358,6 +374,9 @@ namespace Microsoft.FSharp.Linq.QueryRunExtensions
             [<CompiledName("RunQueryAsValue")>]
             member Run : Microsoft.FSharp.Quotations.Expr<'T> -> 'T
 
+    /// <summary>
+    /// A module used to support the F# query syntax.  
+    /// </summary>
     module HighPriority = 
         type Microsoft.FSharp.Linq.QueryBuilder with
             /// <summary>

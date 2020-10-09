@@ -96,29 +96,29 @@ module NameMap =
 //------------------------------------------------------------------------- 
 module Check = 
     
-    /// Throw <c>System.InvalidOperationException()</c> if argument is <c>None</c>.
+    /// Throw <cref>System.InvalidOperationException</cref> if argument is <c>None</c>.
     /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
     let NotNone argName (arg:'T option) : 'T = 
         match arg with 
         | None -> raise (new System.InvalidOperationException(argName))
         | Some x -> x
 
-    /// Throw <c>System.ArgumentNullException()</c> if argument is <c>null</c>.
+    /// Throw <cref>System.ArgumentNullException</cref> if argument is <c>null</c>.
     let ArgumentNotNull arg argName = 
         match box(arg) with 
         | null -> raise (new System.ArgumentNullException(argName))
         | _ -> ()
        
         
-    /// Throw <c>System.ArgumentNullException()</c> if array argument is <c>null</c>.
-    /// Throw <c>System.ArgumentOutOfRangeException()</c> is array argument is empty.
+    /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
+    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is array argument is empty.
     let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName = 
         ArgumentNotNull arr argName
         if (0 = arr.Length) then
             raise (new System.ArgumentOutOfRangeException(argName))
 
-    /// Throw <c>System.ArgumentNullException()</c> if string argument is <c>null</c>.
-    /// Throw <c>System.ArgumentOutOfRangeException()</c> is string argument is empty.
+    /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
+    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
     let StringArgumentNotNullOrEmpty (s:string) argName = 
         ArgumentNotNull s argName
         if s.Length = 0 then
@@ -267,11 +267,6 @@ let mapTriple (f1, f2, f3) (a1, a2, a3) = (f1 a1, f2 a2, f3 a3)
 let mapQuadruple (f1, f2, f3, f4) (a1, a2, a3, a4) = (f1 a1, f2 a2, f3 a3, f4 a4)
 let fmap2Of2 f z (a1, a2) = let z, a2 = f z a2 in z, (a1, a2)
 
-module List = 
-    let noRepeats xOrder xs =
-        let s = Zset.addList xs (Zset.empty xOrder) // build set 
-        Zset.elements s // get elements... no repeats
-
 //---------------------------------------------------------------------------
 // Zmap rebinds
 //------------------------------------------------------------------------- 
@@ -313,19 +308,12 @@ let bufs f =
     f buf 
     buf.ToString()
 
-let buff (os: TextWriter) f x = 
+// writing to output stream via a string buffer.
+let writeViaBuffer (os: TextWriter) f x = 
     let buf = System.Text.StringBuilder 100 
     f buf x 
     os.Write(buf.ToString())
 
-// Converts "\n" into System.Environment.NewLine before writing to os. See lib.fs:buff
-let writeViaBufferWithEnvironmentNewLines (os: TextWriter) f x = 
-    let buf = System.Text.StringBuilder 100 
-    f buf x
-    let text = buf.ToString()
-    let text = text.Replace("\n", System.Environment.NewLine)
-    os.Write text
-        
 //---------------------------------------------------------------------------
 // Imperative Graphs 
 //---------------------------------------------------------------------------
@@ -560,3 +548,20 @@ module StackGuard =
     let EnsureSufficientExecutionStack recursionDepth =
         if recursionDepth > MaxUncheckedRecursionDepth then
             RuntimeHelpers.EnsureSufficientExecutionStack ()
+
+[<RequireQualifiedAccess>] 
+type MaybeLazy<'T> =
+    | Strict of 'T
+    | Lazy of Lazy<'T>
+
+    member this.Value: 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Value
+
+    member this.Force() : 'T =
+        match this with
+        | Strict x -> x
+        | Lazy x -> x.Force()
+
+let inline vsnd ((_, y): struct('T * 'T)) = y

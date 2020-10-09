@@ -2,14 +2,224 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../FSComp.resx">
     <body>
-      <trans-unit id="fSharpBannerVersion">
-        <source>{0} for F# {1}</source>
-        <target state="translated">{0} für F# {1}</target>
+      <trans-unit id="chkFeatureNotLanguageSupported">
+        <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
+        <target state="translated">Das Feature "{0}" ist in F# {1} nicht verfügbar. Verwenden Sie Sprachversion {2} oder höher.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkFeatureNotRuntimeSupported">
+        <source>Feature '{0}' is not supported by target runtime.</source>
+        <target state="translated">Das Feature "{0}" wird von der Zielruntime nicht unterstützt.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkFeatureNotSupportedInLibrary">
+        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
+        <target state="new">Feature '{0}' requires the F# library for language version {1} or greater.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csAvailableOverloads">
+        <source>Available overloads:\n{0}</source>
+        <target state="translated">Verfügbare Überladungen:\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
+        <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
+        <target state="new">A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
+        <source>Known types of arguments: {0}</source>
+        <target state="translated">Bekannte Argumenttypen: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
+        <source>Known type of argument: {0}</source>
+        <target state="translated">Bekannter Argumenttyp: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundReturnType">
+        <source>Known return type: {0}</source>
+        <target state="translated">Bekannter Rückgabetyp: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixPlural">
+        <source>Known type parameters: {0}</source>
+        <target state="translated">Bekannte Typparameter: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csNoOverloadsFoundTypeParametersPrefixSingular">
+        <source>Known type parameter: {0}</source>
+        <target state="translated">Bekannter Typparameter: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
+        <source>Argument at index {0} doesn't match</source>
+        <target state="translated">Das Argument bei Index {0} stimmt nicht überein.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
+        <source>Argument '{0}' doesn't match</source>
+        <target state="translated">Das Argument "{0}" stimmt nicht überein.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyDependency">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
+        <target state="translated">Die Typanbieter-Designerassembly "{0}" konnte aus dem Ordner "{1}" nicht geladen werden, weil eine Abhängigkeit fehlte oder nicht geladen werden konnte. Alle Abhängigkeiten der Typanbieter-Designerassembly müssen sich in demselben Ordner wie die Assembly befinden. Gemeldete Ausnahme: {2} – {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasDesignerAssemblyException">
+        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}'. The exception reported was: {2} - {3}</source>
+        <target state="translated">Die Typanbieter-Designerassembly "{0}" konnte aus dem Ordner "{1}" nicht geladen werden. Gemeldete Ausnahme: {2} – {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etProviderHasWrongDesignerAssemblyNoPath">
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. The exception reported was: {2} - {3}</source>
+        <target state="translated">Das Assemblyattribut "{0}" verweist auf eine Designerassembly "{1}", die entweder nicht geladen werden kann oder nicht vorhanden ist. Gemeldete Ausnahme: {2} – {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAndBang">
+        <source>applicative computation expressions</source>
+        <target state="translated">applikative Berechnungsausdrücke</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDefaultInterfaceMemberConsumption">
+        <source>default interface member consumption</source>
+        <target state="translated">standardmäßige Schnittstellenmembernutzung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDotlessFloat32Literal">
+        <source>dotless float32 literal</source>
+        <target state="translated">punktloses float32-Literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFixedIndexSlice3d4d">
+        <source>fixed-index slice 3d/4d</source>
+        <target state="translated">Segment 3D/4D mit feststehendem Index</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureFromEndSlicing">
+        <source>from-end slicing</source>
+        <target state="translated">Segmentierung ab Ende</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureImplicitYield">
+        <source>implicit yield</source>
+        <target state="translated">implizite yield-Anweisung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
+        <source>interfaces with multiple generic instantiation</source>
+        <target state="new">interfaces with multiple generic instantiation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNameOf">
+        <source>nameof</source>
+        <target state="translated">nameof</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureNullableOptionalInterop">
+        <source>nullable optional interop</source>
+        <target state="translated">Interop, NULL-Werte zulassend, optional</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOpenTypeDeclaration">
+        <source>open type declaration</source>
+        <target state="new">open type declaration</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureOverloadsForCustomOperations">
+        <source>overloads for custom operations</source>
+        <target state="new">overloads for custom operations</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featurePackageManagement">
+        <source>package management</source>
+        <target state="translated">Paketverwaltung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRelaxWhitespace">
+        <source>whitespace relexation</source>
+        <target state="translated">Lockerung für Leerraum</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSingleUnderscorePattern">
+        <source>single underscore pattern</source>
+        <target state="translated">Muster mit einzelnem Unterstrich</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStringInterpolation">
+        <source>string interpolation</source>
+        <target state="new">string interpolation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWildCardInForLoop">
+        <source>wild card in for loop</source>
+        <target state="translated">Platzhalter in for-Schleife</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureWitnessPassing">
+        <source>witness passing for trait constraints in F# quotations</source>
+        <target state="translated">Zeugenübergabe für Merkmalseinschränkungen in F#-Zitaten</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated">
+        <source>Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</source>
+        <target state="new">Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated2">
+        <source>.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</source>
+        <target state="new">.NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%' format specifiers.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated3">
+        <source>The '%P' specifier may not be used explicitly.</source>
+        <target state="new">The '%P' specifier may not be used explicitly.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="forFormatInvalidForInterpolated4">
+        <source>Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</source>
+        <target state="new">Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="formatDashItem">
+        <source> - {0}</source>
+        <target state="translated"> - {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
         <source>From the end slicing with requires language version 5.0, use /langversion:preview.</source>
-        <target state="new">From the end slicing with requires language version 5.0, use /langversion:preview.</target>
+        <target state="translated">Für das vom Ende ausgehende Slicing ist Sprachversion 5.0 erforderlich. Verwenden Sie /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiInvalidDirective">
+        <source>Invalid directive '#{0} {1}'</source>
+        <target state="new">Invalid directive '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionConst">
+        <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
+        <target state="new">Keyword to specify a constant literal as a type parameter argument in Type Providers.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexByteStringMayNotBeInterpolated">
+        <source>a byte string may not be interpolated</source>
+        <target state="new">a byte string may not be interpolated</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexRBraceInInterpolatedString">
+        <source>A '}}' character must be escaped (by doubling) in an interpolated string.</source>
+        <target state="new">A '}}' character must be escaped (by doubling) in an interpolated string.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexSingleQuoteInSingleQuote">
+        <source>Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</source>
+        <target state="new">Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTripleQuoteInTripleQuote">
+        <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
+        <target state="new">Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -37,9 +247,39 @@
         <target state="translated">Unbekannter Wert "{0}" für "--langversion". Verwenden Sie "--langversion:?", um die vollständige Liste anzuzeigen.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
+        <target state="translated">Für das Paketverwaltungsfeature ist Sprachversion 5.0 erforderlich. Verwenden Sie /langversion:preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEmptyFillInInterpolatedString">
+        <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
+        <target state="new">Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedString">
+        <source>Incomplete interpolated string begun at or before here</source>
+        <target state="new">Incomplete interpolated string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedStringFill">
+        <source>Incomplete interpolated string expression fill begun at or before here</source>
+        <target state="new">Incomplete interpolated string expression fill begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedTripleQuoteString">
+        <source>Incomplete interpolated triple-quote string begun at or before here</source>
+        <target state="new">Incomplete interpolated triple-quote string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEofInInterpolatedVerbatimString">
+        <source>Incomplete interpolated verbatim string begun at or before here</source>
+        <target state="new">Incomplete interpolated verbatim string begun at or before here</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -57,24 +297,99 @@
         <target state="translated">Algorithmus "{0}" wird nicht unterstützt</target>
         <note />
       </trans-unit>
+      <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
+        <source>#i is not supported by the registered PackageManagers</source>
+        <target state="new">#i is not supported by the registered PackageManagers</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAndBangNotSupported">
+        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
+        <target state="translated">Dieses Feature wird in dieser Version von F# nicht unterstützt. Möglicherweise müssen Sie "/langversion:preview" hinzufügen, um dieses Feature zu verwenden.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
-        <target state="new">This is the wrong anonymous record. It should have the fields {0}.</target>
+        <target state="translated">Dies ist der falsche anonyme Datensatz. Er muss folgende Felder umfassen: {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSubset">
         <source>This anonymous record does not have enough fields. Add the missing fields {0}.</source>
-        <target state="new">This anonymous record does not have enough fields. Add the missing fields {0}.</target>
+        <target state="translated">Dieser anonyme Datensatz weist nicht genügend Felder auf. Fügen Sie die fehlenden Felder ({0}) hinzu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameSuperset">
         <source>This anonymous record has too many fields. Remove the extra fields {0}.</source>
-        <target state="new">This anonymous record has too many fields. Remove the extra fields {0}.</target>
+        <target state="translated">Dieser anonyme Datensatz enthält zu viele Felder. Entfernen Sie die zusätzlichen Felder ({0}).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdInvalid">
+        <source>Invalid Anonymous Record type declaration.</source>
+        <target state="new">Invalid Anonymous Record type declaration.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Attribute können nicht auf Typerweiterungen angewendet werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
+        <source>Byref types are not allowed in an open type declaration.</source>
+        <target state="new">Byref types are not allowed in an open type declaration.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInterpolationMixedWithPercent">
+        <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
+        <target state="new">Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidAlignmentInInterpolatedString">
+        <source>Invalid alignment in interpolated string</source>
+        <target state="new">Invalid alignment in interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
+        <source>use! may not be combined with and!</source>
+        <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentNoArg">
+        <source>Cannot assign a value to another value marked literal</source>
+        <target state="new">Cannot assign a value to another value marked literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcLiteralFieldAssignmentWithArg">
+        <source>Cannot assign '{0}' to a value marked literal</source>
+        <target state="new">Cannot assign '{0}' to a value marked literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRequireMergeSourcesOrBindN">
+        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
+        <target state="translated">Das Konstrukt "let! ... and! ..." kann nur verwendet werden, wenn der Berechnungsausdrucks-Generator entweder eine {0}-Methode oder geeignete MergeSource- und Bind-Methoden definiert.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnableToParseInterpolatedString">
+        <source>Invalid interpolated string. {0}</source>
+        <target state="new">Invalid interpolated string. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
+        <source>Interface member '{0}' does not have a most specific implementation.</source>
+        <target state="translated">Der Schnittstellenmember "{0}" weist keine spezifischste Implementierung auf.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceWithConcreteAndVariable">
+        <source>'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</source>
+        <target state="new">'{0}' cannot implement the interface '{1}' with the two instantiations '{2}' and '{3}' because they may unify.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelInterfaceWithConcreteAndVariableObjectExpression">
+        <source>You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</source>
+        <target state="new">You cannot implement the interface '{0}' with the two instantiations '{1}' and '{2}' because they may unify.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
+        <source>The type '{0}' does not define the field, constructor or member '{1}'.</source>
+        <target state="translated">Der Typ "{0}" definiert nicht das Feld, den Konstruktor oder den Member "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameNamespace">
@@ -217,6 +532,41 @@
         <target state="translated">Verweisassemblys für .NET Framework-Verweise verwenden, wenn verfügbar (standardmäßig aktiviert).</target>
         <note />
       </trans-unit>
+      <trans-unit id="xmlDocBadlyFormed">
+        <source>This XML comment is invalid: '{0}'</source>
+        <target state="new">This XML comment is invalid: '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocDuplicateParameter">
+        <source>This XML comment is invalid: multiple documentation entries for parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: multiple documentation entries for parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocInvalidParameterName">
+        <source>This XML comment is invalid: unknown parameter '{0}'</source>
+        <target state="new">This XML comment is invalid: unknown parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingCrossReference">
+        <source>This XML comment is invalid: missing 'cref' attribute for cross-reference</source>
+        <target state="new">This XML comment is invalid: missing 'cref' attribute for cross-reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameter">
+        <source>This XML comment is incomplete: no documentation for parameter '{0}'</source>
+        <target state="new">This XML comment is incomplete: no documentation for parameter '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocMissingParameterName">
+        <source>This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</source>
+        <target state="new">This XML comment is invalid: missing 'name' attribute for parameter or parameter reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="xmlDocUnresolvedCrossReference">
+        <source>This XML comment is invalid: unresolved cross-reference '{0}'</source>
+        <target state="new">This XML comment is invalid: unresolved cross-reference '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="yieldUsedInsteadOfYieldBang">
         <source>Consider using 'yield!' instead of 'yield'.</source>
         <target state="translated">Verwenden Sie ggf. "yield!" anstelle von "yield".</target>
@@ -240,16 +590,6 @@
       <trans-unit id="buildInvalidVersionFile">
         <source>Invalid version file '{0}'</source>
         <target state="translated">Ungültige Versionsdatei "{0}".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildProductName">
-        <source>Microsoft (R) F# Compiler version {0}</source>
-        <target state="translated">Microsoft (R) F# Compiler, Version {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildProductNameCommunity">
-        <source>F# Compiler for F# {0}</source>
-        <target state="translated">F# Compiler für F# {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="buildProblemWithFilename">
@@ -1018,8 +1358,8 @@
         <note />
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
-        <source>A named argument has been assigned more than one value</source>
-        <target state="translated">Einem benannten Argument wurde mehr als ein Wert zugewiesen.</target>
+        <source>The named argument '{0}' has been assigned more than one value</source>
+        <target state="translated">Dem benannten Argument "{0}" wurden mehrere Werte zugewiesen.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGiven">
@@ -1853,13 +2193,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csCandidates">
-        <source>Candidates: {0}</source>
-        <target state="translated">Kandidaten: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csSeeAvailableOverloads">
-        <source>The available overloads are shown below.</source>
-        <target state="translated">Die verfügbaren Überladungen werden unten angezeigt.</target>
+        <source>Candidates:\n{0}</source>
+        <target state="translated">Kandidaten:\n{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="parsDoCannotHaveVisibilityDeclarations">
@@ -3558,8 +3893,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyRecordFieldsAndSimpleLetCanBeMutable">
-        <source>Only record fields and simple, non-recursive 'let' bindings may be marked mutable</source>
-        <target state="translated">Nur Datensatzfelder und einfache, nicht rekursive let-Bindungen dürfen als "mutable" markiert werden.</target>
+        <source>Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</source>
+        <target state="new">Mutable 'let' bindings can't be recursive or defined in recursive modules or namespaces</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberIsNotSufficientlyGeneric">
@@ -4239,32 +4574,32 @@
       </trans-unit>
       <trans-unit id="optsEmbedAllSource">
         <source>Embed all source files in the portable PDB file</source>
-        <target state="translated">Alle Quelldateien in der portablen PDB-Datei einbetten</target>
+        <target state="translated">Alle Quelldateien in der portierbaren PDB-Datei einbetten</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedSource">
         <source>Embed specific source files in the portable PDB file</source>
-        <target state="translated">Bestimmte Quelldateien in der portablen PDB-Datei einbetten</target>
+        <target state="translated">Bestimmte Quelldateien in der portierbaren PDB-Datei einbetten</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSourceLink">
         <source>Source link information file to embed in the portable PDB file</source>
-        <target state="translated">Die Datei mit Quelllinkinformationen, die in die portable PDB-Datei eingebettet werden soll</target>
+        <target state="translated">Die Datei mit Quelllinkinformationen, die in die portierbare PDB-Datei eingebettet werden soll</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
         <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Die Option "--embed" wird nur bei der Ausgabe einer portablen PDB unterstützt (--debug:portable oder --debug:embedded).</target>
+        <target state="translated">Die Option "--embed" wird nur bei der Ausgabe einer portierbaren PDB unterstützt (--debug:portable oder --debug:embedded).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSourceLinkRequirePortablePDBs">
         <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Die Option "--sourcelink" wird nur bei der Ausgabe einer portablen PDB unterstützt (--debug:portable oder --debug:embedded).</target>
+        <target state="translated">Die Option "--sourcelink" wird nur bei der Ausgabe einer portierbaren PDB unterstützt (--debug:portable oder --debug:embedded).</target>
         <note />
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
-        <target state="translated">Die Quelldatei ist zu groß, um in eine portable PDB eingebettet zu werden.</target>
+        <target state="translated">Die Quelldatei ist zu groß, um in eine portierbare PDB eingebettet zu werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsResource">
@@ -4284,7 +4619,7 @@
       </trans-unit>
       <trans-unit id="optsDebug">
         <source>Specify debugging type: full, portable, embedded, pdbonly. ('{0}' is the default if no debuggging type specified and enables attaching a debugger to a running program, 'portable' is a cross-platform format, 'embedded' is a cross-platform format embedded into the output file).</source>
-        <target state="translated">Geben Sie den Debugtyp an: vollständig, portabel, eingebettet, pdbonly. ("{0}" ist der Standardwert, wenn kein Debugtyp angegeben wird, und ermöglicht das Anfügen eines Debuggers an ein aktuell ausgeführtes Programm. "Portabel" ist ein plattformübergreifendes Format, "eingebettet" ein plattformübergreifendes, in die Ausgabedatei eingebettetes Format).</target>
+        <target state="translated">Geben Sie den Debugtyp an: full, portable, embedded, pdbonly. ("{0}" ist der Standardwert, wenn kein Debugtyp angegeben wird, und ermöglicht das Anfügen eines Debuggers an ein aktuell ausgeführtes Programm. "portable" ist ein plattformübergreifendes Format, "embedded" ein plattformübergreifendes, in die Ausgabedatei eingebettetes Format).</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimize">
@@ -5008,8 +5343,8 @@
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
-        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
-        <target state="translated">Dies ist kein gültiges numerisches Literal. Die folgenden numerischen Literale sind z.B. gültig: 1, 0x1, 0b0001 (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</source>
+        <target state="translated">Dies ist kein gültiges numerisches Literal. Unter anderem sind die folgenden numerischen Literale gültig: 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -5728,8 +6063,8 @@
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasWrongDesignerAssembly">
-        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded or doesn't exist. {2}</source>
-        <target state="translated">Das Assemblyattribut '{0}' bezieht sich auf eine Designerassembly '{1}', die entweder nicht geladen werden kann oder nicht vorhanden ist. {2}</target>
+        <source>Assembly attribute '{0}' refers to a designer assembly '{1}' which cannot be loaded from path '{2}'. The exception reported was: {3} - {4}</source>
+        <target state="translated">Das Assemblyattribut "{0}" verweist auf eine Designerassembly "{1}", die nicht aus dem Pfad "{2}" geladen werden kann. Gemeldete Ausnahme: {3} – {4}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderDoesNotHaveValidConstructor">
@@ -7154,7 +7489,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameMismatch">
         <source>This anonymous record does not exactly match the expected shape. Add the missing fields {0} and remove the extra fields {1}.</source>
-        <target state="needs-review-translation">Zwei anonyme Datensatztypen weisen die nicht übereinstimmenden Feldnamen "{0}" und "{1}" auf.</target>
+        <target state="translated">Dieser anonyme Datensatz stimmt nicht genau mit der erwarteten Form überein. Fügen Sie die fehlenden Felder ({0}) hinzu, und entfernen Sie die zusätzlichen Felder ({1}).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotCallExtensionMethodInrefToByref">
@@ -7239,7 +7574,7 @@
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--pathmap kann nur mit portablen PDB-Dateien verwendet werden (--debug:portable oder --debug:embedded)</target>
+        <target state="translated">--pathmap kann nur mit portierbaren PDB-Dateien verwendet werden (--debug:portable oder --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
@@ -7249,22 +7584,22 @@
       </trans-unit>
       <trans-unit id="optsCompilerTool">
         <source>Reference an assembly or directory containing a design time tool (Short form: -t)</source>
-        <target state="new">Reference an assembly or directory containing a design time tool (Short form: -t)</target>
+        <target state="translated">Verweisen Sie auf eine Assembly oder ein Verzeichnis mit einem Entwurfszeittool (Kurzform: -t).</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
-        <target state="new">Package manager key '{0}' was not registered in {1}. Currently registered: {2}</target>
+        <target state="translated">Der Paket-Manager-Schlüssel "{0}" wurde in "{1}" nicht registriert. Aktuell registriert: {2}</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
-        <target state="new">{0}</target>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
         <source>The dependency manager extension {0} could not be loaded. Message: {1}</source>
-        <target state="new">The dependency manager extension {0} could not be loaded. Message: {1}</target>
+        <target state="translated">Die Abhängigkeits-Manager-Erweiterung "{0}" konnte nicht geladen werden. Meldung: {1}</target>
         <note />
       </trans-unit>
     </body>

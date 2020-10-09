@@ -6,19 +6,17 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Diagnostics 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open FSharp.Compiler.AbstractIL.Internal.Support 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
+open FSharp.Compiler.AbstractIL.Internal.Support
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-#if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-#endif
-
 
 #if DEBUG
 let showEntryLookups = false
@@ -144,66 +142,6 @@ let applyFixup32 (data: byte[]) offset v =
     data.[offset+1] <- b1 v
     data.[offset+2] <- b2 v
     data.[offset+3] <- b3 v
-
-//---------------------------------------------------------------------
-// Strong name signing
-//---------------------------------------------------------------------
-
-type ILStrongNameSigner =  
-    | PublicKeySigner of Support.pubkey
-    | PublicKeyOptionsSigner of Support.pubkeyOptions
-    | KeyPair of Support.keyPair
-    | KeyContainer of Support.keyContainerName
-
-    static member OpenPublicKeyOptions s p = PublicKeyOptionsSigner((Support.signerOpenPublicKeyFile s), p)
-
-    static member OpenPublicKey pubkey = PublicKeySigner pubkey
-
-    static member OpenKeyPairFile s = KeyPair(Support.signerOpenKeyPairFile s)
-
-    static member OpenKeyContainer s = KeyContainer s
-
-    member s.Close() = 
-        match s with 
-        | PublicKeySigner _
-        | PublicKeyOptionsSigner _
-        | KeyPair _ -> ()
-        | KeyContainer containerName -> Support.signerCloseKeyContainer containerName
-      
-    member s.IsFullySigned =
-        match s with 
-        | PublicKeySigner _ -> false
-        | PublicKeyOptionsSigner pko -> let _, usePublicSign = pko
-                                        usePublicSign
-        | KeyPair _ | KeyContainer _ -> true
-
-    member s.PublicKey = 
-        match s with 
-        | PublicKeySigner pk -> pk
-        | PublicKeyOptionsSigner pko -> let pk, _ = pko
-                                        pk
-        | KeyPair kp -> Support.signerGetPublicKeyForKeyPair kp
-        | KeyContainer kn -> Support.signerGetPublicKeyForKeyContainer kn
-
-    member s.SignatureSize = 
-        let pkSignatureSize pk =
-            try Support.signerSignatureSize pk
-            with e -> 
-              failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-              0x80 
-        match s with 
-        | PublicKeySigner pk -> pkSignatureSize pk
-        | PublicKeyOptionsSigner pko -> let pk, _ = pko
-                                        pkSignatureSize pk
-        | KeyPair kp -> pkSignatureSize (Support.signerGetPublicKeyForKeyPair kp)
-        | KeyContainer kn -> pkSignatureSize (Support.signerGetPublicKeyForKeyContainer kn)
-
-    member s.SignFile file = 
-        match s with 
-        | PublicKeySigner _ -> ()
-        | PublicKeyOptionsSigner _ -> ()
-        | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
-        | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
 
 //---------------------------------------------------------------------
 // TYPES FOR TABLES
@@ -483,16 +421,17 @@ type MetadataTable<'T> =
 //---------------------------------------------------------------------
 
 /// We use this key type to help find ILMethodDefs for MethodRefs 
-type MethodDefKey(tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTypes, isStatic: bool) =
+type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTypes, isStatic: bool) =
     // Precompute the hash. The hash doesn't include the return type or 
     // argument types (only argument type count). This is very important, since
     // hashing these is way too expensive
-    let hashCode = 
-       hash tidx 
-       |> combineHash (hash garity) 
-       |> combineHash (hash nm) 
+    let hashCode =
+       hash tidx
+       |> combineHash (hash garity)
+       |> combineHash (hash nm)
        |> combineHash (hash argtys.Length)
        |> combineHash (hash isStatic)
+
     member key.TypeIdx = tidx
     member key.GenericArity = garity
     member key.Name = nm
@@ -500,15 +439,19 @@ type MethodDefKey(tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTyp
     member key.ArgTypes = argtys
     member key.IsStatic = isStatic
     override x.GetHashCode() = hashCode
-    override x.Equals(obj: obj) = 
-        match obj with 
-        | :? MethodDefKey as y -> 
-            tidx = y.TypeIdx && 
-            garity = y.GenericArity && 
-            nm = y.Name && 
+    override x.Equals(obj: obj) =
+        match obj with
+        | :? MethodDefKey as y ->
+            let compareILTypes o1 o2 =
+                match o1, o2 with
+                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj )
+                | _ -> o1 = o2
+
+            tidx = y.TypeIdx &&
+            garity = y.GenericArity &&
+            nm = y.Name &&
             // note: these next two use structural equality on AbstractIL ILType values
-            rty = y.ReturnType && 
-            List.lengthsEqAndForall2 (fun a b -> a = b) argtys y.ArgTypes &&
+            rty = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
@@ -1131,22 +1074,22 @@ and GetKeyForFieldDef tidx (fd: ILFieldDef) =
 and GenFieldDefPass2 cenv tidx fd = 
     ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey: FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
 
-and GetKeyForMethodDef tidx (md: ILMethodDef) = 
-    MethodDefKey (tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
+and GetKeyForMethodDef cenv tidx (md: ILMethodDef) = 
+    MethodDefKey (cenv.ilg, tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
 
-and GenMethodDefPass2 cenv tidx md = 
-    let idx = 
+and GenMethodDefPass2 cenv tidx md =
+    let idx =
       cenv.methodDefIdxsByKey.AddUniqueEntry
-         "method" 
-         (fun (key: MethodDefKey) -> 
+         "method"
+         (fun (key: MethodDefKey) ->
            dprintn "Duplicate in method table is:"
            dprintn (" Type index: "+string key.TypeIdx)
            dprintn (" Method name: "+key.Name)
            dprintn (" Method arity (num generic params): "+string key.GenericArity)
            key.Name
          )
-         (GetKeyForMethodDef tidx md) 
-    
+         (GetKeyForMethodDef cenv tidx md)
+
     cenv.methodDefIdxs.[md] <- idx
 
 and GetKeyForPropertyDef tidx (x: ILPropertyDef) = 
@@ -1235,7 +1178,7 @@ let FindMethodDefIdx cenv mdkey =
               let (TdKey (tenc2, tname2)) = typeNameOfIdx mdkey2.TypeIdx
               dprintn ("A method in '"+(String.concat "." (tenc2@[tname2]))+"' had the right name but the wrong signature:")
               dprintn ("generic arity: "+string mdkey2.GenericArity) 
-              dprintn (sprintf "mdkey2: %+A" mdkey2)) 
+              dprintn (sprintf "mdkey2: %+A" mdkey2))
       raise MethodDefNotFound
 
 
@@ -1264,7 +1207,7 @@ let GetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
         if not (isTypeRefLocal tref) then
              failwithf "method referred to by method impl, event or property is not in a type defined in this module, method ref is %A" mref
         let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
-        let mdkey = MethodDefKey (tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
+        let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
         FindMethodDefIdx cenv mdkey
     with e ->
         failwithf "Error in GetMethodRefAsMethodDefIdx for mref = %A, error: %s" (mref.Name, tref.Name) e.Message
@@ -2702,7 +2645,7 @@ let rec GetResourceAsManifestResourceRow cenv r =
             Data (alignedOffset, true), (i_File, 0)  
 
         match r.Location with 
-        | ILResourceLocation.Local bytes -> embedManagedResources bytes
+        | ILResourceLocation.Local bytes -> embedManagedResources (bytes.GetByteMemory())
         | ILResourceLocation.File (mref, offset) -> ULong offset, (i_File, GetModuleRefAsFileIdx cenv mref) 
         | ILResourceLocation.Assembly aref -> ULong 0x0, (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref) 
 
@@ -3004,7 +2947,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
         getUncodedToken TableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd))
        MethodDefTokenMap = (fun t md ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef tidx md)))
+        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef cenv tidx md)))
        PropertyTokenMap = (fun t pd ->
         let tidx = idxForNextedTypeDef t
         getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pd)))

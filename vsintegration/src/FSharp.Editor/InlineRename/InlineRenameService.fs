@@ -125,7 +125,7 @@ type internal InlineRenameInfo
                             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return 
                                 [| for symbolUse in symbolUses do
-                                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with
+                                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
                                      | Some span ->
                                          let textSpan = Tokenizer.fixupSpan(sourceText, span)
                                          yield FSharpInlineRenameLocation(document, textSpan) 
@@ -155,7 +155,7 @@ type internal InlineRenameService
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, userOpName = userOpName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
@@ -169,7 +169,7 @@ type internal InlineRenameService
     interface IFSharpEditorInlineRenameService with
         member __.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<IFSharpInlineRenameInfo> =
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, projectOptions)
