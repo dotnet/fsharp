@@ -87,13 +87,35 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(true, result.Success)
             Assert.Equal(1, result.Resolutions |> Seq.length)
             Assert.Equal(1, result.SourceFiles |> Seq.length)
-            Assert.Equal(1, result.Roots |> Seq.length)
+            Assert.Equal(2, result.Roots |> Seq.length)
 
         let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result.Success)
         Assert.Equal(1, result.Resolutions |> Seq.length)
         Assert.Equal(1, result.SourceFiles |> Seq.length)
         Assert.Equal(1, result.Roots |> Seq.length)
+        ()
+
+    [<Fact>]
+    member __.``Dependency Manager Reports package root for nuget package with no build artifacts``() =
+
+        let nativeProbingRoots () = Seq.empty<string>
+
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite, 3.1.8"|], reportError, "netcoreapp3.1")
+        Assert.Equal(true, result.Success)
+        Assert.True((result.Resolutions |> Seq.length) > 1)
+        Assert.Equal(1, result.SourceFiles |> Seq.length)
+        Assert.True(Option.isSome(result.Roots |> Seq.tryFind(fun root -> root.EndsWith("microsoft.data.sqlite/3.1.8/"))))
         ()
 
 
@@ -148,8 +170,9 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(1, result1.Resolutions |> Seq.length)
             Assert.True((result1.Resolutions |> Seq.head).Contains("\\net45\\"))
             Assert.Equal(1, result1.SourceFiles |> Seq.length)
-            Assert.Equal(1, result1.Roots |> Seq.length)
+            Assert.Equal(2, result1.Roots |> Seq.length)
             Assert.True((result1.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
+            Assert.True((result1.Roots |> Seq.last).EndsWith("/microsoft.netframework.referenceassemblies/1.0.0/"))
 
         let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data, 3.3.3"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result2.Success)
@@ -211,7 +234,7 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(6, result1.Resolutions |> Seq.length)
             Assert.True((result1.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
             Assert.Equal(1, result1.SourceFiles |> Seq.length)
-            Assert.Equal(6, result1.Roots |> Seq.length)
+            Assert.Equal(7, result1.Roots |> Seq.length)
             Assert.True((result1.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
 
         // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
@@ -578,7 +601,7 @@ x |> Seq.iter(fun r ->
             Assert.Equal(true, result.Success)
             Assert.Equal(1, result.Resolutions |> Seq.length)
             Assert.Equal(1, result.SourceFiles |> Seq.length)
-            Assert.Equal(1, result.Roots |> Seq.length)
+            Assert.Equal(2, result.Roots |> Seq.length)
 
         let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result.Success)
@@ -741,17 +764,3 @@ x |> Seq.iter(fun r ->
         output.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
-
-    [<Fact>]
-    member __.``Ensure resolutions file doesn't contain lines with only empty values``() =
-        use tempDir = getTempDir ()
-        let dpm = new FSharpDependencyManager(Some(tempDir.ToString()))
-        let resolutionResult = dpm.PrepareDependencyResolutionFiles(".fsx", [("r", "FParsec,Version=1.1.1")], "netcoreapp3.1", RidHelpers.platformRid)
-        let resolutionLines =
-            match resolutionResult.resolutionsFile with
-            | Some path -> File.ReadAllLines(path)
-            | None -> failwith "Expected resolutions file to be created."
-        let improperResolutionLines =
-            resolutionLines
-            |> Array.filter (fun l -> l.StartsWith(","))
-        Assert.Empty(improperResolutionLines)

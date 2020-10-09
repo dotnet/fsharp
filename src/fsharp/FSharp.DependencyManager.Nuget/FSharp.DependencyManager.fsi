@@ -49,6 +49,4 @@ type FSharpDependencyManager =
 
     member HelpMessages:string[]
 
-    member PrepareDependencyResolutionFiles: scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string -> PackageBuildResolutionResult
-
     member ResolveDependencies: scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string -> obj
