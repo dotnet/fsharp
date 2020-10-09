@@ -314,28 +314,6 @@ stages:
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
             displayName: End to end build tests
 
-        # Source Build Linux - disabled until MSBuild/NuGet issues are resolved
-        # - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        #   - job: SourceBuild_Linux
-        #     pool:
-        #       vmImage: ubuntu-latest
-        #     steps:
-        #     - checkout: self
-        #       clean: true
-        #     - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
-        #       displayName: Build
-        #     - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-        #       displayName: Dump NuGet cache contents
-        #       condition: failed()
-        #     - task: PublishBuildArtifacts@1
-        #       displayName: Publish NuGet cache contents
-        #       inputs:
-        #         PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-        #         ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
-        #         publishLocation: Container
-        #       continueOnError: true
-        #       condition: failed()
-
         # Source Build Windows
         - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
           - job: SourceBuild_Windows
@@ -344,19 +322,23 @@ stages:
             steps:
             - checkout: self
               clean: true
-            - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+            - script: eng\CIBuild.cmd -configuration Release -noSign -prepareMachine -sourceBuild
               displayName: Build
-            - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-              displayName: Dump NuGet cache contents
-              condition: failed()
-            - task: PublishBuildArtifacts@1
-              displayName: Publish NuGet cache contents
+            - task: PublishPipelineArtifact@1
+              displayName: Publish Logs
               inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-                ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                artifactName: 'SourceBuild_Windows Logs'
+              continueOnError: true
+              condition: not(succeeded())
+            - task: PublishBuildArtifacts@1
+              displayName: Publish Logs
+              inputs:
+                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                ArtifactName: 'SourceBuild_Windows_Test'
                 publishLocation: Container
               continueOnError: true
-              condition: failed()
+              condition: not(succeeded())
 
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
@@ -371,6 +353,49 @@ stages:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
+        # Source Build Semi-Official
+        # used until https://github.com/dotnet/source-build/issues/1795 is fixed
+        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+          - job: SourceBuild_Official
+            pool:
+              name: NetCorePublic-Pool
+              queue: BuildPool.Ubuntu.1604.amd64.Open
+            timeoutInMinutes: 90
+            steps:
+            - checkout: self
+              clean: true
+            - script: ./eng/cibuild.sh --configuration Release --prepareMachine --docker --sourceBuild
+              displayName: Build
+            - task: PublishPipelineArtifact@1
+              displayName: Publish Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                artifactName: 'SourceBuild_Official Logs'
+              continueOnError: true
+              condition: not(succeeded())
+            - task: PublishBuildArtifacts@1
+              displayName: Publish Logs
+              inputs:
+                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                ArtifactName: 'SourceBuild_Official_Test'
+                publishLocation: Container
+              continueOnError: true
+              condition: not(succeeded())
+
+    # Arcade-powered source build
+    # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
+    # - template: /eng/common/templates/jobs/jobs.yml
+    #   parameters:
+    #     enablePublishUsingPipelines: true
+    #     enablePublishBuildArtifacts: true
+    #     enablePublishBuildAssets: true
+    #     artifacts:
+    #       publish:
+    #         artifacts: true
+    #         manifests: true
+    #     runSourceBuild: true
+    #     sourceBuildParameters:
+    #       includeDefaultManagedPlatform: true
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
