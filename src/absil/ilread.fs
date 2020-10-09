@@ -52,7 +52,6 @@ module rec ILBinaryReaderImpl =
 
         let typeDefCache = ConcurrentDictionary()
         let typeRefCache = ConcurrentDictionary()
-        let typeSpecCache = ConcurrentDictionary()
         let asmRefCache = ConcurrentDictionary()
         let memberRefToILMethSpecCache = ConcurrentDictionary()
         let methDefToILMethSpecCache = ConcurrentDictionary()
@@ -85,10 +84,6 @@ module rec ILBinaryReaderImpl =
             if isCachingEnabled then
                 typeRefCache.[key] <- ilType
 
-        member _.CacheILType(key: struct(TypeSpecificationHandle * SignatureTypeKind), ilType: ILType) =
-            if isCachingEnabled then
-                typeSpecCache.[key] <- ilType
-
         member _.CacheILAssemblyRef(key: AssemblyReferenceHandle, ilAsmRef: ILAssemblyRef) =
             asmRefCache.[key] <- ilAsmRef
 
@@ -114,11 +109,6 @@ module rec ILBinaryReaderImpl =
 
         member _.TryGetCachedILType(key) =
             match typeRefCache.TryGetValue(key) with
-            | true, ilType -> ValueSome(ilType)
-            | _ -> ValueNone
-   
-        member _.TryGetCachedILType(key) =
-            match typeSpecCache.TryGetValue(key) with
             | true, ilType -> ValueSome(ilType)
             | _ -> ValueNone
 
