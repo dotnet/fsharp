@@ -71,6 +71,10 @@ Alternatively, if you _really_ want to live on the bleeding edge, you can set up
 * Set your feed to the preview feed: https://dotnet.myget.org/F/fsharp-preview/vsix
 * Install a VSIX manually from the preview feed: https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp
 
+## Per-build NuGet packages
+
+Per-build verions of our NuGet packages are available via this URL: `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json `
+
 ## Branches
 
 These are the branches in use:

@@ -242,6 +242,16 @@
         <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe 'static' modifiers differ</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="needs-review-translation">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FieldNotContainedTypesDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
         <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</target>
@@ -3875,11 +3885,6 @@
       <trans-unit id="optsWriteXml">
         <source>Write the xmldoc of the assembly to the given file</source>
         <target state="new">Write the xmldoc of the assembly to the given file</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagerError">

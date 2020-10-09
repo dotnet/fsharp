@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <Compile Include="ConsoleHelpers.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\utils\RidHelpers.fs" />
     <Compile Include="TestHelpers.fs" />
     <Compile Include="DependencyManagerInteractiveTests.fs" />
     <Compile Include="DependencyManagerLineParserTests.fs" />

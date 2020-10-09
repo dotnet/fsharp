@@ -272,6 +272,11 @@
         <target state="translated">전체 목록에 대한 --langversion use --langversion:?의 인식할 수 없는 값 '{0}'입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">패키지 관리 기능을 사용하려면 언어 버전 5.0이 필요합니다. /langversion:preview를 사용하세요.</target>

@@ -265,7 +265,7 @@ module AsyncExpr =
 
 
 
-module TryCatch =
+module TryWith =
     let foo o s = 
          let mutable x_NO = 1
          try 

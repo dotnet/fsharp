@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
+open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
@@ -89,13 +90,23 @@ type IResolveDependenciesResult =
     /// The resolution error log (* process stderror *)
     abstract StdError: string[]
 
-    /// The resolution paths
+    /// The resolution paths - the full paths to selcted resolved dll's.
+    /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
     abstract Resolutions: seq<string>
 
     /// The source code file paths
     abstract SourceFiles: seq<string>
 
     /// The roots to package directories
+    ///     This points to the root of each located package.
+    ///     The layout of the package manager will be package manager specific.
+    ///     however, the dependency manager dll understands the nuget package layout
+    ///     and so if the package contains folders similar to the nuget layout then
+    ///     the dependency manager will be able to probe and resolve any native dependencies
+    ///     required by the nuget package.
+    ///
+    /// This path is also equivalent to
+    ///     #I @"c:\somepath\to\packages\1.1.1\ResolvedPackage"
     abstract Roots: seq<string>
 
 
@@ -249,7 +260,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
                     let success, sourceFiles, packageRoots =
                         let tupleFields = result |> FSharpValue.GetTupleFields
                         match tupleFields |> Array.length with
-                        | 3 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.toSeq
+                        | 3 -> tupleFields.[0] :?> bool, tupleFields.[1] :?> string list  |> List.toSeq, tupleFields.[2] :?> string list |> List.distinct |> List.toSeq
                         | _ -> false, seqEmpty, seqEmpty
                     ReflectionDependencyManagerProvider.MakeResultFromFields(success, Array.empty, Array.empty, Seq.empty, sourceFiles, packageRoots)
                 else

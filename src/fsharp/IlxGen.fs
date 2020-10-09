@@ -2128,7 +2128,7 @@ let rec FirstEmittedCodeWillBeDebugPoint g sp expr =
             | DebugPointAtSequential.StmtOnly -> true
             | DebugPointAtSequential.ExprOnly -> false
         | Expr.Match (DebugPointAtBinding _, _, _, _, _, _) -> true
-        | Expr.Op ((TOp.TryCatch (DebugPointAtTry.Yes _, _)
+        | Expr.Op ((TOp.TryWith (DebugPointAtTry.Yes _, _)
                   | TOp.TryFinally (DebugPointAtTry.Yes _, _)
                   | TOp.For (DebugPointAtFor.Yes _, _)
                   | TOp.While (DebugPointAtWhile.Yes _, _)), _, _, _) -> true
@@ -2184,7 +2184,7 @@ let EmitDebugPointForWholeExpr g sp expr =
         // So since the 'let tmp = expr' has a sequence point, then no sequence point is needed for the 'match'. But the processing
         // of the 'let' requests SPAlways for the body.
         | Expr.Match _ -> false
-        | Expr.Op (TOp.TryCatch _, _, _, _) -> false
+        | Expr.Op (TOp.TryWith _, _, _, _) -> false
         | Expr.Op (TOp.TryFinally _, _, _, _) -> false
         | Expr.Op (TOp.For _, _, _, _) -> false
         | Expr.Op (TOp.While _, _, _, _) -> false
@@ -2375,8 +2375,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
             GenForLoop cenv cgbuf eenv (spStart, v, e1, dir, e2, e3, m) sequel
         | TOp.TryFinally (spTry, spFinally), [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)], [resty] -> 
             GenTryFinally cenv cgbuf eenv (e1, e2, m, resty, spTry, spFinally) sequel
-        | TOp.TryCatch (spTry, spWith), [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _);Expr.Lambda (_, _, _, [vh], eh, _, _)], [resty] -> 
-            GenTryCatch cenv cgbuf eenv (e1, vf, ef, vh, eh, m, resty, spTry, spWith) sequel
+        | TOp.TryWith (spTry, spWith), [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _);Expr.Lambda (_, _, _, [vh], eh, _, _)], [resty] ->
+            GenTryWith cenv cgbuf eenv (e1, vf, ef, vh, eh, m, resty, spTry, spWith) sequel
         | TOp.ILCall (virt, _, valu, newobj, valUseFlags, _, isDllImport, ilMethRef, enclArgTys, methArgTys, returnTys), args, [] -> 
             GenILCall cenv cgbuf eenv (virt, valu, newobj, valUseFlags, isDllImport, ilMethRef, enclArgTys, methArgTys, args, returnTys, m) sequel
         | TOp.RefAddrGet _readonly, [e], [ty] -> GenGetAddrOfRefCellField cenv cgbuf eenv (e, ty, m) sequel
@@ -3564,7 +3564,7 @@ and GenTry cenv cgbuf eenv scopeMarks (e1, m, resty, spTry) =
     let tryMarks = (startTryMark.CodeLabel, endTryMark.CodeLabel)
     whereToSave, eenvinner, stack, tryMarks, afterHandler, ilResultTy
 
-and GenTryCatch cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, spWith) sequel =
+and GenTryWith cenv cgbuf eenv (e1, vf: Val, ef, vh: Val, eh, m, resty, spTry, spWith) sequel =
     let g = cenv.g
 
     // Save the stack - gross because IL flushes the stack at the exn. handler

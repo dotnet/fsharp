@@ -502,7 +502,7 @@ module ByrefReturnTests =
         test()
         test2()
 
-    module TestTryCatchReturn =
+    module TestTryWithReturn =
         let mutable x = 1
         let mutable y = 1
 
@@ -815,7 +815,7 @@ module ByrefReturnMemberTests =
         test()
         test2()
 
-    module TestTryCatchReturn =
+    module TestTryWithReturn =
         let mutable x = 1
         let mutable y = 1
 

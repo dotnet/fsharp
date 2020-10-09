@@ -581,8 +581,11 @@ type ILTypeRef =
       hashCode : int
       mutable asBoxedType: ILType }
 
+    static member ComputeHash(scope, enclosing, name) =
+        hash scope * 17 ^^^ (hash enclosing * 101 <<< 1) ^^^ (hash name * 47 <<< 2)
+
     static member Create (scope, enclosing, name) =
-        let hashCode = hash scope * 17 ^^^ (hash enclosing * 101 <<< 1) ^^^ (hash name * 47 <<< 2)
+        let hashCode = ILTypeRef.ComputeHash(scope, enclosing, name)
         { trefScope=scope
           trefEnclosing=enclosing
           trefName=name
@@ -612,11 +615,31 @@ type ILTypeRef =
     override x.GetHashCode() = x.hashCode
 
     override x.Equals yobj =
-         let y = (yobj :?> ILTypeRef)
-         (x.ApproxId = y.ApproxId) &&
-         (x.Scope = y.Scope) &&
-         (x.Name = y.Name) &&
-         (x.Enclosing = y.Enclosing)
+        let y = (yobj :?> ILTypeRef)
+        (x.ApproxId = y.ApproxId) &&
+        (x.Scope = y.Scope) &&
+        (x.Name = y.Name) &&
+        (x.Enclosing = y.Enclosing)
+
+    member x.EqualsWithPrimaryScopeRef(primaryScopeRef:ILScopeRef, yobj:obj) =
+        let y = (yobj :?> ILTypeRef)
+        let isPrimary (v:ILTypeRef) =
+            match v.Scope with
+            | ILScopeRef.PrimaryAssembly -> true
+            | _ -> false
+
+        // Since we can remap the scope, we need to recompute hash ... this is not an expensive operation
+        let isPrimaryX = isPrimary x
+        let isPrimaryY = isPrimary y
+        let xApproxId = if isPrimaryX && not(isPrimaryY) then ILTypeRef.ComputeHash(primaryScopeRef, x.Enclosing, x.Name) else x.ApproxId
+        let yApproxId = if isPrimaryY && not(isPrimaryX) then ILTypeRef.ComputeHash(primaryScopeRef, y.Enclosing, y.Name) else y.ApproxId
+        let xScope = if isPrimaryX then primaryScopeRef else x.Scope
+        let yScope = if isPrimaryY then primaryScopeRef else y.Scope
+
+        (xApproxId = yApproxId) &&
+        (xScope = yScope) &&
+        (x.Name = y.Name) &&
+        (x.Enclosing = y.Enclosing)
 
     interface IComparable with
 
@@ -683,6 +706,10 @@ and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugT
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
+
+    member x.EqualsWithPrimaryScopeRef(primaryScopeRef:ILScopeRef, yobj:obj) =
+        let y = (yobj :?> ILTypeSpec)
+        x.tspecTypeRef.EqualsWithPrimaryScopeRef(primaryScopeRef, y.TypeRef) && (x.GenericArgs = y.GenericArgs)
 
     override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
 
@@ -2203,9 +2230,9 @@ type ILResourceAccess =
     | Public
     | Private
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoEquality;NoComparison>]
 type ILResourceLocation =
-    | Local of ReadOnlyByteMemory
+    | Local of ByteStorage
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
@@ -2219,7 +2246,7 @@ type ILResource =
     /// Read the bytes from a resource local to an assembly
     member r.GetBytes() =
         match r.Location with
-        | ILResourceLocation.Local bytes -> bytes
+        | ILResourceLocation.Local bytes -> bytes.GetByteMemory()
         | _ -> failwith "GetBytes"
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex

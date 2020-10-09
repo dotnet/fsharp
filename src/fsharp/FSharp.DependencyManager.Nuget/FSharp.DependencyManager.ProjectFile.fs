@@ -26,8 +26,8 @@ type internal Resolution =
       FullPath : string
       AssetType: string
       IsNotImplementationReference: string
-      NativePath : string
       InitializeSourcePath : string
+      NativePath : string
     }
 
 
@@ -69,7 +69,6 @@ module internal ProjectFile =
                     String.IsNullOrEmpty(r.PackageRoot)) &&
                 Directory.Exists(r.PackageRoot))
             |> Array.map(fun r -> r.PackageRoot)
-            |> Array.distinct
 
         let nativeRoots =
             resolutions
@@ -78,9 +77,9 @@ module internal ProjectFile =
                     String.IsNullOrEmpty(r.NativePath)) &&
                 Directory.Exists(r.NativePath))
             |> Array.map(fun r -> r.NativePath)
-            |> Array.distinct
 
-        Array.concat [|managedRoots; nativeRoots|]
+        Array.concat [|managedRoots; nativeRoots|] |> Array.distinct
+
 
     let getResolutionsFromFile resolutionsFile =
 
@@ -194,11 +193,25 @@ $(PACKAGEREFERENCES)
             Condition="'%(RuntimeTargetsCopyLocalItems.AssetType)' == 'native'">
             <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
         </NativeIncludeRoots>
+
         <NativeIncludeRoots
             Include="@(NativeCopyLocalItems)"
             Condition="'%(NativeCopyLocalItems.AssetType)' == 'native'">
             <Path>$([MSBuild]::EnsureTrailingSlash('$([System.String]::Copy('%(FullPath)').Substring(0, $([System.String]::Copy('%(FullPath)').LastIndexOf('runtimes'))))'))</Path>
         </NativeIncludeRoots>
+
+        <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)').Replace('.','_'))" />
+        <PropertyNames Include = "Pkg$([System.String]::Copy('%(PackageReference.FileName)%(PackageReference.Extension)').Replace('.','_'))"/>
+
+        <ProvidedPackageRoots Include = "$(%(PropertyNames.FileName))" Condition="'$(%(PropertyNames.FileName))' != ''">
+          <ParentDirectory>$([System.IO.Path]::GetDirectoryName('$(%(PropertyNames.FileName))'))</ParentDirectory>
+          <NugetPackageId>$([System.IO.Path]::GetFileName('%(ProvidedPackageRoots.ParentDirectory)'))</NugetPackageId>
+          <NugetPackageVersion>$([System.IO.Path]::GetFileName('$(%(PropertyNames.FileName))'))</NugetPackageVersion>
+          <AssetType>package</AssetType>
+          <PackageRoot>$([MSBuild]::EnsureTrailingSlash('$(%(PropertyNames.FileName))'))</PackageRoot>
+          <PackageRoot>$([System.String]::Copy('%(ProvidedPackageRoots.PackageRoot)').Replace('\', '/'))</PackageRoot>
+          <Path>%(ProvidedPackageRoots.PackageRoot)</Path>
+        </ProvidedPackageRoots>
       </ItemGroup>
   </Target>
 
@@ -210,12 +223,16 @@ $(PACKAGEREFERENCES)
     <ItemGroup>
       <ResolvedReferenceLines Remove='*' />
       <ResolvedReferenceLines
-          Condition=" ('%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core') or ('$(SCRIPTEXTENSION)'!='.fsx' and '%(InteractiveResolvedFile.NugetPackageId)'=='FSharp.Core')"
+          Condition="(@(InteractiveResolvedFile->Count()) &gt; 0) AND (('%(InteractiveResolvedFile.NugetPackageId)'!='FSharp.Core') or ('$(SCRIPTEXTENSION)'!='.fsx' and '%(InteractiveResolvedFile.NugetPackageId)'=='FSharp.Core'))"
           Include='%(InteractiveResolvedFile.NugetPackageId),%(InteractiveResolvedFile.NugetPackageVersion),%(InteractiveResolvedFile.PackageRoot),%(InteractiveResolvedFile.FullPath),%(InteractiveResolvedFile.AssetType),%(InteractiveResolvedFile.IsNotImplementationReference),%(InteractiveResolvedFile.InitializeSourcePath),'
           KeepDuplicates="false" />
       <ResolvedReferenceLines
-          Condition="('%(NativeIncludeRoots.NugetPackageId)'!='FSharp.Core') or ('$(SCRIPTEXTENSION)'!='.fsx' and '%(NativeIncludeRoots.NugetPackageId)'=='FSharp.Core')"
+          Condition="(@(NativeIncludeRoots->Count()) &gt; 0) AND (('%(NativeIncludeRoots.NugetPackageId)'!='FSharp.Core') or ('$(SCRIPTEXTENSION)'!='.fsx' and '%(NativeIncludeRoots.NugetPackageId)'=='FSharp.Core'))"
           Include='%(NativeIncludeRoots.NugetPackageId),%(NativeIncludeRoots.NugetPackageVersion),%(NativeIncludeRoots.PackageRoot),,%(NativeIncludeRoots.AssetType),,,%(NativeIncludeRoots.Path)'
+          KeepDuplicates="false" />
+      <ResolvedReferenceLines
+          Condition="(@(ProvidedPackageRoots->Count()) &gt; 0) AND (('%(ProvidedPackageRoots.NugetPackageId)'!='FSharp.Core') or ('$(SCRIPTEXTENSION)'!='.fsx' and '%(ProvidedPackageRoots.NugetPackageId)'=='FSharp.Core'))"
+          Include='%(ProvidedPackageRoots.NugetPackageId),%(ProvidedPackageRoots.NugetPackageVersion),%(ProvidedPackageRoots.PackageRoot),,%(ProvidedPackageRoots.AssetType),,,%(ProvidedPackageRoots.Path)'
           KeepDuplicates="false" />
     </ItemGroup>
 

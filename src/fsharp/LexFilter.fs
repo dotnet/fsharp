@@ -198,7 +198,7 @@ let rec isIfBlockContinuator token =
     | ODUMMY token -> isIfBlockContinuator token
     | _ -> false
 
-/// Determine the token that may align with the 'try' of a 'try/catch' or 'try/finally' without closing
+/// Determine the token that may align with the 'try' of a 'try/with' or 'try/finally' without closing
 /// the construct
 let rec isTryBlockContinuator token =
     match token with 

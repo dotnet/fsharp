@@ -195,6 +195,8 @@ type ILTypeRef =
 
     member QualifiedName: string
 
+    member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
+
     interface System.IComparable
     
 /// Type specs and types.  
@@ -208,19 +210,21 @@ type ILTypeSpec =
 
     /// The type instantiation if the type is generic, otherwise empty
     member GenericArgs: ILGenericArgs
-    
-    /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly? 
+
+    /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly?
     member Scope: ILScopeRef
     
     /// The list of enclosing type names for a nested type. If non-nil then the first of these also contains the namespace.
     member Enclosing: string list
-    
+
     /// The name of the type. This also contains the namespace if Enclosing is empty.
     member Name: string
-    
+
     /// The name of the type in the assembly using the '.' notation for nested types.
     member FullName: string
-    
+
+    member internal EqualsWithPrimaryScopeRef: ILScopeRef * obj -> bool
+
     interface System.IComparable
 
 and 
@@ -1408,11 +1412,11 @@ type ILResourceAccess =
     | Public 
     | Private 
 
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess;NoEquality;NoComparison>]
 type ILResourceLocation = 
     internal
     /// Represents a manifest resource that can be read or written to a PE file
-    | Local of ReadOnlyByteMemory
+    | Local of ByteStorage
 
     /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32

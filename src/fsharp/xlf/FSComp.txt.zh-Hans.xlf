@@ -272,6 +272,11 @@
         <target state="translated">--langversion 的值“{0}”无法识别，使用 --langversion:? 获取完整列表。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">包管理功能需要语言版本 5.0，请使用 /langversion:preview</target>

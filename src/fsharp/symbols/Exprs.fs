@@ -813,7 +813,7 @@ module FSharpExprConvert =
             | TOp.TryFinally _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
                 E.TryFinally(ConvExpr cenv env e1, ConvExpr cenv env e2) 
 
-            | TOp.TryCatch _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] -> 
+            | TOp.TryWith _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] ->
                 let vfR = ConvVal cenv vf
                 let envf = env.BindVal vf
                 let vhR = ConvVal cenv vh

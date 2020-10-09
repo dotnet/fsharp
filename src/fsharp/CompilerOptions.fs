@@ -1422,8 +1422,13 @@ let displayHelpFsc tcConfigB (blocks:CompilerOptionBlock list) =
     PrintCompilerOptionBlocks blocks
     exit 0
       
+let displayVersion tcConfigB =
+    printfn "%s" tcConfigB.productNameForBannerText
+    exit 0
+
 let miscFlagsBoth tcConfigB = 
     [   CompilerOption("nologo", tagNone, OptionUnit (fun () -> tcConfigB.showBanner <- false), None, Some (FSComp.SR.optsNologo()))
+        CompilerOption("version", tagNone, OptionUnit (fun () -> displayVersion tcConfigB), None, Some (FSComp.SR.optsVersion()))
     ]
       
 let miscFlagsFsc tcConfigB =

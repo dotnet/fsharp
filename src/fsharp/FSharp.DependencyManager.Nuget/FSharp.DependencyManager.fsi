@@ -20,16 +20,26 @@ type ResolveDependenciesResult =
     /// The resolution error log (process stderr)
     member StdError: string[]
 
-    /// The resolution paths
+    /// The resolution paths - the full paths to selected resolved dll's.
+    /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"
     member Resolutions: seq<string>
 
     /// The source code file paths
     member SourceFiles: seq<string>
 
     /// The roots to package directories
+    ///     This points to the root of each located package.
+    ///     The layout of the package manager will be package manager specific.
+    ///     however, the dependency manager dll understands the nuget package layout
+    ///     and so if the package contains folders similar to the nuget layout then
+    ///     the dependency manager will be able to probe and resolve any native dependencies
+    ///     required by the nuget package.
+    ///
+    /// This path is also equivant to
+    ///     #I @"c:\somepath\to\packages\ResolvedPackage\1.1.1\"
     member Roots: seq<string>
 
-[<DependencyManagerAttribute>] 
+[<DependencyManagerAttribute>]
 type FSharpDependencyManager =
     new: outputDir:string option -> FSharpDependencyManager
 
@@ -39,4 +49,4 @@ type FSharpDependencyManager =
 
     member HelpMessages:string[]
 
-    member ResolveDependencies: scriptExt:string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string -> obj
+    member ResolveDependencies: scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string -> obj

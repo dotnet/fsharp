@@ -540,7 +540,7 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     member __.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         comparer <- LanguagePrimitives.FastGenericComparer<'Key>
-        tree <- serializedData |> Array.map (fun (KeyValue(k, v)) -> (k, v)) |> MapTree.ofArray comparer
+        tree <- serializedData |> Array.map (fun kvp -> kvp.Key, kvp.Value) |> MapTree.ofArray comparer
         serializedData <- null
 
     static member Empty : Map<'Key, 'Value> =
@@ -670,7 +670,8 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
                 let m1 = e1.MoveNext() 
                 let m2 = e2.MoveNext()
                 (m1 = m2) && (not m1 || 
-                                 (let e1c, e2c = e1.Current, e2.Current
+                                 (let e1c = e1.Current
+                                  let e2c = e2.Current
                                   ((e1c.Key = e2c.Key) && (Unchecked.equals e1c.Value e2c.Value) && loop())))
             loop()
         | _ -> false
@@ -852,7 +853,7 @@ module Map =
 
     [<CompiledName("FoldBack")>]
     let foldBack<'Key, 'T, 'State  when 'Key : comparison> folder (table: Map<'Key, 'T>) (state:'State) =
-        MapTree.foldBack  folder table.Tree state
+        MapTree.foldBack folder table.Tree state
 
     [<CompiledName("ToSeq")>]
     let toSeq (table: Map<_, _>) =
@@ -860,11 +861,11 @@ module Map =
 
     [<CompiledName("FindKey")>]
     let findKey predicate (table : Map<_, _>) =
-        table |> toSeq |> Seq.pick (fun (k, v) -> if predicate k v then Some k else None)
+        table |> Seq.pick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
 
     [<CompiledName("TryFindKey")>]
     let tryFindKey predicate (table : Map<_, _>) =
-        table |> toSeq |> Seq.tryPick (fun (k, v) -> if predicate k v then Some k else None)
+        table |> Seq.tryPick (fun kvp -> let k = kvp.Key in if predicate k kvp.Value then Some k else None)
 
     [<CompiledName("OfList")>]
     let ofList (elements: ('Key * 'Value) list) =

@@ -3,37 +3,15 @@
 namespace Microsoft.DotNet.DependencyManager
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
+open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 
 /// Signature for Native library resolution probe callback
 /// host implements this, it's job is to return a list of package roots to probe.
 type NativeResolutionProbe = delegate of Unit -> seq<string>
-
-module internal RidHelpers =
-
-    // Computer valid dotnet-rids for this environment:
-    //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
-    //
-    // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
-    let probingRids, baseRid, platformRid =
-        let processArchitecture = RuntimeInformation.ProcessArchitecture
-        let baseRid =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "win"
-            elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "osx"
-            else "linux"
-        let platformRid =
-            match processArchitecture with
-            | Architecture.X64 ->  baseRid + "-x64"
-            | Architecture.X86 -> baseRid + "-x86"
-            | Architecture.Arm64 -> baseRid + "-arm64"
-            | _ -> baseRid + "-arm"
-        [| "any"; baseRid; platformRid |], baseRid, platformRid
-
-open RidHelpers
 
 #if NETSTANDARD
 open System.Runtime.Loader
@@ -109,7 +87,7 @@ type NativeDllResolveHandlerCoreClr (_nativeProbingRoots: NativeResolutionProbe)
                         if File.Exists(path) then
                             Some path
                         else
-                            probingRids |> Seq.tryPick(fun rid -> probeForNativeLibrary root rid name)))
+                            RidHelpers.probingRids |> Seq.tryPick(fun rid -> probeForNativeLibrary root rid name)))
 
         match probe with
         | Some path -> NativeAssemblyLoadContext.NativeLoadContext.LoadNativeLibrary(path)

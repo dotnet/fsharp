@@ -175,6 +175,9 @@
     <Compile Include="..\..\utils\PathMap.fs">
       <Link>Utilities\PathMap.fs</Link>
     </Compile>
+    <Compile Include="..\..\utils\RidHelpers.fs">
+      <Link>Utilities\RidHelpers.fs</Link>
+    </Compile>
     <Compile Include="..\range.fsi">
       <Link>ErrorLogging\range.fsi</Link>
     </Compile>

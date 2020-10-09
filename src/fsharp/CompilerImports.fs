@@ -79,7 +79,7 @@ let IsReflectedDefinitionsResource (r: ILResource) =
 
 let MakeILResource rName bytes = 
     { Name = rName
-      Location = ILResourceLocation.Local(ByteMemory.FromArray(bytes).AsReadOnly())
+      Location = ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
       Access = ILResourceAccess.Public
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
@@ -87,8 +87,15 @@ let MakeILResource rName bytes =
 let PickleToResource inMem file (g: TcGlobals) scope rName p x =
     let file = PathMap.apply g.pathMap file
 
+    let bytes = pickleObjWithDanglingCcus inMem file g scope p x
+    let byteStorage =
+        if inMem then
+            ByteStorage.FromByteArrayAndCopy(bytes, useBackingMemoryMappedFile = true)
+        else
+            ByteStorage.FromByteArray(bytes)
+
     { Name = rName
-      Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.Local(ByteMemory.FromArray(bytes).AsReadOnly()))
+      Location = ILResourceLocation.Local(byteStorage)
       Access = ILResourceAccess.Public
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
