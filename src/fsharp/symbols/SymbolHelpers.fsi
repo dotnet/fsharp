@@ -39,7 +39,7 @@ type public FSharpErrorInfo =
     member Subcategory: string
     member ErrorNumber: int
 
-    internal new : fileName: string * startPos: pos * endPos: pos * severity: FSharpErrorSeverity * message: string * subcategory: string * errorNum: int -> FSharpErrorInfo
+    internal new : range: range * severity: FSharpErrorSeverity * message: string * subcategory: string * errorNum: int -> FSharpErrorInfo
     static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpErrorInfo
     static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpErrorInfo
 

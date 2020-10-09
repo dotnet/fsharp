@@ -176,7 +176,8 @@ type ExternalDiagnostics(fileName: string) =
                         let (|Severity|_|) (s:string) = match s with "warning" -> Some FSharpErrorSeverity.Warning | "error" -> Some FSharpErrorSeverity.Error | _ -> None
                         match fragments with 
                         | [| _; Int32 startPosLine; Int32 startPosChar; Int32 endPosLine; Int32 endPosChar; Severity severity; message; Int32 errorNum |] -> 
-                            let errorInfo = FSharpErrorInfo(fileName, mkPos startPosLine startPosChar, mkPos endPosLine endPosChar, severity, message, BuildPhaseSubcategory.TypeCheck, errorNum)   
+                            let m = mkRange fileName (mkPos startPosLine startPosChar) (mkPos endPosLine endPosChar)
+                            let errorInfo = FSharpErrorInfo(m, severity, message, BuildPhaseSubcategory.TypeCheck, errorNum)   
                             yield errorInfo 
                         | _ -> () |]
 
