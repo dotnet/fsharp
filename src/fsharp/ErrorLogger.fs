@@ -4,6 +4,7 @@ module public FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler 
 open FSharp.Compiler.Range
+open FSharp.Compiler.Features
 open System
 
 //------------------------------------------------------------------------
@@ -90,7 +91,12 @@ exception PossibleUnverifiableCode of range
 
 exception UnresolvedReferenceNoRange of (*assemblyName*) string 
 exception UnresolvedReferenceError of (*assemblyName*) string * range
-exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string
+exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string with
+    override this.Message =
+        match this :> exn with
+        | UnresolvedPathReferenceNoRange(assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
+        | _ -> "impossible"
+
 exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
 
 
@@ -441,8 +447,8 @@ let PushThreadBuildPhaseUntilUnwind (phase:BuildPhase) =
 let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #ErrorLogger) =
     let oldErrorLogger = CompileThreadStatic.ErrorLogger
     let newErrorLogger = errorLoggerTransformer oldErrorLogger
-    let newInstalled = ref true
-    let newIsInstalled() = if !newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
+    let mutable newInstalled = true
+    let newIsInstalled() = if newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
                              member __.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
                              member __.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
@@ -452,7 +458,7 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     { new System.IDisposable with 
          member __.Dispose() =
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
-            newInstalled := false }
+            newInstalled <- false }
 
 let SetThreadBuildPhaseNoUnwind(phase:BuildPhase) = CompileThreadStatic.BuildPhase <- phase
 let SetThreadErrorLoggerNoUnwind errorLogger     = CompileThreadStatic.ErrorLogger <- errorLogger
@@ -675,3 +681,30 @@ type public FSharpErrorSeverityOptions =
 // this back in.
 // let dummyMethodFOrBug6417A() = () 
 // let dummyMethodFOrBug6417B() = () 
+
+let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    if not (langVersion.SupportsFeature langFeature) then
+        let featureStr = langVersion.GetFeatureString langFeature
+        let currentVersionStr = langVersion.SpecifiedVersionString
+        let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+        Some (Error(FSComp.SR.chkFeatureNotLanguageSupported(featureStr, currentVersionStr, suggestedVersionStr), m))
+    else
+        None
+
+let internal checkLanguageFeatureError langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> error (e)
+    | None -> ()
+
+let internal checkLanguageFeatureErrorRecover langVersion langFeature m =
+    match tryLanguageFeatureErrorAux langVersion langFeature m with
+    | Some e -> errorR e
+    | None -> ()
+
+let internal tryLanguageFeatureErrorOption langVersion langFeature m =
+    tryLanguageFeatureErrorAux langVersion langFeature m
+
+let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    let featureStr = langVersion.GetFeatureString langFeature
+    let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+    error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary(featureStr, suggestedVersionStr), m))

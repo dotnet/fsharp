@@ -3,11 +3,12 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array3D module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
+open Utils
 
 (*
 [Test Strategy]
@@ -19,16 +20,29 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array3Module() =
+    let array3d (arrs: 'a array array array ) = Array3D.init arrs.Length arrs.[0].Length arrs.[0].[0].Length  (fun i j k -> arrs.[i].[j].[k])
+
 
     let VerifyDimensions arr x y z =
-        if Array3D.length1 arr <> x then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array3D.length2 arr <> y then Assert.Fail("Array3D does not have expected dimensions.")
-        if Array3D.length3 arr <> z then Assert.Fail("Array3D does not have expected dimensions.")
+        if Array3D.length1 arr <> x then Assert.Fail("Expected length1 to be " + (Array3D.length1 arr).ToString() + " but got " + x.ToString())
+        if Array3D.length2 arr <> y then Assert.Fail("Expected length2 to be " + (Array3D.length2 arr).ToString() + " but got " + x.ToString())
+        if Array3D.length3 arr <> z then Assert.Fail("Expected length3 to be " + (Array3D.length3 arr).ToString() + " but got " + x.ToString())
         ()
 
-    [<Test>]
+    let shouldBeEmpty arr = 
+        if Array3D.length3 arr <> 0 
+        && Array3D.length2 arr <> 0
+        && Array3D.length1 arr <> 0 then 
+            Assert.Fail("Array3D is not empty.")
+
+    let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+    [<Fact>]
     member this.Create() =
         // integer array  
         let intArr = Array3D.create 3 4 5 168
@@ -47,7 +61,7 @@ type Array3Module() =
         
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.Init() =
             
         // integer array  
@@ -63,7 +77,7 @@ type Array3Module() =
         VerifyDimensions intArr 3 3 3
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Get() =
         
         // integer array  
@@ -91,7 +105,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.get nullArr 1 1 1 |> ignore)  
         ()
     
-    [<Test>]
+    [<Fact>]
     member this.Iter() =
 
         // integer array  
@@ -101,7 +115,7 @@ type Array3Module() =
         let addToTotal x = resultInt := !resultInt + x              
         
         Array3D.iter addToTotal intArr 
-        Assert.IsTrue(!resultInt = 726)
+        Assert.True(!resultInt = 726)
         
         // string array 
         let strArr = Array3D.init 2 3 2 (fun i j k-> i.ToString() + "-" + j.ToString() + "-" + k.ToString())
@@ -110,7 +124,7 @@ type Array3Module() =
         let addElement (x:string) = resultStr := (!resultStr) + x + ","  
 
         Array3D.iter addElement strArr  
-        Assert.IsTrue(!resultStr = "0-0-0,0-0-1,0-1-0,0-1-1,0-2-0,0-2-1,1-0-0,1-0-1,1-1-0,1-1-1,1-2-0,1-2-1,")
+        Assert.True(!resultStr = "0-0-0,0-0-1,0-1-0,0-1-1,0-2-0,0-2-1,1-0-0,1-0-1,1-1-0,1-1-1,1-2-0,1-2-1,")
         
         // empty array
         let emptyArray = Array3D.create 0 0 0 0
@@ -121,7 +135,7 @@ type Array3Module() =
         CheckThrowsArgumentNullException(fun () -> Array3D.iter (fun x -> Assert.Fail("Souldn't be called")) nullArr)
         ()   
 
-    [<Test>]
+    [<Fact>]
     member this.Iteri() =
 
         // integer array  
@@ -152,7 +166,7 @@ type Array3Module() =
         CheckThrowsArgumentNullException (fun () -> Array3D.iteri funStr nullArr |> ignore)  
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.Length1() =
     
         // integer array  
@@ -176,7 +190,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.length1 nullArr |> ignore)  
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Length2() =
     
         // integer array  
@@ -200,7 +214,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.length2 nullArr |> ignore)  
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Length3() = 
     
         // integer array  
@@ -223,7 +237,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.length3 nullArr |> ignore)  
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.Map() =
         
         // integer array  
@@ -248,7 +262,7 @@ type Array3Module() =
         CheckThrowsArgumentNullException (fun () -> Array3D.map funStr nullArr |> ignore)  
         ()   
 
-    [<Test>]
+    [<Fact>]
     member this.Mapi() =
 
         // integer array  
@@ -276,22 +290,22 @@ type Array3Module() =
         () 
 
 
-    [<Test>]
+    [<Fact>]
     member this.Set() =
 
         // integer array  
         let intArr = Array3D.init 2 3 2(fun i j k -> i*100 + j*10 + k)
         
-        Assert.IsFalse(intArr.[1,1,1] = -1)
+        Assert.False(intArr.[1,1,1] = -1)
         Array3D.set intArr 1 1 1 -1
-        Assert.IsTrue(intArr.[1,1,1] = -1)
+        Assert.True(intArr.[1,1,1] = -1)
 
         // string array 
         let strArr = Array3D.init 2 3 2 (fun i j k-> i.ToString() + "-" + j.ToString()+ "-" + k.ToString())
         
-        Assert.IsFalse(strArr.[1,1,1] = "custom")
+        Assert.False(strArr.[1,1,1] = "custom")
         Array3D.set strArr 1 1 1 "custom"
-        Assert.IsTrue(strArr.[1,1,1] = "custom")
+        Assert.True(strArr.[1,1,1] = "custom")
 
         // Out of bounds checks
         CheckThrowsIndexOutRangException(fun () -> Array3D.set strArr 2 0 0 "out of bounds")
@@ -307,7 +321,7 @@ type Array3Module() =
         CheckThrowsNullRefException (fun () -> Array3D.set  nullArr 0 0 0 "")  
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.ZeroCreate() =
             
         let intArr : int[,,] = Array3D.zeroCreate 2 3 2
@@ -316,7 +330,7 @@ type Array3Module() =
             
         let structArray : DateTime[,,] = Array3D.zeroCreate 1 1 1
         let defaultVal = new DateTime()
-        Assert.IsTrue(Array3D.get structArray 0 0 0 = defaultVal)
+        Assert.True(Array3D.get structArray 0 0 0 = defaultVal)
 
         let strArr : string[,,] = Array3D.zeroCreate 2 3 2
         for i in 0 .. 1 do
@@ -330,3 +344,179 @@ type Array3Module() =
         CheckThrowsArgumentException(fun () -> Array3D.zeroCreate 1 1 -1 |> ignore)
         
         ()
+
+    [<Fact>]
+    member this.``Slicing with reverse index in all 3 slice expr behaves as expected``()  = 
+        let arr = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+
+        Assert.Equal(arr.[..^1, ^1..^0, ^2..], arr.[..3, 3..4, 2..])
+
+    [<Fact>]
+    member this.``Set slice with reverse index in all 3 slice expr behaves as expected``()  = 
+        let arr1 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+        let arr2 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+
+        let setSlice = Array3D.create 2 2 2 0
+
+        arr1.[^1..^0, ^2..3, 1..^2] <- setSlice
+        arr2.[3..4, 2..3, 1..2] <- setSlice
+
+        Assert.Equal(arr1, arr2)
+
+    [<Fact>]
+    member this.``Indexer with reverse index in one dim behaves as expected``() = 
+        let arr1 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+ 
+        Assert.AreEqual(arr1.[^1,0,0], 300)
+
+    [<Fact>]
+    member this.``Indexer with reverse index in all dim behaves as expected``() = 
+        let arr1 = Array3D.init 5 5 5 (fun i j k -> i*100 + j*10 + k)
+ 
+        Assert.AreEqual(arr1.[^0,^1,^0], 434)
+
+    [<Fact>]
+    member this.``Set item with reverse index in all dims behave as expected``() = 
+        let arr1 = Array3D.create 5 5 5 2
+
+        arr1.[^1,^0,^0] <- 9
+        Assert.AreEqual(arr1.[3,4,4], 9)
+
+    [<Fact>]
+    member this.SlicingBoundedStartEnd() = 
+        shouldEqual m1.[*,*,*]  m1
+        shouldEqual m1.[0..,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+        shouldEqual m1.[0..0,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |] |])
+        shouldEqual m1.[1..1,*,*]  
+           (array3d [| 
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+
+        shouldEqual m1.[*,1..1,*]  
+           (array3d [| 
+                     [| [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[..1,*,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[*,0..0,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];  |] |] )
+        shouldEqual m1.[*,0..1,*]  
+           (array3d [| 
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+        shouldEqual m1.[*,*,0..0]  
+           (array3d [| 
+                     [| [| 1.0|];
+                        [| 11.0|]  |]
+                     [| [| 10.0|];
+                        [| 100.0 |]  |] |] )
+        shouldEqual m1.[*,*,0..5]  
+           (array3d [|   
+                     [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                        [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
+
+    [<Fact>]
+    member this.SlicingOutOfBounds() = 
+        shouldBeEmpty m1.[*,*,7..] 
+        shouldBeEmpty m1.[*,*,.. -1]  
+
+        shouldBeEmpty m1.[*,3..,*]  
+        shouldBeEmpty m1.[*,.. -1,*]
+
+        shouldBeEmpty m1.[3..,*,*] 
+        shouldBeEmpty m1.[.. -1,*,*]  
+
+    member this.SlicingSingleFixed1() =
+        let m1 = (array3d [| 
+                            [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                               [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                            [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                               [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.; 0.; 0.; 0. ; 0.;|]
+        m1.[0,0,*] <- newSlice
+        Assert.AreEqual(m1.[1,0,0], 10.0)
+        Assert.AreEqual(m1.[0,0,*], newSlice)
+        
+    [<Fact>]
+    member this.SlicingSingleFixed2() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.;|]
+        m1.[0,*,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        Assert.AreEqual(m1.[0,*,0], newSlice)
+
+    [<Fact>]
+    member this.SlicingSingleFixed3() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = [|0.; 0.|]
+        m1.[*,0,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        Assert.AreEqual(m1.[*,0,0], newSlice)
+
+    [<Fact>]
+    member this.SlicingDoubleFixed1() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
+        m1.[0,*,*] <- newSlice
+        Assert.AreEqual(m1.[1,0,0], 10.0)
+        shouldEqual m1.[0,*,*] newSlice
+        
+    [<Fact>]
+    member this.SlicingDoubleFixed2() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.;|]; [|0.; 0.;|] |]
+        m1.[*,*,0] <- newSlice
+        Assert.AreEqual(m1.[0,0,1], 2.0)
+        shouldEqual m1.[*,*,0] newSlice
+
+    [<Fact>]
+    member this.SlicingDoubleFixed3() =
+        let m1 = (array3d [| 
+                        [| [| 1.0;2.0;3.0;4.0;5.0;6.0 |];
+                           [| 11.0;21.0;31.0;41.0;51.0;61.0 |]  |]
+                        [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
+                           [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |])
+
+        let newSlice = array2D [| [|0.; 0.; 0.; 0.; 0. ; 0.;|]; [|0.; 0.; 0.; 0.; 0. ; 0.;|] |]
+        m1.[*,0,*] <- newSlice
+        Assert.AreEqual(m1.[0,1,0], 11.0)
+        shouldEqual m1.[*,0,*] newSlice

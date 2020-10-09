@@ -27,6 +27,7 @@ type public Fsc () as this =
     let mutable checksumAlgorithm: string = null
     let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
+    let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
@@ -63,7 +64,7 @@ type public Fsc () as this =
     let mutable targetProfile : string = null
     let mutable targetType : string = null
     let mutable toolExe : string = "fsc.exe"
-    let mutable toolPath : string =
+    let defaultToolPath =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
             with _ -> None
@@ -162,6 +163,12 @@ type public Fsc () as this =
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
+
+        // CompilerTools
+        if compilerTools <> null then 
+            for item in compilerTools do
+                builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
+
         // References
         if references <> null then 
             for item in references do
@@ -275,6 +282,11 @@ type public Fsc () as this =
     member fsc.CodePage
         with get() = codePage
         and set(s) = codePage <- s
+
+    // -r <string>: Reference an F# or .NET assembly.
+    member fsc.CompilerTools
+        with get() = compilerTools
+        and set(a) = compilerTools <- a
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member fsc.DebugSymbols
@@ -459,11 +471,6 @@ type public Fsc () as this =
     member fsc.TreatWarningsAsErrors
         with get() = treatWarningsAsErrors
         and set(p) = treatWarningsAsErrors <- p
-        
-    // For targeting other folders for "fsc.exe" (or ToolExe if different)
-    member fsc.ToolPath
-        with get() = toolPath
-        and set(s) = toolPath <- s
 
     // When set to true, generate resource names in the same way as C# with root namespace and folder names
     member fsc.UseStandardResourceNames
@@ -524,8 +531,9 @@ type public Fsc () as this =
     override fsc.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
     override fsc.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
     override fsc.GenerateFullPathToTool() =
-        if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
-        System.IO.Path.Combine(toolPath, fsc.ToolExe)
+        if defaultToolPath = "" then
+            raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
+        System.IO.Path.Combine(defaultToolPath, fsc.ToolExe)
     override fsc.LogToolCommand (message:string) =
         fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |>ignore
 
@@ -567,8 +575,8 @@ type public Fsc () as this =
                     invokeCompiler baseCallDelegate
                 with
                 | e ->
-                        Debug.Assert(false, "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
-                        reraise()
+                    Debug.Fail("HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. " + (e.ToString()))
+                    reraise()
 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
@@ -577,7 +585,7 @@ type public Fsc () as this =
 
     override fsc.GenerateResponseFileCommands() =
         let builder = generateCommandLineBuilder ()
-        builder.GetCapturedArguments() |> Seq.fold(fun acc f -> acc + f + Environment.NewLine) ""
+        builder.GetCapturedArguments() |> String.concat Environment.NewLine
 
     // expose this to internal components (for nunit testing)
     member internal fsc.InternalGenerateCommandLineCommands() =

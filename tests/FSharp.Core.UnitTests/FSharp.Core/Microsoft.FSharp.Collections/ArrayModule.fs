@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -18,23 +18,22 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
-[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type ArrayModule() =
 
-    [<Test>]
+    [<Fact>]
     member this.Empty() =
         let emptyArray = Array.empty
         if Array.length emptyArray <> 0 then Assert.Fail()    
         
         let c : int[]   = Array.empty<int>
-        Assert.IsTrue( (c = [| |]) )
+        Assert.True( (c = [| |]) )
         
         let d : string[] = Array.empty<string>
-        Assert.IsTrue( (d = [| |]) )
+        Assert.True( (d = [| |]) )
         ()
 
 
-    [<Test>]
+    [<Fact>]
     member this.AllPairs() =
         // integer array
         let resultInt =  Array.allPairs [|1..3|] [|2..2..6|]
@@ -62,15 +61,15 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Append() =
         // integer array
         let intArray = Array.append [| 1; 2 |] [| 3; 4 |]
-        Assert.IsTrue( (intArray = [| 1; 2; 3; 4 |]) )
-        
+        Assert.True( (intArray = [| 1; 2; 3; 4 |]) )
+
         // string array
         let strArray = Array.append [| "a"; "b" |] [| "C"; "D" |]
-        Assert.IsTrue( (strArray = [| "a"; "b"; "C"; "D" |]) )
+        Assert.True( (strArray = [| "a"; "b"; "C"; "D" |]) )
 
         // empty array
         let emptyArray : int[]  = [|   |]
@@ -79,8 +78,8 @@ type ArrayModule() =
         let appEmptySingle = Array.append emptyArray singleArray
         let appSingleEmpty = Array.append singleArray emptyArray
         
-        Assert.IsTrue( (appEmptySingle = [| 1 |]) )
-        Assert.IsTrue( (appSingleEmpty = [| 1 |]) )
+        Assert.True( (appEmptySingle = [| 1 |]) )
+        Assert.True( (appSingleEmpty = [| 1 |]) )
       
         // null array
         let nullArray = null:int[]
@@ -90,7 +89,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Average() =   
       
         // empty float32 array
@@ -126,7 +125,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.AverageBy() =
 
         // empty double array
@@ -162,21 +161,21 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.ChunkBySize() =
 
         // int Seq
-        Assert.IsTrue([| [|1..4|]; [|5..8|] |] = Array.chunkBySize 4 [|1..8|])
-        Assert.IsTrue([| [|1..4|]; [|5..8|]; [|9..10|] |] = Array.chunkBySize 4 [|1..10|])
-        Assert.IsTrue([| [|1|]; [|2|]; [|3|]; [|4|] |] = Array.chunkBySize 1 [|1..4|])
-        Assert.IsTrue([| [|1..3|]; [|4|] |] = Array.chunkBySize 3 [|1..4|])
-        Assert.IsTrue([| [|1..5|]; [|6..10|]; [|11..12|] |] = Array.chunkBySize 5 [|1..12|])
+        Assert.True([| [|1..4|]; [|5..8|] |] = Array.chunkBySize 4 [|1..8|])
+        Assert.True([| [|1..4|]; [|5..8|]; [|9..10|] |] = Array.chunkBySize 4 [|1..10|])
+        Assert.True([| [|1|]; [|2|]; [|3|]; [|4|] |] = Array.chunkBySize 1 [|1..4|])
+        Assert.True([| [|1..3|]; [|4|] |] = Array.chunkBySize 3 [|1..4|])
+        Assert.True([| [|1..5|]; [|6..10|]; [|11..12|] |] = Array.chunkBySize 5 [|1..12|])
 
         // string Seq
-        Assert.IsTrue([| [|"a"; "b"|]; [|"c";"d"|]; [|"e"|] |] = Array.chunkBySize 2 [|"a";"b";"c";"d";"e"|])
+        Assert.True([| [|"a"; "b"|]; [|"c";"d"|]; [|"e"|] |] = Array.chunkBySize 2 [|"a";"b";"c";"d";"e"|])
 
         // empty Seq
-        Assert.IsTrue([||] = Array.chunkBySize 3 [||])
+        Assert.True([||] = Array.chunkBySize 3 [||])
 
         // null Seq
         let nullArr:_[] = null
@@ -188,22 +187,22 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.SplitInto() =
 
         // int array
-        Assert.IsTrue([| [|1..4|]; [|5..7|]; [|8..10|] |] = Array.splitInto 3 [|1..10|])
-        Assert.IsTrue([| [|1..4|]; [|5..8|]; [|9..11|] |] = Array.splitInto 3 [|1..11|])
-        Assert.IsTrue([| [|1..4|]; [|5..8|]; [|9..12|] |] = Array.splitInto 3 [|1..12|])
+        Assert.True([| [|1..4|]; [|5..7|]; [|8..10|] |] = Array.splitInto 3 [|1..10|])
+        Assert.True([| [|1..4|]; [|5..8|]; [|9..11|] |] = Array.splitInto 3 [|1..11|])
+        Assert.True([| [|1..4|]; [|5..8|]; [|9..12|] |] = Array.splitInto 3 [|1..12|])
 
-        Assert.IsTrue([| [|1..2|]; [|3|]; [|4|]; [|5|] |] = Array.splitInto 4 [|1..5|])
-        Assert.IsTrue([| [|1|]; [|2|]; [|3|]; [|4|] |] = Array.splitInto 20 [|1..4|])
+        Assert.True([| [|1..2|]; [|3|]; [|4|]; [|5|] |] = Array.splitInto 4 [|1..5|])
+        Assert.True([| [|1|]; [|2|]; [|3|]; [|4|] |] = Array.splitInto 20 [|1..4|])
 
         // string array
-        Assert.IsTrue([| [|"a"; "b"|]; [|"c";"d"|]; [|"e"|] |] = Array.splitInto 3 [|"a";"b";"c";"d";"e"|])
+        Assert.True([| [|"a"; "b"|]; [|"c";"d"|]; [|"e"|] |] = Array.splitInto 3 [|"a";"b";"c";"d";"e"|])
 
         // empty array
-        Assert.IsTrue([| |] = Array.splitInto 3 [| |])
+        Assert.True([| |] = Array.splitInto 3 [| |])
 
         // null array
         let nullArr:_[] = null
@@ -215,7 +214,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.distinct() =
         // distinct should work on empty array
         Assert.AreEqual([||], Array.distinct [||])
@@ -235,7 +234,7 @@ type ArrayModule() =
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([|null, list|], Array.distinct [|null, list|])
         
-    [<Test>]
+    [<Fact>]
     member this.distinctBy() =
         // distinctBy should work on empty array
         Assert.AreEqual([||], Array.distinctBy (fun _ -> failwith "should not be executed") [||])
@@ -257,7 +256,7 @@ type ArrayModule() =
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([|null, list|], Array.distinctBy id [|null, list|])
 
-    [<Test>]
+    [<Fact>]
     member this.Except() =
         // integer array
         let intArr1 = [| yield! {1..100}
@@ -289,7 +288,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Take() =
         Assert.AreEqual([||],Array.take 0 [||])
         Assert.AreEqual([||],Array.take 0 [|"str1";"str2";"str3";"str4"|])
@@ -302,7 +301,7 @@ type ArrayModule() =
         CheckThrowsInvalidOperationExn (fun () -> Array.take 5 [|"str1";"str2";"str3";"str4"|] |> ignore)
         CheckThrowsArgumentNullException (fun () -> Array.take 5 null |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member this.takeWhile() =
         Assert.AreEqual([||],Array.takeWhile (fun x -> failwith "should not be used") [||])
         Assert.AreEqual([|1;2;4;5|],Array.takeWhile (fun x -> x < 6) [|1;2;4;5;6;7|])
@@ -315,7 +314,7 @@ type ArrayModule() =
 
         CheckThrowsArgumentNullException (fun () -> Array.takeWhile (fun _ -> failwith "should not be used") null |> ignore) 
 
-    [<Test>]
+    [<Fact>]
     member this.splitAt() =        
         Assert.AreEqual([||], Array.splitAt 0 [||] |> fst)  
         Assert.AreEqual([||], Array.splitAt 0 [||] |> snd)
@@ -343,7 +342,7 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.splitAt 0 null |> ignore)
         CheckThrowsArgumentNullException (fun () -> Array.splitAt 1 null |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.replicate() =
         // replicate should create multiple copies of the given value
         Assert.AreEqual([||],Array.replicate 0 null)
@@ -353,7 +352,7 @@ type ArrayModule() =
 
         CheckThrowsArgumentException (fun () ->  Array.replicate -1 null |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member this.Blit() = 
         // int array   
         let intSrc = [| 1..10 |]
@@ -401,7 +400,7 @@ type ArrayModule() =
         // empty array
         let emptySrc :int[] = [| |]
         let emptyChoosed = chooseInt funcInt emptySrc
-        Assert.IsTrue( (emptyChoosed = [| |]) )
+        Assert.True( (emptyChoosed = [| |]) )
 
         // null array
         let nullArr = null:int[]    
@@ -409,11 +408,11 @@ type ArrayModule() =
         
         () 
       
-    [<Test>]
+    [<Fact>]
     member this.Choose() = 
         this.ChooseTester Array.choose Array.choose
 
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Choose`` () = 
         this.ChooseTester Array.Parallel.choose Array.Parallel.choose
 
@@ -442,11 +441,11 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Collect () =
         this.CollectTester Array.collect Array.collect
         
-    [<Test>]
+    [<Fact>]
     member this.CollectWithSideEffects () =
         let stamp = ref 0
         let f x = stamp := !stamp + 1; [| x |]
@@ -458,11 +457,11 @@ type ArrayModule() =
         Array.collect f [|1;2;3|] |> ignore
         Assert.AreEqual(3,!stamp)
         
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Collect`` () =
         this.CollectTester Array.Parallel.collect Array.Parallel.collect
 
-    [<Test>]
+    [<Fact>]
     member this.compareWith() =
         // compareWith should work on empty arrays
         Assert.AreEqual(0,Array.compareWith (fun _ -> failwith "should not be executed")  [||] [||])
@@ -487,7 +486,7 @@ type ArrayModule() =
         Assert.AreEqual(1,Array.compareWith (fun x y -> 1) [|"1";"2"|] [|"1";"3"|])
         Assert.AreEqual(-1,Array.compareWith (fun x y -> -1) [|"1";"2"|] [|"1";"3"|])
         
-    [<Test>]
+    [<Fact>]
     member this.Concat() =
         // integer array
         let seqInt = 
@@ -509,7 +508,7 @@ type ArrayModule() =
         // Empty array
         let emptyArrays = [| [| |]; [| 0 |]; [| 1 |]; [| |]; [| |] |]
         let result2 = Array.concat emptyArrays
-        Assert.IsTrue(result2.[0] = 0 && result2.[1] = 1)
+        Assert.True(result2.[0] = 0 && result2.[1] = 1)
         if result2.[0] <> 0 && result2.[1] <> 1 then Assert.Fail()    
 
         // null array
@@ -519,7 +518,7 @@ type ArrayModule() =
                 
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.countBy() =
         // countBy should work on empty array
         Assert.AreEqual(0,Array.countBy (fun _ -> failwith "should not be executed") [||] |> Array.length)
@@ -531,7 +530,7 @@ type ArrayModule() =
         Assert.AreEqual([| 5,1; 2,2; 3,2 |],Array.countBy id [|5;2;2;3;3|])
         Assert.AreEqual([| 3,3; 2,2; 1,3 |],Array.countBy (fun x -> if x < 3 then x else 3) [|5;2;1;2;3;3;1;1|])
 
-    [<Test>]
+    [<Fact>]
     member this.Copy() =
         // int array
         let intSrc:int [] = [| 3;5;7 |]    
@@ -555,7 +554,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Create() =
         // int array
         let intArr = Array.create 3 8    
@@ -563,7 +562,7 @@ type ArrayModule() =
         
         // string array
         let strArr = Array.create 3 "good"
-        Assert.IsTrue( (strArr = [|"good"; "good";  "good"|]) )
+        Assert.True( (strArr = [|"good"; "good";  "good"|]) )
         
         // empty array
         let emptyArr = Array.create 0 "empty"    
@@ -572,12 +571,12 @@ type ArrayModule() =
         // array with null elements
         let nullStr = null:string  
         let nullArr = Array.create 3 nullStr
-        Assert.IsTrue( (nullArr = [|null; null; null|]) )
+        Assert.True( (nullArr = [|null; null; null|]) )
         
         ()
 
     
-    [<Test>]
+    [<Fact>]
     member this.TryHead() =
         // integer array
         let resultInt = Array.tryHead  [|2..2..20|]        
@@ -596,7 +595,7 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.tryHead nullArr |> ignore) 
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Exists() =
         // integer array
         let intArr = [| 2;4;6;8 |]
@@ -621,7 +620,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Exists2() =
         // integer array
         let intFir = [| 2;4;6;8 |]
@@ -654,7 +653,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Fill() =
         // integer array
         let intArr = [|1..5|]
@@ -685,7 +684,7 @@ type ArrayModule() =
          
         ()
 
-    [<Test>] 
+    [<Fact>] 
     member this.Filter() =
         // integer array
         let intArr = [| 1..20 |]
@@ -710,7 +709,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Filter2 () =
         // The Array.filter algorithm uses a bitmask as a temporary storage mechanism
         // for which elements to filter. This introduces some possible error conditions
@@ -768,7 +767,7 @@ type ArrayModule() =
 
 
 
-    [<Test>]
+    [<Fact>]
     member this.Where() =
         // integer array
         let intArr = [| 1..20 |]
@@ -793,13 +792,13 @@ type ArrayModule() =
         
         ()   
 
-    [<Test>]
+    [<Fact>]
     member this.``where should work like filter``() =
         Assert.AreEqual([||], Array.where (fun x -> x % 2 = 0) [||])
         Assert.AreEqual([|0;2;4;6;8|], Array.where (fun x -> x % 2 = 0) [|0..9|])
         Assert.AreEqual([|"a";"b";"c"|], Array.where (fun _ -> true) [|"a";"b";"c"|])
 
-    [<Test>]
+    [<Fact>]
     member this.Find() =
         // integer array
         let intArr = [| 1..20 |]
@@ -826,7 +825,7 @@ type ArrayModule() =
         
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.FindBack() =
         // integer array
         let funcInt x = if (x%5 = 0) then true else false
@@ -852,7 +851,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.FindIndex() =
         // integer array
         let intArr = [| 1..20 |]
@@ -879,7 +878,7 @@ type ArrayModule() =
         
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.FindIndexBack() =
         // integer array
         let funcInt x = if (x%5 = 0) then true else false
@@ -905,7 +904,7 @@ type ArrayModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Pick() =
         // integers
         let intArr = [| 1..10 |]
@@ -918,7 +917,7 @@ type ArrayModule() =
         // make it not found
         CheckThrowsKeyNotFoundException (fun () -> Array.pick (fun n -> None) intArr |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.last() =
         // last should fail on empty array
         CheckThrowsArgumentException(fun () -> Array.last [||] |> ignore)
@@ -931,7 +930,7 @@ type ArrayModule() =
         Assert.AreEqual("2", Array.last [|"1"; "3"; "2"|])
         Assert.AreEqual(["4"], Array.last [|["1"; "3"]; []; ["4"]|])
     
-    [<Test>]
+    [<Fact>]
     member this.TryLast() =
         // integers array
         let IntSeq = [| 1..9 |]
@@ -944,21 +943,21 @@ type ArrayModule() =
          
         // Empty array
         let emptyResult = Array.tryLast Array.empty
-        Assert.IsTrue(emptyResult.IsNone)
+        Assert.True(emptyResult.IsNone)
       
         // null array
         let nullArr = null:string[]  
         CheckThrowsArgumentNullException (fun () ->Array.tryLast nullArr |> ignore) 
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.ToSeq() =
         let intArr = [| 1..10 |]
         let seq = Array.toSeq intArr
         let sum = Seq.sum seq
         Assert.AreEqual(55, sum)
         
-    [<Test>]
+    [<Fact>]
     member this.TryPick() =
         // integer array
         let intArr = [| 1..10 |]    
@@ -989,7 +988,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Fold() =
         // integer array
         let intArr = [| 1..5 |]    
@@ -1015,7 +1014,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Fold2() =
         // integer array  
         let funcInt x y z = x + y.ToString() + z.ToString()
@@ -1043,7 +1042,7 @@ type ArrayModule() =
                 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.FoldBack() =
         // integer array
         let intArr = [| 1..5 |]    
@@ -1069,7 +1068,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.FoldBack2() =
         // integer array  
         let funcInt x y z = x.ToString() + y.ToString() + z
@@ -1097,7 +1096,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.ForAll() =
         // integer array
         let resultInt = Array.forall (fun x -> x > 2) [| 3..2..10 |]
@@ -1117,7 +1116,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.ForAll2() =
         // integer array
         let resultInt = Array.forall2 (fun x y -> x < y) [| 1..10 |] [|2..2..20|]
@@ -1142,7 +1141,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Get() =
         // integer array
         let intArr = [| 3;4;7;8;10 |]    
@@ -1165,43 +1164,43 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.``exactlyOne should return the element from singleton arrays``() =
         Assert.AreEqual(1, Array.exactlyOne [|1|])
         Assert.AreEqual("2", Array.exactlyOne [|"2"|])
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.``exactlyOne should fail on empty array``() =
         CheckThrowsArgumentException(fun () -> Array.exactlyOne [||] |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.``exactlyOne should fail on null array``() =
         CheckThrowsArgumentNullException(fun () -> Array.exactlyOne null |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.``exactlyOne should fail on arrays with more than one element``() =
         CheckThrowsArgumentException(fun () -> Array.exactlyOne [|"1"; "2"|] |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.``tryExactlyOne should return the element from singleton arrays``() =
         Assert.AreEqual(Some 1, Array.tryExactlyOne [|1|])
         Assert.AreEqual(Some "2", Array.tryExactlyOne [|"2"|])
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.``tryExactlyOne should return None on empty array``() =
         Assert.AreEqual(None, Array.tryExactlyOne [||])
 
-    [<Test>]
+    [<Fact>]
     member this.``tryExactlyOne should return None for arrays with more than one element``() =
         Assert.AreEqual(None, Array.tryExactlyOne [|"1"; "2"|])
 
-    [<Test>]
+    [<Fact>]
     member this.``tryExactlyOne should fail on null array``() =
         CheckThrowsArgumentNullException(fun () -> Array.tryExactlyOne null |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.GroupBy() =
         let funcInt x = x%5
              
@@ -1259,7 +1258,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Hd() =
         // integer array
         let resultInt = Array.head [|2..2..20|]
@@ -1273,11 +1272,11 @@ type ArrayModule() =
         CheckThrowsArgumentNullException(fun () -> Array.head null |> ignore)
         ()    
 
-    [<Test>]
+    [<Fact>]
     member this.Init() = 
         this.InitTester Array.init Array.init
         
-    [<Test>]
+    [<Fact>]
     member this.InitWithSideEffects () =
         let stamp = ref 0
         let f i = 
@@ -1290,11 +1289,11 @@ type ArrayModule() =
         Array.init 10 f |> ignore
         Assert.AreEqual (10, !stamp)
         
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Init``() = 
         this.InitTester Array.Parallel.init Array.Parallel.init
 
-    [<Test>]
+    [<Fact>]
     member this.IsEmpty() =
         // integer array
         let intArr = [| 3;4;7;8;10 |]    
@@ -1317,7 +1316,7 @@ type ArrayModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Iter() =
         // integer array
         let intArr = [| 1..10 |]  
@@ -1349,7 +1348,7 @@ type ArrayModule() =
         
         ()
        
-    [<Test>]
+    [<Fact>]
     member this.Iter2() =
         // integer array
         let resultInt = ref 0    
@@ -1385,7 +1384,7 @@ type ArrayModule() =
         ()
         
         
-    [<Test>]
+    [<Fact>]
     member this.Iteri() =
         // integer array
         let intArr = [| 1..10 |]  
@@ -1417,7 +1416,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Iteri2() =
         // integer array
         let resultInt = ref 0    
@@ -1452,7 +1451,7 @@ type ArrayModule() =
         
         ()                
 
-    [<Test>]
+    [<Fact>]
     member this.``pairwise should return pairs of the input array``() =
         Assert.AreEqual([||],Array.pairwise [||])
         Assert.AreEqual([||],Array.pairwise [|1|])
@@ -1460,7 +1459,7 @@ type ArrayModule() =
         Assert.AreEqual([|1,2; 2,3|],Array.pairwise [|1;2;3|])
         Assert.AreEqual([|"H","E"; "E","L"; "L","L"; "L","O"|],Array.pairwise [|"H";"E";"L";"L";"O"|])
 
-    [<Test>]
+    [<Fact>]
     member this.``pairwise should not work on null``() =
         CheckThrowsArgumentNullException(fun () -> Array.pairwise null |> ignore)
 
@@ -1484,11 +1483,11 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]  
+    [<Fact>]  
     member this.Map () =
         this.MapTester Array.map Array.map
         
-    [<Test>]
+    [<Fact>]
     member this.MapWithSideEffects () =
         let stamp = ref 0
         let f x = stamp := !stamp + 1; x + 1
@@ -1500,7 +1499,7 @@ type ArrayModule() =
         Array.map f [| 1..100 |] |> ignore
         Assert.AreEqual(100,!stamp)
         
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Map`` () =
         this.MapTester Array.Parallel.map Array.Parallel.map
 
@@ -1523,11 +1522,11 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> mapiInt f nullArg |> ignore)        
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Mapi () = this.MapiTester Array.mapi Array.mapi
         
 
-    [<Test>]
+    [<Fact>]
     member this.MapiWithSideEffects () =
         let stamp = ref 0
         let f i x = stamp := !stamp + 1; (i, x + 1)
@@ -1540,12 +1539,12 @@ type ArrayModule() =
         Assert.AreEqual(100,!stamp)
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Mapi`` () =
         this.MapiTester Array.Parallel.mapi Array.Parallel.mapi
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Iter``() =
         // integer array
         let intArr = [| 1..10 |]  
@@ -1577,7 +1576,7 @@ type ArrayModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Iteri``() =   
         // integer array
         let intArr = [| 1..10 |] 
@@ -1642,38 +1641,197 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> partString funcString nullArr |> ignore)
         
         
-    [<Test>]
+    [<Fact>]
     member this.Partition () =
         this.PartitionTester Array.partition Array.partition    
 
-    [<Test>]
+    [<Fact>]
     member this.Singleton() =
         Assert.AreEqual([|null|],Array.singleton null)
         Assert.AreEqual([|"1"|],Array.singleton "1")
         Assert.AreEqual([|[]|], Array.singleton [])
-        Assert.IsTrue([|[||]|] = Array.singleton [||])
+        Assert.True([|[||]|] = Array.singleton [||])
 
-    [<Test>]
+    [<Fact>]
     member this.``Parallel.Partition`` () =
         this.PartitionTester Array.Parallel.partition Array.Parallel.partition    
 
-    [<Test>]
+    [<Fact>]
     member this.Contains() =
         // integer array
         let intArr = [| 2;4;6;8 |]
         let resultInt = Array.contains 6 intArr
-        Assert.IsTrue(resultInt)
+        Assert.True(resultInt)
 
         // string array
         let strArr = [|"Lists"; "are"; "commonly"|]
         let resultStr = Array.contains "not" strArr
-        Assert.IsFalse(resultStr)
+        Assert.False(resultStr)
 
         // empty array
         let emptyArr:int[] = [| |]
         let resultEpt = Array.contains 4 emptyArr
-        Assert.IsFalse(resultEpt)
+        Assert.False(resultEpt)
 
         // null array
         let nullArr = null:string[]
         CheckThrowsArgumentNullException (fun () -> Array.contains "empty" nullArr |> ignore)
+
+    [<Fact>]
+    member this.``Slicing with first index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.AreEqual(arr.[^3..], arr.[1..])
+
+    
+    [<Fact>]
+    member this.``Slicing with second index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.AreEqual(arr.[..^1], arr.[..3])
+
+    
+    [<Fact>]
+    member this.``Slicing with both index reverse behaves as expected``()  = 
+        let arr = [| 1;2;3;4;5 |]
+
+        Assert.AreEqual(arr.[^3..^1], arr.[1..3])
+
+    [<Fact>]
+    member this.``Slicing with first index reverse and second index non reverse behaves as expected``()=
+        let arr = [|1;2;3;4;5|]
+
+        Assert.AreEqual(arr.[^3..4], arr.[1..4])
+
+    [<Fact>]
+    member this.``Slicing with first index non reverse and second index reverse behaves as expected``()=
+        let arr = [|1;2;3;4;5|]
+
+        Assert.AreEqual(arr.[3..^0], arr.[3..4])
+
+    [<Fact>]
+    member this.``Set slice with first index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[^3..] <- [| 9;8;7;6 |]
+        arr2.[1..] <- [| 9;8;7;6 |]
+
+        Assert.AreEqual(arr1, arr2)
+
+    [<Fact>]
+    member this.``Set slice with second index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[..^1] <- [| 9;8;7;6 |]
+        arr2.[..3] <- [| 9;8;7;6 |]
+
+        Assert.AreEqual(arr1, arr2)
+
+    [<Fact>]
+    member this.``Set slice with both index reverse behaves as expected``()  = 
+        let arr1 = [| 1;2;3;4;5 |]
+        let arr2 = [| 1;2;3;4;5 |]
+
+        arr1.[^3..^1] <- [| 8;7;6 |]
+        arr2.[1..3] <- [| 8;7;6 |]
+
+        Assert.AreEqual(arr1, arr2)
+
+    [<Fact>]
+    member this.``Get item with reverse index behaves as expected``() = 
+        let arr = [|1;2;3;4;5|]
+        Assert.AreEqual(arr.[^1], 4)
+
+    [<Fact>]
+    member this.``Set item with reverse index behaves as expected``() = 
+        let arr = [|1;2;3;4;5|]
+
+        arr.[^0] <- 9
+        Assert.AreEqual(arr.[4], 9)
+
+    [<Fact>] 
+    member this.SlicingUnboundedEnd() = 
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[-1..], arr)
+        Assert.AreEqual(arr.[0..], arr)
+        Assert.AreEqual(arr.[1..], [2;3;4;5;6])
+        Assert.AreEqual(arr.[2..], [3;4;5;6])
+        Assert.AreEqual(arr.[5..], [6])
+        Assert.AreEqual(arr.[6..], ([||]: int array))
+        Assert.AreEqual(arr.[7..], ([||]: int array))
+
+    
+    [<Fact>] 
+    member this.SlicingUnboundedStart() = 
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[..0], [|1|])
+        Assert.AreEqual(arr.[..1], [|1;2|])
+        Assert.AreEqual(arr.[..2], [|1;2;3|])
+        Assert.AreEqual(arr.[..3], [|1;2;3;4|])
+        Assert.AreEqual(arr.[..4], [|1;2;3;4;5|])
+        Assert.AreEqual(arr.[..5], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[..7], [|1;2;3;4;5;6|])
+
+
+    [<Fact>]
+    member this.SlicingBoundedStartEnd() =
+        let arr = [|1;2;3;4;5;6|]
+
+        Assert.AreEqual(arr.[*], arr)
+
+        Assert.AreEqual(arr.[0..0], [|1|])
+        Assert.AreEqual(arr.[0..1], [|1;2|])
+        Assert.AreEqual(arr.[0..2], [|1;2;3|])
+        Assert.AreEqual(arr.[0..3], [|1;2;3;4|])
+        Assert.AreEqual(arr.[0..4], [|1;2;3;4;5|])
+        Assert.AreEqual(arr.[0..5], [|1;2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[1..1], [|2|])
+        Assert.AreEqual(arr.[1..2], [|2;3|])
+        Assert.AreEqual(arr.[1..3], [|2;3;4|])
+        Assert.AreEqual(arr.[1..4], [|2;3;4;5|])
+        Assert.AreEqual(arr.[1..5], [|2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[0..1], [|1;2|])
+        Assert.AreEqual(arr.[1..1], [|2|])
+        Assert.AreEqual(arr.[2..1], ([||]: int array))
+        Assert.AreEqual(arr.[3..1], ([||]: int array))
+        Assert.AreEqual(arr.[4..1], ([||]: int array))
+
+
+    [<Fact>]
+    member this.SlicingEmptyArray() = 
+
+        let empty : obj array = Array.empty
+        Assert.AreEqual(empty.[*], ([||]: obj array))
+        Assert.AreEqual(empty.[5..3], ([||]: obj array))
+        Assert.AreEqual(empty.[0..], ([||]: obj array))
+        Assert.AreEqual(empty.[0..0], ([||]: obj array))
+        Assert.AreEqual(empty.[0..1], ([||]: obj array))
+        Assert.AreEqual(empty.[3..5], ([||]: obj array))
+
+
+    [<Fact>]
+    member this.SlicingOutOfBounds() = 
+        let arr = [|1;2;3;4;5;6|]
+       
+        Assert.AreEqual(arr.[..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[6..], ([||]: int array))
+
+        Assert.AreEqual(arr.[0..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[1..(-1)], ([||]: int array))
+        Assert.AreEqual(arr.[1..0], ([||]: int array))
+        Assert.AreEqual(arr.[0..6], [|1;2;3;4;5;6|])
+        Assert.AreEqual(arr.[1..6], [|2;3;4;5;6|])
+
+        Assert.AreEqual(arr.[-1..1], [|1;2|])
+        Assert.AreEqual(arr.[-3..(-4)], ([||]: int array))
+        Assert.AreEqual(arr.[-4..(-3)], ([||]: int array))
+
+

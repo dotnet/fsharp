@@ -2,25 +2,27 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Reflection
 open FSharp.Compiler.AbstractIL.IL
     
 /// Represents a type in an external (non F#) assembly.
 [<RequireQualifiedAccess>]
 type ExternalType =
-      /// Type defined in non-F# assembly.
+    /// Type defined in non-F# assembly.
     | Type of fullName: string * genericArgs: ExternalType list
-      /// Array of type that is defined in non-F# assembly.
+
+    /// Array of type that is defined in non-F# assembly.
     | Array of inner: ExternalType
-      /// Pointer defined in non-F# assembly.
+
+    /// Pointer defined in non-F# assembly.
     | Pointer of inner: ExternalType
-      /// Type variable defined in non-F# assembly.
+
+    /// Type variable defined in non-F# assembly.
     | TypeVar of typeName: string
+
     override ToString : unit -> string
         
 module ExternalType =
     val internal tryOfILType : string array -> ILType -> ExternalType option
-
 
 /// Represents the type of a single method parameter
 [<RequireQualifiedAccess>]
@@ -32,7 +34,6 @@ type ParamTypeSymbol =
 module ParamTypeSymbol =
     val internal tryOfILType : string array -> ILType -> ParamTypeSymbol option
     val internal tryOfILTypes : string array -> ILType list -> ParamTypeSymbol list option
-    
 
 /// Represents a symbol in an external (non F#) assembly
 [<RequireQualifiedAccess>]
@@ -43,5 +44,7 @@ type ExternalSymbol =
     | Field of typeName: string * name: string
     | Event of typeName: string * name: string
     | Property of typeName: string * name: string
+
     override ToString : unit -> string
+
     member internal ToDebuggerDisplay : unit -> string

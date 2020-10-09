@@ -1,17 +1,16 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
-open NUnit.Framework
+open Xunit
 
 open Microsoft.FSharp.Collections
 open FSharp.Core.UnitTests.LibraryTestFx
 
-[<TestFixture>]
 type LazyType() =
    
-    [<Test>]
+    [<Fact>]
     member this.Create() =
         
         // int 
@@ -26,7 +25,7 @@ type LazyType() =
         let nullLazy = Lazy<_>.Create(fun () -> ())
         Assert.AreEqual(nullLazy.Value, null)
         
-    [<Test>]
+    [<Fact>]
     member this.CreateFromValue() =
         
         // int 
@@ -42,7 +41,7 @@ type LazyType() =
         Assert.AreEqual(nullLazy.Value,null)
          
         
-    [<Test>]
+    [<Fact>]
     member this.Force() =
         
         // int 
@@ -60,7 +59,7 @@ type LazyType() =
         let nullForce = nullLazy.Force()
         Assert.AreEqual(nullForce,null)
         
-    [<Test>]
+    [<Fact>]
     member this.Value() =
         
         // int 
@@ -75,7 +74,7 @@ type LazyType() =
         let nullLazy = Lazy<_>.CreateFromValue(null)
         Assert.AreEqual(nullLazy.Value,null)
         
-    [<Test>]
+    [<Fact>]
     member this.IsDelayed() =
         
         // int 
@@ -97,7 +96,7 @@ type LazyType() =
         let resultIsDelayed = nullLazy.Force()
         Assert.AreEqual(not nullLazy.IsValueCreated,false)
         
-    [<Test>]
+    [<Fact>]
     member this.IsForced() =
         
         // int 
@@ -119,7 +118,7 @@ type LazyType() =
         let resultIsForced = nullLazy.Force()
         Assert.AreEqual( nullLazy.IsValueCreated,true)
         
-    [<Test>]
+    [<Fact>]
     member this.Printing() =
         let n = lazy 12
         Assert.AreEqual( n.IsValueCreated, false )

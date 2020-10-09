@@ -1,14 +1,49 @@
 # CI and PR triggers
 trigger:
-- master
-- dev16.1
-- feature/*
-- release/*
+  branches:
+    include:
+    - main
+    - dev16.1
+    - feature/*
+    - release/*
+  paths:
+    include:
+    - '*'
+    exclude:
+    - .github/*
+    - docs/compiler-guide.md
+    - attributions.md
+    - CODE_OF_CONDUCT.md
+    - DEVGUIDE.md
+    - INTERNAL.md
+    - Language-Version-History.md
+    - License.txt
+    - README.md
+    - release-notes.md
+    - TESTGUIDE.md
+
 pr:
-- master
-- dev16.1
-- feature/*
-- release/*
+  branches:
+    include:
+    - main
+    - dev16.1
+    - feature/*
+    - release/*
+  paths:
+    include:
+    - '*'
+    exclude:
+    - .github/*
+    - docs/compiler-guide.md
+    - attributions.md
+    - CODE_OF_CONDUCT.md
+    - DEVGUIDE.md
+    - INTERNAL.md
+    - Language-Version-History.md
+    - License.txt
+    - README.md
+    - release-notes.md
+    - TESTGUIDE.md
 
 variables:
   - name: _TeamName
@@ -21,6 +56,9 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
+    - name: RunningAsPullRequest
+      value: true
 
 # Variables defined in yml cannot be overridden at queue time; instead overridable variables must be defined in the web UI.
 # Commenting out until something like this is supported: https://github.com/Microsoft/azure-pipelines-yaml/pull/129
@@ -83,6 +121,8 @@ stages:
                     /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
                     /p:PublishToSymbolServer=true
                     /p:VisualStudioDropName=$(VisualStudioDropName)
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c $(_BuildConfig)
+            displayName: End to end build tests
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -187,11 +227,22 @@ stages:
               publishLocation: Container
             continueOnError: true
             condition: eq(variables['_testKind'], 'testFSharpQA')
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
 
         # Linux
         - job: Linux
           pool:
-            vmImage: ubuntu-16.04
+            vmImage: ubuntu-latest
           variables:
           - name: _SignType
             value: Test
@@ -208,11 +259,22 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Linux'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
 
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macOS-10.13
+            vmImage: macOS-latest
           variables:
           - name: _SignType
             value: Test
@@ -229,98 +291,86 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Mac'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
 
-        # Source Build Linux
-        - job: SourceBuild_Linux
+        # End to end build
+        - job: EndToEndBuildTests
           pool:
-            vmImage: ubuntu-16.04
+            vmImage: windows-2019
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
-            displayName: Build
+          - script: .\Build.cmd -c Release
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
+            displayName: End to end build tests
+
+        # Source Build Linux - disabled until MSBuild/NuGet issues are resolved
+        # - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+        #   - job: SourceBuild_Linux
+        #     pool:
+        #       vmImage: ubuntu-latest
+        #     steps:
+        #     - checkout: self
+        #       clean: true
+        #     - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+        #       displayName: Build
+        #     - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+        #       displayName: Dump NuGet cache contents
+        #       condition: failed()
+        #     - task: PublishBuildArtifacts@1
+        #       displayName: Publish NuGet cache contents
+        #       inputs:
+        #         PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
+        #         ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
+        #         publishLocation: Container
+        #       continueOnError: true
+        #       condition: failed()
 
         # Source Build Windows
-        - job: SourceBuild_Windows
-          pool:
-            vmImage: windows-2019
-          steps:
-          - checkout: self
-            clean: true
-          - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
-            displayName: Build
+        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+          - job: SourceBuild_Windows
+            pool:
+              vmImage: windows-2019
+            steps:
+            - checkout: self
+              clean: true
+            - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+              displayName: Build
+            - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+              displayName: Dump NuGet cache contents
+              condition: failed()
+            - task: PublishBuildArtifacts@1
+              displayName: Publish NuGet cache contents
+              inputs:
+                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+                ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
+                publishLocation: Container
+              continueOnError: true
+              condition: failed()
 
-        # Up-to-date
-        - job: UpToDate_Windows
-          pool:
-            vmImage: windows-2019
-          steps:
-          - checkout: self
-            clean: true
-          - task: PowerShell@2
-            displayName: Run up-to-date build check
-            inputs:
-              filePath: eng\tests\UpToDate.ps1
-              arguments: -configuration $(_BuildConfig) -ci -binaryLog
+        # Up-to-date - disabled due to it being flaky
+        #- job: UpToDate_Windows
+        #  pool:
+        #    vmImage: windows-2019
+        #  steps:
+        #  - checkout: self
+        #    clean: true
+        #  - task: PowerShell@2
+        #    displayName: Run up-to-date build check
+        #    inputs:
+        #      filePath: eng\tests\UpToDate.ps1
+        #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
-  #-------------------------------------------------------------------------------------------------------------------#
-  #                                                   FCS builds                                                      #
-  #-------------------------------------------------------------------------------------------------------------------#
-
-  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
-    - template: /eng/common/templates/jobs/jobs.yml
-      parameters:
-        enableMicrobuild: true
-        enablePublishTestResults: false
-        enablePublishBuildAssets: true
-        enablePublishUsingPipelines: false
-        enableTelemetry: true
-        helixRepo: dotnet/fsharp
-        jobs:
-
-        - job: Windows_FCS
-          pool:
-            vmImage: windows-2019
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: fcs\build.cmd TestAndNuget
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            continueOnError: true
-            condition: always()
-
-        - job: Linux_FCS
-          pool:
-            vmImage: ubuntu-16.04
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - script: ./fcs/build.sh
-            displayName: Build
-
-        # - job: MacOS_FCS
-        #   pool:
-        #     vmImage: macOS-10.13
-        #   variables:
-        #   - name: _SignType
-        #     value: Test
-        #   steps:
-        #   - checkout: self
-        #     clean: true
-        #   - script: ./fcs/build.sh
-        #     displayName: Build
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
@@ -339,7 +389,7 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev16.4
-      insertTargetBranch: rel/d16.4
+      componentBranchName: refs/heads/release/dev16.8
+      insertTargetBranch: master
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'

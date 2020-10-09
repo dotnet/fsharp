@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Control.Observable module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Control
+namespace FSharp.Core.UnitTests.Control
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -77,11 +77,9 @@ type RadioStation(frequency, callsign) =
     member this.BroadcastSignal = m_broadcastEvent.Publish
 
 // ---------------------------------------------------
-
-[<TestFixture>]
 type ObservableModule() =
     
-    [<Test>]
+    [<Fact>]
     member this.Choose() = 
         
         let coffeeCup = new EventfulCoffeeCup(10.0<ml>, 10.0<ml>)
@@ -112,7 +110,7 @@ type ObservableModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Filter() = 
     
         let kexp = new RadioStation(90.3, "KEXP")
@@ -137,7 +135,7 @@ type ObservableModule() =
                                       "Flight of the Penguins - song 1"])
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Listen() = 
     
         let kqfc = new RadioStation(90.3, "KEXP")
@@ -159,7 +157,7 @@ type ObservableModule() =
     
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Map() = 
     
         let numEvent = new Event<int>()
@@ -179,7 +177,7 @@ type ObservableModule() =
         Assert.AreEqual(!results, "333221")
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Merge() =
         
         let evensEvent = new Event<int>()
@@ -199,7 +197,7 @@ type ObservableModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Pairwise() = 
     
         let numEvent = new Event<int>()
@@ -221,7 +219,7 @@ type ObservableModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Partition() = 
     
         let numEvent = new Event<int>()
@@ -244,7 +242,7 @@ type ObservableModule() =
 
         ()
  
-    [<Test>]
+    [<Fact>]
     member this.Scan() = 
     
         let numEvent = new Event<int>()
@@ -267,7 +265,7 @@ type ObservableModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Split() = 
     
         let numEvent = new Event<int>()

@@ -4,9 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 
-// FIXME: We cannot make this internal yet until F# gets a compiler switch to make cases public when the type itself is internal.
-// https://github.com/Microsoft/visualfsharp/issues/4821
-type (* internal *) LogEditorFunctionId =
+type internal LogEditorFunctionId =
     | Classification_Semantic = 1
     | Classification_Syntactic = 2
     | LanguageService_HandleCommandLineArgs = 3

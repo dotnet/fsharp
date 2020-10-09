@@ -1,20 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Convert quoted TAST data structures to structures ready for pickling 
-
+/// Convert quoted TAST data structures to structures ready for pickling 
 module internal FSharp.Compiler.QuotationTranslator
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
-open FSharp.Compiler.Import
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.AbstractIL.IL
-
-[<Sealed>]
-type QuotationTranslationEnv =
-   static member Empty : QuotationTranslationEnv
-   member BindTypars : Typars -> QuotationTranslationEnv
+open FSharp.Compiler.Import
+open FSharp.Compiler.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TypedTree
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range
@@ -26,19 +20,22 @@ type IsReflectedDefinition =
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-    /// Indicates that type references are emitted as integer indexes into a supplied table
-    | FSharp_40_Plus
-    | FSharp_20_Plus
+    { 
+      /// Indicates that witness parameters are recorded
+      SupportsWitnesses: bool 
+      
+      /// Indicates that type references are emitted as integer indexes into a supplied table
+      SupportsDeserializeEx: bool 
+    }
 
 [<Sealed>]
 type QuotationGenerationScope  =
-    static member Create: TcGlobals * ImportMap * CcuThunk * IsReflectedDefinition -> QuotationGenerationScope
-    member Close: unit -> ILTypeRef list * (TType * range) list * (Expr * range) list 
+    static member Create: TcGlobals * ImportMap * CcuThunk * ConstraintSolver.TcValF * IsReflectedDefinition -> QuotationGenerationScope
+    member Close: unit -> ILTypeRef list * (TType * range) list * (Expr * range) list
     static member ComputeQuotationFormat : TcGlobals -> QuotationSerializationFormat
 
-val ConvExprPublic : QuotationGenerationScope -> QuotationTranslationEnv -> Expr -> QuotationPickler.ExprData 
-val ConvMethodBase  : QuotationGenerationScope -> QuotationTranslationEnv ->  string * Val  -> QuotationPickler.MethodBaseData
-
+val ConvExprPublic : QuotationGenerationScope -> suppressWitnesses: bool -> Expr -> QuotationPickler.ExprData 
+val ConvReflectedDefinition: QuotationGenerationScope -> string -> Val -> Expr -> QuotationPickler.MethodBaseData * QuotationPickler.ExprData
 
 val (|ModuleValueOrMemberUse|_|) : TcGlobals -> Expr -> (ValRef * ValUseFlag * Expr * TType * TypeInst * Expr list) option
 val (|SimpleArrayLoopUpperBound|_|) : Expr -> unit option

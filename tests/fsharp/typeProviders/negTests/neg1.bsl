@@ -29,7 +29,6 @@ neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilP
 neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
 
 neg1.fsx(11,38,11,66): typecheck error FS0039: The type 'TypeWhereNameRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    IsArrayTypeRaisesException
 
 neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
@@ -41,7 +40,6 @@ neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilP
 neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
 
 neg1.fsx(11,38,11,66): typecheck error FS0039: The type 'TypeWhereNameRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    IsArrayTypeRaisesException
 
 neg1.fsx(12,38,12,62): typecheck error FS3073: The type provider 'Provider.EvilProvider' reported an error: The 'Name' of a provided type was null or empty.
@@ -305,7 +303,6 @@ neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 
 neg1.fsx(25,39,25,78): typecheck error FS0039: The type 'TypeWhereGetConstructorsRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
@@ -317,7 +314,6 @@ neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
 
 neg1.fsx(25,39,25,78): typecheck error FS0039: The type 'TypeWhereGetConstructorsRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(27,39,27,69): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsReturnsNull' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetMethods'
@@ -329,7 +325,6 @@ neg1.fsx(27,39,27,69): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(27,39,27,69): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsReturnsNull' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetMethods'
 
 neg1.fsx(27,39,27,69): typecheck error FS0039: The type 'TypeWhereGetMethodsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(27,39,27,69): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsReturnsNull' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetMethods'
@@ -341,7 +336,6 @@ neg1.fsx(27,39,27,69): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(27,39,27,69): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsReturnsNull' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetMethods'
 
 neg1.fsx(27,39,27,69): typecheck error FS0039: The type 'TypeWhereGetMethodsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(28,39,28,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsReturnsNull' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetEvents'
@@ -353,7 +347,6 @@ neg1.fsx(28,39,28,68): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(28,39,28,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsReturnsNull' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetEvents'
 
 neg1.fsx(28,39,28,68): typecheck error FS0039: The type 'TypeWhereGetEventsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(28,39,28,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsReturnsNull' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetEvents'
@@ -365,7 +358,6 @@ neg1.fsx(28,39,28,68): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(28,39,28,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsReturnsNull' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetEvents'
 
 neg1.fsx(28,39,28,68): typecheck error FS0039: The type 'TypeWhereGetEventsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(29,39,29,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsReturnsNull' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetFields'
@@ -377,7 +369,6 @@ neg1.fsx(29,39,29,68): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(29,39,29,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsReturnsNull' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetFields'
 
 neg1.fsx(29,39,29,68): typecheck error FS0039: The type 'TypeWhereGetFieldsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(29,39,29,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsReturnsNull' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetFields'
@@ -389,7 +380,6 @@ neg1.fsx(29,39,29,68): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(29,39,29,68): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsReturnsNull' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetFields'
 
 neg1.fsx(29,39,29,68): typecheck error FS0039: The type 'TypeWhereGetFieldsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(30,39,30,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesReturnsNull' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetProperties'
@@ -401,7 +391,6 @@ neg1.fsx(30,39,30,72): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(30,39,30,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesReturnsNull' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetProperties'
 
 neg1.fsx(30,39,30,72): typecheck error FS0039: The type 'TypeWhereGetPropertiesReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(30,39,30,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesReturnsNull' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetProperties'
@@ -413,7 +402,6 @@ neg1.fsx(30,39,30,72): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(30,39,30,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesReturnsNull' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetProperties'
 
 neg1.fsx(30,39,30,72): typecheck error FS0039: The type 'TypeWhereGetPropertiesReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(31,39,31,73): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetNestedTypesReturnsNull' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
@@ -429,9 +417,7 @@ neg1.fsx(32,39,32,74): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(32,39,32,74): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsReturnsNull' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetConstructors'
 
 neg1.fsx(32,39,32,74): typecheck error FS0039: The type 'TypeWhereGetConstructorsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesReturnsNull
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(32,39,32,74): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsReturnsNull' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetConstructors'
@@ -443,9 +429,7 @@ neg1.fsx(32,39,32,74): typecheck error FS3021: Unexpected exception from provide
 neg1.fsx(32,39,32,74): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsReturnsNull' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: The type provider returned 'null', which is not a valid return value from 'GetConstructors'
 
 neg1.fsx(32,39,32,74): typecheck error FS0039: The type 'TypeWhereGetConstructorsReturnsNull' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
-
    TypeWhereGetNestedTypesReturnsNull
-
    TypeWhereGetNestedTypesRaisesException
 
 neg1.fsx(33,39,33,72): typecheck error FS3042: Unexpected 'null' return value from provided type 'FSharp.EvilProvider.TypeWhereGetInterfacesReturnsNull' member 'GetInterfaces'
@@ -1374,7 +1358,7 @@ neg1.fsx(341,110,341,114): typecheck error FS0001: This expression was expected 
 but here has type
     'bool'    
 
-neg1.fsx(342,110,342,114): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'string'.
+neg1.fsx(342,104,342,114): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'string'.
 
 neg1.fsx(345,104,345,106): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'float'.
 
@@ -1654,21 +1638,15 @@ neg1.fsx(438,109,438,110): typecheck error FS0001: This expression was expected 
 but here has type
     'string'    
 
-neg1.fsx(438,9,438,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
-
 neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
 
-neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
-
 neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
-
-neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
 
 neg1.fsx(448,9,448,107): typecheck error FS3148: Too many static parameters. Expected at most 1 parameters, but got 2 unnamed and 0 named parameters.
 

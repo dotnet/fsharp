@@ -3,13 +3,13 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.List type
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open System.Collections
 open System.Collections.Generic
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -19,11 +19,10 @@ Make sure each method works on:
 * Empty List (0 elements)
 *)
 
-[<TestFixture>][<Category "Collections.List">][<Category "FSharp.Core.Collections">]
 type ListType() =
-    
+
     // Interfaces
-    [<Test>]
+    [<Fact>]
     member this.IEnumerable() =
         
         // Legit IE
@@ -53,7 +52,7 @@ type ListType() =
         Assert.AreEqual(false, enum.MoveNext())
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.IEnumerable_T() =
         
         // Legit IE
@@ -83,7 +82,7 @@ type ListType() =
         Assert.AreEqual(false, enum.MoveNext())
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
  
-    [<Test>]
+    [<Fact>]
     member this.IReadOnlyCollection_T() =
         
         // Legit IReadOnlyCollection_T
@@ -100,7 +99,7 @@ type ListType() =
 
         Assert.AreEqual(c.Count, 0)
 
-    [<Test>]
+    [<Fact>]
     member this.IReadOnlyList_T() =
 
         let c = ['a'; 'b'; 'c'] :> IReadOnlyList<char>
@@ -116,48 +115,48 @@ type ListType() =
         CheckThrowsArgumentException(fun () -> c.[0] |> ignore)
 
     // Base class methods
-    [<Test>]
+    [<Fact>]
     member this.ObjectToString() =
         Assert.AreEqual("[1; 2; 3]", [1; 2; 3].ToString())
         Assert.AreEqual("[]", [].ToString())
         Assert.AreEqual("[]", ([] : decimal list list).ToString())
     
-    [<Test>]
+    [<Fact>]
     member this.ObjectEquals() =
         // All three are different references, but equality has been
         // provided by the F# compiler.
         let a = [1; 2; 3]
         let b = [1 .. 3]
         let c = 1 :: [2; 3]
-        Assert.IsTrue( (a = b) )
-        Assert.IsTrue( (b = c) )
-        Assert.IsTrue( (c = a) )
-        Assert.IsTrue( a.Equals(b) ); Assert.IsTrue( b.Equals(a) )
-        Assert.IsTrue( b.Equals(c) ); Assert.IsTrue( c.Equals(b) )
-        Assert.IsTrue( c.Equals(a) ); Assert.IsTrue( a.Equals(c) )
+        Assert.True( (a = b) )
+        Assert.True( (b = c) )
+        Assert.True( (c = a) )
+        Assert.True( a.Equals(b) ); Assert.True( b.Equals(a) )
+        Assert.True( b.Equals(c) ); Assert.True( c.Equals(b) )
+        Assert.True( c.Equals(a) ); Assert.True( a.Equals(c) )
 
         // Equality between types
         let a = [] : int list
         let b = [] : string list
-        Assert.IsFalse( b.Equals(a) )
-        Assert.IsFalse( a.Equals(b) )
+        Assert.False( b.Equals(a) )
+        Assert.False( a.Equals(b) )
         
         // Co/contra variance not supported
         let a = [] : string list
         let b = [] : obj list
-        Assert.IsFalse(a.Equals(b))
-        Assert.IsFalse(b.Equals(a))
+        Assert.False(a.Equals(b))
+        Assert.False(b.Equals(a))
         
         // Self equality
         let a = [1]
-        Assert.IsTrue( (a = a) )
-        Assert.IsTrue(a.Equals(a))
+        Assert.True( (a = a) )
+        Assert.True(a.Equals(a))
         
         // Null
-        Assert.IsFalse(a.Equals(null))
+        Assert.False(a.Equals(null))
     
     // Instance methods
-    [<Test>]
+    [<Fact>]
     member this.Length() =
     
         let l = [1 .. 10]
@@ -166,18 +165,18 @@ type ListType() =
         let e : int list list = List.empty
         Assert.AreEqual(e.Length, 0)
         
-    [<Test>]
+    [<Fact>]
     member this.IsEmpty() =
     
         let l = [1 .. 10]
-        Assert.IsFalse(l.IsEmpty)
+        Assert.False(l.IsEmpty)
     
         let e = Microsoft.FSharp.Collections.List.Empty : string list
-        Assert.IsTrue(e.IsEmpty)
+        Assert.True(e.IsEmpty)
         
-        Assert.IsTrue( ([] @ []).IsEmpty )
+        Assert.True( ([] @ []).IsEmpty )
         
-    [<Test>]
+    [<Fact>]
     member this.Head() =
         
         let l = ['a'; 'e'; 'i'; 'o'; 'u']
@@ -185,7 +184,7 @@ type ListType() =
         
         CheckThrowsInvalidOperationExn(fun () -> ([] : string list).Head |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member this.Tail() =
         
         let l = ['a'; 'e'; 'i'; 'o'; 'u']
@@ -193,7 +192,7 @@ type ListType() =
         
         CheckThrowsInvalidOperationExn(fun () -> ([] : string list).Tail |> ignore)
     
-    [<Test>]
+    [<Fact>]
     member this.Item() =
 
         let mutable l = [1]
@@ -215,21 +214,21 @@ type ListType() =
     
     // Static methods
     
-    [<Test>]
+    [<Fact>]
     member this.Empty() =
         let emptyList =  Microsoft.FSharp.Collections.List.Empty
         if List.length emptyList <> 0 then Assert.Fail()    
         
         let c : int list   = Microsoft.FSharp.Collections.List.Empty
-        Assert.IsTrue( (c = []) )
+        Assert.True( (c = []) )
         
         let d : string list = Microsoft.FSharp.Collections.List.Empty
-        Assert.IsTrue( (d = []) )
+        Assert.True( (d = []) )
         
         ()
 
 
-    [<Test>]
+    [<Fact>]
     member this.Cons() =
         // integer List
         let intList =  Microsoft.FSharp.Collections.List.Cons (1, [ 2;3; 4 ]) 
@@ -244,21 +243,23 @@ type ListType() =
         if emptyList <> [2] then Assert.Fail()
         ()
 
-    [<Test>]
-    member this.Slicing() =
+
+    [<Fact>] 
+    member this.SlicingUnboundedEnd() = 
         let lst = [1;2;3;4;5;6]
 
-        Assert.AreEqual(lst.[*], lst)
-
-        CheckThrowsIndexOutRangException((fun _ -> lst.[-1 ..] |> ignore))
+        Assert.AreEqual(lst.[-1..], lst)
         Assert.AreEqual(lst.[0..], lst)
         Assert.AreEqual(lst.[1..], [2;3;4;5;6])
         Assert.AreEqual(lst.[2..], [3;4;5;6])
         Assert.AreEqual(lst.[5..], [6])
         Assert.AreEqual(lst.[6..], ([]: int list))
-        CheckThrowsIndexOutRangException((fun _ -> lst.[7..] |> ignore))        
 
-        
+    
+    [<Fact>] 
+    member this.SlicingUnboundedStart() = 
+        let lst = [1;2;3;4;5;6]
+
         Assert.AreEqual(lst.[..(-1)], ([]: int list))
         Assert.AreEqual(lst.[..0], [1])
         Assert.AreEqual(lst.[..1], [1;2])
@@ -266,41 +267,60 @@ type ListType() =
         Assert.AreEqual(lst.[..3], [1;2;3;4])
         Assert.AreEqual(lst.[..4], [1;2;3;4;5])
         Assert.AreEqual(lst.[..5], [1;2;3;4;5;6])
-        CheckThrowsIndexOutRangException((fun _ -> lst.[..6] |> ignore)) 
-        
-        Assert.AreEqual(lst.[0..(-1)], ([]: int list))
+
+
+    [<Fact>]
+    member this.SlicingBoundedStartEnd() =
+        let lst = [1;2;3;4;5;6]
+
+        Assert.AreEqual(lst.[*], lst)
+
         Assert.AreEqual(lst.[0..0], [1])
         Assert.AreEqual(lst.[0..1], [1;2])
         Assert.AreEqual(lst.[0..2], [1;2;3])
         Assert.AreEqual(lst.[0..3], [1;2;3;4])
         Assert.AreEqual(lst.[0..4], [1;2;3;4;5])
         Assert.AreEqual(lst.[0..5], [1;2;3;4;5;6])
-        CheckThrowsIndexOutRangException((fun _ -> lst.[0..6] |> ignore))  
 
-        Assert.AreEqual(lst.[1..(-1)], ([]: int list))
-        Assert.AreEqual(lst.[1..0], ([]: int list))
         Assert.AreEqual(lst.[1..1], [2])
         Assert.AreEqual(lst.[1..2], [2;3])
         Assert.AreEqual(lst.[1..3], [2;3;4])
         Assert.AreEqual(lst.[1..4], [2;3;4;5])
         Assert.AreEqual(lst.[1..5], [2;3;4;5;6])
-        CheckThrowsIndexOutRangException((fun _ -> lst.[1..6] |> ignore))
 
-        CheckThrowsIndexOutRangException((fun _ -> lst.[-1..1] |> ignore))
         Assert.AreEqual(lst.[0..1], [1;2])
         Assert.AreEqual(lst.[1..1], [2])
         Assert.AreEqual(lst.[2..1], ([]: int list))
         Assert.AreEqual(lst.[3..1], ([]: int list))
         Assert.AreEqual(lst.[4..1], ([]: int list))
 
-        Assert.AreEqual(lst.[-3..(-4)], ([]: int list))
-        CheckThrowsIndexOutRangException((fun _ -> lst.[-4..(-3)] |> ignore))
+
+    [<Fact>]
+    member this.SlicingEmptyList() = 
 
         let empty : obj list = List.empty
         Assert.AreEqual(empty.[*], ([]: obj list))
         Assert.AreEqual(empty.[5..3], ([]: obj list))
         Assert.AreEqual(empty.[0..], ([]: obj list))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[..0] |> ignore))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[0..0] |> ignore))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[0..1] |> ignore))
-        CheckThrowsIndexOutRangException((fun _ -> empty.[3..5] |> ignore))
+        Assert.AreEqual(empty.[0..0], ([]: obj list))
+        Assert.AreEqual(empty.[0..1], ([]: obj list))
+        Assert.AreEqual(empty.[3..5], ([]: obj list))
+
+
+    [<Fact>]
+    member this.SlicingOutOfBounds() = 
+        let lst = [1;2;3;4;5;6]
+       
+        Assert.AreEqual(lst.[..6], [1;2;3;4;5;6])
+        Assert.AreEqual(lst.[6..], ([]: int list))
+
+        Assert.AreEqual(lst.[0..(-1)], ([]: int list))
+        Assert.AreEqual(lst.[1..(-1)], ([]: int list))
+        Assert.AreEqual(lst.[1..0], ([]: int list))
+        Assert.AreEqual(lst.[0..6], [1;2;3;4;5;6])
+        Assert.AreEqual(lst.[1..6], [2;3;4;5;6])
+
+        Assert.AreEqual(lst.[-1..1], [1;2])
+        Assert.AreEqual(lst.[-3..(-4)], ([]: int list))
+        Assert.AreEqual(lst.[-4..(-3)], ([]: int list))
+

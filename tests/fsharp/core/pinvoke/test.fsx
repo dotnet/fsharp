@@ -16,7 +16,7 @@ let report_failure (s : string) =
     stderr.WriteLine s
     failures := !failures @ [s]
 
-// We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
+// We currently build targeting netcoreapp3_1, and will continue to do so through this VS cycle
 // We will use this api to see if we are running on a netcore which supports pinvoke / refemit
 let definePInvokeMethod =
     typeof<System.Reflection.Emit.TypeBuilder>.GetMethod("DefinePInvokeMethod", [|

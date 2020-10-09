@@ -4,8 +4,9 @@ module FSharp.Core.UnitTests.LibraryTestFx
 
 open System
 open System.Collections.Generic
-
-open NUnit.Framework
+open System.IO
+open System.Reflection
+open Xunit
 
 // Workaround for bug 3601, we are issuing an unnecessary warning
 #nowarn "0004"
@@ -37,6 +38,7 @@ let private CheckThrowsExn2<'a when 'a :> exn> s (f : unit -> unit) =
 // attribute to flag these exception's usage as a bug.
 let CheckThrowsNullRefException      f = CheckThrowsExn<NullReferenceException>   f
 let CheckThrowsIndexOutRangException f = CheckThrowsExn<IndexOutOfRangeException> f
+let CheckThrowsObjectDisposedException f = CheckThrowsExn<ObjectDisposedException> f
 
 // Legit exceptions
 let CheckThrowsNotSupportedException f = CheckThrowsExn<NotSupportedException>    f
@@ -49,6 +51,7 @@ let CheckThrowsDivideByZeroException f = CheckThrowsExn<DivideByZeroException>  
 let CheckThrowsOverflowException     f = CheckThrowsExn<OverflowException>        f
 let CheckThrowsInvalidOperationExn   f = CheckThrowsExn<InvalidOperationException> f
 let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>           f
+let CheckThrowsArithmeticException   f = CheckThrowsExn<ArithmeticException>  f
 
 // Verifies two sequences are equal (same length, equiv elements)
 let VerifySeqsEqual (seq1 : seq<'T>) (seq2 : seq<'T>) =
@@ -95,16 +98,17 @@ module SurfaceArea =
         let actual =
             types |> Array.collect getTypeMemberStrings
 
-        asm,actual
+        asm, actual
 
     // verify public surface area matches expected
     let verify expected platform (fileName : string) =
+        printfn "Verify"
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-
+        
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
@@ -128,7 +132,7 @@ module SurfaceArea =
         else
 
             let logFile =
-                let workDir = TestContext.CurrentContext.WorkDirectory
+                let workDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
                 sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
             System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 

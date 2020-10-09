@@ -9,10 +9,6 @@ open System
 
 exception ABC
 
-type Assert =
-    static member AreEqual (a, b) = a=b
-    static member Fail = raise (Exception("Fail"))
-
 let failures = ref []
 
 let report_failure (s : string) = 
@@ -26,6 +22,9 @@ let test (s : string) b =
     stderr.WriteLine(s)
 
 let check s b1 b2 = test s (b1 = b2)
+
+type Assert =
+    static member AreEqual msg (a, b) = check msg a b; (a = b)
 
 type BasicNameOfTests() =
 
@@ -47,34 +46,34 @@ type BasicNameOfTests() =
     static member ``local variable name lookup`` () =
         let a = 0
         let b = nameof a
-        let result = Assert.AreEqual("a", b)
+        let result = Assert.AreEqual ("line " + string __LINE__) ("a", b)
         let c = nameof b
-        result || Assert.AreEqual("b", c)
+        result || Assert.AreEqual ("line " + string __LINE__) ("b", c)
 
     static member ``local int function name`` () =
         let myFunction x = 0 * x
         let result = nameof myFunction
-        Assert.AreEqual("myFunction", result)
+        Assert.AreEqual ("line " + string __LINE__) ("myFunction", result)
 
     static member ``local curried function name`` () =
         let curriedFunction x y = x * y
         let result = nameof curriedFunction
-        Assert.AreEqual("curriedFunction", result)
+        Assert.AreEqual ("line " + string __LINE__) ("curriedFunction", result)
 
     static member ``local tupled function name`` () =
         let tupledFunction(x,y) = x * y
         let result = nameof tupledFunction
-        Assert.AreEqual("tupledFunction", result)
+        Assert.AreEqual ("line " + string __LINE__) ("tupledFunction", result)
 
     static member ``local unit function name`` () =
         let myFunction() = 1
         let result = nameof(myFunction)
-        Assert.AreEqual("myFunction", result)
+        Assert.AreEqual ("line " + string __LINE__) ("myFunction", result)
 
     static member ``local function parameter name`` () =
         let myFunction parameter1 = nameof parameter1
         let result = myFunction "x"
-        Assert.AreEqual("parameter1", result)
+        Assert.AreEqual ("line " + string __LINE__) ("parameter1", result)
 
     static member ``can get name from inside a local function (needs to be let rec)`` () =
         let rec myLocalFunction x = 
@@ -82,83 +81,91 @@ type BasicNameOfTests() =
             nameof myLocalFunction + " " + z.ToString()
 
         let a = myLocalFunction 23
-        let result = Assert.AreEqual("myLocalFunction 46", a)
+        let result = Assert.AreEqual ("line " + string __LINE__) ("myLocalFunction 46", a)
 
         let b = myLocalFunction 25
-        result || Assert.AreEqual("myLocalFunction 50", b)
+        result || Assert.AreEqual ("line " + string __LINE__) ("myLocalFunction 50", b)
 
     static member ``can get name from inside static member`` () =
         let b = nameof(BasicNameOfTests.``can get name from inside static member``)
-        Assert.AreEqual("can get name from inside static member", b)
+        Assert.AreEqual ("line " + string __LINE__) ("can get name from inside static member", b)
 
     member this.``can get name from inside instance member`` () =
         let b = nameof(this.``can get name from inside instance member``)
-        Assert.AreEqual("can get name from inside instance member", b)
+        Assert.AreEqual ("line " + string __LINE__) ("can get name from inside instance member", b)
 
     static member ``can get name of static member`` () =
         let b = nameof(BasicNameOfTests.``can get name of static member``)
-        Assert.AreEqual("can get name of static member", b)
+        Assert.AreEqual ("line " + string __LINE__) ("can get name of static member", b)
 
     member this.``can get name of instance member`` () =
         let b = nameof(this.MemberMethod)
-        Assert.AreEqual("MemberMethod", b)
+        Assert.AreEqual ("line " + string __LINE__) ("MemberMethod", b)
+
+    member this.``can get name of instance member via unchecked`` () =
+        let b = nameof(Unchecked.defaultof<BasicNameOfTests>.MemberMethod)
+        Assert.AreEqual ("line " + string __LINE__) ("MemberMethod", b)
+
+    member this.``can get name of method type parameter``<'TTT> () =
+        let b = nameof<'TTT>
+        Assert.AreEqual ("line " + string __LINE__) ("TTT", b)
 
     static member ``namespace name`` () =
         let b = nameof(FSharp.Core)
-        Assert.AreEqual("Core",b)
+        Assert.AreEqual ("line " + string __LINE__) ("Core",b)
 
     static member ``module name`` () =
         let b = nameof(FSharp.Core.Operators)
-        Assert.AreEqual("Operators",b)
+        Assert.AreEqual ("line " + string __LINE__) ("Operators",b)
 
     static member ``exception name`` () =
         let b = nameof(ABC)
-        Assert.AreEqual("ABC",b)
+        Assert.AreEqual ("line " + string __LINE__) ("ABC",b)
 
     static member ``nested type name 1`` () =
         let b = nameof(System.Collections.Generic.List.Enumerator<_>)
-        Assert.AreEqual("Enumerator",b)
+        Assert.AreEqual ("line " + string __LINE__) ("Enumerator",b)
 
     static member ``type name 2`` () =
         let b = nameof(System.Action<_>)
-        Assert.AreEqual("Action",b)
+        Assert.AreEqual ("line " + string __LINE__) ("Action",b)
 
     static member ``member function which is defined below`` () =
         let x = BasicNameOfTests()
         let b = nameof(x.MemberMethodDefinedBelow)
-        Assert.AreEqual("MemberMethodDefinedBelow",b)
+        Assert.AreEqual ("line " + string __LINE__) ("MemberMethodDefinedBelow",b)
 
     member this.MemberMethodDefinedBelow(x,y) = x * y
 
     static member ``static member function name`` () =
         let b = nameof(BasicNameOfTests.StaticMethod)
-        Assert.AreEqual("StaticMethod",b)
+        Assert.AreEqual ("line " + string __LINE__) ("StaticMethod",b)
 
     member this.``class member lookup`` () =
         let b = nameof(localConstant)
-        Assert.AreEqual("localConstant",b)
+        Assert.AreEqual ("line " + string __LINE__) ("localConstant",b)
 
     static member ``static property name`` () =
         let b = nameof(BasicNameOfTests.StaticProperty)
-        Assert.AreEqual("StaticProperty",b)
+        Assert.AreEqual ("line " + string __LINE__) ("StaticProperty",b)
 
     member this.get_XYZ() = 1
 
     static member ``member method starting with get_`` () =
         let x = BasicNameOfTests()
         let b = nameof(x.get_XYZ)
-        Assert.AreEqual("get_XYZ",b)
+        Assert.AreEqual ("line " + string __LINE__) ("get_XYZ",b)
 
     static member get_SXYZ() = 1
 
     static member ``static method starting with get_`` () =
         let b = nameof(BasicNameOfTests.get_SXYZ)
-        Assert.AreEqual("get_SXYZ",b)
+        Assert.AreEqual ("line " + string __LINE__) ("get_SXYZ",b)
 
     static member ``nameof local property with encapsulated name`` () =
         let ``local property with encapsulated name and %.f`` = 0
         let b = nameof(``local property with encapsulated name and %.f``)
-        Assert.AreEqual("local property with encapsulated name and %.f",b)
+        Assert.AreEqual ("line " + string __LINE__) ("local property with encapsulated name and %.f",b)
 
 type MethodGroupNameOfTests() =
     member this.MethodGroup() = ()    
@@ -170,20 +177,20 @@ type MethodGroupNameOfTests() =
 
     member this.``single argument method group name lookup`` () =
         let b = nameof(this.MethodGroup)
-        Assert.AreEqual("MethodGroup",b)
+        Assert.AreEqual ("line " + string __LINE__) ("MethodGroup",b)
 
     member this.``multiple argument method group name lookup`` () =
         let b = nameof(this.MethodGroup1 : (float * int64 -> _))
-        Assert.AreEqual("MethodGroup1",b)
+        Assert.AreEqual ("line " + string __LINE__) ("MethodGroup1",b)
 
 type FrameworkMethodTests() =
     member this.``library function name`` () =
         let b = nameof(List.map)
-        Assert.AreEqual("map",b)
+        Assert.AreEqual ("line " + string __LINE__) ("map",b)
 
     member this.``static class function name`` () =
         let b = nameof(System.Tuple.Create)
-        Assert.AreEqual("Create",b)
+        Assert.AreEqual ("line " + string __LINE__) ("Create",b)
 
 type CustomUnionType =
     | OptionA 
@@ -198,22 +205,22 @@ type UnionAndRecordNameOfTests() =
 
     member this.``measure 1`` () =
         let b = nameof(Milliquacks)
-        Assert.AreEqual("Milliquacks",b)
+        Assert.AreEqual ("line " + string __LINE__) ("Milliquacks",b)
 
     member this.``record case 1`` () =
         let sample = Unchecked.defaultof<CustomRecordType>
         let b = nameof(sample.X)
-        let result = Assert.AreEqual("X",b)
+        let result = Assert.AreEqual ("line " + string __LINE__) ("X",b)
         let b = nameof(sample.Y)
-        result || Assert.AreEqual("Y",b)
+        result || Assert.AreEqual ("line " + string __LINE__) ("Y",b)
 
     member this.``union case 1`` () =
         let b = nameof(OptionA)
-        Assert.AreEqual("OptionA",b)
+        Assert.AreEqual ("line " + string __LINE__) ("OptionA",b)
 
     member this.``union case 2`` () =
         let b = nameof(OptionB)
-        Assert.AreEqual("OptionB",b)
+        Assert.AreEqual ("line " + string __LINE__) ("OptionB",b)
 
 type AttributeNameOfTests() =
 
@@ -222,27 +229,33 @@ type AttributeNameOfTests() =
         let t = typeof<AttributeNameOfTests>.GetMethod("ok in attribute")
         let attrs = t.GetCustomAttributes(typeof<ObsoleteAttribute>, false)
         let attr = attrs.[0] :?> ObsoleteAttribute
-        Assert.AreEqual(attr.Message, "test string")
+        Assert.AreEqual ("line " + string __LINE__) (attr.Message, "test string")
 
 type OperatorNameOfTests() =    
 
     member this.``lookup name of typeof operator`` () =
         let b = nameof(typeof<int>)
-        Assert.AreEqual("typeof",b)
+        Assert.AreEqual ("line " + string __LINE__) ("typeof",b)
 
     member this.``lookup name of + operator`` () =
         let b = nameof(+)
-        Assert.AreEqual("op_Addition",b)
+        Assert.AreEqual ("line " + string __LINE__) ("+",b)
+        let b2 = nameof(op_Addition)
+        Assert.AreEqual ("line " + string __LINE__) ("op_Addition",b2)
+        let b3 = nameof(FSharp.Core.Operators.(+))
+        Assert.AreEqual ("line " + string __LINE__) ("+",b3)
+        let b4 = nameof(FSharp.Core.Operators.op_Addition)
+        Assert.AreEqual ("line " + string __LINE__) ("op_Addition",b4)
 
     member this.``lookup name of |> operator`` () =
         let a = nameof(|>)
-        let result = Assert.AreEqual("op_PipeRight",a)
+        let result = Assert.AreEqual ("line " + string __LINE__) ("|>",a)
         let b = nameof(op_PipeRight)
-        result || Assert.AreEqual("op_PipeRight",b)
+        result || Assert.AreEqual ("line " + string __LINE__) ("op_PipeRight",b)
 
     member this.``lookup name of nameof operator`` () =
         let b = nameof(nameof)
-        Assert.AreEqual("nameof",b)
+        Assert.AreEqual ("line " + string __LINE__) ("nameof",b)
 
 type PatternMatchingOfOperatorNameTests() =
     member this.Method1(i:int) = ()
@@ -265,17 +278,17 @@ type NameOfOperatorForGenerics() =
     member this.``use it in a generic function`` () =
         let fullyGeneric x = x
         let b = nameof(fullyGeneric)
-        Assert.AreEqual("fullyGeneric",b)
+        Assert.AreEqual ("line " + string __LINE__) ("fullyGeneric",b)
 
     member this.``lookup name of a generic class`` () =
         let b = nameof System.Collections.Generic.List<int>
-        Assert.AreEqual("List",b)
+        Assert.AreEqual ("line " + string __LINE__) ("List",b)
 
 type UserDefinedNameOfTests() =
     static member ``user defined nameof should shadow the operator`` () =
         let nameof x = "test" + x.ToString()
         let y = nameof 1
-        Assert.AreEqual("test1",y)
+        Assert.AreEqual ("line " + string __LINE__) ("test1",y)
 
 type Person = 
     { Name : string
@@ -285,6 +298,30 @@ type Person =
         | x when x = nameof __.Name -> { __ with Name = string value }
         | x when x = nameof __.Age -> { __ with Age = value :?> int }
         | _ -> __
+
+type GenericClassNameOfTests<'TTT>() =
+
+    static member ``can get name of class type parameter`` () =
+        let b = nameof<'TTT>
+        Assert.AreEqual ("line " + string __LINE__) ("TTT", b)
+
+type GenericClassNameOfTests2<[<Measure>] 'TTT>() =
+
+    static member ``can get name of class unit of measure type parameter`` () =
+        let b = nameof<'TTT>
+        Assert.AreEqual ("line " + string __LINE__) ("TTT", b)
+
+module RecTest = 
+    let rec [<Literal>] two = 2
+    and twoName = nameof(two)
+    let ``can get name of recursive literal`` () =
+        Assert.AreEqual ("line " + string __LINE__) ("two", twoName)
+
+module rec RecTest2 = 
+    let [<Literal>] two = 2
+    let twoName = nameof(two)
+    let ``can get name of literal in recursive module`` () =
+        Assert.AreEqual ("line " + string __LINE__) ("two", twoName)
 
 do test "local variable name lookup"                    (BasicNameOfTests.``local variable name lookup`` ())
 do test "local int function name"                       (BasicNameOfTests.``local int function name`` ())
@@ -297,6 +334,7 @@ do test "can get name from inside a local function (needs to be let rec)"
 do test "can get name from inside static member"        (BasicNameOfTests.``can get name from inside static member`` ())
 do test "can get name from inside instance member"      ((BasicNameOfTests()).``can get name from inside instance member`` ())
 do test "can get name of instance member"               ((BasicNameOfTests()).``can get name of instance member`` ())
+do test "can get name of instance member via unchecked" ((BasicNameOfTests()).``can get name of instance member via unchecked`` ())
 do test "namespace name"                                (BasicNameOfTests.``namespace name`` ())
 do test "module name"                                   (BasicNameOfTests.``module name`` ())
 do test "exception name"                                (BasicNameOfTests.``exception name`` ())
@@ -333,6 +371,41 @@ do test "use it in a generic function"                  ((NameOfOperatorForGener
 do test "lookup name of a generic class"                ((NameOfOperatorForGenerics()).``lookup name of a generic class`` ())
 
 do test "user defined nameof should shadow the operator"(UserDefinedNameOfTests.``user defined nameof should shadow the operator`` ())
+
+do test "can get name of class type parameter"(GenericClassNameOfTests<int>.``can get name of class type parameter`` ())
+do test "can get name of class type parameter"(GenericClassNameOfTests2<FSharp.Data.UnitSystems.SI.UnitSymbols.kg>.``can get name of class unit of measure type parameter`` ())
+do test "can get name of recursive literal"(RecTest.``can get name of recursive literal`` ())
+do test "can get name of literal in recursive module"(RecTest2.``can get name of literal in recursive module`` ())
+
+module PatternMatchingWithNameof =
+    /// Simplified version of EventStore's API
+    type RecordedEvent = { EventType: string; Data: string }
+
+    /// My concrete type:
+    type MyEvent =
+        | A of string
+        | B of string
+
+    let deserialize (e: RecordedEvent) : MyEvent =
+        match e.EventType with
+        | nameof A -> A e.Data
+        | nameof B -> B e.Data
+        | t -> failwithf "Invalid EventType: %s" t
+
+    let getData event =
+        match event with
+        | A amsg -> amsg
+        | B bmsg -> bmsg
+
+    let re1 = { EventType = nameof A; Data = "hello" }
+    let re2 = { EventType = nameof B; Data = "world" }
+
+    let a = deserialize re1
+    let b = deserialize re2
+
+    check "fklwveoihwq1" (getData a) re1.Data
+    check "fklwveoihwq2" (getData b) re2.Data
+
 
 #if TESTS_AS_APP
 let RUN() = 

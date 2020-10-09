@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Map module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -20,20 +20,19 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>][<Category "Collections.Map">][<Category "FSharp.Core.Collections">]
 type MapModule() =
-    [<Test>]
+    [<Fact>]
     member this.Empty() =
-        let emptyMap = Map.empty        
-        Assert.IsTrue(Map.isEmpty emptyMap)
+        let emptyMap = Map.empty
+        Assert.True(Map.isEmpty emptyMap)
         
         let a:Map<int,int>    = Map.empty<int,int>
         let b : Map<string,string> = Map.empty<string,string>
         let c : Map<int,string> = Map.empty<int,string>  
-              
+
         ()
-        
-    [<Test>]
+
+    [<Fact>]
     member this.Add() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -63,32 +62,66 @@ type MapModule() =
          
         ()
 
-    [<Test>]
+    [<Fact>]
+    member this.Change() =
+
+        let a = (Map.ofArray [|(1,1);(2,4);(3,9)|])
+        let b = Map.change 4 (fun current -> Assert.AreEqual(current, None); Some 16) a
+        Assert.AreEqual(b.[1], 1)
+        Assert.AreEqual(b.[2], 4)
+        Assert.AreEqual(b.[3], 9)
+        Assert.AreEqual(b.[4], 16)
+        let c = Map.change 4 (fun current -> Assert.AreEqual(current, Some 16); Some 25) b
+        Assert.AreEqual(b.[1], 1)
+        Assert.AreEqual(b.[2], 4)
+        Assert.AreEqual(b.[3], 9)
+        Assert.AreEqual(c.[4], 25)
+
+        // empty Map
+        let eptMap = Map.empty
+        let resultEpt = Map.change 1 (fun current -> Assert.AreEqual(current, None); Some "a") eptMap
+        Assert.AreEqual(resultEpt.[1], "a")
+
+        // One-element Map
+        let oeleMap = Map.ofSeq [(1, "one")]
+        let resultOele = Map.change 7 (fun current -> Assert.AreEqual(current, None); Some "seven") oeleMap
+        Assert.AreEqual(resultOele.[7], "seven")
+
+        // Remove element
+        let resultRm = Map.change 1 (fun current -> Assert.AreEqual(current, Some 1); None) c
+        Assert.False(resultRm.ContainsKey 1)
+        Assert.AreEqual(resultRm.[2], 4)
+        Assert.AreEqual(resultRm.[3], 9)
+        Assert.AreEqual(resultRm.[4], 25)
+
+        ()
+
+    [<Fact>]
     member this.Exists() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
         let resultValueMap = Map.exists (fun x y -> x > 3) valueKeyMap        
-        Assert.IsTrue(resultValueMap)
+        Assert.True(resultValueMap)
 
         
         // reference keys
         let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
         let resultRefMap = refMap |> Map.exists  (fun x y -> y>2 )
-        Assert.IsTrue(resultRefMap)
+        Assert.True(resultRefMap)
         
         // One-element Map
         let oeleMap = Map.ofSeq [(1, "one")]
         let resultOele = oeleMap |> Map.exists  (fun x y -> (x + y.Length) % 4 = 0 ) 
-        Assert.IsTrue(resultOele)
+        Assert.True(resultOele)
         
         // empty Map
         let eptMap = Map.empty
         let resultEpt = Map.exists (fun x y -> false) eptMap
-        Assert.IsFalse(resultEpt)
+        Assert.False(resultEpt)
        
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Filter() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -113,7 +146,7 @@ type MapModule() =
         ()       
 
 
-    [<Test>]
+    [<Fact>]
     member this.Find() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -136,7 +169,7 @@ type MapModule() =
                
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.FindIndex() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -159,7 +192,7 @@ type MapModule() =
                
         ()          
      
-    [<Test>]
+    [<Fact>]
     member this.TryPick() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -184,7 +217,7 @@ type MapModule() =
                
         ()     
 
-    [<Test>]
+    [<Fact>]
     member this.Pick() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -211,7 +244,7 @@ type MapModule() =
         
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Fold() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -235,7 +268,7 @@ type MapModule() =
                
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.FoldBack() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -259,56 +292,56 @@ type MapModule() =
                
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.ForAll() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
         let resultValueMap = valueKeyMap |> Map.forall (fun x y -> x % 3 = 0)         
-        Assert.IsFalse(resultValueMap)
+        Assert.False(resultValueMap)
         
         // reference keys
         let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
         let resultRefMap = refMap |> Map.forall  (fun x y -> x.Length  > 4 )         
-        Assert.IsFalse(resultRefMap)
+        Assert.False(resultRefMap)
         
         // One-element Map
         let oeleMap = Map.ofSeq [(1, "one")]
         let resultOele = oeleMap |> Map.forall  (fun x y -> x<3 )         
-        Assert.IsTrue(resultOele)
+        Assert.True(resultOele)
         
         // empty Map
         let eptMap = Map.empty
         let resultEpt =eptMap |>  Map.forall (fun x y -> true)         
-        Assert.IsTrue(resultEpt)
+        Assert.True(resultEpt)
                
         ()       
 
 
-    [<Test>]
+    [<Fact>]
     member this.IsEmpty() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
         let resultValueMap = Map.isEmpty  valueKeyMap        
-        Assert.IsFalse(resultValueMap)
+        Assert.False(resultValueMap)
         
         // reference keys
         let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
         let resultRefMap = Map.isEmpty   refMap        
-        Assert.IsFalse(resultRefMap)
+        Assert.False(resultRefMap)
         
         // One-element Map
         let oeleMap = Map.ofSeq [(1, "one")]
         let resultOele = Map.isEmpty   oeleMap        
-        Assert.IsFalse(resultOele)
+        Assert.False(resultOele)
         
         // empty Map
         let eptMap = Map.empty
         let resultEpt = Map.isEmpty  eptMap        
-        Assert.IsTrue(resultEpt)
+        Assert.True(resultEpt)
                
         ()  
 
-    [<Test>]
+    [<Fact>]
     member this.Iter() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -348,7 +381,7 @@ type MapModule() =
                
         ()          
      
-    [<Test>]
+    [<Fact>]
     member this.Map() =
 
         // value keys
@@ -373,31 +406,31 @@ type MapModule() =
                
         ()     
 
-    [<Test>]
+    [<Fact>]
     member this.Contains() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
         let resultValueMap = Map.containsKey 2 valueKeyMap        
-        Assert.IsTrue(resultValueMap)
+        Assert.True(resultValueMap)
         
         // reference keys
         let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
         let resultRefMap = Map.containsKey ".."  refMap        
-        Assert.IsTrue(resultRefMap)
+        Assert.True(resultRefMap)
         
         // One-element Map
         let oeleMap = Map.ofSeq [(1, "one")]
         let resultOele = Map.containsKey 1 oeleMap        
-        Assert.IsTrue(resultOele)
+        Assert.True(resultOele)
         
         // empty Map
         let eptMap = Map.empty
         let resultEpt = Map.containsKey 3 eptMap        
-        Assert.IsFalse(resultEpt)
+        Assert.False(resultEpt)
                
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.Of_Array_Of_List_Of_Seq() =
         // value keys    
         let valueKeyMapOfArr = Map.ofArray [|(2,"b"); (3,"c"); (4,"d"); (5,"e")|]     
@@ -428,7 +461,7 @@ type MapModule() =
                 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Partition() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -459,7 +492,7 @@ type MapModule() =
         ()
     
         
-    [<Test>]
+    [<Fact>]
     member this.Remove() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -490,7 +523,7 @@ type MapModule() =
                                
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.To_Array() =
         // value keys    
         let valueKeyMapOfArr = Map.ofArray [|(1,1);(2,4);(3,9)|]     
@@ -514,7 +547,7 @@ type MapModule() =
 
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.To_List() =
         // value keys    
         let valueKeyMapOfArr = Map.ofList [(1,1);(2,4);(3,9)]     
@@ -539,7 +572,7 @@ type MapModule() =
 
         ()     
 
-    [<Test>]
+    [<Fact>]
     member this.To_Seq() =
         // value keys    
         let valueKeyMapOfArr = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]  
@@ -564,7 +597,7 @@ type MapModule() =
          
         ()           
 
-    [<Test>]
+    [<Fact>]
     member this.TryFind() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]
@@ -588,7 +621,7 @@ type MapModule() =
                
         ()      
 
-    [<Test>]
+    [<Fact>]
     member this.TryFindIndex() =
         // value keys
         let valueKeyMap = Map.ofSeq [(2,"b"); (3,"c"); (4,"d"); (5,"e")]

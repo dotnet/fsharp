@@ -11,14 +11,19 @@ open System
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SyntaxTreeOps
 
 type ShortIdent = string
+
 type Idents = ShortIdent[]
+
 type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
+
 type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
+
 type IsAutoOpen = bool
 
 [<AutoOpen>]
@@ -65,11 +70,6 @@ module Extensions =
         member x.TryGetMembersFunctionsAndValues = 
             try x.MembersFunctionsAndValues with _ -> [||] :> _
 
-    let isOperator (name: string) =
-        name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )") && name.Length > 4
-            && name.Substring (2, name.Length - 4) 
-               |> String.forall (fun c -> c <> ' ' && not (Char.IsLetter c))
-
     type FSharpMemberOrFunctionOrValue with
         // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307). 
         member x.FullTypeSafe = Option.attempt (fun _ -> x.FullType)
@@ -87,7 +87,7 @@ module Extensions =
 
         member x.TryGetFullCompiledOperatorNameIdents() : Idents option =
             // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
-            if isOperator x.DisplayName && x.DisplayName <> x.CompiledName then
+            if PrettyNaming.IsOperatorName x.DisplayName && x.DisplayName <> x.CompiledName then
                 x.DeclaringEntity
                 |> Option.bind (fun e -> e.TryGetFullName())
                 |> Option.map (fun enclosingEntityFullName -> 
@@ -113,6 +113,7 @@ type AssemblySymbol =
       Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind
       UnresolvedSymbol: UnresolvedSymbol }
+
     override x.ToString() = sprintf "%A" x  
 
 type AssemblyPath = string
@@ -125,6 +126,7 @@ type Parent =
       AutoOpen: Idents option
       WithModuleSuffix: Idents option 
       IsModule: bool }
+
     static member Empty = 
         { Namespace = None
           ThisRequiresQualifiedAccess = fun _ -> None
@@ -132,6 +134,7 @@ type Parent =
           AutoOpen = None
           WithModuleSuffix = None 
           IsModule = true }
+
     static member RewriteParentIdents (parentIdents: Idents option) (idents: Idents) =
         match parentIdents with
         | Some p when p.Length <= idents.Length -> 
@@ -353,7 +356,7 @@ module AssemblyContentProvider =
 #endif
         | [], _ -> []
         | assemblies, Some fileName ->
-            let fileWriteTime = FileInfo(fileName).LastWriteTime 
+            let fileWriteTime = FileSystem.GetLastWriteTimeShim(fileName) 
             withCache <| fun cache ->
                 match contentType, cache.TryGet fileName with 
                 | _, Some entry
@@ -501,8 +504,8 @@ module ParsedInput =
         | _ -> None
 
     let (|ConstructorPats|) = function
-        | SynConstructorArgs.Pats ps -> ps
-        | SynConstructorArgs.NamePatPairs(xs, _) -> List.map snd xs
+        | SynArgPats.Pats ps -> ps
+        | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
@@ -589,13 +592,14 @@ module ParsedInput =
         and walkInterfaceImpl (InterfaceImpl(_, bindings, _)) = List.iter walkBinding bindings
     
         and walkIndexerArg = function
-            | SynIndexerArg.One e -> walkExpr e
-            | SynIndexerArg.Two (e1, e2) -> List.iter walkExpr [e1; e2]
+            | SynIndexerArg.One (e, _, _) -> walkExpr e
+            | SynIndexerArg.Two (e1, _, e2, _, _, _) -> List.iter walkExpr [e1; e2]
     
         and walkType = function
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
-            | SynType.MeasurePower (t, _, _) -> walkType t
+            | SynType.MeasurePower (t, _, _)
+            | SynType.Paren (t, _) -> walkType t
             | SynType.Fun (t1, t2, _)
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1; walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
@@ -632,7 +636,7 @@ module ParsedInput =
             | SynExpr.Assert (e, _)
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
-            | SynExpr.Lambda (_, _, pats, e, _) ->
+            | SynExpr.Lambda (_, _, pats, e, _, _) ->
                 walkSimplePats pats
                 walkExpr e
             | SynExpr.New (_, t, e, _)
@@ -703,9 +707,13 @@ module ParsedInput =
                 addLongIdentWithDots ident
                 List.iter walkExpr [e1; e2; e3]
             | SynExpr.JoinIn (e1, _, e2, _) -> List.iter walkExpr [e1; e2]
-            | SynExpr.LetOrUseBang (_, _, _, pat, e1, e2, _) ->
+            | SynExpr.LetOrUseBang (_, _, _, pat, e1, es, e2, _) ->
                 walkPat pat
-                List.iter walkExpr [e1; e2]
+                walkExpr e1
+                for (_,_,_,patAndBang,eAndBang,_) in es do
+                    walkPat patAndBang
+                    walkExpr eAndBang
+                walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
                 List.iter walkTypar ts
                 walkMemberSig sign
@@ -740,8 +748,7 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkType t
             argInfo :: (argInfos |> List.concat)
-            |> List.map (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
-            |> List.concat
+            |> List.collect (fun (SynArgInfo(Attributes attrs, _, _)) -> attrs)
             |> List.iter walkAttribute
     
         and walkMemberSig = function
@@ -760,10 +767,11 @@ module ParsedInput =
                 walkTypeDefnSigRepr repr
                 List.iter walkMemberSig memberSigs
     
-        and walkMember = function
+        and walkMember memb =
+            match memb with
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _) ->
+            | SynMemberDefn.ImplicitCtor (_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _, _) ->
                 List.iter walkAttribute attrs
                 List.iter walkSimplePat simplePats
             | SynMemberDefn.ImplicitInherit (t, e, _, _) -> walkType t; walkExpr e
@@ -860,30 +868,30 @@ module ParsedInput =
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
         use _ignoreAllDiagnostics = new ErrorScope()  
 
-        let result: (Scope * pos * (* finished *) bool) option ref = ref None
-        let ns: string[] option ref = ref None
+        let mutable result = None
+        let mutable ns = None
         let modules = ResizeArray<Module>()  
 
-        let inline longIdentToIdents ident = ident |> Seq.map (fun x -> string x) |> Seq.toArray
+        let inline longIdentToIdents ident = ident |> Seq.map string |> Seq.toArray
         
         let addModule (longIdent: LongIdent, range: range) =
             modules.Add 
-                { Idents = longIdent |> List.map string |> List.toArray 
+                { Idents = longIdentToIdents longIdent
                   Range = range }
 
         let doRange kind (scope: LongIdent) line col =
             if line <= currentLine then
-                match !result, insertionPoint with
+                match result, insertionPoint with
                 | None, _ -> 
-                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
+                    result <- Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
                 | Some (_, _, true), _ -> ()
                 | Some (oldScope, oldPos, false), OpenStatementInsertionPoint.TopLevel when kind <> OpenDeclaration ->
-                    result := Some (oldScope, oldPos, true)
+                    result <- Some (oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
                     | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
-                        result := 
+                        result <-
                             Some ({ Idents = 
                                         match scope with 
                                         | [] -> oldScope.Idents 
@@ -893,7 +901,7 @@ module ParsedInput =
                                   false)
                     | _ -> ()
 
-        let getMinColumn (decls: SynModuleDecls) =
+        let getMinColumn decls =
             match decls with
             | [] -> None
             | firstDecl :: _ -> 
@@ -916,11 +924,11 @@ module ParsedInput =
             if range.EndLine >= currentLine then
                 let isModule = kind.IsModule
                 match isModule, parent, ident with
-                | false, _, _ -> ns := Some (longIdentToIdents ident)
+                | false, _, _ -> ns <- Some (longIdentToIdents ident)
                 // top level module with "inlined" namespace like Ns1.Ns2.TopModule
                 | true, [], _f :: _s :: _ -> 
                     let ident = longIdentToIdents ident
-                    ns := Some (ident.[0..ident.Length - 2])
+                    ns <- Some (ident.[0..ident.Length - 2])
                 | _ -> ()
                 
                 let fullIdent = parent @ ident
@@ -958,9 +966,9 @@ module ParsedInput =
         | ParsedInput.ImplFile input -> walkImplFileInput input
 
         let res =
-            !result
+            result
             |> Option.map (fun (scope, pos, _) ->
-                let ns = !ns |> Option.map longIdentToIdents
+                let ns = ns |> Option.map longIdentToIdents
                 scope, ns, mkPos (pos.Line + 1) pos.Column)
         
         let modules = 

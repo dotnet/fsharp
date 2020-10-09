@@ -135,7 +135,9 @@ namespace Microsoft.FSharp.Core
     type StructuralEqualityAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface |||
+                      AttributeTargets.Delegate ||| AttributeTargets.Struct |||
+                      AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoEqualityAttribute() = 
         inherit System.Attribute()
@@ -150,19 +152,26 @@ namespace Microsoft.FSharp.Core
     type CustomComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Delegate ||| AttributeTargets.Struct ||| AttributeTargets.Enum, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface |||
+                      AttributeTargets.Delegate ||| AttributeTargets.Struct |||
+                      AttributeTargets.Enum, AllowMultiple=false)>]  
     [<Sealed>]
     type NoComparisonAttribute() = 
         inherit System.Attribute()
 
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter |||
+                      AttributeTargets.Method ||| AttributeTargets.Property |||
+                      AttributeTargets.Constructor, AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute(includeValue: bool) =
         inherit System.Attribute()
         new() = ReflectedDefinitionAttribute(false)
         member x.IncludeValue = includeValue
 
-    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class ||| AttributeTargets.Field ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum ||| AttributeTargets.Property, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Class |||
+                      AttributeTargets.Field ||| AttributeTargets.Interface |||
+                      AttributeTargets.Struct ||| AttributeTargets.Delegate |||
+                      AttributeTargets.Enum ||| AttributeTargets.Property, AllowMultiple=false)>]  
     [<Sealed>]
     type CompiledNameAttribute(compiledName:string) =
         inherit System.Attribute()
@@ -237,11 +246,20 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
         member x.Flags = flags
 
+
+    module internal ExperimentalAttributeMessages =
+        [<Literal>]
+        let RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
+
+        [<Literal>]
+        let NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
+
     [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
     type ExperimentalAttribute(message:string) =
         inherit System.Attribute()
-        member x.Message = message    
+
+        member x.Message = message
 
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
@@ -301,10 +319,15 @@ namespace Microsoft.FSharp.Core
 
     [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
-    type NoDynamicInvocationAttribute() =
+    type NoDynamicInvocationAttribute(isLegacy: bool) =
+
         inherit System.Attribute()
 
-    [<AttributeUsage(AttributeTargets.Parameter, AllowMultiple=false)>]
+        new () = NoDynamicInvocationAttribute(false)
+
+        member x.IsLegacy = isLegacy
+
+    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
     [<Sealed>]
     type OptionalArgumentAttribute() =
         inherit System.Attribute()
@@ -347,7 +370,7 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
 
-    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    /// <summary>Represents a managed pointer in F# code.</summary>
     type byref<'T> = (# "!0&" #)
 
     /// <summary>Represents a managed pointer in F# code.</summary>
@@ -377,9 +400,11 @@ namespace Microsoft.FSharp.Core
     module internal BasicInlinedOperations =  
         let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
         let inline box     (x:'T) = (# "box !0" type ('T) x : obj #)
+        let inline convPrim<'T1, 'T2>(x: 'T1) : 'T2 = unboxPrim<'T2> (box x) 
         let inline not     (b:bool) = (# "ceq" b false : bool #)
         let inline (=)     (x:int)   (y:int)    = (# "ceq" x y : bool #) 
-        let inline (<>)    (x:int)   (y:int)    = not(# "ceq" x y : bool #) 
+        let inline (<>)    (x:int)   (y:int)    = not(# "ceq" x y : bool #)
+        let inline (<=)    (x:int)   (y:int)    = not(# "cgt" x y : bool #)
         let inline (>=)    (x:int)   (y:int)    = not(# "clt" x y : bool #)
         let inline (>=.)   (x:int64) (y:int64)  = not(# "clt" x y : bool #)
         let inline (>=...) (x:char)  (y:char)   = not(# "clt" x y : bool #)
@@ -440,14 +465,14 @@ namespace Microsoft.FSharp.Core
 
         let inline iscastPrim<'T when 'T : not struct>(x:obj) = (# "isinst !0" type ('T) x : 'T #)
 
+        let inline mask (n:int) (m:int) = (# "and" n m : int #)
 
     open BasicInlinedOperations
 
     
     module TupleUtils =
     
-        // adapted from System.Tuple :: CombineHashCodes
-        let inline mask (n:int) (m:int) = (# "and" n m : int #)
+        // adapted from System.Tuple::CombineHashCodes
         let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
         let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
         let inline combineTupleHashes (h1 : int) (h2 : int) = (opxor ((opshl h1  5) + h1)  h2)
@@ -568,7 +593,7 @@ namespace Microsoft.FSharp.Core
                         then TypeNullnessSemantics_NullNotLiked
                         else TypeNullnessSemantics_NullTrueValue
 
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]             
+             
             type TypeInfo<'T>() = 
                // Compute an on-demand per-instantiation static field
                static let info = getTypeInfo typeof<'T>
@@ -651,8 +676,15 @@ namespace Microsoft.FSharp.Core
             let inline GetArray2DLength1 (arr: 'T[,]) =  (# "ldlen.multi 2 0" arr : int #)  
             let inline GetArray2DLength2 (arr: 'T[,]) =  (# "ldlen.multi 2 1" arr : int #)  
 
+            let inline GetArray2DLength (arr: 'T[,]) (dim: int) = 
+                match dim with
+                | 0 -> GetArray2DLength1 arr
+                | 1 -> GetArray2DLength2 arr
+                | _ -> raise (System.IndexOutOfRangeException())
+
             let inline Array2DZeroCreate (n:int) (m:int) = (# "newarr.multi 2 !0" type ('T) n m : 'T[,] #)
-            let GetArray2DSub (src: 'T[,]) src1 src2 len1 len2 =
+            
+            let inline GetArray2DSub (src: 'T[,]) src1 src2 len1 len2 =
                 let len1 = (if len1 < 0 then 0 else len1)
                 let len2 = (if len2 < 0 then 0 else len2)
                 let dst = Array2DZeroCreate len1 len2
@@ -661,7 +693,7 @@ namespace Microsoft.FSharp.Core
                         SetArray2D dst i j (GetArray2D src (src1 + i) (src2 + j))
                 dst
 
-            let SetArray2DSub (dst: 'T[,]) src1 src2 len1 len2 src =
+            let inline SetArray2DSub (dst: 'T[,]) src1 src2 len1 len2 src =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         SetArray2D dst (src1+i) (src2+j) (GetArray2D src i j)
@@ -679,9 +711,16 @@ namespace Microsoft.FSharp.Core
 
             let inline GetArray3DLength3 (arr: 'T[,,]) =  (# "ldlen.multi 3 2" arr : int #)  
 
+            let inline GetArray3DLength (arr: 'T[,,]) (dim: int) = 
+                match dim with
+                | 0 -> GetArray3DLength1 arr 
+                | 1 -> GetArray3DLength2 arr
+                | 2 -> GetArray3DLength3 arr
+                | _ -> raise (System.IndexOutOfRangeException())
+
             let inline Array3DZeroCreate (n1:int) (n2:int) (n3:int) = (# "newarr.multi 3 !0" type ('T) n1 n2 n3 : 'T[,,] #)
 
-            let GetArray3DSub (src: 'T[,,]) src1 src2 src3 len1 len2 len3 =
+            let inline GetArray3DSub (src: 'T[,,]) src1 src2 src3 len1 len2 len3 =
                 let len1 = (if len1 < 0 then 0 else len1)
                 let len2 = (if len2 < 0 then 0 else len2)
                 let len3 = (if len3 < 0 then 0 else len3)
@@ -692,7 +731,7 @@ namespace Microsoft.FSharp.Core
                             SetArray3D dst i j k (GetArray3D src (src1+i) (src2+j) (src3+k))
                 dst
 
-            let SetArray3DSub (dst: 'T[,,]) src1 src2 src3 len1 len2 len3 src =
+            let inline SetArray3DSub (dst: 'T[,,]) src1 src2 src3 len1 len2 len3 src =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         for k = 0 to len3 - 1 do
@@ -705,17 +744,25 @@ namespace Microsoft.FSharp.Core
             let inline SetArray4D (target: 'T[,,,]) (index1: int) (index2: int) (index3: int) (index4: int) (value:'T) = 
                 (# "stelem.multi 4 !0" type ('T) target index1 index2 index3 index4 value #)  
 
-            let inline Array4DLength1 (arr: 'T[,,,]) =  (# "ldlen.multi 4 0" arr : int #)  
+            let inline GetArray4DLength1 (arr: 'T[,,,]) =  (# "ldlen.multi 4 0" arr : int #)  
 
-            let inline Array4DLength2 (arr: 'T[,,,]) =  (# "ldlen.multi 4 1" arr : int #)  
+            let inline GetArray4DLength2 (arr: 'T[,,,]) =  (# "ldlen.multi 4 1" arr : int #)  
 
-            let inline Array4DLength3 (arr: 'T[,,,]) =  (# "ldlen.multi 4 2" arr : int #)  
+            let inline GetArray4DLength3 (arr: 'T[,,,]) =  (# "ldlen.multi 4 2" arr : int #)  
 
-            let inline Array4DLength4 (arr: 'T[,,,]) =  (# "ldlen.multi 4 3" arr : int #)  
+            let inline GetArray4DLength4 (arr: 'T[,,,]) =  (# "ldlen.multi 4 3" arr : int #)  
+
+            let inline GetArray4DLength (arr: 'T[,,,]) (dim: int) =
+                match dim with
+                | 0 -> GetArray4DLength1 arr
+                | 1 -> GetArray4DLength2 arr
+                | 2 -> GetArray4DLength3 arr
+                | 3 -> GetArray4DLength4 arr
+                | _ -> raise (System.IndexOutOfRangeException())
 
             let inline Array4DZeroCreate (n1:int) (n2:int) (n3:int) (n4:int) = (# "newarr.multi 4 !0" type ('T) n1 n2 n3 n4 : 'T[,,,] #)
 
-            let GetArray4DSub (src: 'T[,,,]) src1 src2 src3 src4 len1 len2 len3 len4 =
+            let inline GetArray4DSub (src: 'T[,,,]) src1 src2 src3 src4 len1 len2 len3 len4 =
                 let len1 = (if len1 < 0 then 0 else len1)
                 let len2 = (if len2 < 0 then 0 else len2)
                 let len3 = (if len3 < 0 then 0 else len3)
@@ -728,7 +775,7 @@ namespace Microsoft.FSharp.Core
                               SetArray4D dst i j k m (GetArray4D src (src1+i) (src2+j) (src3+k) (src4+m))
                 dst
 
-            let SetArray4DSub (dst: 'T[,,,]) src1 src2 src3 src4 len1 len2 len3 len4 src =
+            let inline SetArray4DSub (dst: 'T[,,,]) src1 src2 src3 src4 len1 len2 len3 len4 src =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         for k = 0 to len3 - 1 do
@@ -737,9 +784,9 @@ namespace Microsoft.FSharp.Core
 
         let inline anyToString nullStr x = 
             match box x with 
+            | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
             | null -> nullStr
-            | :? System.IFormattable as f -> f.ToString(null,System.Globalization.CultureInfo.InvariantCulture)
-            | obj ->  obj.ToString()
+            | _ ->  x.ToString()
 
         let anyToStringShowingNull x = anyToString "null" x
 
@@ -1007,6 +1054,7 @@ namespace Microsoft.FSharp.Core
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                 when 'T : DateTime = System.DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #))
 
 
             /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
@@ -1085,6 +1133,7 @@ namespace Microsoft.FSharp.Core
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                 when 'T : DateTime = System.DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #))
 
             /// Generic less-than with static optimizations for some well-known cases.
             let inline GenericLessThanFast (x:'T) (y:'T) = 
@@ -1104,6 +1153,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32= (# "clt" x y : bool #) 
                 when 'T : char   = (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) < 0
               
             /// Generic greater-than with static optimizations for some well-known cases.
             let inline GenericGreaterThanFast (x:'T) (y:'T) = 
@@ -1123,6 +1173,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) > 0
 
             /// Generic less-than-or-equal with static optimizations for some well-known cases.
             let inline GenericLessOrEqualFast (x:'T) (y:'T) = 
@@ -1142,6 +1193,7 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not(# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) <= 0
 
             /// Generic greater-than-or-equal with static optimizations for some well-known cases.
             let inline GenericGreaterOrEqualFast (x:'T) (y:'T) = 
@@ -1161,6 +1213,8 @@ namespace Microsoft.FSharp.Core
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                
+                when 'T : DateTime = DateTime.Compare((# "" x : DateTime #), (# "" y : DateTime #)) >= 0
 
 
             //-------------------------------------------------------------------------
@@ -1444,6 +1498,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
                                
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -1466,6 +1521,8 @@ namespace Microsoft.FSharp.Core
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
+    
                   
             /// A compiler intrinsic generated during optimization of calls to GenericEqualityIntrinsic on tuple values.
             //
@@ -1492,6 +1549,7 @@ namespace Microsoft.FSharp.Core
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
                   when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : DateTime = DateTime.Equals((# "" x : DateTime #), (# "" y : DateTime #))
                   
 
             let inline GenericInequalityFast (x:'T) (y:'T) = (not(GenericEqualityFast x y) : bool)
@@ -1663,11 +1721,10 @@ namespace Microsoft.FSharp.Core
             let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
                 GenericHashParamObj comp (box input)
                 
-            /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
                  match s with 
                  | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String :: GetHashCode()" s : int #)
+                 | _ -> s.GetHashCode()
                     
             // from mscorlib v4.0.30319
             let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
@@ -1942,6 +1999,10 @@ namespace Microsoft.FSharp.Core
 
         let inline PhysicalHash obj = HashCompare.PhysicalHashFast obj
         
+        let inline typeeq<'T, 'U> = PhysicalEquality typeof<'T> typeof<'U>
+        let inline type2eq<'T1, 'T2, 'U> = typeeq<'T1, 'U> && typeeq<'T2, 'U>  
+        let inline type3eq<'T1, 'T2, 'T3, 'U> = typeeq<'T1, 'U> && typeeq<'T2, 'U> && typeeq<'T3, 'U> 
+
         let GenericComparer = HashCompare.fsComparerER :> IComparer
 
         let GenericEqualityComparer = HashCompare.fsEqualityComparerUnlimitedHashingPER :> IEqualityComparer
@@ -2175,7 +2236,7 @@ namespace Microsoft.FSharp.Core
         let inline EnumOfValue (value : 'T) : 'Enum when 'Enum : enum<'T> = 
             unboxPrim<'Enum>(box value)
              // According to the somewhat subtle rules of static optimizations,
-             // this condition is used whenever 'Enum is resolved to a nominal type
+             // this condition is used whenever 'Enum is resolved to a nominal
             when 'Enum : 'Enum = (retype value : 'Enum)
 
         let inline EnumToValue (enum : 'Enum) : 'T when 'Enum : enum<'T> = 
@@ -2308,7 +2369,22 @@ namespace Microsoft.FSharp.Core
             | 'o' -> parseOctalUInt64  (s.Substring(p))
             | _ -> UInt64.Parse(s.Substring(p), NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture) 
 
+        let inline ParseByte (s:string)       = (# "conv.ovf.u1" (ParseUInt32 s) : byte #)
 
+        let inline ParseSByte (s:string)      = (# "conv.ovf.i1" (ParseInt32 s)  : sbyte #)
+
+        let inline ParseInt16 (s:string)      = (# "conv.ovf.i2" (ParseInt32 s)  : int16 #)
+
+        let inline ParseUInt16 (s:string)     = (# "conv.ovf.u2" (ParseUInt32 s) : uint16 #)
+
+        let inline ParseIntPtr (s:string)  = (# "conv.ovf.i"  (ParseInt64 s)  : nativeint #)
+
+        let inline ParseUIntPtr (s:string) = (# "conv.ovf.u"  (ParseInt64 s)  : unativeint #)
+
+        let inline ParseDouble (s:string)   = Double.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
+
+        let inline ParseSingle (s:string) = Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
+            
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
         type GenericZeroDynamicImplTable<'T>() = 
             static let result : 'T = 
@@ -2321,6 +2397,7 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<nativeint>)  then unboxPrim<'T> (box 0n)
                 elif aty.Equals(typeof<byte>)       then unboxPrim<'T> (box 0uy)
                 elif aty.Equals(typeof<uint16>)     then unboxPrim<'T> (box 0us)
+                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box '\000')
                 elif aty.Equals(typeof<uint32>)     then unboxPrim<'T> (box 0u)
                 elif aty.Equals(typeof<uint64>)     then unboxPrim<'T> (box 0UL)
                 elif aty.Equals(typeof<unativeint>) then unboxPrim<'T> (box 0un)
@@ -2344,7 +2421,7 @@ namespace Microsoft.FSharp.Core
                 elif aty.Equals(typeof<nativeint>)  then unboxPrim<'T> (box 1n)
                 elif aty.Equals(typeof<byte>)       then unboxPrim<'T> (box 1uy)
                 elif aty.Equals(typeof<uint16>)     then unboxPrim<'T> (box 1us)
-                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box (retype 1us : char))
+                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box '\001')
                 elif aty.Equals(typeof<uint32>)     then unboxPrim<'T> (box 1u)
                 elif aty.Equals(typeof<uint64>)     then unboxPrim<'T> (box 1UL)
                 elif aty.Equals(typeof<unativeint>) then unboxPrim<'T> (box 1un)
@@ -2372,6 +2449,7 @@ namespace Microsoft.FSharp.Core
             when ^T : unativeint  = 0un
             when ^T : int16       = 0s
             when ^T : uint16      = 0us
+            when ^T : char        = '\000'
             when ^T : sbyte       = 0y
             when ^T : byte        = 0uy
             when ^T : decimal     = 0M
@@ -2392,7 +2470,7 @@ namespace Microsoft.FSharp.Core
             when ^T : unativeint  = 1un
             when ^T : int16       = 1s
             when ^T : uint16      = 1us
-            when ^T : char        = (retype 1us : char)
+            when ^T : char        = '\001'
             when ^T : sbyte       = 1y
             when ^T : byte        = 1uy
             when ^T : decimal     = 1M
@@ -2401,197 +2479,671 @@ namespace Microsoft.FSharp.Core
              // That is, not in the generic implementation of '+'
             when ^T : ^T = (^T : (static member One : ^T) ())
 
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
-        type GenericDivideByIntDynamicImplTable<'T>() = 
-            static let result : ('T -> int -> 'T) = 
+        type System.Type with
+    
+            member inline this.GetSingleStaticMethodByTypes(name: string, parameterTypes: Type[]) =
+               let staticBindingFlags = (# "" 0b111000 : BindingFlags #) // BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic
+               this.GetMethod(name, staticBindingFlags, null, parameterTypes, null )
+
+        let UnaryDynamicImpl nm : ('T -> 'U) =
+             let aty = typeof<'T>
+             let minfo = aty.GetSingleStaticMethodByTypes(nm, [| aty |])
+             (fun x -> unboxPrim<_>(minfo.Invoke(null,[| box x|])))
+
+        let BinaryDynamicImpl nm : ('T -> 'U -> 'V) =
+             let aty = typeof<'T>
+             let bty = typeof<'U>
+             let minfo = aty.GetSingleStaticMethodByTypes(nm, [| aty; bty |])
+             (fun x y -> unboxPrim<_>(minfo.Invoke(null,[| box x; box y|])))
+
+        // Legacy dynamic implementation of operator resolution if no built in solution is used and no witness passed
+        type UnaryOpDynamicImplTable<'OpInfo,'T,'U>() = 
+            static let mutable meth : MethodInfo = null
+
+            static member Invoke opName (x: 'T) : 'U = 
                 // The dynamic implementation
                 let aty = typeof<'T>
-                if aty.Equals(typeof<decimal>)    then unboxPrim<_> (box (fun (x:decimal) (n:int) -> System.Decimal.Divide(x, System.Convert.ToDecimal(n))))
-                elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float) (n:int) -> (# "div" x ((# "conv.r8" n  : float #)) : float #)))
-                elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32) (n:int) -> (# "div" x ((# "conv.r4" n  : float32 #)) : float32 #)))
-                else 
-                    match aty.GetMethod("DivideByInt",[| aty; typeof<int> |]) with 
-                    | null -> raise (NotSupportedException (SR.GetString(SR.dyInvDivByIntCoerce)))
-                    | m -> (fun x n -> unboxPrim<_> (m.Invoke(null,[| box x; box n |])))
 
-            static member Result : ('T -> int -> 'T) = result
+                match meth with 
+                | null ->
+                    let ameth = aty.GetSingleStaticMethodByTypes(opName, [| aty |])
+                    match ameth with
+                    | null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
+                    | res -> 
+                        meth <- res
+                | _ -> ()
+                unboxPrim<'U> (meth.Invoke(null,[| box x |]))
 
-        let DivideByIntDynamic<'T> x y = GenericDivideByIntDynamicImplTable<('T)>.Result x y
+        // Legacy dynamic implementation of operator resolution, if no built in solution is used and no witness passed
+        type BinaryOpDynamicImplTable<'OpInfo,'T1,'T2,'U>() = 
+            static let mutable meth : MethodInfo = null
 
-        let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x:^T) (y:int) : ^T =
+            static member Invoke opName (x: 'T1) (y: 'T2) : 'U =
+                match meth with 
+                | null -> 
+                    // The dynamic implementation
+                    let aty = typeof<'T1>
+                    let bty = typeof<'T2>
+
+                    let ameth = aty.GetSingleStaticMethodByTypes(opName, [| aty; bty |])
+                    let bmeth = 
+                        if aty.Equals(bty) then null else 
+                        bty.GetSingleStaticMethodByTypes(opName, [| aty; bty |])
+                    match ameth, bmeth with
+                    | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
+                    | m, null | null, m ->
+                        meth <- m
+                    | _ -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddOverload)))
+                | _ -> ()
+                unboxPrim<'U> (meth.Invoke(null,[| box x; box y |]))
+
+        type OpAdditionInfo = class end
+
+        let AdditionDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "add" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, float> then convPrim<_,'U> (# "add" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U, float32> then convPrim<_,'U> (# "add" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "add" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "add" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "add" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "add" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "add" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "conv.i2" (# "add" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "conv.u2" (# "add" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, char> then convPrim<_,'U> (# "conv.u2" (# "add" (convPrim<_,char> x) (convPrim<_,char> y) : uint32 #) : char #)
+            elif type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "conv.i1" (# "add" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "conv.u1" (# "add" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U, string> then convPrim<_,'U> (String.Concat(convPrim<_,string> x, convPrim<_,string> y))
+            elif type3eq<'T1, 'T2, 'U, decimal> then convPrim<_,'U> (Decimal.op_Addition(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpAdditionInfo, 'T1, 'T2, 'U>.Invoke "op_Addition" x y
+
+        type OpSubtractionInfo = class end 
+        let SubtractionDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "sub" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, float> then convPrim<_,'U> (# "sub" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U, float32> then convPrim<_,'U> (# "sub" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "sub" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "sub" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "sub" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "sub" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "sub" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "conv.i2" (# "sub" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "conv.u2" (# "sub" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "conv.i1" (# "sub" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "conv.u1" (# "sub" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U, decimal> then convPrim<_,'U> (Decimal.op_Subtraction(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpSubtractionInfo, 'T1, 'T2, 'U>.Invoke "op_Subtraction" x y
+
+        type OpMultiplyInfo = class end
+        let MultiplyDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U,  int32> then convPrim<_,'U> (# "mul" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U,  float> then convPrim<_,'U> (# "mul" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U,  float32> then convPrim<_,'U> (# "mul" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U,  int64> then convPrim<_,'U> (# "mul" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U,  uint64> then convPrim<_,'U> (# "mul" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U,  uint32> then convPrim<_,'U> (# "mul" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U,  nativeint> then convPrim<_,'U> (# "mul" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U,  unativeint> then convPrim<_,'U> (# "mul" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U,  int16> then convPrim<_,'U> (# "conv.i2" (# "mul" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U,  uint16> then convPrim<_,'U> (# "conv.u2" (# "mul" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U,  sbyte> then convPrim<_,'U> (# "conv.i1" (# "mul" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U,  byte> then convPrim<_,'U> (# "conv.u1" (# "mul" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U,  decimal> then convPrim<_,'U> (Decimal.op_Multiply(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpMultiplyInfo, 'T1, 'T2, 'U>.Invoke "op_Multiply" x y
+
+        type OpDivisionInfo = class end
+        let DivisionDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U,int32> then convPrim<_,'U> (# "div" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U,float> then convPrim<_,'U> (# "div" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U,float32> then convPrim<_,'U> (# "div" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U,int64> then convPrim<_,'U> (# "div" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U,uint64> then convPrim<_,'U> (# "div.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U,uint32> then convPrim<_,'U> (# "div.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U,nativeint> then convPrim<_,'U> (# "div" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U,unativeint> then convPrim<_,'U> (# "div.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U,int16> then convPrim<_,'U> (# "conv.i2" (# "div" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U,uint16> then convPrim<_,'U> (# "conv.u2" (# "div.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U,sbyte> then convPrim<_,'U> (# "conv.i1" (# "div" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U,byte> then convPrim<_,'U> (# "conv.u1" (# "div.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U, decimal> then convPrim<_,'U> (Decimal.op_Division(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpDivisionInfo, 'T1, 'T2, 'U>.Invoke "op_Division" x y
+
+        type OpModulusInfo = class end
+        let ModulusDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U  =
+            if type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "rem" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, float> then convPrim<_,'U> (# "rem" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U, float32> then convPrim<_,'U> (# "rem" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "rem" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "rem.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "rem.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "rem" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "rem.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "conv.i2" (# "rem" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "conv.u2" (# "rem.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "conv.i1" (# "rem" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "conv.u1" (# "rem.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U, decimal> then convPrim<_,'U> (Decimal.op_Modulus(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpModulusInfo, 'T1, 'T2, 'U>.Invoke "op_Modulus" x y
+
+        type OpUnaryNegationInfo = class end
+        let UnaryNegationDynamic<'T,'U> (value: 'T) : 'U =
+            if type2eq<'T, 'U, int32> then convPrim<_,'U> (# "neg" (convPrim<_,int32> value) : int32 #) 
+            elif type2eq<'T, 'U, float> then convPrim<_,'U> (# "neg" (convPrim<_,float> value) : float #) 
+            elif type2eq<'T, 'U, float32> then convPrim<_,'U> (# "neg" (convPrim<_,float32> value) : float32 #) 
+            elif type2eq<'T, 'U, int64> then convPrim<_,'U> (# "neg" (convPrim<_,int64> value) : int64 #) 
+            elif type2eq<'T, 'U, nativeint> then convPrim<_,'U> (# "neg" (convPrim<_,nativeint> value) : nativeint #) 
+            elif type2eq<'T, 'U, int16> then convPrim<_,'U> (# "conv.i2" (# "neg" (convPrim<_,int16> value) : int32 #) : int16 #)
+            elif type2eq<'T, 'U, sbyte> then convPrim<_,'U> (# "conv.i1" (# "neg" (convPrim<_,sbyte> value) : int32 #) : sbyte #)
+            elif type2eq<'T, 'U, decimal> then convPrim<_,'U> (Decimal.op_UnaryNegation(convPrim<_,decimal> value))
+            else UnaryOpDynamicImplTable<OpUnaryNegationInfo,'T,'U>.Invoke "op_UnaryNegation" value
+
+        type OpCheckedAdditionInfo = class end
+        let CheckedAdditionDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "add.ovf" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, float> then convPrim<_,'U> (# "add" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U, float32> then convPrim<_,'U> (# "add" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "add.ovf" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "add.ovf.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "add.ovf.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "add.ovf" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "add.ovf.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "conv.ovf.i2" (# "add.ovf" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "conv.ovf.u2.un" (# "add.ovf.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, char> then convPrim<_,'U> (# "conv.ovf.u2.un" (# "add.ovf.un" (convPrim<_,char> x) (convPrim<_,char> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "conv.ovf.i1" (# "add.ovf" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "conv.ovf.u1.un" (# "add.ovf.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U, string> then convPrim<_,'U> (String.Concat(convPrim<_,string> x, convPrim<_,string> y))
+            elif type3eq<'T1, 'T2, 'U, decimal> then convPrim<_,'U> (Decimal.op_Addition(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpCheckedAdditionInfo, 'T1, 'T2, 'U>.Invoke "op_Addition" x y
+
+        type OpCheckedSubtractionInfo = class end
+        let CheckedSubtractionDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "sub.ovf" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, float> then convPrim<_,'U> (# "sub" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U, float32> then convPrim<_,'U> (# "sub" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "sub.ovf" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "sub.ovf.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "sub.ovf.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "sub.ovf" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "sub.ovf.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "conv.ovf.i2" (# "sub.ovf" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "conv.ovf.u2.un" (# "sub.ovf.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "conv.ovf.i1" (# "sub.ovf" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "conv.ovf.u1.un" (# "sub.ovf.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U, decimal> then convPrim<_,'U> (Decimal.op_Subtraction(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpCheckedSubtractionInfo, 'T1, 'T2, 'U>.Invoke "op_Subtraction" x y
+
+        type OpCheckedMultiplyInfo = class end
+        let CheckedMultiplyDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "mul.ovf" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, float> then convPrim<_,'U> (# "mul" (convPrim<_,float> x) (convPrim<_,float> y) : float #) 
+            elif type3eq<'T1, 'T2, 'U, float32> then convPrim<_,'U> (# "mul" (convPrim<_,float32> x) (convPrim<_,float32> y) : float32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "mul.ovf" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "mul.ovf.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "mul.ovf.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "mul.ovf" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "mul.ovf.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "conv.ovf.i2" (# "mul.ovf" (convPrim<_,int16> x) (convPrim<_,int16> y) : int32 #) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "conv.ovf.u2.un" (# "mul.ovf.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint32 #) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "conv.ovf.i1" (# "mul.ovf" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : int32 #) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "conv.ovf.u1.un" (# "mul.ovf.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : uint32 #) : byte #)
+            elif type3eq<'T1, 'T2, 'U, decimal> then convPrim<_,'U> (Decimal.op_Multiply(convPrim<_,decimal> x, convPrim<_,decimal> y))
+            else BinaryOpDynamicImplTable<OpCheckedMultiplyInfo, 'T1, 'T2, 'U>.Invoke "op_Multiply" x y
+
+        type OpCheckedUnaryNegationInfo = class end
+        let CheckedUnaryNegationDynamic<'T,'U> value =
+            if type2eq<'T, 'U, int32> then convPrim<_,'U> (# "sub.ovf" 0 (convPrim<_,int32> value) : int32 #) 
+            elif type2eq<'T, 'U, float> then convPrim<_,'U> (# "neg" (convPrim<_,float> value) : float #) 
+            elif type2eq<'T, 'U, float32> then convPrim<_,'U> (# "neg" (convPrim<_,float32> value) : float32 #) 
+            elif type2eq<'T, 'U, int64> then convPrim<_,'U> (# "sub.ovf" 0L (convPrim<_,int64> value) : int64 #) 
+            elif type2eq<'T, 'U, nativeint> then convPrim<_,'U> (# "sub.ovf" 0n (convPrim<_,nativeint> value) : nativeint #) 
+            elif type2eq<'T, 'U, int16> then convPrim<_,'U> (# "sub.ovf" 0s (convPrim<_,int16> value) : int16 #)
+            elif type2eq<'T, 'U, sbyte> then convPrim<_,'U> (# "sub.ovf" 0y (convPrim<_,sbyte> value) : sbyte #)
+            elif type2eq<'T, 'U, decimal> then convPrim<_,'U> (Decimal.op_UnaryNegation(convPrim<_,decimal> value))
+            else UnaryOpDynamicImplTable<OpCheckedUnaryNegationInfo,'T,'U>.Invoke "op_UnaryNegation" value
+
+        type OpLeftShiftInfo = class end
+        let LeftShiftDynamic<'T1, 'T2, 'U> (value: 'T1) (shift: 'T2) : 'U =
+            if type2eq<'T1, 'U, sbyte> && typeeq<'T2, int> then convPrim<_,'U> (# "conv.i1" (# "shl" (convPrim<_,sbyte> value) (mask (convPrim<_,int32> shift) 7) : int32 #) : sbyte #)
+            elif type2eq<'T1, 'U, byte> && typeeq<'T2, int> then convPrim<_,'U> (# "conv.u1" (# "shl" (convPrim<_,byte> value) (mask (convPrim<_,int32> shift) 7) : uint32 #) : byte #)
+            elif type2eq<'T1, 'U, int16> && typeeq<'T2, int> then convPrim<_,'U> (# "conv.i2" (# "shl" (convPrim<_,int16> value) (mask (convPrim<_,int32> shift) 15) : int32 #) : int16 #)
+            elif type2eq<'T1, 'U, uint16> && typeeq<'T2, int> then convPrim<_,'U> (# "conv.u2" (# "shl" (convPrim<_,uint16> value) (mask (convPrim<_,int32> shift) 15) : uint32 #) : uint16 #)
+            elif type2eq<'T1, 'U, int32> && typeeq<'T2, int> then convPrim<_,'U> (# "shl" (convPrim<_,int32> value) (mask (convPrim<_,int32> shift) 31) : int32 #) 
+            elif type2eq<'T1, 'U, uint32> && typeeq<'T2, int> then convPrim<_,'U> (# "shl" (convPrim<_,uint32> value) (mask (convPrim<_,int32> shift) 31) : uint32 #) 
+            elif type2eq<'T1, 'U, int64> && typeeq<'T2, int> then convPrim<_,'U> (# "shl" (convPrim<_,int64> value) (mask (convPrim<_,int32> shift) 63) : int64 #) 
+            elif type2eq<'T1, 'U, uint64> && typeeq<'T2, int> then convPrim<_,'U> (# "shl" (convPrim<_,uint64> value)  (mask (convPrim<_,int32> shift) 63) : uint64 #) 
+            elif type2eq<'T1, 'U, nativeint> && typeeq<'T2, int> then convPrim<_,'U> (# "shl" (convPrim<_,nativeint> value) (convPrim<_,int32> shift) : nativeint #) 
+            elif type2eq<'T1, 'U, unativeint> && typeeq<'T2, int> then convPrim<_,'U> (# "shl" (convPrim<_,unativeint> value) (convPrim<_,int32> shift) : unativeint #) 
+            else BinaryOpDynamicImplTable<OpLeftShiftInfo, 'T1, 'T2, 'U>.Invoke "op_LeftShift" value shift
+
+        type OpRightShiftInfo = class end
+        let RightShiftDynamic<'T1, 'T2, 'U> (value: 'T1) (shift: 'T2) : 'U =
+            if type2eq<'T1, 'U, sbyte> && typeeq<'T2, int> then convPrim<_,'U> (# "shr" (convPrim<_,sbyte> value) (mask (convPrim<_,int32> shift) 7) : sbyte #)
+            elif type2eq<'T1, 'U, byte> && typeeq<'T2, int> then convPrim<_,'U> (# "shr.un" (convPrim<_,byte> value) (mask (convPrim<_,int32> shift) 7) : byte #)
+            elif type2eq<'T1, 'U, int16> && typeeq<'T2, int> then convPrim<_,'U> (# "shr" (convPrim<_,int16> value) (mask (convPrim<_,int32> shift) 15): int16 #)
+            elif type2eq<'T1, 'U, uint16> && typeeq<'T2, int> then convPrim<_,'U> (# "shr.un" (convPrim<_,uint16> value) (mask (convPrim<_,int32> shift) 15) : uint16 #)
+            elif type2eq<'T1, 'U, int32> && typeeq<'T2, int> then convPrim<_,'U> (# "shr" (convPrim<_,int32> value) (mask (convPrim<_,int32> shift) 31) : int32 #) 
+            elif type2eq<'T1, 'U, uint32> && typeeq<'T2, int> then convPrim<_,'U> (# "shr.un" (convPrim<_,uint32> value) (mask (convPrim<_,int32> shift) 31) : uint32 #) 
+            elif type2eq<'T1, 'U, int64> && typeeq<'T2, int> then convPrim<_,'U> (# "shr" (convPrim<_,int64> value) (mask (convPrim<_,int32> shift) 63) : int64 #) 
+            elif type2eq<'T1, 'U, uint64> && typeeq<'T2, int> then convPrim<_,'U> (# "shr.un" (convPrim<_,uint64> value)  (mask (convPrim<_,int32> shift) 63) : uint64 #) 
+            elif type2eq<'T1, 'U, nativeint> && typeeq<'T2, int> then convPrim<_,'U> (# "shr" (convPrim<_,nativeint> value) (convPrim<_,int32> shift) : nativeint #) 
+            elif type2eq<'T1, 'U, unativeint> && typeeq<'T2, int> then convPrim<_,'U> (# "shr.un" (convPrim<_,unativeint> value) (convPrim<_,int32> shift) : unativeint #) 
+            else BinaryOpDynamicImplTable<OpRightShiftInfo, 'T1, 'T2, 'U>.Invoke "op_RightShift" value shift
+
+        type OpBitwiseAndInfo = class end
+        let BitwiseAndDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "and" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "and" (convPrim<_,byte> x) (convPrim<_,byte> y) : byte #)
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "and" (convPrim<_,int16> x) (convPrim<_,int16> y) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "and" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "and" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "and" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "and" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "and" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "and" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "and" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            else BinaryOpDynamicImplTable<OpBitwiseAndInfo, 'T1, 'T2, 'U>.Invoke "op_BitwiseAnd" x y
+
+        type OpBitwiseOrInfo = class end
+        let BitwiseOrDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "or" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "or" (convPrim<_,byte> x) (convPrim<_,byte> y) : byte #)
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "or" (convPrim<_,int16> x) (convPrim<_,int16> y) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "or" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "or" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "or" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "or" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "or" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "or" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "or" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            else BinaryOpDynamicImplTable<OpBitwiseOrInfo, 'T1, 'T2, 'U>.Invoke "op_BitwiseOr" x y
+
+        type OpExclusiveOrInfo = class end
+        let ExclusiveOrDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type3eq<'T1, 'T2, 'U, sbyte> then convPrim<_,'U> (# "xor" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : sbyte #)
+            elif type3eq<'T1, 'T2, 'U, byte> then convPrim<_,'U> (# "xor" (convPrim<_,byte> x) (convPrim<_,byte> y) : byte #)
+            elif type3eq<'T1, 'T2, 'U, int16> then convPrim<_,'U> (# "xor" (convPrim<_,int16> x) (convPrim<_,int16> y) : int16 #)
+            elif type3eq<'T1, 'T2, 'U, uint16> then convPrim<_,'U> (# "xor" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : uint16 #)
+            elif type3eq<'T1, 'T2, 'U, int32> then convPrim<_,'U> (# "xor" (convPrim<_,int32> x) (convPrim<_,int32> y) : int32 #) 
+            elif type3eq<'T1, 'T2, 'U, uint32> then convPrim<_,'U> (# "xor" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : uint32 #) 
+            elif type3eq<'T1, 'T2, 'U, int64> then convPrim<_,'U> (# "xor" (convPrim<_,int64> x) (convPrim<_,int64> y) : int64 #) 
+            elif type3eq<'T1, 'T2, 'U, uint64> then convPrim<_,'U> (# "xor" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : uint64 #) 
+            elif type3eq<'T1, 'T2, 'U, nativeint> then convPrim<_,'U> (# "xor" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : nativeint #) 
+            elif type3eq<'T1, 'T2, 'U, unativeint> then convPrim<_,'U> (# "xor" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : unativeint #) 
+            else BinaryOpDynamicImplTable<OpExclusiveOrInfo, 'T1, 'T2, 'U>.Invoke "op_ExclusiveOr" x y
+
+        type OpLogicalNotInfo = class end
+        let LogicalNotDynamic<'T,'U> (value: 'T) : 'U =
+            if type2eq<'T, 'U, sbyte> then convPrim<_,'U> (# "conv.i1" (# "not" (convPrim<_,sbyte> value) : int32 #) : sbyte #)
+            elif type2eq<'T, 'U, byte> then convPrim<_,'U> (# "conv.u1" (# "not" (convPrim<_,byte> value) : uint32 #) : byte #)
+            elif type2eq<'T, 'U, int16> then convPrim<_,'U> (# "conv.i2" (# "not" (convPrim<_,int16> value) : int32 #) : int16 #)
+            elif type2eq<'T, 'U, uint16> then convPrim<_,'U> (# "conv.u2" (# "not" (convPrim<_,uint16> value) : uint32 #) : uint16 #)
+            elif type2eq<'T, 'U, int32> then convPrim<_,'U> (# "not" (convPrim<_,int32> value) : int32 #) 
+            elif type2eq<'T, 'U, uint32> then convPrim<_,'U> (# "not" (convPrim<_,uint32> value) : uint32 #) 
+            elif type2eq<'T, 'U, int64> then convPrim<_,'U> (# "not" (convPrim<_,int64> value) : int64 #) 
+            elif type2eq<'T, 'U, uint64> then convPrim<_,'U> (# "not" (convPrim<_,uint64> value) : uint64 #) 
+            elif type2eq<'T, 'U, nativeint> then convPrim<_,'U> (# "not" (convPrim<_,nativeint> value) : nativeint #) 
+            elif type2eq<'T, 'U, unativeint> then convPrim<_,'U> (# "not" (convPrim<_,unativeint> value) : unativeint #) 
+            else UnaryOpDynamicImplTable<OpLogicalNotInfo,'T,'U>.Invoke "op_LogicalNot" value
+
+        type OpExplicitInfo = class end
+        let ExplicitDynamic<'T, 'U> (value: 'T) : 'U =
+            if typeeq<'U, byte> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.u1" (convPrim<_,sbyte> value) : byte #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u1" (convPrim<_,byte> value) : byte #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.u1" (convPrim<_,int16> value) : byte #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u1" (convPrim<_,uint16> value) : byte #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.u1" (convPrim<_,int32> value) : byte #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u1" (convPrim<_,uint32> value) : byte #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.u1" (convPrim<_,int64> value) : byte #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u1" (convPrim<_,uint64> value) : byte #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.u1" (convPrim<_,nativeint> value) : byte #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u1" (convPrim<_,unativeint> value) : byte #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u1" (convPrim<_,float> value) : byte #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u1" (convPrim<_,float32> value) : byte #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u1" (convPrim<_,char> value) : byte #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseByte (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, sbyte> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i1" (convPrim<_,sbyte> value) : sbyte #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.i1" (convPrim<_,byte> value) : sbyte #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i1" (convPrim<_,int16> value) : sbyte #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.i1" (convPrim<_,uint16> value) : sbyte #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i1" (convPrim<_,int32> value) : sbyte #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.i1" (convPrim<_,uint32> value) : sbyte #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i1" (convPrim<_,int64> value) : sbyte #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.i1" (convPrim<_,uint64> value) : sbyte #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i1" (convPrim<_,nativeint> value) : sbyte #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.i1" (convPrim<_,unativeint> value) : sbyte #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i1" (convPrim<_,float> value) : sbyte #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i1" (convPrim<_,float32> value) : sbyte #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.i1" (convPrim<_,char> value) : sbyte #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseSByte (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, uint16> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.u2" (convPrim<_,sbyte> value) : uint16 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u2" (convPrim<_,byte> value) : uint16 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int16> value) : uint16 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint16> value) : uint16 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int32> value) : uint16 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint32> value) : uint16 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int64> value) : uint16 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint64> value) : uint16 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.u2" (convPrim<_,nativeint> value) : uint16 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u2" (convPrim<_,unativeint> value) : uint16 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float> value) : uint16 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float32> value) : uint16 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u2" (convPrim<_,char> value) : uint16 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUInt16 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, int16> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i2" (convPrim<_,sbyte> value) : int16 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.i2" (convPrim<_,byte> value) : int16 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i2" (convPrim<_,int16> value) : int16 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.i2" (convPrim<_,uint16> value) : int16 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i2" (convPrim<_,int32> value) : int16 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.i2" (convPrim<_,uint32> value) : int16 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i2" (convPrim<_,int64> value) : int16 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.i2" (convPrim<_,uint64> value) : int16 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i2" (convPrim<_,nativeint> value) : int16 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.i2" (convPrim<_,unativeint> value) : int16 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i2" (convPrim<_,float> value) : int16 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i2" (convPrim<_,float32> value) : int16 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.i2" (convPrim<_,char> value) : int16 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseInt16 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, uint32> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.u4" (convPrim<_,sbyte> value) : uint32 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u4" (convPrim<_,byte> value) : uint32 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.u4" (convPrim<_,int16> value) : uint32 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u4" (convPrim<_,uint16> value) : uint32 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.u4" (convPrim<_,int32> value) : uint32 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u4" (convPrim<_,uint32> value) : uint32 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.u4" (convPrim<_,int64> value) : uint32 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u4" (convPrim<_,uint64> value) : uint32 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.u4" (convPrim<_,nativeint> value) : uint32 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u4" (convPrim<_,unativeint> value) : uint32 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u4" (convPrim<_,float> value) : uint32 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u4" (convPrim<_,float32> value) : uint32 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u4" (convPrim<_,char> value) : uint32 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUInt32 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, int32> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i4" (convPrim<_,sbyte> value) : int32 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.i4" (convPrim<_,byte> value) : int32 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int16> value) : int32 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint16> value) : int32 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int32> value) : int32 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint32> value) : int32 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i4" (convPrim<_,int64> value) : int32 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.i4" (convPrim<_,uint64> value) : int32 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i4" (convPrim<_,nativeint> value) : int32 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.i4" (convPrim<_,unativeint> value) : int32 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i4" (convPrim<_,float> value) : int32 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i4" (convPrim<_,float32> value) : int32 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.i4" (convPrim<_,char> value) : int32 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseInt32 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, uint64> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i8" (convPrim<_,sbyte> value) : uint64 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u8" (convPrim<_,byte> value) : uint64 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i8" (convPrim<_,int16> value) : uint64 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u8" (convPrim<_,uint16> value) : uint64 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i8" (convPrim<_,int32> value) : uint64 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u8" (convPrim<_,uint32> value) : uint64 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "" (convPrim<_,int64> value) : uint64 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.i8" (convPrim<_,uint64> value) : uint64 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i8" (convPrim<_,nativeint> value) : uint64 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u8" (convPrim<_,unativeint> value) : uint64 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u8" (convPrim<_,float> value) : uint64 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u8" (convPrim<_,float32> value) : uint64 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u8" (convPrim<_,char> value) : uint64 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUInt64 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, int64> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i8" (convPrim<_,sbyte> value) : int64 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u8" (convPrim<_,byte> value) : int64 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i8" (convPrim<_,int16> value) : int64 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u8" (convPrim<_,uint16> value) : int64 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i8" (convPrim<_,int32> value) : int64 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u8" (convPrim<_,uint32> value) : int64 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (convPrim<_,int64> value) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "" (convPrim<_,uint64> value) : int64 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.i8" (convPrim<_,nativeint> value) : int64 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u8" (convPrim<_,unativeint> value) : int64 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u8" (convPrim<_,float> value) : int64 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u8" (convPrim<_,float32> value) : int64 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u8" (convPrim<_,char> value) : int64 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseInt64 (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, float32> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.r4" (convPrim<_,sbyte> value) : float32 #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,byte> value) : float32 #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.r4" (convPrim<_,int16> value) : float32 #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,uint16> value) : float32 #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.r4" (convPrim<_,int32> value) : float32 #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,uint32> value) : float32 #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.r4" (convPrim<_,int64> value) : float32 #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,uint64> value) : float32 #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r4" (convPrim<_,nativeint> value) : float32 #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,unativeint> value) : float32 #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.r4" (convPrim<_,float> value) : float32 #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.r4" (convPrim<_,float32> value) : float32 #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r4" (convPrim<_,char> value) : float32 #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseSingle (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, float> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.r8" (convPrim<_,sbyte> value) : float #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,byte> value) : float #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.r8" (convPrim<_,int16> value) : float #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint16> value) : float #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.r8" (convPrim<_,int32> value) : float #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint32> value) : float #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.r8" (convPrim<_,int64> value) : float #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,uint64> value) : float #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.r8" (convPrim<_,nativeint> value) : float #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,unativeint> value) : float #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.r8" (convPrim<_,float> value) : float #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.r8" (convPrim<_,float32> value) : float #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.r.un conv.r8" (convPrim<_,char> value) : float #) 
+                elif typeeq<'T, decimal> then convPrim<_,'U> (Convert.ToDouble(convPrim<_,decimal> value))
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseDouble (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, unativeint> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i" (convPrim<_,sbyte> value) : unativeint #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u" (convPrim<_,byte> value) : unativeint #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i" (convPrim<_,int16> value) : unativeint #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint16> value) : unativeint #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i" (convPrim<_,int32> value) : unativeint #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint32> value) : unativeint #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i" (convPrim<_,int64> value) : unativeint #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint64> value) : unativeint #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "" (convPrim<_,nativeint> value) : unativeint #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "" (convPrim<_,unativeint> value) : unativeint #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u" (convPrim<_,float> value) : unativeint #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u" (convPrim<_,float32> value) : unativeint #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u" (convPrim<_,char> value) : unativeint #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseUIntPtr (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, nativeint> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.i" (convPrim<_,sbyte> value) : nativeint #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u" (convPrim<_,byte> value) : nativeint #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.i" (convPrim<_,int16> value) : nativeint #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint16> value) : nativeint #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.i" (convPrim<_,int32> value) : nativeint #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint32> value) : nativeint #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.i" (convPrim<_,int64> value) : nativeint #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u" (convPrim<_,uint64> value) : nativeint #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "" (convPrim<_,nativeint> value) : nativeint #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "" (convPrim<_,unativeint> value) : nativeint #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.i" (convPrim<_,float> value) : nativeint #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.i" (convPrim<_,float32> value) : nativeint #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u" (convPrim<_,char> value) : nativeint #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (ParseIntPtr (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, char> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (# "conv.u2" (convPrim<_,sbyte> value) : char #)
+                elif typeeq<'T, byte> then convPrim<_,'U> (# "conv.u2" (convPrim<_,byte> value) : char #)
+                elif typeeq<'T, int16> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int16> value) : char #)
+                elif typeeq<'T, uint16> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint16> value) : char #)
+                elif typeeq<'T, int32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int32> value) : char #) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint32> value) : char #) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (# "conv.u2" (convPrim<_,int64> value) : char #) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (# "conv.u2" (convPrim<_,uint64> value) : char #) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (# "conv.u2" (convPrim<_,nativeint> value) : char #) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (# "conv.u2" (convPrim<_,unativeint> value) : char #) 
+                elif typeeq<'T, float> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float> value) : char #) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (# "conv.u2" (convPrim<_,float32> value) : char #) 
+                elif typeeq<'T, char> then convPrim<_,'U> (# "conv.u2" (convPrim<_,char> value) : char #) 
+                elif typeeq<'T, string> then convPrim<_,'U> (System.Char.Parse (convPrim<_,string> value)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            elif typeeq<'U, decimal> then 
+                if typeeq<'T, sbyte> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,sbyte> value))
+                elif typeeq<'T, byte> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,byte> value))
+                elif typeeq<'T, int16> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,int16> value))
+                elif typeeq<'T, uint16> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,uint16> value))
+                elif typeeq<'T, int32> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,int32> value)) 
+                elif typeeq<'T, uint32> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,uint32> value)) 
+                elif typeeq<'T, int64> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,int64> value)) 
+                elif typeeq<'T, uint64> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,uint64> value)) 
+                elif typeeq<'T, nativeint> then convPrim<_,'U> (Convert.ToDecimal (# "conv.i8" (convPrim<_,nativeint> value) : int64 #)) 
+                elif typeeq<'T, unativeint> then convPrim<_,'U> (Convert.ToDecimal (# "conv.u8" (convPrim<_,unativeint> value) : uint64 #)) 
+                elif typeeq<'T, float> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,float> value)) 
+                elif typeeq<'T, float32> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,float32> value)) 
+                elif typeeq<'T, char> then convPrim<_,'U> (Convert.ToDecimal (convPrim<_,char> value)) 
+                elif typeeq<'T, decimal> then convPrim<'T,'U> value 
+                elif typeeq<'T, string> then convPrim<_,'U> (Decimal.Parse(convPrim<_,string> value, NumberStyles.Float,CultureInfo.InvariantCulture)) 
+                else UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+            else
+                UnaryOpDynamicImplTable<OpExplicitInfo, 'T, 'U>.Invoke "op_Explicit" value
+
+        type OpLessThanInfo = class end
+        let LessThanDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type2eq<'T1, 'T2, sbyte> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : bool #)
+            elif type2eq<'T1, 'T2, byte> && typeeq<'U, bool> then convPrim<_,'U> (# "clt.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : bool #)
+            elif type2eq<'T1, 'T2, int16> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (convPrim<_,int16> x) (convPrim<_,int16> y) : bool #)
+            elif type2eq<'T1, 'T2, uint16> && typeeq<'U, bool> then convPrim<_,'U> (# "clt.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : bool #)
+            elif type2eq<'T1, 'T2, int32> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (convPrim<_,int32> x) (convPrim<_,int32> y) : bool #) 
+            elif type2eq<'T1, 'T2, uint32> && typeeq<'U, bool> then convPrim<_,'U> (# "clt.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : bool #) 
+            elif type2eq<'T1, 'T2, int64> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (convPrim<_,int64> x) (convPrim<_,int64> y) : bool #) 
+            elif type2eq<'T1, 'T2, uint64> && typeeq<'U, bool> then convPrim<_,'U> (# "clt.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : bool #) 
+            elif type2eq<'T1, 'T2, nativeint> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : bool #) 
+            elif type2eq<'T1, 'T2, unativeint> && typeeq<'U, bool> then convPrim<_,'U> (# "clt.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : bool #) 
+            elif type2eq<'T1, 'T2, float> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (convPrim<_,float> x) (convPrim<_,float> y) : bool #) 
+            elif type2eq<'T1, 'T2, float32> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (convPrim<_,float32> x) (convPrim<_,float32> y) : bool #) 
+            elif type2eq<'T1, 'T2, char> && typeeq<'U, bool> then convPrim<_,'U> (# "clt.un" (convPrim<_,char> x) (convPrim<_,char> y) : bool #) 
+            elif type2eq<'T1, 'T2, decimal> && typeeq<'U, bool> then convPrim<_,'U> (Decimal.op_LessThan (convPrim<_,decimal> x, convPrim<_,decimal> y))
+            elif type2eq<'T1, 'T2, string> && typeeq<'U, bool> then convPrim<_,'U> (# "clt" (String.CompareOrdinal (convPrim<_,string> x, convPrim<_,string> y)) 0 : bool #)
+            else BinaryOpDynamicImplTable<OpLessThanInfo, 'T1, 'T2, 'U>.Invoke "op_LessThan" x y
+
+        type OpGreaterThanInfo = class end
+        let GreaterThanDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type2eq<'T1, 'T2, sbyte> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : bool #)
+            elif type2eq<'T1, 'T2, byte> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : bool #)
+            elif type2eq<'T1, 'T2, int16> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (convPrim<_,int16> x) (convPrim<_,int16> y) : bool #)
+            elif type2eq<'T1, 'T2, uint16> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : bool #)
+            elif type2eq<'T1, 'T2, int32> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (convPrim<_,int32> x) (convPrim<_,int32> y) : bool #) 
+            elif type2eq<'T1, 'T2, uint32> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : bool #) 
+            elif type2eq<'T1, 'T2, int64> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (convPrim<_,int64> x) (convPrim<_,int64> y) : bool #) 
+            elif type2eq<'T1, 'T2, uint64> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : bool #) 
+            elif type2eq<'T1, 'T2, nativeint> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : bool #) 
+            elif type2eq<'T1, 'T2, unativeint> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : bool #) 
+            elif type2eq<'T1, 'T2, float> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (convPrim<_,float> x) (convPrim<_,float> y) : bool #) 
+            elif type2eq<'T1, 'T2, float32> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (convPrim<_,float32> x) (convPrim<_,float32> y) : bool #) 
+            elif type2eq<'T1, 'T2, char> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt.un" (convPrim<_,char> x) (convPrim<_,char> y) : bool #) 
+            elif type2eq<'T1, 'T2, decimal> && typeeq<'U, bool> then convPrim<_,'U> (Decimal.op_GreaterThan (convPrim<_,decimal> x, convPrim<_,decimal> y))
+            elif type2eq<'T1, 'T2, string> && typeeq<'U, bool> then convPrim<_,'U> (# "cgt" (String.CompareOrdinal (convPrim<_,string> x, convPrim<_,string> y)) 0 : bool #)
+            else BinaryOpDynamicImplTable<OpGreaterThanInfo, 'T1, 'T2, 'U>.Invoke "op_GreaterThan" x y
+
+        type OpLessThanOrEqualInfo = class end
+        let LessThanOrEqualDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type2eq<'T1, 'T2, sbyte> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : bool #))
+            elif type2eq<'T1, 'T2, byte> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : bool #))
+            elif type2eq<'T1, 'T2, int16> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (convPrim<_,int16> x) (convPrim<_,int16> y) : bool #))
+            elif type2eq<'T1, 'T2, uint16> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : bool #))
+            elif type2eq<'T1, 'T2, int32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (convPrim<_,int32> x) (convPrim<_,int32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, uint32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, int64> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (convPrim<_,int64> x) (convPrim<_,int64> y) : bool #)) 
+            elif type2eq<'T1, 'T2, uint64> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : bool #)) 
+            elif type2eq<'T1, 'T2, nativeint> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : bool #)) 
+            elif type2eq<'T1, 'T2, unativeint> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : bool #)) 
+            elif type2eq<'T1, 'T2, float> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (convPrim<_,float> x) (convPrim<_,float> y) : bool #)) 
+            elif type2eq<'T1, 'T2, float32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (convPrim<_,float32> x) (convPrim<_,float32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, char> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt.un" (convPrim<_,char> x) (convPrim<_,char> y) : bool #)) 
+            elif type2eq<'T1, 'T2, decimal> && typeeq<'U, bool> then convPrim<_,'U> (Decimal.op_LessThanOrEqual (convPrim<_,decimal> x, convPrim<_,decimal> y))
+            elif type2eq<'T1, 'T2, string> && typeeq<'U, bool> then convPrim<_,'U> (not (# "cgt" (String.CompareOrdinal (convPrim<_,string> x, convPrim<_,string> y)) 0 : bool #))
+            else BinaryOpDynamicImplTable<OpLessThanOrEqualInfo, 'T1, 'T2, 'U>.Invoke "op_LessThanOrEqual" x y
+
+        type OpGreaterThanOrEqualInfo = class end
+        let GreaterThanOrEqualDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type2eq<'T1, 'T2, sbyte> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : bool #))
+            elif type2eq<'T1, 'T2, byte> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt.un" (convPrim<_,byte> x) (convPrim<_,byte> y) : bool #))
+            elif type2eq<'T1, 'T2, int16> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (convPrim<_,int16> x) (convPrim<_,int16> y) : bool #))
+            elif type2eq<'T1, 'T2, uint16> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt.un" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : bool #))
+            elif type2eq<'T1, 'T2, int32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (convPrim<_,int32> x) (convPrim<_,int32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, uint32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt.un" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, int64> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (convPrim<_,int64> x) (convPrim<_,int64> y) : bool #)) 
+            elif type2eq<'T1, 'T2, uint64> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt.un" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : bool #)) 
+            elif type2eq<'T1, 'T2, nativeint> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : bool #)) 
+            elif type2eq<'T1, 'T2, unativeint> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt.un" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : bool #)) 
+            elif type2eq<'T1, 'T2, float> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (convPrim<_,float> x) (convPrim<_,float> y) : bool #)) 
+            elif type2eq<'T1, 'T2, float32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (convPrim<_,float32> x) (convPrim<_,float32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, char> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt.un" (convPrim<_,char> x) (convPrim<_,char> y) : bool #)) 
+            elif type2eq<'T1, 'T2, decimal> && typeeq<'U, bool> then convPrim<_,'U> (Decimal.op_GreaterThanOrEqual (convPrim<_,decimal> x, convPrim<_,decimal> y))
+            elif type2eq<'T1, 'T2, string> && typeeq<'U, bool> then convPrim<_,'U> (not (# "clt" (String.CompareOrdinal (convPrim<_,string> x, convPrim<_,string> y)) 0 : bool #))
+            else BinaryOpDynamicImplTable<OpGreaterThanOrEqualInfo, 'T1, 'T2, 'U>.Invoke "op_GreaterThanOrEqual" x y
+
+        type OpEqualityInfo = class end
+        let EqualityDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type2eq<'T1, 'T2, sbyte> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : bool #)
+            elif type2eq<'T1, 'T2, byte> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,byte> x) (convPrim<_,byte> y) : bool #)
+            elif type2eq<'T1, 'T2, int16> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,int16> x) (convPrim<_,int16> y) : bool #)
+            elif type2eq<'T1, 'T2, uint16> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : bool #)
+            elif type2eq<'T1, 'T2, int32> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,int32> x) (convPrim<_,int32> y) : bool #) 
+            elif type2eq<'T1, 'T2, uint32> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : bool #) 
+            elif type2eq<'T1, 'T2, int64> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,int64> x) (convPrim<_,int64> y) : bool #) 
+            elif type2eq<'T1, 'T2, uint64> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : bool #) 
+            elif type2eq<'T1, 'T2, nativeint> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : bool #) 
+            elif type2eq<'T1, 'T2, unativeint> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : bool #) 
+            elif type2eq<'T1, 'T2, float> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,float> x) (convPrim<_,float> y) : bool #) 
+            elif type2eq<'T1, 'T2, float32> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,float32> x) (convPrim<_,float32> y) : bool #) 
+            elif type2eq<'T1, 'T2, char> && typeeq<'U, bool> then convPrim<_,'U> (# "ceq" (convPrim<_,char> x) (convPrim<_,char> y) : bool #) 
+            elif type2eq<'T1, 'T2, decimal> && typeeq<'U, bool> then convPrim<_,'U> (Decimal.op_Equality (convPrim<_,decimal> x, convPrim<_,decimal> y))
+            elif type2eq<'T1, 'T2, string> && typeeq<'U, bool> then convPrim<_,'U> (String.Equals (convPrim<_,string> x, convPrim<_,string> y))
+            else BinaryOpDynamicImplTable<OpEqualityInfo, 'T1, 'T2, 'U>.Invoke "op_Equality" x y
+
+        type OpInequalityInfo = class end
+        let InequalityDynamic<'T1, 'T2, 'U> (x: 'T1) (y: 'T2) : 'U =
+            if type2eq<'T1, 'T2, sbyte> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,sbyte> x) (convPrim<_,sbyte> y) : bool #))
+            elif type2eq<'T1, 'T2, byte> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,byte> x) (convPrim<_,byte> y) : bool #))
+            elif type2eq<'T1, 'T2, int16> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,int16> x) (convPrim<_,int16> y) : bool #))
+            elif type2eq<'T1, 'T2, uint16> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,uint16> x) (convPrim<_,uint16> y) : bool #))
+            elif type2eq<'T1, 'T2, int32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,int32> x) (convPrim<_,int32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, uint32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,uint32> x) (convPrim<_,uint32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, int64> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,int64> x) (convPrim<_,int64> y) : bool #)) 
+            elif type2eq<'T1, 'T2, uint64> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,uint64> x) (convPrim<_,uint64> y) : bool #)) 
+            elif type2eq<'T1, 'T2, nativeint> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,nativeint> x) (convPrim<_,nativeint> y) : bool #)) 
+            elif type2eq<'T1, 'T2, unativeint> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,unativeint> x) (convPrim<_,unativeint> y) : bool #)) 
+            elif type2eq<'T1, 'T2, float> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,float> x) (convPrim<_,float> y) : bool #)) 
+            elif type2eq<'T1, 'T2, float32> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,float32> x) (convPrim<_,float32> y) : bool #)) 
+            elif type2eq<'T1, 'T2, char> && typeeq<'U, bool> then convPrim<_,'U> (not (# "ceq" (convPrim<_,char> x) (convPrim<_,char> y) : bool #))
+            elif type2eq<'T1, 'T2, decimal> && typeeq<'U, bool> then convPrim<_,'U> (Decimal.op_Inequality (convPrim<_,decimal> x, convPrim<_,decimal> y))
+            elif type2eq<'T1, 'T2, string> && typeeq<'U, bool> then convPrim<_,'U> (not (String.Equals (convPrim<_,string> x, convPrim<_,string> y)))
+            else BinaryOpDynamicImplTable<OpEqualityInfo, 'T1, 'T2, 'U>.Invoke "op_Inequality" x y
+
+        type DivideByIntInfo = class end
+        let DivideByIntDynamic<'T> (x: 'T) (n: int) : 'T =
+            if typeeq<'T, float> then convPrim<_,'T> (# "div" (convPrim<_,float> x) (# "conv.r8" n : float #) : float #)
+            elif typeeq<'T, float32> then convPrim<_,'T> (# "div" (convPrim<_,float32> x) (# "conv.r4" n : float32 #) : float32 #) 
+            elif typeeq<'T, decimal> then convPrim<_,'T> (Decimal.Divide(convPrim<_,decimal> x, Convert.ToDecimal(n))) 
+            else BinaryOpDynamicImplTable<DivideByIntInfo, 'T, int, 'T>.Invoke "DivideByInt" x n
+
+        let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x: ^T) (y: int) : ^T =
             DivideByIntDynamic<'T> x y
-            when ^T : float       = (# "div" x ((# "conv.r8" (y:int)  : float #)) : float #)
-            when ^T : float32     = (# "div" x ((# "conv.r4" (y:int)  : float32 #)) : float32 #)
-            when ^T : decimal     = System.Decimal.Divide((retype x:decimal), System.Convert.ToDecimal(y))
+            when ^T : float = (# "div" x ((# "conv.r8" y  : float #)) : float #)
+            when ^T : float32 = (# "div" x ((# "conv.r4" y  : float32 #)) : float32 #)
+            when ^T : decimal = Decimal.Divide((# "" x : decimal #), Convert.ToDecimal(y))
             when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, y))
-
-
-        // Dynamic implementation of addition operator resolution
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
-        type AdditionDynamicImplTable<'T,'U,'V>() = 
-            static let impl : ('T -> 'U -> 'V) = 
-                // The dynamic implementation
-                let aty = typeof<'T>
-                let bty = typeof<'U>
-                let cty = typeof<'V> 
-                let dyn() = 
-                    let ameth = aty.GetMethod("op_Addition",[| aty; bty |])
-                    let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Addition",[| aty; bty |])
-                    match ameth,bmeth  with 
-                    | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
-                    | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
-                    | _ -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddOverload)))
-                        
-                if aty.Equals(bty) && bty.Equals(cty) then
-                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte)      (y:sbyte)      -> (# "conv.i1" (# "add" x y : int32 #) : sbyte #)))
-                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16)      (y:int16)      -> (# "conv.i2" (# "add" x y : int32 #) : int16 #)))
-                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32)      (y:int32)      -> (# "add" x y : int32 #)))
-                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64)      (y:int64)      -> (# "add" x y : int64 #)))
-                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint)  (y:nativeint)  -> (# "add" x y : nativeint #)))
-                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte)       (y:byte)       -> (# "conv.u1" (# "add" x y : uint32 #) : byte #)))
-                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16)     (y:uint16)     -> (# "conv.u2" (# "add" x y : uint32 #) : uint16 #)))
-                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32)     (y:uint32)     -> (# "add" x y : uint32 #)))
-                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64)     (y:uint64)     -> (# "add" x y : uint64 #)))
-                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> (# "add" x y : unativeint #)))
-                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float)      (y:float)      -> (# "add" x y : float #)))
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32)    (y:float32)    -> (# "add" x y : float32 #)))
-                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string)     (y:string)     -> System.String.Concat(x,y)))
-                    else dyn()
-                else dyn()
-
-            static member Impl : ('T -> 'U -> 'V) = impl
-
-        let AdditionDynamic<'T,'U,'V> x y  = AdditionDynamicImplTable<'T,'U,'V>.Impl x y
-
-        // Dynamic implementation of checked addition operator resolution
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
-        type CheckedAdditionDynamicImplTable<'T,'U,'V>() = 
-            static let impl : ('T -> 'U -> 'V) = 
-                // The dynamic implementation
-                let aty = typeof<'T>
-                let bty = typeof<'U>
-                let cty = typeof<'V> 
-                let dyn() = 
-                    let ameth = aty.GetMethod("op_Addition",[| aty; bty |])
-                    let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Addition",[| aty; bty |])
-                    match ameth,bmeth  with 
-                    | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
-                    | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
-                    | _ -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddOverload)))
-                        
-                if aty.Equals(bty) && bty.Equals(cty) then
-                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte)      (y:sbyte)      -> (# "conv.ovf.i1" (# "add.ovf" x y : int32 #) : sbyte #)))
-                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16)      (y:int16)      -> (# "conv.ovf.i2" (# "add.ovf" x y : int32 #) : int16 #)))
-                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32)      (y:int32)      -> (# "add.ovf" x y : int32 #)))
-                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64)      (y:int64)      -> (# "add.ovf" x y : int64 #)))
-                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint)  (y:nativeint)  -> (# "add.ovf" x y : nativeint #)))
-                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte)       (y:byte)       -> (# "conv.ovf.u1.un" (# "add.ovf.un" x y : uint32 #) : byte #)))
-                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16)     (y:uint16)     -> (# "conv.ovf.u2.un" (# "add.ovf.un" x y : uint32 #) : uint16 #)))
-                    elif aty.Equals(typeof<char>)       then unboxPrim<_> (box (fun (x:char)       (y:char)       -> (# "conv.ovf.u2.un" (# "add.ovf.un" x y : uint32 #) : char #)))
-                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32)     (y:uint32)     -> (# "add.ovf.un" x y : uint32 #)))
-                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64)     (y:uint64)     -> (# "add.ovf.un" x y : uint64 #)))
-                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> (# "add.ovf.un" x y : unativeint #)))
-                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float)      (y:float)      -> (# "add" x y : float #)))
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32)    (y:float32)    -> (# "add" x y : float32 #)))
-                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string)     (y:string)     -> System.String.Concat(x,y)))
-                    else dyn()
-                else dyn()
-
-
-            static member Impl : ('T -> 'U -> 'V) = impl
-
-        let CheckedAdditionDynamic<'T,'U,'V> x y  = CheckedAdditionDynamicImplTable<'T,'U,'V>.Impl x y
-
-
-        // Dynamic implementation of addition operator resolution
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
-        type MultiplyDynamicImplTable<'T,'U,'V>() = 
-            static let impl : ('T -> 'U -> 'V) = 
-                // The dynamic implementation
-                let aty = typeof<'T>
-                let bty = typeof<'U>
-                let cty = typeof<'V> 
-                let dyn() = 
-                    let ameth = aty.GetMethod("op_Multiply",[| aty; bty |])
-                    let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Multiply",[| aty; bty |])
-                    match ameth,bmeth  with 
-                    | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpMultCoerce)))
-                    | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
-                    | _ -> raise (NotSupportedException (SR.GetString(SR.dyInvOpMultOverload)))
-                        
-                if aty.Equals(bty) && bty.Equals(cty) then
-                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte)      (y:sbyte)      -> (# "conv.i1" (# "mul" x y : int32 #) : sbyte #)))
-                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16)      (y:int16)      -> (# "conv.i2" (# "mul" x y : int32 #) : int16 #)))
-                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32)      (y:int32)      -> (# "mul" x y : int32 #)))
-                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64)      (y:int64)      -> (# "mul" x y : int64 #)))
-                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint)  (y:nativeint)  -> (# "mul" x y : nativeint #)))
-                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte)       (y:byte)       -> (# "conv.u1" (# "mul" x y : uint32 #) : byte #)))
-                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16)     (y:uint16)     -> (# "conv.u2" (# "mul" x y : uint32 #) : uint16 #)))
-                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32)     (y:uint32)     -> (# "mul" x y : uint32 #)))
-                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64)     (y:uint64)     -> (# "mul" x y : uint64 #)))
-                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> (# "mul" x y : unativeint #)))
-                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float)      (y:float)      -> (# "mul" x y : float #)))
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32)    (y:float32)    -> (# "mul" x y : float32 #)))
-                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string)     (y:string)     -> System.String.Concat(x,y)))
-                    else dyn()
-                else dyn()
-
-            static member Impl : ('T -> 'U -> 'V) = impl
-
-        let MultiplyDynamic<'T,'U,'V> x y  = MultiplyDynamicImplTable<'T,'U,'V>.Impl x y
-
-        // Dynamic implementation of checked addition operator resolution
-        [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
-        type CheckedMultiplyDynamicImplTable<'T,'U,'V>() = 
-            static let impl : ('T -> 'U -> 'V) = 
-                // The dynamic implementation
-                let aty = typeof<'T>
-                let bty = typeof<'U>
-                let cty = typeof<'V> 
-                let dyn() = 
-                    let ameth = aty.GetMethod("op_Multiply",[| aty; bty |])
-                    let bmeth = if aty.Equals(bty) then null else bty.GetMethod("op_Multiply",[| aty; bty |])
-                    match ameth,bmeth  with 
-                    | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpMultCoerce)))
-                    | m,null | null,m -> (fun x y -> unboxPrim<_> (m.Invoke(null,[| box x; box y |])))
-                    | _ -> raise (NotSupportedException (SR.GetString(SR.dyInvOpMultOverload)))
-                        
-                if aty.Equals(bty) && bty.Equals(cty) then
-                    if aty.Equals(typeof<sbyte>)        then unboxPrim<_> (box (fun (x:sbyte)      (y:sbyte)      -> (# "conv.ovf.i1" (# "mul.ovf" x y : int32 #) : sbyte #)))
-                    elif aty.Equals(typeof<int16>)      then unboxPrim<_> (box (fun (x:int16)      (y:int16)      -> (# "conv.ovf.i2" (# "mul.ovf" x y : int32 #) : int16 #)))
-                    elif aty.Equals(typeof<int32>)      then unboxPrim<_> (box (fun (x:int32)      (y:int32)      -> (# "mul.ovf" x y : int32 #)))
-                    elif aty.Equals(typeof<int64>)      then unboxPrim<_> (box (fun (x:int64)      (y:int64)      -> (# "mul.ovf" x y : int64 #)))
-                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_> (box (fun (x:nativeint)  (y:nativeint)  -> (# "mul.ovf" x y : nativeint #)))
-                    elif aty.Equals(typeof<byte>)       then unboxPrim<_> (box (fun (x:byte)       (y:byte)       -> (# "conv.ovf.u1.un" (# "mul.ovf.un" x y : uint32 #) : byte #)))
-                    elif aty.Equals(typeof<uint16>)     then unboxPrim<_> (box (fun (x:uint16)     (y:uint16)     -> (# "conv.ovf.u2.un" (# "mul.ovf.un" x y : uint16 #) : uint16 #)))
-                    elif aty.Equals(typeof<uint32>)     then unboxPrim<_> (box (fun (x:uint32)     (y:uint32)     -> (# "mul.ovf.un" x y : uint32 #)))
-                    elif aty.Equals(typeof<uint64>)     then unboxPrim<_> (box (fun (x:uint64)     (y:uint64)     -> (# "mul.ovf.un" x y : uint64 #)))
-                    elif aty.Equals(typeof<unativeint>) then unboxPrim<_> (box (fun (x:unativeint) (y:unativeint) -> (# "mul.ovf.un" x y : unativeint #)))
-                    elif aty.Equals(typeof<float>)      then unboxPrim<_> (box (fun (x:float)      (y:float)      -> (# "mul" x y : float #)))
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_> (box (fun (x:float32)    (y:float32)    -> (# "mul" x y : float32 #)))
-                    elif aty.Equals(typeof<string>)     then unboxPrim<_> (box (fun (x:string)     (y:string)     -> System.String.Concat(x,y)))
-                    else dyn()
-                else dyn()
-
-            static member Impl : ('T -> 'U -> 'V) = impl
-
-        let CheckedMultiplyDynamic<'T,'U,'V> x y  = CheckedMultiplyDynamicImplTable<'T,'U,'V>.Impl x y
-
-
-namespace System
-
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Text
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.BasicInlinedOperations
-    open Microsoft.FSharp.Core.LanguagePrimitives
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
-
 
 namespace Microsoft.FSharp.Core
 
@@ -2883,7 +3435,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-    [<DebuggerDisplay("{DebugDisplay,nq}")>]
+    [<DebuggerDisplay("{get_DebugDisplay(this),nq}")>]
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]
@@ -2967,6 +3519,7 @@ namespace Microsoft.FSharp.Collections
     // Lists
     //-------------------------------------------------------------------------
 
+    open System
     open System.Collections.Generic
     open System.Diagnostics
     open Microsoft.FSharp.Core
@@ -3099,36 +3652,32 @@ namespace Microsoft.FSharp.Collections
                elif n = 0 then h
                else nth t (n - 1)
 
-        // similar to 'takeFreshConsTail' but with exceptions same as array slicing
         let rec sliceFreshConsTail cons n l =
             if n = 0 then setFreshConsTail cons [] else
             match l with
-            | [] -> outOfRange()
+            | [] -> setFreshConsTail cons []
             | x :: xs ->
                 let cons2 = freshConsNoTail x
                 setFreshConsTail cons cons2
                 sliceFreshConsTail cons2 (n - 1) xs
 
-        // similar to 'take' but with n representing an index, not a number of elements
-        // and with exceptions matching array slicing
         let sliceTake n l =
             if n < 0 then [] else
             match l with
-            | [] -> outOfRange()
+            | [] -> []
             | x :: xs ->
                 let cons = freshConsNoTail x
                 sliceFreshConsTail cons n xs
                 cons
 
-        // similar to 'skip' but with exceptions same as array slicing
         let sliceSkip n l =
-            if n < 0 then outOfRange()
+            let n2 = if n < 0 then 0 else n
             let rec loop i lst =
                 match lst with
                 | _ when i = 0 -> lst
                 | _ :: t -> loop (i-1) t
-                | [] -> outOfRange()
-            loop n l
+                | [] -> []
+            loop n2 l
 
     type List<'T> with
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3168,7 +3717,11 @@ namespace Microsoft.FSharp.Collections
             | None, Some(j) -> PrivateListHelpers.sliceTake j l
             | Some(i), Some(j) ->
                 if i > j then [] else
-                PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
+                let start = if i < 0 then 0 else i
+                PrivateListHelpers.sliceTake (j - start) (PrivateListHelpers.sliceSkip start l)
+
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        member l.GetReverseIndex(_: int, offset: int) = l.Length - offset - 1
 
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
@@ -3196,14 +3749,14 @@ namespace Microsoft.FSharp.Core
     open System.Diagnostics              
     open System.Collections.Generic
     open System.Globalization
+    open System.Text
+    open System.Numerics
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
     open Microsoft.FSharp.Core.BasicInlinedOperations
     open Microsoft.FSharp.Collections
-
-
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1046:DoNotOverloadOperatorEqualsOnReferenceTypes")>]
     module Operators = 
@@ -3242,10 +3795,6 @@ namespace Microsoft.FSharp.Core
         
         [<CompiledName("FailurePattern")>]
         let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<System.Exception>) then Some error.Message else None
-
-        [<CompiledName("Not")>]
-        let inline not (value: bool) = (# "ceq" value false : bool #)
-           
 
         let inline (<) x y = GenericLessThan x y
         let inline (>) x y = GenericGreaterThan x y
@@ -3331,9 +3880,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultValueArg")>]
         let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~-) (n: ^T) : ^T = 
-            (^T : (static member (~-) : ^T -> ^T) (n))
+             UnaryNegationDynamic<(^T), (^T)> n
              when ^T : int32     = (# "neg" n  : int32 #)
              when ^T : float     = (# "neg" n  : float #)
              when ^T : float32   = (# "neg" n  : float32 #)
@@ -3342,7 +3891,10 @@ namespace Microsoft.FSharp.Core
              when ^T : nativeint = (# "neg" n  : nativeint #)
              when ^T : sbyte     = (# "neg" n  : sbyte #)
              when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" n : decimal #))) : ^T #)
-
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             // That is, not in the generic implementation of '*'
+             when ^T : ^T = (^T : (static member (~-) : ^T -> ^T) (n))
 
         let inline (+) (x: ^T) (y: ^U) : ^V = 
              AdditionDynamic<(^T),(^U),(^V)>  x y 
@@ -3361,15 +3913,13 @@ namespace Microsoft.FSharp.Core
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "add" x y : uint32 #) : byte #)
              when ^T : string      and ^U : string     = (# "" (System.String.Concat((# "" x : string #),(# "" y : string #))) : ^T #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Addition((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
-
              // According to the somewhat subtle rules of static optimizations,
-             // this condition is used whenever ^T is resolved to a nominal type
-             // That is, not in the generic implementation of '+'
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (-) (x: ^T) (y: ^U) : ^V = 
-             ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
+             SubtractionDynamic<(^T),(^U),(^V)>  x y 
              when ^T : int32      and ^U : int32      = (# "sub" x y : int32 #)
              when ^T : float      and ^U : float      = (# "sub" x y : float #)
              when ^T : float32    and ^U : float32    = (# "sub" x y : float32 #)
@@ -3383,7 +3933,9 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "sub" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "sub" x y : uint32 #) : byte #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
-
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
 
         let inline ( * ) (x: ^T) (y: ^U) : ^V = 
              MultiplyDynamic<(^T),(^U),(^V)>  x y 
@@ -3401,13 +3953,12 @@ namespace Microsoft.FSharp.Core
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "mul" x y : uint32 #) : byte #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Multiply((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
              // According to the somewhat subtle rules of static optimizations,
-             // this condition is used whenever ^T is resolved to a nominal type
-             // That is, not in the generic implementation of '*'
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
              when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline ( / ) (x: ^T) (y: ^U) : ^V = 
-             ((^T or ^U): (static member (/) : ^T * ^U -> ^V) (x,y))
+             DivisionDynamic<(^T),(^U),(^V)>  x y 
              when ^T : int32       and ^U : int32      = (# "div" x y : int32 #)
              when ^T : float       and ^U : float      = (# "div" x y : float #)
              when ^T : float32     and ^U : float32    = (# "div" x y : float32 #)
@@ -3421,10 +3972,13 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "div" x y : int32 #) : sbyte #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "div.un" x y : uint32 #) : byte #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Division((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = ((^T or ^U): (static member (/) : ^T * ^U -> ^V) (x,y))
         
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline ( % ) (x: ^T) (y: ^U) : ^V = 
-             ((^T or ^U): (static member (%) : ^T * ^U -> ^V) (x,y))
+             ModulusDynamic<(^T),(^U),(^V)>  x y 
              when ^T : int32       and ^U : int32      = (# "rem" x y : int32 #)
              when ^T : float       and ^U : float      = (# "rem" x y : float #)
              when ^T : float32     and ^U : float32    = (# "rem" x y : float32 #)
@@ -3438,10 +3992,13 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte       and ^U : sbyte      = (# "conv.i1" (# "rem"    x y : int32  #) : sbyte  #)
              when ^T : byte        and ^U : byte       = (# "conv.u1" (# "rem.un" x y : uint32 #) : byte   #)
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Modulus((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = ((^T or ^U): (static member (%) : ^T * ^U -> ^V) (x,y))
         
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~+) (value: ^T) : ^T =
-             (^T: (static member (~+) : ^T -> ^T) (value))
+             value
              when ^T : int32      = value
              when ^T : float      = value
              when ^T : float32    = value
@@ -3455,12 +4012,11 @@ namespace Microsoft.FSharp.Core
              when ^T : sbyte      = value
              when ^T : byte       = value
              when ^T : decimal    = value
+             when ^T : ^T = (^T: (static member (~+) : ^T -> ^T) (value))
 
-        let inline mask (n:int) (m:int) = (# "and" n m : int #)
-        
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (<<<) (value: ^T) (shift:int) : ^T = 
-             (^T: (static member (<<<) : ^T * int -> ^T) (value,shift))
+             LeftShiftDynamic<(^T),int,(^T)> value shift
              when ^T : int32      = (# "shl" value (mask shift 31) : int #)
              when ^T : uint32     = (# "shl" value (mask shift 31) : uint32 #)
              when ^T : int64      = (# "shl" value (mask shift 63) : int64 #)
@@ -3471,10 +4027,13 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16     = (# "conv.u2" (# "shl" value (mask shift 15) : uint32 #) : uint16 #)
              when ^T : sbyte      = (# "conv.i1" (# "shl" value (mask shift 7 ) : int32  #) : sbyte #)
              when ^T : byte       = (# "conv.u1" (# "shl" value (mask shift 7 ) : uint32 #) : byte #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T: (static member (<<<) : ^T * int -> ^T) (value,shift))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (>>>) (value: ^T) (shift:int) : ^T = 
-             (^T: (static member (>>>) : ^T * int -> ^T) (value,shift))
+             RightShiftDynamic<(^T),int,(^T)> value shift
              when ^T : int32      = (# "shr"    value (mask shift 31) : int32 #)
              when ^T : uint32     = (# "shr.un" value (mask shift 31) : uint32 #)
              when ^T : int64      = (# "shr"    value (mask shift 63) : int64 #)
@@ -3485,10 +4044,13 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16     = (# "conv.u2" (# "shr.un" value (mask shift 15) : uint32 #) : uint16 #)
              when ^T : sbyte      = (# "conv.i1" (# "shr"    value (mask shift 7 ) : int32  #) : sbyte #)
              when ^T : byte       = (# "conv.u1" (# "shr.un" value (mask shift 7 ) : uint32 #) : byte #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T: (static member (>>>) : ^T * int -> ^T) (value, shift))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (&&&) (x: ^T) (y: ^T) : ^T = 
-             (^T: (static member (&&&) : ^T * ^T -> ^T) (x,y))
+             BitwiseAndDynamic<(^T),(^T),(^T)> x y
              when ^T : int32      = (# "and" x y : int32 #)
              when ^T : int64      = (# "and" x y : int64 #)
              when ^T : uint64     = (# "and" x y : uint64 #)
@@ -3499,10 +4061,13 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "and" x y : unativeint #)
              when ^T : sbyte      = (# "and" x y : sbyte #)
              when ^T : byte       = (# "and" x y : byte #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T: (static member (&&&) : ^T * ^T -> ^T) (x, y))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (|||) (x: ^T) (y: ^T) : ^T = 
-             (^T: (static member (|||) : ^T * ^T -> ^T) (x,y))
+             BitwiseOrDynamic<(^T),(^T),(^T)> x y
              when ^T : int32      = (# "or" x y : int32 #)
              when ^T : int64      = (# "or" x y : int64 #)
              when ^T : uint64     = (# "or" x y : uint64 #)
@@ -3513,10 +4078,13 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "or" x y : unativeint #)
              when ^T : sbyte      = (# "or" x y : sbyte #)
              when ^T : byte       = (# "or" x y : byte #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T: (static member (|||) : ^T * ^T -> ^T) (x, y))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (^^^) (x: ^T) (y: ^T) : ^T = 
-             (^T: (static member (^^^) : ^T * ^T -> ^T) (x,y))
+             ExclusiveOrDynamic<(^T),(^T),(^T)> x y
              when ^T : int32      = (# "xor" x y : int32 #)
              when ^T : int64      = (# "xor" x y : int64 #)
              when ^T : uint64     = (# "xor" x y : uint64 #)
@@ -3527,10 +4095,13 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (# "xor" x y : unativeint #)
              when ^T : sbyte      = (# "xor" x y : sbyte #)
              when ^T : byte       = (# "xor" x y : byte #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T: (static member (^^^) : ^T * ^T -> ^T) (x, y))
         
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         let inline (~~~) (value: ^T) : ^T = 
-             (^T: (static member (~~~) : ^T -> ^T) (value))
+             LogicalNotDynamic<(^T),(^T)> value
              when ^T : int32      = (# "not" value : int32 #)
              when ^T : int64      = (# "not" value : int64 #)
              when ^T : uint64     = (# "not" value : uint64 #)
@@ -3541,6 +4112,9 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16     = (# "conv.u2" (# "not" value : uint32 #) : uint16 #)
              when ^T : sbyte      = (# "conv.i1" (# "not" value : int32  #) : sbyte #)
              when ^T : byte       = (# "conv.u1" (# "not" value : uint32 #) : byte #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T: (static member (~~~) : ^T -> ^T) (value))
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
@@ -3569,21 +4143,11 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Exit")>]
         let exit (exitcode:int) = System.Environment.Exit(exitcode); failwith "System.Environment.Exit did not exit!"
 
-        let inline parseByte (s:string)       = (# "conv.ovf.u1" (ParseUInt32 s) : byte #)
-        let inline ParseSByte (s:string)      = (# "conv.ovf.i1" (ParseInt32 s)  : sbyte #)
-        let inline ParseInt16 (s:string)      = (# "conv.ovf.i2" (ParseInt32 s)  : int16 #)
-        let inline ParseUInt16 (s:string)     = (# "conv.ovf.u2" (ParseUInt32 s) : uint16 #)
-        let inline ParseIntPtr (s:string)  = (# "conv.ovf.i"  (ParseInt64 s)  : nativeint #)
-        let inline ParseUIntPtr (s:string) = (# "conv.ovf.u"  (ParseInt64 s)  : unativeint #)
-        let inline ParseDouble (s:string)   = Double.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
-        let inline ParseSingle (s:string) = Single.Parse(removeUnderscores s,NumberStyles.Float, CultureInfo.InvariantCulture)
-            
-
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToByte")>]
         let inline byte (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> byte) (value))
-             when ^T : string     = parseByte (castToString value)
+             ExplicitDynamic<(^T), byte> value
+             when ^T : string     = ParseByte (castToString value)
              when ^T : float      = (# "conv.u1" value  : byte #)
              when ^T : float32    = (# "conv.u1" value  : byte #)
              when ^T : int64      = (# "conv.u1" value  : byte #)
@@ -3597,11 +4161,14 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u1" value  : byte #)
              when ^T : unativeint = (# "conv.u1" value  : byte #)
              when ^T : byte       = (# "conv.u1" value  : byte #)
-
-        [<NoDynamicInvocation>]
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
+            
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToSByte")>]
         let inline sbyte (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> sbyte) (value))
+             ExplicitDynamic<(^T), sbyte> value
              when ^T : string     = ParseSByte (castToString value)
              when ^T : float     = (# "conv.i1" value  : sbyte #)
              when ^T : float32   = (# "conv.i1" value  : sbyte #)
@@ -3616,11 +4183,14 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.i1" value  : sbyte #)
              when ^T : unativeint = (# "conv.i1" value  : sbyte #)
              when ^T : byte     = (# "conv.i1" value  : sbyte #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> sbyte) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToUInt16")>]
         let inline uint16 (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> uint16) (value))
+             ExplicitDynamic<(^T), uint16> value
              when ^T : string     = ParseUInt16 (castToString value)
              when ^T : float     = (# "conv.u2" value  : uint16 #)
              when ^T : float32   = (# "conv.u2" value  : uint16 #)
@@ -3635,11 +4205,14 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u2" value  : uint16 #)
              when ^T : unativeint = (# "conv.u2" value  : uint16 #)
              when ^T : byte     = (# "conv.u2" value  : uint16 #)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever ^T is resolved to a nominal type or witnesses are available
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint16) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToInt16")>]
         let inline int16 (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> int16) (value))
+             ExplicitDynamic<(^T), int16> value
              when ^T : string     = ParseInt16 (castToString value)
              when ^T : float     = (# "conv.i2" value  : int16 #)
              when ^T : float32   = (# "conv.i2" value  : int16 #)
@@ -3654,18 +4227,17 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.i2" value  : int16 #)
              when ^T : unativeint = (# "conv.i2" value  : int16 #)
              when ^T : byte     = (# "conv.i2" value  : int16 #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> int16) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToUInt32")>]
         let inline uint32 (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> uint32) (value))
+             ExplicitDynamic<(^T), uint32> value
              when ^T : string     = ParseUInt32 (castToString value)
              when ^T : float     = (# "conv.u4" value  : uint32 #)
              when ^T : float32   = (# "conv.u4" value  : uint32 #)
-
              when ^T : int64     = (# "conv.u4" value  : uint32 #)
              when ^T : nativeint = (# "conv.u4" value  : uint32 #)
-             
              // For integers shorter that 32 bits, we must first 
              // sign-widen the signed integer to 32 bits, and then 
              // "convert" from signed int32 to unsigned int32
@@ -3673,45 +4245,47 @@ namespace Microsoft.FSharp.Core
              when ^T : int32     = (# "" value : uint32 #)
              when ^T : int16     = (# "" value : uint32 #)
              when ^T : sbyte     = (# "" value : uint32 #)             
-             
              when ^T : uint64     = (# "conv.u4" value  : uint32 #)
              when ^T : uint32     = (# "conv.u4" value  : uint32 #)
              when ^T : uint16     = (# "conv.u4" value  : uint32 #)
              when ^T : char       = (# "conv.u4" value  : uint32 #)
              when ^T : unativeint = (# "conv.u4" value  : uint32 #)
              when ^T : byte     = (# "conv.u4" value  : uint32 #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint32) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToInt32")>]
         let inline int32 (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> int32) (value))
+             ExplicitDynamic<(^T), int32> value
              when ^T : string     = ParseInt32 (castToString value)
              when ^T : float     = (# "conv.i4" value  : int32 #)
              when ^T : float32   = (# "conv.i4" value  : int32 #)
              when ^T : int64     = (# "conv.i4" value  : int32 #)
              when ^T : nativeint = (# "conv.i4" value  : int32 #)
-             
              // For integers shorter that 32 bits, we sign-widen the signed integer to 32 bits
              // This is a no-op on IL stack (ECMA 335 Part III 1.5 Tables 8 & 9)
              when ^T : int32     = (# "" value  : int32 #)
              when ^T : int16     = (# "" value  : int32 #)
              when ^T : sbyte     = (# "" value  : int32 #)
-             
              when ^T : uint64     = (# "conv.i4" value  : int32 #)             
              when ^T : uint32     = (# "" value  : int32 #) // Signed<->Unsigned conversion is a no-op on IL stack
              when ^T : uint16     = (# "conv.i4" value  : int32 #)
              when ^T : char       = (# "conv.i4" value  : int32 #)
              when ^T : unativeint = (# "conv.i4" value  : int32 #)
              when ^T : byte     = (# "conv.i4" value  : int32 #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> int32) (value))
 
         [<CompiledName("ToInt")>]
-        let inline int value = int32  value         
+        let inline int value = int32  value
+
+        [<CompiledName("ToUInt")>]
+        let inline uint value = uint32 value
 
         [<CompiledName("ToEnum")>]
         let inline enum< ^T when ^T : enum<int32> > (value:int32) : ^T = EnumOfValue value
 
         [<CompiledName("KeyValuePattern")>]
-        let ( |KeyValue| ) (keyValuePair : KeyValuePair<'T,'U>) = (keyValuePair.Key, keyValuePair.Value)
+        let (|KeyValue|) (keyValuePair : KeyValuePair<'T,'U>) = (keyValuePair.Key, keyValuePair.Value)
 
         [<CompiledName("Infinity")>]
         let infinity = System.Double.PositiveInfinity
@@ -3725,14 +4299,13 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("NaNSingle")>]
         let nanf = System.Single.NaN 
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToUInt64")>]
         let inline uint64 (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> uint64) (value))
+             ExplicitDynamic<(^T), uint64> value
              when ^T : string     = ParseUInt64 (castToString value)
              when ^T : float     = (# "conv.u8" value  : uint64 #)
              when ^T : float32   = (# "conv.u8" value  : uint64 #)
-                          
              // we must first sign-widen the signed integer to 64 bits, and then 
              // "convert" from signed int64 to unsigned int64             
              // conv.i8 sign-widens the input, and on IL stack, 
@@ -3742,19 +4315,18 @@ namespace Microsoft.FSharp.Core
              when ^T : int16     = (# "conv.i8" value  : uint64 #)
              when ^T : nativeint = (# "conv.i8" value  : uint64 #)
              when ^T : sbyte     = (# "conv.i8" value  : uint64 #)
-             
-             
              when ^T : uint64     = (# "" value  : uint64 #)
              when ^T : uint32     = (# "conv.u8" value  : uint64 #)
              when ^T : uint16     = (# "conv.u8" value  : uint64 #)
              when ^T : char       = (# "conv.u8" value  : uint64 #)
              when ^T : unativeint = (# "conv.u8" value  : uint64 #)
              when ^T : byte     = (# "conv.u8" value  : uint64 #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint64) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToInt64")>]
         let inline int64 (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> int64) (value))
+             ExplicitDynamic<(^T), int64> value
              when ^T : string     = ParseInt64 (castToString value)
              when ^T : float     = (# "conv.i8" value  : int64 #)
              when ^T : float32   = (# "conv.i8" value  : int64 #)
@@ -3763,7 +4335,6 @@ namespace Microsoft.FSharp.Core
              when ^T : int16     = (# "conv.i8" value  : int64 #)
              when ^T : nativeint = (# "conv.i8" value  : int64 #)
              when ^T : sbyte     = (# "conv.i8" value  : int64 #)
-             
              // When converting unsigned integer, we should zero-widen them, NOT sign-widen 
              // No-op for uint64, conv.u8 for uint32, for smaller types conv.u8 and conv.i8 are identical.
              // For nativeint, conv.u8 works correctly both in 32 bit and 64 bit case.
@@ -3773,11 +4344,12 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u8" value  : int64 #)
              when ^T : unativeint = (# "conv.u8" value  : int64 #)
              when ^T : byte     = (# "conv.u8" value  : int64 #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> int64) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToSingle")>]
         let inline float32 (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> float32) (value))
+             ExplicitDynamic<(^T), float32> value
              when ^T : string     = ParseSingle (castToString value)
              when ^T : float     = (# "conv.r4" value  : float32 #)
              // NOTE: float32 should convert its argument to 32-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
@@ -3793,11 +4365,12 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.r.un conv.r4" value  : float32 #)
              when ^T : unativeint = (# "conv.r.un conv.r4" value  : float32 #)
              when ^T : byte     = (# "conv.r.un conv.r4" value  : float32 #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> float32) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToDouble")>]
         let inline float (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> float) (value))
+             ExplicitDynamic<(^T), float> value
              when ^T : string     = ParseDouble (castToString value)
              // NOTE: float should convert its argument to 64-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
              when ^T : float     = (# "conv.r8" value  : float #)
@@ -3813,12 +4386,13 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.r.un conv.r8" value  : float #)
              when ^T : unativeint = (# "conv.r.un conv.r8" value  : float #)
              when ^T : byte       = (# "conv.r.un conv.r8" value  : float #)
-             when ^T : decimal    = (System.Convert.ToDouble((# "" value : decimal #))) 
+             when ^T : decimal    = (Convert.ToDouble((# "" value : decimal #))) 
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> float) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToDecimal")>]
         let inline decimal (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> decimal) (value))
+             ExplicitDynamic<(^T), decimal> value
              when ^T : string     = (System.Decimal.Parse(castToString value,NumberStyles.Float,CultureInfo.InvariantCulture))
              when ^T : float      = (System.Convert.ToDecimal((# "" value : float #))) 
              when ^T : float32    = (System.Convert.ToDecimal((# "" value : float32 #))) 
@@ -3833,20 +4407,15 @@ namespace Microsoft.FSharp.Core
              when ^T : unativeint = (System.Convert.ToDecimal(uint64 (# "" value : unativeint #))) 
              when ^T : byte       = (System.Convert.ToDecimal((# "" value : byte #))) 
              when ^T : decimal    = (# "" value : decimal #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> decimal) (value))
 
-        // Recall type names.
-        // Framework names:     sbyte, byte,  int16, uint16, int32, uint32, int64, uint64, single,  double.
-        // C# names:            sbyte, byte,  short, ushort, int,   uint,   long,  ulong,  single,  double.
-        // F# names:            sbyte, byte,  int16, uint16, int,   uint32, int64, uint64, float32, float.
-
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToUIntPtr")>]
         let inline unativeint (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> unativeint) (value))
+             ExplicitDynamic<(^T), unativeint> value
              when ^T : string     = ParseUIntPtr (castToString value)
              when ^T : float     = (# "conv.u" value  : unativeint #)
              when ^T : float32   = (# "conv.u" value  : unativeint #)
-             
              // Narrower signed types we sign-extend.
              // Same length signed types we leave as such (so -1 gets reinterpreted as unsigned MaxValue).
              // Wider signed types we truncate.
@@ -3856,28 +4425,26 @@ namespace Microsoft.FSharp.Core
              when ^T : int16     = (# "conv.i" value  : unativeint #)
              when ^T : nativeint = (# "" value  : unativeint #)
              when ^T : sbyte     = (# "conv.i" value  : unativeint #)
-             
              when ^T : uint64     = (# "conv.u" value  : unativeint #)
              when ^T : uint32     = (# "conv.u" value  : unativeint #)
              when ^T : uint16     = (# "conv.u" value  : unativeint #)
              when ^T : char       = (# "conv.u" value  : unativeint #)
              when ^T : unativeint = (# "" value  : unativeint #)
              when ^T : byte       = (# "conv.u" value  : unativeint #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> unativeint) (value))
 
-        [<NoDynamicInvocation>]
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToIntPtr")>]
         let inline nativeint (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> nativeint) (value))
+             ExplicitDynamic<(^T), nativeint> value
              when ^T : string     = ParseIntPtr (castToString value)
              when ^T : float      = (# "conv.i" value  : nativeint #)
              when ^T : float32    = (# "conv.i" value  : nativeint #)
-                         
              when ^T : int64      = (# "conv.i" value  : nativeint #)
              when ^T : int32      = (# "conv.i" value  : nativeint #)
              when ^T : int16      = (# "conv.i" value  : nativeint #)
              when ^T : nativeint  = (# "conv.i" value  : nativeint #)
              when ^T : sbyte      = (# "conv.i" value  : nativeint #)
-
              // Narrower unsigned types we zero-extend.
              // Same length unsigned types we leave as such (so unsigned MaxValue (all-bits-set) gets reinterpreted as -1).
              // Wider unsigned types we truncate.
@@ -3888,30 +4455,61 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u" value  : nativeint #)
              when ^T : unativeint = (# "" value  : nativeint #)
              when ^T : byte       = (# "conv.i" value  : nativeint #)
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         [<CompiledName("ToString")>]
-        let inline string (value: ^T) = 
+        let inline string (value: 'T) = 
              anyToString "" value
-             // since we have static optimization conditionals for ints below, we need to special-case Enums.
-             // This way we'll print their symbolic value, as opposed to their integral one (Eg., "A", rather than "1")
-             when ^T struct = anyToString "" value
-             when ^T : float      = (# "" value : float      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : float32    = (# "" value : float32    #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int64      = (# "" value : int64      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int32      = (# "" value : int32      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : nativeint  = (# "" value : nativeint  #).ToString()
-             when ^T : sbyte      = (# "" value : sbyte      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint64     = (# "" value : uint64     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint32     = (# "" value : uint32     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : unativeint = (# "" value : unativeint #).ToString()
-             when ^T : byte       = (# "" value : byte       #).ToString("g",CultureInfo.InvariantCulture)
+             when 'T : string     = (# "" value : string #)     // force no-op
 
-        [<NoDynamicInvocation>]
+             // Using 'let x = (# ... #) in x.ToString()' leads to better IL, without it, an extra stloc and ldloca.s (get address-of)
+             // gets emitted, which are unnecessary. With it, the extra address-of-variable is not created
+             when 'T : float      = let x = (# "" value : float #)      in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : float32    = let x = (# "" value : float32 #)    in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : decimal    = let x = (# "" value : decimal #)    in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : BigInteger = let x = (# "" value : BigInteger #) in x.ToString(null, CultureInfo.InvariantCulture)
+             
+             // no IFormattable
+             when 'T : char       = let x = (# "" value : 'T #)         in x.ToString()     // use 'T, because char can be an enum  
+             when 'T : bool       = let x = (# "" value : bool #)       in x.ToString()
+             when 'T : nativeint  = let x = (# "" value : nativeint #)  in x.ToString()
+             when 'T : unativeint = let x = (# "" value : unativeint #) in x.ToString()
+
+             // Integral types can be enum:
+             // It is not possible to distinguish statically between Enum and (any type of) int. For signed types we have 
+             // to use IFormattable::ToString, as the minus sign can be overridden. Using boxing we'll print their symbolic
+             // value if it's an enum, e.g.: 'ConsoleKey.Backspace' gives "Backspace", rather than "8")
+             when 'T : sbyte      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int16      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int32      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+             when 'T : int64      = (box value :?> IFormattable).ToString(null, CultureInfo.InvariantCulture)
+
+             // unsigned integral types have equal behavior with 'T::ToString() vs IFormattable::ToString
+             // this allows us to issue the 'constrained' opcode with 'callvirt'
+             when 'T : byte       = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint16     = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint32     = let x = (# "" value : 'T #) in x.ToString()
+             when 'T : uint64     = let x = (# "" value : 'T #) in x.ToString()
+
+
+             // other common mscorlib System struct types
+             when 'T : DateTime         = let x = (# "" value : DateTime #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : DateTimeOffset   = let x = (# "" value : DateTimeOffset #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : TimeSpan         = let x = (# "" value : TimeSpan #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : Guid             = let x = (# "" value : Guid #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T struct = 
+                match box value with
+                | :? IFormattable as f -> f.ToString(null, CultureInfo.InvariantCulture)
+                | _ -> value.ToString()
+
+             // other commmon mscorlib reference types
+             when 'T : StringBuilder = let x = (# "" value : StringBuilder #) in x.ToString()
+             when 'T : IFormattable = let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
+
+        [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
         let inline char (value: ^T) = 
-            (^T : (static member op_Explicit: ^T -> char) (value))
+             ExplicitDynamic<(^T), char> value
              when ^T : string     = (System.Char.Parse(castToString value))
              when ^T : float      = (# "conv.u2" value  : char #)
              when ^T : float32    = (# "conv.u2" value  : char #)
@@ -3926,12 +4524,12 @@ namespace Microsoft.FSharp.Core
              when ^T : char       = (# "conv.u2" value  : char #)
              when ^T : unativeint = (# "conv.u2" value  : char #)
              when ^T : byte       = (# "conv.u2" value  : char #)
-
+             when ^T : ^T = (^T : (static member op_Explicit: ^T -> char) (value))
         
         module NonStructuralComparison = 
             /// Static less-than with static optimizations for some well-known cases.
             let inline (<) (x:^T) (y:^U) = 
-                ((^T or ^U): (static member (<) : ^T * ^U -> bool) (x,y))
+                LessThanDynamic<(^T), (^U), bool> x y
                 when ^T : bool   = (# "clt" x y : bool #)
                 when ^T : sbyte  = (# "clt" x y : bool #)
                 when ^T : int16  = (# "clt" x y : bool #)
@@ -3948,10 +4546,11 @@ namespace Microsoft.FSharp.Core
                 when ^T : char   = (# "clt" x y : bool #)
                 when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
                 when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when ^T : ^T = ((^T or ^U): (static member (<) : ^T * ^U -> bool) (x,y))
 
             /// Static greater-than with static optimizations for some well-known cases.
             let inline (>) (x:^T) (y:^U) = 
-                ((^T or ^U): (static member (>) : ^T * ^U -> bool) (x,y))
+                GreaterThanDynamic<(^T), (^U), bool> x y
                 when 'T : bool       = (# "cgt" x y : bool #)
                 when 'T : sbyte      = (# "cgt" x y : bool #)
                 when 'T : int16      = (# "cgt" x y : bool #)
@@ -3968,10 +4567,11 @@ namespace Microsoft.FSharp.Core
                 when 'T : char       = (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
                 when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when ^T : ^T = ((^T or ^U): (static member (>) : ^T * ^U -> bool) (x,y))
 
             /// Static less-than-or-equal with static optimizations for some well-known cases.
             let inline (<=) (x:^T) (y:^U) = 
-                ((^T or ^U): (static member (<=) : ^T * ^U -> bool) (x,y))
+                LessThanOrEqualDynamic<(^T), (^U), bool> x y
                 when 'T : bool       = not (# "cgt" x y : bool #)
                 when 'T : sbyte      = not (# "cgt" x y : bool #)
                 when 'T : int16      = not (# "cgt" x y : bool #)
@@ -3988,10 +4588,11 @@ namespace Microsoft.FSharp.Core
                 when 'T : char       = not (# "cgt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
                 when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
+                when ^T : ^T = ((^T or ^U): (static member (<=) : ^T * ^U -> bool) (x,y))
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
             let inline (>=) (x:^T) (y:^U) = 
-                ((^T or ^U): (static member (>=) : ^T * ^U -> bool) (x,y))
+                GreaterThanOrEqualDynamic<(^T), (^U), bool> x y
                 when 'T : bool       = not (# "clt" x y : bool #)
                 when 'T : sbyte      = not (# "clt" x y : bool #)
                 when 'T : int16      = not (# "clt" x y : bool #)
@@ -4008,11 +4609,11 @@ namespace Microsoft.FSharp.Core
                 when 'T : char       = not (# "clt" x y : bool #)
                 when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
                 when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
-
+                when ^T : ^T = ((^T or ^U): (static member (>=) : ^T * ^U -> bool) (x,y))
 
             /// Static greater-than-or-equal with static optimizations for some well-known cases.
             let inline (=) (x:^T) (y:^T) = 
-                (^T : (static member (=) : ^T * ^T -> bool) (x,y))
+                EqualityDynamic<(^T), (^T), bool> x y
                 when ^T : bool    = (# "ceq" x y : bool #)
                 when ^T : sbyte   = (# "ceq" x y : bool #)
                 when ^T : int16   = (# "ceq" x y : bool #)
@@ -4027,11 +4628,12 @@ namespace Microsoft.FSharp.Core
                 when ^T : char    = (# "ceq" x y : bool #)
                 when ^T : nativeint  = (# "ceq" x y : bool #)
                 when ^T : unativeint  = (# "ceq" x y : bool #)
-                when ^T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
-                when ^T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string  = String.Equals((# "" x : string #),(# "" y : string #))
+                when ^T : decimal = Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : ^T = (^T : (static member (=) : ^T * ^T -> bool) (x,y))
 
             let inline (<>) (x:^T) (y:^T) = 
-                (^T : (static member (<>) : ^T * ^T -> bool) (x,y))
+                InequalityDynamic<(^T), (^T), bool> x y
                 when ^T : bool    = not (# "ceq" x y : bool #)
                 when ^T : sbyte   = not (# "ceq" x y : bool #)
                 when ^T : int16   = not (# "ceq" x y : bool #)
@@ -4048,7 +4650,7 @@ namespace Microsoft.FSharp.Core
                 when ^T : unativeint  = not (# "ceq" x y : bool #)
                 when ^T : string  = not (System.String.Equals((# "" x : string #),(# "" y : string #)))
                 when ^T : decimal     = System.Decimal.op_Inequality((# "" x:decimal #), (# "" y:decimal #))
-
+                when ^T : ^T = (^T : (static member (<>) : ^T * ^T -> bool) (x,y))
 
             // static comparison (ER mode) with static optimizations for some well-known cases
             [<CompiledName("Compare")>]
@@ -4151,7 +4753,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
 
-        [<CompiledName("NameOf")>]
+        [<CompiledName("NameOf"); CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)>]
         let inline nameof (_: 'T) : string = raise (Exception "may not call directly, should always be optimized away")
 
         [<CompiledName("MethodHandleOf")>]
@@ -4171,6 +4773,9 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Identity")>]
         let id x = x
+
+        [<CompiledName("Not")>]
+        let inline not (value: bool) = match value with true -> false | _ -> true
 
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.
@@ -4224,9 +4829,8 @@ namespace Microsoft.FSharp.Core
                  // That is, not in the generic implementation of '+'
                  when ^T : ^T = ((^T or ^U): (static member (+) : ^T * ^U -> ^V) (x,y))
 
-            [<NoDynamicInvocation>]
             let inline (-) (x: ^T) (y: ^U) : ^V = 
-                 ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
+                 CheckedSubtractionDynamic<(^T),(^U),(^V)>  x y 
                  when ^T : int32      and ^U : int32      = (# "sub.ovf" x y : int32 #)
                  when ^T : float      and ^U : float      = (# "sub" x y : float #)
                  when ^T : float32    and ^U : float32    = (# "sub" x y : float32 #)
@@ -4240,10 +4844,11 @@ namespace Microsoft.FSharp.Core
                  when ^T : sbyte       and ^U : sbyte      = (# "conv.ovf.i1" (# "sub.ovf" x y : int32 #) : sbyte #)
                  when ^T : byte        and ^U : byte       = (# "conv.ovf.u1.un" (# "sub.ovf.un" x y : uint32 #) : byte #)
                  when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
+                 when ^T : ^T = ((^T or ^U): (static member (-) : ^T * ^U -> ^V) (x,y))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline (~-) (value: ^T) : ^T = 
-                (^T : (static member (~-) : ^T -> ^T) (value))
+                 CheckedUnaryNegationDynamic<(^T),(^T)>  value 
                  when ^T : int32     = (# "sub.ovf" 0 value  : int32 #)
                  when ^T : float     = (# "neg" value  : float #)
                  when ^T : float32   = (# "neg" value  : float32 #)
@@ -4252,6 +4857,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : nativeint = (# "sub.ovf" 0n value  : nativeint #)
                  when ^T : sbyte     = (# "sub.ovf" 0y value  : sbyte #)
                  when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" value : decimal #))) : ^T #)
+                 when ^T : ^T = (^T : (static member (~-) : ^T -> ^T) (value))
 
             let inline ( * ) (x: ^T) (y: ^U) : ^V = 
                  CheckedMultiplyDynamic<(^T),(^U),(^V)>  x y 
@@ -4273,11 +4879,11 @@ namespace Microsoft.FSharp.Core
                  // That is, not in the generic implementation of '*'
                  when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToByte")>]
             let inline byte (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> byte) (value))
-                 when ^T : string     = parseByte (castToString value)
+                 ExplicitDynamic<(^T),byte> value 
+                 when ^T : string     = ParseByte (castToString value)
                  when ^T : float     = (# "conv.ovf.u1" value  : byte #)
                  when ^T : float32   = (# "conv.ovf.u1" value  : byte #)
                  when ^T : int64     = (# "conv.ovf.u1" value  : byte #)
@@ -4291,11 +4897,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u1.un" value  : byte #)
                  when ^T : unativeint = (# "conv.ovf.u1.un" value  : byte #)
                  when ^T : byte     = (# "conv.ovf.u1.un" value  : byte #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> byte) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToSByte")>]
             let inline sbyte (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> sbyte) (value))
+                 ExplicitDynamic<(^T),sbyte> value 
                  when ^T : string     = ParseSByte (castToString value)
                  when ^T : float     = (# "conv.ovf.i1" value  : sbyte #)
                  when ^T : float32   = (# "conv.ovf.i1" value  : sbyte #)
@@ -4310,11 +4917,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : unativeint = (# "conv.ovf.i1.un" value  : sbyte #)
                  when ^T : byte     = (# "conv.ovf.i1.un" value  : sbyte #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> sbyte) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt16")>]
             let inline uint16 (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> uint16) (value))
+                 ExplicitDynamic<(^T),uint16> value 
                  when ^T : string     = ParseUInt16 (castToString value)
                  when ^T : float      = (# "conv.ovf.u2" value  : uint16 #)
                  when ^T : float32    = (# "conv.ovf.u2" value  : uint16 #)
@@ -4329,11 +4937,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u2.un" value  : uint16 #)
                  when ^T : unativeint = (# "conv.ovf.u2.un" value  : uint16 #)
                  when ^T : byte       = (# "conv.ovf.u2.un" value  : uint16 #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint16) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToChar")>]
             let inline char (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> char) (value))
+                 ExplicitDynamic<(^T), char> value 
                  when ^T : string     = (System.Char.Parse(castToString value))
                  when ^T : float      = (# "conv.ovf.u2" value  : char #)
                  when ^T : float32    = (# "conv.ovf.u2" value  : char #)
@@ -4348,11 +4957,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u2.un" value  : char #)
                  when ^T : unativeint = (# "conv.ovf.u2.un" value  : char #)
                  when ^T : byte       = (# "conv.ovf.u2.un" value  : char #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> char) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt16")>]
             let inline int16 (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> int16) (value))
+                 ExplicitDynamic<(^T), int16> value 
                  when ^T : string     = ParseInt16 (castToString value)
                  when ^T : float     = (# "conv.ovf.i2" value  : int16 #)
                  when ^T : float32   = (# "conv.ovf.i2" value  : int16 #)
@@ -4367,11 +4977,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i2.un" value  : int16 #)
                  when ^T : unativeint = (# "conv.ovf.i2.un" value  : int16 #)
                  when ^T : byte     = (# "conv.ovf.i2.un" value  : int16 #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> int16) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt32")>]
             let inline uint32 (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> uint32) (value))
+                 ExplicitDynamic<(^T), uint32> value 
                  when ^T : string     = ParseUInt32 (castToString value)
                  when ^T : float     = (# "conv.ovf.u4" value  : uint32 #)
                  when ^T : float32   = (# "conv.ovf.u4" value  : uint32 #)
@@ -4386,11 +4997,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u4.un" value  : uint32 #)
                  when ^T : unativeint = (# "conv.ovf.u4.un" value  : uint32 #)
                  when ^T : byte     = (# "conv.ovf.u4.un" value  : uint32 #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint32) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt32")>]
             let inline int32 (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> int32) (value))
+                 ExplicitDynamic<(^T), int32> value 
                  when ^T : string     = ParseInt32 (castToString value)
                  when ^T : float     = (# "conv.ovf.i4" value  : int32 #)
                  when ^T : float32   = (# "conv.ovf.i4" value  : int32 #)
@@ -4405,15 +5017,15 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i4.un" value  : int32 #)
                  when ^T : unativeint = (# "conv.ovf.i4.un" value  : int32 #)
                  when ^T : byte     = (# "conv.ovf.i4.un" value  : int32 #)
-
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> int32) (value))
 
             [<CompiledName("ToInt")>]
             let inline int value = int32 value
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUInt64")>]
             let inline uint64 (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> uint64) (value))
+                 ExplicitDynamic<(^T), uint64> value 
                  when ^T : string     = ParseUInt64 (castToString value)
                  when ^T : float     = (# "conv.ovf.u8" value  : uint64 #)
                  when ^T : float32   = (# "conv.ovf.u8" value  : uint64 #)
@@ -4428,11 +5040,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u8.un" value  : uint64 #)
                  when ^T : unativeint = (# "conv.ovf.u8.un" value  : uint64 #)
                  when ^T : byte     = (# "conv.ovf.u8.un" value  : uint64 #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> uint64) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToInt64")>]
             let inline int64 (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> int64) (value))
+                 ExplicitDynamic<(^T), int64> value 
                  when ^T : string     = ParseInt64 (castToString value)
                  when ^T : float     = (# "conv.ovf.i8" value  : int64 #)
                  when ^T : float32   = (# "conv.ovf.i8" value  : int64 #)
@@ -4447,11 +5060,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i8.un" value  : int64 #)
                  when ^T : unativeint = (# "conv.ovf.i8.un" value  : int64 #)
                  when ^T : byte     = (# "conv.ovf.i8.un" value  : int64 #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> int64) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToUIntPtr")>]
             let inline unativeint (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> unativeint) (value))
+                 ExplicitDynamic<(^T), unativeint> value 
                  when ^T : string     = ParseUIntPtr (castToString value)
                  when ^T : float     = (# "conv.ovf.u" value  : unativeint #)
                  when ^T : float32   = (# "conv.ovf.u" value  : unativeint #)
@@ -4466,11 +5080,12 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.u.un" value  : unativeint #)
                  when ^T : unativeint = (# "conv.ovf.u.un" value  : unativeint #)
                  when ^T : byte     = (# "conv.ovf.u.un" value  : unativeint #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> unativeint) (value))
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             [<CompiledName("ToIntPtr")>]
             let inline nativeint (value: ^T) = 
-                (^T : (static member op_Explicit: ^T -> nativeint) (value))
+                 ExplicitDynamic<(^T), nativeint> value 
                  when ^T : string     = ParseIntPtr (castToString value)
                  when ^T : float     = (# "conv.ovf.i" value  : nativeint #)
                  when ^T : float32   = (# "conv.ovf.i" value  : nativeint #)
@@ -4485,6 +5100,7 @@ namespace Microsoft.FSharp.Core
                  when ^T : char       = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : unativeint = (# "conv.ovf.i.un" value  : nativeint #)
                  when ^T : byte     = (# "conv.ovf.i.un" value  : nativeint #)
+                 when ^T : ^T = (^T : (static member op_Explicit: ^T -> nativeint) (value))
 
         module OperatorIntrinsics =
 
@@ -4682,14 +5298,14 @@ namespace Microsoft.FSharp.Core
                 else 
                     // a constrained, common simple iterator that is fast.
                     let singleStepRangeEnumerator () =
-                        let value : Ref<'T> = ref (n - LanguagePrimitives.GenericOne)
+                        let mutable value = n - LanguagePrimitives.GenericOne
 
                         let inline current () =
                             // according to IEnumerator<int>.Current documentation, the result of of Current
                             // is undefined prior to the first call of MoveNext and post called to MoveNext
                             // that return false (see https://msdn.microsoft.com/en-us/library/58e146b7%28v=vs.110%29.aspx)
                             // so we should be able to just return value here, which would be faster
-                            let derefValue = !value
+                            let derefValue = value
                             if derefValue < n then
                                 notStarted ()
                             elif derefValue > m then
@@ -4705,14 +5321,14 @@ namespace Microsoft.FSharp.Core
 
                           interface IEnumerator with
                             member __.Current = box (current ())
-                            member __.Reset () = value := n - LanguagePrimitives.GenericOne
+                            member __.Reset () = value <- n - LanguagePrimitives.GenericOne
                             member __.MoveNext () =
-                                let derefValue = !value
+                                let derefValue = value
                                 if derefValue < m then
-                                    value := derefValue + LanguagePrimitives.GenericOne
+                                    value <- derefValue + LanguagePrimitives.GenericOne
                                     true
                                 elif derefValue = m then 
-                                    value := derefValue + LanguagePrimitives.GenericOne
+                                    value <- derefValue + LanguagePrimitives.GenericOne
                                     false
                                 else false }
 
@@ -4880,12 +5496,16 @@ namespace Microsoft.FSharp.Core
             let PowGeneric (one, mul, value: 'T, exponent) = ComputePowerGenericInlined  one mul value exponent 
 
             let inline ComputeSlice bound start finish length =
-                match start, finish with
-                | None, None -> bound, bound + length - 1
-                | None, Some n when n >= bound  -> bound, n
-                | Some m, None when m <= bound + length -> m, bound + length - 1
-                | Some m, Some n -> m, n
-                | _ -> raise (System.IndexOutOfRangeException())
+                let low = 
+                    match start with
+                    | Some n when n >= bound -> n
+                    | _ -> bound
+                let high = 
+                    match finish with 
+                    | Some m when m < bound + length -> m
+                    | _ -> bound + length - 1
+
+                low, high
 
             let inline GetArraySlice (source: _[]) start finish =
                 let start, finish = ComputeSlice 0 start finish source.Length
@@ -4896,7 +5516,7 @@ namespace Microsoft.FSharp.Core
                 let finish = (match finish with None -> target.Length - 1 | Some n -> n) 
                 SetArraySub target start (finish - start + 1) source
 
-            let GetArraySlice2D (source: _[,]) start1 finish1 start2 finish2 =
+            let inline GetArraySlice2D (source: _[,]) start1 finish1 start2 finish2 =
                 let bound1 = source.GetLowerBound(0)
                 let bound2 = source.GetLowerBound(1)
                 let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source)
@@ -4905,41 +5525,41 @@ namespace Microsoft.FSharp.Core
                 let len2 = (finish2 - start2 + 1)
                 GetArray2DSub source start1 start2 len1 len2
 
-            let inline GetArraySlice2DFixed1 (source: _[,]) index1 start2 finish2 = 
-                let bound2 = source.GetLowerBound(1)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 source)
-                let len2 = (finish2 - start2 + 1)
-                let dst = zeroCreate (if len2 < 0 then 0 else len2)
-                for j = 0 to len2 - 1 do 
-                    SetArray dst j (GetArray2D source index1 (start2+j))
+            let inline GetArraySlice2DFixed (source: _[,]) start finish index nonFixedDim = 
+                let bound = source.GetLowerBound(nonFixedDim)
+                let start, finish = ComputeSlice bound start finish (GetArray2DLength source nonFixedDim)
+                let len = (finish - start + 1)
+                let dst = zeroCreate (if len < 0 then 0 else len)
+                let getArrayElem = 
+                    match nonFixedDim with
+                    | 1 -> (fun i -> GetArray2D source index (start+i))
+                    | 0 -> (fun i -> GetArray2D source (start+i) index)
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for j = 0 to len - 1 do 
+                    SetArray dst j (getArrayElem j)
                 dst
 
-            let inline GetArraySlice2DFixed2 (source: _[,]) start1 finish1 index2 =
-                let bound1 = source.GetLowerBound(0)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source) 
-                let len1 = (finish1 - start1 + 1)
-                let dst = zeroCreate (if len1 < 0 then 0 else len1)
-                for i = 0 to len1 - 1 do 
-                    SetArray dst i (GetArray2D source (start1+i) index2)
-                dst
+            let inline GetArraySlice2DFixed1 (source: _[,]) index1 start2 finish2 = GetArraySlice2DFixed source start2 finish2 index1 1
 
-            let inline SetArraySlice2DFixed1 (target: _[,]) index1 start2 finish2 (source: _[]) = 
-                let bound2 = target.GetLowerBound(1)
-                let start2  = (match start2 with None -> bound2 | Some n -> n) 
-                let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 target - 1 | Some n -> n) 
-                let len2 = (finish2 - start2 + 1)
-                for j = 0 to len2 - 1 do
-                    SetArray2D target index1 (bound2+start2+j) (GetArray source j)
+            let inline GetArraySlice2DFixed2 (source: _[,]) start1 finish1 index2 = GetArraySlice2DFixed source start1 finish1 index2 0
 
-            let inline SetArraySlice2DFixed2 (target: _[,]) start1 finish1 index2 (source:_[]) = 
-                let bound1 = target.GetLowerBound(0)
-                let start1  = (match start1 with None -> bound1 | Some n -> n) 
-                let finish1 = (match finish1 with None -> bound1 + GetArray2DLength1 target - 1 | Some n -> n) 
-                let len1 = (finish1 - start1 + 1)
-                for i = 0 to len1 - 1 do
-                    SetArray2D target (bound1+start1+i) index2 (GetArray source i)
+            let inline SetArraySlice2DFixed (target: _[,]) (source: _[]) index start finish nonFixedDim  = 
+                let bound = target.GetLowerBound(nonFixedDim)
+                let start, finish = ComputeSlice bound start finish (GetArray2DLength target nonFixedDim)
+                let len = (finish - start + 1)
+                let setArrayElem = 
+                    match nonFixedDim with
+                    | 1 -> (fun j -> SetArray2D target index (bound + start + j) (GetArray source j)) 
+                    | 0 -> (fun i -> SetArray2D target (bound + start + i) index (GetArray source i))
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for j = 0 to len - 1 do
+                    setArrayElem j
 
-            let SetArraySlice2D (target: _[,]) start1 finish1 start2 finish2 (source: _[,]) = 
+            let inline SetArraySlice2DFixed1 (target: _[,]) index1 start2 finish2 (source: _[]) = SetArraySlice2DFixed target source index1 start2 finish2 1 
+
+            let inline SetArraySlice2DFixed2 (target: _[,]) start1 finish1 index2 (source:_[]) = SetArraySlice2DFixed target source index2 start1 finish1 0
+
+            let inline SetArraySlice2D (target: _[,]) start1 finish1 start2 finish2 (source: _[,]) = 
                 let bound1 = target.GetLowerBound(0)
                 let bound2 = target.GetLowerBound(1)
                 let start1  = (match start1 with None -> bound1 | Some n -> n) 
@@ -4948,7 +5568,7 @@ namespace Microsoft.FSharp.Core
                 let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 target - 1 | Some n -> n) 
                 SetArray2DSub target start1 start2 (finish1 - start1 + 1) (finish2 - start2 + 1) source
 
-            let GetArraySlice3D (source: _[,,]) start1 finish1 start2 finish2 start3 finish3 =
+            let inline GetArraySlice3D (source: _[,,]) start1 finish1 start2 finish2 start3 finish3 =
                 let bound1 = source.GetLowerBound(0)
                 let bound2 = source.GetLowerBound(1)
                 let bound3 = source.GetLowerBound(2)
@@ -4960,7 +5580,65 @@ namespace Microsoft.FSharp.Core
                 let len3 = (finish3 - start3 + 1)
                 GetArray3DSub source start1 start2 start3 len1 len2 len3
 
-            let SetArraySlice3D (target: _[,,]) start1 finish1 start2 finish2 start3 finish3 (source:_[,,]) = 
+            let inline GetArraySlice3DFixedSingle (source: _[,,]) start1 finish1 start2 finish2 index nonFixedDim1 nonFixedDim2 =
+                let bound1 = source.GetLowerBound(nonFixedDim1)
+                let bound2 = source.GetLowerBound(nonFixedDim2)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray3DLength source nonFixedDim1)              
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray3DLength source nonFixedDim2)              
+                let len1 = (finish1 - start1 + 1)
+                let len2 = (finish2 - start2 + 1)
+
+                let dst = Array2DZeroCreate (max 0 len1) (max 0 len2)
+                let getArrayElem = 
+                    match nonFixedDim1, nonFixedDim2 with
+                    | 1, 2 -> (fun i j -> GetArray3D source index (start1 + i) (start2 + j))
+                    | 0, 2 -> (fun i j -> GetArray3D source (start1 + i) index (start2 + j))
+                    | 0, 1 -> (fun i j -> GetArray3D source (start1 + i) (start2 + j) index)
+                    | _ -> raise (System.IndexOutOfRangeException())
+
+                for i = 0 to len1 - 1 do
+                    for j = 0 to len2 - 1 do
+                        SetArray2D dst i j (getArrayElem i j)
+
+                dst
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice3DFixedSingle1 (source: _[,,]) index1 start2 finish2 start3 finish3 = GetArraySlice3DFixedSingle source start2 finish2 start3 finish3 index1 1 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice3DFixedSingle2 (source: _[,,]) start1 finish1 index2 start3 finish3 = GetArraySlice3DFixedSingle source start1 finish1 start3 finish3 index2 0 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice3DFixedSingle3 (source: _[,,]) start1 finish1 start2 finish2 index3 = GetArraySlice3DFixedSingle source start1 finish1 start2 finish2 index3 0 1
+
+            let inline GetArraySlice3DFixedDouble (source: _[,,]) start finish index1 index2 nonFixedDim = 
+                let bound = source.GetLowerBound(nonFixedDim)
+                let start, finish = ComputeSlice bound start finish (GetArray3DLength source nonFixedDim)
+                let len = (finish - start + 1)
+                let dst = zeroCreate (if len < 0 then 0 else len)
+                let getArrayElem = 
+                    match nonFixedDim with
+                    | 2 -> (fun i -> GetArray3D source index1 index2 i)
+                    | 1 -> (fun i -> GetArray3D source index1 (start + i) index2)
+                    | 0 -> (fun i -> GetArray3D source (start+i) index1 index2)
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for j = 0 to len - 1 do 
+                    SetArray dst j (getArrayElem j)
+                dst
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice3DFixedDouble1 (source: _[,,]) index1 index2 start3 finish3 = 
+                GetArraySlice3DFixedDouble source start3 finish3 index1 index2 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice3DFixedDouble2 (source: _[,,]) index1 start2 finish2 index3 = 
+                GetArraySlice3DFixedDouble source start2 finish2 index1 index3 1
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice3DFixedDouble3 (source: _[,,]) start1 finish1 index2 index3 = 
+                GetArraySlice3DFixedDouble source start1 finish1 index2 index3 0
+
+            let inline SetArraySlice3D (target: _[,,]) start1 finish1 start2 finish2 start3 finish3 (source:_[,,]) = 
                 let bound1 = target.GetLowerBound(0)
                 let bound2 = target.GetLowerBound(1)
                 let bound3 = target.GetLowerBound(2)
@@ -4972,22 +5650,200 @@ namespace Microsoft.FSharp.Core
                 let finish3 = (match finish3 with None -> bound3 + GetArray3DLength3 target - 1 | Some n -> n) 
                 SetArray3DSub target start1 start2 start3 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) source
 
-            let GetArraySlice4D (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 = 
+            let inline SetArraySlice3DFixedSingle (target: _[,,]) (source: _[,]) index start1 finish1 start2 finish2 nonFixedDim1 nonFixedDim2  = 
+                let bound1 = target.GetLowerBound(nonFixedDim1)
+                let bound2 = target.GetLowerBound(nonFixedDim2)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray3DLength target nonFixedDim1)              
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray3DLength target nonFixedDim2)              
+                let len1 = (finish1 - start1 + 1)
+                let len2 = (finish2 - start2 + 1)
+                let setArrayElem = 
+                    match nonFixedDim1, nonFixedDim2 with
+                    | 1, 2 -> (fun i j -> SetArray3D target index (bound1 + start1 + i) (bound2 + start2 + j) (GetArray2D source i j)) 
+                    | 0, 2 -> (fun i j -> SetArray3D target (bound1 + start1 + i) index (bound2+ start2 + j) (GetArray2D source i j))
+                    | 0, 1 -> (fun i j -> SetArray3D target (bound1 + start1 + i) (bound2+ start2 + j) index (GetArray2D source i j))
+                    | _ -> raise (System.IndexOutOfRangeException())
+
+                for i = 0 to len1 - 1 do
+                    for j = 0 to len2 - 1 do
+                        setArrayElem i j
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice3DFixedSingle1 (target: _[,,]) index start2 finish2 start3 finish3 (source: _[,]) = 
+                SetArraySlice3DFixedSingle target source index start2 finish2 start3 finish3 1 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice3DFixedSingle2 (target: _[,,]) start1 finish1 index start3 finish3 (source: _[,]) = 
+                SetArraySlice3DFixedSingle target source index start1 finish1 start3 finish3 0 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice3DFixedSingle3 (target: _[,,]) start1 finish1 start2 finish2 index (source: _[,]) = 
+                SetArraySlice3DFixedSingle target source index start1 finish1 start2 finish2 0 1
+
+            let inline SetArraySlice3DFixedDouble (target: _[,,]) (source: _[]) index1 index2 start finish nonFixedDim = 
+                let bound = target.GetLowerBound(nonFixedDim)
+                let start, finish = ComputeSlice bound start finish (GetArray3DLength target nonFixedDim)
+                let len = (finish - start + 1)
+                let setArrayElem = 
+                    match nonFixedDim with
+                    | 2 -> (fun k -> SetArray3D target index1 index2 (bound + start + k) (GetArray source k)) 
+                    | 1 -> (fun j -> SetArray3D target index1 (bound + start + j) index2 (GetArray source j)) 
+                    | 0 -> (fun i -> SetArray3D target (bound + start + i) index1 index2 (GetArray source i))
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for j = 0 to len - 1 do 
+                    setArrayElem j
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice3DFixedDouble1 (target: _[,,]) index1 index2 start3 finish3 (source: _[]) = 
+                SetArraySlice3DFixedDouble target source index1 index2 start3 finish3 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice3DFixedDouble2 (target: _[,,]) index1 start2 finish2 index3 (source: _[]) = 
+                SetArraySlice3DFixedDouble target source index1 index3 start2 finish2 1
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice3DFixedDouble3 (target: _[,,]) start1 finish1 index2 index3 (source: _[]) = 
+                SetArraySlice3DFixedDouble target source index2 index3 start1 finish1 0
+
+            let inline GetArraySlice4D (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 =
                 let bound1 = source.GetLowerBound(0)
                 let bound2 = source.GetLowerBound(1)
                 let bound3 = source.GetLowerBound(2)
                 let bound4 = source.GetLowerBound(3)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (Array4DLength1 source)              
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (Array4DLength2 source)              
-                let start3, finish3 = ComputeSlice bound3 start3 finish3 (Array4DLength3 source)              
-                let start4, finish4 = ComputeSlice bound4 start4 finish4 (Array4DLength4 source)              
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength1 source)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength2 source)
+                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray4DLength3 source)
+                let start4, finish4 = ComputeSlice bound4 start4 finish4 (GetArray4DLength4 source)
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
                 let len3 = (finish3 - start3 + 1)
                 let len4 = (finish4 - start4 + 1)
                 GetArray4DSub source start1 start2 start3 start4 len1 len2 len3 len4
 
-            let SetArraySlice4D (target: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 (source:_[,,,]) = 
+            let inline GetArraySlice4DFixedSingle (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index nonFixedDim1 nonFixedDim2 nonFixedDim3 = 
+                let bound1 = source.GetLowerBound(nonFixedDim1)
+                let bound2 = source.GetLowerBound(nonFixedDim2)
+                let bound3 = source.GetLowerBound(nonFixedDim3)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength source nonFixedDim2)
+                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray4DLength source nonFixedDim3)
+                let len1 = (finish1 - start1 + 1)
+                let len2 = (finish2 - start2 + 1)
+                let len3 = (finish3 - start3 + 1)
+
+                let dst = Array3DZeroCreate (max len1 0) (max len2 0) (max len3 0)
+                let getArrayElem = 
+                    match nonFixedDim1, nonFixedDim2, nonFixedDim3 with
+                    | 1, 2, 3 -> (fun i j k-> GetArray4D source index i j k)
+                    | 0, 2, 3 -> (fun i j k -> GetArray4D source i index j k)
+                    | 0, 1, 3 -> (fun i j k -> GetArray4D source i j index k)
+                    | 0, 1, 2 -> (fun i j k -> GetArray4D source i j k index)
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for i = 0 to len1 - 1 do
+                    for j = 0 to len2 - 1 do
+                        for k = 0 to len3 - 1 do
+                            SetArray3D dst i j k (getArrayElem i j k)
+
+                dst
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedSingle1 (source: _[,,,]) index1 start2 finish2 start3 finish3 start4 finish4 =
+                GetArraySlice4DFixedSingle source start2 finish2 start3 finish3 start4 finish4 index1 1 2 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedSingle2 (source: _[,,,]) start1 finish1 index2 start3 finish3 start4 finish4 = 
+                GetArraySlice4DFixedSingle source start1 finish1 start3 finish3 start4 finish4 index2 0 2 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedSingle3 (source: _[,,,]) start1 finish1 start2 finish2 index3 start4 finish4 = 
+                GetArraySlice4DFixedSingle source start1 finish1 start2 finish2 start4 finish4 index3 0 1 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedSingle4 (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index4 = 
+                GetArraySlice4DFixedSingle source start1 finish1 start2 finish2 start3 finish3 index4 0 1 2
+
+            let inline GetArraySlice4DFixedDouble (source: _[,,,]) start1 finish1 start2 finish2 index1 index2 nonFixedDim1 nonFixedDim2 = 
+                let bound1 = source.GetLowerBound(nonFixedDim1)
+                let bound2 = source.GetLowerBound(nonFixedDim2)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength source nonFixedDim2)
+                let len1 = (finish1 - start1 + 1)
+                let len2 = (finish2 - start2 + 1)
+
+                let dst = Array2DZeroCreate (max len1 0) (max len2 0)
+                let getArrayElem = 
+                    match nonFixedDim1, nonFixedDim2 with
+                    | 2, 3 -> (fun i j -> GetArray4D source index1 index2 i j)
+                    | 1, 3 -> (fun i j -> GetArray4D source index1 i index2 j)
+                    | 1, 2 -> (fun i j -> GetArray4D source index1 i j index2)
+                    | 0, 3 -> (fun i j -> GetArray4D source i index1 index2 j)
+                    | 0, 2 -> (fun i j -> GetArray4D source i index1 j index2)
+                    | 0, 1 -> (fun i j -> GetArray4D source i j index1 index2)
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for i = 0 to len1 - 1 do
+                    for j = 0 to len2 - 1 do
+                            SetArray2D dst i j (getArrayElem i j)
+
+                dst
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedDouble1 (source: _[,,,]) index1 index2 start3 finish3 start4 finish4 =
+                GetArraySlice4DFixedDouble source start3 finish3 start4 finish4 index1 index2 2 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedDouble2 (source: _[,,,]) index1 start2 finish2 index3 start4 finish4 =
+                GetArraySlice4DFixedDouble source start2 finish2 start4 finish4 index1 index3 1 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedDouble3 (source: _[,,,]) index1 start2 finish2 start3 finish3 index4 =
+                GetArraySlice4DFixedDouble source start2 finish2 start3 finish3 index1 index4 1 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedDouble4 (source: _[,,,]) start1 finish1 index2 index3 start4 finish4 =
+                GetArraySlice4DFixedDouble source start1 finish1 start4 finish4 index2 index3 0 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedDouble5 (source: _[,,,]) start1 finish1 index2 start3 finish3 index4 = 
+                GetArraySlice4DFixedDouble source start1 finish1 start3 finish3 index2 index4 0 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedDouble6 (source: _[,,,]) start1 finish1 start2 finish2 index3 index4 = 
+                GetArraySlice4DFixedDouble source start1 finish1 start2 finish2 index3 index4 0 1
+
+            let inline GetArraySlice4DFixedTriple (source: _[,,,]) start1 finish1 index1 index2 index3 nonFixedDim1 = 
+                let bound1 = source.GetLowerBound(nonFixedDim1)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
+                let len1 = (finish1 - start1 + 1)
+                let dst = zeroCreate (max len1 0)
+                let getArrayElem = 
+                    match nonFixedDim1 with
+                    | 0 -> (fun i -> GetArray4D source i index1 index2 index3)
+                    | 1 -> (fun i -> GetArray4D source index1 i index2 index3)
+                    | 2 -> (fun i -> GetArray4D source index1 index2 i index3)
+                    | 3 -> (fun i -> GetArray4D source index1 index2 index3 i)
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for i = 0 to len1 - 1 do
+                    SetArray dst i (getArrayElem i) 
+
+                dst
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedTriple1 (source: _[,,,]) start1 finish1 index2 index3 index4 = 
+                GetArraySlice4DFixedTriple source start1 finish1 index2 index3 index4 0
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedTriple2 (source: _[,,,]) index1 start2 finish2 index3 index4 =
+                GetArraySlice4DFixedTriple source start2 finish2 index1 index3 index4 1
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedTriple3 (source: _[,,,]) index1 index2 start3 finish3 index4 =
+                GetArraySlice4DFixedTriple source start3 finish3 index1 index2 index4 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline GetArraySlice4DFixedTriple4 (source: _[,,,]) index1 index2 index3 start4 finish4 = 
+                GetArraySlice4DFixedTriple source start4 finish4 index1 index2 index3 3
+
+            let inline SetArraySlice4D (target: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 (source:_[,,,]) = 
                 let bound1 = target.GetLowerBound(0)
                 let bound2 = target.GetLowerBound(1)
                 let bound3 = target.GetLowerBound(2)
@@ -4996,11 +5852,127 @@ namespace Microsoft.FSharp.Core
                 let start2  = (match start2 with None -> bound2 | Some n -> n) 
                 let start3  = (match start3 with None -> bound3 | Some n -> n) 
                 let start4  = (match start4 with None -> bound4 | Some n -> n) 
-                let finish1 = (match finish1 with None -> bound1 + Array4DLength1 target - 1 | Some n -> n) 
-                let finish2 = (match finish2 with None -> bound2 + Array4DLength2 target - 1 | Some n -> n) 
-                let finish3 = (match finish3 with None -> bound3 + Array4DLength3 target - 1 | Some n -> n) 
-                let finish4 = (match finish4 with None -> bound4 + Array4DLength4 target - 1 | Some n -> n) 
+                let finish1 = (match finish1 with None -> bound1 + GetArray4DLength1 target - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + GetArray4DLength2 target - 1 | Some n -> n) 
+                let finish3 = (match finish3 with None -> bound3 + GetArray4DLength3 target - 1 | Some n -> n) 
+                let finish4 = (match finish4 with None -> bound4 + GetArray4DLength4 target - 1 | Some n -> n) 
                 SetArray4DSub target start1 start2 start3 start4 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) (finish4 - start4 + 1) source
+
+            let inline SetArraySlice4DFixedSingle (target: _[,,,]) (source: _[,,]) index start1 finish1 start2 finish2 start3 finish3 nonFixedDim1 nonFixedDim2 nonFixedDim3 = 
+                let bound1 = target.GetLowerBound(nonFixedDim1)
+                let bound2 = target.GetLowerBound(nonFixedDim2)
+                let bound3 = target.GetLowerBound(nonFixedDim3)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength target nonFixedDim1)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength target nonFixedDim2)
+                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray4DLength target nonFixedDim3)
+                let len1 = (finish1 - start1 + 1)
+                let len2 = (finish2 - start2 + 1)
+                let len3 = (finish3 - start3 + 1)
+
+                let setArrayElem = 
+                    match nonFixedDim1, nonFixedDim2, nonFixedDim3 with
+                    | 1, 2, 3 -> (fun i j k -> SetArray4D target index (bound1 + start1 + i) (bound2 + start2 + j) (bound3 + start3 + k) (GetArray3D source i j k))
+                    | 0, 2, 3 -> (fun i j k -> SetArray4D target (bound1 + start1 + i) index (bound2 + start2 + j) (bound3 + start3 + k) (GetArray3D source i j k))
+                    | 0, 1, 3 -> (fun i j k -> SetArray4D target (bound1 + start1 + i) (bound2 + start2 + j) index (bound3 + start3 + k) (GetArray3D source i j k))
+                    | 0, 1, 2 -> (fun i j k -> SetArray4D target (bound1 + start1 + i) (bound2 + start2 + j) (bound3 + start3 + k) index (GetArray3D source i j k))
+                    | _ -> raise (System.IndexOutOfRangeException())
+
+                for i = 0 to len1 - 1 do
+                    for j = 0 to len2 - 1 do
+                        for k = 0 to len3 - 1 do
+                            setArrayElem i j k
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedSingle1 (target: _[,,,]) index1 start2 finish2 start3 finish3 start4 finish4 (source: _[,,]) = 
+                SetArraySlice4DFixedSingle target source index1 start2 finish2 start3 finish3 start4 finish4 1 2 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedSingle2 (target: _[,,,]) start1 finish1 index2 start3 finish3 start4 finish4 (source: _[,,]) = 
+                SetArraySlice4DFixedSingle target source index2 start1 finish1 start3 finish3 start4 finish4 0 2 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedSingle3 (target: _[,,,]) start1 finish1 start2 finish2 index3 start4 finish4 (source: _[,,]) = 
+                SetArraySlice4DFixedSingle target source index3 start1 finish1 start2 finish2 start4 finish4 0 1 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedSingle4 (target: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index4 (source: _[,,]) = 
+                SetArraySlice4DFixedSingle target source index4 start1 finish1 start2 finish2 start3 finish3 0 1 2
+
+            let inline SetArraySlice4DFixedDouble (target: _[,,,]) (source: _[,]) index1 index2 start1 finish1 start2 finish2 nonFixedDim1 nonFixedDim2 = 
+                let bound1 = target.GetLowerBound(nonFixedDim1)
+                let bound2 = target.GetLowerBound(nonFixedDim2)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength target nonFixedDim1)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength target nonFixedDim2)
+                let len1 = (finish1 - start1 + 1)
+                let len2 = (finish2 - start2 + 1)
+
+                let setArrayElem = 
+                    match nonFixedDim1, nonFixedDim2 with
+                    | 2, 3 -> (fun i j -> SetArray4D target index1 index2 (bound1 + start1 + i) (bound2 + start2 + j) (GetArray2D source i j))
+                    | 1, 3 -> (fun i j -> SetArray4D target index1 (bound1 + start1 + i) index2 (bound2 + start2 + j) (GetArray2D source i j))
+                    | 1, 2 -> (fun i j -> SetArray4D target index1 (bound1 + start1 + i) (bound2 + start2 + j) index2 (GetArray2D source i j))
+                    | 0, 3 -> (fun i j -> SetArray4D target (bound1 + start1 + i) index1 index2 (bound2 + start2 + j) (GetArray2D source i j))
+                    | 0, 2 -> (fun i j -> SetArray4D target (bound1 + start1 + i) index1 (bound2 + start2 + j) index2 (GetArray2D source i j))
+                    | 0, 1 -> (fun i j -> SetArray4D target (bound1 + start1 + i) (bound2 + start2 + j) index1 index2 (GetArray2D source i j))
+                    | _ -> raise (System.IndexOutOfRangeException())
+
+                for i = 0 to len1 - 1 do
+                    for j = 0 to len2 - 1 do
+                        setArrayElem i j 
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedDouble1 (target: _[,,,]) index1 index2 start3 finish3 start4 finish4 (source: _[,]) =
+                SetArraySlice4DFixedDouble target source index1 index2 start3 finish3 start4 finish4  2 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedDouble2 (target: _[,,,]) index1 start2 finish2 index3 start4 finish4 (source: _[,]) =
+                SetArraySlice4DFixedDouble target source index1 index3 start2 finish2 start4 finish4 1 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedDouble3 (target: _[,,,]) index1 start2 finish2 start3 finish3 index4 (source: _[,]) = 
+                SetArraySlice4DFixedDouble target source index1 index4 start2 finish2 start3 finish3 1 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedDouble4 (target: _[,,,]) start1 finish1 index2 index3 start4 finish4 (source: _[,]) =
+                SetArraySlice4DFixedDouble target source index2 index3 start1 finish1 start4 finish4 0 3
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedDouble5 (target: _[,,,]) start1 finish1 index2 start3 finish3 index4 (source: _[,]) =
+                SetArraySlice4DFixedDouble target source index2 index4 start1 finish1 start3 finish3 0 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedDouble6 (target: _[,,,]) start1 finish1 start2 finish2 index3 index4 (source: _[,]) =
+                SetArraySlice4DFixedDouble target source index3 index4 start1 finish1 start2 finish2 0 1
+
+            let inline SetArraySlice4DFixedTriple (target: _[,,,]) (source: _[]) index1 index2 index3 start1 finish1 nonFixedDim1 = 
+                let bound1 = target.GetLowerBound(nonFixedDim1)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength target nonFixedDim1)
+                let len1 = (finish1 - start1 + 1)
+                let setArrayElem = 
+                    match nonFixedDim1 with
+                    | 0 -> (fun i -> SetArray4D target (bound1 + start1 + i) index1 index2 index3 (GetArray source i))
+                    | 1 -> (fun i -> SetArray4D target index1 (bound1 + start1 + i) index2 index3 (GetArray source i))
+                    | 2 -> (fun i -> SetArray4D target index1 index2 (bound1 + start1 + i) index3 (GetArray source i))
+                    | 3 -> (fun i -> SetArray4D target index1 index2 index3 (bound1 + start1 + i) (GetArray source i))
+                    | _ -> raise (System.IndexOutOfRangeException())
+                for i = 0 to len1 - 1 do
+                    setArrayElem i
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedTriple1 (target: _[,,,]) start1 finish1 index2 index3 index4 (source: _[]) = 
+                SetArraySlice4DFixedTriple target source index2 index3 index4 start1 finish1 0
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedTriple2 (target: _[,,,]) index1 start2 finish2 index3 index4 (source: _[]) = 
+                SetArraySlice4DFixedTriple target source index1 index3 index4 start2 finish2 1
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedTriple3 (target: _[,,,]) index1 index2 start3 finish3 index4 (source: _[]) =
+                SetArraySlice4DFixedTriple target source index1 index2 index4 start3 finish3 2
+
+            [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+            let inline SetArraySlice4DFixedTriple4 (target: _[,,,]) index1 index2 index3 start4 finish4 (source: _[]) =
+                SetArraySlice4DFixedTriple target source index1 index2 index3 start4 finish4 3
 
             let inline GetStringSlice (source: string) start finish =
                 let start, finish = ComputeSlice 0 start finish source.Length
@@ -5008,7 +5980,7 @@ namespace Microsoft.FSharp.Core
                 if len <= 0 then String.Empty
                 else source.Substring(start, len)
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline absImpl (x: ^T) : ^T = 
                  (^T: (static member Abs : ^T -> ^T) (x))
                  when ^T : int32       = let x : int32     = retype x in System.Math.Abs(x)
@@ -5024,62 +5996,62 @@ namespace Microsoft.FSharp.Core
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
                  when ^T : decimal     = System.Math.Abs(retype x : decimal) 
-            
-            [<NoDynamicInvocation>]
+
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  acosImpl(x: ^T) : ^T = 
                  (^T: (static member Acos : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Acos(retype x)
                  when ^T : float32     = System.Math.Acos(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  asinImpl(x: ^T) : ^T = 
                  (^T: (static member Asin : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Asin(retype x)
                  when ^T : float32     = System.Math.Asin(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  atanImpl(x: ^T) : ^T = 
                  (^T: (static member Atan : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Atan(retype x)
                  when ^T : float32     = System.Math.Atan(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  atan2Impl(x: ^T) (y: ^T) : 'U = 
                  (^T: (static member Atan2 : ^T * ^T -> 'U) (x,y))
                  when ^T : float       = System.Math.Atan2(retype x, retype y)
                  when ^T : float32     = System.Math.Atan2(toFloat (retype x), toFloat(retype y)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  ceilImpl(x: ^T) : ^T = 
                  (^T: (static member Ceiling : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Ceiling(retype x : float)
                  when ^T : float32     = System.Math.Ceiling(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  expImpl(x: ^T) : ^T = 
                  (^T: (static member Exp : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Exp(retype x)
                  when ^T : float32     = System.Math.Exp(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline floorImpl (x: ^T) : ^T = 
                  (^T: (static member Floor : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Floor(retype x : float)
                  when ^T : float32     = System.Math.Floor(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline truncateImpl (x: ^T) : ^T = 
                  (^T: (static member Truncate : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Truncate(retype x : float) 
                  when ^T : float32     = System.Math.Truncate(toFloat (retype x))  |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline roundImpl (x: ^T) : ^T = 
                  (^T: (static member Round : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Round(retype x : float)
                  when ^T : float32     = System.Math.Round(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline signImpl (x: ^T) : int = 
                  (^T: (member Sign : int) (x))
                  when ^T : int32       = System.Math.Sign(retype x : int32)
@@ -5091,79 +6063,67 @@ namespace Microsoft.FSharp.Core
                  when ^T : float32     = System.Math.Sign(toFloat (retype x)) 
                  when ^T : decimal     = System.Math.Sign(retype x : decimal) 
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  logImpl(x: ^T) : ^T = 
                  (^T: (static member Log : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Log(retype x)
                  when ^T : float32     = System.Math.Log(toFloat (retype x)) |> toFloat32
             
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  log10Impl(x: ^T) : ^T = 
                  (^T: (static member Log10 : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Log10(retype x)
                  when ^T : float32     = System.Math.Log10(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  sqrtImpl(x: ^T) : ^U = 
                  (^T: (static member Sqrt : ^T -> ^U) (x))
                  when ^T : float       = System.Math.Sqrt(retype x : float)
                  when ^T : float32     = System.Math.Sqrt(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  cosImpl(x: ^T) : ^T = 
                  (^T: (static member Cos : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Cos(retype x)
                  when ^T : float32     = System.Math.Cos(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  coshImpl(x: ^T) : ^T = 
                  (^T: (static member Cosh : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Cosh(retype x)
                  when ^T : float32     = System.Math.Cosh(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  sinImpl(x: ^T) : ^T = 
                  (^T: (static member Sin : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Sin(retype x)
                  when ^T : float32     = System.Math.Sin(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  sinhImpl(x: ^T) : ^T = 
                  (^T: (static member Sinh : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Sinh(retype x)
                  when ^T : float32     = System.Math.Sinh(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  tanImpl(x: ^T) : ^T = 
                  (^T: (static member Tan : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Tan(retype x)
                  when ^T : float32     = System.Math.Tan(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  tanhImpl(x: ^T) : ^T = 
                  (^T: (static member Tanh : ^T -> ^T) (x))
                  when ^T : float       = System.Math.Tanh(retype x)
                  when ^T : float32     = System.Math.Tanh(toFloat (retype x)) |> toFloat32
 
-            [<NoDynamicInvocation>]
+            [<NoDynamicInvocation(isLegacy=true)>]
             let inline  powImpl (x: ^T) (y: ^U) : ^T = 
                  (^T: (static member Pow : ^T * ^U -> ^T) (x,y))
                  when ^T : float       = System.Math.Pow((retype x : float), (retype y: float))
                  when ^T : float32     = System.Math.Pow(toFloat (retype x), toFloat(retype y)) |> toFloat32
 
             [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
-            let UnaryDynamicImpl nm : ('T -> 'U) =
-                 let aty = typeof<'T>
-                 let minfo = aty.GetMethod(nm, [| aty |])
-                 (fun x -> unboxPrim<_>(minfo.Invoke(null,[| box x|])))
-
-            let BinaryDynamicImpl nm : ('T -> 'U -> 'V) =
-                 let aty = typeof<'T>
-                 let bty = typeof<'U>
-                 let minfo = aty.GetMethod(nm,[| aty;bty |])
-                 (fun x y -> unboxPrim<_>(minfo.Invoke(null,[| box x; box y|])))
-
-            [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]                
             type AbsDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
                     let aty = typeof<'T>
@@ -5420,13 +6380,6 @@ namespace Microsoft.FSharp.Core
            when ^T : byte        = RangeByte    (retype start) (retype step) (retype finish)
         
 
-        type ``[,]``<'T> with 
-            member arr.GetSlice(x : int, y1 : int option, y2 : int option) = GetArraySlice2DFixed1 arr x y1 y2 
-            member arr.GetSlice(x1 : int option, x2 : int option, y : int) = GetArraySlice2DFixed2 arr x1 x2 y
-
-            member arr.SetSlice(x : int, y1 : int option, y2 : int option, source:'T[]) = SetArraySlice2DFixed1 arr x y1 y2 source
-            member arr.SetSlice(x1 : int option, x2 : int option, y : int, source:'T[]) = SetArraySlice2DFixed2 arr x1 x2 y source
-
         [<CompiledName("Abs")>]
         let inline abs (value: ^T) : ^T = 
              AbsDynamic value
@@ -5600,6 +6553,52 @@ namespace Microsoft.FSharp.Core
                          (let x = (retype x : decimal) in
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
+        [<AutoOpen>]
+        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        module ArrayExtensions =
+            type ``[,,,]``<'T> with
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                member arr.GetReverseIndex(dim: int, offset: int) = 
+                    let len = 
+                        match dim with
+                        | 0 -> GetArray4DLength1 arr
+                        | 1 -> GetArray4DLength2 arr
+                        | 2 -> GetArray4DLength3 arr
+                        | 3 -> GetArray4DLength4 arr
+                        | _ -> raise (System.IndexOutOfRangeException())
+
+                    len - offset - 1
+
+            type ``[,,]``<'T> with
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                member arr.GetReverseIndex(dim: int, offset: int) = 
+                    let len = 
+                        match dim with
+                        | 0 -> GetArray3DLength1 arr
+                        | 1 -> GetArray3DLength2 arr
+                        | 2 -> GetArray3DLength3 arr
+                        | _ -> raise (System.IndexOutOfRangeException())
+
+                    len - offset - 1
+
+            type ``[,]``<'T> with
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                member arr.GetReverseIndex(dim: int, offset: int) = 
+                    let len = 
+                        match dim with
+                        | 0 -> GetArray2DLength1 arr
+                        | 1 -> GetArray2DLength2 arr
+                        | _ -> raise (System.IndexOutOfRangeException())
+
+                    len - offset - 1
+
+            type ``[]``<'T> with
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                member arr.GetReverseIndex (_: int, offset: int) = arr.Length - offset - 1
+
+            type System.String with
+                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                member str.GetReverseIndex (_: int, offset: int) = str.Length - offset - 1
 
 namespace Microsoft.FSharp.Control
 

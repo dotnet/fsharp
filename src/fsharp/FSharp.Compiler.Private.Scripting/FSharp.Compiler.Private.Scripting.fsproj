@@ -4,23 +4,26 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
     <PackageDescription>Provides embedding F# language scripting.</PackageDescription>
+    <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Tools-$(FSProductVersionReleaseNotesVersion)</PackageReleaseNotes>
     <NuspecFile>FSharp.Compiler.Private.Scripting.nuspec</NuspecFile>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="TextHelpers.fs" />
     <Compile Include="FSharpScript.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <NuspecProperty Include="FSharpCoreVersion=$(FSCorePackageVersion)-$(VersionSuffix)"/>
-    <NuspecProperty Include="TargetFramework=$(TargetFramework)"/>
+    <NuspecProperty Include="FsharpCorePackageVersion=$(FSCorePackageVersion)" Condition="'$(VersionSuffix)'==''" />
+    <NuspecProperty Include="FsharpCorePackageVersion=$(FSCorePackageVersion)-$(VersionSuffix)" Condition="'$(VersionSuffix)'!=''" />
+    <NuspecProperty Include="TargetFramework=$(TargetFramework)" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
   </ItemGroup>
 
 </Project>

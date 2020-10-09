@@ -27,6 +27,21 @@
         <target state="translated">Прочее</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpInteractivePreview">
+        <source>FSI Preview</source>
+        <target state="translated">Предварительная версия FSI</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewMode">
+        <source>Enable preview language features</source>
+        <target state="translated">Включить предварительные версии функций языка</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractivePreviewModeDescr">
+        <source>Enable preview of in-development language features in F# Interactive</source>
+        <target state="translated">Включить предварительный просмотр функций языка, находящихся в разработке, в F# Interactive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
         <source>Shadow copy assemblies</source>
         <target state="translated">Теневое копирование сборок</target>

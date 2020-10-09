@@ -2,6 +2,31 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSStrings.resx">
     <body>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="translated">'..^' sembolü</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
+        <source>interpolated string</source>
+        <target state="new">interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
+        <source>interpolated string (first part)</source>
+        <target state="new">interpolated string (first part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
+        <source>interpolated string (final part)</source>
+        <target state="new">interpolated string (final part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
+        <source>interpolated string (part)</source>
+        <target state="new">interpolated string (part)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">. Ayrıca bkz. {0}.</target>
@@ -63,18 +88,13 @@
         <note />
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a misspelt pattern name.</source>
-        <target state="translated">Büyük harfli değişken tanımlayıcıları desenlerde genel olarak kullanılmamalıdır, yanlış yazılmış bir desen adının göstergesi olabilirler.</target>
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="translated">Büyük harfli değişken tanımlayıcıları desenlerde genel olarak kullanılmamalıdır. Bunlar, eksik bir açık bildirimin veya yanlış yazılmış bir desen adının göstergesi olabilirler.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">
         <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
         <target state="translated">Ayırt edici birleşim durumları ve özel durum etiketleri büyük harfli tanımlayıcılar olmalıdır</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleOverload">
-        <source>Possible overload: '{0}'. {1}.</source>
-        <target state="translated">Olası aşırı yükleme: '{0}'. {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionExpected">
@@ -1620,6 +1640,11 @@
       <trans-unit id="Parser.TOKEN.BAR.RBRACE">
         <source>symbol '|}'</source>
         <target state="translated">sembol '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND.BANG">
+        <source>keyword 'and!'</source>
+        <target state="translated">'and!' anahtar sözcüğü</target>
         <note />
       </trans-unit>
     </body>

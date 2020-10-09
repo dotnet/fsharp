@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        $CommonMetadataElements$
+        <language>en-US</language>
+        <dependencies>
+            <group targetFramework=".NETStandard2.0">
+                <dependency id="FSharp.Core" version="$FSharpCoreVersion$" />
+            </group>
+        </dependencies>
+
+    </metadata>
+    <files>
+        $CommonFileElements$
+
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.dll"                  target="lib\netstandard2.0" />
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\FSharp.Compiler.Service.xml"                  target="lib\netstandard2.0" />
+
+        <!-- resources -->
+        <file src="FSharp.Compiler.Service\$Configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"     target="lib\netstandard2.0" />
+    </files>
+</package>

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,12 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly Hash03
 {
@@ -29,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.Hash03
 {
-  // Offset: 0x00000000 Length: 0x00000220
+  // Offset: 0x00000000 Length: 0x0000021A
 }
 .mresource public FSharpOptimizationData.Hash03
 {
-  // Offset: 0x00000228 Length: 0x000000B0
+  // Offset: 0x00000220 Length: 0x000000B0
 }
 .module Hash03.dll
-// MVID: {59B18AEE-9642-788D-A745-0383EE8AB159}
+// MVID: {5F1FBE49-9642-788D-A745-038349BE1F5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02DA0000
+// Image base: 0x05560000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,7 +67,7 @@
       .locals init ([0] int32 x,
                [1] int32 i)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash03.fsx'
+      .line 5,5 : 8,25 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Hash03.fsx'
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
       .line 7,7 : 8,32 ''
@@ -74,7 +79,7 @@
       IL_0006:  ldc.i4     0x483
       IL_000b:  ldc.i4.s   99
       IL_000d:  ldstr      "5"
-      IL_0012:  call       instance int32 [mscorlib]System.String::GetHashCode()
+      IL_0012:  callvirt   instance int32 [netstandard]System.Object::GetHashCode()
       IL_0017:  xor
       IL_0018:  xor
       IL_0019:  stloc.0

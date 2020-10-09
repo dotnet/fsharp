@@ -15,6 +15,7 @@ open Microsoft.CodeAnalysis.CodeActions
 open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
 
 [<NoEquality; NoComparison>]
 type internal InterfaceState =
@@ -35,7 +36,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
     let checker = checkerProvider.Checker
     static let userOpName = "ImplementInterfaceCodeFixProvider"
 
-    let queryInterfaceState appendBracketAt (pos: pos) (tokens: Tokenizer.SavedTokenInfo[]) (ast: Ast.ParsedInput) =
+    let queryInterfaceState appendBracketAt (pos: pos) (tokens: Tokenizer.SavedTokenInfo[]) (ast: ParsedInput) =
         asyncMaybe {
             let line = pos.Line - 1
             let! iface = InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast
@@ -137,7 +138,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
             let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, sourceText = sourceText, userOpName = userOpName)
@@ -168,7 +169,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 | _ -> 
                     Some context.Span.End
             let! interfaceState = queryInterfaceState appendBracketAt interfacePos tokens parsedInput                        
-            let! symbol = Tokenizer.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! symbol = Tokenizer.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let fcsTextLineNumber = textLine.LineNumber + 1
             let lineContents = textLine.ToString()                            
             let! options = context.Document.GetOptionsAsync(cancellationToken)

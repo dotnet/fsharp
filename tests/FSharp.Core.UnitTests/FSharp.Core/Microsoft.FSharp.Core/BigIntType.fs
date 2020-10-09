@@ -3,13 +3,13 @@
 // Various tests for the:
 // System.Numerics.BigInteger struct
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Math
+namespace FSharp.Core.UnitTests.Math
 
 #nowarn "52" // error FS0052: The value has been copied to ensure the original is not mutated by this operation 
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 open Microsoft.FSharp.Math
 open System.Numerics
 
@@ -22,7 +22,6 @@ Make sure each method works on:
 * large    bigints
 *)
 
-[<TestFixture>]
 type BigIntType() =
 
     // global variables
@@ -32,7 +31,7 @@ type BigIntType() =
     let bigNegativeB = -bigPositiveB
         
     // Interfaces
-    [<Test>]
+    [<Fact>]
     member this.IComparable() =        
         
         // Legit IC
@@ -40,7 +39,7 @@ type BigIntType() =
         Assert.AreEqual(ic.CompareTo(bigPositiveA), 0) 
                
     // Base class methods
-    [<Test>]
+    [<Fact>]
     member this.ObjectToString() =
         Assert.AreEqual(bigPositiveA.ToString(), 
                         "12345678901234567890")
@@ -54,7 +53,7 @@ type BigIntType() =
 #endif
         
     
-    [<Test>]
+    [<Fact>]
     member this.ObjectEquals() =
         // All three are different constructor, but have equivalent value
         
@@ -66,61 +65,61 @@ type BigIntType() =
         let z3 = BigInteger.Zero
         let z4 = BigInteger()
 
-        Assert.IsTrue( (a = b) )
-        Assert.IsTrue( (b = c) )
-        Assert.IsTrue( (c = a) )
-        Assert.IsTrue( (z1 = z2) )
-        Assert.IsTrue( (z2 = z3) )
+        Assert.True( (a = b) )
+        Assert.True( (b = c) )
+        Assert.True( (c = a) )
+        Assert.True( (z1 = z2) )
+        Assert.True( (z2 = z3) )
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsTrue( (z3 = z4) )
-        Assert.IsTrue( (z4 = z1) )
+        Assert.True( (z3 = z4) )
+        Assert.True( (z4 = z1) )
 #endif
-        Assert.IsTrue( (z1 = -z2) )
-        Assert.IsTrue( (z2 = -z3) )
+        Assert.True( (z1 = -z2) )
+        Assert.True( (z2 = -z3) )
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsTrue( (z3 = -z4) )
-        Assert.IsTrue( (z4 = -z1) )
+        Assert.True( (z3 = -z4) )
+        Assert.True( (z4 = -z1) )
 #endif
-        Assert.IsTrue( a.Equals(b) ); Assert.IsTrue( b.Equals(a) )
-        Assert.IsTrue( b.Equals(c) ); Assert.IsTrue( c.Equals(b) )
-        Assert.IsTrue( c.Equals(a) ); Assert.IsTrue( a.Equals(c) )
-        Assert.IsTrue( z1.Equals(z2) ); Assert.IsTrue( z2.Equals(z3) )
+        Assert.True( a.Equals(b) ); Assert.True( b.Equals(a) )
+        Assert.True( b.Equals(c) ); Assert.True( c.Equals(b) )
+        Assert.True( c.Equals(a) ); Assert.True( a.Equals(c) )
+        Assert.True( z1.Equals(z2) ); Assert.True( z2.Equals(z3) )
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsTrue( z3.Equals(z4) ); Assert.IsTrue( z4.Equals(z1) )
+        Assert.True( z3.Equals(z4) ); Assert.True( z4.Equals(z1) )
 #endif
         
         // Self equality
         let a = new BigInteger(168)
-        Assert.IsTrue( (a = a) )        
-        Assert.IsTrue( (z1 = z1) )
-        Assert.IsTrue( (z2 = z2) )
-        Assert.IsTrue( (z3 = z3) )
+        Assert.True( (a = a) )        
+        Assert.True( (z1 = z1) )
+        Assert.True( (z2 = z2) )
+        Assert.True( (z3 = z3) )
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsTrue( (z4 = z4) )
+        Assert.True( (z4 = z4) )
 #endif
-        Assert.IsTrue(a.Equals(a))
-        Assert.IsTrue(z1.Equals(z1))
-        Assert.IsTrue(z2.Equals(z2))
-        Assert.IsTrue(z3.Equals(z3))
+        Assert.True(a.Equals(a))
+        Assert.True(z1.Equals(z1))
+        Assert.True(z2.Equals(z2))
+        Assert.True(z3.Equals(z3))
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsTrue(z4.Equals(z4))
+        Assert.True(z4.Equals(z4))
 #endif
         
         // Null
-        Assert.IsFalse(a.Equals(null))
+        Assert.False(a.Equals(null))
 
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsTrue(0I.GetHashCode() = (BigInteger()).GetHashCode())
+        Assert.True(0I.GetHashCode() = (BigInteger()).GetHashCode())
 #endif
     
     // static methods
-    [<Test>]
+    [<Fact>]
     member this.Abs() = 
         Assert.AreEqual(BigInteger.Abs(bigPositiveA),
                                    bigPositiveA)
@@ -138,7 +137,7 @@ type BigIntType() =
     
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.DivRem() = 
         let mutable r = BigInteger(0)        
         let mutable q = BigInteger(0)
@@ -178,7 +177,7 @@ type BigIntType() =
         ()
         
        
-    [<Test>]
+    [<Fact>]
     member this.GreatestCommonDivisor() = 
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(bigPositiveA, bigPositiveB), 900000000090I)
         Assert.AreEqual(BigInteger.GreatestCommonDivisor(bigNegativeA, bigNegativeB), 900000000090I)
@@ -192,12 +191,12 @@ type BigIntType() =
 
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.One() = 
         Assert.AreEqual(BigInteger.One,1I)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Parse() = 
         Assert.AreEqual(BigInteger.Parse("12345678901234567890"),
                                      bigPositiveA)
@@ -219,7 +218,7 @@ type BigIntType() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Pow() = 
         Assert.AreEqual(BigInteger.Pow(2I, 3),   8I)
         Assert.AreEqual(BigInteger.Pow(0I, 100), 0I)
@@ -235,7 +234,7 @@ type BigIntType() =
         CheckThrowsArgumentOutOfRangeException(fun() -> BigInteger.Pow(100I, -2) |> ignore)              
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Sign() = 
         Assert.AreEqual(0I.Sign,            0)
         Assert.AreEqual(BigInteger().Sign,  0)
@@ -243,44 +242,44 @@ type BigIntType() =
         Assert.AreEqual(bigNegativeA.Sign, -1)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.IsZero() = 
-        Assert.IsTrue(0I.IsZero)
-        Assert.IsTrue(-0I.IsZero)
-        Assert.IsTrue(BigInteger.Zero.IsZero)
-        Assert.IsTrue((-BigInteger.Zero).IsZero)
+        Assert.True(0I.IsZero)
+        Assert.True(-0I.IsZero)
+        Assert.True(BigInteger.Zero.IsZero)
+        Assert.True((-BigInteger.Zero).IsZero)
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsTrue(BigInteger().IsZero)
-        Assert.IsTrue((-BigInteger()).IsZero)
+        Assert.True(BigInteger().IsZero)
+        Assert.True((-BigInteger()).IsZero)
 #endif
-        Assert.IsTrue(BigInteger(0).IsZero)
-        Assert.IsTrue((-BigInteger(0)).IsZero)
-        Assert.IsFalse(1I.IsZero)
-        Assert.IsFalse(BigInteger.One.IsZero)
-        Assert.IsFalse(-1I.IsZero)
+        Assert.True(BigInteger(0).IsZero)
+        Assert.True((-BigInteger(0)).IsZero)
+        Assert.False(1I.IsZero)
+        Assert.False(BigInteger.One.IsZero)
+        Assert.False(-1I.IsZero)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.IsOne() = 
-        Assert.IsFalse(0I.IsOne)
-        Assert.IsFalse(-0I.IsOne)
-        Assert.IsFalse(BigInteger.Zero.IsOne)
-        Assert.IsFalse((-BigInteger.Zero).IsOne)
+        Assert.False(0I.IsOne)
+        Assert.False(-0I.IsOne)
+        Assert.False(BigInteger.Zero.IsOne)
+        Assert.False((-BigInteger.Zero).IsOne)
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
 #else
-        Assert.IsFalse(BigInteger().IsOne)
-        Assert.IsFalse((-BigInteger()).IsOne)
+        Assert.False(BigInteger().IsOne)
+        Assert.False((-BigInteger()).IsOne)
 #endif
-        Assert.IsFalse(BigInteger(0).IsOne)
-        Assert.IsFalse((-BigInteger(0)).IsOne)
-        Assert.IsTrue(1I.IsOne)
-        Assert.IsTrue(BigInteger.One.IsOne)
-        Assert.IsTrue(BigInteger(1).IsOne)
-        Assert.IsFalse(-1I.IsOne)
+        Assert.False(BigInteger(0).IsOne)
+        Assert.False((-BigInteger(0)).IsOne)
+        Assert.True(1I.IsOne)
+        Assert.True(BigInteger.One.IsOne)
+        Assert.True(BigInteger(1).IsOne)
+        Assert.False(-1I.IsOne)
         ()
     
-    [<Test>]
+    [<Fact>]
     member this.ToDouble() = 
         Assert.AreEqual(double 0I,       0.0)
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
@@ -291,7 +290,7 @@ type BigIntType() =
         Assert.AreEqual(double -123I, -123.0)
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.ToInt32() = 
         Assert.AreEqual(int32 0I,       0)
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
@@ -302,7 +301,7 @@ type BigIntType() =
         Assert.AreEqual(int32 -123I, -123)
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.ToInt64() = 
         Assert.AreEqual(int64 0I,       0L)
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
@@ -314,7 +313,7 @@ type BigIntType() =
          
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Zero() = 
         Assert.AreEqual(BigInteger.Zero,0I)
 #if CROSS_PLATFORM_COMPILER // see https://bugzilla.xamarin.com/show_bug.cgi?id=22591
@@ -324,7 +323,7 @@ type BigIntType() =
         ()
      
     // operators    
-    [<Test>]
+    [<Fact>]
     member this.Addition() = 
         Assert.AreEqual((123I + 456I),579I)
         Assert.AreEqual((-123I + (-456I)),-579I)
@@ -339,7 +338,7 @@ type BigIntType() =
            
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Division() = 
         Assert.AreEqual((123I / 124I),0I)
         Assert.AreEqual((123I / (-124I)),0I)
@@ -351,7 +350,7 @@ type BigIntType() =
 
         ()
     
-    [<Test>]    
+    [<Fact>]    
     member this.Equality() = 
         Assert.AreEqual((bigPositiveA = bigPositiveA),true)
         Assert.AreEqual((bigPositiveA = bigNegativeA),false)                                   
@@ -365,7 +364,7 @@ type BigIntType() =
         
         ()
     
-    [<Test>]    
+    [<Fact>]    
     member this.GreaterThan() = 
         Assert.AreEqual((bigPositiveA > bigPositiveB),false)
         Assert.AreEqual((bigNegativeA > bigPositiveB),false)
@@ -381,7 +380,7 @@ type BigIntType() =
         
         ()
     
-    [<Test>]    
+    [<Fact>]    
     member this.GreaterThanOrEqual() = 
         Assert.AreEqual((bigPositiveA >= bigPositiveB),false)
         Assert.AreEqual((bigPositiveA >= bigNegativeB),true)
@@ -398,7 +397,7 @@ type BigIntType() =
         
         ()
     
-    [<Test>]    
+    [<Fact>]    
     member this.LessThan() = 
         Assert.AreEqual((bigPositiveA < bigPositiveB),true)
         Assert.AreEqual((bigNegativeA < bigPositiveB),true)
@@ -415,7 +414,7 @@ type BigIntType() =
 
         ()
     
-    [<Test>]    
+    [<Fact>]    
     member this.LessThanOrEqual() = 
         Assert.AreEqual((bigPositiveA <= bigPositiveB),true)
         Assert.AreEqual((bigPositiveA <= bigNegativeB),false)
@@ -432,7 +431,7 @@ type BigIntType() =
 
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Modulus() = 
         Assert.AreEqual((bigPositiveA % bigPositiveB),bigPositiveA)
         Assert.AreEqual((bigNegativeA % bigNegativeB),bigNegativeA)
@@ -446,7 +445,7 @@ type BigIntType() =
 
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Multiply() = 
         Assert.AreEqual((123I * 100I),12300I)
         Assert.AreEqual((123I * (-100I)),-12300I)
@@ -460,7 +459,7 @@ type BigIntType() =
            
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Range() = 
         let resultPos = [123I..128I]
         let seqPos = 
@@ -499,7 +498,7 @@ type BigIntType() =
         ()
         
         
-    [<Test>]
+    [<Fact>]
     member this.RangeStep() = 
         let resultPos = [100I .. 3I .. 109I]
         let seqPos    = 
@@ -535,7 +534,7 @@ type BigIntType() =
                    
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Subtraction() = 
         Assert.AreEqual((100I - 123I),-23I)
         Assert.AreEqual((0I - bigPositiveB),bigNegativeB)
@@ -551,7 +550,7 @@ type BigIntType() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.UnaryNegation() = 
         Assert.AreEqual(-bigPositiveA,bigNegativeA)
         Assert.AreEqual(-bigNegativeA,bigPositiveA)
@@ -563,7 +562,7 @@ type BigIntType() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.UnaryPlus() = 
         Assert.AreEqual(+bigPositiveA,bigPositiveA)
         Assert.AreEqual(+bigNegativeA,bigNegativeA)
@@ -576,7 +575,7 @@ type BigIntType() =
         ()
         
     // instance methods
-    [<Test>]
+    [<Fact>]
     member this.New_int32() = 
         Assert.AreEqual(new BigInteger(0), 0I)
         Assert.AreEqual(new BigInteger(-10), -10I)
@@ -584,7 +583,7 @@ type BigIntType() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.New_int64() = 
         Assert.AreEqual(new BigInteger(0L), 0I)
         Assert.AreEqual(new BigInteger(-100L), -100I)

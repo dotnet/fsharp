@@ -1,12 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Core.DiscriminatedUnionTypes
+module FSharp.Core.UnitTests.DiscriminatedUnionTypes
 
 open System
 open System.Numerics
 open System.Reflection
 open System.Runtime.InteropServices
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+
+open Xunit
 open FsCheck
 open FsCheck.PropOperators
 
@@ -14,9 +15,8 @@ type EnumUnion =
     | A
     | B
 
-[<TestFixture>]
 type UseUnionsAsEnums() = 
-    [<Test>]
+    [<Fact>]
     member this.CanCompare() = 
         Assert.AreEqual(EnumUnion.B, EnumUnion.B)
         Assert.AreNotEqual(EnumUnion.A, EnumUnion.B)
@@ -27,37 +27,36 @@ type FlagsUnion =
     | Two = 2
     | Four = 4
 
-[<TestFixture>]
 type UseUnionsAsFlags() = 
     
-    [<Test>]
+    [<Fact>]
     member this.CanCompareWithInts() = 
         Assert.AreEqual(int FlagsUnion.One, 1)
         Assert.AreEqual(int FlagsUnion.Two, 2)
         Assert.AreEqual(int FlagsUnion.Four, 4)
     
-    [<Test>]
+    [<Fact>]
     member this.CanCastFromInts() = 
         let four : FlagsUnion = enum 4
         Assert.AreEqual(four, FlagsUnion.Four)
     
-    [<Test>]
+    [<Fact>]
     member this.CanCreateValuesWithoutName() = 
         let unknown : FlagsUnion = enum 99 // strange, but valid
         Assert.AreEqual(int unknown, 99)
     
-    [<Test>]
+    [<Fact>]
     member this.CanParseViaBCL() = 
         let values = System.Enum.GetValues(typeof<FlagsUnion>)
         let fourFromString = System.Enum.Parse(typeof<FlagsUnion>, "Four", false) :?> FlagsUnion // downcast needed
         Assert.AreEqual(fourFromString, FlagsUnion.Four)
     
-    [<Test>]
+    [<Fact>]
     member this.CanUseBinaryOr() = 
         Assert.AreEqual(int (FlagsUnion.One ||| FlagsUnion.Two), 3)
         Assert.AreEqual(int (FlagsUnion.One ||| FlagsUnion.One), 1)
     
-    [<Test>]
+    [<Fact>]
     member this.CanCompareWithFlags() = 
         Assert.AreEqual(FlagsUnion.Two, FlagsUnion.Two)
         Assert.AreNotEqual(FlagsUnion.Two, FlagsUnion.One)
@@ -66,13 +65,12 @@ type UnionsWithData =
     | Alpha of int
     | Beta of string * float
 
-[<TestFixture>]
 type UseUnionsWithData() = 
     let a1 = Alpha 1
     let a2 = Alpha 2
     let b1 = Beta("win", 8.1)
     
-    [<Test>]
+    [<Fact>]
     member this.CanAccessTheData() = 
         match a1 with
         | Alpha 1 -> ()
@@ -92,7 +90,7 @@ type UseUnionsWithData() =
             Assert.AreEqual(y, 8.1)
         | _ -> Assert.Fail()
     
-    [<Test>]
+    [<Fact>]
     member this.CanAccessTheDataInGuards() = 
         match a1 with
         | Alpha x when x = 1 -> ()
@@ -108,11 +106,11 @@ let private hasAttribute<'T,'Attr>() =
     typeof<'T>.GetTypeInfo().GetCustomAttributes() |> Seq.exists  (fun x -> x.GetType() = typeof<'Attr>)
 
 
-let [<Test>] ``struct unions hold [<Struct>] metadata`` () =
-    Assert.IsTrue (hasAttribute<StructUnion,StructAttribute>())
+let [<Fact>] ``struct unions hold [<Struct>] metadata`` () =
+    Assert.True (hasAttribute<StructUnion,StructAttribute>())
 
 
-let [<Test>] ``struct unions are comparable`` () =
+let [<Fact>] ``struct unions are comparable`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         i1 <> i2 ==>
@@ -124,7 +122,7 @@ let [<Test>] ``struct unions are comparable`` () =
         (sr1.Equals sr2)               |@ "sr1.Equals sr2"
 
 
-let [<Test>] ``struct unions support pattern matching`` () =
+let [<Fact>] ``struct unions support pattern matching`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         let sr1 = SU(i1, i2)
@@ -138,7 +136,7 @@ let [<Test>] ``struct unions support pattern matching`` () =
         |@ "function pattern match on struct union"
 
 
-let [<Test>] ``struct unions support let binds using `` () =
+let [<Fact>] ``struct unions support let binds using `` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         let sr1 = SU(i1,i2)
@@ -147,15 +145,13 @@ let [<Test>] ``struct unions support let binds using `` () =
         (c1 = i1 && d2 = i2) |@ "c1 = i1 && d2 = i2"
 
 
-let [<Test>] ``struct unions support function argument bindings`` () =
+let [<Fact>] ``struct unions support function argument bindings`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
         let sr1 = SU(i1,i2)
         let test sr1 (SU (c1,d2) as sr2) =
             sr1 = sr2 && c1 = i1 && d2 = i2
-        test sr1 sr1      
-        
-        
+        test sr1 sr1
 
 [<Struct>]
 [<CustomComparison; CustomEquality>]
@@ -176,7 +172,7 @@ type ComparisonStructUnion =
             | _ -> invalidArg "other" "cannot compare values of different types"
 
 
-[<Test>]
+[<Fact>]
 let ``struct unions support [<CustomEquality>]`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) ->
@@ -184,8 +180,7 @@ let ``struct unions support [<CustomEquality>]`` () =
         let sr2 = SU2(i1,i2)
         (sr1.Equals sr2)      
 
-
-[<Test>]
+[<Fact>]
 let ``struct unions support [<CustomComparison>]`` () =
     Check.QuickThrowOnFailure <|
     fun (i1:int) (i2:int) (k1:int) (k2:int) ->        
@@ -197,10 +192,10 @@ let ``struct unions support [<CustomComparison>]`` () =
         else false
 
 
-[<Test>]
+[<Fact>]
 let ``struct unions hold [<CustomComparison>] [<CustomEquality>] metadata`` () =
-    Assert.IsTrue (hasAttribute<ComparisonStructUnion,CustomComparisonAttribute>())
-    Assert.IsTrue (hasAttribute<ComparisonStructUnion,CustomEqualityAttribute>())
+    Assert.True (hasAttribute<ComparisonStructUnion,CustomComparisonAttribute>())
+    Assert.True (hasAttribute<ComparisonStructUnion,CustomEqualityAttribute>())
 
 
 [<Struct>]
@@ -210,13 +205,13 @@ type NoComparisonStructUnion =
 
 
 
-[<Test>]
+[<Fact>]
 let ``struct unions hold [<NoComparison>] [<NoEquality>] metadata`` () =
-    Assert.IsTrue (hasAttribute<NoComparisonStructUnion,NoComparisonAttribute>())
-    Assert.IsTrue (hasAttribute<NoComparisonStructUnion,NoEqualityAttribute>())
+    Assert.True (hasAttribute<NoComparisonStructUnion,NoComparisonAttribute>())
+    Assert.True (hasAttribute<NoComparisonStructUnion,NoEqualityAttribute>())
 
 
-let [<Test>] ``can properly construct a struct union using FSharpValue.MakeUnionCase, and we get the fields`` () =
+let [<Fact>] ``can properly construct a struct union using FSharpValue.MakeUnionCase, and we get the fields`` () =
     let cases = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(typeof<StructUnion>)
 
     Assert.AreEqual (1, cases.Length)
@@ -226,7 +221,7 @@ let [<Test>] ``can properly construct a struct union using FSharpValue.MakeUnion
     
     let structUnion = Microsoft.FSharp.Reflection.FSharpValue.MakeUnion (case, [|box 1234; box 3456|])
 
-    Assert.IsTrue (structUnion.GetType().IsValueType)
+    Assert.True (structUnion.GetType().IsValueType)
 
     let _uc, fieldVals = Microsoft.FSharp.Reflection.FSharpValue.GetUnionFields(structUnion, typeof<StructUnion>)
 
@@ -238,7 +233,7 @@ let [<Test>] ``can properly construct a struct union using FSharpValue.MakeUnion
     let c2 = (fieldVals.[1] :?> int)
     Assert.AreEqual (3456, c2)
 
-let [<Test>] ``struct unions does optimization correctly on pattern matching`` () =
+let [<Fact>] ``struct unions does optimization correctly on pattern matching`` () =
     let arr = ResizeArray()
     match arr.Add(1); ValueSome () with
     | ValueSome () -> ()

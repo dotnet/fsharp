@@ -6,19 +6,17 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Diagnostics 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
-open FSharp.Compiler.AbstractIL.Internal.Support 
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
+open FSharp.Compiler.AbstractIL.Internal.Support
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-#if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-#endif
-
 
 #if DEBUG
 let showEntryLookups = false
@@ -144,66 +142,6 @@ let applyFixup32 (data: byte[]) offset v =
     data.[offset+1] <- b1 v
     data.[offset+2] <- b2 v
     data.[offset+3] <- b3 v
-
-//---------------------------------------------------------------------
-// Strong name signing
-//---------------------------------------------------------------------
-
-type ILStrongNameSigner =  
-    | PublicKeySigner of Support.pubkey
-    | PublicKeyOptionsSigner of Support.pubkeyOptions
-    | KeyPair of Support.keyPair
-    | KeyContainer of Support.keyContainerName
-
-    static member OpenPublicKeyOptions s p = PublicKeyOptionsSigner((Support.signerOpenPublicKeyFile s), p)
-
-    static member OpenPublicKey pubkey = PublicKeySigner pubkey
-
-    static member OpenKeyPairFile s = KeyPair(Support.signerOpenKeyPairFile s)
-
-    static member OpenKeyContainer s = KeyContainer s
-
-    member s.Close() = 
-        match s with 
-        | PublicKeySigner _
-        | PublicKeyOptionsSigner _
-        | KeyPair _ -> ()
-        | KeyContainer containerName -> Support.signerCloseKeyContainer containerName
-      
-    member s.IsFullySigned =
-        match s with 
-        | PublicKeySigner _ -> false
-        | PublicKeyOptionsSigner pko -> let _, usePublicSign = pko
-                                        usePublicSign
-        | KeyPair _ | KeyContainer _ -> true
-
-    member s.PublicKey = 
-        match s with 
-        | PublicKeySigner pk -> pk
-        | PublicKeyOptionsSigner pko -> let pk, _ = pko
-                                        pk
-        | KeyPair kp -> Support.signerGetPublicKeyForKeyPair kp
-        | KeyContainer kn -> Support.signerGetPublicKeyForKeyContainer kn
-
-    member s.SignatureSize = 
-        let pkSignatureSize pk =
-            try Support.signerSignatureSize pk
-            with e -> 
-              failwith ("A call to StrongNameSignatureSize failed ("+e.Message+")")
-              0x80 
-        match s with 
-        | PublicKeySigner pk -> pkSignatureSize pk
-        | PublicKeyOptionsSigner pko -> let pk, _ = pko
-                                        pkSignatureSize pk
-        | KeyPair kp -> pkSignatureSize (Support.signerGetPublicKeyForKeyPair kp)
-        | KeyContainer kn -> pkSignatureSize (Support.signerGetPublicKeyForKeyContainer kn)
-
-    member s.SignFile file = 
-        match s with 
-        | PublicKeySigner _ -> ()
-        | PublicKeyOptionsSigner _ -> ()
-        | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
-        | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
 
 //---------------------------------------------------------------------
 // TYPES FOR TABLES
@@ -483,16 +421,17 @@ type MetadataTable<'T> =
 //---------------------------------------------------------------------
 
 /// We use this key type to help find ILMethodDefs for MethodRefs 
-type MethodDefKey(tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTypes, isStatic: bool) =
+type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTypes, isStatic: bool) =
     // Precompute the hash. The hash doesn't include the return type or 
     // argument types (only argument type count). This is very important, since
     // hashing these is way too expensive
-    let hashCode = 
-       hash tidx 
-       |> combineHash (hash garity) 
-       |> combineHash (hash nm) 
+    let hashCode =
+       hash tidx
+       |> combineHash (hash garity)
+       |> combineHash (hash nm)
        |> combineHash (hash argtys.Length)
        |> combineHash (hash isStatic)
+
     member key.TypeIdx = tidx
     member key.GenericArity = garity
     member key.Name = nm
@@ -500,15 +439,19 @@ type MethodDefKey(tidx: int, garity: int, nm: string, rty: ILType, argtys: ILTyp
     member key.ArgTypes = argtys
     member key.IsStatic = isStatic
     override x.GetHashCode() = hashCode
-    override x.Equals(obj: obj) = 
-        match obj with 
-        | :? MethodDefKey as y -> 
-            tidx = y.TypeIdx && 
-            garity = y.GenericArity && 
-            nm = y.Name && 
+    override x.Equals(obj: obj) =
+        match obj with
+        | :? MethodDefKey as y ->
+            let compareILTypes o1 o2 =
+                match o1, o2 with
+                | ILType.Value v1, ILType.Value v2 -> v1.EqualsWithPrimaryScopeRef(ilg.primaryAssemblyScopeRef, v2 :> obj )
+                | _ -> o1 = o2
+
+            tidx = y.TypeIdx &&
+            garity = y.GenericArity &&
+            nm = y.Name &&
             // note: these next two use structural equality on AbstractIL ILType values
-            rty = y.ReturnType && 
-            List.lengthsEqAndForall2 (fun a b -> a = b) argtys y.ArgTypes &&
+            rty = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argtys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
 
@@ -754,6 +697,7 @@ let GetScopeRefAsImplementationElem cenv scoref =
     | ILScopeRef.Local -> (i_AssemblyRef, 0)
     | ILScopeRef.Assembly aref -> (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
     | ILScopeRef.Module mref -> (i_File, GetModuleRefAsFileIdx cenv mref)
+    | ILScopeRef.PrimaryAssembly -> (i_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
  
 // -------------------------------------------------------------------- 
 // Type references, types etc.
@@ -781,6 +725,7 @@ and GetResolutionScopeAsElem cenv (scoref, enc) =
         | ILScopeRef.Local -> (rs_Module, 1) 
         | ILScopeRef.Assembly aref -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
         | ILScopeRef.Module mref -> (rs_ModuleRef, GetModuleRefAsIdx cenv mref)
+        | ILScopeRef.PrimaryAssembly -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
     else
         let enc2, n2 = List.frontAndBack enc
         (rs_TypeRef, GetTypeDescAsTypeRefIdx cenv (scoref, enc2, n2))
@@ -866,27 +811,25 @@ and GetTypeAsTypeSpecIdx cenv env ty =
     FindOrAddSharedRow cenv TableNames.TypeSpec (GetTypeAsTypeSpecRow cenv env ty)
 
 and EmitType cenv env bb ty =
+    let ilg = cenv.ilg
     match ty with 
-  // REVIEW: what are these doing here? 
-    | ILType.Value tspec when tspec.Name = "System.String" -> bb.EmitByte et_STRING 
-    | ILType.Value tspec when tspec.Name = "System.Object" -> bb.EmitByte et_OBJECT 
-    | ty when isILSByteTy ty -> bb.EmitByte et_I1 
-    | ty when isILInt16Ty ty -> bb.EmitByte et_I2 
-    | ty when isILInt32Ty ty -> bb.EmitByte et_I4 
-    | ty when isILInt64Ty ty -> bb.EmitByte et_I8 
-    | ty when isILByteTy ty -> bb.EmitByte et_U1 
-    | ty when isILUInt16Ty ty -> bb.EmitByte et_U2 
-    | ty when isILUInt32Ty ty -> bb.EmitByte et_U4 
-    | ty when isILUInt64Ty ty -> bb.EmitByte et_U8 
-    | ty when isILDoubleTy ty -> bb.EmitByte et_R8 
-    | ty when isILSingleTy ty -> bb.EmitByte et_R4 
-    | ty when isILBoolTy ty -> bb.EmitByte et_BOOLEAN 
-    | ty when isILCharTy ty -> bb.EmitByte et_CHAR 
-    | ty when isILStringTy ty -> bb.EmitByte et_STRING 
-    | ty when isILObjectTy ty -> bb.EmitByte et_OBJECT 
-    | ty when isILIntPtrTy ty -> bb.EmitByte et_I 
-    | ty when isILUIntPtrTy ty -> bb.EmitByte et_U 
-    | ty when isILTypedReferenceTy ty -> bb.EmitByte et_TYPEDBYREF 
+    | ty when isILSByteTy ilg ty -> bb.EmitByte et_I1 
+    | ty when isILInt16Ty ilg ty -> bb.EmitByte et_I2 
+    | ty when isILInt32Ty ilg ty -> bb.EmitByte et_I4 
+    | ty when isILInt64Ty ilg ty -> bb.EmitByte et_I8 
+    | ty when isILByteTy ilg ty -> bb.EmitByte et_U1 
+    | ty when isILUInt16Ty ilg ty -> bb.EmitByte et_U2 
+    | ty when isILUInt32Ty ilg ty -> bb.EmitByte et_U4 
+    | ty when isILUInt64Ty ilg ty -> bb.EmitByte et_U8 
+    | ty when isILDoubleTy ilg ty -> bb.EmitByte et_R8 
+    | ty when isILSingleTy ilg ty -> bb.EmitByte et_R4 
+    | ty when isILBoolTy ilg ty -> bb.EmitByte et_BOOLEAN 
+    | ty when isILCharTy ilg ty -> bb.EmitByte et_CHAR 
+    | ty when isILStringTy ilg ty -> bb.EmitByte et_STRING 
+    | ty when isILObjectTy ilg ty -> bb.EmitByte et_OBJECT 
+    | ty when isILIntPtrTy ilg ty -> bb.EmitByte et_I 
+    | ty when isILUIntPtrTy ilg ty -> bb.EmitByte et_U 
+    | ty when isILTypedReferenceTy ilg ty -> bb.EmitByte et_TYPEDBYREF 
 
     | ILType.Boxed tspec -> EmitTypeSpec cenv env bb (et_CLASS, tspec)
     | ILType.Value tspec -> EmitTypeSpec cenv env bb (et_VALUETYPE, tspec)
@@ -1131,22 +1074,22 @@ and GetKeyForFieldDef tidx (fd: ILFieldDef) =
 and GenFieldDefPass2 cenv tidx fd = 
     ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey: FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
 
-and GetKeyForMethodDef tidx (md: ILMethodDef) = 
-    MethodDefKey (tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
+and GetKeyForMethodDef cenv tidx (md: ILMethodDef) = 
+    MethodDefKey (cenv.ilg, tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
 
-and GenMethodDefPass2 cenv tidx md = 
-    let idx = 
+and GenMethodDefPass2 cenv tidx md =
+    let idx =
       cenv.methodDefIdxsByKey.AddUniqueEntry
-         "method" 
-         (fun (key: MethodDefKey) -> 
+         "method"
+         (fun (key: MethodDefKey) ->
            dprintn "Duplicate in method table is:"
            dprintn (" Type index: "+string key.TypeIdx)
            dprintn (" Method name: "+key.Name)
            dprintn (" Method arity (num generic params): "+string key.GenericArity)
            key.Name
          )
-         (GetKeyForMethodDef tidx md) 
-    
+         (GetKeyForMethodDef cenv tidx md)
+
     cenv.methodDefIdxs.[md] <- idx
 
 and GetKeyForPropertyDef tidx (x: ILPropertyDef) = 
@@ -1235,7 +1178,7 @@ let FindMethodDefIdx cenv mdkey =
               let (TdKey (tenc2, tname2)) = typeNameOfIdx mdkey2.TypeIdx
               dprintn ("A method in '"+(String.concat "." (tenc2@[tname2]))+"' had the right name but the wrong signature:")
               dprintn ("generic arity: "+string mdkey2.GenericArity) 
-              dprintn (sprintf "mdkey2: %+A" mdkey2)) 
+              dprintn (sprintf "mdkey2: %+A" mdkey2))
       raise MethodDefNotFound
 
 
@@ -1264,7 +1207,7 @@ let GetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
         if not (isTypeRefLocal tref) then
              failwithf "method referred to by method impl, event or property is not in a type defined in this module, method ref is %A" mref
         let tidx = GetIdxForTypeDef cenv (TdKey(tref.Enclosing, tref.Name))
-        let mdkey = MethodDefKey (tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
+        let mdkey = MethodDefKey (cenv.ilg, tidx, mref.GenericArity, mref.Name, mref.ReturnType, mref.ArgTypes, mref.CallingConv.IsStatic)
         FindMethodDefIdx cenv mdkey
     with e ->
         failwithf "Error in GetMethodRefAsMethodDefIdx for mref = %A, error: %s" (mref.Name, tref.Name) e.Message
@@ -2689,7 +2632,7 @@ and GenEventPass3 cenv env (md: ILEventDef) =
 
 let rec GetResourceAsManifestResourceRow cenv r = 
     let data, impl = 
-        let embedManagedResources (bytes: byte[]) = 
+        let embedManagedResources (bytes: ReadOnlyByteMemory) = 
             // Embedded managed resources must be word-aligned. However resource format is  
             // not specified in ECMA. Some mscorlib resources appear to be non-aligned - it seems it doesn't matter..  
             let offset = cenv.resources.Position 
@@ -2698,12 +2641,11 @@ let rec GetResourceAsManifestResourceRow cenv r =
             let resourceSize = bytes.Length 
             cenv.resources.EmitPadding pad 
             cenv.resources.EmitInt32 resourceSize 
-            cenv.resources.EmitBytes bytes 
+            cenv.resources.EmitByteMemory bytes 
             Data (alignedOffset, true), (i_File, 0)  
 
         match r.Location with 
-        | ILResourceLocation.LocalIn _ -> embedManagedResources (r.GetBytes())
-        | ILResourceLocation.LocalOut bytes -> embedManagedResources bytes 
+        | ILResourceLocation.Local bytes -> embedManagedResources (bytes.GetByteMemory())
         | ILResourceLocation.File (mref, offset) -> ULong offset, (i_File, GetModuleRefAsFileIdx cenv mref) 
         | ILResourceLocation.Assembly aref -> ULong 0x0, (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref) 
 
@@ -3005,7 +2947,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
         getUncodedToken TableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd))
        MethodDefTokenMap = (fun t md ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef tidx md)))
+        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef cenv tidx md)))
        PropertyTokenMap = (fun t pd ->
         let tidx = idxForNextedTypeDef t
         getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pd)))
@@ -3622,6 +3564,7 @@ let writeBinaryAndReportMappings (outfile,
                 match ilg.primaryAssemblyScopeRef with 
                 | ILScopeRef.Local -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Local" 
                 | ILScopeRef.Module(_) -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.Module"
+                | ILScopeRef.PrimaryAssembly -> failwith "Expected mscorlib to be ILScopeRef.Assembly was ILScopeRef.PrimaryAssembly"
                 | ILScopeRef.Assembly aref ->
                     match aref.Version with
                     | Some version when version.Major = 2us -> parseILVersion "2.0.50727.0"

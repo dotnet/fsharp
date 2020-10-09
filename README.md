@@ -30,9 +30,23 @@ Build from the command line:
 
 After it's finished, open `FSharp.sln` in your editor of choice.
 
-### More options and information
+### Visual Studio Online quickstart
 
-See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) for more details on additional configurations for building and testing, how to update compiler error messages, and more.
+If you'd like to use Visual Studio online (or VSCode with VSO as backend), just click this button to create a new online environment:
+
+<a href="https://online.visualstudio.com/environments/new?name=my-fsharp&repo=dotnet/fsharp"><img src="https://img.shields.io/static/v1?style=flat-square&logo=microsoft&label=VS%20Online&message=Create&color=blue" alt="VS Online"></a>
+
+This will provision an environment with all necessary dependencies. Initial build of the environment may take up to 10 minutes, as it's also performing initial build of the F# compiler.
+
+### Documentation for contributors
+
+See [DEVGUIDE.md](DEVGUIDE.md) for more details on configurations for building the codebase. In practice, you only really need to run `build.cmd`/`build.sh`.
+
+See [TESTGUIDE.md](TESTGUIDE.md) for information about the various test suites in this codebase and how to run them individually.
+
+See the [Compiler Guide](docs/compiler-guide.md) for an in-depth guide to the F# compiler. It is essential reading for any larger contributions to the F# compiler codebase.
+
+See [the F# Language Specification](https://fsharp.org/specs/language-spec/) for an in-depth description of the F# language. This is essential for understanding some behaviors of the F# compiler and some of the rules within the compiler codebase. For example, the order and way name resolution happens is specified here, which greatly impacts how the code in Name Resolutions works and why certain decisions are made.
 
 ### No contribution is too small
 
@@ -42,11 +56,11 @@ Even if you find a single-character typo, we're happy to take the change! Althou
 
 | Branch | Status |
 |:------:|:------:|
-|master|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=master)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=master)|
+|main|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=main)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=main)|
 
 ## Using nightly releases in Visual Studio
 
-You can use the latest `master` build of the F# compiler and tools for Visual Studio via our nightly releases if you are a Visual Studio user. See details on setup here:
+You can use the latest `main` build of the F# compiler and tools for Visual Studio via our nightly releases if you are a Visual Studio user. See details on setup here:
 
 https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
 
@@ -57,26 +71,28 @@ Alternatively, if you _really_ want to live on the bleeding edge, you can set up
 * Set your feed to the preview feed: https://dotnet.myget.org/F/fsharp-preview/vsix
 * Install a VSIX manually from the preview feed: https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp
 
+## Per-build NuGet packages
+
+Per-build verions of our NuGet packages are available via this URL: `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json `
+
 ## Branches
 
 These are the branches in use:
 
-* `master`
-  - Most contributions go here.
+* `main`
+  - Almost all contributions go here.
   - Able to be built, installed and used in the latest public Visual Studio release.
   - May contain updated F# features and logic.
   - Used to build nightly VSIX (see above).
-  - Gets integrated into https://github.com/fsharp/fsharp to form the basis of Mono releases
-  - Gets integrated into https://github.com/fsharp/FSharp.Compiler.Service to form the basis of FSharp.Compiler.Service releases
 
-* `dev15.9`
+* `release/dev15.9`
   - Long-term servicing branch for VS 2017 update 15.9.x. We do not expect to service that release, but if we do, that's where the changes will go.
 
-* `dev16.x`
+* `release/dev16.x`
   - Latest release branch for the particular point release of Visual Studio.
-  - Incorporates features and fixes from master up to a particular branch point, then selective cherry-picks.
+  - Incorporates features and fixes from main up to a particular branch point, then selective cherry-picks.
   - May contain new features that depend on new things or fixes in the corresponding forthcoming Visual Studio release.
-  - Gets integrated back into master once the corresponding Visual Studio release is made.
+  - Gets integrated back into main once the corresponding Visual Studio release is made.
 
 ## F# language and core library evolution
 
@@ -85,13 +101,6 @@ Evolution of the F# language and core library follows a process spanning two add
 1. Use the [F# language suggestions repo](https://github.com/fsharp/fslang-suggestions/) to search for ideas, vote on ones you like, submit new ideas, and discuss details with the F# community.
 2. Ideas that are "approved in principle" are eligible for a new RFC in the [F# language design repo](https://github.com/fsharp/fslang-design). This is where the technical specification and discussion of approved suggestions go.
 3. Implementations and testing of an RFC are submitted to this repository.
-
-## Additional project documentation
-
-The following links can help you get an overview of some technical aspects of the F# language and compiler:
-
-* [The F# Compiler Technical Guide](https://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
-* [The F# Language Specification](https://fsharp.org/specs/language-spec/)
 
 ## License
 
@@ -115,3 +124,4 @@ If you're curious about F# itself, check out these links:
 * [Get started with F#](https://docs.microsoft.com/dotnet/fsharp/get-started/)
 * [F# Software Foundation](https://fsharp.org)
 * [F# Testimonials](https://fsharp.org/testimonials)
+

@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="5003">
         <source>Script.fsx</source>
-        <target state="translated">Script.fsx</target>
+        <target state="new">Script.fsx</target>
         <note />
       </trans-unit>
       <trans-unit id="5005">
@@ -199,7 +199,7 @@
       </trans-unit>
       <trans-unit id="5013">
         <source>File.fs</source>
-        <target state="translated">File.fs</target>
+        <target state="new">File.fs</target>
         <note />
       </trans-unit>
       <trans-unit id="5014">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Microsoft Visual F# Tools 10.4 per F# 4.6</target>
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Microsoft Visual F# Tools</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Microsoft Visual F# Tools 10.4 per F# 4.6</target>
+        <source>Microsoft Visual F# Tools</source>
+        <target state="translated">Microsoft Visual F# Tools</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.4 for F# 4.6</source>
-        <target state="translated">Visual F# Tools 10.4 per F# 4.6</target>
+        <source>Visual F# Tools</source>
+        <target state="translated">Visual F# Tools</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

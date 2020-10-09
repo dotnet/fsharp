@@ -10,6 +10,7 @@
   <!-- directory locations -->
   <PropertyGroup>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
+    <FSharpTestsRoot>$(RepoRoot)tests</FSharpTestsRoot>
     <SymStoreDirectory>$(ArtifactsDir)\SymStore</SymStoreDirectory>
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
@@ -35,23 +36,6 @@
 
     <!-- ensure all NuGet packages come from the `$(NuGetPackageRoot)` variable -->
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
-  </PropertyGroup>
-
-  <!-- mono -->
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <MonoRoot Condition="'$(MonoRoot)' == '' and $([MSBuild]::IsOsPlatform('Linux'))">/usr</MonoRoot>
-    <MonoRoot Condition="'$(MonoRoot)' == '' and $([MSBuild]::IsOsPlatform('OSX'))">/Library/Frameworks/Mono.framework/Versions/Current</MonoRoot>
-    <MonoLibFolder>$(MonoRoot)/lib/mono</MonoLibFolder>
-    <MonoPackaging Condition="$(TargetFramework.StartsWith('net4'))">true</MonoPackaging>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net45'">$(MonoLibFolder)/4.5-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net451'">$(MonoLibFolder)/4.5.1-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net452'">$(MonoLibFolder)/4.5.2-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net46'">$(MonoLibFolder)/4.6-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net461'">$(MonoLibFolder)/4.6.1-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net462'">$(MonoLibFolder)/4.6.2-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net47'">$(MonoLibFolder)/4.7-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net471'">$(MonoLibFolder)/4.7.1-api</FrameworkPathOverride>
-    <FrameworkPathOverride Condition="'$(TargetFramework)' == 'net472'">$(MonoLibFolder)/4.7.2-api</FrameworkPathOverride>
   </PropertyGroup>
 
   <!-- signing -->

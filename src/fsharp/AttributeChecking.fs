@@ -4,6 +4,7 @@
 /// on items from name resolution
 module internal FSharp.Compiler.AttributeChecking
 
+open System
 open System.Collections.Generic
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -12,8 +13,8 @@ open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Tast
-open FSharp.Compiler.Tastops
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
@@ -246,7 +247,6 @@ let MethInfoHasAttribute g m attribSpec minfo  =
         |> Option.isSome
 
 
-
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
@@ -265,11 +265,19 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     | _ -> 
         CompleteD
 
+let langVersionPrefix = "--langversion:preview"
+
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
 /// returning errors and warnings as data
-let CheckFSharpAttributes g attribs m = 
-    if isNil attribs then CompleteD 
-    else 
+let CheckFSharpAttributes (g:TcGlobals) attribs m =
+    let isExperimentalAttributeDisabled (s:string) =
+        if g.compilingFslib then
+            true
+        else
+            g.langVersion.IsPreviewEnabled && (s.IndexOf(langVersionPrefix, StringComparison.OrdinalIgnoreCase) >= 0)
+
+    if isNil attribs then CompleteD
+    else
         (match TryFindFSharpAttribute g g.attrib_SystemObsolete attribs with
         | Some(Attrib(_, _, [ AttribStringArg s ], _, _, _, _)) ->
             WarnD(ObsoleteWarning(s, m))
@@ -283,28 +291,34 @@ let CheckFSharpAttributes g attribs m =
         | None -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) -> 
+        | Some(Attrib(_, _, [ AttribStringArg s ; AttribInt32Arg n ], namedArgs, _, _, _)) ->
             let msg = UserCompilerMessage(s, n, m)
             let isError = 
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
-            if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
-                 
+            // If we are using a compiler that supports nameof then error 3501 is always suppressed.
+            // See attribute on FSharp.Core 'nameof'
+            if n = 3501 then CompleteD
+            elif isError && (not g.compilingFslib || n <> 1204) then ErrorD msg 
+            else WarnD msg
         | _ -> 
             CompleteD
         ) ++ (fun () -> 
-            
+
         match TryFindFSharpAttribute g g.attrib_ExperimentalAttribute attribs with
-        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) -> 
-            WarnD(Experimental(s, m))
-        | Some _ -> 
+        | Some(Attrib(_, _, [ AttribStringArg(s) ], _, _, _, _)) ->
+            if isExperimentalAttributeDisabled s then
+                CompleteD
+            else
+                WarnD(Experimental(s, m))
+        | Some _ ->
             WarnD(Experimental(FSComp.SR.experimentalConstruct (), m))
-        | _ ->  
+        | _ ->
             CompleteD
-        ) ++ (fun () -> 
+        ) ++ (fun () ->
 
         match TryFindFSharpAttribute g g.attrib_UnverifiableAttribute attribs with
         | Some _ -> 

@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
-open NUnit.Framework
+open Xunit
 
 open FSharp.Core.UnitTests.LibraryTestFx
 
@@ -19,10 +19,9 @@ Make sure each method works on:
 * Null Seq    (null)
 *)
 
-[<TestFixture>][<Category "Collections.Seq">][<Category "FSharp.Core.Collections">]
 type SeqModule() =
 
-    [<Test>]
+    [<Fact>]
     member this.AllPairs() =
 
         // integer Seq
@@ -49,7 +48,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException(fun() -> Seq.allPairs (seq [1..7]) null |> ignore)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.CachedSeq_Clear() =
         
         let evaluatedItems : int list ref = ref []
@@ -89,7 +88,7 @@ type SeqModule() =
         Assert.AreEqual(List.length !evaluatedItems, 20)
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Append() =
 
         // empty Seq 
@@ -134,18 +133,18 @@ type SeqModule() =
          
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.replicate() =
         // replicate should create multiple copies of the given value
-        Assert.IsTrue(Seq.isEmpty <| Seq.replicate 0 null)
-        Assert.IsTrue(Seq.isEmpty <| Seq.replicate 0 1)
+        Assert.True(Seq.isEmpty <| Seq.replicate 0 null)
+        Assert.True(Seq.isEmpty <| Seq.replicate 0 1)
         Assert.AreEqual(null, Seq.head <| Seq.replicate 1 null)
         Assert.AreEqual(["1";"1"],Seq.replicate 2 "1" |> Seq.toList)
 
         CheckThrowsArgumentException (fun () ->  Seq.replicate -1 null |> ignore)
         
         
-    [<Test>]
+    [<Fact>]
     member this.Average() =
         // empty Seq 
         let emptySeq:seq<double> = Seq.empty<double>
@@ -158,21 +157,21 @@ type SeqModule() =
         
         let averageDouble = Seq.average doubleSeq
         
-        Assert.IsFalse( averageDouble <> 2.5)
+        Assert.False( averageDouble <> 2.5)
         
         // float32 Seq
         let floatSeq:seq<float32> = seq [ 2.0f;4.4f;5.0f;8.6f]
         
         let averageFloat = Seq.average floatSeq
         
-        Assert.IsFalse( averageFloat <> 5.0f)
+        Assert.False( averageFloat <> 5.0f)
         
         // decimal Seq
         let decimalSeq:seq<decimal> = seq [ 0M;19M;19.03M]
         
         let averageDecimal = Seq.average decimalSeq
         
-        Assert.IsFalse( averageDecimal <> 12.676666666666666666666666667M )
+        Assert.False( averageDecimal <> 12.676666666666666666666666667M )
         
         // null Seq
         let nullSeq:seq<double> = null
@@ -181,7 +180,7 @@ type SeqModule() =
         ()
         
         
-    [<Test>]
+    [<Fact>]
     member this.AverageBy() =
         // empty Seq 
         let emptySeq:seq<double> = Seq.empty<double>
@@ -193,21 +192,21 @@ type SeqModule() =
         
         let averageDouble = Seq.averageBy (fun x -> x-2.0) doubleSeq
         
-        Assert.IsFalse( averageDouble <> 0.5 )
+        Assert.False( averageDouble <> 0.5 )
         
         // float32 Seq
         let floatSeq:seq<float32> = seq [ 2.0f;4.4f;5.0f;8.6f]
         
         let averageFloat = Seq.averageBy (fun x -> x*3.3f)  floatSeq
         
-        Assert.IsFalse( averageFloat <> 16.5f )
+        Assert.False( averageFloat <> 16.5f )
         
         // decimal Seq
         let decimalSeq:seq<decimal> = seq [ 0M;19M;19.03M]
         
         let averageDecimal = Seq.averageBy (fun x -> x/10.7M) decimalSeq
         
-        Assert.IsFalse( averageDecimal <> 1.1847352024922118380062305296M )
+        Assert.False( averageDecimal <> 1.1847352024922118380062305296M )
         
         // null Seq
         let nullSeq:seq<double> = null
@@ -215,7 +214,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.averageBy (fun (x:double)->x+4.0) nullSeq |> ignore) 
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Cache() =
         // empty Seq 
         let emptySeq:seq<double> = Seq.empty<double>
@@ -256,7 +255,7 @@ type SeqModule() =
         VerifySeqsEqual nullSeq cacheNull
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Case() =
 
         // integer Seq
@@ -303,7 +302,7 @@ type SeqModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Choose() =
         
         // int Seq
@@ -342,7 +341,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.choose funcInt nullSeq |> ignore) 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.ChunkBySize() =
 
         let verify expected actual =
@@ -378,7 +377,7 @@ type SeqModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.SplitInto() =
 
         let verify expected actual =
@@ -409,7 +408,7 @@ type SeqModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Compare() =
     
         // int Seq
@@ -418,7 +417,7 @@ type SeqModule() =
         let funcInt x y = if (x>y) then x else 0
         let intcompared = Seq.compareWith funcInt intSeq1 intSeq2
        
-        Assert.IsFalse( intcompared <> 7 )
+        Assert.False( intcompared <> 7 )
         
         // string Seq
         let stringSeq1 = seq ["a"; "b"]
@@ -428,13 +427,13 @@ type SeqModule() =
                              | "b", "d" -> 1
                              |_         -> -1
         let strcompared = Seq.compareWith funcString stringSeq1 stringSeq2  
-        Assert.IsFalse( strcompared <> 1 )
+        Assert.False( strcompared <> 1 )
          
         // empty Seq
         let emptySeq = Seq.empty
         let emptycompared = Seq.compareWith funcInt emptySeq emptySeq
         
-        Assert.IsFalse( emptycompared <> 0 )
+        Assert.False( emptycompared <> 0 )
        
         // null Seq
         let nullSeq:seq<int> = null    
@@ -445,7 +444,7 @@ type SeqModule() =
 
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Concat() =
          // integer Seq
         let seqInt = 
@@ -481,7 +480,7 @@ type SeqModule() =
  
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.CountBy() =
         // integer Seq
         let funcIntCount_by (x:int) = x%3 
@@ -515,7 +514,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.countBy funcIntCount_by nullSeq  |> ignore) 
         () 
     
-    [<Test>]
+    [<Fact>]
     member this.Distinct() =
         
         // integer Seq
@@ -549,7 +548,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException(fun () -> Seq.distinct nullSeq  |> ignore) 
         () 
     
-    [<Test>]
+    [<Fact>]
     member this.DistinctBy () =
         // integer Seq
         let funcInt x = x % 3 
@@ -584,7 +583,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException(fun () -> Seq.distinctBy funcInt nullSeq  |> ignore) 
         () 
 
-    [<Test>]
+    [<Fact>]
     member this.Except() =
         // integer Seq
         let intSeq1 = seq { yield! {1..100}
@@ -623,7 +622,7 @@ type SeqModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Exists() =
 
         // Integer Seq
@@ -634,7 +633,7 @@ type SeqModule() =
        
         let ifExistInt = Seq.exists funcInt IntexistsSeq
         
-        Assert.IsTrue( ifExistInt) 
+        Assert.True( ifExistInt) 
             
         // String Seq
         let funcStr (s:string) = s.Contains("key")
@@ -642,13 +641,13 @@ type SeqModule() =
        
         let ifExistStr = Seq.exists funcStr strSeq
         
-        Assert.IsTrue( ifExistStr)
+        Assert.True( ifExistStr)
         
         // Empty Seq
         let emptySeq = Seq.empty
         let ifExistsEmpty = Seq.exists funcInt emptySeq
         
-        Assert.IsFalse( ifExistsEmpty)
+        Assert.False( ifExistsEmpty)
        
         
 
@@ -658,7 +657,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.exists funcInt nullSeq |> ignore) 
         () 
     
-    [<Test>]
+    [<Fact>]
     member this.Exists2() =
         // Integer Seq
         let funcInt x y = (x+y)%3=0 
@@ -666,19 +665,19 @@ type SeqModule() =
         let Intexists2Seq2 = seq [1;6;3]
             
         let ifExist2Int = Seq.exists2 funcInt Intexists2Seq1 Intexists2Seq2
-        Assert.IsTrue( ifExist2Int)
+        Assert.True( ifExist2Int)
              
         // String Seq
         let funcStr s1 s2 = ((s1 + s2) = "CombinedString")
         let strSeq1 = seq [ "Combined"; "Not Combined"]
         let strSeq2 = seq ["String";    "Other String"]
         let ifexists2Str = Seq.exists2 funcStr strSeq1 strSeq2
-        Assert.IsTrue(ifexists2Str)
+        Assert.True(ifexists2Str)
         
         // Empty Seq
         let emptySeq = Seq.empty
         let ifexists2Empty = Seq.exists2 funcInt emptySeq emptySeq
-        Assert.IsFalse( ifexists2Empty)
+        Assert.False( ifexists2Empty)
        
         // null Seq
         let nullSeq:seq<'a> = null
@@ -686,7 +685,7 @@ type SeqModule() =
         () 
     
     
-    [<Test>]
+    [<Fact>]
     member this.Filter() =
         // integer Seq
         let funcInt x = if (x % 5 = 0) then true else false
@@ -725,7 +724,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.filter funcInt nullSeq  |> ignore) 
         () 
     
-    [<Test>]
+    [<Fact>]
     member this.Find() =
         
         // integer Seq
@@ -754,7 +753,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.find funcInt nullSeq |> ignore) 
         ()
     
-    [<Test>]
+    [<Fact>]
     member this.FindBack() =
         // integer Seq
         let funcInt x = x % 5 = 0
@@ -781,7 +780,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.findBack funcInt nullSeq |> ignore)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.FindIndex() =
         
         // integer Seq
@@ -796,7 +795,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException(fun() -> Seq.findIndex (fun i -> true) null |> ignore)
         ()
     
-    [<Test>]
+    [<Fact>]
     member this.Permute() =
         let mapIndex i = (i + 1) % 4
 
@@ -822,7 +821,7 @@ type SeqModule() =
         CheckThrowsArgumentException (fun () -> Seq.permute (fun _ -> 0) [0..9] |> Seq.iter ignore)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.FindIndexBack() =
         // integer Seq
         let digits = seq { 1..100 }
@@ -842,7 +841,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException(fun() -> Seq.findIndexBack (fun i -> true) null |> ignore)
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.Pick() =
     
         let digits = [| 1 .. 10 |] |> Seq.ofArray
@@ -856,7 +855,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.pick (fun i -> Some(i + 0)) null |> ignore)
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Fold() =
         let funcInt x y = x+y
              
@@ -888,7 +887,7 @@ type SeqModule() =
 
 
 
-    [<Test>]
+    [<Fact>]
     member this.Fold2() =
         Assert.AreEqual([(3,5); (2,3); (1,1)],Seq.fold2 (fun acc x y -> (x,y)::acc) [] (seq [ 1..3 ])  (seq [1..2..6]))
 
@@ -920,7 +919,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.fold2 funcInt 0 (seq [1]) nullSeq |> ignore) 
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.FoldBack() =
         // int Seq
         let funcInt x y = x-y
@@ -956,7 +955,7 @@ type SeqModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.foldBack2() =
         // int Seq
         let funcInt x y z = x + y + z
@@ -995,7 +994,7 @@ type SeqModule() =
 
         ()
 
-    [<Test>]
+    [<Fact>]
     member this.ForAll() =
 
         let funcInt x  = if x%2 = 0 then true else false
@@ -1026,7 +1025,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.forall funcInt  nullSeq |> ignore) 
         () 
         
-    [<Test>]
+    [<Fact>]
     member this.ForAll2() =
 
         let funcInt x y = if (x+y)%2 = 0 then true else false
@@ -1057,7 +1056,7 @@ type SeqModule() =
         
         CheckThrowsArgumentNullException (fun () -> Seq.forall2 funcInt  nullSeq nullSeq |> ignore) 
         
-    [<Test>]
+    [<Fact>]
     member this.GroupBy() =
         
         let funcInt x = x%5
@@ -1100,7 +1099,7 @@ type SeqModule() =
         CheckThrowsArgumentNullException (fun () -> Seq.iter (fun _ -> ()) group_byNull) 
         () 
     
-    [<Test>]
+    [<Fact>]
     member this.DisposalOfUnstartedEnumerator() =
         let run = ref false
         let f() = seq {                
@@ -1111,9 +1110,9 @@ type SeqModule() =
               }
   
         f().GetEnumerator().Dispose() 
-        Assert.IsFalse(!run)
+        Assert.False(!run)
 
-    [<Test>]
+    [<Fact>]
     member this.WeirdLocalNames() =
        
         let f pc = seq {                
@@ -1134,7 +1133,7 @@ type SeqModule() =
         let l = f 3 |> Seq.toList
         Assert.AreEqual([6;7;8], l)
 
-    [<Test>]
+    [<Fact>]
     member this.Contains() =
 
         // Integer Seq
@@ -1142,20 +1141,20 @@ type SeqModule() =
 
         let ifContainsInt = Seq.contains 5 intSeq
 
-        Assert.IsTrue(ifContainsInt)
+        Assert.True(ifContainsInt)
 
         // String Seq
         let strSeq = seq ["key"; "blank key"]
 
         let ifContainsStr = Seq.contains "key" strSeq
 
-        Assert.IsTrue(ifContainsStr)
+        Assert.True(ifContainsStr)
 
         // Empty Seq
         let emptySeq = Seq.empty
         let ifContainsEmpty = Seq.contains 5 emptySeq
 
-        Assert.IsFalse(ifContainsEmpty)
+        Assert.False(ifContainsEmpty)
 
         // null Seq
         let nullSeq:seq<'a> = null

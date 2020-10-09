@@ -8,6 +8,22 @@ rem
 
 setlocal
 set __scriptpath=%~dp0
+set configuration=Debug
+
+:parseargs
+if "%1" == "" goto argsdone
+if /i "%1" == "-c" goto set_configuration
+
+echo Unsupported argument: %1
+goto failure
+
+:set_configuration
+set configuration=%2
+shift
+shift
+goto parseargs
+
+:argsdone
 
 pushd %__scriptpath%
 rem
@@ -18,17 +34,17 @@ rem
 if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\BasicProvider /s /q
 taskkill /F /IM dotnet.exe
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40 -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40 -nr=false
-@if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
+echo dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=net40
+     dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=net40
+if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-@if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
+echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-@if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
+echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
 rem
 rem Build typeprovider package with coreclr compiler
@@ -36,17 +52,17 @@ rem Test it with both desktop and coreclr compilers
 rem
 if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\BasicProvider /s /q
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=coreclr -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=coreclr -nr=false
-@if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
+echo dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
+     dotnet pack BasicProvider\BasicProvider.fsproj -o %~dp0artifacts -c %configuration% -v minimal -p:FSharpTestCompilerVersion=coreclr
+if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-@echo%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40 -nr=false
-@if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
+echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
+if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-%__scriptpath%..\..\..\artifacts\toolset\dotnet\dotnet.exe test BasicProvider.Tests\BasicProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr -nr=false
-@if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
+echo dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+     dotnet test BasicProvider.Tests\BasicProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=netcoreapp3.1 -p:FSharpTestCompilerVersion=coreclr
+if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
 :success
 endlocal

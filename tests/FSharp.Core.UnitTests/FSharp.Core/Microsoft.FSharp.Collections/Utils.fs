@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections.Utils
+module FSharp.Core.UnitTests.Collections.Utils
+
+open Xunit
 
 type Result<'a> = 
 | Success of 'a
@@ -33,3 +35,5 @@ let haveSameElements (xs:seq<_>) (ys:seq<_>) =
     let xsHashSet = new System.Collections.Generic.HashSet<_>(xs)
     let ysHashSet = new System.Collections.Generic.HashSet<_>(ys)
     xsHashSet.SetEquals(ysHashSet)
+
+let shouldEqual arr1 arr2 = if arr1 <> arr2 then Assert.Fail()

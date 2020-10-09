@@ -1,12 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.-->
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
+    <UseWpf>true</UseWpf>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,51 +19,4 @@
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Xaml" />
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="WindowsBase" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Strings.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Strings.resx</DependentUpon>
-    </Compile>
-    <Compile Update="FormattingOptionsControl.xaml.cs">
-      <DependentUpon>FormattingOptionsControl.xaml</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Update="Strings.resx">
-      <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <!-- The following are hacks to allow WPF to build. -->
-  <ItemGroup>
-    <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
-    <None Include="@(Page)" />
-    <None Include="@(Resource)" />
-    <Compile Update="**\*.xaml.cs" SubType="Code" DependentUpon="%(Filename)" />
-    <!--<Compile Update="$(IntermediateOutputPath)**\*.g.cs" Visible="false" />-->
-    <UpToDateCheckInput Include="**\*.xaml" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <VSMSBuildBinDir>$(VS150COMNTOOLS)\..\..\MSBuild\$(VisualStudioVersion)\Bin</VSMSBuildBinDir>
-    <LanguageTargets Condition="Exists('$(VSMSBuildBinDir)')">$(VSMSBuildBinDir)\Microsoft.CSharp.targets</LanguageTargets>
-  </PropertyGroup>
-  <Target Name="CoreCompile"/>
-  <Target Name="WorkaroundForXAMLIntellisenseBuildIssue" AfterTargets="_CheckCompileDesignTimePrerequisite">
-    <PropertyGroup>
-      <BuildingProject>false</BuildingProject>
-    </PropertyGroup>
-  </Target>
-
-  <Target Name="CoreCompile">
-  </Target>
 </Project>

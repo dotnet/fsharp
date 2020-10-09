@@ -3,11 +3,11 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.ComparisonIdentity module
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -18,9 +18,8 @@ Make sure each method works on:
 *  (2 - 7 elements)
 *)
 
-[<TestFixture>]
 type ComparisonIdentityModule() =
-    [<Test>]
+    [<Fact>]
     member this.FromFunction() =
         // integer array  
         let intArr = [|1;5;8;2;6;3;7;4|]
@@ -39,7 +38,7 @@ type ComparisonIdentityModule() =
         
         ()
         
-    [<Test>]
+    [<Fact>]
     member this.Structural() =
         // integer array  
         let intArr = [|1;5;8;2;6;3;7;4|]

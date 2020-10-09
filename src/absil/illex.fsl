@@ -16,7 +16,8 @@ open FSharp.Compiler.AbstractIL.Internal.AsciiParser
 open FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
 
-let lexeme (lexbuf : LexBuffer<char>) = new System.String(lexbuf.Lexeme)
+let lexeme (lexbuf : LexBuffer<char>) = LexBuffer<char>.LexemeString lexbuf
+let lexemeChar (lexbuf : LexBuffer<char>) n = lexbuf.LexemeChar n
 
 let unexpectedChar _lexbuf =
   raise Parsing.RecoverableParseError ;;
@@ -70,7 +71,6 @@ let kwdInstrTable =
     addTable (fun i -> INSTR_I32_I32 i) Int32Int32Instrs;
     addTable (fun i -> INSTR_I8 i) Int64Instrs;
     addTable (fun i -> INSTR_R i) DoubleInstrs;
-    addTable (fun i -> INSTR_METHOD i) MethodSpecInstrs;
     addTable (fun i -> INSTR_TYPE i) TypeInstrs;
     addTable (fun i -> INSTR_INT_TYPE i) IntTypeInstrs;
     addTable (fun i -> INSTR_VALUETYPE i) ValueTypeInstrs;
@@ -80,12 +80,7 @@ let kwdInstrTable =
 
 let kwdOrInstr s = (Lazy.force kwdInstrTable).[s] (* words *)
 
-let eval = function 
-  | '0' -> 0  | '1' -> 1 | '2' -> 2  | '3' -> 3  | '4' -> 4  | '5' -> 5 
-  | '6' -> 6  | '7' -> 7  | '8' -> 8  | '9' -> 9 
-  | 'A' -> 10 | 'B' -> 11 | 'C' -> 12 | 'D' -> 13 | 'E' -> 14 | 'F' -> 15
-  | 'a' -> 10 | 'b' -> 11 | 'c' -> 12 | 'd' -> 13 | 'e' -> 14 | 'f' -> 15
-  | _ -> failwith "bad hexbyte"  
+let evalDigit ch  = (int ch) - (int '0')
 
 let kwdOrInstrOrId s = match (Lazy.force kwdInstrTable).TryFind s with Some v -> v | _ -> VAL_ID s
         
@@ -120,21 +115,21 @@ rule token = parse
   (* The problem is telling an integer-followed-by-ellipses from a floating-point-nubmer-followed-by-dots *)
 
   | ((['0'-'9']) | (['0'-'9']['0'-'9']['0'-'9']+)) "..."
-      {  let b = lexeme lexbuf in 
-         VAL_INT32_ELIPSES(int32(String.sub b  0 (String.length b - 3))) }
+      {  let b = lexbuf.LexemeView in 
+         VAL_INT32_ELIPSES(int32(b.Slice(0, (b.Length - 3)).ToString())) }
   | ['0'-'9' 'A'-'F' 'a'-'f' ] ['0'-'9' 'A'-'F' 'a'-'f' ] 
-      { let c1 = String.get (lexeme lexbuf) 0 in 
-        let c2 = String.get (lexeme lexbuf) 1 in 
+      { let c1 = (lexemeChar lexbuf 0) in 
+        let c2 = (lexemeChar lexbuf 1) in 
         if c1 >= '0' && c1 <= '9' && c2 >= '0' && c2 <= '9' then 
-          VAL_INT64(int64 (10*eval c1 + eval c2) )
+          VAL_INT64(int64 (10*evalDigit c1 + evalDigit c2) )
         else VAL_ID(lexeme lexbuf) }
   | '0' 'x' ['0'-'9' 'a'-'f' 'A'-'F']+ 
       { VAL_INT64(int64(lexeme lexbuf)) }
   | "FFFFFF"  ['0'-'9' 'A'-'F' 'a'-'f' ] ['0'-'9' 'A'-'F' 'a'-'f' ] 
-      { let c1 = (lexeme lexbuf).[6] in 
-        let c2 = (lexeme lexbuf).[7] in 
+      { let c1 = (lexemeChar lexbuf 6) in 
+        let c2 = (lexemeChar lexbuf 7) in 
         if c1 >= '0' && c1 <= '9' && c2 >= '0' && c2 <= '9' then 
-          VAL_INT64(int64 (10*eval c1 + eval c2)) 
+          VAL_INT64(int64 (10*evalDigit c1 + evalDigit c2)) 
         else VAL_ID(lexeme lexbuf) }
 
   | '-' ['0'-'9']+ 

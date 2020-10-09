@@ -3,13 +3,14 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
+open FSharp.Test.Utilities
 open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
 module ``Basic Grammar Element Constants`` =
 
     [<Test>]
-    let `` Basic constants compile `` () =
+    let ``Basic constants compile `` () =
         CompilerAssert.Pass 
             """
 let sbyteConst = 1y
@@ -25,6 +26,8 @@ let uint64Const = 1uL
 let ieee32Const1 = 1.0f
 let ieee32Const2 = 1.0F
 let ieee32Const3 = 0x0000000000000001lf
+let ieee32Const4 = 1F
+let ieee32Const5 = 1f
     
 let ieee64Const1 = 1.0
 let ieee64Const2 = 0x0000000000000001LF
@@ -171,4 +174,54 @@ printfn "%A" x10
 let x14 = 0o5_2
 if x14 <> 0o52 then failwith "Wrong parsing"
 printfn "%A" x14
+            """
+    [<Test>]
+    let ``dotless float``() = 
+        CompilerAssert.CompileExeWithOptions [|"--langversion:5.0"|]
+            """
+let x = 42f
+printfn "%A" x
+            """
+
+    [<Test>]
+    let ``dotted float``() = 
+        CompilerAssert.CompileExe
+            """
+let x = 42.f
+printfn "%A" x
+            """
+
+    [<Test>]
+    let ``dotted floats should be equal to dotless floats``() = 
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:5.0"|]
+            """
+if 1.0f <> 1f then failwith "1.0f <> 1f"
+            """
+
+    [<Test>]
+    let ``exponent dotted floats should be equal to dotted floats``() =
+        CompilerAssert.CompileExeAndRun
+            """
+if 1.0e1f <> 10.f then failwith "1.0e1f <> 10.f"
+            """
+
+    [<Test>]
+    let ``exponent dotless floats should be equal to dotted floats``() = 
+        CompilerAssert.CompileExeAndRun
+            """
+if 1e1f <> 10.f then failwith "1e1f <> 10.f" 
+            """
+
+    [<Test>]
+    let ``exponent dotted floats should be equal to dotless floats``() = 
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:5.0"|]
+            """
+if 1.0e1f <> 10f then failwith "1.0e1f <> 10f" 
+            """
+
+    [<Test>]
+    let ``exponent dotless floats should be equal to dotless floats``() = 
+        CompilerAssert.CompileExeAndRunWithOptions [|"--langversion:5.0"|]
+            """
+if 1e1f <> 10f then failwith "1e1f <> 10f" 
             """

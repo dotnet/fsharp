@@ -31,7 +31,6 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
 CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
 CodeGen01,NoMT,CodeGen				CodeGen\Structure
 
-
 CompilerOptions01,NoMT				CompilerOptions\fsc\checked
 CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
@@ -127,7 +126,7 @@ Conformance03			Conformance\Expressions\ControlFlowExpressions\PatternMatching
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SequenceIteration
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SequentialExecution
 Conformance03			Conformance\Expressions\ControlFlowExpressions\SimpleFor
-Conformance03			Conformance\Expressions\ControlFlowExpressions\TryCatch
+Conformance03			Conformance\Expressions\ControlFlowExpressions\TryWith
 Conformance03			Conformance\Expressions\ControlFlowExpressions\TryFinally
 Conformance03			Conformance\Expressions\ControlFlowExpressions\While
 Conformance03			Conformance\Expressions\DataExpressions\AddressOf
@@ -266,8 +265,6 @@ Misc01			Libraries\Core\Operators
 Misc01			Libraries\Core\Reflection
 Misc01			Libraries\Core\Unchecked
 Misc01			Warnings
-Misc01			ErrorMessages\UnitGenericAbstractType
-Misc01			ErrorMessages\ConfusingTypeName
 
 Misc02			Libraries\Portable
 Misc02			Misc

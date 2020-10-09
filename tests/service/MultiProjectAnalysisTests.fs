@@ -14,9 +14,11 @@ open FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
 open FsUnit
 open System.IO
+open System.Collections.Generic
 
 open FSharp.Compiler.Service.Tests.Common
 
+let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
@@ -42,6 +44,13 @@ let x1 = C.M(arg1 = 3, arg2 = 4, arg3 = 5)
 
 /// This is x2
 let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
+
+/// This is
+/// x3
+let x3 (
+          /// This is not x3
+          p: int
+      ) = ()
 
 /// This is type U
 type U = 
@@ -119,22 +128,6 @@ let u = Case1 3
                                     (Project1B.dllName, Project1B.options); |] }
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
-
-
-[<Test>]
-#if NETCOREAPP2_0
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-#endif
-let ``Test multi project 1 whole project errors`` () = 
-
-    let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
-
-    for e in wholeProjectResults.Errors do 
-        printfn "multi project 1 error: <<<%s>>>" e.Message
-
-    wholeProjectResults .Errors.Length |> shouldEqual 0
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual 6
-
 [<Test>]
 let ``Test multi project 1 basic`` () = 
 
@@ -195,10 +188,13 @@ let ``Test multi project 1 xmldoc`` () =
     let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunSynchronously
     let mp = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
 
-    let x1FromProject1A = 
+    let symbolFromProject1A sym = 
         [ for s in p1A.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
-             if  s.Symbol.DisplayName = "x1" then 
+             if  s.Symbol.DisplayName = sym then 
                  yield s.Symbol ]   |> List.head
+        
+    let x1FromProject1A = symbolFromProject1A "x1"
+    let x3FromProject1A = symbolFromProject1A "x3"
 
     let x1FromProjectMultiProject = 
         [ for s in mp.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
@@ -218,6 +214,14 @@ let ``Test multi project 1 xmldoc`` () =
 
     match x1FromProject1A with 
     | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | _ -> failwith "odd symbol!"
+    
+    match x3FromProject1A with 
+    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc |> shouldEqual ([|" This is"; " x3"|] |> toIList)
+    | _ -> failwith "odd symbol!"
+
+    match x3FromProject1A with 
+    | :? FSharpMemberOrFunctionOrValue as v -> v.ElaboratedXmlDoc |> shouldEqual ([|"<summary>"; " This is"; " x3"; "</summary>" |] |> toIList)
     | _ -> failwith "odd symbol!"
 
     match x1FromProjectMultiProject with 
@@ -304,22 +308,6 @@ let p = ("""
     let makeCheckerForStressTest ensureBigEnough = 
         let size = (if ensureBigEnough then numProjectsForStressTest + 10 else numProjectsForStressTest / 2 )
         FSharpChecker.Create(projectCacheSize=size)
-
-[<Test>]
-#if NETCOREAPP2_0
-[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-#endif
-let ``Test ManyProjectsStressTest whole project errors`` () = 
-
-    let checker = ManyProjectsStressTest.makeCheckerForStressTest true
-    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
-    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
-
-    for e in wholeProjectResults.Errors do 
-        printfn "ManyProjectsStressTest error: <<<%s>>>" e.Message
-
-    wholeProjectResults .Errors.Length |> shouldEqual 0
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual (ManyProjectsStressTest.numProjectsForStressTest + 4)
 
 [<Test>]
 let ``Test ManyProjectsStressTest basic`` () = 
@@ -789,6 +777,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
 
     let divisibleByActivePatternCase = divisibleBySymbol :?> FSharpActivePatternCase
     divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual [ "A parameterized active pattern of divisibility" ]
+    divisibleByActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual [ "<summary>"; "A parameterized active pattern of divisibility"; "</summary>" ]
     divisibleByActivePatternCase.XmlDocSig |> shouldEqual "M:Project3A.|DivisibleBy|_|(System.Int32,System.Int32)"
     let divisibleByGroup = divisibleByActivePatternCase.Group
     divisibleByGroup.IsTotal |> shouldEqual false
@@ -819,11 +808,10 @@ let ``Test max memory gets triggered`` () =
 
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Type provider project references should not throw exceptions`` () =
-    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
           {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj";
            ProjectId = None
@@ -874,7 +862,6 @@ let ``Type provider project references should not throw exceptions`` () =
                    yield "--platform:anycpu";
                    for r in mkStandardProjectReferences () do
                        yield "-r:" + r
-                   yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/FSharp.Data.TypeProviders.dll"; 
                   |];
                 ReferencedProjects = [||];
                 IsIncompleteTypeCheckEnvironment = false;
@@ -909,13 +896,12 @@ let ``Type provider project references should not throw exceptions`` () =
 //------------------------------------------------------------------------------------
 
 [<Test>]
-#if NETCOREAPP2_0
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #else
 [<Ignore("Getting vsunit tests passing again")>]
 #endif
 let ``Projects creating generated types should not utilize cross-project-references but should still analyze oK once project is built`` () =
-    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
           {ProjectFileName =
             __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/TestConsole.fsproj";

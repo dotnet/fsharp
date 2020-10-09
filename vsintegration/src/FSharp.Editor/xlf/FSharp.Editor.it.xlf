@@ -7,6 +7,26 @@
         <target state="translated">Aggiungi la parola chiave 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="FSharpDisposableLocalValuesClassificationType">
+        <source>F# Disposable Values (locals)</source>
+        <target state="new">F# Disposable Values (locals)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
+        <source>F# Dispostable Values (top-level)</source>
+        <target state="new">F# Dispostable Values (top-level)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpDisposableTypesClassificationType">
+        <source>F# Disposable Types</source>
+        <target state="new">F# Disposable Types</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFunctionsClassificationType">
+        <source>F# Functions</source>
+        <target state="new">F# Functions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ImplementInterface">
         <source>Implement interface</source>
         <target state="translated">Implementa l'interfaccia</target>
@@ -37,11 +57,6 @@
         <target state="translated">Il nome può essere semplificato.</target>
         <note />
       </trans-unit>
-      <trans-unit id="FSharpFunctionsOrMethodsClassificationType">
-        <source>F# Functions / Methods</source>
-        <target state="translated">Funzioni/Metodi F#</target>
-        <note />
-      </trans-unit>
       <trans-unit id="FSharpMutableVarsClassificationType">
         <source>F# Mutable Variables / Reference Cells</source>
         <target state="translated">Variabili modificabili/Celle di riferimento F#</target>
@@ -55,11 +70,6 @@
       <trans-unit id="FSharpPropertiesClassificationType">
         <source>F# Properties</source>
         <target state="translated">Proprietà F#</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpDisposablesClassificationType">
-        <source>F# Disposable Types</source>
-        <target state="translated">Tipi eliminabili F#</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveUnusedOpens">

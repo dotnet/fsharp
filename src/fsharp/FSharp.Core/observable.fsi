@@ -7,7 +7,9 @@ namespace Microsoft.FSharp.Control
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on first class event and other observable objects.</summary>
+    /// <summary>Contains operations for working with first class event and other observable objects.</summary>
+    ///
+    /// <category index="3">Events and Observables</category>
     module Observable = 
 
         /// <summary>Returns an observable for the merged observations from the sources. 
@@ -19,6 +21,7 @@ namespace Microsoft.FSharp.Control
         /// be triggered concurrently on different threads.</remarks>
         /// <param name="source1">The first Observable.</param>
         /// <param name="source2">The second Observable.</param>
+        ///
         /// <returns>An Observable that propagates information from both sources.</returns>
         [<CompiledName("Merge")>]
         val merge: source1:IObservable<'T> -> source2:IObservable<'T> -> IObservable<'T>
@@ -29,6 +32,7 @@ namespace Microsoft.FSharp.Control
         /// arising from the source and completes when the source completes.</summary>
         /// <param name="mapping">The function applied to observations from the source.</param>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>An Observable of the type specified by <c>mapping</c>.</returns> 
         [<CompiledName("Map")>]
         val map: mapping:('T -> 'U) -> source:IObservable<'T> -> IObservable<'U>
@@ -38,9 +42,11 @@ namespace Microsoft.FSharp.Control
         /// for which the predicate returns true. The predicate is executed once for 
         /// each subscribed observer. The returned object also propagates error 
         /// observations arising from the source and completes when the source completes.</summary>
-        /// <param name="filter">The function to apply to observations to determine if it should
+        ///
+        /// <param name="predicate">The function to apply to observations to determine if it should
         /// be kept.</param>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>An Observable that filters observations based on <c>filter</c>.</returns>
         [<CompiledName("Filter")>]
         val filter: predicate:('T -> bool) -> source:IObservable<'T> -> IObservable<'T>
@@ -52,9 +58,11 @@ namespace Microsoft.FSharp.Control
         /// executed once for each subscribed observer. Both also propagate all error 
         /// observations arising from the source and each completes when the source 
         /// completes.</summary>
+        ///
         /// <param name="predicate">The function to determine which output Observable will trigger
         /// a particular observation.</param>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>A tuple of Observables.  The first triggers when the predicate returns true, and
         /// the second triggers when the predicate returns false.</returns> 
         [<CompiledName("Partition")>]
@@ -67,9 +75,11 @@ namespace Microsoft.FSharp.Control
         /// executed once for each subscribed observer. Both also propagate error 
         /// observations arising from the source and each completes when the source 
         /// completes.</summary>
+        ///
         /// <param name="splitter">The function that takes an observation an transforms
         /// it into one of the two output Choice types.</param>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>A tuple of Observables.  The first triggers when <c>splitter</c> returns Choice1of2
         /// and the second triggers when <c>splitter</c> returns Choice2of2.</returns> 
         [<CompiledName("Split")>]
@@ -79,9 +89,11 @@ namespace Microsoft.FSharp.Control
         /// using the given function. The returned object will trigger observations <c>x</c>
         /// for which the splitter returns <c>Some x</c>. The returned object also propagates 
         /// all errors arising from the source and completes when the source completes.</summary>
+        ///
         /// <param name="chooser">The function that returns Some for observations to be propagated
         /// and None for observations to ignore.</param>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>An Observable that only propagates some of the observations from the source.</returns>
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> source:IObservable<'T> -> IObservable<'U>
@@ -98,12 +110,14 @@ namespace Microsoft.FSharp.Control
         /// <param name="collector">The function to update the state with each observation.</param>
         /// <param name="state">The initial state.</param>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>An Observable that triggers on the updated state values.</returns>
         [<CompiledName("Scan")>]
         val scan: collector:('U -> 'T -> 'U) -> state:'U -> source:IObservable<'T> -> IObservable<'U> 
 
         /// <summary>Creates an observer which permanently subscribes to the given observable and which calls
         /// the given function for each observation.</summary>
+        ///
         /// <param name="callback">The function to be called on each observation.</param>
         /// <param name="source">The input Observable.</param>
         [<CompiledName("Add")>]
@@ -111,8 +125,10 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Creates an observer which subscribes to the given observable and which calls
         /// the given function for each observation.</summary>
+        ///
         /// <param name="callback">The function to be called on each observation.</param>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>An object that will remove the callback if disposed.</returns>
         [<CompiledName("Subscribe")>]
         val subscribe : callback:('T -> unit) -> source:IObservable<'T> -> System.IDisposable
@@ -126,6 +142,7 @@ namespace Microsoft.FSharp.Control
         /// That is, observations arising from the source must not be triggered concurrently 
         /// on different threads.</remarks>
         /// <param name="source">The input Observable.</param>
+        ///
         /// <returns>An Observable that triggers on successive pairs of observations from the input Observable.</returns>
         [<CompiledName("Pairwise")>]
         val pairwise: source:IObservable<'T> -> IObservable<'T * 'T>

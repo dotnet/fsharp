@@ -3,13 +3,13 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.Set type
 
-namespace FSharp.Core.UnitTests.FSharp_Core.Microsoft_FSharp_Collections
+namespace FSharp.Core.UnitTests.Collections
 
 open System
 open System.Collections
 open System.Collections.Generic
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 (*
 [Test Strategy]
@@ -19,17 +19,16 @@ Make sure each method works on:
 * Sets with 4 more more elements
 *)
 
-[<TestFixture>][<Category "Collections.Set">][<Category "FSharp.Core.Collections">]
 type SetType() =
 
     // Interfaces
-    [<Test>]
-    member this.IEnumerable() =        
+    [<Fact>]
+    member this.IEnumerable() =
         // Legit IE
         let ie = (new Set<char>(['a'; 'b'; 'c'])) :> IEnumerable
         //let alphabet = new Set<char>([| 'a' .. 'z' |])
         let enum = ie.GetEnumerator()
-        
+
         let testStepping() =
             CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
             Assert.AreEqual(enum.MoveNext(), true)
@@ -53,7 +52,7 @@ type SetType() =
         Assert.AreEqual(enum.MoveNext(), false)
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.IEnumerable_T() =        
         // Legit IE
         let ie =(new Set<char>(['a'; 'b'; 'c'])) :> IEnumerable<char>
@@ -83,24 +82,24 @@ type SetType() =
         CheckThrowsInvalidOperationExn(fun () -> enum.Current |> ignore)
         
         
-    [<Test>]
+    [<Fact>]
     member this.ICollection() =        
         // Legit IC        
         let ic = (new Set<int>([1;2;3;4])) :> ICollection<int>
         let st = new Set<int>([1;2;3;4])        
         
-        Assert.IsTrue(ic.Contains(3)) 
+        Assert.True(ic.Contains(3)) 
         let newArr = Array.create 5 0
         ic.CopyTo(newArr,0) 
-        Assert.IsTrue(ic.IsReadOnly)       
+        Assert.True(ic.IsReadOnly)       
             
         // Empty IC
         let ic = (new Set<string>([])) :> ICollection<string>
-        Assert.IsFalse(ic.Contains("A") )     
+        Assert.False(ic.Contains("A") )     
         let newArr = Array.create 5 "a"
         ic.CopyTo(newArr,0) 
 
-    [<Test>]
+    [<Fact>]
     member this.IReadOnlyCollection() =        
         // Legit IROC
         let iroc = (new Set<int>([1;2;3;4])) :> IReadOnlyCollection<int>
@@ -110,7 +109,7 @@ type SetType() =
         let iroc = (new Set<string>([])) :> IReadOnlyCollection<string>
         Assert.AreEqual(iroc.Count, 0)
     
-    [<Test>]
+    [<Fact>]
     member this.IComparable() =        
         // Legit IC
         let ic = (new Set<int>([1;2;3;4])) :> IComparable    
@@ -122,82 +121,82 @@ type SetType() =
         
         
     // Base class methods
-    [<Test>]
+    [<Fact>]
     member this.ObjectGetHashCode() =
         // Verify order added is independent
         let x = Set.ofList [1; 2; 3]
         let y = Set.ofList [3; 2; 1]
         Assert.AreEqual(x.GetHashCode(), y.GetHashCode())
     
-    [<Test>]
+    [<Fact>]
     member this.ObjectToString() =
         Assert.AreEqual("set [1; 2; 3; ... ]", (new Set<int>([1;2;3;4])).ToString())
         Assert.AreEqual("set []", (Set.empty).ToString())
         Assert.AreEqual("set [1; 3]", (new Set<decimal>([1M;3M])).ToString())
         
     
-    [<Test>]
+    [<Fact>]
     member this.ObjectEquals() =
         // All three are different references, but equality has been
         // provided by the F# compiler.
         let a = new Set<int>([1;2;3])
         let b = new Set<int>([1..3])
         let c = new Set<int>(seq{1..3})
-        Assert.IsTrue( (a = b) )
-        Assert.IsTrue( (b = c) )
-        Assert.IsTrue( (c = a) )
-        Assert.IsTrue( a.Equals(b) ); Assert.IsTrue( b.Equals(a) )
-        Assert.IsTrue( b.Equals(c) ); Assert.IsTrue( c.Equals(b) )
-        Assert.IsTrue( c.Equals(a) ); Assert.IsTrue( a.Equals(c) )
+        Assert.True( (a = b) )
+        Assert.True( (b = c) )
+        Assert.True( (c = a) )
+        Assert.True( a.Equals(b) ); Assert.True( b.Equals(a) )
+        Assert.True( b.Equals(c) ); Assert.True( c.Equals(b) )
+        Assert.True( c.Equals(a) ); Assert.True( a.Equals(c) )
 
         // Equality between types
         let a = Set.empty<int>
         let b = Set.empty<string>
-        Assert.IsFalse( b.Equals(a) )
-        Assert.IsFalse( a.Equals(b) )
+        Assert.False( b.Equals(a) )
+        Assert.False( a.Equals(b) )
         
         // Co/contra variance not supported
         let a = Set.empty<string>
         let b = Set.empty
-        Assert.IsFalse(a.Equals(b))
-        Assert.IsFalse(b.Equals(a))
+        Assert.False(a.Equals(b))
+        Assert.False(b.Equals(a))
         
         // Self equality
         let a = new Set<int>([1])
-        Assert.IsTrue( (a = a) )
-        Assert.IsTrue(a.Equals(a))
+        Assert.True( (a = a) )
+        Assert.True(a.Equals(a))
         
         // Null
-        Assert.IsFalse(a.Equals(null))  
+        Assert.False(a.Equals(null))  
         
         
     // Instance methods
-    [<Test>]
+    [<Fact>]
     member this.Add() =    
         let l = new Set<int>([1 .. 10])
         let ad = l.Add 88
-        Assert.IsTrue(ad.Contains(88))
+        Assert.True(ad.Contains(88))
     
         let e : Set<string> = Set.empty<string>
         let ade = e.Add "A"
-        Assert.IsTrue(ade.Contains("A"))
+        Assert.True(ade.Contains("A"))
         
         let s = Set.singleton 168
         let ads = s.Add 100
-        Assert.IsTrue(ads.Contains(100))
+        Assert.True(ads.Contains(100))
         
-    [<Test>]
+    [<Fact>]
     member this.Contains() =    
         let i = new Set<int>([1 .. 10])
-        Assert.IsTrue(i.Contains(8))
+        Assert.True(i.Contains(8))
     
         let e : Set<string> = Set.empty<string>
-        Assert.IsFalse(e.Contains("A"))
+        Assert.False(e.Contains("A"))
         
         let s = Set.singleton 168
-        Assert.IsTrue(s.Contains(168))
+        Assert.True(s.Contains(168))
     
-    [<Test>]
+    [<Fact>]
     member this.Count() =    
         let l = new Set<int>([1 .. 10])
         Assert.AreEqual(l.Count, 10)
@@ -208,63 +207,63 @@ type SetType() =
         let s = Set.singleton 'a'
         Assert.AreEqual(s.Count, 1)        
         
-    [<Test>]
+    [<Fact>]
     member this.IsEmpty() =
         let i = new Set<int>([1 .. 10])
-        Assert.IsFalse(i.IsEmpty)
+        Assert.False(i.IsEmpty)
     
         let e : Set<string> = Set.empty<string>
-        Assert.IsTrue(e.IsEmpty)
+        Assert.True(e.IsEmpty)
         
         let s = Set.singleton 168
-        Assert.IsFalse(s.IsEmpty)   
+        Assert.False(s.IsEmpty)   
         
-    [<Test>]
+    [<Fact>]
     member this.IsSubsetOf() =
         let fir = new Set<int>([1 .. 20])
         let sec = new Set<int>([1 .. 10])
-        Assert.IsTrue(sec.IsSubsetOf(fir))
-        Assert.IsTrue(Set.isSubset sec fir)
+        Assert.True(sec.IsSubsetOf(fir))
+        Assert.True(Set.isSubset sec fir)
     
         let e : Set<int> = Set.empty<int>
-        Assert.IsTrue(e.IsSubsetOf(fir))
-        Assert.IsTrue(Set.isSubset e fir)
+        Assert.True(e.IsSubsetOf(fir))
+        Assert.True(Set.isSubset e fir)
         
         let s = Set.singleton 8
-        Assert.IsTrue(s.IsSubsetOf(fir)) 
-        Assert.IsTrue(Set.isSubset s fir)
+        Assert.True(s.IsSubsetOf(fir)) 
+        Assert.True(Set.isSubset s fir)
         
         let s100 = set [0..100]
         let s101 = set [0..101]
         for i = 0 to 100 do 
-            Assert.IsFalse( (set [-1..i]).IsSubsetOf s100)
-            Assert.IsTrue( (set [0..i]).IsSubsetOf s100)
-            Assert.IsTrue( (set [0..i]).IsProperSubsetOf s101)
+            Assert.False( (set [-1..i]).IsSubsetOf s100)
+            Assert.True( (set [0..i]).IsSubsetOf s100)
+            Assert.True( (set [0..i]).IsProperSubsetOf s101)
            
         
-    [<Test>]
+    [<Fact>]
     member this.IsSupersetOf() =
         let fir = new Set<int>([1 .. 10])
         let sec = new Set<int>([1 .. 20])
-        Assert.IsTrue(sec.IsSupersetOf(fir))
-        Assert.IsTrue(Set.isSuperset sec fir)
+        Assert.True(sec.IsSupersetOf(fir))
+        Assert.True(Set.isSuperset sec fir)
     
         let e : Set<int> = Set.empty<int>
-        Assert.IsFalse(e.IsSupersetOf(fir))
-        Assert.IsFalse(Set.isSuperset e fir)
+        Assert.False(e.IsSupersetOf(fir))
+        Assert.False(Set.isSuperset e fir)
         
         let s = Set.singleton 168
-        Assert.IsFalse(s.IsSupersetOf(fir))  
-        Assert.IsFalse(Set.isSuperset s fir)
+        Assert.False(s.IsSupersetOf(fir))  
+        Assert.False(Set.isSuperset s fir)
 
         let s100 = set [0..100]
         let s101 = set [0..101]
         for i = 0 to 100 do 
-            Assert.IsFalse( s100.IsSupersetOf (set [-1..i]))
-            Assert.IsTrue( s100.IsSupersetOf (set [0..i]))
-            Assert.IsTrue( s101.IsSupersetOf (set [0..i]))
+            Assert.False( s100.IsSupersetOf (set [-1..i]))
+            Assert.True( s100.IsSupersetOf (set [0..i]))
+            Assert.True( s101.IsSupersetOf (set [0..i]))
         
-    [<Test>]
+    [<Fact>]
     member this.Remove() =    
         let i = new Set<int>([1;2;3;4])
         Assert.AreEqual(i.Remove 3,(new Set<int>([1;2;4])))
@@ -277,7 +276,7 @@ type SetType() =
         
         
     // Static methods
-    [<Test>]
+    [<Fact>]
     member this.Addition() =
         let fir = new Set<int>([1;3;5])
         let sec = new Set<int>([2;4;6])
@@ -294,7 +293,7 @@ type SetType() =
         Assert.AreEqual(Set.op_Addition(s1,s2), new Set<int>([8;6]))
         
 
-    [<Test>]
+    [<Fact>]
     member this.Subtraction() =
         let fir = new Set<int>([1..6])
         let sec = new Set<int>([2;4;6])
@@ -314,7 +313,7 @@ type SetType() =
         Assert.AreEqual(Set.op_Subtraction(s1,s2), new Set<int>([8]))
         
 
-    [<Test>]
+    [<Fact>]
     member this.MinimumElement() =
         let fir = new Set<int>([1..6])
         let sec = new Set<int>([2;4;6])
@@ -324,7 +323,7 @@ type SetType() =
         Assert.AreEqual(Set.minElement sec, 2)
         
 
-    [<Test>]
+    [<Fact>]
     member this.MaximumElement() =
         let fir = new Set<int>([1..6])
         let sec = new Set<int>([2;4;7])

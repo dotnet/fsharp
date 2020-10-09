@@ -68,16 +68,16 @@ namespace Microsoft.FSharp.Collections
           lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)
 
       let generateWhileSome openf compute closef : IEnumerator<'U> =
-          let started = ref false
-          let curr = ref None
+          let mutable started = false
+          let mutable curr = None
           let state = ref (Some(openf()))
           let getCurr() =
-              check !started
-              match !curr with None -> alreadyFinished() | Some x -> x
-          let start() = if not !started then (started := true)
+              check started
+              match curr with None -> alreadyFinished() | Some x -> x
+          let start() = if not started then (started <- true)
 
           let dispose() = readAndClear state |> Option.iter closef
-          let finish() = try dispose() finally curr := None
+          let finish() = try dispose() finally curr <- None
           {  new IEnumerator<'U> with
                  member __.Current = getCurr()
              interface IEnumerator with
@@ -89,7 +89,7 @@ namespace Microsoft.FSharp.Collections
                      | Some s ->
                          match (try compute s with e -> finish(); reraise()) with
                          | None -> finish(); false
-                         | Some _ as x -> curr := x; true
+                         | Some _ as x -> curr <- x; true
 
                  member __.Reset() = noReset()
              interface System.IDisposable with
@@ -306,14 +306,14 @@ namespace Microsoft.FSharp.Core.CompilerServices
             mkSeq (fun () -> new ConcatEnumerator<_,_>(sources) :> IEnumerator<'T>)
 
         let EnumerateWhile (guard: unit -> bool) (source: seq<'T>) : seq<'T> =
-            let started = ref false
-            let curr = ref None
+            let mutable started = false
+            let mutable curr = None
             let getCurr() =
-                IEnumerator.check !started
-                match !curr with None -> IEnumerator.alreadyFinished() | Some x -> x
-            let start() = if not !started then (started := true)
+                IEnumerator.check started
+                match curr with None -> IEnumerator.alreadyFinished() | Some x -> x
+            let start() = if not started then (started <- true)
 
-            let finish() = (curr := None)
+            let finish() = (curr <- None)
             mkConcatSeq
                (mkSeq (fun () ->
                     { new IEnumerator<_> with
@@ -324,7 +324,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                                start()
                                let keepGoing = (try guard() with e -> finish (); reraise ()) in
                                if keepGoing then
-                                   curr := Some(source); true
+                                   curr <- Some(source); true
                                else
                                    finish(); false
                           member x.Reset() = IEnumerator.noReset()
@@ -335,12 +335,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
             (FinallyEnumerable(compensation, (fun () -> source)) :> seq<_>)
 
         let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
-            // Note, we implement each interface explicitly: this works around a bug in the CLR
-            // implementation on CompactFramework 3.7, used on Windows Phone 7
             { new obj() with
                   member x.ToString() = "<published event>"
-              interface IEvent<'Delegate,'Args>
-              interface IDelegateEvent<'Delegate> with
+              interface IEvent<'Delegate,'Args> with
                  member x.AddHandler(h) = addHandler h
                  member x.RemoveHandler(h) = removeHandler h
               interface System.IObservable<'Args> with

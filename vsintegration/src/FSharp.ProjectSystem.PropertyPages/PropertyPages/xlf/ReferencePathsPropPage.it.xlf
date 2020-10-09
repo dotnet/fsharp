@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="FolderBrowse.Text">
         <source>...</source>
-        <target state="translated">...</target>
+        <target state="new">...</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUp.AccessibleName">

@@ -17,6 +17,7 @@ open System.Collections.Generic
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
@@ -322,6 +323,24 @@ type cenv =
 
     override x.ToString() = "<cenv>"
 
+let convResolveAssemblyRef (cenv: cenv) (asmref: ILAssemblyRef) qualifiedName =
+    let assembly = 
+        match cenv.resolveAssemblyRef asmref with
+        | Some (Choice1Of2 path) ->
+            // asmRef is a path but the runtime is smarter with assembly names so make one
+            let asmName = AssemblyName.GetAssemblyName(path)
+            asmName.CodeBase <- path
+            FileSystem.AssemblyLoad asmName
+        | Some (Choice2Of2 assembly) ->
+            assembly
+        | None ->
+            let asmName = convAssemblyRef asmref
+            FileSystem.AssemblyLoad asmName
+    let typT = assembly.GetType qualifiedName
+    match typT with 
+    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+    | res -> res
+
 /// Convert an Abstract IL type reference to Reflection.Emit System.Type value.
 // This ought to be an adequate substitute for this whole function, but it needs 
 // to be thoroughly tested.
@@ -333,27 +352,15 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
     let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
     match tref.Scope with
     | ILScopeRef.Assembly asmref ->
-        let assembly = 
-            match cenv.resolveAssemblyRef asmref with                     
-            | Some (Choice1Of2 path) ->
-                FileSystem.AssemblyLoadFrom path              
-            | Some (Choice2Of2 assembly) ->
-                assembly
-            | None ->
-                let asmName = convAssemblyRef asmref
-                FileSystem.AssemblyLoad asmName
-        let typT = assembly.GetType qualifiedName
-        match typT with 
-        | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
-        | res -> res
+        convResolveAssemblyRef cenv asmref qualifiedName
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
         let typT = Type.GetType qualifiedName 
         match typT with 
         | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
         | res -> res
-
-
+    | ILScopeRef.PrimaryAssembly ->
+        convResolveAssemblyRef cenv cenv.ilg.primaryAssemblyRef qualifiedName
 
 /// The (local) emitter env (state). Some of these fields are effectively global accumulators
 /// and could be placed as hash tables in the global environment.
@@ -553,9 +560,8 @@ and convTypeAux cenv emEnv preferCreated ty =
         let baseT = convTypeAux cenv emEnv preferCreated eltType
         baseT.MakeByRefType()
     | ILType.TypeVar tv -> envGetTyvar emEnv tv
-    // Consider completing the following cases:                                                      
     | ILType.Modified (_, _, modifiedTy) -> 
-        // Note, "modreq" are not being emitted. This is 
+        
         convTypeAux cenv emEnv preferCreated modifiedTy
 
     | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
@@ -1474,14 +1480,13 @@ let emitParameter cenv emEnv (defineParameter: int * ParameterAttributes * strin
 // buildMethodPass2
 //----------------------------------------------------------------------------
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
 
 let enablePInvoke = true
 
 #else
 
-// We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-// but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+// Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
 let definePInvokeMethod =
     typeof<TypeBuilder>.GetMethod("DefinePInvokeMethod", [|
         typeof<string>
@@ -1534,13 +1539,12 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
 (* p.CharBestFit *)
 (* p.NoMangle *)
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_0
-        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCORE_APP3_0.
+#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
+        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCOREAPP3.
         // It has always been available in the desktop framework
         let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs)
 #else
-        // We currently build targeting netcoreapp2_1, and will continue to do so through this VS cycle
-        // but we can run on Netcoreapp3.0 so ... use reflection to invoke the api, when we are executing on netcoreapp3.0
+        // Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
         let methB =
             System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod")   // Absolutely can't happen
             definePInvokeMethod.Invoke(typB,  [| mdef.Name; p.Where.Name; p.Name; attrs; cconv; rty; null; null; argtys; null; null; pcc; pcs |]) :?> MethodBuilder
@@ -2070,11 +2074,9 @@ let buildModuleFragment cenv emEnv (asmB: AssemblyBuilder) (modB: ModuleBuilder)
     m.Resources.AsList |> List.iter (fun r -> 
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
-        | ILResourceLocation.LocalIn (file, start, len) -> 
-            let bytes = FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
-            modB.DefineManifestResourceAndLog (r.Name, new MemoryStream(bytes), attribs)
-        | ILResourceLocation.LocalOut bytes -> 
-            modB.DefineManifestResourceAndLog (r.Name, new MemoryStream(bytes), attribs)
+        | ILResourceLocation.Local bytes -> 
+            use stream = bytes.GetByteMemory().AsStream()
+            modB.DefineManifestResourceAndLog (r.Name, stream, attribs)
         | ILResourceLocation.File (mr, _) -> 
            asmB.AddResourceFileAndLog (r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 

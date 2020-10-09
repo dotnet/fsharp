@@ -6,15 +6,16 @@ module internal FSharp.Compiler.PPLexer
 
 open System
 
-open FSharp.Compiler.Ast
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lexhelp
+open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.SyntaxTree
 
 open Internal.Utilities.Text.Lexing
 
 let lexeme (lexbuf : UnicodeLexing.Lexbuf) = UnicodeLexing.Lexbuf.LexemeString lexbuf
 
-let fail (args : lexargs) (lexbuf:UnicodeLexing.Lexbuf) e =
+let fail (args : LexArgs) (lexbuf:UnicodeLexing.Lexbuf) e =
      let m = lexbuf.LexemeRange
      args.errorLogger.ErrorR(Error(e,m))
      PPParser.EOF

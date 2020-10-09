@@ -7,7 +7,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler 
+open FSharp.Compiler.Range 
+open FSharp.Compiler.SyntaxTree
 
 /// Indicates a kind of item to show in an F# navigation bar
 type public FSharpNavigationDeclarationItemKind =
@@ -39,12 +40,12 @@ type public FSharpNavigationDeclarationItem =
     member UniqueName : string
     member Glyph : FSharpGlyph
     member Kind : FSharpNavigationDeclarationItemKind
-    member Range : Range.range
-    member BodyRange : Range.range
+    member Range : range
+    member BodyRange : range
     member IsSingleTopLevel : bool
     member EnclosingEntityKind: FSharpEnclosingEntityKind
     member IsAbstract: bool
-    member Access : Ast.SynAccess option
+    member Access : SynAccess option
 
 /// Represents top-level declarations (that should be in the type drop-down)
 /// with nested declarations (that can be shown in the member drop-down)
@@ -63,7 +64,7 @@ type public FSharpNavigationItems =
 // Functionality to access navigable F# items.
 module public FSharpNavigation =
     val internal empty : FSharpNavigationItems
-    val getNavigation : Ast.ParsedInput -> FSharpNavigationItems
+    val getNavigation : ParsedInput -> FSharpNavigationItems
 
 module public NavigateTo =
     [<RequireQualifiedAccess>]
@@ -94,9 +95,9 @@ module public NavigateTo =
     
     type NavigableItem = 
         { Name: string
-          Range: Range.range
+          Range: range
           IsSignature: bool
           Kind: NavigableItemKind
           Container: Container }
 
-    val getNavigableItems : Ast.ParsedInput -> NavigableItem []
+    val getNavigableItems : ParsedInput -> NavigableItem []

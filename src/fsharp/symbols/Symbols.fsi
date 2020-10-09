@@ -3,21 +3,23 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
+
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Range
-open FSharp.Compiler.Ast
-open FSharp.Compiler.Tast
-open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TcGlobals
 
 // Implementation details used by other code in the compiler    
 type internal SymbolEnv = 
-    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
-    new: TcGlobals * thisCcu:CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
+    new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports -> SymbolEnv
+    new: TcGlobals * thisCcu: CcuThunk * thisCcuTyp: ModuleOrNamespaceType option * tcImports: TcImports * amap: ImportMap * infoReader: InfoReader -> SymbolEnv
     member amap: ImportMap
     member g: TcGlobals
 
@@ -47,7 +49,7 @@ type public FSharpAccessibility =
 /// Acquired via GetDisplayEnvAtLocationAlternate and similar methods. May be passed 
 /// to the Format method on FSharpType and other methods.
 type [<Class>] public FSharpDisplayContext = 
-    internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
+    internal new : denv: (TcGlobals -> DisplayEnv) -> FSharpDisplayContext
     static member Empty: FSharpDisplayContext
 
     member WithShortTypeNames: bool -> FSharpDisplayContext
@@ -257,6 +259,10 @@ and [<Class>] public FSharpEntity =
     /// Get the in-memory XML documentation for the entity, used when code is checked in-memory
     member XmlDoc: IList<string>
 
+    /// Get the elaborated XML documentation for the entity, used when code is checked in-memory,
+    /// after any checking and processing to XML performed by the F# compiler
+    member ElaboratedXmlDoc: IList<string>
+
       /// Get the XML documentation signature for the entity, used for .xml file lookup for compiled code
     member XmlDocSig: string
 
@@ -397,6 +403,10 @@ and [<Class>] public FSharpUnionCase =
     /// Get the in-memory XML documentation for the union case, used when code is checked in-memory
     member XmlDoc: IList<string>
 
+    /// Get the elaborated XML documentation for the union case, used when code is checked in-memory,
+    /// after any checking and processing to XML performed by the F# compiler
+    member ElaboratedXmlDoc: IList<string>
+
     /// Get the XML documentation signature for .xml file lookup for the union case, used for .xml file lookup for compiled code 
     member XmlDocSig: string
 
@@ -440,6 +450,12 @@ and [<Class>] public FSharpField =
     /// If the field is from an anonymous record type then get the details of the field including the index in the sorted array of fields
     member AnonRecordFieldDetails: FSharpAnonRecordTypeDetails * FSharpType[] * int
 
+    /// Indicates if the field is declared in a union case
+    member IsUnionCaseField: bool
+
+    /// Returns the declaring union case symbol  
+    member DeclaringUnionCase: FSharpUnionCase option
+
     /// Indicates if the field is declared 'static'
     member IsMutable: bool
 
@@ -464,6 +480,10 @@ and [<Class>] public FSharpField =
 
     /// Get the in-memory XML documentation for the field, used when code is checked in-memory
     member XmlDoc: IList<string>
+
+    /// Get the elaborated XML documentation for the field, used when code is checked in-memory,
+    /// after any checking and processing to XML performed by the F# compiler
+    member ElaboratedXmlDoc: IList<string>
 
     /// Get the XML documentation signature for .xml file lookup for the field, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -515,6 +535,10 @@ and [<Class>] public FSharpGenericParameter =
     /// Get the in-memory XML documentation for the type parameter, used when code is checked in-memory
     member XmlDoc : IList<string>
        
+    /// Get the elaborated XML documentation for the type parameter, used when code is checked in-memory,
+    /// after any checking and processing to XML performed by the F# compiler
+    member ElaboratedXmlDoc: IList<string>
+
     /// Indicates if this is a statically resolved type variable
     member IsSolveAtCompileTime : bool 
 
@@ -826,6 +850,10 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
     /// Get the in-memory XML documentation for the value, used when code is checked in-memory
     member XmlDoc: IList<string>
 
+    /// Get the elaborated XML documentation for the value, used when code is checked in-memory,
+    /// after any checking and processing to XML performed by the F# compiler
+    member ElaboratedXmlDoc: IList<string>
+
     /// XML documentation signature for the value, used for .xml file lookup for compiled code
     member XmlDocSig: string
 
@@ -906,6 +934,10 @@ and [<Class>] public FSharpActivePatternCase =
 
     /// Get the in-memory XML documentation for the active pattern case, used when code is checked in-memory
     member XmlDoc: IList<string>
+
+    /// Get the elaborated XML documentation for the active pattern case, used when code is checked in-memory,
+    /// after any checking and processing to XML performed by the F# compiler
+    member ElaboratedXmlDoc: IList<string>
 
       /// XML documentation signature for the active pattern case, used for .xml file lookup for compiled code
     member XmlDocSig: string
@@ -1043,16 +1075,22 @@ and [<Class>] public FSharpAttribute =
 [<Sealed>]
 type public FSharpOpenDeclaration =
 
-    internal new : longId: Ident list * range: range option * modules: FSharpEntity list * appliedScope: range * isOwnNamespace: bool -> FSharpOpenDeclaration
+    internal new : target: SynOpenDeclTarget * range: range option * modules: FSharpEntity list * types: FSharpType list * appliedScope: range * isOwnNamespace: bool -> FSharpOpenDeclaration
 
-    /// Idents.
-    member LongId: Ident list 
+    /// The syntactic target of the declaration
+    member LongId: Ident list
+
+    /// The syntactic target of the declaration
+    member Target: SynOpenDeclTarget
       
     /// Range of the open declaration.
     member Range: range option
 
     /// Modules or namespaces which is opened with this declaration.
     member Modules: FSharpEntity list 
+      
+    /// Types whose static members and nested types is opened with this declaration.
+    member Types: FSharpType list 
       
     /// Scope in which open declaration is visible.
     member AppliedScope: range 
@@ -1065,7 +1103,7 @@ type public FSharpOpenDeclaration =
 type public FSharpSymbolUse = 
 
     // For internal use only
-    internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+    internal new : g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
     /// The symbol referenced
     member Symbol : FSharpSymbol 
@@ -1101,3 +1139,5 @@ type public FSharpSymbolUse =
     /// The range of text representing the reference to the symbol
     member RangeAlternate: range
 
+    /// Indicates if the FSharpSymbolUse is declared as private
+    member IsPrivateToFile: bool 

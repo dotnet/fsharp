@@ -7,12 +7,11 @@ namespace Legacy.FSharp.Compiler.Hosted
 
 open System
 open System.IO
-open System.Text
 open System.Text.RegularExpressions
-open FSharp.Compiler
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
 
@@ -61,20 +60,20 @@ type internal InProcCompiler(legacyReferenceResolver) =
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
         let loggerProvider = InProcErrorLoggerProvider()
-        let exitCode = ref 0
+        let mutable exitCode = 0
         let exiter = 
             { new Exiter with
-                 member this.Exit n = exitCode := n; raise StopProcessing }
+                 member this.Exit n = exitCode <- n; raise StopProcessing }
         try 
             typecheckAndCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->
-                exitCode := 1
+                exitCode <- 1
                 ()
 
         let output : CompilationOutput = { Warnings = loggerProvider.CapturedWarnings; Errors = loggerProvider.CapturedErrors }
-        !exitCode = 0, output
+        exitCode = 0, output
 
 /// in-proc version of fsc.exe
 type internal FscCompiler(legacyReferenceResolver) =

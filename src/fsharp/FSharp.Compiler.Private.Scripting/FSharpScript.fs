@@ -7,44 +7,41 @@ open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Interactive.Shell
 
-type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: string[]) as this =
-    let outputProduced = Event<string>()
-    let errorProduced = Event<string>()
+[<RequireQualifiedAccess>]
+type LangVersion =
+    | V47
+    | V50
+    | Preview
 
-    // handle stdin/stdout
-    let stdin = new CapturedTextReader()
-    let stdout = new EventedTextWriter()
-    let stderr = new EventedTextWriter()
-    do stdout.LineWritten.Add outputProduced.Trigger
-    do stderr.LineWritten.Add errorProduced.Trigger
-    let captureInput = defaultArg captureInput false
-    let captureOutput = defaultArg captureOutput false
+type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVersion) =
+
     let additionalArgs = defaultArg additionalArgs [||]
-    let savedInput = Console.In
-    let savedOutput = Console.Out
-    let savedError = Console.Error
-    do (fun () ->
-        if captureInput then
-            Console.SetIn(stdin)
-        if captureOutput then
-            Console.SetOut(stdout)
-            Console.SetError(stderr)
-        ())()
-
+    let quiet = defaultArg quiet true
+    let langVersion = defaultArg langVersion LangVersion.Preview
+  
     let config = FsiEvaluationSession.GetDefaultConfiguration()
-    let baseArgs = [| this.GetType().Assembly.Location; "--noninteractive"; "--targetprofile:netcore"; "--quiet" |]
-    let argv = Array.append baseArgs additionalArgs
-    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr, collectible=true)
 
-    member __.AssemblyReferenceAdded = fsi.AssemblyReferenceAdded
+    let computedProfile =
+        // If we are being executed on the desktop framework (we can tell because the assembly containing int is mscorlib) then profile must be mscorlib otherwise use netcore
+        if typeof<int>.Assembly.GetName().Name = "mscorlib" then "mscorlib"
+        else "netcore"
+
+    let baseArgs = [|
+        typeof<FSharpScript>.Assembly.Location;
+        "--noninteractive";
+        "--targetprofile:" + computedProfile
+        if quiet then "--quiet"
+        match langVersion with
+        | LangVersion.V47 -> "--langversion:4.7"
+        | LangVersion.V50 -> "--langversion:5.0"
+        | LangVersion.Preview -> "--langversion:preview"
+        |]
+
+    let argv = Array.append baseArgs additionalArgs
+
+    let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
     member __.ValueBound = fsi.ValueBound
-
-    member __.ProvideInput = stdin.ProvideInput
-
-    member __.OutputProduced = outputProduced.Publish
-
-    member __.ErrorProduced = errorProduced.Publish
 
     member __.Fsi = fsi
 
@@ -71,11 +68,4 @@ type FSharpScript(?captureInput: bool, ?captureOutput: bool, ?additionalArgs: st
 
     interface IDisposable with
         member __.Dispose() =
-            if captureInput then
-                Console.SetIn(savedInput)
-            if captureOutput then
-                Console.SetOut(savedOutput)
-                Console.SetError(savedError)
-            stdin.Dispose()
-            stdout.Dispose()
-            stderr.Dispose()
+            (fsi :> IDisposable).Dispose()
