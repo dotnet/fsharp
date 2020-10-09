@@ -376,8 +376,8 @@ module rec ILBinaryReaderImpl =
 
             member _.GetPinnedType elementType = elementType
 
-            member this.GetTypeFromSpecification(_, typarOffset, typeSpecHandle, rawTypeKind) =
-                readILTypeFromTypeSpecification this.cenv typarOffset (LanguagePrimitives.EnumOfValue rawTypeKind) typeSpecHandle
+            member this.GetTypeFromSpecification(_, typarOffset, typeSpecHandle, _) =
+                readILTypeFromTypeSpecification this.cenv typarOffset typeSpecHandle
             
         interface ISimpleTypeProvider<ILType> with
 
@@ -456,7 +456,7 @@ module rec ILBinaryReaderImpl =
             member _.GetGenericTypeParameter(_, index) =
                 {
                     IsPinned = false
-                    Type = mkILTyvarTy (uint16 index)
+                    Type = mkILTyvarTy (uint16 (index))
                     DebugInfo = None
                 }
 
@@ -474,10 +474,10 @@ module rec ILBinaryReaderImpl =
                     DebugInfo = None
                 }
 
-            member this.GetTypeFromSpecification(_, typarOffset, typeSpecHandle, rawTypeKind) =
+            member this.GetTypeFromSpecification(_, typarOffset, typeSpecHandle, _) =
                 {
                     IsPinned = false
-                    Type = readILTypeFromTypeSpecification this.cenv typarOffset (LanguagePrimitives.EnumOfValue rawTypeKind) typeSpecHandle
+                    Type = readILTypeFromTypeSpecification this.cenv typarOffset typeSpecHandle
                     DebugInfo = None
                 }
             
@@ -670,7 +670,7 @@ module rec ILBinaryReaderImpl =
         | HandleKind.TypeDefinition ->
             readILTypeFromTypeDefinition cenv sigTypeKind (TypeDefinitionHandle.op_Explicit(handle))
         | HandleKind.TypeSpecification ->
-            readILTypeFromTypeSpecification cenv typarOffset sigTypeKind (TypeSpecificationHandle.op_Explicit(handle))
+            readILTypeFromTypeSpecification cenv typarOffset (TypeSpecificationHandle.op_Explicit(handle))
 
         | _ ->
             failwithf "Invalid Handle Kind: %A" handle.Kind
@@ -761,18 +761,10 @@ module rec ILBinaryReaderImpl =
             cenv.CacheILType(cacheKey, ilType)
             ilType
 
-    let readILTypeFromTypeSpecification (cenv: cenv) typarOffset (sigTypeKind: SignatureTypeKind) (typeSpecHandle: TypeSpecificationHandle) =
-        let cacheKey = struct(typeSpecHandle, sigTypeKind)
-        match cenv.TryGetCachedILType cacheKey with
-        | ValueSome(ilType) -> ilType
-        | _ ->
-            let mdReader = cenv.MetadataReader
-
-            let typeSpec = mdReader.GetTypeSpecification(typeSpecHandle)
-
-            let ilType = typeSpec.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
-            cenv.CacheILType(cacheKey, ilType)
-            ilType
+    let readILTypeFromTypeSpecification (cenv: cenv) typarOffset (typeSpecHandle: TypeSpecificationHandle) =
+        let mdReader = cenv.MetadataReader
+        let typeSpec = mdReader.GetTypeSpecification(typeSpecHandle)
+        typeSpec.DecodeSignature(cenv.SignatureTypeProvider, typarOffset)
 
     let readILGenericParameterDef (cenv: cenv) typarOffset (genParamHandle: GenericParameterHandle) : ILGenericParameterDef =
         let mdReader = cenv.MetadataReader
