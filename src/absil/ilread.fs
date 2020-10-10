@@ -58,7 +58,7 @@ module rec ILBinaryReaderImpl =
         let methDefCache = ConcurrentDictionary()
         let stringCache = ConcurrentDictionary()
 
-        let isCachingEnabled = not canReduceMemory
+        let isCachingEnabled = false //not canReduceMemory
 
         member _.IsMetadataOnly = isMetadataOnly
 
