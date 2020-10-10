@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #if INTERACTIVE
-#load "../utils/ResizeArray.fs" "../absil/illib.fs" "../fsharp/ReferenceResolver.fs"
+#load "../utils/ResizeArray.fs" "absil/illib.fs" "../fsharp/ReferenceResolver.fs"
 #else
 module internal FSharp.Compiler.SimulatedMSBuildReferenceResolver
 #endif
