@@ -1862,17 +1862,27 @@ module rec ILBinaryReaderImpl =
         let peReader = cenv.PEReader
         let mdReader = cenv.MetadataReader
 
-        let methBodyBlock = peReader.GetMethodBody(methDef.RelativeVirtualAddress)
+        let ilCode, ilLocals, isZeroInit, maxStack =
+            if (methDef.ImplAttributes &&& MethodImplAttributes.IL) = MethodImplAttributes.IL || methDef.RelativeVirtualAddress = 0 then
+                {
+                    ILCode.Labels = Dictionary()
+                    ILCode.Instrs = [||]
+                    ILCode.Exceptions = []
+                    ILCode.Locals = []
+                }, [], false, 8
+            else
+                let methBodyBlock = peReader.GetMethodBody(methDef.RelativeVirtualAddress)
 
-        let ilLocals =
-            if methBodyBlock.LocalSignature.IsNil then []
-            else decodeLocalSignature cenv mdReader methBodyBlock.LocalSignature
+                let ilLocals =
+                    if methBodyBlock.LocalSignature.IsNil then []
+                    else decodeLocalSignature cenv mdReader methBodyBlock.LocalSignature
 
-        let ilCode = readILCode cenv typarOffset methDef methBodyBlock
+                let ilCode = readILCode cenv typarOffset methDef methBodyBlock
+                ilCode, ilLocals, methBodyBlock.LocalVariablesInitialized, methBodyBlock.MaxStack
     
         {
-            IsZeroInit = methBodyBlock.LocalVariablesInitialized
-            MaxStack = methBodyBlock.MaxStack
+            IsZeroInit = isZeroInit
+            MaxStack = maxStack
             NoInlining = int (methDef.ImplAttributes &&& MethodImplAttributes.NoInlining) <> 0
             AggressiveInlining = int (methDef.ImplAttributes &&& MethodImplAttributes.AggressiveInlining) <> 0
             Locals = ilLocals
