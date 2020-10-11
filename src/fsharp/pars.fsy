@@ -1496,7 +1496,7 @@ tyconDefn:
   | typeNameInfo 
      { TypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], $1.Range) }
 
-  | typeNameInfo type_opt_equals tyconDefnRhsBlock 
+  | typeNameInfo opt_equals tyconDefnRhsBlock 
      { if not $2 then raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition())
        let nameRange = rhs parseState 1
        let (tcDefRepr:SynTypeDefnRepr), members = $3 nameRange
@@ -5446,7 +5446,7 @@ deprecated_opt_equals:
   | EQUALS      { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () } 
   | /* EMPTY */ {  }
 
-type_opt_equals:
+opt_equals:
   | EQUALS      { true }
   | /* EMPTY */ { false } 
 
