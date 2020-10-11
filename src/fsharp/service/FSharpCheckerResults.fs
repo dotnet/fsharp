@@ -173,9 +173,10 @@ type ExternalDiagnostics(fileName: string) =
                     if infoLine.StartsWith("Error") then 
                         let fragments = infoLine.Split([| "\t" |], StringSplitOptions.RemoveEmptyEntries) 
                         let (|Int32|_|) (s:string) = match Int32.TryParse s with true,res -> Some res | _ -> None
-                        let (|Severity|_|) (s:string) = match s with "warning" -> Some FSharpErrorSeverity.Warning | "error" -> Some FSharpErrorSeverity.Error | _ -> None
+                        let (|Severity|) (s:string) = match s with "warning" -> FSharpErrorSeverity.Warning | _ -> FSharpErrorSeverity.Error
                         match fragments with 
                         | [| _; Int32 startPosLine; Int32 startPosChar; Int32 endPosLine; Int32 endPosChar; Severity severity; message; Int32 errorNum |] -> 
+                            let message = message.Replace("\\n", "\n")
                             let m = mkRange fileName (mkPos startPosLine startPosChar) (mkPos endPosLine endPosChar)
                             let errorInfo = FSharpErrorInfo(m, severity, message, BuildPhaseSubcategory.TypeCheck, errorNum)   
                             yield errorInfo 
@@ -191,9 +192,10 @@ type ExternalDiagnostics(fileName: string) =
                         let (|Int32|_|) (s:string) = match Int32.TryParse s with true,res -> Some res | _ -> None
                         match fragments with 
                         | [| _; Int32 startPosLine; Int32 startPosChar; Int32 endPosLine; Int32 endPosChar; message |] -> 
+                            let message = message.Replace("\\n", "\n")
                             let range2 = mkRange fileName (mkPos startPosLine startPosChar) (mkPos endPosLine endPosChar)
                             if posEq range.Start range2.Start && rangeContainsRange range2 range then 
-                                let messages = message.Split('~') // special new-line character
+                                let messages = message.Split('\n')
                                 yield! messages
                         | _ -> () ]
 
