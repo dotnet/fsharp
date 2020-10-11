@@ -1863,7 +1863,7 @@ module rec ILBinaryReaderImpl =
         let mdReader = cenv.MetadataReader
 
         let ilCode, ilLocals, isZeroInit, maxStack =
-            if (methDef.ImplAttributes &&& MethodImplAttributes.IL) = MethodImplAttributes.IL || methDef.RelativeVirtualAddress = 0 then
+            if methDef.RelativeVirtualAddress = 0 then
                 {
                     ILCode.Labels = Dictionary()
                     ILCode.Instrs = [||]
