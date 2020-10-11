@@ -1904,10 +1904,8 @@ module rec ILBinaryReaderImpl =
             MethodBody.PInvoke(pInvokeMethod)
         elif isAbstract then
             MethodBody.Abstract
-        elif not cenv.IsMetadataOnly then
-            MethodBody.IL(readILMethodBody cenv typarOffset methDef)
         else
-            MethodBody.NotAvailable
+            MethodBody.IL(readILMethodBody cenv typarOffset methDef)
 
     let readILMethodDef (cenv: cenv) (methDefHandle: MethodDefinitionHandle) : ILMethodDef =
         match cenv.TryGetCachedILMethodDef methDefHandle with
