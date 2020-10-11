@@ -1883,14 +1883,10 @@ module rec ILBinaryReaderImpl =
     let readMethodBody (cenv: cenv) typarOffset (methDef: MethodDefinition) =
         let mdReader = cenv.MetadataReader
         let attrs = methDef.Attributes
-        let implAttrs = methDef.ImplAttributes
+       // let implAttrs = methDef.ImplAttributes
 
         let isPInvoke = int (attrs &&& MethodAttributes.PinvokeImpl) <> 0
-        let isAbstract = 
-            int (attrs &&& MethodAttributes.Abstract) <> 0 || 
-            int (implAttrs &&& MethodImplAttributes.InternalCall) <> 0 || 
-            int (implAttrs &&& MethodImplAttributes.Unmanaged) <> 0 ||
-            int (implAttrs &&& MethodImplAttributes.Runtime) <> 0
+        let isAbstract = methDef.RelativeVirtualAddress = 0
 
         if isPInvoke then
             let import = methDef.GetImport()
