@@ -18,4 +18,4 @@ type X | A | B
             FSharpErrorSeverity.Error
             3360 
             (2, 8, 2, 9)
-            "Unexpected symbol in type definition. Did you forget to use the = operator?"
+            "Unexpected token in type definition. Expected '='."
