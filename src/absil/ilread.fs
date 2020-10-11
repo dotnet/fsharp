@@ -1886,15 +1886,14 @@ module rec ILBinaryReaderImpl =
         let implAttrs = methDef.ImplAttributes
 
         let isPInvoke = int (attrs &&& MethodAttributes.PinvokeImpl) <> 0
-        let codeType = int (implAttrs &&& MethodImplAttributes.CodeTypeMask)
+        let isNative = int (implAttrs &&& MethodImplAttributes.Native) <> 0
         let isAbstract = 
-            codeType <> 0x00 || 
             int (attrs &&& MethodAttributes.Abstract) <> 0 || 
             int (implAttrs &&& MethodImplAttributes.InternalCall) <> 0 || 
             int (implAttrs &&& MethodImplAttributes.Unmanaged) <> 0 ||
-            int (implAttrs &&& MethodImplAttributes.IL) <> 0
+            int (implAttrs &&& MethodImplAttributes.Runtime) <> 0
 
-        if codeType = 0x01 && isPInvoke then
+        if isNative then
             MethodBody.Native
         elif isPInvoke then
             let import = methDef.GetImport()
