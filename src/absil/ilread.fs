@@ -1862,27 +1862,17 @@ module rec ILBinaryReaderImpl =
         let peReader = cenv.PEReader
         let mdReader = cenv.MetadataReader
 
-        let ilCode, ilLocals, isZeroInit, maxStack =
-            if methDef.RelativeVirtualAddress = 0 then
-                {
-                    ILCode.Labels = Dictionary()
-                    ILCode.Instrs = [||]
-                    ILCode.Exceptions = []
-                    ILCode.Locals = []
-                }, [], false, 8
-            else
-                let methBodyBlock = peReader.GetMethodBody(methDef.RelativeVirtualAddress)
+        let methBodyBlock = peReader.GetMethodBody(methDef.RelativeVirtualAddress)
 
-                let ilLocals =
-                    if methBodyBlock.LocalSignature.IsNil then []
-                    else decodeLocalSignature cenv mdReader methBodyBlock.LocalSignature
+        let ilLocals =
+            if methBodyBlock.LocalSignature.IsNil then []
+            else decodeLocalSignature cenv mdReader methBodyBlock.LocalSignature
 
-                let ilCode = readILCode cenv typarOffset methDef methBodyBlock
-                ilCode, ilLocals, methBodyBlock.LocalVariablesInitialized, methBodyBlock.MaxStack
+        let ilCode = readILCode cenv typarOffset methDef methBodyBlock
     
         {
-            IsZeroInit = isZeroInit
-            MaxStack = maxStack
+            IsZeroInit = methBodyBlock.LocalVariablesInitialized
+            MaxStack = methBodyBlock.MaxStack
             NoInlining = int (methDef.ImplAttributes &&& MethodImplAttributes.NoInlining) <> 0
             AggressiveInlining = int (methDef.ImplAttributes &&& MethodImplAttributes.AggressiveInlining) <> 0
             Locals = ilLocals
@@ -1897,6 +1887,12 @@ module rec ILBinaryReaderImpl =
 
         let isPInvoke = int (attrs &&& MethodAttributes.PinvokeImpl) <> 0
         let codeType = int (implAttrs &&& MethodImplAttributes.CodeTypeMask)
+        let isAbstract = 
+            codeType <> 0x00 || 
+            int (attrs &&& MethodAttributes.Abstract) <> 0 || 
+            int (implAttrs &&& MethodImplAttributes.InternalCall) <> 0 || 
+            int (implAttrs &&& MethodImplAttributes.Unmanaged) <> 0 ||
+            int (implAttrs &&& MethodImplAttributes.IL) <> 0
 
         if codeType = 0x01 && isPInvoke then
             MethodBody.Native
@@ -1915,7 +1911,7 @@ module rec ILBinaryReaderImpl =
                     CharBestFit = mkPInvokeCharBestFit importAttrs
                 }
             MethodBody.PInvoke(pInvokeMethod)
-        elif codeType <> 0x00 || int (attrs &&& MethodAttributes.Abstract) <> 0 || int (implAttrs &&& MethodImplAttributes.InternalCall) <> 0 || int (implAttrs &&& MethodImplAttributes.Unmanaged) <> 0 then
+        elif isAbstract then
             MethodBody.Abstract
         elif not cenv.IsMetadataOnly then
             MethodBody.IL(readILMethodBody cenv typarOffset methDef)
