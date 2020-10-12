@@ -1288,9 +1288,9 @@ module rec ILBinaryReaderImpl =
     type ILOperandDecoder =
         | NoDecoder
         | InlineNone of (ILOperandPrefixEnv -> ILInstr)
-        | ShortInlineVar of (ILOperandPrefixEnv -> sbyte -> ILInstr)
-        | ShortInlineI of (ILOperandPrefixEnv -> sbyte -> ILInstr)
-        | InlineI of (ILOperandPrefixEnv -> int -> ILInstr)
+        | ShortInlineVar of (ILOperandPrefixEnv -> uint8 -> ILInstr)
+        | ShortInlineI of (ILOperandPrefixEnv -> int8 -> ILInstr)
+        | InlineI of (ILOperandPrefixEnv -> int32 -> ILInstr)
         | InlineI8 of (ILOperandPrefixEnv -> int64 -> ILInstr)
         | ShortInlineR of (ILOperandPrefixEnv -> single -> ILInstr)
         | InlineR of (ILOperandPrefixEnv -> double -> ILInstr)
@@ -1658,7 +1658,7 @@ module rec ILBinaryReaderImpl =
                     match decoder with
                     | NoDecoder -> failwith "Bad IL reading format"
                     | InlineNone(f) -> f prefixes
-                    | ShortInlineVar(f) -> f prefixes (ilReader.ReadSByte())
+                    | ShortInlineVar(f) -> f prefixes (ilReader.ReadByte())
                     | ShortInlineI(f) -> f prefixes (ilReader.ReadSByte())
                     | InlineI(f) -> f prefixes (ilReader.ReadInt32())
                     | InlineI8(f) -> f prefixes (ilReader.ReadInt64())
