@@ -23,6 +23,15 @@ open Internal.Utilities.Collections
 
 #nowarn "9"
 
+type ILReaderMetadataSnapshot = (obj * nativeint * int) 
+type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
+
+[<RequireQualifiedAccess>]
+type MetadataOnlyFlag = Yes | No
+
+[<RequireQualifiedAccess>]
+type ReduceMemoryFlag = Yes | No
+
 [<AutoOpen>]
 module rec ILBinaryReaderImpl =
 
@@ -41,11 +50,10 @@ module rec ILBinaryReaderImpl =
 
     [<Sealed>]
     type cenv(
-                peReader: PEReader, 
+                peReaderOpt: PEReader option, // only set when reading full PE including code etc. for static linking
                 mdReader: MetadataReader,
                 pdbReaderProviderOpt: PdbReaderProvider option,
                 entryPointToken: int,
-                isMetadataOnly: bool,
                 canReduceMemory: bool,
                 sigTyProvider: ISignatureTypeProvider<ILType, MethodTypeVarOffset>,
                 localSigTyProvider: ISignatureTypeProvider<ILLocal, MethodTypeVarOffset>) =
@@ -60,11 +68,9 @@ module rec ILBinaryReaderImpl =
 
         let isCachingEnabled = not canReduceMemory
 
-        member _.IsMetadataOnly = isMetadataOnly
-
         member _.CanReduceMemory = canReduceMemory
 
-        member _.PEReader = peReader
+        member _.TryPEReader = peReaderOpt
 
         member _.MetadataReader = mdReader
 
@@ -1858,8 +1864,7 @@ module rec ILBinaryReaderImpl =
             Locals = [] //let locals = readMethodDebugInfo cenv methDef raw2nextLab - does not work yet and didn't in the original reader
         }
 
-    let readILMethodBody (cenv: cenv) typarOffset (methDef: MethodDefinition) : ILMethodBody =
-        let peReader = cenv.PEReader
+    let readILMethodBody (cenv: cenv) (peReader: PEReader) typarOffset (methDef: MethodDefinition) : ILMethodBody =
         let mdReader = cenv.MetadataReader
 
         let methBodyBlock = peReader.GetMethodBody(methDef.RelativeVirtualAddress)
@@ -1880,32 +1885,44 @@ module rec ILBinaryReaderImpl =
             SourceMarker = None // Note: The original reader never set this.
         }
 
-    let readMethodBody (cenv: cenv) typarOffset (methDef: MethodDefinition) =
+    let lazyReadMethodBody (cenv: cenv) typarOffset (methDef: MethodDefinition) =
         let mdReader = cenv.MetadataReader
         let attrs = methDef.Attributes
+        let implAttrs = methDef.ImplAttributes
 
-        let isPInvoke = int (attrs &&& MethodAttributes.PinvokeImpl) <> 0
-        let isAbstract = methDef.RelativeVirtualAddress = 0
+        let codeType = implAttrs &&& MethodImplAttributes.CodeTypeMask
+        let isPinvoke = int (attrs &&& MethodAttributes.PinvokeImpl) <> 0
+        let isAbstract = int (attrs &&& MethodAttributes.Abstract) <> 0
+        let isInternalCall = int (implAttrs &&& MethodImplAttributes.InternalCall) <> 0
+        let isUnmanaged = int (implAttrs &&& MethodImplAttributes.Unmanaged) <> 0
 
-        if isPInvoke then
-            let import = methDef.GetImport()
-            let importAttrs = import.Attributes
-            let pInvokeMethod : PInvokeMethod =
-                {
-                    Where = readILModuleRefFromModuleReference cenv (mdReader.GetModuleReference(import.Module))
-                    Name = readString cenv import.Name
-                    CallingConv = mkPInvokeCallingConvention importAttrs
-                    CharEncoding = mkPInvokeCharEncoding importAttrs
-                    NoMangle = int (importAttrs &&& MethodImportAttributes.ExactSpelling) <> 0
-                    LastError = int (importAttrs &&& MethodImportAttributes.SetLastError) <> 0
-                    ThrowOnUnmappableChar = mkPInvokeThrowOnUnmappableChar importAttrs
-                    CharBestFit = mkPInvokeCharBestFit importAttrs
-                }
-            MethodBody.PInvoke(pInvokeMethod)
-        elif isAbstract then
-            MethodBody.Abstract
+        if codeType = MethodImplAttributes.Native && isPinvoke then
+            methBodyNative
+        elif isPinvoke then
+            mkMethBodyLazyAux (
+                lazy
+                    let import = methDef.GetImport()
+                    let importAttrs = import.Attributes
+                    let pInvokeMethod : PInvokeMethod =
+                        {
+                            Where = readILModuleRefFromModuleReference cenv (mdReader.GetModuleReference(import.Module))
+                            Name = readString cenv import.Name
+                            CallingConv = mkPInvokeCallingConvention importAttrs
+                            CharEncoding = mkPInvokeCharEncoding importAttrs
+                            NoMangle = int (importAttrs &&& MethodImportAttributes.ExactSpelling) <> 0
+                            LastError = int (importAttrs &&& MethodImportAttributes.SetLastError) <> 0
+                            ThrowOnUnmappableChar = mkPInvokeThrowOnUnmappableChar importAttrs
+                            CharBestFit = mkPInvokeCharBestFit importAttrs
+                        }
+                    MethodBody.PInvoke(pInvokeMethod))
+        elif isInternalCall || isAbstract || isUnmanaged || codeType <> MethodImplAttributes.IL then
+            methBodyAbstract
         else
-            MethodBody.IL(readILMethodBody cenv typarOffset methDef)
+            match cenv.TryPEReader with
+            | Some peReader ->
+                mkMethBodyLazyAux(lazy MethodBody.IL(readILMethodBody cenv peReader typarOffset methDef))
+            | _ ->
+                methBodyNotAvailable
 
     let readILMethodDef (cenv: cenv) (methDefHandle: MethodDefinitionHandle) : ILMethodDef =
         match cenv.TryGetCachedILMethodDef methDefHandle with
@@ -1933,7 +1950,7 @@ module rec ILBinaryReaderImpl =
                     callingConv = mkILCallingConv si.Header,
                     parameters = parameters,
                     ret = ret,
-                    body = mkMethBodyLazyAux (lazy readMethodBody cenv typarOffset methDef),
+                    body = lazyReadMethodBody cenv typarOffset methDef,
                     isEntryPoint = isEntryPoint,
                     genericParams = readILGenericParameterDefs cenv typarOffset (methDef.GetGenericParameters()),
                     securityDeclsStored = readILSecurityDeclsStored cenv (methDef.GetDeclarativeSecurityAttributes()),
@@ -1948,10 +1965,11 @@ module rec ILBinaryReaderImpl =
         let fieldDef = mdReader.GetFieldDefinition(fieldDefHandle)
 
         let data = 
-            if not cenv.IsMetadataOnly && int (fieldDef.Attributes &&& FieldAttributes.HasFieldRVA) <> 0 then
-                cenv.PEReader.GetSectionData(fieldDef.GetRelativeVirtualAddress()).GetContent().ToArray() // We should just return the immutable array instead of making a copy....
+            match cenv.TryPEReader with
+            | Some peReader when int (fieldDef.Attributes &&& FieldAttributes.HasFieldRVA) <> 0 ->
+                peReader.GetSectionData(fieldDef.GetRelativeVirtualAddress()).GetContent().ToArray() // We should just return the immutable array instead of making a copy....
                 |> Some
-            else
+            | _ ->
                 None
 
         let literalValue =
@@ -2251,8 +2269,7 @@ module rec ILBinaryReaderImpl =
             if not typeDef.IsNested then
                 yield readILPreTypeDef cenv typeDefHandle |]
 
-    let readILResources (cenv: cenv) =
-        let peReader = cenv.PEReader
+    let readILResources (cenv: cenv) (peReader: PEReader) =
         let mdReader = cenv.MetadataReader
 
         mdReader.ManifestResources
@@ -2287,7 +2304,7 @@ module rec ILBinaryReaderImpl =
         |> List.ofSeq
         |> mkILResources
 
-    let readModuleDef (peReader: PEReader) isMetadataOnly canReduceMemory (pdbReaderProviderOpt: PdbReaderProvider option) =
+    let readModuleDef (peReader: PEReader) (metadataOnly: MetadataOnlyFlag) (reduceMemory: ReduceMemoryFlag) (pdbReaderProviderOpt: PdbReaderProvider option) =
         let nativeResources = readILNativeResources peReader
 
         let subsys =
@@ -2333,11 +2350,16 @@ module rec ILBinaryReaderImpl =
         let moduleDef = mdReader.GetModuleDefinition()
         let ilModuleName = mdReader.GetString moduleDef.Name
         let ilMetadataVersion = mdReader.MetadataVersion
+
+        let canReduceMemory = reduceMemory = ReduceMemoryFlag.Yes
+        let peReaderOpt = 
+            if canReduceMemory && metadataOnly = MetadataOnlyFlag.Yes then None
+            else Some peReader
     
         let cenv = 
             let sigTyProvider = SignatureTypeProvider()
             let localSigTyProvider = LocalSignatureTypeProvider()
-            let cenv = cenv(peReader, mdReader, pdbReaderProviderOpt, entryPointToken, isMetadataOnly, canReduceMemory, sigTyProvider, localSigTyProvider)
+            let cenv = cenv(peReaderOpt, mdReader, pdbReaderProviderOpt, entryPointToken, canReduceMemory, sigTyProvider, localSigTyProvider)
             sigTyProvider.cenv <- cenv
             localSigTyProvider.cenv <- cenv
             cenv
@@ -2372,17 +2394,8 @@ module rec ILBinaryReaderImpl =
           PhysicalAlignment = alignPhys
           ImageBase = imageBaseReal
           MetadataVersion = ilMetadataVersion
-          Resources = readILResources cenv
+          Resources = readILResources cenv peReader
         }, ilAsmRefs
-
-type ILReaderMetadataSnapshot = (obj * nativeint * int) 
-type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
-
-[<RequireQualifiedAccess>]
-type MetadataOnlyFlag = Yes | No
-
-[<RequireQualifiedAccess>]
-type ReduceMemoryFlag = Yes | No
 
 type ILReaderOptions =
     { pdbDirPath: string option
@@ -2422,7 +2435,7 @@ let OpenILModuleReaderAux (memory: ReadOnlyByteMemory) (opts: ILReaderOptions) =
             match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
             | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
             | _ -> None)
-    let ilModuleDef, ilAsmRefs = readModuleDef peReader (opts.metadataOnly = MetadataOnlyFlag.Yes) (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes) pdbReaderProviderOpt
+    let ilModuleDef, ilAsmRefs = readModuleDef peReader opts.metadataOnly opts.reduceMemoryUsage pdbReaderProviderOpt
     {   new Object() with
     
             override _.Finalize() =
