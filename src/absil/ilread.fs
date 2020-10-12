@@ -1772,9 +1772,9 @@ module rec ILBinaryReaderImpl =
 
     // --------------------------------------------------------------------
 
-    let decodeLocalSignature (cenv: cenv) (mdReader: MetadataReader) localSignature =
+    let decodeLocalSignature (cenv: cenv) (mdReader: MetadataReader) typarOffset localSignature =
         let si = mdReader.GetStandaloneSignature localSignature
-        si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, 0)
+        si.DecodeLocalSignature(cenv.LocalSignatureTypeProvider, typarOffset)
         |> List.ofSeq
 
     let readILLocalDebugInfo (pdbReader: MetadataReader) (debugInfoHandle: MethodDebugInformationHandle) (raw2nextLab: int -> ILCodeLabel) =
@@ -1854,7 +1854,7 @@ module rec ILBinaryReaderImpl =
             Labels = lab2pc
             Instrs = instrs
             Exceptions = exceptions
-            Locals = [] //let locals = readMethodDebugInfo cenv methDef raw2nextLab - does not work yet and didn't in the original reader
+            Locals = [] // readMethodDebugInfo cenv methDef raw2nextLab - does not work yet and didn't in the original reader
         }
 
     let readILMethodBody (cenv: cenv) (peReader: PEReader) typarOffset (methDef: MethodDefinition) : ILMethodBody =
@@ -1864,7 +1864,7 @@ module rec ILBinaryReaderImpl =
 
         let ilLocals =
             if methBodyBlock.LocalSignature.IsNil then []
-            else decodeLocalSignature cenv mdReader methBodyBlock.LocalSignature
+            else decodeLocalSignature cenv mdReader typarOffset methBodyBlock.LocalSignature
 
         let ilCode = readILCode cenv typarOffset methDef methBodyBlock
     
