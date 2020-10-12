@@ -1690,11 +1690,11 @@ module rec ILBinaryReaderImpl =
                         f prefixes (ilMethSpec.MethodRef.CallingSignature, ilVarArgs)
 
                     | ShortInlineBrTarget(f) -> 
-                        let value = ilReader.ReadSByte()
-                        f prefixes (rawToLabel (ilReader.Offset + int value))
+                        let offset = ilReader.ReadSByte()
+                        f prefixes (rawToLabel (ilReader.Offset + int offset))
                     | InlineBrTarget(f) -> 
-                        let value = ilReader.ReadInt32()
-                        f prefixes (rawToLabel (ilReader.Offset + value))
+                        let offset = ilReader.ReadInt32()
+                        f prefixes (rawToLabel (ilReader.Offset + offset))
 
                     | InlineSwitch(f) ->
                         let deltas = Array.zeroCreate (ilReader.ReadInt32())
