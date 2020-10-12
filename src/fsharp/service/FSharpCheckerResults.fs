@@ -183,7 +183,7 @@ type ExternalDiagnostics(fileName: string) =
                         | _ -> () |]
 
     // range is the range of the symbol use
-    member __.ReadExternalToolTips (range: range) = 
+    member __.ReadExternalToolTips (pos: pos) = 
         [   if FileSystem.SafeExists infoFile && not (FileSystem.SafeExists lockFile) then
                 let infoLines = File.ReadAllLines infoFile
                 for infoLine in infoLines do 
@@ -194,7 +194,7 @@ type ExternalDiagnostics(fileName: string) =
                         | [| _; Int32 startPosLine; Int32 startPosChar; Int32 endPosLine; Int32 endPosChar; message |] -> 
                             let message = message.Replace("\\n", "\n")
                             let range2 = mkRange fileName (mkPos startPosLine startPosChar) (mkPos endPosLine endPosChar)
-                            if posEq range.Start range2.Start && rangeContainsRange range2 range then 
+                            if rangeContainsPos range2 pos then 
                                 let messages = message.Split('\n')
                                 yield! messages
                         | _ -> () ]
@@ -1176,9 +1176,8 @@ type internal TypeCheckInfo
                         | Some(items, denv, _, m) ->
                             let itemsL = [| for item in items -> FormatStructuredDescriptionOfItem false infoReader m denv item.ItemWithInst |]
                             let extraLines = 
-                                // reduce the range to just cover the name.
-                                let m = mkRange m.FileName m.Start (mkPos m.StartLine colAtEndOfNames)
-                                ExternalDiagnostics(mainInputFileName).ReadExternalToolTips(m) 
+                                let p = mkPos m.StartLine colAtEndOfNames
+                                ExternalDiagnostics(mainInputFileName).ReadExternalToolTips(p) 
                                 |> List.map (FSharp.Compiler.Layout.TaggedTextOps.tagText >> wordL)
                                 |> Layout.aboveListL
                             match Array.toList itemsL with 
