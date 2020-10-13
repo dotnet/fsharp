@@ -2477,24 +2477,17 @@ let OpenILModuleReaderAux (peReader: PEReader) (opts: ILReaderOptions) metadataS
     aliveReaders.Add(mdReader, reader)
     reader
 
-let OpenILModuleReaderFromBytes (_fileNameForDebugOutput: string) assemblyContents (opts: ILReaderOptions) =
-    let memory = ByteMemory.FromArray assemblyContents
-    let options =
-        if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && opts.metadataOnly = MetadataOnlyFlag.Yes then
-            PEStreamOptions.Default
-        else
-            PEStreamOptions.PrefetchEntireImage
-    let peReader = new PEReader(memory.AsStream(), options)
+let OpenILModuleReaderFromBytes (_fileNameForDebugOutput: string) (assemblyContents: byte []) (opts: ILReaderOptions) =
+    let peReader = new PEReader(new MemoryStream(assemblyContents), PEStreamOptions.PrefetchEntireImage)
     OpenILModuleReaderAux peReader opts None
 
 let OpenILModuleReaderFromFile fileName (opts: ILReaderOptions) metadataSnapshotOpt =
-    let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=true)
-    let options =
+    let peReader =
         if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && opts.metadataOnly = MetadataOnlyFlag.Yes then
-            PEStreamOptions.Default
+            let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=true)
+            new PEReader(memory.AsStream(), PEStreamOptions.Default)
         else
-            PEStreamOptions.PrefetchEntireImage
-    let peReader = new PEReader(memory.AsStream(), options)
+            new PEReader(new MemoryStream(File.ReadAllBytes(fileName)), PEStreamOptions.PrefetchEntireImage)
     OpenILModuleReaderAux peReader opts metadataSnapshotOpt
 
 type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * writeStamp: DateTime * bool * ReduceMemoryFlag * MetadataOnlyFlag with
