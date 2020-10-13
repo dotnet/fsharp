@@ -61,12 +61,11 @@ module rec ILBinaryReaderImpl =
         let typeDefCache = ConcurrentDictionary()
         let typeRefCache = ConcurrentDictionary()
         let asmRefCache = ConcurrentDictionary()
-        let memberRefToILMethSpecCache = ConcurrentDictionary()
         let methDefToILMethSpecCache = ConcurrentDictionary()
         let methDefCache = ConcurrentDictionary()
         let stringCache = ConcurrentDictionary()
 
-        let isCachingEnabled = false //not canReduceMemory
+        let isCachingEnabled = not canReduceMemory
 
         member _.CanReduceMemory = canReduceMemory
 
@@ -93,10 +92,6 @@ module rec ILBinaryReaderImpl =
         member _.CacheILAssemblyRef(key: AssemblyReferenceHandle, ilAsmRef: ILAssemblyRef) =
             asmRefCache.[key] <- ilAsmRef
 
-        member _.CacheILMethodSpec(key: MemberReferenceHandle, ilMethSpec: ILMethodSpec) =
-            if isCachingEnabled then
-                memberRefToILMethSpecCache.[key] <- ilMethSpec
-
         member _.CacheILMethodSpec(key: MethodDefinitionHandle, ilMethSpec: ILMethodSpec) =
             if isCachingEnabled then
                 methDefToILMethSpecCache.[key] <- ilMethSpec
@@ -121,11 +116,6 @@ module rec ILBinaryReaderImpl =
         member _.TryGetCachedILAssemblyRef(key: AssemblyReferenceHandle) =
             match asmRefCache.TryGetValue(key) with
             | true, ilAsmRef -> ValueSome(ilAsmRef)
-            | _ -> ValueNone
-
-        member _.TryGetCachedILMethodSpec(key) =
-            match memberRefToILMethSpecCache.TryGetValue(key) with
-            | true, ilMethSpec -> ValueSome(ilMethSpec)
             | _ -> ValueNone
 
         member _.TryGetCachedILMethodSpec(key) =
@@ -538,14 +528,35 @@ module rec ILBinaryReaderImpl =
                     Type =  mkILArr1DTy elementType.Type
                     DebugInfo = None
                 }
+
+    let rec seekCountUtf8String offset length (addr: nativeptr<byte>) n = 
+        if offset >= length then
+            failwith "Unable to read string from metadata."
+
+        let c = NativePtr.read addr |> int
+        if c = 0 then n 
+        else seekCountUtf8String (offset + 1) length (NativePtr.add addr 1) (n + 1)
+    
+    let seekReadUTF8String offset length addr = 
+        let count = seekCountUtf8String offset length addr 0
+        if count = 0 then
+            String.Empty
+        else
+            System.Text.Encoding.UTF8.GetString(addr, count)
                 
     let readString (cenv: cenv) (stringHandle: StringHandle) =
-        match cenv.TryGetCachedString stringHandle with
-        | ValueSome str -> str
-        | _ ->
-            let str = cenv.MetadataReader.GetString stringHandle
-            cenv.CacheString(stringHandle, str)
-            str
+        if stringHandle.IsNil then
+            String.Empty
+        else
+            match cenv.TryGetCachedString stringHandle with
+            | ValueSome str -> str
+            | _ ->
+                let str = 
+                    try cenv.MetadataReader.GetString(stringHandle)
+                    with
+                    | _ -> String.Empty
+                cenv.CacheString(stringHandle, str)
+                str
 
     let readTypeName (cenv: cenv) (namespaceHandle: StringHandle) (nameHandle: StringHandle) =
         let name = readString cenv nameHandle
@@ -2297,7 +2308,7 @@ module rec ILBinaryReaderImpl =
         |> List.ofSeq
         |> mkILResources
 
-    let readModuleDef (peReader: PEReader) (metadataOnly: MetadataOnlyFlag) (reduceMemory: ReduceMemoryFlag) (pdbReaderProviderOpt: PdbReaderProvider option) =
+    let readModuleDef (peReader: PEReader) (peReaderCaptured: PEReader option) (reduceMemory: ReduceMemoryFlag) (pdbReaderProviderOpt: PdbReaderProvider option) (mdReader: MetadataReader) =
         let nativeResources = readILNativeResources peReader
 
         let subsys =
@@ -2339,20 +2350,14 @@ module rec ILBinaryReaderImpl =
 
         let entryPointToken = peReader.PEHeaders.CorHeader.EntryPointTokenOrRelativeVirtualAddress
 
-        let mdReader = peReader.GetMetadataReader()
         let moduleDef = mdReader.GetModuleDefinition()
         let ilModuleName = mdReader.GetString moduleDef.Name
         let ilMetadataVersion = mdReader.MetadataVersion
-
-        let canReduceMemory = reduceMemory = ReduceMemoryFlag.Yes
-        let peReaderOpt = 
-            if canReduceMemory && metadataOnly = MetadataOnlyFlag.Yes then None
-            else Some peReader
     
         let cenv = 
             let sigTyProvider = SignatureTypeProvider()
             let localSigTyProvider = LocalSignatureTypeProvider()
-            let cenv = cenv(peReaderOpt, mdReader, pdbReaderProviderOpt, entryPointToken, canReduceMemory, sigTyProvider, localSigTyProvider)
+            let cenv = cenv(peReaderCaptured, mdReader, pdbReaderProviderOpt, entryPointToken, (reduceMemory = ReduceMemoryFlag.Yes), sigTyProvider, localSigTyProvider)
             sigTyProvider.cenv <- cenv
             localSigTyProvider.cenv <- cenv
             cenv
@@ -2419,38 +2424,70 @@ let defaultStatistics =
 
 let GetStatistics() = defaultStatistics
 
-let OpenILModuleReaderAux (memory: ReadOnlyByteMemory) (opts: ILReaderOptions) =
+type ILModuleReaderImpl(peReaderCaptured: PEReader option, holder: obj, ilModuleDef, ilAsmRefs, dispose) =
+
+    member _.Holder = holder
+
+    override _.Finalize() =
+        match peReaderCaptured with
+        | Some peReader -> peReader.Dispose()
+        | _ -> ()
+
+    interface ILModuleReader with
+
+        member _.ILModuleDef = ilModuleDef
+
+        member _.ILAssemblyRefs = ilAsmRefs
+
+    interface IDisposable with
+
+        member _.Dispose() = dispose ()
+
+let aliveReaders = System.Runtime.CompilerServices.ConditionalWeakTable<MetadataReader, ILModuleReader>()
+
+let OpenILModuleReaderAux (memory: ReadOnlyByteMemory) (opts: ILReaderOptions) metadataSnapshotOpt =
     let peReader = new PEReader(memory.AsStream())
+    let peReaderCaptured, mdReader, snapshotHolder =
+        if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && opts.metadataOnly = MetadataOnlyFlag.Yes then
+            match metadataSnapshotOpt with
+            | Some(obj, start, len) ->
+                None, MetadataReader(NativePtr.ofNativeInt start, len), Some obj
+            | _ ->
+                Some peReader, peReader.GetMetadataReader(), None
+        else
+            Some peReader, peReader.GetMetadataReader(), None
+
     let pdbReaderProviderOpt = 
         opts.pdbDirPath
         |> Option.bind (fun pdbDirPath ->
-            let streamProvider = System.Func<_,_>(fun pdbPath -> ByteMemory.FromFile(pdbPath, FileAccess.Read, canShadowCopy=true).AsReadOnlyStream())
+            let streamProvider = System.Func<_,_>(fun pdbPath -> ByteMemory.FromFile(pdbPath, FileAccess.Read, canShadowCopy=false).AsReadOnlyStream())
             match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
             | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
             | _ -> None)
-    let ilModuleDef, ilAsmRefs = readModuleDef peReader opts.metadataOnly opts.reduceMemoryUsage pdbReaderProviderOpt
-    {   new Object() with
-    
-            override _.Finalize() =
-                peReader.Dispose()
+    let ilModuleDef, ilAsmRefs = readModuleDef peReader peReaderCaptured opts.reduceMemoryUsage pdbReaderProviderOpt mdReader
 
-        interface ILModuleReader with
+    let disposePdbReader = fun () -> match pdbReaderProviderOpt with Some (provider, _) -> provider.Dispose() | _ -> ()
+    let dispose =
+        // If we are not capturing the PEReader, then we will dispose of it.
+        if peReaderCaptured.IsNone then
+            disposePdbReader ()
+            peReader.Dispose()
+            id
+        else
+            disposePdbReader
 
-            member _.ILModuleDef = ilModuleDef
-
-            member _.ILAssemblyRefs = ilAsmRefs
-
-        interface IDisposable with
-
-            member _.Dispose() = () }
+    let holder = (snapshotHolder, mdReader)
+    let reader = new ILModuleReaderImpl(peReaderCaptured, holder, ilModuleDef, ilAsmRefs, dispose) :> ILModuleReader
+    aliveReaders.Add(mdReader, reader)
+    reader
 
 let OpenILModuleReaderFromBytes (_fileNameForDebugOutput: string) assemblyContents opts =
     let memory = ByteMemory.FromArray assemblyContents
-    OpenILModuleReaderAux (memory.AsReadOnly()) opts
+    OpenILModuleReaderAux (memory.AsReadOnly()) opts None
 
-let OpenILModuleReaderFromFile fileName opts =
-    let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=true)
-    OpenILModuleReaderAux (memory.AsReadOnly()) opts
+let OpenILModuleReaderFromFile fileName opts metadataSnapshotOpt =
+    let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=false)
+    OpenILModuleReaderAux (memory.AsReadOnly()) opts metadataSnapshotOpt
 
 type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * writeStamp: DateTime * bool * ReduceMemoryFlag * MetadataOnlyFlag with
 
@@ -2479,7 +2516,7 @@ let ClearAllILModuleReaderCache () =
     ilModuleReaderCache2.Clear()
 
 let OpenILModuleReader fileName opts =
-    let (ILModuleReaderCacheKey (fullPath,_,_,_,_) as key) = 
+    let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_) as key) = 
         let fullPath = FileSystem.GetFullPathShim fileName
         let writeTime = FileSystem.GetLastWriteTimeShim fileName
         ILModuleReaderCacheKey (fullPath, writeTime, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
@@ -2507,7 +2544,13 @@ let OpenILModuleReader fileName opts =
     | true, weak when weak.TryGetTarget(&res) -> res
     | _ ->
 
-    let ilModuleReader = OpenILModuleReaderFromFile fullPath opts
+    let metadataSnapshotOpt =
+        if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && opts.metadataOnly = MetadataOnlyFlag.Yes then
+            opts.tryGetMetadataSnapshot(fullPath, writeStamp)
+        else
+            None
+
+    let ilModuleReader = OpenILModuleReaderFromFile fullPath opts metadataSnapshotOpt
     ilModuleReaderCache1Lock.AcquireLock (fun ltok -> ilModuleReaderCache1.Put(ltok, key, ilModuleReader))
     ilModuleReaderCache2.[key] <- System.WeakReference<_>(ilModuleReader)
     ilModuleReader
