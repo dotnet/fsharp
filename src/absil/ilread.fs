@@ -2456,7 +2456,7 @@ let OpenILModuleReaderAux (peReader: PEReader) (opts: ILReaderOptions) metadataS
     let pdbReaderProviderOpt = 
         opts.pdbDirPath
         |> Option.bind (fun pdbDirPath ->
-            let streamProvider = System.Func<_,_>(fun pdbPath -> ByteMemory.FromFile(pdbPath, FileAccess.Read, canShadowCopy=false).AsReadOnlyStream())
+            let streamProvider = System.Func<_,_>(fun pdbPath -> ByteMemory.FromFile(pdbPath, FileAccess.Read, canShadowCopy=true).AsReadOnlyStream())
             match peReader.TryOpenAssociatedPortablePdb(pdbDirPath, streamProvider) with
             | true, pdbReaderProvider, pdbPath -> Some(pdbReaderProvider, pdbPath)
             | _ -> None)
@@ -2488,7 +2488,7 @@ let OpenILModuleReaderFromBytes (_fileNameForDebugOutput: string) assemblyConten
     OpenILModuleReaderAux peReader opts None
 
 let OpenILModuleReaderFromFile fileName (opts: ILReaderOptions) metadataSnapshotOpt =
-    let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=false)
+    let memory = ByteMemory.FromFile(fileName, FileAccess.Read, canShadowCopy=true)
     let options =
         if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && opts.metadataOnly = MetadataOnlyFlag.Yes then
             PEStreamOptions.Default
