@@ -551,10 +551,7 @@ module rec ILBinaryReaderImpl =
             match cenv.TryGetCachedString stringHandle with
             | ValueSome str -> str
             | _ ->
-                let str = 
-                    try cenv.MetadataReader.GetString(stringHandle)
-                    with
-                    | _ -> String.Empty
+                let str = cenv.MetadataReader.GetString(stringHandle)
                 cenv.CacheString(stringHandle, str)
                 str
 
