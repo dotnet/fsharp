@@ -65,6 +65,7 @@
       https://api.nuget.org/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vssdk/nuget/v3/index.json;
       https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-impl/nuget/v3/index.json;
+      <!-- https://pkgs.dev.azure.com/azure-public/vside/_packaging/vs-buildservices/nuget/v3/index.json; -->
     </RestoreSources>
     
     <!-- System.* packages -->
@@ -116,7 +117,7 @@
     <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
     <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
 
-    <!-- Visual Studio packages -->
+    <!-- Visual Studio editor packages -->
     <VisualStudioEditorPackagesVersion>16.8.39</VisualStudioEditorPackagesVersion>
     <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
     <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
@@ -129,14 +130,14 @@
     <MicrosoftVisualStudioTextDataVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextDataVersion>
     <MicrosoftVisualStudioTextInternalVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextInternalVersion>
 
-
+    <!-- Visual Studio language+shell packages -->
     <VisualStudioLanguageAndShellVersion>16.7.30329.88</VisualStudioLanguageAndShellVersion>
     <MicrosoftVisualStudioShell150Version>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioShell150Version>
     <MicrosoftVisualStudioShellDesignVersion>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioShellDesignVersion>
     <MicrosoftVisualStudioShellFrameworkVersion>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>$(VisualStudioLanguageAndShellVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
 
-    
+    <!-- Visual Studio shell+interop packages -->
     <VisualStudioLanguageAndShellInteropVersion>16.7.30328.74</VisualStudioLanguageAndShellInteropVersion>
     <MicrosoftVisualStudioShellInterop80Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop80Version>
     <MicrosoftVisualStudioShellInterop90Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioShellInterop90Version>
@@ -150,10 +151,9 @@
     <MicrosoftVisualStudioTextManagerInterop100Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop100Version>
     <MicrosoftVisualStudioTextManagerInterop120Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop120Version>
     <MicrosoftVisualStudioOLEInteropVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioOLEInteropVersion>
-
-    <MicrosoftServiceHubFrameworkVersion>2.6.92</MicrosoftServiceHubFrameworkVersion>
-    <MicrosoftVisualStudioEditorImplementationVersion>16.8.39</MicrosoftVisualStudioEditorImplementationVersion>
-
+    
+    <!-- Misc. Visual Studio packages -->
+    <MicrosoftVisualStudioRpcContractsVersion>16.8.30</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualStudioComponentModelHostVersion>16.6.255</MicrosoftVisualStudioComponentModelHostVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>14.0.25420</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
     <EnvDTE80Version>8.0.1</EnvDTE80Version>
@@ -180,10 +180,12 @@
     <VSSDKVSLangProj8Version>8.0.4</VSSDKVSLangProj8Version>
     <VSSDKVSLangProj11Version>11.0.4</VSSDKVSLangProj11Version>
     <VSSDKVSHelpVersion>7.0.4</VSSDKVSHelpVersion>
+
     <!-- setup packages -->
     <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
     <MicroBuildCoreSentinelVersion>1.0.0</MicroBuildCoreSentinelVersion>
     <MicroBuildPluginsSwixBuildVersion>1.0.147</MicroBuildPluginsSwixBuildVersion>
+
     <!-- other packages -->
     <FsCheckVersion>3.0.0-alpha4</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
@@ -202,7 +204,7 @@
     <NunitXmlTestLoggerVersion>2.1.41</NunitXmlTestLoggerVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
     <StrawberryPerlVersion>5.28.0.1</StrawberryPerlVersion>
-    <StreamJsonRpcVersion>2.6.104</StreamJsonRpcVersion>
+    <StreamJsonRpcVersion>2.6.113</StreamJsonRpcVersion>
     <XUnitVersion>2.4.1</XUnitVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>
   </PropertyGroup>

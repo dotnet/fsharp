@@ -50,14 +50,9 @@
   </ItemGroup>
 
   <ItemGroup>
-
-	<PackageReference Include="Microsoft.VisualStudio.LiveShare" Version="1.1.57" />
-	<PackageReference Include="Microsoft.Internal.VisualStudio.Shell.Embeddable" Version="16.5.29527.48-pre" />
-	<PackageReference Include="Microsoft.Internal.VisualStudio.Shell.Interop.16.DesignTime" Version="$(MicrosoftVisualStudioShellInterop16DesignTimeVersion)" />
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80Version)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesVersion)" />
-    <PackageReference Include="Microsoft.VisualStudio.Editor.Implementation" Version="$(MicrosoftVisualStudioEditorImplementationVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.GraphModel" Version="$(MicrosoftVisualStudioGraphModelVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.ImageCatalog" Version="$(MicrosoftVisualStudioImageCatalogVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" Version="$(MicrosoftVisualStudioPlatformVSEditorVersion)" />
