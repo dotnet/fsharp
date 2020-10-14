@@ -151,12 +151,12 @@
     <MicrosoftVisualStudioTextManagerInterop100Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop100Version>
     <MicrosoftVisualStudioTextManagerInterop120Version>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioTextManagerInterop120Version>
     <MicrosoftVisualStudioOLEInteropVersion>$(VisualStudioLanguageAndShellInteropVersion)</MicrosoftVisualStudioOLEInteropVersion>
+    <EnvDTE80Version>$(VisualStudioLanguageAndShellInteropVersion)</EnvDTE80Version>
     
     <!-- Misc. Visual Studio packages -->
     <MicrosoftVisualStudioRpcContractsVersion>16.8.30</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualStudioComponentModelHostVersion>16.6.255</MicrosoftVisualStudioComponentModelHostVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>14.0.25420</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
-    <EnvDTE80Version>8.0.1</EnvDTE80Version>
     <MicrosoftVisualStudioDesignerInterfacesVersion>1.1.4322</MicrosoftVisualStudioDesignerInterfacesVersion>
     <MicrosoftVisualStudioGraphModelVersion>16.0.28226-alpha</MicrosoftVisualStudioGraphModelVersion>
     <MicrosoftVisualStudioImagingVersion>16.7.30329.63</MicrosoftVisualStudioImagingVersion>
@@ -168,7 +168,7 @@
     <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
-    <MicrosoftVisualStudioShellInterop160DesignTimeVersion>16.0.28001.4001</MicrosoftVisualStudioShellInterop160DesignTimeVersion>
+    <MicrosoftVisualStudioShellInterop160DesignTimeVersion>16.0.1</MicrosoftVisualStudioShellInterop160DesignTimeVersion>
     <MicrosoftVisualStudioShellInterop16DesignTimeVersion>16.0.28924.11111</MicrosoftVisualStudioShellInterop16DesignTimeVersion>
     <MicrosoftVisualStudioThreadingVersion>16.8.7-alpha</MicrosoftVisualStudioThreadingVersion>
     <MicrosoftVisualStudioUtilitiesVersion>16.7.30329.38</MicrosoftVisualStudioUtilitiesVersion>
