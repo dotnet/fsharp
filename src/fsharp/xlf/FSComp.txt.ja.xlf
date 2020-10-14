@@ -4052,6 +4052,16 @@
         <target state="translated">メンバーとローカル クラスの束縛はどちらも '{0}' という名前を使用しています</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsErrorInReturnForLetIncorrectIndentation">
+        <source>Error in the return expression for this 'let'. Possible incorrect indentation.</source>
+        <target state="new">Error in the return expression for this 'let'. Possible incorrect indentation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcTypeAbbreviationsCannotHaveInterfaceDeclaration">
         <source>Type abbreviations cannot have interface declarations</source>
         <target state="translated">型略称にインターフェイスの宣言を含めることはできません</target>
