@@ -56,14 +56,14 @@
   <!-- version number assignment -->
   <PropertyGroup Condition="'$(UseFSharpPackageVersion)' == 'true'">
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
-    <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(FSCoreVersion)</AssemblyVersion >
+    <AssemblyVersion>$(FSCoreVersion)</AssemblyVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(UseFSharpPackageVersion)' != 'true'">
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpCompilerServiceVersion)' == 'true'">$(FSharpCompilerServicePackageVersion)</VersionPrefix>
-    <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix).0</AssemblyVersion>
+    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
   <PropertyGroup>
