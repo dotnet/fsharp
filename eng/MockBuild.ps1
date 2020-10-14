@@ -10,6 +10,6 @@ catch {
     Write-Host $_
     Write-Host $_.Exception
     Write-Host $_.ScriptStackTrace
-    Write-PipelineTelemetryError -Category "Build" -Message "Error doing mock official build"
-    ExitWithExitCode 1
+    Write-Host "##[error](NETCORE_ENGINEERING_TELEMETRY=Build) Error doing mock official build."
+    exit 1
 }
