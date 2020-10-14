@@ -1664,7 +1664,8 @@ module internal VsActual =
             if File.Exists(fullPath) then
                 list.Add(new AssemblyCatalog(fullPath))
             else
-                failwith <| sprintf "unable to find assembly %s" p
+                
+                failwith <| sprintf "unable to find assembly '%s' in location '%s'" p thisAssemblyDir
 
         list.Add(new AssemblyCatalog(thisAssembly))
         [ "Microsoft.VisualStudio.Text.Data.dll"
