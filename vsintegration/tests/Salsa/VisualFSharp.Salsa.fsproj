@@ -69,6 +69,7 @@
     <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop.8.0" Version="$(MicrosoftVisualStudioTextManagerInterop80Version)" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Utilities" Version="$(MicrosoftVisualStudioUtilitiesVersion)" />
+	<PackageReference Include="Microsoft.VisualStudio.Editor" Version="16.8.8" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" />

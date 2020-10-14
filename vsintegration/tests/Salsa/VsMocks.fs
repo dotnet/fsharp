@@ -1674,7 +1674,7 @@ module internal VsActual =
           "Microsoft.VisualStudio.Text.UI.Wpf.dll"
           "Microsoft.VisualStudio.Threading.dll"
           "Microsoft.VisualStudio.Platform.VSEditor.dll"
-          "Microsoft.VisualStudio.Editor.Implementation.dll"
+          "Microsoft.VisualStudio.Editor.dll"
           "Microsoft.VisualStudio.ComponentModelHost.dll"
           "Microsoft.VisualStudio.Shell.15.0.dll" ]
         |> List.iter add
