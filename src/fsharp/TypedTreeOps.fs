@@ -3918,11 +3918,11 @@ module DebugPrint =
                 atomL x --- (wordL(tagText ":>") ^^ typeL ty) 
             | Expr.Op (TOp.Reraise, [_], [], _) -> 
                 wordL(tagText "Rethrow!")
-            | Expr.Op (TOp.ILAsm (a, tys), tyargs, args, _) -> 
-                let instrs = a |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
+            | Expr.Op (TOp.ILAsm (instrs, retTypes), tyargs, args, _) -> 
+                let instrs = instrs |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
                 let instrs = leftL(tagText "(#") ^^ instrs ^^ rightL(tagText "#)")
                 (appL g instrs tyargs args ---
-                    wordL(tagText ":") ^^ spaceListL (List.map typeAtomL tys)) |> wrap
+                    wordL(tagText ":") ^^ spaceListL (List.map typeAtomL retTypes)) |> wrap
             | Expr.Op (TOp.LValueOp (lvop, vr), _, args, _) -> 
                 (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
             | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, _), tyargs, args, _) ->
@@ -4759,8 +4759,8 @@ and accFreeInOp opts op acc =
         let acc = accUsesFunctionLocalConstructs (kind = RecdExprIsObjInit) acc
         (accUsedRecdOrUnionTyconRepr opts tcref.Deref (accFreeTyvars opts accFreeTycon tcref acc)) 
 
-    | TOp.ILAsm (_, tys) ->  
-        accFreeVarsInTys opts tys acc
+    | TOp.ILAsm (_, retTypes) ->  
+        accFreeVarsInTys opts retTypes acc
     
     | TOp.Reraise -> 
         accUsesRethrow true acc
@@ -5314,10 +5314,10 @@ and remapOp tmenv op =
     | TOp.UnionCaseFieldGet (ucref, n) -> TOp.UnionCaseFieldGet (remapUnionCaseRef tmenv.tyconRefRemap ucref, n)
     | TOp.UnionCaseFieldGetAddr (ucref, n, readonly) -> TOp.UnionCaseFieldGetAddr (remapUnionCaseRef tmenv.tyconRefRemap ucref, n, readonly)
     | TOp.UnionCaseFieldSet (ucref, n) -> TOp.UnionCaseFieldSet (remapUnionCaseRef tmenv.tyconRefRemap ucref, n)
-    | TOp.ILAsm (instrs, tys) -> 
-        let tys2 = remapTypes tmenv tys
-        if tys === tys2 then op else
-        TOp.ILAsm (instrs, tys2)
+    | TOp.ILAsm (instrs, retTypes) -> 
+        let retTypes2 = remapTypes tmenv retTypes
+        if retTypes === retTypes2 then op else
+        TOp.ILAsm (instrs, retTypes2)
     | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitInfo tmenv traitInfo)
     | TOp.LValueOp (kind, lvr) -> TOp.LValueOp (kind, remapValRef tmenv lvr)
     | TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, ilMethRef, enclTypeInst, methInst, retTypes) -> 

@@ -2367,8 +2367,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
             GenSetStaticField cenv cgbuf eenv (f, tyargs, e2, m) sequel
         | TOp.Tuple tupInfo, _, _ -> 
             GenAllocTuple cenv cgbuf eenv (tupInfo, args, tyargs, m) sequel
-        | TOp.ILAsm (code, returnTys), _, _ ->  
-            GenAsmCode cenv cgbuf eenv (code, tyargs, args, returnTys, m) sequel 
+        | TOp.ILAsm (instrs, retTypes), _, _ ->  
+            GenAsmCode cenv cgbuf eenv (instrs, tyargs, args, retTypes, m) sequel 
         | TOp.While (sp, _), [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _)], [] -> 
             GenWhileLoop cenv cgbuf eenv (sp, e1, e2, m) sequel 
         | TOp.For (spStart, dir), [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], [] -> 

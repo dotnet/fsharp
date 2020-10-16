@@ -579,7 +579,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let raiseExpr = mkCallRaise g m (tyOfExpr g expr) arg1
             ConvExpr cenv env raiseExpr
 
-        | TOp.ILAsm (_il, _), _, _                         ->
+        | TOp.ILAsm (_, _), _, _                         ->
             wfail(Error(FSComp.SR.crefQuotationsCantContainInlineIL(), m))
 
         | TOp.ExnConstr tcref, _, args              ->
@@ -828,8 +828,8 @@ and ConvLValueExprCore cenv env expr =
         | TOp.LValueOp (LAddrOf _, vref), _, _ -> ConvValRef false cenv env m vref []
         | TOp.ValFieldGetAddr (rfref, _), _, _ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
         | TOp.UnionCaseFieldGetAddr (ucref, n, _), [e], _ -> ConvUnionFieldGet cenv env m ucref n tyargs e
-        | TOp.ILAsm ([ I_ldflda(fspec) ], _rtys), _, _  -> ConvLdfld  cenv env m fspec tyargs args
-        | TOp.ILAsm ([ I_ldsflda(fspec) ], _rtys), _, _  -> ConvLdfld  cenv env m fspec tyargs args
+        | TOp.ILAsm ([ I_ldflda(fspec) ], _), _, _  -> ConvLdfld  cenv env m fspec tyargs args
+        | TOp.ILAsm ([ I_ldsflda(fspec) ], _), _, _  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr :: idxs), [elemty]  ->
             match shape.Rank, idxs with
             | 1, [idx1] -> ConvExpr cenv env (mkCallArrayGet cenv.g m elemty arr idx1)

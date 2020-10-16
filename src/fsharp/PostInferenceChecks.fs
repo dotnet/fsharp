@@ -1413,8 +1413,8 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         // Recursively check in same context, e.g. if at PermitOnlyReturnable the obj arg must also be returnable
         CheckExpr cenv env obj context
 
-    | TOp.ILAsm (instrs, tys), _, _  ->
-        CheckTypeInstNoInnerByrefs cenv env m tys
+    | TOp.ILAsm (instrs, retTypes), _, _  ->
+        CheckTypeInstNoInnerByrefs cenv env m retTypes
         CheckTypeInstNoByrefs cenv env m tyargs
         match instrs, args with
         // Write a .NET instance field

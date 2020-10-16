@@ -2177,9 +2177,9 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
               | StripUnionCaseValue (uc, info) -> UnionCaseValue(uc, info) 
               | _ -> valu
           0, valu
-      | TOp.ILAsm (instrs, tys) -> 
+      | TOp.ILAsm (instrs, retTypes) -> 
           min instrs.Length 1, 
-          mkAssemblyCodeValueInfo cenv.g instrs argValues tys
+          mkAssemblyCodeValueInfo cenv.g instrs argValues retTypes
       | TOp.Bytes bytes -> bytes.Length/10, valu
       | TOp.UInt16s bytes -> bytes.Length/10, valu
       | TOp.ValFieldGetAddr _     

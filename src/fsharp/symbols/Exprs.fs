@@ -319,8 +319,8 @@ module FSharpExprConvert =
             | TOp.ValFieldGetAddr (rfref, _), [], _ -> mkStaticRecdFieldGet (rfref, tyargs, m)
             | TOp.ValFieldGetAddr (rfref, _), [arg], _ -> mkRecdFieldGetViaExprAddr (exprOfExprAddr cenv arg, rfref, tyargs, m)
             | TOp.UnionCaseFieldGetAddr (uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr (exprOfExprAddr cenv arg, uref, tyargs, n, m)
-            | TOp.ILAsm ([ I_ldflda fspec ], rtys), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], rtys, m)
-            | TOp.ILAsm ([ I_ldsflda fspec ], rtys), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, rtys, m)
+            | TOp.ILAsm ([ I_ldflda fspec ], retTypes), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], retTypes, m)
+            | TOp.ILAsm ([ I_ldsflda fspec ], retTypes), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, retTypes, m)
             | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr :: idxs), [elemty]  -> 
                 match shape.Rank, idxs with 
                 | 1, [idx1] -> mkCallArrayGet cenv.g m elemty arr idx1
@@ -731,8 +731,8 @@ module FSharpExprConvert =
                 let raiseExpr = mkCallRaise cenv.g m (tyOfExpr cenv.g expr) arg1 
                 ConvExprPrim cenv env raiseExpr        
 
-            | TOp.ILAsm (il, _), tyargs, args                         -> 
-                E.ILAsm(sprintf "%+A" il, ConvTypes cenv tyargs, ConvExprs cenv env args)
+            | TOp.ILAsm (instrs, _), tyargs, args                         -> 
+                E.ILAsm(sprintf "%+A" instrs, ConvTypes cenv tyargs, ConvExprs cenv env args)
 
             | TOp.ExnConstr tcref, tyargs, args              -> 
                 E.NewRecord(ConvType cenv (mkAppTy tcref tyargs), ConvExprs cenv env args) 

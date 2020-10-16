@@ -141,8 +141,8 @@ and accOp cenv env (op, tyargs, args, _m) =
     | TOp.TraitCall traitInfo -> 
         accTraitInfo cenv env traitInfo
         
-    | TOp.ILAsm (_, tys) ->
-        accTypeInst cenv env tys
+    | TOp.ILAsm (_, retTypes) ->
+        accTypeInst cenv env retTypes
     | _ ->    ()
 
 and accTraitInfo cenv env (TTrait(tys, _nm, _, argtys, rty, _sln)) =
