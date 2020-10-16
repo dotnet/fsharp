@@ -670,16 +670,16 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             | FSharpForLoopUp -> QP.mkForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body)
             | _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainDescendingForLoops(), m))
 
-        | TOp.ILCall (_, _, _, isNewObj, valUseFlags, isProp, _, ilMethRef, enclTypeArgs, methTypeArgs, _tys), [], callArgs ->
+        | TOp.ILCall (_, _, _, isCtor, valUseFlag, isProperty, _, ilMethRef, enclTypeInst, methInst, _), [], callArgs ->
              let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.DeclaringTypeRef
-             let isNewObj = isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false)
+             let isNewObj = isCtor || (match valUseFlag with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false)
              let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
-             let isPropGet = isProp && methName.StartsWithOrdinal("get_")
-             let isPropSet = isProp && methName.StartsWithOrdinal("set_")
-             let tyargs = (enclTypeArgs@methTypeArgs)
-             ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, [], methArgTypesR, methRetTypeR, methName, tyargs, methTypeArgs.Length, [], [], [callArgs])
+             let isPropGet = isProperty && methName.StartsWithOrdinal("get_")
+             let isPropSet = isProperty && methName.StartsWithOrdinal("set_")
+             let tyargs = (enclTypeInst@methInst)
+             ConvObjectModelCall cenv env m (isPropGet, isPropSet, isNewObj, parentTyconR, [], methArgTypesR, methRetTypeR, methName, tyargs, methInst.Length, [], [], [callArgs])
 
         | TOp.TryFinally _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
             QP.mkTryFinally(ConvExpr cenv env e1, ConvExpr cenv env e2)

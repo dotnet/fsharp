@@ -3925,13 +3925,13 @@ module DebugPrint =
                     wordL(tagText ":") ^^ spaceListL (List.map typeAtomL tys)) |> wrap
             | Expr.Op (TOp.LValueOp (lvop, vr), _, args, _) -> 
                 (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
-            | Expr.Op (TOp.ILCall (_isVirtCall, _isProtectedCall, _valu, _isNewObjCall, _valUseFlags, _isProperty, _noTailCall, ilMethRef, tinst, minst, _tys), tyargs, args, _) ->
+            | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, _), tyargs, args, _) ->
                 let meth = ilMethRef.Name
                 wordL(tagText "ILCall") ^^
                    aboveListL 
                       [ yield wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                        if not tinst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL tinst
-                        if not minst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL minst
+                        if not enclTypeInst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL enclTypeInst
+                        if not methInst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL methInst
                         if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
                         if not args.IsEmpty then yield listL exprL args ] 
                     |> wrap
@@ -4774,12 +4774,12 @@ and accFreeInOp opts op acc =
     | TOp.LValueOp (_, vref) -> 
         accFreeValRef opts vref acc
 
-    | TOp.ILCall (_, isProtectedCall, _, _, valUseFlags, _, _, _, enclTypeArgs, methTypeArgs, tys) ->
-       accFreeVarsInTys opts enclTypeArgs 
-         (accFreeVarsInTys opts methTypeArgs  
-           (accFreeInValFlags opts valUseFlags
-             (accFreeVarsInTys opts tys 
-               (accUsesFunctionLocalConstructs isProtectedCall acc))))
+    | TOp.ILCall (_, isProtected, _, _, valUseFlag, _, _, _, enclTypeInst, methInst, retTypes) ->
+       accFreeVarsInTys opts enclTypeInst 
+         (accFreeVarsInTys opts methInst  
+           (accFreeInValFlags opts valUseFlag
+             (accFreeVarsInTys opts retTypes 
+               (accUsesFunctionLocalConstructs isProtected acc))))
 
 and accFreeInTargets opts targets acc = 
     Array.foldBack (accFreeInTarget opts) targets acc
@@ -5320,10 +5320,10 @@ and remapOp tmenv op =
         TOp.ILAsm (instrs, tys2)
     | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitInfo tmenv traitInfo)
     | TOp.LValueOp (kind, lvr) -> TOp.LValueOp (kind, remapValRef tmenv lvr)
-    | TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, valUseFlags, isProperty, noTailCall, ilMethRef, enclTypeArgs, methTypeArgs, tys) -> 
-       TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, remapValFlags tmenv valUseFlags, 
-                   isProperty, noTailCall, ilMethRef, remapTypes tmenv enclTypeArgs, 
-                   remapTypes tmenv methTypeArgs, remapTypes tmenv tys)
+    | TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, ilMethRef, enclTypeInst, methInst, retTypes) -> 
+       TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, remapValFlags tmenv valUseFlag, 
+                   isProperty, noTailCall, ilMethRef, remapTypes tmenv enclTypeInst, 
+                   remapTypes tmenv methInst, remapTypes tmenv retTypes)
     | _ -> op
     
 and remapValFlags tmenv x =
@@ -5858,7 +5858,7 @@ let rec tyOfExpr g e =
     | Expr.Op (op, tinst, _, _) -> 
         match op with 
         | TOp.Coerce -> (match tinst with [to_ty;_fromTy] -> to_ty | _ -> failwith "bad TOp.Coerce node")
-        | (TOp.ILCall (_, _, _, _, _, _, _, _, _, _, rtys) | TOp.ILAsm (_, rtys)) -> (match rtys with [h] -> h | _ -> g.unit_ty)
+        | (TOp.ILCall (_, _, _, _, _, _, _, _, _, _, retTypes) | TOp.ILAsm (_, retTypes)) -> (match retTypes with [h] -> h | _ -> g.unit_ty)
         | TOp.UnionCase uc -> actualResultTyOfUnionCase tinst uc 
         | TOp.UnionCaseProof uc -> mkProvenUnionCaseTy uc tinst  
         | TOp.Recd (_, tcref) -> mkAppTy tcref tinst
@@ -9094,8 +9094,8 @@ let (|RangeInt32Step|_|) g expr =
 
 let (|GetEnumeratorCall|_|) expr =   
     match expr with   
-    | Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, iLMethodRef, _, _, _), _, [Expr.Val (vref, _, _) | Expr.Op (_, _, [Expr.Val (vref, ValUseFlag.NormalValUse, _)], _) ], _) ->  
-        if iLMethodRef.Name = "GetEnumerator" then Some vref  
+    | Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, [Expr.Val (vref, _, _) | Expr.Op (_, _, [Expr.Val (vref, ValUseFlag.NormalValUse, _)], _) ], _) ->  
+        if ilMethodRef.Name = "GetEnumerator" then Some vref  
         else None  
     | _ -> None  
 
