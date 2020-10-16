@@ -4699,16 +4699,22 @@ type TOp =
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 
 
-    /// ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, noTailCall, mref, actualTypeInst, actualMethInst, retTy)
-    ///  
     /// IL method calls.
-    ///     value -- is the object a value type? 
-    ///     isProp -- used for quotation reflection.
-    ///     noTailCall - DllImport? if so don't tailcall 
-    ///     actualTypeInst -- instantiation of the enclosing type
-    ///     actualMethInst -- instantiation of the method
-    ///     retTy -- the types of pushed values, if any 
-    | ILCall of bool * bool * bool * bool * ValUseFlag * bool * bool * ILMethodRef * TypeInst * TypeInst * TTypes   
+    ///     isProperty -- used for quotation reflection, property getters & setters  
+    ///     noTailCall - DllImport? if so don't tailcall  
+    ///     retTypes -- the types of pushed values, if any
+    | ILCall of 
+        isVirtual: bool * 
+        isProtected: bool * 
+        isStruct: bool * 
+        isCtor: bool * 
+        valUseFlag: ValUseFlag * 
+        isProperty: bool * 
+        noTailCall: bool * 
+        ilMethRef: ILMethodRef * 
+        enclTypeInst: TypeInst * 
+        methInst: TypeInst * 
+        retTypes: TTypes   
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4748,7 +4754,7 @@ type TOp =
         | Label n -> "Label(" + string n + ")"
         | TraitCall info -> "TraitCall(" + info.MemberName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
-        | ILCall (_,_,_,_,_,_,_,m,_,_,_) -> "ILCall(" + m.ToString() + ",..)"
+        | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
 
 /// Represents the kind of record construction operation.
 type RecordConstructionInfo = 
