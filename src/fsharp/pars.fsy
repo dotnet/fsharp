@@ -2453,7 +2453,8 @@ unionCaseReprElements:
 
 unionCaseReprElement:
   | ident COLON appType
-     { mkNamedField($1, $3) }
+     { let wholeRange = rhs2 parseState 1 3
+       mkNamedField($1, $3, wholeRange) }
 
   | appType
      { mkAnonField $1 }
