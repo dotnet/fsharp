@@ -134,15 +134,15 @@ and accOp cenv env (op, tyargs, args, _m) =
     accExprs cenv env args
     match op with 
     // Handle these as special cases since mutables are allowed inside their bodies 
-    | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeArgs, methTypeArgs, tys) ->
-        accTypeInst cenv env enclTypeArgs
-        accTypeInst cenv env methTypeArgs
-        accTypeInst cenv env tys
+    | TOp.ILCall (_, _, _, _, _, _, _, _, enclTypeInst, methInst, retTypes) ->
+        accTypeInst cenv env enclTypeInst
+        accTypeInst cenv env methInst
+        accTypeInst cenv env retTypes
     | TOp.TraitCall traitInfo -> 
         accTraitInfo cenv env traitInfo
         
-    | TOp.ILAsm (_, tys) ->
-        accTypeInst cenv env tys
+    | TOp.ILAsm (_, retTypes) ->
+        accTypeInst cenv env retTypes
     | _ ->    ()
 
 and accTraitInfo cenv env (TTrait(tys, _nm, _, argtys, rty, _sln)) =

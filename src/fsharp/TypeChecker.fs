@@ -811,8 +811,8 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
                         UnitTypeExpectedWithEquality (denv, ty, m)
                 else
                     UnitTypeExpectedWithEquality (denv, ty, m)
-            | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, methodRef, _, _, _), _, Expr.Val (vf, _, _) :: _, _) :: _ when methodRef.Name.StartsWithOrdinal("get_") ->
-                UnitTypeExpectedWithPossiblePropertySetter (denv, ty, vf.DisplayName, PrettyNaming.ChopPropertyName(methodRef.Name), m)
+            | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), _, Expr.Val (vf, _, _) :: _, _) :: _ when ilMethRef.Name.StartsWithOrdinal("get_") ->
+                UnitTypeExpectedWithPossiblePropertySetter (denv, ty, vf.DisplayName, PrettyNaming.ChopPropertyName(ilMethRef.Name), m)
             | Expr.Val (vf, _, _) :: _ -> 
                 UnitTypeExpectedWithPossibleAssignment (denv, ty, vf.IsMutable, vf.DisplayName, m)
             | _ -> UnitTypeExpectedWithEquality (denv, ty, m)
@@ -11838,8 +11838,8 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
                     AttribNamedArg(nm, argty, isProp, mkAttribExpr callerArgExpr))
 
                 match expr with 
-                | Expr.Op (TOp.ILCall (_, _, valu, _, _, _, _, ilMethRef, [], [], _rtys), [], args, m) -> 
-                    if valu then error (Error(FSComp.SR.tcCustomAttributeMustBeReferenceType(), m))
+                | Expr.Op (TOp.ILCall (_, _, isStruct, _, _, _, _, ilMethRef, [], [], _), [], args, m) -> 
+                    if isStruct then error (Error(FSComp.SR.tcCustomAttributeMustBeReferenceType(), m))
                     if args.Length <> ilMethRef.ArgTypes.Length then error (Error(FSComp.SR.tcCustomAttributeArgumentMismatch(), m))
                     let args = args |> List.map mkAttribExpr
                     Attrib(tcref, ILAttrib ilMethRef, args, namedAttribArgMap, isAppliedToGetterOrSetter, Some constrainedTgts, m)

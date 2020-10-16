@@ -319,8 +319,8 @@ module FSharpExprConvert =
             | TOp.ValFieldGetAddr (rfref, _), [], _ -> mkStaticRecdFieldGet (rfref, tyargs, m)
             | TOp.ValFieldGetAddr (rfref, _), [arg], _ -> mkRecdFieldGetViaExprAddr (exprOfExprAddr cenv arg, rfref, tyargs, m)
             | TOp.UnionCaseFieldGetAddr (uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr (exprOfExprAddr cenv arg, uref, tyargs, n, m)
-            | TOp.ILAsm ([ I_ldflda fspec ], rtys), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], rtys, m)
-            | TOp.ILAsm ([ I_ldsflda fspec ], rtys), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, rtys, m)
+            | TOp.ILAsm ([ I_ldflda fspec ], retTypes), [arg], _  -> mkAsmExpr ([ mkNormalLdfld fspec ], tyargs, [exprOfExprAddr cenv arg], retTypes, m)
+            | TOp.ILAsm ([ I_ldsflda fspec ], retTypes), _, _  -> mkAsmExpr ([ mkNormalLdsfld fspec ], tyargs, args, retTypes, m)
             | TOp.ILAsm (([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr :: idxs), [elemty]  -> 
                 match shape.Rank, idxs with 
                 | 1, [idx1] -> mkCallArrayGet cenv.g m elemty arr idx1
@@ -670,9 +670,9 @@ module FSharpExprConvert =
                 let op = mkCallHash cenv.g m ty arg
                 ConvExprPrim cenv env op
 
-            | TOp.ILCall (_, _, _, _, _, _, _, mref, _, _, _), [],
+            | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), [],
               [Expr.Op (TOp.ILAsm ([ I_ldtoken (ILToken.ILType _) ], _), [ty], _, _)]
-              when mref.DeclaringTypeRef.Name = "System.Type" && mref.Name = "GetTypeFromHandle" -> 
+              when ilMethRef.DeclaringTypeRef.Name = "System.Type" && ilMethRef.Name = "GetTypeFromHandle" -> 
                 let op = mkCallTypeOf cenv.g m ty
                 ConvExprPrim cenv env op
 
@@ -731,8 +731,8 @@ module FSharpExprConvert =
                 let raiseExpr = mkCallRaise cenv.g m (tyOfExpr cenv.g expr) arg1 
                 ConvExprPrim cenv env raiseExpr        
 
-            | TOp.ILAsm (il, _), tyargs, args                         -> 
-                E.ILAsm(sprintf "%+A" il, ConvTypes cenv tyargs, ConvExprs cenv env args)
+            | TOp.ILAsm (instrs, _), tyargs, args                         -> 
+                E.ILAsm(sprintf "%+A" instrs, ConvTypes cenv tyargs, ConvExprs cenv env args)
 
             | TOp.ExnConstr tcref, tyargs, args              -> 
                 E.NewRecord(ConvType cenv (mkAppTy tcref tyargs), ConvExprs cenv env args) 
@@ -807,8 +807,8 @@ module FSharpExprConvert =
                     else lim1
                 E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
 
-            | TOp.ILCall (_, _, _, isNewObj, valUseFlags, _isProp, _, ilMethRef, enclTypeArgs, methTypeArgs, _tys), [], callArgs -> 
-                ConvILCall cenv env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m)
+            | TOp.ILCall (_, _, _, isCtor, valUseFlag, _, _, ilMethRef, enclTypeInst, methInst, _), [], callArgs -> 
+                ConvILCall cenv env (isCtor, valUseFlag, ilMethRef, enclTypeInst, methInst, callArgs, m)
 
             | TOp.TryFinally _, [_resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
                 E.TryFinally(ConvExpr cenv env e1, ConvExpr cenv env e2) 
