@@ -9,7 +9,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --warnon:3390 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
+    <OtherFlags>--warnon:3218 --warnon:1182 --warnon:3390 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57 --simpleresolution --simpleresolution</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
 
@@ -19,6 +19,10 @@
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSCorePackageVersion) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Core-$(FSCoreReleaseNotesVersion)</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <WarningsAsErrors>3239;1182;0025;</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -230,7 +234,7 @@
   <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
   <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
   <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
-  <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
+  <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile">
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.optdata" />
