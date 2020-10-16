@@ -4673,7 +4673,9 @@ type TOp =
     | TupleFieldGet of TupInfo * int 
 
     /// IL assembly code - type list are the types pushed on the stack 
-    | ILAsm of ILInstr list * TTypes 
+    | ILAsm of 
+        instrs: ILInstr list * 
+        retTypes: TTypes 
 
     /// Generate a ldflda on an 'a ref. 
     | RefAddrGet of bool
