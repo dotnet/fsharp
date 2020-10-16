@@ -41785,7 +41785,7 @@ FSharp.Compiler.SyntaxTreeOps: SynExpr mkSynTrifix(range, System.String, SynExpr
 FSharp.Compiler.SyntaxTreeOps: SynExpr mkSynUnit(range)
 FSharp.Compiler.SyntaxTreeOps: SynExpr |SynExprErrorSkip|(SynExpr)
 FSharp.Compiler.SyntaxTreeOps: SynField mkAnonField(SynType)
-FSharp.Compiler.SyntaxTreeOps: SynField mkNamedField(Ident, SynType)
+FSharp.Compiler.SyntaxTreeOps: SynField mkNamedField(Ident, SynType, range)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynPatMaybeVar(LongIdentWithDots, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], range)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynPatVar(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], Ident)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynThisPatVar(Ident)
