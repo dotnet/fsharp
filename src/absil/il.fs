@@ -4100,7 +4100,21 @@ and refs_of_token s x =
     | ILToken.ILMethod mr -> refs_of_mspec s mr
     | ILToken.ILField fr -> refs_of_fspec s fr
 
-and refs_of_custom_attr s (cattr: ILAttribute) = refs_of_mspec s cattr.Method
+and refs_of_attrib_elem s (e: ILAttribElem) =
+    match e with
+    | Type (Some ty) -> refs_of_typ s ty
+    | TypeRef (Some tref) -> refs_of_tref s tref
+    | Array (ty, els) ->
+        refs_of_typ s ty 
+        refs_of_attrib_elems s els
+    | _ -> ()
+    
+and refs_of_attrib_elems s els =
+    List.iter (refs_of_attrib_elem s) els
+
+and refs_of_custom_attr s (cattr: ILAttribute) = 
+    refs_of_mspec s cattr.Method
+    refs_of_attrib_elems s cattr.Elements 
 
 and refs_of_custom_attrs s (cas : ILAttributes) = Array.iter (refs_of_custom_attr s) cas.AsArray
 
