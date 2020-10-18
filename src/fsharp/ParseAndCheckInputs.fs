@@ -494,7 +494,7 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     TcConfig.Create(tcConfigB, validate=false)
 
 /// Build the initial type checking environment
-let GetInitialTcEnv (thisAssemblyName: string, initm: range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =    
+let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =    
     let initm = initm.StartRange
 
     let ccus = 
@@ -503,7 +503,7 @@ let GetInitialTcEnv (thisAssemblyName: string, initm: range, tcConfig: TcConfig,
 
     let amap = tcImports.GetImportMap()
 
-    let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
+    let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, assemblyName, ccus)
 
     if tcConfig.checkOverflow then
         try TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName), initm)

@@ -1596,11 +1596,11 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
                                               testingAndQAFlags       tcConfigB])
   ]
 
-let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, commandLineArgs) =
+let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, argv) =
     try
         let sourceFilesAcc = ResizeArray sourceFiles
         let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add name
-        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
+        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
         ResizeArray.toList sourceFilesAcc
     with e ->
         errorRecovery e range0

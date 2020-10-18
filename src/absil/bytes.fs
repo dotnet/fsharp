@@ -429,9 +429,9 @@ type internal ByteStream =
         let res = b.bytes.ReadUtf8String(b.pos,n)  
         b.pos <- b.pos + n; res 
       
-    static member FromBytes (b: ReadOnlyByteMemory,n,len) = 
-        if n < 0 || (n+len) > b.Length then failwith "FromBytes"
-        { bytes = b; pos = n; max = n+len }
+    static member FromBytes (b: ReadOnlyByteMemory,start,length) = 
+        if start < 0 || (start+length) > b.Length then failwith "FromBytes"
+        { bytes = b; pos = start; max = start+length }
 
     member b.ReadBytes n  = 
         if b.pos + n > b.max then failwith "ReadBytes: end of stream"
@@ -477,11 +477,11 @@ type internal ByteBuffer =
             bbArr.[bbBase + i] <- byte arr.[i] 
         buf.bbCurrent <- newSize 
 
-    member bb.FixupInt32 pos n = 
-        bb.bbArray.[pos] <- (Bytes.b0 n |> byte)
-        bb.bbArray.[pos + 1] <- (Bytes.b1 n |> byte)
-        bb.bbArray.[pos + 2] <- (Bytes.b2 n |> byte)
-        bb.bbArray.[pos + 3] <- (Bytes.b3 n |> byte)
+    member bb.FixupInt32 pos value = 
+        bb.bbArray.[pos] <- (Bytes.b0 value |> byte)
+        bb.bbArray.[pos + 1] <- (Bytes.b1 value |> byte)
+        bb.bbArray.[pos + 2] <- (Bytes.b2 value |> byte)
+        bb.bbArray.[pos + 3] <- (Bytes.b3 value |> byte)
 
     member buf.EmitInt32 n = 
         let newSize = buf.bbCurrent + 4 

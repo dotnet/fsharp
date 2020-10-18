@@ -28,7 +28,11 @@ type ILPlatform =
 /// points and some other locations. 
 [<Sealed>]
 type ILSourceDocument =
-    static member Create: language: ILGuid option * vendor: ILGuid option * documentType: ILGuid option * file: string -> ILSourceDocument
+    static member Create: 
+        language: ILGuid option * 
+        vendor: ILGuid option * 
+        documentType: ILGuid option * 
+        file: string -> ILSourceDocument
     member Language: ILGuid option
     member Vendor: ILGuid option
     member DocumentType: ILGuid option
@@ -295,7 +299,13 @@ and ILTypes = ILType list
 type ILMethodRef =
 
      /// Functional creation
-     static member Create: enclosingTypeRef: ILTypeRef * callingConv: ILCallingConv * name: string * genericArity: int * argTypes: ILTypes * returnType: ILType -> ILMethodRef
+     static member Create: 
+        enclosingTypeRef: ILTypeRef * 
+        callingConv: ILCallingConv * 
+        name: string * 
+        genericArity: int * 
+        argTypes: ILTypes * 
+        returnType: ILType -> ILMethodRef
 
      member DeclaringTypeRef: ILTypeRef
 

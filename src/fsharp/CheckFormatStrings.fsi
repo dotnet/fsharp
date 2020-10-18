@@ -13,6 +13,6 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TcGlobals
 
-val ParseFormatString : m: range -> fragmentRanges: range list -> g: TcGlobals -> isInterpolated: bool -> isFormattableString: bool -> formatStringCheckContext: FormatStringCheckContext option -> fmt: string -> bty: TType -> cty: TType -> dty: TType -> TType list * TType * TType * TType[] * (range * int) list * string
+val ParseFormatString : m: range -> fragmentRanges: range list -> g: TcGlobals -> isInterpolated: bool -> isFormattableString: bool -> formatStringCheckContext: FormatStringCheckContext option -> fmt: string -> printerArgTy: TType -> printerResidueTy: TType -> printerResultTy: TType -> TType list * TType * TType * TType[] * (range * int) list * string
 
-val TryCountFormatStringArguments: m: range -> g: TcGlobals -> isInterpolated: bool -> fmt:string -> bty:TType -> cty:TType -> int option
+val TryCountFormatStringArguments: m: range -> g: TcGlobals -> isInterpolated: bool -> fmt:string -> printerArgTy:TType -> printerResidueTy:TType -> int option

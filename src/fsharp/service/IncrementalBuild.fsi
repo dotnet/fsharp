@@ -205,7 +205,7 @@ type internal IncrementalBuilder =
           ReferenceResolver.Resolver *
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *
-          scriptClosureOptions:LoadClosure option *
+          loadClosureOpt:LoadClosure option *
           sourceFiles:string list *
           commandLineArgs:string list *
           projectReferences: IProjectReference list *
@@ -298,7 +298,7 @@ module internal IncrementalBuild =
     type BuildInput =
         /// Declare a named scalar output.
         static member ScalarInput: node:Scalar<'T> * value: 'T -> BuildInput
-        static member VectorInput: node:Vector<'T> * value: 'T list -> BuildInput
+        static member VectorInput: node:Vector<'T> * values: 'T list -> BuildInput
 
     /// Declare build outputs and bind them to real values.
     /// Only required for unit testing.
@@ -312,5 +312,5 @@ module internal IncrementalBuild =
         member DeclareVectorOutput : output:Vector<'T> -> unit
 
         /// Set the concrete inputs for this build. 
-        member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
+        member GetInitialPartialBuild : inputs: BuildInput list -> PartialBuild
 

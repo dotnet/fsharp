@@ -31,7 +31,7 @@ namespace Internal.Utilities.Collections
     /// Remove all elements.
     member Clear : 'Token -> unit
     /// Resize
-    member Resize : 'Token * keepStrongly: int * ?keepMax : int -> unit
+    member Resize : 'Token * newKeepStrongly: int * ?newKeepMax : int -> unit
     
   /// Simple priority caching for a small number of key/value associations.
   /// This cache may age-out results that have been Set by the caller.
@@ -79,5 +79,5 @@ namespace Internal.Utilities.Collections
     member Set : 'Token * key:'Key * value:'Value -> unit
 
     /// Resize
-    member Resize : 'Token * keepStrongly: int * ?keepMax : int -> unit
+    member Resize : 'Token * newKeepStrongly: int * ?newKeepMax : int -> unit
 

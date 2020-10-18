@@ -54,18 +54,18 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
         let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
-type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTy: ModuleOrNamespaceType option, tcImports: TcImports, amapV: Import.ImportMap, infoReaderV: InfoReader) = 
+type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
 
-    new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTy: ModuleOrNamespaceType option, tcImports: TcImports) =
+    new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
         let infoReader = InfoReader(g, amap)
-        SymbolEnv(g, thisCcu, thisCcuTy, tcImports, amap, infoReader)
+        SymbolEnv(g, thisCcu, thisCcuTyp, tcImports, amap, infoReader)
 
     member __.g = g
-    member __.amap = amapV
+    member __.amap = amap
     member __.thisCcu = thisCcu
-    member __.thisCcuTy = thisCcuTy
-    member __.infoReader = infoReaderV
+    member __.thisCcuTy = thisCcuTyp
+    member __.infoReader = infoReader
     member __.tcImports = tcImports
 
 [<AutoOpen>]
@@ -224,8 +224,8 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 
     member x.SignatureLocation = SymbolHelpers.rangeOfItem cenv.g (Some true) x.Item
 
-    member x.IsEffectivelySameAs(y:FSharpSymbol) = 
-        x.Equals y || ItemsAreEffectivelyEqual cenv.g x.Item y.Item
+    member x.IsEffectivelySameAs(other:FSharpSymbol) = 
+        x.Equals other || ItemsAreEffectivelyEqual cenv.g x.Item other.Item
 
     member x.GetEffectivelySameAsHash() = ItemsAreEffectivelyEqualHash cenv.g x.Item
 
@@ -247,8 +247,8 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 
     // TODO: there are several cases where we may need to report more interesting
     // symbol information below. By default we return a vanilla symbol.
-    static member Create(g, thisCcu, thisCcuTye, tcImports, item): FSharpSymbol = 
-        FSharpSymbol.Create(SymbolEnv(g, thisCcu, Some thisCcuTye, tcImports), item)
+    static member Create(g, thisCcu, thisCcuTyp, tcImports, item): FSharpSymbol = 
+        FSharpSymbol.Create(SymbolEnv(g, thisCcu, Some thisCcuTyp, tcImports), item)
 
     static member Create(cenv, item): FSharpSymbol = 
         let dflt() = FSharpSymbol(cenv, (fun () -> item), (fun _ _ _ -> true)) 
@@ -2074,10 +2074,10 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName
         with _  -> "??"
 
-    member x.FormatLayout (denv:FSharpDisplayContext) =
+    member x.FormatLayout (context:FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfMemberNoInstShort { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -2089,7 +2089,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
-            NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
+            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
 
 
 and FSharpType(cenv, ty:TType) =
@@ -2106,7 +2106,7 @@ and FSharpType(cenv, ty:TType) =
     
     let isResolved() = not (isUnresolved())
 
-    new (g, thisCcu, thisCcuTy, tcImports, ty) = FSharpType(SymbolEnv(g, thisCcu, Some thisCcuTy, tcImports), ty)
+    new (g, thisCcu, thisCcuTyp, tcImports, ty) = FSharpType(SymbolEnv(g, thisCcu, Some thisCcuTyp, tcImports), ty)
 
     member __.IsUnresolved = isUnresolved()
 
@@ -2249,13 +2249,13 @@ and FSharpType(cenv, ty:TType) =
             | TType_anon (_,l1) -> 10800 + List.sumBy hashType l1
         hashType ty
 
-    member x.Format(denv: FSharpDisplayContext) = 
+    member x.Format(context: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) ty 
+        NicePrint.prettyStringOfTyNoCx (context.Contents cenv.g) ty 
 
-    member x.FormatLayout(denv: FSharpDisplayContext) =
+    member x.FormatLayout(context: FSharpDisplayContext) =
        protect <| fun () -> 
-        NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
+        NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
 
     override x.ToString() = 
        protect <| fun () -> 
@@ -2265,8 +2265,8 @@ and FSharpType(cenv, ty:TType) =
         let prettyTy = PrettyTypes.PrettifyType ty.cenv.g ty.V  |> fst
         ty.AdjustType prettyTy
 
-    static member Prettify(tys: IList<FSharpType>) = 
-        let xs = tys |> List.ofSeq
+    static member Prettify(types: IList<FSharpType>) = 
+        let xs = types |> List.ofSeq
         match xs with 
         | [] -> []
         | h :: _ -> 
@@ -2330,14 +2330,14 @@ and FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
         |> List.map (fun (ty, nm, isField, obj) -> FSharpType(cenv, ty), nm, isField, resolveArgObj obj)
         |> makeReadOnlyCollection
 
-    member __.Format(denv: FSharpDisplayContext) = 
+    member __.Format(context: FSharpDisplayContext) = 
         protect <| fun () -> 
             match attrib with
             | AttribInfo.FSAttribInfo(g, attrib) ->
-                NicePrint.stringOfFSAttrib (denv.Contents g) attrib
+                NicePrint.stringOfFSAttrib (context.Contents g) attrib
             | AttribInfo.ILAttribInfo (g, _, _scoref, cattr, _) -> 
                 let parms, _args = decodeILAttribData g.ilg cattr 
-                NicePrint.stringOfILAttrib (denv.Contents g) (cattr.Method.DeclaringType, parms)
+                NicePrint.stringOfILAttrib (context.Contents g) (cattr.Method.DeclaringType, parms)
 
     override __.ToString() = 
         if entityIsUnresolved attrib.TyconRef then "attribute ???" else "attribute " + attrib.TyconRef.CompiledName + "(...)" 
@@ -2453,8 +2453,8 @@ and FSharpAssemblySignature (cenv, topAttribs: TypeChecker.TopAttribs option, op
         FSharpAssemblySignature(cenv, None, Some ccu, ccu.Contents.ModuleOrNamespaceType)
     
     // Assembly signature for an assembly produced via type-checking.
-    new (g, thisCcu, thisCcuTy, tcImports, topAttribs, mtyp) = 
-        FSharpAssemblySignature(SymbolEnv(g, thisCcu, Some thisCcuTy, tcImports), topAttribs, None, mtyp)
+    new (tcGlobals, thisCcu, thisCcuTyp, tcImports, topAttribs, contents) = 
+        FSharpAssemblySignature(SymbolEnv(tcGlobals, thisCcu, Some thisCcuTyp, tcImports), topAttribs, None, contents)
 
     member __.Entities = 
 
@@ -2506,8 +2506,8 @@ and FSharpAssemblySignature (cenv, topAttribs: TypeChecker.TopAttribs option, op
 
 and FSharpAssembly internal (cenv, ccu: CcuThunk) = 
 
-    new (g, tcImports, ccu: CcuThunk) = 
-        FSharpAssembly(SymbolEnv(g, ccu, None, tcImports), ccu)
+    new (tcGlobals, tcImports, ccu: CcuThunk) = 
+        FSharpAssembly(SymbolEnv(tcGlobals, ccu, None, tcImports), ccu)
 
     member __.RawCcuThunk = ccu
 

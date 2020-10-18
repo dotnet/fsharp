@@ -333,7 +333,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         val asTaggedTextWriter: writer: TextWriter -> TaggedTextWriter
 
-        val any_to_layout: options:FormatOptions -> value:'T * Type -> Layout
+        val any_to_layout: options:FormatOptions -> value:'T * typValue:Type -> Layout
 
         val squashTo: width: int -> layout: Layout -> Layout
 
@@ -343,7 +343,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         val output_layout: options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
 
-        val layout_as_string: options:FormatOptions -> value:'T * Type -> string
+        val layout_as_string: options:FormatOptions -> value:'T * typValue:Type -> string
 #endif
 
         /// Convert any value to a layout using the given formatting options.  The
@@ -353,5 +353,5 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val layout_to_string: options:FormatOptions -> layout:Layout -> string
 
 #if COMPILER
-        val fsi_any_to_layout: options:FormatOptions -> value:'T * Type -> Layout
+        val fsi_any_to_layout: options:FormatOptions -> value:'T * typValue:Type -> Layout
 #endif  

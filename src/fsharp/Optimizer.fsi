@@ -51,7 +51,7 @@ val internal OptimizeImplFile:
     Import.ImportMap *
     IncrementalOptimizationEnv *
     isIncrementalFragment: bool *
-    emitTaicalls: bool *
+    emitTailcalls: bool *
     SignatureHidingInfo * 
     TypedImplFile 
        -> (IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) * (bool -> Expr -> Expr)

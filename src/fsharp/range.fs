@@ -199,7 +199,7 @@ let fileIndexOfFile filePath = fileIndexOfFileAux false filePath
 
 let fileOfFileIndex idx = fileIndexTable.IndexToFile idx
 
-let mkPos l c = pos (l, c)
+let mkPos line column = pos (line, column)
 
 let unknownFileName = "unknown"
 let startupFileName = "startup"
@@ -370,7 +370,7 @@ module Line =
 
 module Pos =
 
-    let fromZ (line:Line0) idx = mkPos (Line.fromZ line) idx 
+    let fromZ (line:Line0) column = mkPos (Line.fromZ line) column 
 
     let toZ (p:pos) = (Line.toZ p.Line, p.Column)
 
