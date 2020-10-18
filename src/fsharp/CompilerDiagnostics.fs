@@ -1645,10 +1645,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
 
 // remove any newlines and tabs
-let OutputPhasedDiagnostic (os: System.Text.StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (canSuggestNames: bool) =
+let OutputPhasedDiagnostic (os: System.Text.StringBuilder) (err: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR buf err canSuggestNames
+    OutputPhasedErrorR buf err suggestNames
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append s |> ignore
@@ -1698,7 +1698,7 @@ type Diagnostic =
     | Long of bool * DiagnosticDetailedInfo
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err: PhasedDiagnostic, canSuggestNames: bool) =
+let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, isError, err: PhasedDiagnostic, suggestNames: bool) =
     let outputWhere (showFullPaths, errorStyle) m: DiagnosticLocation =
         if Range.equals m rangeStartup || Range.equals m rangeCmdArgs then
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
@@ -1771,7 +1771,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             let canonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedDiagnostic os mainError flattenErrors canSuggestNames
+                OutputPhasedDiagnostic os mainError flattenErrors suggestNames
                 os.ToString()
             
             let entry: DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
@@ -1786,7 +1786,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedDiagnostic os err flattenErrors canSuggestNames
+                        OutputPhasedDiagnostic os err flattenErrors suggestNames
                         os.ToString()
 
                     let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1794,7 +1794,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedDiagnostic os err flattenErrors canSuggestNames
+                    OutputPhasedDiagnostic os err flattenErrors suggestNames
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
 
             relatedErrors |> List.iter OutputRelatedError
@@ -1829,14 +1829,14 @@ let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, erro
             os.Append( details.Canonical.TextRepresentation ) |> ignore
             os.Append( details.Message ) |> ignore
       
-let OutputDiagnosticContext prefix fileLineFn os err =
+let OutputDiagnosticContext prefix fileLineFunction os err =
     match GetRangeOfDiagnostic err with
     | None -> ()      
     | Some m -> 
         let filename = m.FileName
         let lineA = m.StartLine
         let lineB = m.EndLine
-        let line = fileLineFn filename lineA
+        let line = fileLineFunction filename lineA
         if line<>"" then 
             let iA = m.StartColumn
             let iB = m.EndColumn

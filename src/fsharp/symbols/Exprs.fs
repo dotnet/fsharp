@@ -1234,7 +1234,7 @@ module FSharpExprConvert =
 /// The contents of the F# assembly as provided through the compiler API
 type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: TypedImplFile list) = 
 
-    new (g, thisCcu, thisCcuType, tcImports, mimpls) = FSharpAssemblyContents(SymbolEnv(g, thisCcu, thisCcuType, tcImports), mimpls)
+    new (tcGlobals, thisCcu, thisCcuType, tcImports, mimpls) = FSharpAssemblyContents(SymbolEnv(tcGlobals, thisCcu, thisCcuType, tcImports), mimpls)
 
     member __.ImplementationFiles = 
         [ for mimpl in mimpls -> FSharpImplementationFileContents(cenv, mimpl)]

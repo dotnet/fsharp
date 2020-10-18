@@ -24,7 +24,7 @@ module internal Zmap =
     val find     : 'Key -> Zmap<'Key,'T> -> 'T          // raises KeyNotFoundException 
 
     val map      : mapping:('T -> 'U) -> Zmap<'Key,'T> -> Zmap<'Key,'U>
-    val mapi     : ('Key -> 'T -> 'U) -> Zmap<'Key,'T> -> Zmap<'Key,'U>
+    val mapi     : mapping:('Key -> 'T -> 'U) -> Zmap<'Key,'T> -> Zmap<'Key,'U>
     val fold     : ('Key -> 'T -> 'U -> 'U) -> Zmap<'Key,'T> -> 'U -> 'U
     val foldMap  : ('State -> 'Key -> 'T -> 'State * 'U) -> 'State -> Zmap<'Key,'T> -> 'State * Zmap<'Key,'U>
     val iter     : action:('T -> 'U -> unit) -> Zmap<'T, 'U>  -> unit

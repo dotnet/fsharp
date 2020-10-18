@@ -920,7 +920,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
 
 [<Sealed>]
-type FSharpSourceTokenizer(defineConstants: string list, filename: string option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, filename: string option) =
 
     // Public callers are unable to answer LanguageVersion feature support questions.
     // External Tools including the VS IDE will enable the default LanguageVersion 
@@ -928,7 +928,7 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
  
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
-    let lexargs = mkLexargs(defineConstants, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)

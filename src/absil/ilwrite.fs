@@ -4238,8 +4238,8 @@ type options =
      dumpDebugInfo: bool
      pathMap: PathMap }
 
-let WriteILBinary (outfile, (args: options), modul, normalizeAssemblyRefs) =
-    writeBinaryAndReportMappings (outfile, 
-                                  args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.checksumAlgorithm, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo, args.pathMap) modul normalizeAssemblyRefs
+let WriteILBinary (filename, (options: options), inputModule, normalizeAssemblyRefs) =
+    writeBinaryAndReportMappings (filename, 
+                                  options.ilg, options.pdbfile, options.signer, options.portablePDB, options.embeddedPDB, options.embedAllSource, 
+                                  options.embedSourceList, options.sourceLink, options.checksumAlgorithm, options.emitTailcalls, options.deterministic, options.showTimes, options.dumpDebugInfo, options.pathMap) inputModule normalizeAssemblyRefs
     |> ignore

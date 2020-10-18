@@ -16,17 +16,17 @@ exception Accept of obj
 type internal IParseState(ruleStartPoss:Position[], ruleEndPoss:Position[], lhsPos:Position[], ruleValues:obj[], lexbuf:LexBuffer<char>) = 
     member p.LexBuffer = lexbuf
 
-    member p.InputRange n = ruleStartPoss.[n-1], ruleEndPoss.[n-1]
+    member p.InputRange index = ruleStartPoss.[index-1], ruleEndPoss.[index-1]
 
-    member p.InputStartPosition n = ruleStartPoss.[n-1]
+    member p.InputStartPosition index = ruleStartPoss.[index-1]
 
-    member p.InputEndPosition n = ruleEndPoss.[n-1]
+    member p.InputEndPosition index = ruleEndPoss.[index-1]
 
     member p.ResultStartPosition    = lhsPos.[0]
 
     member p.ResultEndPosition    = lhsPos.[1]
 
-    member p.GetInput n    = ruleValues.[n-1]        
+    member p.GetInput index    = ruleValues.[index-1]        
 
     member p.ResultRange    = (lhsPos.[0], lhsPos.[1])  
 
