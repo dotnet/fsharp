@@ -355,28 +355,37 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     // 
     /// Cache of builds keyed by options.        
     let incrementalBuildersCache = 
-        MruCache<CompilationThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[])>
+        MruCache<AnyCallerThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[])>
                 (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
                  areSimilar =  FSharpProjectOptions.UseSameProject)
 
+    let tryGetBuilder options =
+        incrementalBuildersCache.TryGet (AssumeAnyCallerThreadWithoutEvidence(), options)
+
+    let tryGetSimilarBuilder options =
+        incrementalBuildersCache.TryGetSimilar (AssumeAnyCallerThreadWithoutEvidence(), options)
+
+    let tryGetAnyBuilder options =
+        incrementalBuildersCache.TryGetAny (AssumeAnyCallerThreadWithoutEvidence(), options)
+
     let getOrCreateBuilder (ctok, options, userOpName) =
       cancellable {
           RequireCompilationThread ctok
-          match incrementalBuildersCache.TryGet (ctok, options) with
+          match tryGetBuilder options with
           | Some (builderOpt,creationErrors) -> 
               Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
               return builderOpt,creationErrors
           | None -> 
               Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
               let! (builderOpt,creationErrors) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
-              incrementalBuildersCache.Set (ctok, options, info)
+              incrementalBuildersCache.Set (AssumeAnyCallerThreadWithoutEvidence(), options, info)
               return builderOpt, creationErrors
       }
 
     let getSimilarOrCreateBuilder (ctok, options, userOpName) =
         RequireCompilationThread ctok
-        match incrementalBuildersCache.TryGetSimilar (ctok, options) with
+        match tryGetSimilarBuilder options with
         | Some res -> Cancellable.ret res
         // The builder does not exist at all. Create it.
         | None -> getOrCreateBuilder (ctok, options, userOpName)
@@ -590,7 +599,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                    cancellable {
                     let! _builderOpt,_creationErrors = getOrCreateBuilder (ctok, options, userOpName)
 
-                    match incrementalBuildersCache.TryGetAny (ctok, options) with
+                    match tryGetAnyBuilder options with
                     | Some (Some builder, creationErrors) ->
                         match bc.GetCachedCheckFileResult(builder, filename, sourceText, options) with
                         | Some (_, checkResults) -> return Some (builder, creationErrors, Some (FSharpCheckFileAnswer.Succeeded checkResults))
@@ -920,39 +929,40 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompileIfAlreadySeen, userOpName) =
         let startBackgroundCompileIfAlreadySeen = defaultArg startBackgroundCompileIfAlreadySeen implicitlyStartBackgroundWork
-        // This operation can't currently be cancelled nor awaited
-        reactor.EnqueueOp(userOpName, "InvalidateConfiguration: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
-            // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
-            // will have the effect of releasing memory associated with the previous builder, but costs some time.
-            if incrementalBuildersCache.ContainsSimilarKey (ctok, options) then
 
-                // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
-                // including by incrementalBuildersCache.Set.
-                let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
-                incrementalBuildersCache.Set(ctok, options, newBuilderInfo)
+        // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
+        // will have the effect of releasing memory associated with the previous builder, but costs some time.
+        if incrementalBuildersCache.ContainsSimilarKey (AssumeAnyCallerThreadWithoutEvidence(), options) then
+            // This operation can't currently be cancelled nor awaited
+            reactor.EnqueueOp(userOpName, "InvalidateConfiguration: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
+                    // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
+                    // including by incrementalBuildersCache.Set.
+                    let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
+                    incrementalBuildersCache.Set(AssumeAnyCallerThreadWithoutEvidence(), options, newBuilderInfo)
 
-                // Start working on the project.  Also a somewhat arbitrary choice
-                if startBackgroundCompileIfAlreadySeen then 
-                   bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
+                    // Start working on the project.  Also a somewhat arbitrary choice
+                    if startBackgroundCompileIfAlreadySeen then 
+                       bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
 
-    member bc.ClearCache(options : FSharpProjectOptions seq, userOpName) =
-        // This operation can't currently be cancelled nor awaited
-        reactor.EnqueueOp(userOpName, "ClearCache", String.Empty, fun ctok -> 
-            options
-            |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(ctok, options)))
+    member bc.ClearCache(options : FSharpProjectOptions seq) =
+        let ctok = AssumeAnyCallerThreadWithoutEvidence()
+        options
+        |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(ctok, options))
 
     member __.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
-         cancellable {
-            // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
-            // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
-            // builder, but costs some time.
-            if incrementalBuildersCache.ContainsSimilarKey (ctok, options) then
-                // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
-                // including by incrementalBuildersCache.Set.
-                let! newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) 
-                incrementalBuildersCache.Set(ctok, options, newBuilderInfo)
-          })
+        // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
+        // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
+        // builder, but costs some time.
+        if incrementalBuildersCache.ContainsSimilarKey (AssumeAnyCallerThreadWithoutEvidence(), options) then
+            reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
+             cancellable {
+                    // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
+                    // including by incrementalBuildersCache.Set.
+                    let! newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) 
+                    incrementalBuildersCache.Set(AssumeAnyCallerThreadWithoutEvidence(), options, newBuilderInfo)
+              })
+        else
+            async { () }
 
     member __.CheckProjectInBackground (options, userOpName) =
         reactor.SetBackgroundOp (Some (userOpName, "CheckProjectInBackground", options.ProjectFileName, (fun ctok ct -> 
@@ -997,7 +1007,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 checkFileInProjectCachePossiblyStale.Clear ltok
                 checkFileInProjectCache.Clear ltok
                 parseFileCache.Clear(ltok))
-            incrementalBuildersCache.Clear ctok
+            incrementalBuildersCache.Clear(AssumeAnyCallerThreadWithoutEvidence())
             frameworkTcImportsCache.Clear ctok
             scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Clear ltok)
             cancellable.Return ())
@@ -1008,7 +1018,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 checkFileInProjectCachePossiblyStale.Resize(ltok, keepStrongly=1)
                 checkFileInProjectCache.Resize(ltok, keepStrongly=1)
                 parseFileCache.Resize(ltok, keepStrongly=1))
-            incrementalBuildersCache.Resize(ctok, keepStrongly=1, keepMax=1)
+            incrementalBuildersCache.Resize(AssumeAnyCallerThreadWithoutEvidence(), keepStrongly=1, keepMax=1)
             frameworkTcImportsCache.Downsize(ctok)
             scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Resize(ltok,keepStrongly=1, keepMax=1))
             cancellable.Return ())
@@ -1245,8 +1255,8 @@ type FSharpChecker(legacyReferenceResolver,
 
     /// Clear the internal cache of the given projects.
     member __.ClearCache(options: FSharpProjectOptions seq, ?userOpName: string) =
-        let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.ClearCache(options, userOpName)
+        let _userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.ClearCache(options)
 
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member __.NotifyProjectCleaned(options: FSharpProjectOptions, ?userOpName: string) =
