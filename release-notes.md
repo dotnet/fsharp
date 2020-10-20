@@ -20,19 +20,29 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 
 ### FSharpLanguage 5.0.0
 
-* TODO
+* Package references in scripts via `#r "nuget:..."`
+* String interpolation
+* Support for `nameof` and the `nameof` pattern
+* `open type` declarations
+* Applicative computation expressions via `let! ... and!`
+* Overloads for custom operations in computation expressions (in preview)
+* Interfaces can now be implemeneted at different generic instantiations
+* Default interface member consumption
+* Better interop with nullable value types
 
 ### FSharp Core 5.0.0
 
-* TODO
+* Consistent behavior for empty/non-existent slices for lists, strings, arrays, 2D arrays, 3D arrays, and 4D arrays
+* Support for fixed-index slices in 3D and 4D arrays
+* Support for negative indexes (in preview)
 
 ### FSharp Tools 11.0.0
 
-* TODO
+* Improved batch compilation performance (up to 30% faster depending on the project type)
 
 ### FSharp Compiler Service 38.0.0
 
-* TODO
+* Support for Jupyter Notebooks and VSCode notebooks via `FSharp.Compiler.Private.Scripting` and .NET Interactive
 
 ## Visual Studio 2017-2019 Update 16.7 release notes
 
