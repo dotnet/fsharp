@@ -12,17 +12,27 @@ This document contains current and historical release notes information. They ar
 
 ## Current release notes
 
+These release notes track our current efforts to document changes to the F# project over time. They are split into the language, core library, compiler/tools, and compiler service.
+
+### F# 5 / Visual Studio 16.8 / .NET 5
+
+This release covers three important milestones: F# 5, Visual Studio 16.8, and .NET 5.
+
 ### FSharpLanguage 5.0.0
-* Fix () - Some bug fix [A Developer](https://github.com/Adeveloper).
+
+* TODO
 
 ### FSharp Core 5.0.0
-* Fix () - Some bug fix [A Developer](https://github.com/Adeveloper).
+
+* TODO
 
 ### FSharp Tools 11.0.0
-* Fix () - Some bug fix [A Developer](https://github.com/Adeveloper).
 
-### FSharp Compiler Service 37.0.0
-* Fix () - Some bug fix [A Developer](https://github.com/Adeveloper).
+* TODO
+
+### FSharp Compiler Service 38.0.0
+
+* TODO
 
 ## Visual Studio 2017-2019 Update 16.7 release notes
 
