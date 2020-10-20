@@ -29,7 +29,7 @@ module rec Compiler =
         | FS  of FSharpCompilationSource
         | CS  of CSharpCompilationSource
         | IL  of ILCompilationSource
-        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
+        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this)
 
     type FSharpCompilationSource =
         { Source:         TestType
