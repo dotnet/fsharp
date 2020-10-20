@@ -22,10 +22,10 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 
 * Package references in scripts via `#r "nuget:..."`
 * String interpolation
-* Support for `nameof` and the `nameof` pattern
+* Support for `nameof` and the `nameof` pattern by Microsoft and [Loïc Denuzière](https://github.com/Tarmil)
 * `open type` declarations
 * Applicative computation expressions via `let! ... and!`
-* Overloads for custom operations in computation expressions (in preview)
+* Overloads for custom operations in computation expressions (in preview), by [Ryan Riley](https://github.com/panesofglass) and [Diego Esmerio](https://github.com/Nhowka)
 * Interfaces can now be implemeneted at different generic instantiations
 * Default interface member consumption
 * Better interop with nullable value types
@@ -35,14 +35,45 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Consistent behavior for empty/non-existent slices for lists, strings, arrays, 2D arrays, 3D arrays, and 4D arrays
 * Support for fixed-index slices in 3D and 4D arrays
 * Support for negative indexes (in preview)
+* Reverted a change where the %A and %O and `ToString`/`string` result of a union with `RequireQualifiedAccess` gave the fully-qualified union case name in response to user feedback
+* Significantly improved XML documentation for all APIs
+* Optimized reflection for F# types by [kerams](https://github.com/kerams)
 
 ### FSharp Tools 11.0.0
 
 * Improved batch compilation performance (up to 30% faster depending on the project type)
+* Support for editing `#r "nuget:..."` scripts in Visual Studio
+* Various fixes for F# script editing performance, especially for scripts with significant dependencies getting loaded
+* Support for compiling against .NET Core on Windows when no STAThread is availble
+* Support for validating signatures against XML doc comments when compiling via `/warnon:3390`
+* Fixed a bug where FSharp.Core XML doc contents were not displayed in F# scripts in Visual Studio
+* Support for strong name signing against F# projects when compiling using the .NET SDK
+* Fixed a bug where manually referencing `Akkling.Cluster.Sharding.0.9.3` in FSI would not work
+* Bring back the custom colorization options that were missed in the 16.7 update
+* Support coloring disposable values independently from disposable types
+* Fix a bug where emitting an `inref<_>` could cause a value to no longer be consumable by C#
+* Support displaying `Some x` when debugging F# options in Visual Studio, by [Friedrich von Never](https://github.com/ForNeVeR)
+* Fix a bug where compiling large anonymous records could fail in release mode
+* Support for considering struct tuples and struct anonymous records as subtypes of `System.ValueTuple`
+* Fix several internal errors in the compiler when compiling various niche scenarios
+* Various performance enhancements when editing large files by Microsoft and [Daniel Svensson](https://github.com/Daniel-Svensson)
+* Optimized output for the `string` function, by [Abel Braaksma](https://github.com/abelbraaksma)
+* Various fixes for some display regressions for Find all References in Visual Studio
+* Fix duplicate symbol output when renaming constructs in a project with multiple TFMs
+* Support for `Int64.MinValue` as a `nativeint` literal, by [Abel Braaksma](https://github.com/abelbraaksma)
+* Prevent assignment to `const` fields, by [Chet Husk](https://github.com/baronfel)
+* Compiler message enhancements by Microsoft and [Vladimir Shchur](https://github.com/Lanayx)
 
 ### FSharp Compiler Service 38.0.0
 
+The most notable change for FSharp.Compiler.Service is that it is now built and deployed as a part of the dotnet/fsharp codebase. Builds are produced nightly, matching exactly the nightly builds of the F# compiler, FSharp.Core, and F# tools.
+
 * Support for Jupyter Notebooks and VSCode notebooks via `FSharp.Compiler.Private.Scripting` and .NET Interactive
+* Improvements to the F# syntax tree represtation by [Eugene Auduchinok](https://github.com/auduchinok)
+* Support for `const` in keyword completion info by [Alex Berezhnykh](https://github.com/DedSec256)
+* Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
+* Support for `ToString` in `FSharp.Compiler.Text.StringText` by [Asti](https://github.com/deviousasti)
+* Fix an issue with equality comparisons for `StringText` by [Asti](https://github.com/deviousasti)
 
 ## Visual Studio 2017-2019 Update 16.7 release notes
 
@@ -69,7 +100,7 @@ The following features were added to F# 5 preview:
 * Updated semantic classification to better distinguish various F# constructs from one another
 * Improvements to performance of various array-based operations in FSharp.Core by [Abel Braaksma](https://github.com/abelbraaksma)
 * Various improvements to the F# compiler service by [Eugene Auduchinok](https://github.com/auduchinok)
-* Improvements to SourceLink support by [Chet Hust](https://github.com/baronfel)
+* Improvements to SourceLink support by [Chet Husk](https://github.com/baronfel)
 * Support for `Map.change` by [Fraser Waters](https://github.com/Frassle)
 
 ### Visual Studio 16.6
