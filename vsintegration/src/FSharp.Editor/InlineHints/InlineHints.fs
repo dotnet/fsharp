@@ -46,26 +46,18 @@ type internal FSharpInlineHintsService
                 for symbolUse in symbolUses do
                     if symbolUse.IsFromDefinition then
                         match symbolUse.Symbol with
-                        | :? FSharpMemberOrFunctionOrValue as x when x.IsValue && not x.IsMemberThisValue && not x.IsConstructorThisValue ->
-                            let symbolSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
-
-                            // TODO: look for if 'x' is SynExpr.Typed perhaps?
-
-                            // This does not correctly "classify" non-F# types
-                            // TODO deal with that, probably via a new API?
-                            let typeLayout = x.FormatLayout symbolUse.DisplayContext
+                        | :? FSharpMemberOrFunctionOrValue as value when value.IsValue && not value.IsMemberThisValue && not value.IsConstructorThisValue ->
+                            let typeInfo = ResizeArray()
                             
-                            let taggedText = ResizeArray()        
-                            
-                            Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                            value.FormatLayout symbolUse.DisplayContext
+                            |> Layout.renderL (Layout.taggedTextListR typeInfo.Add)
+                            |> ignore
                             
                             let displayParts = ImmutableArray.CreateBuilder()
                             displayParts.Add(TaggedText(TextTags.Text, ": "))
-                            
-                            taggedText
-                            |> Seq.map (fun tt -> RoslynHelpers.roslynTag tt.Tag, tt.Text)
-                            |> Seq.map (fun (tag, text) -> TaggedText(tag, text))
-                            |> Seq.iter (fun tt -> displayParts.Add(tt))
+
+                            for tt in typeInfo do
+                                displayParts.Add(TaggedText(RoslynHelpers.roslynTag tt.Tag, tt.Text))
 
                             // TODO - this is not actually correct
                             // We need to get QuickInfo for the actual type we pull out, not the value
@@ -90,15 +82,11 @@ type internal FSharpInlineHintsService
 
                                         let descriptionParts = ImmutableArray.CreateBuilder()
 
-                                        mainDesc
-                                        |> Seq.map (fun tt -> RoslynHelpers.roslynTag tt.Tag, tt.Text)
-                                        |> Seq.map (fun (tag, text) -> TaggedText(tag, text))
-                                        |> Seq.iter (fun tt -> descriptionParts.Add(tt))
+                                        for tt in mainDesc do
+                                            descriptionParts.Add(TaggedText(RoslynHelpers.roslynTag tt.Tag, tt.Text))
 
-                                        docs
-                                        |> Seq.map (fun tt -> RoslynHelpers.roslynTag tt.Tag, tt.Text)
-                                        |> Seq.map (fun (tag, text) -> TaggedText(tag, text))
-                                        |> Seq.iter (fun tt -> descriptionParts.Add(tt))
+                                        for tt in docs do
+                                            descriptionParts.Add(TaggedText(RoslynHelpers.roslynTag tt.Tag, tt.Text))
 
                                         return (descriptionParts.ToImmutableArray())
                                     }
@@ -106,6 +94,7 @@ type internal FSharpInlineHintsService
                                     |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
                             let getDescriptionAsync position = Func<Document, CancellationToken, _>(callBack position)
+                            let symbolSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
 
                             let hint = FSharpInlineHint(TextSpan(symbolSpan.End, 0), displayParts.ToImmutableArray(), getDescriptionAsync symbolSpan.Start)
                             typeHints.Add(hint)
