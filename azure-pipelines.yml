@@ -382,6 +382,30 @@ stages:
               continueOnError: true
               condition: not(succeeded())
 
+        # Plain build Linux
+        - job: Plain_Build_Linux
+          pool:
+            vmImage: ubuntu-latest
+          steps:
+          - checkout: self
+            clean: true
+          - script: ./build.sh
+            displayName: Initial build
+          - script: dotnet build ./FSharp.sln
+            displayName: Regular rebuild
+
+        # Plain build Mac
+        - job: Plain_Build_MacOS
+          pool:
+            vmImage: macos-latest
+          steps:
+          - checkout: self
+            clean: true
+          - script: ./build.sh
+            displayName: Initial build
+          - script: dotnet build ./FSharp.sln
+            displayName: Regular rebuild
+
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
     # - template: /eng/common/templates/jobs/jobs.yml
