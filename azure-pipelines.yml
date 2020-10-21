@@ -239,6 +239,16 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # Mock official build
+        - job: MockOfficial
+          pool:
+            vmImage: windows-2019
+          steps:
+          - checkout: self
+            clean: true
+          - pwsh: .\eng\MockBuild.ps1
+            displayName: Build with OfficialBuildId
+
         # Linux
         - job: Linux
           pool:
@@ -311,7 +321,7 @@ stages:
           - checkout: self
             clean: true
           - script: .\Build.cmd -c Release
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
         # Source Build Windows
@@ -415,7 +425,7 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: release/dev16.8
-      insertTargetBranch: master
+      componentBranchName: refs/heads/release/dev16.9
+      insertTargetBranch: main
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'

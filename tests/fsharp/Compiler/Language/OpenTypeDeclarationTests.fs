@@ -13,7 +13,7 @@ open FSharp.Tests
 module OpenTypeDeclarationTests =
 
     [<Literal>]
-    let targetVersion = "'preview'"
+    let targetVersion = "5.0"
 
     let baseModule = """
 module Core_OpenStaticClasses
@@ -36,7 +36,7 @@ type NotAllowedToOpen() =
 """
 
     [<Test>]
-    let ``OpenSystemMathOnce - langversion:v4_6`` () =
+    let ``OpenSystemMathOnce - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
 
@@ -52,19 +52,19 @@ module OpenSystemMathOnce =
         |> ignore
 
     [<Test>]
-    let ``OpenSystemMathOnce - langversion:preview`` () =
+    let ``OpenSystemMathOnce - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
 
                        open type System.Math
                        let x = Min(1.0, 2.0)""")
-         |> withLangVersionPreview
+         |> withLangVersion50
          |> typecheck
          |> shouldSucceed
          |> ignore
 
     [<Test>]
-    let ``OpenSystemMathTwice - langversion:v4_6`` () =
+    let ``OpenSystemMathTwice - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenSystemMathTwice = 
 
@@ -85,19 +85,19 @@ module OpenSystemMathTwice =
         |> ignore
 
     [<Test>]
-    let ``OpenSystemMathTwice - langversion:preview`` () =
+    let ``OpenSystemMathTwice - langversion:50`` () =
         Fsx (baseModule + """
 module OpenSystemMathOnce =
 
                    open type System.Math
                    let x = Min(1.0, 2.0)""")
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Test>]
-    let ``OpenMyMathOnce - langversion:v4_6`` () =
+    let ``OpenMyMathOnce - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenMyMathOnce = 
 
@@ -115,20 +115,20 @@ module OpenMyMathOnce =
         |> ignore
 
     [<Test>]
-    let ``OpenMyMathOnce - langversion:preview`` () =
+    let ``OpenMyMathOnce - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenMyMathOnce = 
 
     open type MyMath
     let x = Min(1.0, 2.0)
     let x2 = Min(1, 2)""")
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Test>]
-    let ``DontOpenAutoMath - langversion:v4_6`` () =
+    let ``DontOpenAutoMath - langversion:4.6`` () =
         Fsx (baseModule + """
 module DontOpenAutoMath = 
 
@@ -144,19 +144,19 @@ module DontOpenAutoMath =
         |> ignore
 
     [<Test>]
-    let ``DontOpenAutoMath - langversion:preview`` () =
+    let ``DontOpenAutoMath - langversion:5.0`` () =
         Fsx (baseModule + """
 module DontOpenAutoMath = 
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Test>]
-    let ``OpenAutoMath - langversion:v4_6`` () =
+    let ``OpenAutoMath - langversion:4.6`` () =
         Fsx (baseModule + """
 module OpenAutoMath = 
     open type AutoOpenMyMath
@@ -175,7 +175,7 @@ module OpenAutoMath =
         |> ignore
 
     [<Test>]
-    let ``OpenAutoMath - langversion:preview`` () =
+    let ``OpenAutoMath - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenAutoMath = 
     open type AutoOpenMyMath
@@ -183,19 +183,19 @@ module OpenAutoMath =
 
     let x = AutoMin(1.0, 2.0)
     let x2 = AutoMin(1, 2)""")
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> typecheck
         |> shouldSucceed
         |> ignore
 
     [<Test>]
-    let ``OpenAccessibleFields - langversion:preview`` () =
+    let ``OpenAccessibleFields - langversion:5.0`` () =
         Fsx (baseModule + """
 module OpenAFieldFromMath =
     open type System.Math
     
     let pi = PI""")
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> typecheck
         |> shouldSucceed
         |> ignore
@@ -236,7 +236,7 @@ module Test =
     let y = NestedTest<int>()
     let a = x.A()
     let b = y.B()"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -274,7 +274,7 @@ namespace FSharpTest
 open System
 type Abbrev = CSharpTest.Test
 open type Abbrev.NestedTest"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -312,7 +312,7 @@ namespace FSharpTest
 open System
 type Abbrev = CSharpTest.Test
 open type Abbrev"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -345,7 +345,7 @@ open type CSharpTest.Test.NestedTest
 
 module Test =
     let x = A()"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -416,7 +416,7 @@ module Test2 =
 
     let y2 : NestedTest<int> = new NestedTest<int>()
     let y2a : byte = y2.A()"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -431,7 +431,7 @@ open type System.Collections.Generic.List<int>
 
 module Test =
     let e2 = new Enumerator()"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -535,7 +535,7 @@ module Test4 =
 
     let d : NestedNestedTest<int> = NestedNestedTest<int>()
     let dd : int = d.D()"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -634,7 +634,7 @@ module Test3 =
 
     let r3 : int list = cc.C()
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> shouldSucceed
@@ -652,7 +652,7 @@ type kg
 
 open type kg
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -678,7 +678,7 @@ type vec3<[<Measure>] 'Measure> = Vector3
 
 open type vec3<kg>
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -710,7 +710,7 @@ module Test =
     let y : float<kg> = GetY(Unchecked.defaultof<_>)
 
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -751,7 +751,7 @@ module Test =
 
     let w : float = GetW(Unchecked.defaultof<_>)
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -783,7 +783,7 @@ module Test =
 
     let x : float<g> = GetX(Unchecked.defaultof<_>)
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -795,7 +795,7 @@ namespace FSharpTest
 
 open type (int * int)
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -810,7 +810,7 @@ namespace FSharpTest
 
 open type struct (int * int)
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -825,7 +825,7 @@ namespace FSharpTest
 
 open type (int -> int)
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -840,7 +840,7 @@ namespace FSharpTest
 
 open type {| x: int |}
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -855,7 +855,7 @@ namespace FSharpTest
 
 open type struct {| x: int |}
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -874,7 +874,7 @@ open System
 
 open type Tuple<int, int>
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -893,7 +893,7 @@ open System
 
 open type ValueTuple<int, int>
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -910,7 +910,7 @@ namespace FSharpTest
 
 open type FSharpFunc<int, int>
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -934,7 +934,7 @@ module Test =
     let x = EnumCase1
     let y = EnumCase2
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -963,7 +963,7 @@ module Test =
     let x = CSharpEnumCase1
     let y = CSharpEnumCase2
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> ignore
@@ -989,7 +989,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1015,7 +1015,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1062,7 +1062,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1092,7 +1092,7 @@ module Test3 =
 
     let y = M()
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withErrorCode 1
         |> ignore
@@ -1146,7 +1146,7 @@ module Test2 =
 
     let y = M()
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withErrorCode 39
         |> ignore
@@ -1175,7 +1175,7 @@ module Test2 =
         M(1)
         M(2.0)
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
         |> ignore
@@ -1204,7 +1204,7 @@ module Test2 =
         M(1)
         M(2.0)
         """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withErrorCodes [1;1]
         |> ignore
@@ -1234,7 +1234,7 @@ open CSharpTest.Test
 
 module Test =
     let x = A()"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> withReferences [csharp]
         |> compile
         |> withDiagnostics
@@ -1250,7 +1250,7 @@ module Test =
 namespace FSharpTest
 
 open type System"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -1264,7 +1264,7 @@ open type System"""
 namespace FSharpTest
 
 open type FSharp.Core.Option"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -1280,7 +1280,7 @@ namespace FSharpTest
 open type byref<int>
 open type inref<int>
 open type outref<int>"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -1323,7 +1323,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MPM2ExtP2Ext")
 
@@ -1358,7 +1358,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MP")
 
@@ -1396,7 +1396,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MExtP")
 
@@ -1426,7 +1426,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "M")
 
@@ -1437,7 +1437,7 @@ open type System.Math
 
 let x = Equals(2.0, 3.0)
             """
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> compile
         |> withDiagnostics
             [
@@ -1463,7 +1463,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> asExe
         |> compile
         |> withDiagnostics
@@ -1492,7 +1492,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1515,7 +1515,7 @@ open type TestExtensions.IntExtensions
 let main _ =
     Test(1)
     0"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1540,7 +1540,7 @@ let main _ =
     let x = 1
     x.Test()
     0"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1559,7 +1559,7 @@ open type A
 let main _ =
     let _x = 1 + 1
     0"""
-        |> withLangVersionPreview
+        |> withLangVersion50
         |> asExe
         |> compile
         |> shouldSucceed
@@ -1688,7 +1688,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [ilCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1814,7 +1814,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [ilCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1964,7 +1964,7 @@ let x2: string = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [ilCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2123,7 +2123,7 @@ let x2: float32 = X()
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:preview"|], cmplRefs = [ilCmpl])
+            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2164,7 +2164,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2206,7 +2206,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl], name = "Test")
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl], name = "Test")
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2245,7 +2245,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:preview"|], cmplRefs = [csCmpl])
+            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpErrorSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")
@@ -2265,15 +2265,15 @@ let main _ =
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withLangVersionPreview
-            
+            |> withLangVersion50
+
         let provided =
             Fsx (sprintf """
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withLangVersionPreview
+            |> withLangVersion50
 
         let test =
             Fsx """
@@ -2291,7 +2291,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2307,7 +2307,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
             |> ignoreWarnings
-            |> withLangVersionPreview
+            |> withLangVersion50
 
         let provided =
             Fsx (sprintf """
@@ -2315,7 +2315,7 @@ if StaticProperty1 <> "You got a static property" then
             """ (dir ++ "provided.fs"))
             |> withName "provided"
             |> ignoreWarnings
-            |> withLangVersionPreview
+            |> withLangVersion50
 
         let test =
             Fsx """
@@ -2331,7 +2331,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2346,7 +2346,7 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> ignoreWarnings
             |> withLangVersionPreview
 
@@ -2355,7 +2355,7 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> ignoreWarnings
             |> withLangVersionPreview
 
@@ -2368,7 +2368,7 @@ if StaticProperty1 <> "You got a static property" then
             """
             |> asExe
             |> ignoreWarnings
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> withReferences [provider;provided]
 
         compileAndRun test
@@ -2383,7 +2383,7 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> ignoreWarnings
             |> withLangVersionPreview
 
@@ -2392,7 +2392,7 @@ if StaticProperty1 <> "You got a static property" then
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> ignoreWarnings
             |> withLangVersionPreview
 
@@ -2405,7 +2405,7 @@ open type TheOuterType
 let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> withReferences [provider;provided]
             |> ignoreWarnings
 
@@ -2421,7 +2421,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
 #load @"%s"
             """ (dir ++ "provider.fsx"))
             |> withName "provider"
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> ignoreWarnings
             |> withLangVersionPreview
 
@@ -2430,7 +2430,7 @@ let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
 #load @"%s"
             """ (dir ++ "provided.fs"))
             |> withName "provided"
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> ignoreWarnings
             |> withLangVersionPreview
 
@@ -2441,7 +2441,7 @@ open type FSharp.HelloWorldGenerative.TheContainerType<"TheOuterType">
 let _ : TheNestedGeneratedType = Unchecked.defaultof<_>
             """
             |> asExe
-            |> withLangVersionPreview
+            |> withLangVersion50
             |> withReferences [provider;provided]
             |> ignoreWarnings
 
