@@ -45,6 +45,15 @@ type Reactor() =
 
     let threadsUsed = System.Collections.Concurrent.ConcurrentDictionary<int, byte>()
 
+    let useThread (thread: Thread) =
+        thread.CurrentUICulture <- culture
+        threadsUsed.[thread.ManagedThreadId] <- 0uy
+        { new IDisposable with 
+            member _.Dispose() = 
+                let res, _ = threadsUsed.TryRemove(thread.ManagedThreadId)
+                assert res
+        }
+
     /// Mailbox dispatch function.
     let builder = 
         MailboxProcessor<_>.Start <| fun inbox ->
@@ -72,8 +81,7 @@ type Reactor() =
                                             pauseBeforeBackgroundWork
                                     return! inbox.TryReceive(timeout) }
 
-                    let currentThread = Thread.CurrentThread
-                    currentThread.CurrentUICulture <- culture
+                    use _disposable = useThread Thread.CurrentThread
 
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
@@ -85,12 +93,7 @@ type Reactor() =
                         Trace.TraceInformation("Reactor: {0:n3} --> {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, inbox.CurrentQueueLength)
                         let time = Stopwatch()
                         time.Start()
-
-                        threadsUsed.[currentThread.ManagedThreadId] <- 0uy
                         op ctok
-                        let res, _ = threadsUsed.TryRemove(currentThread.ManagedThreadId)
-                        assert res
-
                         time.Stop()
                         let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
