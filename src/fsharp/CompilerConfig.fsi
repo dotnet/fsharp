@@ -92,14 +92,6 @@ type AssemblyReference =
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 
-/// The thread in which compilation calls will be enqueued and done work on.
-/// Note: This is currently only used when disposing of type providers and will be extended to all the other type provider calls when compilations can be done in parallel.
-///       Right now all calls in FCS to type providers are single-threaded through use of the reactor thread. 
-type ICompilationThread =
-
-    /// Enqueue work to be done on a compilation thread.
-    abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
-
 [<RequireQualifiedAccess>]
 type CompilerTarget = 
     | WinExe 

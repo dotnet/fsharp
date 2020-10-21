@@ -31,7 +31,8 @@ module internal ExtensionTyping =
           outputFile                : string option
           showResolutionMessages    : bool
           referencedAssemblies      : string[]
-          temporaryFolder           : string }
+          temporaryFolder           : string
+          compilationThread         : ICompilationThread }
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
@@ -97,7 +98,7 @@ module internal ExtensionTyping =
         // reporting errors.
         let protect f =
             try 
-                f ()
+                resolutionEnvironment.compilationThread.EnqueueWorkAndWait(fun _ -> f ())
             with err ->
                 let e = StripException (StripException err)
                 raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))

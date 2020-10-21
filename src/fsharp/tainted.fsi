@@ -10,6 +10,7 @@ open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
 open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Stores and transports aggregated list of errors reported by the type provider
 type internal TypeProviderError =
@@ -42,7 +43,7 @@ type internal TypeProviderError =
 type internal Tainted<'T> =
 
     /// Create an initial tainted value
-    static member CreateAll : (ITypeProvider * ILScopeRef) list -> Tainted<ITypeProvider> list
+    static member CreateAll : (ITypeProvider * ILScopeRef) list * ICompilationThread -> Tainted<ITypeProvider> list
 
     /// A type provider that produced the value
     member TypeProvider : Tainted<ITypeProvider>

@@ -42,6 +42,9 @@ module internal ExtensionTyping =
 
         /// The folder for temporary files
         temporaryFolder             : string
+
+        /// The compilation thread
+        compilationThread           : ICompilationThread
       }
 
     /// Find and instantiate the set of ITypeProvider components for the given assembly reference

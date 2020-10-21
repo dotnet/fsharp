@@ -1227,7 +1227,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                    outputFile = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
                    referencedAssemblies = Array.distinct [| for r in tcImportsStrong.AllAssemblyResolutions() -> r.resolvedPath |]
-                   temporaryFolder = FileSystem.GetTempPathShim() }
+                   temporaryFolder = FileSystem.GetTempPathShim()
+                   compilationThread = tcConfig.compilationThread }
 
             // The type provider should not hold strong references to disposed
             // TcImport objects. So the callbacks provided in the type provider config

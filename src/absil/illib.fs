@@ -653,6 +653,15 @@ type Lock<'LockTokenType when 'LockTokenType :> LockToken>() =
 //---------------------------------------------------
 // Misc
 
+/// The thread in which compilation calls will be enqueued and done work on.
+type internal ICompilationThread =
+
+    /// Enqueue work to be done on a compilation thread.
+    abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
+
+    /// Enqueue work to be done on a compilation thread.
+    abstract EnqueueWorkAndWait: (CompilationThreadToken -> 'T) -> 'T
+
 /// Get an initialization hole 
 let getHole r = match !r with None -> failwith "getHole" | Some x -> x
 

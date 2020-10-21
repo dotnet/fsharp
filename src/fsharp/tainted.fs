@@ -69,7 +69,7 @@ type internal TypeProviderError
             for msg in errors do
                 f (new TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
-type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef }
+type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef; CompilationThread: ICompilationThread }
 
 [<NoEquality>][<NoComparison>] 
 type internal Tainted<'T> (context : TaintedContext, value : 'T) =
@@ -88,7 +88,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
 
     member this.Protect f  (range:range) =
         try 
-            f value
+            context.CompilationThread.EnqueueWorkAndWait (fun _ -> f value)
         with
             |   :? TypeProviderError -> reraise()
             |   :? AggregateException as ae ->
@@ -141,9 +141,9 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 
-    static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef) list) =
+    static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef) list, compilationThread) =
         [for (tp,nm) in providerSpecs do
-             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm },tp) ] 
+             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; CompilationThread=compilationThread },tp) ] 
 
     member this.OfType<'U> () =
         match box value with
