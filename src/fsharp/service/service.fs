@@ -930,19 +930,19 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompileIfAlreadySeen, userOpName) =
         let startBackgroundCompileIfAlreadySeen = defaultArg startBackgroundCompileIfAlreadySeen implicitlyStartBackgroundWork
 
-        // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
-        // will have the effect of releasing memory associated with the previous builder, but costs some time.
-        if incrementalBuildersCache.ContainsSimilarKey (AssumeAnyCallerThreadWithoutEvidence(), options) then
-            // This operation can't currently be cancelled nor awaited
-            reactor.EnqueueOp(userOpName, "InvalidateConfiguration: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
-                    // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
-                    // including by incrementalBuildersCache.Set.
-                    let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
-                    incrementalBuildersCache.Set(AssumeAnyCallerThreadWithoutEvidence(), options, newBuilderInfo)
+        // This operation can't currently be cancelled nor awaited
+        reactor.EnqueueOp(userOpName, "InvalidateConfiguration: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
+            // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
+            // will have the effect of releasing memory associated with the previous builder, but costs some time.
+            if incrementalBuildersCache.ContainsSimilarKey (AssumeAnyCallerThreadWithoutEvidence(), options) then
+                // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
+                // including by incrementalBuildersCache.Set.
+                let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
+                incrementalBuildersCache.Set(AssumeAnyCallerThreadWithoutEvidence(), options, newBuilderInfo)
 
-                    // Start working on the project.  Also a somewhat arbitrary choice
-                    if startBackgroundCompileIfAlreadySeen then 
-                       bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
+                // Start working on the project.  Also a somewhat arbitrary choice
+                if startBackgroundCompileIfAlreadySeen then 
+                    bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
 
     member bc.ClearCache(options : FSharpProjectOptions seq) =
         let ctok = AssumeAnyCallerThreadWithoutEvidence()
@@ -950,19 +950,17 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         |> Seq.iter (fun options -> incrementalBuildersCache.RemoveAnySimilar(ctok, options))
 
     member __.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
-        // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
-        // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
-        // builder, but costs some time.
-        if incrementalBuildersCache.ContainsSimilarKey (AssumeAnyCallerThreadWithoutEvidence(), options) then
-            reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
-             cancellable {
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
+            cancellable {
+                // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
+                // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
+                // builder, but costs some time.
+                if incrementalBuildersCache.ContainsSimilarKey (AssumeAnyCallerThreadWithoutEvidence(), options) then
                     // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                     // including by incrementalBuildersCache.Set.
                     let! newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) 
                     incrementalBuildersCache.Set(AssumeAnyCallerThreadWithoutEvidence(), options, newBuilderInfo)
-              })
-        else
-            async { () }
+            })
 
     member __.CheckProjectInBackground (options, userOpName) =
         reactor.SetBackgroundOp (Some (userOpName, "CheckProjectInBackground", options.ProjectFileName, (fun ctok ct -> 
