@@ -172,7 +172,7 @@ module internal ExtensionTyping =
                     tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
                     []
 
-        let providers = Tainted<_>.CreateAll providerSpecs
+        let providers = Tainted<_>.CreateAll(providerSpecs, resolutionEnvironment.compilationThread)
 
         providers
 

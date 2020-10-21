@@ -42,6 +42,9 @@ type Reactor() =
     let mutable culture = CultureInfo(CultureInfo.CurrentUICulture.Name)
 
     let mutable bgOpCts = new CancellationTokenSource()
+
+    let threadsUsed = System.Collections.Concurrent.ConcurrentDictionary<int, byte>()
+
     /// Mailbox dispatch function.
     let builder = 
         MailboxProcessor<_>.Start <| fun inbox ->
@@ -68,7 +71,10 @@ type Reactor() =
                                             Trace.TraceInformation("Reactor: {0:n3} pausing {1} milliseconds", DateTime.Now.TimeOfDay.TotalSeconds, pauseBeforeBackgroundWork)
                                             pauseBeforeBackgroundWork
                                     return! inbox.TryReceive(timeout) }
-                    Thread.CurrentThread.CurrentUICulture <- culture
+
+                    let currentThread = Thread.CurrentThread
+                    currentThread.CurrentUICulture <- culture
+
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
@@ -79,7 +85,12 @@ type Reactor() =
                         Trace.TraceInformation("Reactor: {0:n3} --> {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, inbox.CurrentQueueLength)
                         let time = Stopwatch()
                         time.Start()
+
+                        threadsUsed.[currentThread.ManagedThreadId] <- 0uy
                         op ctok
+                        let res, _ = threadsUsed.TryRemove(currentThread.ManagedThreadId)
+                        assert res
+
                         time.Stop()
                         let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
@@ -196,6 +207,19 @@ type Reactor() =
             )
             return! resultCell.AsyncResult 
         }
+
+    member r.ExecuteOrEnqueueAndAwaitOpAsync (userOpName, opName, opArg, f) =
+        if threadsUsed.ContainsKey(Thread.CurrentThread.ManagedThreadId) then
+            async { 
+                let! ct = Async.CancellationToken
+                let result =
+                    match Cancellable.run ct (f (AssumeCompilationThreadWithoutEvidence())) with 
+                    | ValueOrCancelled.Value r -> r
+                    | ValueOrCancelled.Cancelled e -> raise e
+                return result }
+        else
+            r.EnqueueAndAwaitOpAsync(userOpName, opName, opArg, f)
+
     member __.PauseBeforeBackgroundWork with get() = pauseBeforeBackgroundWork and set v = pauseBeforeBackgroundWork <- v
 
     static member Singleton = theReactor 
