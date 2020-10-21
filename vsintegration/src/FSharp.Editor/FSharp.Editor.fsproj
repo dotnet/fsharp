@@ -53,7 +53,6 @@
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
-    <Compile Include="InlineHints\InlineHints.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ClassificationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
@@ -85,6 +84,7 @@
     <Compile Include="QuickInfo\Navigation.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
+    <Compile Include="InlineHints\InlineHints.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />

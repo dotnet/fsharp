@@ -212,6 +212,10 @@ type public FSharpCheckFileResults =
     /// Get all textual usages of all symbols throughout the file
     member GetAllUsesOfAllSymbolsInFile : ?cancellationToken: CancellationToken -> seq<FSharpSymbolUse>
 
+    /// <summary>Get all textual usages of all symbols throughout a typechecked file that fall within a given range.</summary>
+    /// <param name="outerRange">The range in the typechecked document that all symbols must by defined within</param>
+    member GetAllUsesOfAllSymbolsInFileWithinRange : outerRange: range -> Async<FSharpSymbolUse[]>
+
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
