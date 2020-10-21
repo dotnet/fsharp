@@ -9,6 +9,7 @@
 module internal FSharp.Compiler.TcGlobals
 
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Diagnostics
 
 open FSharp.Compiler.AbstractIL 
@@ -360,7 +361,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkForallTyIfNeeded d r = match d with [] -> r | tps -> TType_forall(tps, r)
 
       // A table of all intrinsics that the compiler cares about
-  let v_knownIntrinsics = Dictionary<(string * string option * string * int), ValRef>(HashIdentity.Structural)
+  let v_knownIntrinsics = ConcurrentDictionary<(string * string option * string * int), ValRef>(HashIdentity.Structural)
 
   let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
       let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
@@ -374,7 +375,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let key = (enclosingEntity.LastItemMangledName, memberParentName, compiledName, argCount)
       assert not (v_knownIntrinsics.ContainsKey(key))
       if isKnown && not (v_knownIntrinsics.ContainsKey(key)) then
-          v_knownIntrinsics.Add(key, ValRefForIntrinsic vref)
+          v_knownIntrinsics.[key] <- ValRefForIntrinsic vref
       vref
 
   let makeIntrinsicValRef info = makeIntrinsicValRefGeneral true info

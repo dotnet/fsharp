@@ -65,7 +65,7 @@ module internal ExtensionTyping =
      ///
      /// At the moment this is the "Type --> ILTypeRef" and "Type --> Tycon" remapping 
      /// context for generated types (it is empty for erased types). This is computed from
-     /// while processing the [<Generate>] declaration related to the type.
+     /// while processing the [<Generate>] declaration related to the type. 
      ///
      /// Immutable (after type generation for a [<Generate>] declaration populates the dictionaries).
      ///

@@ -697,7 +697,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
     fun f (idx: int32) ->
         let cache = 
             match !cache with
-            | null -> cache := new Dictionary<int32, _>(11)
+            | null -> cache := new ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
             | _ -> ()
             !cache
         match cache.TryGetValue idx with
@@ -719,7 +719,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
     fun f (idx :'T) ->
         let cache = 
             match !cache with
-            | null -> cache := new Dictionary<_, _>(11 (* sz: int *) ) 
+            | null -> cache := new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) ) 
             | _ -> ()
             !cache
         match cache.TryGetValue idx with
