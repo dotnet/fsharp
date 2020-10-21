@@ -382,6 +382,58 @@ stages:
               continueOnError: true
               condition: not(succeeded())
 
+        # Plain build Windows
+        # Disabled until the Windows Proto compiler is coreclr
+        # - job: Plain_Build_Windows
+        #   pool:
+        #     vmImage: windows-latest
+        #   variables:
+        #   - name: _BuildConfig
+        #     value: Debug
+        #   steps:
+        #   - checkout: self
+        #     clean: true
+        #   - script: .\Build.cmd
+        #     displayName: Initial build
+        #   - script: dotnet --list-sdks
+        #     displayName: Report dotnet SDK versions
+        #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+        #     displayName: Regular rebuild
+
+        # Plain build Linux
+        - job: Plain_Build_Linux
+          pool:
+            vmImage: ubuntu-latest
+          variables:
+          - name: _BuildConfig
+            value: Debug
+          steps:
+          - checkout: self
+            clean: true
+          - script: ./build.sh
+            displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            displayName: Regular rebuild
+
+        # Plain build Mac
+        - job: Plain_Build_MacOS
+          pool:
+            vmImage: macos-latest
+          variables:
+          - name: _BuildConfig
+            value: Debug
+          steps:
+          - checkout: self
+            clean: true
+          - script: ./build.sh
+            displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            displayName: Regular rebuild
+
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
     # - template: /eng/common/templates/jobs/jobs.yml
