@@ -2007,12 +2007,12 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
 and MakeOptimizedSystemStringConcatCall cenv env m args =
     let rec optimizeArg argExpr accArgs =
         match argExpr, accArgs with
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ 
-          when IsILMethodRefSystemStringConcatArray mref ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ 
+          when IsILMethodRefSystemStringConcatArray ilMethRef ->
             optimizeArgs args accArgs
 
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args, _), _ 
-          when IsILMethodRefSystemStringConcat mref ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _), _ 
+          when IsILMethodRefSystemStringConcat ilMethRef ->
             optimizeArgs args accArgs
 
 // String constant folding requires a bit more work as we cannot quadratically concat strings at compile time.
@@ -2045,8 +2045,8 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             mkStaticCall_String_Concat_Array cenv.g m arg
 
     match expr with
-    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _) as op, tyargs, args, m) 
-      when IsILMethodRefSystemStringConcat mref || IsILMethodRefSystemStringConcatArray mref ->
+    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _) as op, tyargs, args, m) 
+      when IsILMethodRefSystemStringConcat ilMethRef || IsILMethodRefSystemStringConcatArray ilMethRef ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
         OptimizeExpr cenv env expr
@@ -2102,9 +2102,9 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
    // This code hooks arr.Length. The idea is to ensure loops end up in the "same shape"as the forms of loops that the .NET JIT
    // guarantees to optimize.
   
-    | TOp.ILCall (_, _, _, _, _, _, _, mref, _enclTypeArgs, _methTypeArgs, _tys), _, [arg]
-        when (mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
-              mref.Name = "get_Length" &&
+    | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [arg]
+        when (ilMethRef.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
+              ilMethRef.Name = "get_Length" &&
               isArray1DTy cenv.g (tyOfExpr cenv.g arg)) -> 
          OptimizeExpr cenv env (Expr.Op (TOp.ILAsm (i_ldlen, [cenv.g.int_ty]), [], [arg], m))
 
@@ -2113,11 +2113,11 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILAsm ([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
     // Optimize calls when concatenating strings, e.g. "1" + "2" + "3" + "4" .. etc.
-    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] 
-      when IsILMethodRefSystemStringConcatArray mref ->
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] 
+      when IsILMethodRefSystemStringConcatArray ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
-    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args 
-      when IsILMethodRefSystemStringConcat mref ->
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args 
+      when IsILMethodRefSystemStringConcat ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
 
     | _ -> 
@@ -2177,9 +2177,9 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
               | StripUnionCaseValue (uc, info) -> UnionCaseValue(uc, info) 
               | _ -> valu
           0, valu
-      | TOp.ILAsm (instrs, tys) -> 
+      | TOp.ILAsm (instrs, retTypes) -> 
           min instrs.Length 1, 
-          mkAssemblyCodeValueInfo cenv.g instrs argValues tys
+          mkAssemblyCodeValueInfo cenv.g instrs argValues retTypes
       | TOp.Bytes bytes -> bytes.Length/10, valu
       | TOp.UInt16s bytes -> bytes.Length/10, valu
       | TOp.ValFieldGetAddr _     
@@ -2204,7 +2204,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
     // Indirect calls to IL code are always taken as tailcalls
     let mayBeCriticalTailcall = 
         match op with
-        | TOp.ILCall (virt, _, newobj, _, _, _, _, _, _, _, _) -> not newobj && virt
+        | TOp.ILCall (isVirtual, _, isCtor, _, _, _, _, _, _, _, _) -> not isCtor && isVirtual
         | _ -> false
     
     let vinfo = { TotalSize=argsTSize + cost

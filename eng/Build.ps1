@@ -58,6 +58,7 @@ param (
     [switch]$testpack,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
+    [switch]$sourceBuild,
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
@@ -108,6 +109,7 @@ function Print-Usage() {
     Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
     Write-Host "  -useGlobalNuGetCache      Use global NuGet cache."
     Write-Host "  -noVisualStudio           Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
+    Write-Host "  -sourceBuild              Simulate building for source-build."
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -154,10 +156,11 @@ function Process-Arguments() {
         $script:pack = $True;
     }
 
+    if ($sourceBuild) {
+        $script:testpack = $False;
+    }
+
     foreach ($property in $properties) {
-        if ($property.StartsWith("/p:DotNetBuildFromSource=true", "InvariantCultureIgnoreCase")) {
-            $script:testpack = $False;
-        }
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
             Print-Usage
@@ -220,6 +223,7 @@ function BuildSolution() {
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
+        /p:DotNetBuildFromSource=$sourceBuild `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties

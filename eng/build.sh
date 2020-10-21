@@ -30,6 +30,7 @@ usage()
   echo "  --docker                   Run in a docker container if applicable"
   echo "  --skipAnalyzers            Do not run analyzers during build operations"
   echo "  --prepareMachine           Prepare machine for CI run, clean up processes after build"
+  echo "  --sourceBuild              Simulate building for source-build"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -130,14 +131,12 @@ while [[ $# > 0 ]]; do
       ;;
     --docker)
       docker=true
-      shift
-      continue
+      ;;
+    --sourcebuild)
+      source_build=true
       ;;
     /p:*)
       properties="$properties $1"
-      if [[ "$1" == "/p:dotnetbuildfromsource=true" ]]; then
-        source_build=true
-      fi
       ;;
     *)
       echo "Invalid argument: $1"
@@ -279,6 +278,7 @@ function BuildSolution {
     /p:ContinuousIntegrationBuild=$ci \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
+    /p:DotNetBuildFromSource=$source_build \
     $properties
 }
 
