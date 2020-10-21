@@ -391,6 +391,8 @@ stages:
             clean: true
           - script: ./build.sh
             displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
           - script: dotnet build ./FSharp.sln
             displayName: Regular rebuild
 
@@ -403,6 +405,8 @@ stages:
             clean: true
           - script: ./build.sh
             displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
           - script: dotnet build ./FSharp.sln
             displayName: Regular rebuild
 
