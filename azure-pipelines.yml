@@ -386,6 +386,9 @@ stages:
         - job: Plain_Build_Linux
           pool:
             vmImage: ubuntu-latest
+          variables:
+          - name: _BuildConfig
+            value: Debug
           steps:
           - checkout: self
             clean: true
@@ -393,13 +396,16 @@ stages:
             displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: dotnet build ./FSharp.sln
+          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
 
         # Plain build Mac
         - job: Plain_Build_MacOS
           pool:
             vmImage: macos-latest
+          variables:
+          - name: _BuildConfig
+            value: Debug
           steps:
           - checkout: self
             clean: true
@@ -407,7 +413,7 @@ stages:
             displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: dotnet build ./FSharp.sln
+          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
 
     # Arcade-powered source build
