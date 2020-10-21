@@ -36,8 +36,9 @@ param (
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
     [string]$bootstrapTfm = "net472",
-    [switch][Alias('bl')]$binaryLog,
-    [switch][Alias('nobl')]$excludeCIBinaryLog,
+    [switch][Alias('bl')]$binaryLog = $true,
+    [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
+    [switch][Alias('nolog')]$noBinaryLog = $false,
     [switch]$ci,
     [switch]$official,
     [switch]$procdump,
@@ -73,6 +74,7 @@ function Print-Usage() {
     Write-Host "  -verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
     Write-Host "  -deployExtensions         Deploy built vsixes"
     Write-Host "  -binaryLog                Create MSBuild binary log (short: -bl)"
+    Write-Host "  -noLog                    Turn off logging (short: -nolog)"
     Write-Host "  -excludeCIBinaryLog       When running on CI, allow no binary log (short: -nobl)"
     Write-Host ""
     Write-Host "Actions:"
@@ -160,6 +162,10 @@ function Process-Arguments() {
         $script:testpack = $False;
     }
 
+    if ($noBinaryLog) {
+        $script:binaryLog = $False;
+    }
+
     foreach ($property in $properties) {
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
@@ -192,10 +198,6 @@ function BuildSolution() {
 
     Write-Host "$($solution):"
 
-    if ($binaryLog -and $excludeCIBinaryLog) {
-        Write-Host "Invalid argument -binarylog(-bl) and -excludeCIBinaryLog(-nobl) cannot be set at the same time"
-        ExitWithExitCode 1
-        }
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
 
     $projects = Join-Path $RepoRoot $solution
