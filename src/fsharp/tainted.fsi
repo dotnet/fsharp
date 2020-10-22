@@ -12,6 +12,16 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 
+[<Sealed>]
+type internal TypeProviderToken = 
+    interface LockToken
+
+[<Sealed;Class>]
+type internal TypeProviderLock =
+    inherit Lock<TypeProviderToken>
+
+    static member Singleton : TypeProviderLock
+
 /// Stores and transports aggregated list of errors reported by the type provider
 type internal TypeProviderError =
     inherit System.Exception
@@ -43,7 +53,7 @@ type internal TypeProviderError =
 type internal Tainted<'T> =
 
     /// Create an initial tainted value
-    static member CreateAll : (ITypeProvider * ILScopeRef) list * ICompilationThread -> Tainted<ITypeProvider> list
+    static member CreateAll : (ITypeProvider * ILScopeRef) list -> Tainted<ITypeProvider> list
 
     /// A type provider that produced the value
     member TypeProvider : Tainted<ITypeProvider>

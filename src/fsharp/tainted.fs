@@ -10,6 +10,15 @@ open Microsoft.FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library 
 
+[<Sealed>]
+type internal TypeProviderToken() = interface LockToken
+
+[<Sealed>]
+type internal TypeProviderLock() =
+    inherit Lock<TypeProviderToken>()
+
+    static member val Singleton = TypeProviderLock()
+
 type internal TypeProviderError
     (
         errNum : int,
@@ -69,7 +78,7 @@ type internal TypeProviderError
             for msg in errors do
                 f (new TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
-type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef; CompilationThread: ICompilationThread }
+type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef }
 
 [<NoEquality>][<NoComparison>] 
 type internal Tainted<'T> (context : TaintedContext, value : 'T) =
@@ -88,7 +97,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
 
     member this.Protect f  (range:range) =
         try 
-            context.CompilationThread.EnqueueWorkAndWait (fun _ -> f value)
+            TypeProviderLock.Singleton.AcquireLock(fun _ -> f value)
         with
             |   :? TypeProviderError -> reraise()
             |   :? AggregateException as ae ->
@@ -141,9 +150,9 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 
-    static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef) list, compilationThread) =
+    static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef) list) =
         [for (tp,nm) in providerSpecs do
-             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; CompilationThread=compilationThread },tp) ] 
+             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm },tp) ] 
 
     member this.OfType<'U> () =
         match box value with

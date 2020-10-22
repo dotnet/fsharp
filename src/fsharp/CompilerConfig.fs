@@ -434,7 +434,6 @@ type TcConfigBuilder =
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
 #endif
-      mutable compilationThread: ICompilationThread
 
       /// pause between passes? 
       mutable pause: bool
@@ -595,11 +594,6 @@ type TcConfigBuilder =
 #if !NO_EXTENSIONTYPING
           showExtensionTypeMessages = false
 #endif
-          compilationThread = 
-                let ctok = CompilationThreadToken ()
-                { new ICompilationThread with 
-                    member _.EnqueueWork work = work ctok
-                    member _.EnqueueWorkAndWait work = work ctok }
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
@@ -994,7 +988,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #if !NO_EXTENSIONTYPING
     member x.showExtensionTypeMessages = data.showExtensionTypeMessages
 #endif
-    member x.compilationThread = data.compilationThread
     member x.pause = data.pause
     member x.alwaysCallVirt = data.alwaysCallVirt
     member x.noDebugData = data.noDebugData

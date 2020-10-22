@@ -243,7 +243,6 @@ type TcConfigBuilder =
 #if !NO_EXTENSIONTYPING
       mutable showExtensionTypeMessages: bool
 #endif
-      mutable compilationThread: ICompilationThread
       mutable pause: bool 
       mutable alwaysCallVirt: bool
       mutable noDebugData: bool
@@ -421,7 +420,6 @@ type TcConfig =
 #if !NO_EXTENSIONTYPING
     member showExtensionTypeMessages: bool
 #endif
-    member compilationThread: ICompilationThread
     member pause: bool 
     member alwaysCallVirt: bool
     member noDebugData: bool
