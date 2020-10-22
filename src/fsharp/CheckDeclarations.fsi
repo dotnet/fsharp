@@ -1,16 +1,16 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.CheckDecls
+module internal FSharp.Compiler.CheckDeclarations
 
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
 open FSharp.Compiler.Import
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.CheckExprs
 open FSharp.Compiler.TypedTree
 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv

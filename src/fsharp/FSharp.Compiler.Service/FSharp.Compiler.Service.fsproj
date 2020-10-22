@@ -491,17 +491,17 @@
     <Compile Include="..\PostInferenceChecks.fs">
       <Link>Logic\PostInferenceChecks.fs</Link>
     </Compile>
-    <Compile Include="..\CheckExprs.fsi">
-      <Link>Logic\CheckExprs.fsi</Link>
+    <Compile Include="..\CheckExpressions.fsi">
+      <Link>Logic\CheckExpressions.fsi</Link>
     </Compile>
-    <Compile Include="..\CheckExprs.fs">
-      <Link>Logic\CheckExprs.fs</Link>
+    <Compile Include="..\CheckExpressions.fs">
+      <Link>Logic\CheckExpressions.fs</Link>
     </Compile>
-    <Compile Include="..\CheckDecls.fsi">
-      <Link>Logic\CheckDecls.fsi</Link>
+    <Compile Include="..\CheckDeclarations.fsi">
+      <Link>Logic\CheckDeclarations.fsi</Link>
     </Compile>
-    <Compile Include="..\CheckDecls.fs">
-      <Link>Logic\CheckDecls.fs</Link>
+    <Compile Include="..\CheckDeclarations.fs">
+      <Link>Logic\CheckDeclarations.fs</Link>
     </Compile>
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>

@@ -26,7 +26,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
-open FSharp.Compiler.CheckDecls
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.ErrorLogger
 
 open Internal.Utilities

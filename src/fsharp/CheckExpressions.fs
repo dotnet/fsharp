@@ -2,7 +2,7 @@
 
 /// The typechecker. Left-to-right constrained type checking 
 /// with generalization at appropriate points.
-module internal FSharp.Compiler.CheckExprs
+module internal FSharp.Compiler.CheckExpressions
 
 open System
 open System.Collections.Generic

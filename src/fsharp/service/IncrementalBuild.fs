@@ -13,8 +13,8 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.CheckExprs
-open FSharp.Compiler.CheckDecls
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerGlobalState
@@ -1022,7 +1022,7 @@ module IncrementalBuilderEventTesting =
     let GetMostRecentIncrementalBuildEvents n = MRU.MostRecentList n
     let GetCurrentIncrementalBuildEventNum() = MRU.CurrentEventNum 
 
-module Tc = FSharp.Compiler.CheckExprs
+module Tc = FSharp.Compiler.CheckExpressions
 
 // This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.SyntaxTree.
 [<AutoOpen>]

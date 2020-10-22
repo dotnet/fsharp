@@ -12,7 +12,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.CheckDecls
+open FSharp.Compiler.CheckDeclarations
 
 val GetGeneratedILModuleName : CompilerTarget -> string -> string
 

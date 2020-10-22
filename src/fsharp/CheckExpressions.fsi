@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.CheckExprs
+module internal FSharp.Compiler.CheckExpressions
 
 open System
 open FSharp.Compiler 
@@ -159,7 +159,7 @@ val TcFieldInit : range -> ILFieldInit -> Const
 val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType
 
 //-------------------------------------------------------------------------
-// The rest are all helpers needed for declaration checking (CheckDecls.fs)
+// The rest are all helpers needed for declaration checking (CheckDeclarations.fs)
 //------------------------------------------------------------------------- 
 
 /// Represents the compilation environment for typechecking a single file in an assembly. 

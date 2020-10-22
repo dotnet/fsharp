@@ -5,8 +5,8 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.CheckExprs
-open FSharp.Compiler.CheckDecls
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
