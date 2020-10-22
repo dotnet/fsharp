@@ -132,7 +132,7 @@ type CompilerService() =
 
     let parsingOptions =
         {
-            SourceFiles = [|"TypeChecker.fs"|]
+            SourceFiles = [|"CheckExprs.fs"|]
             ConditionalCompilationDefines = []
             ErrorSeverityOptions = FSharpErrorSeverityOptions.Default
             IsInteractive = false
@@ -159,7 +159,7 @@ type CompilerService() =
 
         match sourceOpt with
         | None ->
-            sourceOpt <- Some <| SourceText.From(File.OpenRead("""..\..\..\..\..\src\fsharp\TypeChecker.fs"""), Encoding.Default, SourceHashAlgorithm.Sha1, true)
+            sourceOpt <- Some <| SourceText.From(File.OpenRead("""..\..\..\..\..\src\fsharp\CheckExprs.fs"""), Encoding.Default, SourceHashAlgorithm.Sha1, true)
         | _ -> ()
 
         match assembliesOpt with
@@ -176,7 +176,7 @@ type CompilerService() =
         | None, _ -> failwith "no checker"
         | _, None -> failwith "no source"
         | Some(checker), Some(source) ->
-            let results = checker.ParseFile("TypeChecker.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
+            let results = checker.ParseFile("CheckExprs.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
             if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
 
     [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
