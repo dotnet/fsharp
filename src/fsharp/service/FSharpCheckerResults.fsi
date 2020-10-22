@@ -254,7 +254,6 @@ type public FSharpCheckFileResults =
     static member internal MakeEmpty : 
         filename: string *
         creationErrors: FSharpErrorInfo[] *
-        reactorOps: IReactorOperations *
         keepAssemblyContents: bool 
           -> FSharpCheckFileResults
         

@@ -387,7 +387,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     let parseCacheLock = Lock<ParseCacheLockToken>()
     
-
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
     let parseFileCache = MruCache<ParseCacheLockToken,_,_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
 
@@ -631,7 +630,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
                 let! builderOpt,creationErrors = execWithReactorAsync (fun ctok -> getOrCreateBuilder (ctok, options, userOpName))
                 match builderOpt with
-                | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationErrors, reactorOps, keepAssemblyContents))
+                | None -> return FSharpCheckFileAnswer.Succeeded (FSharpCheckFileResults.MakeEmpty(filename, creationErrors, keepAssemblyContents))
                 | Some builder -> 
                     // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
                     let cachedResults = bc.GetCachedCheckFileResult(builder, filename, sourceText, options)
@@ -712,7 +711,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             match builderOpt with
             | None ->
                 let parseResults = FSharpParseFileResults(creationErrors, None, true, [| |])
-                let typedResults = FSharpCheckFileResults.MakeEmpty(filename, creationErrors, reactorOps, keepAssemblyContents)
+                let typedResults = FSharpCheckFileResults.MakeEmpty(filename, creationErrors, keepAssemblyContents)
                 return (parseResults, typedResults)
             | Some builder -> 
                 let! (parseTreeOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (ctok, filename)
@@ -792,13 +791,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     /// Try to get recent approximate type check results for a file. 
     member __.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
-        match sourceText with 
-        | Some sourceText -> 
-            parseCacheLock.AcquireLock (fun ltok -> 
+        parseCacheLock.AcquireLock (fun ltok -> 
+            match sourceText with 
+            | Some sourceText -> 
                 match checkFileInProjectCache.TryGet(ltok,(filename,sourceText.GetHashCode(),options)) with
                 | Some (a,b,c,_) -> Some (a,b,c)
-                | None -> parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options))))
-        | None -> parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
+                | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options))
+            | None -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private __.ParseAndCheckProjectImpl(options, ctok, userOpName) =
@@ -1004,7 +1003,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 checkFileInProjectCachePossiblyStale.Resize(ltok, keepStrongly=1)
                 checkFileInProjectCache.Resize(ltok, keepStrongly=1)
                 parseFileCache.Resize(ltok, keepStrongly=1))
-            incrementalBuildersCache.Resize(ctok, keepStrongly=1, keepMax=1)
+            incrementalBuildersCache.Resize(AnyCallerThread, keepStrongly=1, keepMax=1)
             frameworkTcImportsCache.Downsize(ctok)
             scriptClosureCache.Resize(AnyCallerThread,keepStrongly=1, keepMax=1)
             cancellable.Return ())

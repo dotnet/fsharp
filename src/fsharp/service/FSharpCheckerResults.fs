@@ -1966,8 +1966,8 @@ type FSharpCheckFileResults
 
     override __.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
-    static member MakeEmpty(filename: string, creationErrors: FSharpErrorInfo[], reactorOps, keepAssemblyContents) = 
-        FSharpCheckFileResults (filename, creationErrors, None, [| |], None, reactorOps, keepAssemblyContents)
+    static member MakeEmpty(filename: string, creationErrors: FSharpErrorInfo[], keepAssemblyContents) = 
+        FSharpCheckFileResults (filename, creationErrors, None, [| |], None, keepAssemblyContents)
 
     static member JoinErrors(isIncompleteTypeCheckEnvironment, 
                              creationErrors: FSharpErrorInfo[], 
@@ -2006,7 +2006,7 @@ type FSharpCheckFileResults
                           None, implFileOpt, openDeclarations) 
                 
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
+        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
 
     static member CheckOneFile
         (parseResults: FSharpParseFileResults,
@@ -2041,7 +2041,7 @@ type FSharpCheckFileResults
                 return FSharpCheckFileAnswer.Aborted                
             | Result.Ok tcFileInfo -> 
                 let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-                let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
+                let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
                 return FSharpCheckFileAnswer.Succeeded(results)
         }
 
