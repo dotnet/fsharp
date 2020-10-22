@@ -39,7 +39,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.CheckExprs
+open FSharp.Compiler.CheckDecls
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 open Internal.Utilities

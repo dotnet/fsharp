@@ -31,7 +31,8 @@ open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.SignatureConformance
-open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.CheckExprs
+open FSharp.Compiler.CheckDecls
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

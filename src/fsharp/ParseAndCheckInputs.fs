@@ -28,7 +28,8 @@ open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.CheckExprs
+open FSharp.Compiler.CheckDecls
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals

@@ -12,7 +12,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.CheckExprs
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals

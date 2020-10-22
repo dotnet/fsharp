@@ -12,7 +12,8 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypeChecker
+open FSharp.Compiler.CheckExprs
+open FSharp.Compiler.CheckDecls
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
