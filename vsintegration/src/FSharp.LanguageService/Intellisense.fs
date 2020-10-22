@@ -329,7 +329,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                         // This can happen e.g. if you are typing quickly and the typecheck results are stale enough that you don't have a captured resolution for
                         // the name you just typed, but fresh enough that you do have the right name-resolution-environment to look up the name.
                         let lidEnd = nwpl.LongIdEndLocation
-                        let methods = typedResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
+                        let methods = typedResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)
                         
                         // If the name is an operator ending with ">" then it is a mistake 
                         // we can't tell whether "  >(" is a generic method call or an operator use 
@@ -377,40 +377,40 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                 reraise()
           else None
 
-        let hasTextChangedSinceLastTypecheck (curTextSnapshot: ITextSnapshot, oldTextSnapshot: ITextSnapshot, ((sl:int,sc:int),(el:int,ec:int))) = 
-            // compare the text from (sl,sc) to (el,ec) to see if it changed from the old snapshot to the current one
-            // (sl,sc)-(el,ec) are line/col positions in the current snapshot
-            if el >= oldTextSnapshot.LineCount then
-                true  // old did not even have 'el' many lines, note 'el' is zero-based
-            else
-                assert(el < curTextSnapshot.LineCount)
-                let oldFirstLine = oldTextSnapshot.GetLineFromLineNumber sl  
-                let oldLastLine = oldTextSnapshot.GetLineFromLineNumber el
-                if oldFirstLine.Length < sc || oldLastLine.Length < ec then
-                    true  // one of old lines was not even long enough to contain the position we're looking at
-                else
-                    let posOfStartInOld = oldFirstLine.Start.Position + sc
-                    let posOfEndInOld = oldLastLine.Start.Position + ec
-                    let curFirstLine = curTextSnapshot.GetLineFromLineNumber sl  
-                    let curLastLine = curTextSnapshot.GetLineFromLineNumber el  
-                    assert(curFirstLine.Length >= sc)
-                    assert(curLastLine.Length >= ec)
-                    let posOfStartInCur = curFirstLine.Start.Position + sc
-                    let posOfEndInCur = curLastLine.Start.Position + ec
-                    if posOfEndInCur - posOfStartInCur <> posOfEndInOld - posOfStartInOld then
-                        true  // length of text between two endpoints changed
-                    else
-                        let mutable oldPos = posOfStartInOld
-                        let mutable curPos = posOfStartInCur
-                        let mutable ok = true
-                        while ok && oldPos < posOfEndInOld do
-                            let oldChar = oldTextSnapshot.[oldPos]
-                            let curChar = curTextSnapshot.[curPos]
-                            if oldChar <> curChar then
-                                ok <- false
-                            oldPos <- oldPos + 1
-                            curPos <- curPos + 1
-                        not ok
+        //let hasTextChangedSinceLastTypecheck (curTextSnapshot: ITextSnapshot, oldTextSnapshot: ITextSnapshot, ((sl:int,sc:int),(el:int,ec:int))) = 
+        //    // compare the text from (sl,sc) to (el,ec) to see if it changed from the old snapshot to the current one
+        //    // (sl,sc)-(el,ec) are line/col positions in the current snapshot
+        //    if el >= oldTextSnapshot.LineCount then
+        //        true  // old did not even have 'el' many lines, note 'el' is zero-based
+        //    else
+        //        assert(el < curTextSnapshot.LineCount)
+        //        let oldFirstLine = oldTextSnapshot.GetLineFromLineNumber sl  
+        //        let oldLastLine = oldTextSnapshot.GetLineFromLineNumber el
+        //        if oldFirstLine.Length < sc || oldLastLine.Length < ec then
+        //            true  // one of old lines was not even long enough to contain the position we're looking at
+        //        else
+        //            let posOfStartInOld = oldFirstLine.Start.Position + sc
+        //            let posOfEndInOld = oldLastLine.Start.Position + ec
+        //            let curFirstLine = curTextSnapshot.GetLineFromLineNumber sl  
+        //            let curLastLine = curTextSnapshot.GetLineFromLineNumber el  
+        //            assert(curFirstLine.Length >= sc)
+        //            assert(curLastLine.Length >= ec)
+        //            let posOfStartInCur = curFirstLine.Start.Position + sc
+        //            let posOfEndInCur = curLastLine.Start.Position + ec
+        //            if posOfEndInCur - posOfStartInCur <> posOfEndInOld - posOfStartInOld then
+        //                true  // length of text between two endpoints changed
+        //            else
+        //                let mutable oldPos = posOfStartInOld
+        //                let mutable curPos = posOfStartInCur
+        //                let mutable ok = true
+        //                while ok && oldPos < posOfEndInOld do
+        //                    let oldChar = oldTextSnapshot.[oldPos]
+        //                    let curChar = curTextSnapshot.[curPos]
+        //                    if oldChar <> curChar then
+        //                        ok <- false
+        //                    oldPos <- oldPos + 1
+        //                    curPos <- curPos + 1
+        //                not ok
 
         /// Implements the corresponding abstract member from IntellisenseInfo in MPF.
         override scope.GetDataTipText(line, col) =
@@ -453,7 +453,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetStructuredToolTipText(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
+                            let dataTip = typedResults.GetStructuredToolTipText(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
 
                             match dataTip with
                             | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
@@ -488,7 +488,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
             | _ -> false
 
         /// Implements the corresponding abstract member from IntellisenseInfo in MPF.
-        override scope.GetDeclarations(textSnapshot, line, col, reason) =
+        override scope.GetDeclarations(_textSnapshot, line, col, reason) =
             assert(FSharpIntellisenseInfo_DEPRECATED.IsReasonRequiringSyncParse(reason))
             async {
                 try
@@ -531,11 +531,11 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                             let pname = QuickParse.GetPartialLongNameEx(lineText, col-1) 
                             let _x = 1 // for breakpoint
 
-                            let detectTextChange (oldTextSnapshotInfo: obj, range) = 
-                                let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
-                                hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
+                            //let detectTextChange (oldTextSnapshotInfo: obj, range) = 
+                            //    let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
+                            //    hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, lineText, pname, (fun() -> []), detectTextChange) 
+                            let decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, lineText, pname, (fun() -> [])) 
                             return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
                     else
                         // no TypeCheckInfo in ParseResult.
@@ -595,7 +595,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                     |   Some(s,colAtEndOfNames, _) ->
                                             if typedResults.HasFullTypeCheckInfo then 
                                                 let qualId = PrettyNaming.GetLongNameFromString s
-                                                match typedResults.GetF1Keyword(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) |> Async.RunSynchronously with
+                                                match typedResults.GetF1Keyword(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) with
                                                 | Some s -> Some s
                                                 | None -> None 
                                             else None                           

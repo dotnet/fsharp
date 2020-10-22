@@ -346,11 +346,11 @@ let inline dumpErrors results =
 
 
 let getSymbolUses (results: FSharpCheckFileResults) =
-    results.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+    results.GetAllUsesOfAllSymbolsInFile()
 
 let getSymbolUsesFromSource (source: string) =
     let _, typeCheckResults = getParseAndCheckResults source 
-    typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
 
 let getSymbols (symbolUses: FSharpSymbolUse[]) =
     symbolUses |> Array.map (fun symbolUse -> symbolUse.Symbol)

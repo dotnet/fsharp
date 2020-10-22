@@ -62,7 +62,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
             let! parseResults, checkResults, _projectResults = fsi.ParseAndCheckInteraction(text)
             let lineText = text.Split('\n').[line - 1]
             let partialName = QuickParse.GetPartialLongNameEx(lineText, column - 1)
-            let! declarationListInfos = checkResults.GetDeclarationListInfo(Some parseResults, line, lineText, partialName)
+            let declarationListInfos = checkResults.GetDeclarationListInfo(Some parseResults, line, lineText, partialName)
             return declarationListInfos.Items
         }
 

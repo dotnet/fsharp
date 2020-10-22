@@ -119,12 +119,7 @@ type public FSharpCheckFileResults =
     /// <param name="getAllEntities">
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
-    member GetDeclarationListInfo :
-        ParsedFileResultsOpt:FSharpParseFileResults option *
-        line: int *
-        lineText:string *
-        partialName: PartialLongName *
-        ?getAllEntities: (unit -> AssemblySymbol list) -> FSharpDeclarationListInfo
+    member GetDeclarationListInfo: ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) -> FSharpDeclarationListInfo
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -144,13 +139,7 @@ type public FSharpCheckFileResults =
     /// <param name="getAllEntities">
     ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
-    member GetDeclarationListSymbols:
-             ParsedFileResultsOpt:FSharpParseFileResults option * 
-             line: int * 
-             lineText:string * 
-             partialName: PartialLongName * 
-             ?getAllEntities: (unit -> AssemblySymbol list) 
-                 -> FSharpSymbolUse list list
+    member GetDeclarationListSymbols: ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) -> FSharpSymbolUse list list
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///
@@ -159,13 +148,7 @@ type public FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetStructuredToolTipText :
-            line:int *
-            colAtEndOfNames:int * 
-            lineText:string * 
-            names:string list * 
-            tokenTag:int 
-                -> FSharpStructuredToolTipText
+    member GetStructuredToolTipText : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> FSharpStructuredToolTipText
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///
