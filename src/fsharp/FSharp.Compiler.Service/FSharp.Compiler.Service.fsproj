@@ -509,7 +509,6 @@
     <Compile Include="..\CheckDeclarations.fs">
       <Link>Logic\CheckDeclarations.fs</Link>
     </Compile>
-    <Compile Include="CheckComputationExpressions.fs" />
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
