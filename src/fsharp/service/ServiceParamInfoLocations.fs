@@ -272,3 +272,50 @@ type FSharpNoteworthyParamInfoLocations with
             r
         | _ -> None
 
+module internal FunctionApplicationArgumentLocationsImpl =
+
+    type private FindResult = 
+        /// Ranges for each parameter found in a function application
+        | Found of range list
+        | NotFound
+
+    let rec private searchSynArgExpr traverseSynExpr _pos expr ranges =
+        match expr with
+
+        /// TODO - need to handle things like tuples, parens using functions as inputs, etc.
+        // should probably be test-driven!
+
+        | SynExprParen(SynExprParen(_, _, _, _) as _synExpr, _, _, parenRange) ->
+            Found(parenRange :: ranges), None
+
+        | SynExpr.ArbitraryAfterError (_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
+            Found(range :: ranges), None
+
+        | e -> 
+            let inner = traverseSynExpr e
+            match inner with
+            | None ->
+                Found (e.Range :: ranges), Some inner
+            | _ -> NotFound, Some inner
+
+    let findFSharpFunctionArgInfos pos parseTree =
+        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+            member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                match expr with
+                | SynExpr.App (_exprAtomicFlag, isInfix, funcExpr, argExpr, _range) ->
+                    let isInfixFuncExpr =
+                        match funcExpr with
+                        | SynExpr.App (_, isInfix, _, _, _) -> isInfix
+                        | _ -> false
+
+                    let workingRanges =  match traverseSynExpr funcExpr with Some ranges -> ranges | None -> []
+                    
+                    if isInfix || isInfixFuncExpr then
+                        None
+                    else
+                        let xResult, cacheOpt = searchSynArgExpr traverseSynExpr pos argExpr workingRanges
+                        match xResult, cacheOpt with
+                        | Found ranges, _ -> Some ranges
+                        | NotFound, Some cache -> cache
+                        | _ -> traverseSynExpr argExpr
+                | _ -> defaultTraverse expr })

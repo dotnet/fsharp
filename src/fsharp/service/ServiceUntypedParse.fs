@@ -104,6 +104,14 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
         match input with
         | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)
         | _ -> None
+
+    member scope.GetAllArgumentsForFunctionApplication pos =
+        match input with
+        | Some input ->
+            // TODO - ideally we shouldn't be having to reverse it here I guess
+            FunctionApplicationArgumentLocationsImpl.findFSharpFunctionArgInfos pos input
+            |> Option.map List.rev
+        | None -> None
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =

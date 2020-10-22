@@ -860,6 +860,9 @@ type FSharpMemberOrFunctionOrValue =
 
     member CurriedParameterGroups: IList<IList<FSharpParameter>>
 
+    /// doop doop yeet yeet
+    member PossibleArgumentList : string list option
+
     /// Gets the overloads for the current method
     /// matchParameterNumber indicates whether to filter the overloads to match the number of parameters in the current symbol
     member Overloads: bool -> IList<FSharpMemberOrFunctionOrValue> option
@@ -900,6 +903,9 @@ type FSharpMemberOrFunctionOrValue =
     
     /// Indicated if this is a value
     member IsValue: bool
+    
+    /// Indicated if this is a value
+    member IsFunction : bool
 
     /// Indicates if this is a constructor.
     member IsConstructor: bool

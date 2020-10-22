@@ -38,3 +38,5 @@ type public FSharpNoteworthyParamInfoLocations =
     /// Find the information about parameter info locations at a particular source location
     static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option
 
+module internal FunctionApplicationArgumentLocationsImpl =
+    val findFSharpFunctionArgInfos: pos: pos -> parseTree: ParsedInput -> range list option

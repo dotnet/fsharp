@@ -22,11 +22,14 @@ type public FSharpParseFileResults =
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
 
+    // doot doot yeet yeet
+    member GetAllArgumentsForFunctionApplication: pos: pos -> range list option
+
     /// Name of the file for which this information were created
-    member FileName                       : string
+    member FileName: string
 
     /// Get declared items and the selected item at the specified location
-    member GetNavigationItems             : unit -> FSharpNavigationItems
+    member GetNavigationItems: unit -> FSharpNavigationItems
 
     /// Return the inner-most range associated with a possible breakpoint location
     member ValidateBreakpointLocation : pos:pos -> range option

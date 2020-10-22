@@ -1927,6 +1927,23 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                    |> makeReadOnlyCollection ]
              |> makeReadOnlyCollection
 
+    member x.PossibleArgumentList =
+        checkIsResolved()
+        match d with
+        | P _ | E _ | M _ | C _ -> None
+        | V v ->
+            match v.ValReprInfo with
+            | None ->
+                // the "pass a single function to a function case"?
+                let _, tau = v.TypeScheme
+                if isFunTy cenv.g tau then
+                    Some [v.DisplayName]
+                else
+                    None
+            | Some info ->
+                info.ArgNames
+
+
     member x.ReturnParameter = 
         checkIsResolved()
         match d with 
@@ -2060,6 +2077,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.IsValue =
         match d with
         | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
+        | _ -> false
+
+    member x.IsFunction =
+        match d with
+        | V valRef -> SymbolHelpers.isFunction cenv.g valRef.Type
         | _ -> false
 
     override x.Equals(other: obj) =
