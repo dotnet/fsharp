@@ -28,21 +28,21 @@ open FSharp.Compiler.TypedTreeOps
 type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: layout, isOptional: bool) = 
 
     /// The name of the parameter.
-    member __.ParameterName = name
+    member _.ParameterName = name
 
     /// A key that can be used for sorting the parameters, used to help sort overloads.
-    member __.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
+    member _.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
 
     /// The structured representation for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member __.StructuredDisplay = display
+    member _.StructuredDisplay = display
 
     /// The text to display for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member __.Display = showL display
+    member _.Display = showL display
 
     /// Is the parameter optional
-    member __.IsOptional = isOptional
+    member _.IsOptional = isOptional
 
 [<AutoOpen>]
 module internal DescriptionListsImpl = 
@@ -475,43 +475,44 @@ module internal DescriptionListsImpl =
 [<Sealed>]
 type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility option,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
-    member __.Name = name
-    member __.NameInCode = nameInCode
+    member _.Name = name
+    member _.NameInCode = nameInCode
 
-    member __.StructuredDescriptionTextAsync = 
+    member decl.StructuredDescriptionTextAsync = decl.StructuredDescriptionText |> async.Return
+
+    member _.StructuredDescriptionText = 
         match info with
         | Choice1Of2 (items: CompletionItem list, infoReader, m, denv) -> 
-            // reactor causes the lambda to execute on the background compiler thread, through the Reactor
             FSharpToolTipText(items |> List.map (fun x -> SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
-            |> async.Return 
-               
         | Choice2Of2 result -> 
-            async.Return result
+            result
 
-    member decl.DescriptionTextAsync = 
-        decl.StructuredDescriptionTextAsync
-        |> Tooltips.Map Tooltips.ToFSharpToolTipText
+    member x.DescriptionTextAsync = x.DescriptionText |> async.Return
 
-    member __.Glyph = glyph 
-    member __.Accessibility = accessibility
-    member __.Kind = kind
-    member __.IsOwnMember = isOwnMember
-    member __.MinorPriority = priority
-    member __.FullName = fullName
-    member __.IsResolved = isResolved
-    member __.NamespaceToOpen = namespaceToOpen
+    member decl.DescriptionText = 
+        decl.StructuredDescriptionText
+        |> Tooltips.ToFSharpToolTipText
+
+    member _.Glyph = glyph 
+    member _.Accessibility = accessibility
+    member _.Kind = kind
+    member _.IsOwnMember = isOwnMember
+    member _.MinorPriority = priority
+    member _.FullName = fullName
+    member _.IsResolved = isResolved
+    member _.NamespaceToOpen = namespaceToOpen
 
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
 type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool, isError: bool) = 
     static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
 
-    member __.Items = declarations
-    member __.IsForType = isForType
-    member __.IsError = isError
+    member _.Items = declarations
+    member _.IsForType = isForType
+    member _.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool) = 
+    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility, items: CompletionItem list, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> SymbolHelpers.RemoveExplicitlySuppressedCompletionItems g
@@ -655,7 +656,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | ns -> Some (System.String.Join(".", ns)))
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor), getAccessibility item.Item,
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv), getAccessibility item.Item,
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         new FSharpDeclarationListInfo(Array.ofList decls, isForType, false)
@@ -678,31 +679,31 @@ type FSharpMethodGroupItem(description: FSharpToolTipText<layout>, xmlDoc: FShar
                            hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
 
     /// The structured description representation for the method (or other item)
-    member __.StructuredDescription = description
+    member _.StructuredDescription = description
 
     /// The formatted description text for the method (or other item)
-    member __.Description = Tooltips.ToFSharpToolTipText description
+    member _.Description = Tooltips.ToFSharpToolTipText description
 
     /// The documentation for the item
-    member __.XmlDoc = xmlDoc
+    member _.XmlDoc = xmlDoc
 
     /// The The structured description representation for the method (or other item)
-    member __.StructuredReturnTypeText = returnType
+    member _.StructuredReturnTypeText = returnType
 
     /// The formatted type text for the method (or other item)
-    member __.ReturnTypeText = showL returnType
+    member _.ReturnTypeText = showL returnType
 
     /// The parameters of the method in the overload set
-    member __.Parameters = parameters
+    member _.Parameters = parameters
 
     /// Does the method support an arguments list?  This is always true except for static type instantiations like TP<42, "foo">.
-    member __.HasParameters = hasParameters
+    member _.HasParameters = hasParameters
 
     /// Does the method support a params list arg?
-    member __.HasParamArrayArg = hasParamArrayArg
+    member _.HasParamArrayArg = hasParamArrayArg
 
     /// Does the type name or method support a static arguments list, like TP<42, "foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
-    member __.StaticParameters = staticParameters
+    member _.StaticParameters = staticParameters
 
 
 /// A table of methods for Intellisense completion
@@ -731,9 +732,9 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
             let parms = meth.Parameters
             parms.Length, (parms |> Array.map (fun p -> p.CanonicalTypeTextForSorting)))
 
-    member __.MethodName = name
+    member _.MethodName = name
 
-    member __.Methods = methods
+    member _.Methods = methods
 
     static member Create (infoReader: InfoReader, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g

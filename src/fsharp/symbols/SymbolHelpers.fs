@@ -288,7 +288,6 @@ module Tooltips =
     let ToFSharpToolTipText (FSharpStructuredToolTipText.FSharpToolTipText text) = 
         FSharpToolTipText(List.map ToFSharpToolTipElement text)
     
-    let Map f a = async.Bind(a, f >> async.Return)
 
 [<RequireQualifiedAccess>]
 type CompletionItemKind =
