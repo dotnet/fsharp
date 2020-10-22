@@ -550,13 +550,8 @@ val ComputeAccessAndCompPath: env: TcEnv -> declKindOpt:DeclKind option -> m: ra
 /// Get the expression resulting from turning an expression into an enumerable value, e.g. at 'for' loops 
 val ConvertArbitraryExprToEnumerable: cenv:TcFileState -> ty:TType -> env:TcEnv -> expr:Expr -> Expr * TType    
 
-val UnifyTypes : cenv:TcFileState -> env:TcEnv -> m:range -> actualTy:TType -> expectedTy:TType -> unit    
-val CompilePatternForMatchClauses: cenv:TcFileState -> env:TcEnv -> mExpr:range -> matchm:range -> warnOnUnused:bool -> actionOnFailure:ActionOnFailure -> inputExprOpt:Expr option -> inputTy:TType -> resultTy:TType -> tclauses:TypedMatchClause list -> Val * Expr    
-val TcExprFlex: cenv:TcFileState -> flex:bool -> compat:bool -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> e:SynExpr -> Expr * UnscopedTyparEnv    
-val TcStmtThatCantBeCtorBody: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
-val TcExprUndelayed: cenv:TcFileState -> overallTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
-val TcLinearExprs: bodyChecker:(TType -> TcEnv -> UnscopedTyparEnv -> SynExpr -> Expr * UnscopedTyparEnv) -> cenv:TcFileState -> env:TcEnv -> overallTy:TType -> tpenv:UnscopedTyparEnv -> isCompExpr:bool -> expr:SynExpr -> cont:(Expr * UnscopedTyparEnv -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
-val TryTcStmt: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> bool * Expr * UnscopedTyparEnv    
+/// Invoke pattern match compilation
+val CompilePatternForMatchClauses: cenv:TcFileState -> env:TcEnv -> mExpr:range -> matchm:range -> warnOnUnused:bool -> actionOnFailure:ActionOnFailure -> inputExprOpt:Expr option -> inputTy:TType -> resultTy:TType -> tclauses:TypedMatchClause list -> Val * Expr
 
 /// Process recursive bindings so that initialization is through laziness and is checked.
 /// The bindings may be either plain 'let rec' bindings or mutually recursive nestings of modules and types.
@@ -656,11 +651,29 @@ val TcAttributesWithPossibleTargets: canFail: bool -> cenv: TcFileState -> env: 
 /// Check a constant value, e.g. a literal
 val TcConst: cenv: TcFileState -> ty: TType -> m: range -> env: TcEnv -> c: SynConst -> Const
 
-/// Check an expression
+/// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr: cenv:TcFileState -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
 
-/// Check an expression
+/// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * TType * UnscopedTyparEnv    
+
+/// Check a syntactic expression and convert it to a typed tree expression. Possibly allow for subsumption flexibility
+/// and insert a coercion if necessary.
+val TcExprFlex: cenv:TcFileState -> flex:bool -> compat:bool -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> e:SynExpr -> Expr * UnscopedTyparEnv    
+
+/// Check a syntactic statement and convert it to a typed tree expression.
+val TcStmtThatCantBeCtorBody: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
+
+/// Check a syntactic expression and convert it to a typed tree expression
+val TcExprUndelayed: cenv:TcFileState -> overallTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> Expr * UnscopedTyparEnv    
+
+/// Check a linear expression (e.g. a sequence of 'let') in a tail-recursive way
+/// and convert it to a typed tree expression, using the bodyChecker to check the parts
+/// that are not linear.
+val TcLinearExprs: bodyChecker:(TType -> TcEnv -> UnscopedTyparEnv -> SynExpr -> Expr * UnscopedTyparEnv) -> cenv:TcFileState -> env:TcEnv -> overallTy:TType -> tpenv:UnscopedTyparEnv -> isCompExpr:bool -> expr:SynExpr -> cont:(Expr * UnscopedTyparEnv -> Expr * UnscopedTyparEnv) -> Expr * UnscopedTyparEnv
+
+/// Try to check a syntactic statement and indicate if it's type is not unit without emitting a warning
+val TryTcStmt: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> synExpr:SynExpr -> bool * Expr * UnscopedTyparEnv    
 
 /// Check a pattern being used as a pattern match
 val TcMatchPattern: cenv:TcFileState -> inputTy:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> pat:SynPat * optWhenExpr:SynExpr option -> Pattern * Expr option * Val list * TcEnv * UnscopedTyparEnv    
@@ -719,6 +732,9 @@ val TranslateTopValSynInfo: range -> tcAttributes: (AttributeTargets -> SynAttri
 /// Given the declaration of a function or member, complete the processing of its ValReprInfo
 /// once type parameters have been fully inferred via generalization.
 val TranslatePartialArity: tps: Typar list -> PartialValReprInfo -> ValReprInfo
+
+/// Constrain two types to be equal within this type checking context
+val UnifyTypes : cenv:TcFileState -> env:TcEnv -> m:range -> actualTy:TType -> expectedTy:TType -> unit    
 
 module GeneralizationHelpers =
     
