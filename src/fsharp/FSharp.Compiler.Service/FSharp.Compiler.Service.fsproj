@@ -497,12 +497,19 @@
     <Compile Include="..\CheckExpressions.fs">
       <Link>Logic\CheckExpressions.fs</Link>
     </Compile>
+    <Compile Include="..\CheckComputationExpressions.fsi">
+      <Link>Logic\CheckComputationExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\CheckComputationExpressions.fs">
+      <Link>Logic\CheckComputationExpressions.fs</Link>
+    </Compile>
     <Compile Include="..\CheckDeclarations.fsi">
       <Link>Logic\CheckDeclarations.fsi</Link>
     </Compile>
     <Compile Include="..\CheckDeclarations.fs">
       <Link>Logic\CheckDeclarations.fs</Link>
     </Compile>
+    <Compile Include="CheckComputationExpressions.fs" />
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
