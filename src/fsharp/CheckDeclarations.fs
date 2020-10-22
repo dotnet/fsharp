@@ -3409,7 +3409,7 @@ module EstablishTypeDefinitionCores =
 
 
     /// Check and establish a 'type X = ABC<...>' provided type definition
-    let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon: Tycon, rhsType: SynType, tcrefForContainer: TyconRef, theRootType: Tainted<ProvidedType>, checkTypeName, args, m) =
+    let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes (cenv: cenv) inSig (tycon: Tycon, rhsType: SynType, tcrefForContainer: TyconRef, theRootType: Tainted<ProvidedType>, checkTypeName, args, m) =
         // Explanation: We are definitely on the compilation thread here, we just have not propagated the token this far.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
@@ -5671,7 +5671,7 @@ let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) =
 
 // Defaults get applied before the module signature is checked and before the implementation conditions on virtuals/overrides. 
 // Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
-let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs = 
+let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs = 
     try
         let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
@@ -5712,7 +5712,7 @@ let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m =
       try check implFileTypePriorToSig with e -> errorRecovery e m
 
 
-let SolveInternalUnknowns g cenv denvAtEnd mexpr extraAttribs =
+let SolveInternalUnknowns g (cenv: cenv) denvAtEnd mexpr extraAttribs =
     let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
     unsolved |> List.iter (fun tp -> 
