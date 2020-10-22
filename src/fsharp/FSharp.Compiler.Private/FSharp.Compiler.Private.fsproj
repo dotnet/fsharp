@@ -514,11 +514,17 @@
     <Compile Include="..\PostInferenceChecks.fs">
       <Link>Logic\PostInferenceChecks.fs</Link>
     </Compile>
-    <Compile Include="..\TypeChecker.fsi">
-      <Link>Logic\TypeChecker.fsi</Link>
+    <Compile Include="..\CheckExpressions.fsi">
+      <Link>Logic\CheckExpressions.fsi</Link>
     </Compile>
-    <Compile Include="..\TypeChecker.fs">
-      <Link>Logic\TypeChecker.fs</Link>
+    <Compile Include="..\CheckExpressions.fs">
+      <Link>Logic\CheckExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\CheckDeclarations.fsi">
+      <Link>Logic\CheckDeclarations.fsi</Link>
+    </Compile>
+    <Compile Include="..\CheckDeclarations.fs">
+      <Link>Logic\CheckDeclarations.fs</Link>
     </Compile>
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
