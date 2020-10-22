@@ -5596,11 +5596,11 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     | SynExpr.CompExpr (isArrayOrList, isNotNakedRefCell, comp, m) ->
         let env = ExitFamilyRegion env
-        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (isArrayOrList, isNotNakedRefCell, validateObjectSequenceOrRecordExpression, comp) m
+        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (isArrayOrList, isNotNakedRefCell, comp) m
         
     | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
-        cenv.TcArrayOrListSequenceExpression cenv env overallTy tpenv (isArray, acceptDeprecatedIfThenExpression, validateExpressionWithIfRequiresParenthesis, comp)  m
+        cenv.TcArrayOrListSequenceExpression cenv env overallTy tpenv (isArray, comp)  m
 
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x) 
