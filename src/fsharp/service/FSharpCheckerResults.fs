@@ -99,7 +99,6 @@ type internal NameResResult =
     | Members of (ItemWithInst list * DisplayEnv * range)
     | Cancel of DisplayEnv * range
     | Empty
-    | TypecheckStaleAndTextChanged
 
 [<RequireQualifiedAccess>]
 type ResolveOverloads = 
@@ -626,7 +625,6 @@ type internal TypeCheckInfo
                     | _ -> ValueNone
 
             match nameResItems with            
-            | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) -> 
                 // lookup based on name resolution results successful
