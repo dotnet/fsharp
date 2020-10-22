@@ -18421,7 +18421,8 @@ FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: Int32 g
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: System.String ToString()
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: ValueOrCancelled`1 NewCancelled(System.OperationCanceledException)
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: ValueOrCancelled`1 NewValue(TResult)
-FSharp.Compiler.AbstractIL.Internal.Library: AnyCallerThreadToken AssumeAnyCallerThreadWithoutEvidence()
+FSharp.Compiler.AbstractIL.Internal.Library: AnyCallerThreadToken AnyCallerThread
+FSharp.Compiler.AbstractIL.Internal.Library: AnyCallerThreadToken get_AnyCallerThread()
 FSharp.Compiler.AbstractIL.Internal.Library: Boolean String.EndsWithOrdinal(System.String, System.String)
 FSharp.Compiler.AbstractIL.Internal.Library: Boolean String.StartsWithOrdinal(System.String, System.String)
 FSharp.Compiler.AbstractIL.Internal.Library: Boolean isNilOrSingleton[a](Microsoft.FSharp.Collections.FSharpList`1[a])

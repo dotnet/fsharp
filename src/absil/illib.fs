@@ -636,9 +636,9 @@ let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: Co
 /// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
 let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
 
-/// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
+/// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
 type AnyCallerThreadToken() = interface ExecutionToken
-let AssumeAnyCallerThreadWithoutEvidence () = Unchecked.defaultof<AnyCallerThreadToken>
+let AnyCallerThread = Unchecked.defaultof<AnyCallerThreadToken>
 
 /// A base type for various types of tokens that must be passed when a lock is taken.
 /// Each different static lock should declare a new subtype of this type.
