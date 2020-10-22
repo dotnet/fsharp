@@ -834,23 +834,31 @@ module IncrClassChecking =
     /// Indicates how is a 'let' bound value in a class with implicit construction is represented in
     /// the TAST ultimately produced by type checking.    
     type IncrClassValRepr = 
+
         // e.g representation for 'let v = 3' if it is not used in anything given a method representation
         | InVar of (* isArg: *) bool 
+
         // e.g representation for 'let v = 3'
         | InField of (*isStatic:*)bool * (*staticCountForSafeInit:*) int * RecdFieldRef
+
         // e.g representation for 'let f x = 3'
         | InMethod of (*isStatic:*)bool * Val * ValReprInfo
 
     /// IncrClassReprInfo represents the decisions we make about the representation of 'let' and 'do' bindings in a
     /// type defined with implicit class construction.
     type IncrClassReprInfo = 
-        { /// Indicates the set of field names taken within one incremental class
+        { 
+          /// Indicates the set of field names taken within one incremental class
           TakenFieldNames: Set<string>
+          
           RepInfoTcGlobals: TcGlobals
+          
           /// vals mapped to representations
           ValReprs: Zmap<Val, IncrClassValRepr> 
+          
           /// vals represented as fields or members from this point on 
-          ValsWithRepresentation: Zset<Val> }
+          ValsWithRepresentation: Zset<Val> 
+        }
 
         static member Empty(g, names) = 
             { TakenFieldNames=Set.ofList names
