@@ -377,41 +377,6 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                 reraise()
           else None
 
-        //let hasTextChangedSinceLastTypecheck (curTextSnapshot: ITextSnapshot, oldTextSnapshot: ITextSnapshot, ((sl:int,sc:int),(el:int,ec:int))) = 
-        //    // compare the text from (sl,sc) to (el,ec) to see if it changed from the old snapshot to the current one
-        //    // (sl,sc)-(el,ec) are line/col positions in the current snapshot
-        //    if el >= oldTextSnapshot.LineCount then
-        //        true  // old did not even have 'el' many lines, note 'el' is zero-based
-        //    else
-        //        assert(el < curTextSnapshot.LineCount)
-        //        let oldFirstLine = oldTextSnapshot.GetLineFromLineNumber sl  
-        //        let oldLastLine = oldTextSnapshot.GetLineFromLineNumber el
-        //        if oldFirstLine.Length < sc || oldLastLine.Length < ec then
-        //            true  // one of old lines was not even long enough to contain the position we're looking at
-        //        else
-        //            let posOfStartInOld = oldFirstLine.Start.Position + sc
-        //            let posOfEndInOld = oldLastLine.Start.Position + ec
-        //            let curFirstLine = curTextSnapshot.GetLineFromLineNumber sl  
-        //            let curLastLine = curTextSnapshot.GetLineFromLineNumber el  
-        //            assert(curFirstLine.Length >= sc)
-        //            assert(curLastLine.Length >= ec)
-        //            let posOfStartInCur = curFirstLine.Start.Position + sc
-        //            let posOfEndInCur = curLastLine.Start.Position + ec
-        //            if posOfEndInCur - posOfStartInCur <> posOfEndInOld - posOfStartInOld then
-        //                true  // length of text between two endpoints changed
-        //            else
-        //                let mutable oldPos = posOfStartInOld
-        //                let mutable curPos = posOfStartInCur
-        //                let mutable ok = true
-        //                while ok && oldPos < posOfEndInOld do
-        //                    let oldChar = oldTextSnapshot.[oldPos]
-        //                    let curChar = curTextSnapshot.[curPos]
-        //                    if oldChar <> curChar then
-        //                        ok <- false
-        //                    oldPos <- oldPos + 1
-        //                    curPos <- curPos + 1
-        //                not ok
-
         /// Implements the corresponding abstract member from IntellisenseInfo in MPF.
         override scope.GetDataTipText(line, col) =
             // in cases like 'A<int>' when cursor in on '<' there is an ambiguity that cannot be resolved based only on lexer information
@@ -530,10 +495,6 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                             // TODO don't use QuickParse below, we have parse info available
                             let pname = QuickParse.GetPartialLongNameEx(lineText, col-1) 
                             let _x = 1 // for breakpoint
-
-                            //let detectTextChange (oldTextSnapshotInfo: obj, range) = 
-                            //    let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
-                            //    hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
                             let decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, lineText, pname, (fun() -> [])) 
                             return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
