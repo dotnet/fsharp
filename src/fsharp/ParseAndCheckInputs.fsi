@@ -5,13 +5,14 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open Microsoft.DotNet.DependencyManager
