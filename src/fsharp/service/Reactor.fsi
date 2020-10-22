@@ -48,10 +48,6 @@ type internal Reactor =
     /// Put the operation in the queue, and return an async handle to its result. 
     member EnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
-    /// Put the operation in the queue or run it immediately if the op is trying to be executed on the thread that is currently being used in the reactor.
-    /// This prevents a deadlock.
-    member ExecuteOrEnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
-
     /// The timespan in milliseconds before background work begins after the operations queue is empty
     member PauseBeforeBackgroundWork : int with get, set
 

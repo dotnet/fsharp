@@ -43,17 +43,6 @@ type Reactor() =
 
     let mutable bgOpCts = new CancellationTokenSource()
 
-    let threadsUsed = System.Collections.Concurrent.ConcurrentDictionary<int, byte>()
-
-    let useThread (thread: Thread) =
-        thread.CurrentUICulture <- culture
-        threadsUsed.[thread.ManagedThreadId] <- 0uy
-        { new IDisposable with 
-            member _.Dispose() = 
-                let res, _ = threadsUsed.TryRemove(thread.ManagedThreadId)
-                assert res
-        }
-
     /// Mailbox dispatch function.
     let builder = 
         MailboxProcessor<_>.Start <| fun inbox ->
@@ -80,9 +69,7 @@ type Reactor() =
                                             Trace.TraceInformation("Reactor: {0:n3} pausing {1} milliseconds", DateTime.Now.TimeOfDay.TotalSeconds, pauseBeforeBackgroundWork)
                                             pauseBeforeBackgroundWork
                                     return! inbox.TryReceive(timeout) }
-
-                    use _disposable = useThread Thread.CurrentThread
-
+                    Thread.CurrentThread.CurrentUICulture <- culture
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
                         //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
@@ -210,18 +197,6 @@ type Reactor() =
             )
             return! resultCell.AsyncResult 
         }
-
-    member r.ExecuteOrEnqueueAndAwaitOpAsync (userOpName, opName, opArg, f) =
-        if threadsUsed.ContainsKey(Thread.CurrentThread.ManagedThreadId) then
-            async { 
-                let! ct = Async.CancellationToken
-                let result =
-                    match Cancellable.run ct (f (AssumeCompilationThreadWithoutEvidence())) with 
-                    | ValueOrCancelled.Value r -> r
-                    | ValueOrCancelled.Cancelled e -> raise e
-                return result }
-        else
-            r.EnqueueAndAwaitOpAsync(userOpName, opName, opArg, f)
 
     member __.PauseBeforeBackgroundWork with get() = pauseBeforeBackgroundWork and set v = pauseBeforeBackgroundWork <- v
 
