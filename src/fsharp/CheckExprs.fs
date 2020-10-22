@@ -3876,26 +3876,31 @@ let MakeDelayedSet(e: SynExpr, m) =
     // a named argument, e.g. for "el.Checked <- (el = el2)" 
     DelayedSet (SynExpr.Paren (e, range0, None, e.Range), m)
 
+/// Indicates if member declarations are allowed to be abstract members.
 type NewSlotsOK = 
     | NewSlotsOK 
     | NoNewSlots
 
+/// Indicates whether a syntactic type is allowed to include new type variables
+/// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
 type ImplicitlyBoundTyparsAllowed = 
     | NewTyparsOKButWarnIfNotRigid 
     | NewTyparsOK 
     | NoNewTypars
 
+/// Indicates whether constraints should be checked when checking syntactic types
 type CheckConstraints = 
     | CheckCxs 
     | NoCheckCxs
 
+/// Represents information about the module or type in which a member or value is declared.
 type MemberOrValContainerInfo = 
     | MemberOrValContainerInfo of
-          TyconRef *                        // tcref: The logical apparent parent of a value/member, either a module, type or exception 
-          (TType * SlotImplSet) option * // optIntfSlotTy
-          Val option *                      // baseValOpt
-          SafeInitData *                      // safeInitInfo
-          Typars                            // declaredTyconTypars
+        tcref: TyconRef *
+        optIntfSlotTy: (TType * SlotImplSet) option *
+        baseValOpt: Val option *
+        safeInitInfo: SafeInitData *
+        declaredTyconTypars: Typars
 
 /// Provides information about the context for a value or member definition 
 type ContainerInfo = 
