@@ -381,14 +381,12 @@ let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) =
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
 
 let CheckDuplicates (idf: _ -> Ident) k elems = 
-    elems |> List.iteri (fun i uc1 -> 
-        elems |> List.iteri (fun j uc2 -> 
-            let id1 = (idf uc1)
-            let id2 = (idf uc2)
+    let ids = elems |> List.mapi (fun i uc -> i, idf uc)
+    for (i, id1) in ids do
+        for (j, id2) in ids do
             if j > i && id1.idText = id2.idText then 
-                errorR (Duplicate(k, id1.idText, id1.idRange))))
+                errorR (Duplicate(k, id1.idText, id1.idRange))
     elems
-
 
 module TcRecdUnionAndEnumDeclarations =
 
