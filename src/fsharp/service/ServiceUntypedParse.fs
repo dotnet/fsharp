@@ -119,7 +119,11 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
             let res =
                 AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
                     member __.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
-                        defaultTraverse(expr)
+                        match expr with
+                        | SynExpr.Typed (_expr, _typeExpr, range) ->
+                            rangeContainsPos range pos
+                            |> Some
+                        | _ -> defaultTraverse(expr)
 
                     override _.VisitPat(defaultTraverse, pat) =
                         match pat with
