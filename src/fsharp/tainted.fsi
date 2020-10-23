@@ -20,8 +20,6 @@ type internal TypeProviderToken =
 type internal TypeProviderLock =
     inherit Lock<TypeProviderToken>
 
-    static member Singleton : TypeProviderLock
-
 /// Stores and transports aggregated list of errors reported by the type provider
 type internal TypeProviderError =
     inherit System.Exception

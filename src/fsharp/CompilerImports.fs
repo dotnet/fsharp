@@ -707,11 +707,7 @@ type TcImportsSafeDisposal
         if verbose then 
             dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
 #if !NO_EXTENSIONTYPING
-        async {
-            let actions = disposeTypeProviderActions
-            if actions.Count > 0 then
-                TypeProviderLock.Singleton.AcquireLock(fun _ -> for action in actions do action())
-        } |> Async.Start // Make this async so we do not block dispose
+        for action in disposeTypeProviderActions do action()
 #endif
         for action in disposeActions do action()
 
@@ -1258,7 +1254,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             for provider in providers do 
                 tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> 
                     try 
-                        provider.PUntaintNoFailure(fun x -> x).Dispose() 
+                        provider.PUntaintNoFailure(fun x -> x.Dispose())
                     with e -> 
                         ())
             

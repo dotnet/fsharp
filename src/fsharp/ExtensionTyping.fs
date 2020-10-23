@@ -97,7 +97,7 @@ module internal ExtensionTyping =
         // reporting errors.
         let protect f =
             try 
-                TypeProviderLock.Singleton.AcquireLock(fun _ -> f ())
+                f ()
             with err ->
                 let e = StripException (StripException err)
                 raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
