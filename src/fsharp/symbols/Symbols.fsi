@@ -699,6 +699,15 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
     internal new : SymbolEnv * ValRef -> FSharpMemberOrFunctionOrValue
     internal new : SymbolEnv * Infos.MethInfo -> FSharpMemberOrFunctionOrValue
 
+    /// Indicates if this is a top level function parameter (like x in let f x = ... or x in fun x -> ...)
+    member IsParameter : bool
+
+    /// Indicates if this is a top level function parameter (like x in let f x = ... or x in fun x -> ...)
+    member IsTopLevelParameter : bool
+
+    /// Indicates if this is a nested scope function parameter (like x in match value with | Some x ... or x in for x in 0..9 or x in let! x = ... in CE's)
+    member IsNestedScopeParameter : bool
+
     /// Indicates if the member, function or value is in an unresolved assembly 
     member IsUnresolved : bool
 

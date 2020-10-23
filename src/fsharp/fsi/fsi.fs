@@ -1059,7 +1059,7 @@ let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
             (name, m, None, ty, ValMutability.Immutable,
              false, Some(ValReprInfo([], [], { Attribs = []; Name = None })), vis, ValNotInRecScope, None, NormalVal, [], ValInline.Optional,
              XmlDoc.Empty, true, false, false, false, 
-             false, false, None, Parent(TypedTreeBasics.ERefLocal moduleOrNamespace))
+             false, false, None, Parent(TypedTreeBasics.ERefLocal moduleOrNamespace), NonParam)
     mty <- ModuleOrNamespaceType(ModuleOrNamespaceKind.ModuleOrType, QueueList.one v, QueueList.empty)
 
     let bindExpr = TypedTreeOps.mkCallDefaultOf tcGlobals range0 ty

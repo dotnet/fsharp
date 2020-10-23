@@ -591,13 +591,13 @@ val LocateEnv: ccu: CcuThunk -> env: TcEnv -> enclosingNamespacePath: Ident list
 val MakeCheckSafeInit: g: TcGlobals -> tinst: TypeInst -> safeInitInfo: SafeInitData -> reqExpr: Expr -> expr: Expr -> Expr
 
 /// Make an initial 'Val' and publish it to the environment and mutable module type accumulator.
-val MakeAndPublishVal: cenv: TcFileState -> env: TcEnv -> altActualParent: ParentRef * inSig: bool * declKind: DeclKind * vrec: ValRecursiveScopeInfo * vscheme: ValScheme * attrs: Attribs * doc: XmlDoc * konst: Const option * isGeneratedEventVal: bool -> Val
+val MakeAndPublishVal: cenv: TcFileState -> env: TcEnv -> altActualParent: ParentRef * inSig: bool * declKind: DeclKind * vrec: ValRecursiveScopeInfo * vscheme: ValScheme * attrs: Attribs * doc: XmlDoc * konst: Const option * isGeneratedEventVal: bool * valParamInfo : ValParamInfo -> Val
 
 /// Make an initial 'base' value
 val MakeAndPublishBaseVal: cenv: TcFileState -> env: TcEnv -> Ident option -> TType -> Val option
 
 /// Make simple values (which are not recursive nor members)
-val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> NameMap<(Val * TypeScheme)> * NameMap<Val>
+val MakeAndPublishSimpleVals: cenv: TcFileState -> env: TcEnv -> names: NameMap<PrelimValScheme1> -> valParamInfo : ValParamInfo -> NameMap<(Val * TypeScheme)> * NameMap<Val>
 
 /// Make an initial implicit safe initialization value
 val MakeAndPublishSafeThisVal: cenv: TcFileState -> env: TcEnv -> thisIdOpt: Ident option -> thisTy: TType -> Val option

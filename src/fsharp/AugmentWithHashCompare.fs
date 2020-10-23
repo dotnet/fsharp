@@ -893,7 +893,7 @@ let mkValSpec g (tcref: TyconRef) tmty vis slotsig methn ty argData =
     let inl = ValInline.Optional
     let args = ValReprInfo.unnamedTopArg :: argData
     let topValInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
-    Construct.NewVal (methn, m, None, ty, Immutable, true, topValInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
+    Construct.NewVal (methn, m, None, ty, Immutable, true, topValInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref, NonParam)
 
 let MakeValsForCompareAugmentation g (tcref: TyconRef) = 
     let m = tcref.Range
