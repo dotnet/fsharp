@@ -57,7 +57,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTy: ModuleOrNamespaceType option, tcImports: TcImports, amapV: Import.ImportMap, infoReaderV: InfoReader) = 
 
-    let tcVal = TypeChecker.LightweightTcValForUsingInBuildMethodCall g
+    let tcVal = CheckExpressions.LightweightTcValForUsingInBuildMethodCall g
 
     new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTy: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
