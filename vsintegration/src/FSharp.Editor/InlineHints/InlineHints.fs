@@ -43,7 +43,8 @@ type internal FSharpInlineHintsService
                     value.IsValue &&
                     not value.IsMemberThisValue &&
                     not value.IsConstructorThisValue &&
-                    symbolUse.IsFromDefinition
+                    symbolUse.IsFromDefinition &&
+                    not (parseFileResults.IsTypeAnnotationGiven symbolUse.RangeAlternate.Start)
 
                 for symbolUse in symbolUses do
                     match symbolUse.Symbol with
@@ -62,7 +63,7 @@ type internal FSharpInlineHintsService
 
                         // TODO - this is not actually correct
                         // We need to get QuickInfo for the actual type we pull out, not the value
-                        // This code is correct for parameter name hints though, if that gets done!
+                        // But it does demonstrate a possible way to do this
                         let callBack position =
                             fun _ _ ->
                                 asyncMaybe {
@@ -99,6 +100,7 @@ type internal FSharpInlineHintsService
 
                         let hint = FSharpInlineHint(TextSpan(symbolSpan.End, 0), displayParts.ToImmutableArray(), getDescriptionAsync symbolSpan.Start)
                         typeHints.Add(hint)
+
                     | :? FSharpMemberOrFunctionOrValue as func when func.IsFunction && not symbolUse.IsFromDefinition ->
                         let appliedArgRangesOpt = parseFileResults.GetAllArgumentsForFunctionApplication symbolUse.RangeAlternate.Start
                         match appliedArgRangesOpt with
@@ -124,6 +126,9 @@ type internal FSharpInlineHintsService
                             ()
 
                         ()
+
+                    // TODO - support method calls, ctors, etc
+
                     | _ -> ()
 
                 let typeHints = typeHints.ToImmutableArray()

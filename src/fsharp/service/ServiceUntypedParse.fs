@@ -112,6 +112,25 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
             FunctionApplicationArgumentLocationsImpl.findFSharpFunctionArgInfos pos input
             |> Option.map List.rev
         | None -> None
+
+    member scope.IsTypeAnnotationGiven pos =
+        match input with
+        | Some parseTree ->
+            let res =
+                AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+                    member __.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                        defaultTraverse(expr)
+
+                    override _.VisitPat(defaultTraverse, pat) =
+                        match pat with
+                        | SynPat.Typed (_pat, _targetType, range) ->
+                            rangeContainsPos range pos
+                            |> Some
+                        | _ ->
+                            defaultTraverse pat })
+            res.IsSome
+        | None ->
+            false
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =

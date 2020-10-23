@@ -25,6 +25,9 @@ type public FSharpParseFileResults =
     // doot doot yeet yeet
     member GetAllArgumentsForFunctionApplication: pos: pos -> range list option
 
+    // doot doot yeet yeet
+    member IsTypeAnnotationGiven: pos -> bool
+
     /// Name of the file for which this information were created
     member FileName: string
 
