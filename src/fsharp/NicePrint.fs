@@ -898,7 +898,7 @@ module private PrintTypes =
                     | _ :: rest -> rest
                 else argtys
 
-            let rtyL = layoutTypeWithInfo denv env rty
+            let rtyL = layoutReturnType denv env rty
 
             let tyL =
                 match argtys with 
@@ -1010,6 +1010,8 @@ module private PrintTypes =
     and private layoutTypesWithInfoAndPrec denv env prec sep typl = 
         sepListL sep (List.map (layoutTypeWithInfoAndPrec denv env prec) typl)
 
+    and private layoutReturnType denv env rty = layoutTypeWithInfoAndPrec denv env 4 rty
+
     /// Layout a single type, taking TypeSimplificationInfo into account 
     and private layoutTypeWithInfo denv env ty = 
         layoutTypeWithInfoAndPrec denv env 5 ty
@@ -1046,8 +1048,6 @@ module private PrintTypes =
             |> List.mapSquared argL 
             |> List.map (sepListL (wordL (tagPunctuation "*")))
         allArgsL
-
-    let layoutReturnType denv env rty = layoutTypeWithInfoAndPrec denv env 4 rty
 
     let layoutGenericParameterTypes denv env = 
       function
@@ -2197,9 +2197,9 @@ let layoutExnDef denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
 
 let stringOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0 |> showL
 
-let outputTycon denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Layout.squashTo width *) |>  bufferL os
+let outputTycon denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Display.squashTo width *) |>  bufferL os
 
-let layoutTycon denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Layout.squashTo width *)
+let layoutTycon denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Display.squashTo width *)
 
 let layoutUnionCases denv x = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true
 

@@ -74,7 +74,7 @@ let diamondAssembly () =
 let globalNamespace () =
     let cfg = testConfig' "typeProviders/globalNamespace"
 
-    csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
+    csc cfg """/out:globalNamespaceTP.dll /debug+ /target:library /r:netstandard.dll /r:"%s" """ cfg.FSCOREDLLPATH ["globalNamespaceTP.cs"]
 
     fsc cfg "%s /debug+ /r:globalNamespaceTP.dll /optimize-" cfg.fsc_flags ["test.fsx"]
 
@@ -162,7 +162,7 @@ let helloWorldCSharp () =
 
     rm cfg "provider.dll"
 
-    csc cfg """/out:provider.dll /target:library "/r:%s" /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
+    csc cfg """/out:provider.dll /target:library "/r:%s" /r:netstandard.dll /r:magic.dll""" cfg.FSCOREDLLPATH ["provider.cs"]
 
     fsc cfg "%s /debug+ /r:provider.dll /optimize-" cfg.fsc_flags ["test.fsx"]
 

@@ -5,6 +5,7 @@
     <TargetFramework Condition=" '$(TestTargetFramework)' == '' ">netcoreapp3.1</TargetFramework>
     <TargetFramework Condition=" '$(TestTargetFramework)' != '' ">$(TestTargetFramework)</TargetFramework>
     <IsPackable>false</IsPackable>
+    <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersion)</FSharpCoreImplicitPackageVersion>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
   </PropertyGroup>
 

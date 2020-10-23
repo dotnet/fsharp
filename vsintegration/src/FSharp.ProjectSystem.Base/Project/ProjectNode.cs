@@ -2315,7 +2315,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <remarks>Support hex format (like 0xFF)</remarks>
-        /// <exception cref="System.Exception">
+        /// <exception cref="T:System.Exception">
         /// Raise if invalid format
         /// The inner exception contains the real exception, of type FormatException, StackOverflowException
         /// </exception>

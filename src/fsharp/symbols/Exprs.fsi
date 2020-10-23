@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals

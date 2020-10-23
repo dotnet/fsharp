@@ -85,7 +85,7 @@ module LexbufLocalXmlDocStore =
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
-    let internal SaveXmlDocLine (lexbuf: Lexbuf, lineText, pos) =
+    let internal SaveXmlDocLine (lexbuf: Lexbuf, lineText, range: range) =
         let collector =
             match lexbuf.BufferLocalStore.TryGetValue xmlDocKey with
             | true, collector -> collector
@@ -94,7 +94,7 @@ module LexbufLocalXmlDocStore =
                 lexbuf.BufferLocalStore.[xmlDocKey] <- collector
                 collector
         let collector = unbox<XmlDocCollector>(collector)
-        collector.AddXmlDocLine(lineText, pos)
+        collector.AddXmlDocLine(lineText, range)
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
@@ -116,6 +116,7 @@ type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
 
+/// Represents the active #if/#else blocks
 type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
 
 type LexerIfdefStack = LexerIfdefStackEntries
@@ -124,12 +125,8 @@ type LexerIfdefStack = LexerIfdefStackEntries
 /// it reaches end of line or eof. The options are to continue with 'token' function
 /// or to continue with 'skip' function.
 type LexerEndlineContinuation =
-    | Token of LexerIfdefStackEntries
-    | Skip of LexerIfdefStackEntries * int * range: range
-    member x.LexerIfdefStack =
-      match x with
-      | LexerEndlineContinuation.Token ifd
-      | LexerEndlineContinuation.Skip(ifd, _, _) -> ifd
+    | Token 
+    | Skip of int * range: range
 
 type LexerIfdefExpression =
     | IfdefAnd of LexerIfdefExpression*LexerIfdefExpression
@@ -147,42 +144,67 @@ let rec LexerIfdefEval (lookup: string -> bool) = function
 // Parsing: continuations for whitespace tokens
 //------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
+type LexerStringStyle =
+    | Verbatim
+    | TripleQuote
+    | SingleQuote
+
+[<RequireQualifiedAccess; Struct>]
+type LexerStringKind =
+    { IsByteString: bool
+      IsInterpolated: bool
+      IsInterpolatedFirst: bool }
+    static member String = { IsByteString = false; IsInterpolated = false; IsInterpolatedFirst=false }
+    static member ByteString = { IsByteString = true; IsInterpolated = false; IsInterpolatedFirst=false }
+    static member InterpolatedStringFirst = { IsByteString = false; IsInterpolated = true; IsInterpolatedFirst=true }
+    static member InterpolatedStringPart = { IsByteString = false; IsInterpolated = true; IsInterpolatedFirst=false }
+
+/// Represents the degree of nesting of '{..}' and the style of the string to continue afterwards, in an interpolation fill.
+/// Nesting counters and styles of outer interpolating strings are pushed on this stack.
+type LexerInterpolatedStringNesting = (int * LexerStringStyle * range) list
+
 /// The parser defines a number of tokens for whitespace and
 /// comments eliminated by the lexer.  These carry a specification of
 /// a continuation for the lexer for continued processing after we've dealt with
 /// the whitespace.
 [<RequireQualifiedAccess>]
 [<NoComparison; NoEquality>]
-type LexerWhitespaceContinuation =
-    | Token of ifdef: LexerIfdefStackEntries
-    | IfDefSkip of ifdef: LexerIfdefStackEntries * int * range: range
-    | String of ifdef: LexerIfdefStackEntries * range: range
-    | VerbatimString of ifdef: LexerIfdefStackEntries * range: range
-    | TripleQuoteString of ifdef: LexerIfdefStackEntries * range: range
-    | Comment of ifdef: LexerIfdefStackEntries * int * range: range
-    | SingleLineComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | StringInComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | VerbatimStringInComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | TripleQuoteStringInComment of ifdef: LexerIfdefStackEntries * int * range: range
-    | MLOnly of ifdef: LexerIfdefStackEntries * range: range
-    | EndLine of LexerEndlineContinuation
+type LexerContinuation =
+    | Token of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting
+    | IfDefSkip of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
+    | String of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * kind: LexerStringKind * range: range
+    | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
+    | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
+    | StringInComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * int * range: range
+    | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
+    | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
+
+    static member Default = LexCont.Token([],[])
 
     member x.LexerIfdefStack =
         match x with
         | LexCont.Token (ifdef=ifd)
         | LexCont.IfDefSkip (ifdef=ifd)
         | LexCont.String (ifdef=ifd)
-        | LexCont.VerbatimString (ifdef=ifd)
         | LexCont.Comment (ifdef=ifd)
         | LexCont.SingleLineComment (ifdef=ifd)
-        | LexCont.TripleQuoteString (ifdef=ifd)
         | LexCont.StringInComment (ifdef=ifd)
-        | LexCont.VerbatimStringInComment (ifdef=ifd)
-        | LexCont.TripleQuoteStringInComment (ifdef=ifd)
+        | LexCont.EndLine (ifdef=ifd)
         | LexCont.MLOnly (ifdef=ifd) -> ifd
-        | LexCont.EndLine endl -> endl.LexerIfdefStack
 
-and LexCont = LexerWhitespaceContinuation
+    member x.LexerInterpStringNesting =
+        match x with
+        | LexCont.Token (nesting=nesting)
+        | LexCont.IfDefSkip (nesting=nesting)
+        | LexCont.String (nesting=nesting)
+        | LexCont.Comment (nesting=nesting)
+        | LexCont.SingleLineComment (nesting=nesting)
+        | LexCont.StringInComment (nesting=nesting)
+        | LexCont.EndLine (nesting=nesting)
+        | LexCont.MLOnly (nesting=nesting) -> nesting
+
+and LexCont = LexerContinuation
 
 //------------------------------------------------------------------------
 // Parse IL assembly code

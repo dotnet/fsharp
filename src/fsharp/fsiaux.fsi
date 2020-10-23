@@ -7,10 +7,12 @@ namespace FSharp.Compiler.Interactive
     type IEventLoop =
 
         /// <summary>Run the event loop.</summary>
+        ///
         /// <returns>True if the event loop was restarted; false otherwise.</returns>
         abstract Run : unit -> bool  
 
         /// <summary>Request that the given operation be run synchronously on the event loop.</summary>
+        ///
         /// <returns>The result of the operation.</returns>
         abstract Invoke : (unit -> 'T) -> 'T 
 

@@ -385,6 +385,11 @@ module List =
         mn 0 xs
     let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
 
+    let headAndTail l = 
+       match l with 
+       | [] -> failwith "headAndTail"
+       | h::t -> (h,t)
+
     // WARNING: not tail-recursive 
     let mapHeadTail fhead ftail = function
       | []    -> []
@@ -414,6 +419,17 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
 
     let mapiFoldSquared f z xss = mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
+
+    let duplicates (xs: 'T list) =
+        xs
+        |> List.groupBy id
+        |> List.filter (fun (_, elems) -> Seq.length elems > 1) 
+        |> List.map fst 
+
+    let internal allEqual (xs: 'T list) =
+        match xs with 
+        | [] -> true
+        | h::t -> t |> List.forall (fun h2 -> h = h2)
 
 module ResizeArray =
 

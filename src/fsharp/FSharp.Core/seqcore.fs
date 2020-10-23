@@ -335,12 +335,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
             (FinallyEnumerable(compensation, (fun () -> source)) :> seq<_>)
 
         let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
-            // Note, we implement each interface explicitly: this works around a bug in the CLR
-            // implementation on CompactFramework 3.7, used on Windows Phone 7
             { new obj() with
                   member x.ToString() = "<published event>"
-              interface IEvent<'Delegate,'Args>
-              interface IDelegateEvent<'Delegate> with
+              interface IEvent<'Delegate,'Args> with
                  member x.AddHandler(h) = addHandler h
                  member x.RemoveHandler(h) = removeHandler h
               interface System.IObservable<'Args> with

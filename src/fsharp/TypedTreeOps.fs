@@ -889,6 +889,17 @@ let convertToTypeWithMetadataIfPossible g ty =
     else ty
  
 //---------------------------------------------------------------------------
+// TType modifications
+//---------------------------------------------------------------------------
+
+let stripMeasuresFromTType g tt = 
+    match tt with
+    | TType_app(a,b) ->
+        let b' = b |> List.filter (isMeasureTy g >> not)
+        TType_app(a, b')
+    | _ -> tt
+
+//---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
 //---------------------------------------------------------------------------
 
@@ -1395,7 +1406,7 @@ let mkFor (g: TcGlobals) (spFor, v, e1, dir, e2, e3: Expr, m) =
     Expr.Op (TOp.For (spFor, dir), [], [mkDummyLambda g (e1, g.int_ty) ;mkDummyLambda g (e2, g.int_ty);mkLambda e3.Range v (e3, g.unit_ty)], m)
 
 let mkTryWith g (e1, vf, ef: Expr, vh, eh: Expr, m, ty, spTry, spWith) = 
-    Expr.Op (TOp.TryCatch (spTry, spWith), [ty], [mkDummyLambda g (e1, ty);mkLambda ef.Range vf (ef, ty);mkLambda eh.Range vh (eh, ty)], m)
+    Expr.Op (TOp.TryWith (spTry, spWith), [ty], [mkDummyLambda g (e1, ty);mkLambda ef.Range vf (ef, ty);mkLambda eh.Range vh (eh, ty)], m)
 
 let mkTryFinally (g: TcGlobals) (e1, e2, m, ty, spTry, spFinally) = 
     Expr.Op (TOp.TryFinally (spTry, spFinally), [ty], [mkDummyLambda g (e1, ty);mkDummyLambda g (e2, g.unit_ty)], m)
@@ -2962,12 +2973,41 @@ let fullDisplayTextOfValRefAsLayout (vref: ValRef) =
         pathText ^^ SepL.dot ^^ wordL n
         //pathText +.+ vref.DisplayName
 
-
-let fullMangledPathToTyconRef (tcref: TyconRef) = 
+let fullMangledPathToTyconRef (tcref:TyconRef) = 
     match tcref with 
     | ERefLocal _ -> (match tcref.PublicPath with None -> [| |] | Some pp -> pp.EnclosingPath)
     | ERefNonLocal nlr -> nlr.EnclosingMangledPath
-  
+    
+/// generates a name like 'System.IComparable<System.Int32>.Get'
+let tyconRefToFullName (tc:TyconRef) =
+    let namespaceParts =
+        // we need to ensure there are no collisions between (for example)
+        // - ``IB<GlobalType>`` (non-generic)
+        // - IB<'T> instantiated with 'T = GlobalType
+        // This is only an issue for types inside the global namespace, because '.' is invalid even in a quoted identifier.
+        // So if the type is in the global namespace, prepend 'global`', because '`' is also illegal -> there can be no quoted identifer with that name.
+        match fullMangledPathToTyconRef tc with
+        | [||] -> [| "global`" |]
+        | ns -> ns
+    seq { yield! namespaceParts; yield tc.DisplayName } |> String.concat "."
+
+let rec qualifiedInterfaceImplementationNameAux g (x:TType) : string =
+    match stripMeasuresFromTType g (stripTyEqnsAndErase true g x) with
+    | TType_app (a,[]) -> tyconRefToFullName a
+    | TType_anon (a,b) ->
+        let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
+        sprintf "%s<%s>" (a.ILTypeRef.FullName) genericParameters
+    | TType_app (a,b) ->
+        let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
+        sprintf "%s<%s>" (tyconRefToFullName a) genericParameters
+    | TType_var (v) -> "'" + v.Name
+    | _ -> failwithf "unexpected: expected TType_app but got %O" (x.GetType())
+
+/// for types in the global namespace, `global is prepended (note the backtick)
+let qualifiedInterfaceImplementationName g (tt:TType) memberName =
+    let interfaceName = tt |> qualifiedInterfaceImplementationNameAux g
+    sprintf "%s.%s" interfaceName memberName
+
 let qualifiedMangledNameOfTyconRef tcref nm = 
     String.concat "-" (Array.toList (fullMangledPathToTyconRef tcref) @ [ tcref.LogicalName + "-" + nm ])
 
@@ -3937,20 +3977,20 @@ module DebugPrint =
                 atomL x --- (wordL(tagText ":>") ^^ typeL ty) 
             | Expr.Op (TOp.Reraise, [_], [], _) -> 
                 wordL(tagText "Rethrow!")
-            | Expr.Op (TOp.ILAsm (a, tys), tyargs, args, _) -> 
-                let instrs = a |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
+            | Expr.Op (TOp.ILAsm (instrs, retTypes), tyargs, args, _) -> 
+                let instrs = instrs |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
                 let instrs = leftL(tagText "(#") ^^ instrs ^^ rightL(tagText "#)")
                 (appL g instrs tyargs args ---
-                    wordL(tagText ":") ^^ spaceListL (List.map typeAtomL tys)) |> wrap
+                    wordL(tagText ":") ^^ spaceListL (List.map typeAtomL retTypes)) |> wrap
             | Expr.Op (TOp.LValueOp (lvop, vr), _, args, _) -> 
                 (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
-            | Expr.Op (TOp.ILCall (_isVirtCall, _isProtectedCall, _valu, _isNewObjCall, _valUseFlags, _isProperty, _noTailCall, ilMethRef, tinst, minst, _tys), tyargs, args, _) ->
+            | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, _), tyargs, args, _) ->
                 let meth = ilMethRef.Name
                 wordL(tagText "ILCall") ^^
                    aboveListL 
                       [ yield wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                        if not tinst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL tinst
-                        if not minst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL minst
+                        if not enclTypeInst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL enclTypeInst
+                        if not methInst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL methInst
                         if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
                         if not args.IsEmpty then yield listL exprL args ] 
                     |> wrap
@@ -3960,8 +4000,8 @@ module DebugPrint =
                 (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
             | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
-            | Expr.Op (TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) -> 
-                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh) 
+            | Expr.Op (TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) ->
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh)
             | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
                 (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
             | Expr.Op (TOp.Bytes _, _, _, _) -> 
@@ -3972,7 +4012,7 @@ module DebugPrint =
             | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
             | Expr.Op (TOp.TryFinally _, _tyargs, _args, _) -> wordL(tagText "TOp.TryFinally...")
-            | Expr.Op (TOp.TryCatch _, _tyargs, _args, _) -> wordL(tagText "TOp.TryCatch...")
+            | Expr.Op (TOp.TryWith _, _tyargs, _args, _) -> wordL(tagText "TOp.TryWith...")
             | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
@@ -4716,7 +4756,7 @@ and accFreeInExprNonLinear opts x acc =
             let acc = accFreeInDecisionTree opts dtree acc
             accFreeInTargets opts targets acc
             
-    | Expr.Op (TOp.TryCatch _, tinst, [expr1; expr2; expr3], _) ->
+    | Expr.Op (TOp.TryWith _, tinst, [expr1; expr2; expr3], _) ->
         unionFreeVars 
           (accFreeVarsInTys opts tinst
             (accFreeInExprs opts [expr1; expr2] acc))
@@ -4736,7 +4776,7 @@ and accFreeInOp opts op acc =
     // Things containing no references
     | TOp.Bytes _ 
     | TOp.UInt16s _ 
-    | TOp.TryCatch _ 
+    | TOp.TryWith _
     | TOp.TryFinally _ 
     | TOp.For _ 
     | TOp.Coerce 
@@ -4779,8 +4819,8 @@ and accFreeInOp opts op acc =
         let acc = accUsesFunctionLocalConstructs (kind = RecdExprIsObjInit) acc
         (accUsedRecdOrUnionTyconRepr opts tcref.Deref (accFreeTyvars opts accFreeTycon tcref acc)) 
 
-    | TOp.ILAsm (_, tys) ->  
-        accFreeVarsInTys opts tys acc
+    | TOp.ILAsm (_, retTypes) ->  
+        accFreeVarsInTys opts retTypes acc
     
     | TOp.Reraise -> 
         accUsesRethrow true acc
@@ -4794,12 +4834,12 @@ and accFreeInOp opts op acc =
     | TOp.LValueOp (_, vref) -> 
         accFreeValRef opts vref acc
 
-    | TOp.ILCall (_, isProtectedCall, _, _, valUseFlags, _, _, _, enclTypeArgs, methTypeArgs, tys) ->
-       accFreeVarsInTys opts enclTypeArgs 
-         (accFreeVarsInTys opts methTypeArgs  
-           (accFreeInValFlags opts valUseFlags
-             (accFreeVarsInTys opts tys 
-               (accUsesFunctionLocalConstructs isProtectedCall acc))))
+    | TOp.ILCall (_, isProtected, _, _, valUseFlag, _, _, _, enclTypeInst, methInst, retTypes) ->
+       accFreeVarsInTys opts enclTypeInst 
+         (accFreeVarsInTys opts methInst  
+           (accFreeInValFlags opts valUseFlag
+             (accFreeVarsInTys opts retTypes 
+               (accUsesFunctionLocalConstructs isProtected acc))))
 
 and accFreeInTargets opts targets acc = 
     Array.foldBack (accFreeInTarget opts) targets acc
@@ -5334,16 +5374,16 @@ and remapOp tmenv op =
     | TOp.UnionCaseFieldGet (ucref, n) -> TOp.UnionCaseFieldGet (remapUnionCaseRef tmenv.tyconRefRemap ucref, n)
     | TOp.UnionCaseFieldGetAddr (ucref, n, readonly) -> TOp.UnionCaseFieldGetAddr (remapUnionCaseRef tmenv.tyconRefRemap ucref, n, readonly)
     | TOp.UnionCaseFieldSet (ucref, n) -> TOp.UnionCaseFieldSet (remapUnionCaseRef tmenv.tyconRefRemap ucref, n)
-    | TOp.ILAsm (instrs, tys) -> 
-        let tys2 = remapTypes tmenv tys
-        if tys === tys2 then op else
-        TOp.ILAsm (instrs, tys2)
+    | TOp.ILAsm (instrs, retTypes) -> 
+        let retTypes2 = remapTypes tmenv retTypes
+        if retTypes === retTypes2 then op else
+        TOp.ILAsm (instrs, retTypes2)
     | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitInfo tmenv traitInfo)
     | TOp.LValueOp (kind, lvr) -> TOp.LValueOp (kind, remapValRef tmenv lvr)
-    | TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, valUseFlags, isProperty, noTailCall, ilMethRef, enclTypeArgs, methTypeArgs, tys) -> 
-       TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, remapValFlags tmenv valUseFlags, 
-                   isProperty, noTailCall, ilMethRef, remapTypes tmenv enclTypeArgs, 
-                   remapTypes tmenv methTypeArgs, remapTypes tmenv tys)
+    | TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, ilMethRef, enclTypeInst, methInst, retTypes) -> 
+       TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, remapValFlags tmenv valUseFlag, 
+                   isProperty, noTailCall, ilMethRef, remapTypes tmenv enclTypeInst, 
+                   remapTypes tmenv methInst, remapTypes tmenv retTypes)
     | _ -> op
     
 and remapValFlags tmenv x =
@@ -5368,7 +5408,7 @@ and remapDecisionTree g compgen tmenv x =
                     | DecisionTreeTest.IsInst (srcty, tgty) -> DecisionTreeTest.IsInst (remapType tmenv srcty, remapType tmenv tgty) 
                     | DecisionTreeTest.IsNull -> DecisionTreeTest.IsNull 
                     | DecisionTreeTest.ActivePatternCase _ -> failwith "DecisionTreeTest.ActivePatternCase should only be used during pattern match compilation"
-                    | DecisionTreeTest.Error _ -> failwith "DecisionTreeTest.Error should only be used during pattern match compilation"
+                    | DecisionTreeTest.Error(m) -> DecisionTreeTest.Error(m)
                   TCase(test', remapDecisionTree g compgen tmenv y)) csl, 
                 Option.map (remapDecisionTree g compgen tmenv) dflt, 
                 m)
@@ -5708,7 +5748,7 @@ let rec remarkExpr m x =
         let op = 
             match op with 
             | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
-            | TOp.TryCatch (_, _) -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
+            | TOp.TryWith (_, _) -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5881,7 +5921,7 @@ let rec tyOfExpr g e =
     | Expr.Op (op, tinst, _, _) -> 
         match op with 
         | TOp.Coerce -> (match tinst with [to_ty;_fromTy] -> to_ty | _ -> failwith "bad TOp.Coerce node")
-        | (TOp.ILCall (_, _, _, _, _, _, _, _, _, _, rtys) | TOp.ILAsm (_, rtys)) -> (match rtys with [h] -> h | _ -> g.unit_ty)
+        | (TOp.ILCall (_, _, _, _, _, _, _, _, _, _, retTypes) | TOp.ILAsm (_, retTypes)) -> (match retTypes with [h] -> h | _ -> g.unit_ty)
         | TOp.UnionCase uc -> actualResultTyOfUnionCase tinst uc 
         | TOp.UnionCaseProof uc -> mkProvenUnionCaseTy uc tinst  
         | TOp.Recd (_, tcref) -> mkAppTy tcref tinst
@@ -5894,7 +5934,7 @@ let rec tyOfExpr g e =
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
-        | (TOp.TryCatch _ | TOp.TryFinally _) -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
+        | (TOp.TryWith _ | TOp.TryFinally _) -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
         | TOp.ValFieldGetAddr (fref, readonly) -> mkByrefTyWithFlag g readonly (actualTyOfRecdFieldRef fref tinst)
         | TOp.ValFieldGet fref -> actualTyOfRecdFieldRef fref tinst
         | (TOp.ValFieldSet _ | TOp.UnionCaseFieldSet _ | TOp.ExnFieldSet _ | TOp.LValueOp ((LSet | LByrefSet), _)) ->g.unit_ty
@@ -7082,7 +7122,8 @@ let mkCallRaise (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.r
 
 let mkCallNewDecimal (g: TcGlobals) m (e1, e2, e3, e4, e5) = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
-let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
+let mkCallNewFormat (g: TcGlobals) m aty bty cty dty ety e1 =
+    mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
 
 let tryMkCallBuiltInWitness (g: TcGlobals) traitInfo argExprs m =
     let info, tinst = g.MakeBuiltInWitnessInfo traitInfo
@@ -7158,6 +7199,9 @@ let mkCallSeqSingleton g m ty1 arg1 =
                   
 let mkCallSeqEmpty g m ty1 = 
     mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [[ty1]], [ ], m) 
+                 
+let mkCall_sprintf (g: TcGlobals) m aty fmt es = 
+    mkApps g (typedExprForIntrinsic g m g.sprintf_info, [[aty]], fmt::es , m) 
                  
 let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 = 
     let args = [ e1; e2; e3; e4 ]
@@ -8164,12 +8208,29 @@ let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
 
+// Note, isStructTy does not include type parameters with the ': struct' constraint
+// This predicate is used to detect those type parameters.
+let isNonNullableStructTyparTy g ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp -> 
+        tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
+    | ValueNone ->
+        false
+
+// Note, isRefTy does not include type parameters with the ': not struct' constraint
+// This predicate is used to detect those type parameters.
+let isReferenceTyparTy g ty = 
+    match tryDestTyparTy g ty with 
+    | ValueSome tp -> 
+        tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | _ -> false)
+    | ValueNone ->
+        false
+
 let TypeNullNever g ty = 
     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-    (isStructTy g underlyingTy) ||
-    (isByrefTy g underlyingTy)
-
-
+    isStructTy g underlyingTy ||
+    isByrefTy g underlyingTy ||
+    isNonNullableStructTyparTy g ty
 
 /// Indicates if the type admits the use of 'null' as a value
 let TypeNullIsExtraValue g m ty = 
@@ -8180,26 +8241,40 @@ let TypeNullIsExtraValue g m ty =
         false
     else 
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        match tryTcrefOfAppTy g ty with ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true | _ -> false
+        match tryTcrefOfAppTy g ty with 
+        | ValueSome tcref -> TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute tcref = Some true
+        | ValueNone -> 
+
+        // Consider type parameters
+        if isReferenceTyparTy g ty then
+            (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsNull _ -> true | _ -> false)
+        else
+            false
 
 let TypeNullIsTrueValue g ty =
     (match tryTcrefOfAppTy g ty with
      | ValueSome tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
-     | _ -> false) || (isUnitTy g ty)
+     | _ -> false) 
+    || isUnitTy g ty
 
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
+// The non-inferring counter-part to SolveTypeSupportsNull
 let TypeSatisfiesNullConstraint g m ty = 
     TypeNullIsExtraValue g m ty  
 
+// The non-inferring counter-part to SolveTypeRequiresDefaultValue (and SolveTypeRequiresDefaultConstructor for struct types)
 let rec TypeHasDefaultValue g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
+    // Check reference types - precisely the ones satisfying the ': null' constraint have default values
     TypeSatisfiesNullConstraint g m ty  
-    || (isStructTy g ty &&
-        // Is it an F# struct type?
+    || 
+      // Check nominal struct types
+      (isStructTy g ty &&
+        // F# struct types have a DefaultValue if all their field types have a default value excluding those with DefaultValue(false)
         (if isFSharpStructTy g ty then 
             let tcref, tinst = destAppTy g ty 
             let flds = 
@@ -8209,17 +8284,23 @@ let rec TypeHasDefaultValue g m ty =
                   |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some false))
 
             flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
+
+         // Struct tuple types have a DefaultValue if all their element types have a default value
          elif isStructTupleTy g ty then 
             destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+         
+         // Struct anonymous record types have a DefaultValue if all their element types have a default value
          elif isStructAnonRecdTy g ty then 
             match tryDestAnonRecdTy g ty with
             | ValueNone -> true
             | ValueSome (_, ptys) -> ptys |> List.forall (TypeHasDefaultValue g m)
          else
-            // All struct types defined in other .NET languages have a DefaultValue regardless of their
-            // instantiation
+            // All nominal struct types defined in other .NET languages have a DefaultValue regardless of their instantiation
             true))
-
+    || 
+      // Check for type variables with the ":struct" and "(new : unit -> 'T)" constraints
+      (isNonNullableStructTyparTy g ty &&
+        (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false))
 
 /// Determines types that are potentially known to satisfy the 'comparable' constraint and returns
 /// a set of residual types that must also satisfy the constraint
@@ -8244,10 +8325,9 @@ let (|SpecialComparableHeadType|_|) g ty =
             None
 
 let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
+
 let (|SpecialNotEquatableHeadType|_|) g ty = 
     if isFunTy g ty then Some() else None
-
-
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric'? 
 let canUseTypeTestFast g ty = 
@@ -8259,7 +8339,6 @@ let canUseTypeTestFast g ty =
 let canUseUnboxFast g m ty = 
      not (isTyparTy g ty) && 
      not (TypeNullNotLiked g m ty)
-     
      
 //--------------------------------------------------------------------------
 // Nullness tests and pokes 
@@ -8286,8 +8365,6 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
 
-
-
 // Null tests are generated by
 //    1. The compilation of array patterns in the pattern match compiler
 //    2. The compilation of string patterns in the pattern match compiler
@@ -8298,10 +8375,12 @@ let mkNullTest g m e1 e2 e3 =
         let dtree = TDSwitch(e1, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr         
-let mkNonNullTest (g: TcGlobals) m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un ], [], [e], [g.bool_ty], m)
-let mkNonNullCond g m ty e1 e2 e3 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m ty (mkNonNullTest g m e1) e2 e3
-let mkIfThen (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.unit_ty e1 e2 (mkUnit g m)
 
+let mkNonNullTest (g: TcGlobals) m e = mkAsmExpr ([ IL.AI_ldnull ; IL.AI_cgt_un ], [], [e], [g.bool_ty], m)
+
+let mkNonNullCond g m ty e1 e2 e3 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m ty (mkNonNullTest g m e1) e2 e3
+
+let mkIfThen (g: TcGlobals) m e1 e2 = mkCond NoDebugPointAtStickyBinding DebugPointForTarget.No m g.unit_ty e1 e2 (mkUnit g m)
 
 let ModuleNameIsMangled g attrs =
     match TryFindFSharpInt32Attribute g g.attrib_CompilationRepresentationAttribute attrs with
@@ -8309,7 +8388,6 @@ let ModuleNameIsMangled g attrs =
     | _ -> false 
 
 let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute attrs 
-
 
 let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberInfo) attrs =
     // All extension members are compiled as static members
@@ -9079,8 +9157,8 @@ let (|RangeInt32Step|_|) g expr =
 
 let (|GetEnumeratorCall|_|) expr =   
     match expr with   
-    | Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, iLMethodRef, _, _, _), _, [Expr.Val (vref, _, _) | Expr.Op (_, _, [Expr.Val (vref, ValUseFlag.NormalValUse, _)], _) ], _) ->  
-        if iLMethodRef.Name = "GetEnumerator" then Some vref  
+    | Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, [Expr.Val (vref, _, _) | Expr.Op (_, _, [Expr.Val (vref, ValUseFlag.NormalValUse, _)], _) ], _) ->  
+        if ilMethodRef.Name = "GetEnumerator" then Some vref  
         else None  
     | _ -> None  
 
@@ -9226,21 +9304,6 @@ let (|ValApp|_|) g vref expr =
     | Expr.App (Expr.Val (vref2, _, _), _f0ty, tyargs, args, m) when valRefEq g vref vref2 ->  Some (tyargs, args, m)
     | _ -> None
 
-let isStaticClass (g:TcGlobals) (x: EntityRef) =
-    not x.IsModuleOrNamespace &&
-    x.TyparsNoRange.IsEmpty &&
-    ((x.IsILTycon && 
-      x.ILTyconRawMetadata.IsSealed &&
-      x.ILTyconRawMetadata.IsAbstract) 
-#if !NO_EXTENSIONTYPING
-     || (x.IsProvided &&
-        match x.TypeReprInfo with 
-        | TProvidedTypeExtensionPoint info -> info.IsSealed && info.IsAbstract 
-        | _ -> false)
-#endif
-     || (not x.IsILTycon && not x.IsProvided && HasFSharpAttribute g g.attrib_AbstractClassAttribute x.Attribs)) &&
-    not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute x.Attribs)
-
 /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
 /// duplicate modules etc.
 let CombineCcuContentFragments m l = 
@@ -9329,9 +9392,9 @@ let (|ForLoopExpr|_|) expr =
         Some (sp1, sp2, e1, e2, v, e3, m)
     | _ -> None
 
-let (|TryCatchExpr|_|) expr = 
+let (|TryWithExpr|_|) expr =
     match expr with 
-    | Expr.Op (TOp.TryCatch (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) -> 
+    | Expr.Op (TOp.TryWith (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) ->
         Some (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
     | _ -> None
 

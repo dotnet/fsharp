@@ -514,18 +514,23 @@ let TryDemangleGenericNameAndPos (n: string) =
 
 type NameArityPair = NameArityPair of string * int
 
-let DecodeGenericTypeName pos (mangledName: string) =
-    let res = mangledName.Substring(0, pos)
-    let num = mangledName.Substring(pos+1, mangledName.Length - pos - 1)
-    NameArityPair(res, int32 num)
-
 let DemangleGenericTypeNameWithPos pos (mangledName: string) =
     mangledName.Substring(0, pos)
+
+let DecodeGenericTypeNameWithPos pos (mangledName: string) =
+    let res = DemangleGenericTypeNameWithPos pos mangledName
+    let num = mangledName.Substring(pos+1, mangledName.Length - pos - 1)
+    NameArityPair(res, int32 num)
 
 let DemangleGenericTypeName (mangledName: string) =
     match TryDemangleGenericNameAndPos mangledName with
     | ValueSome pos -> DemangleGenericTypeNameWithPos pos mangledName
     | _ -> mangledName
+
+let DecodeGenericTypeName (mangledName: string) =
+    match TryDemangleGenericNameAndPos mangledName with
+    | ValueSome pos -> DecodeGenericTypeNameWithPos pos mangledName
+    | _ -> NameArityPair(mangledName, 0)
 
 let private chopStringTo (s: string) (c: char) =
     match s.IndexOf c with

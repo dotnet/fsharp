@@ -7,6 +7,26 @@
         <target state="translated">기호 '..^'</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
+        <source>interpolated string</source>
+        <target state="new">interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
+        <source>interpolated string (first part)</source>
+        <target state="new">interpolated string (first part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
+        <source>interpolated string (final part)</source>
+        <target state="new">interpolated string (final part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
+        <source>interpolated string (part)</source>
+        <target state="new">interpolated string (part)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
         <target state="translated">{0}도 참조하세요.</target>
@@ -69,7 +89,7 @@
       </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="needs-review-translation">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>
+        <target state="translated">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 열려 있는 선언이 없거나 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="NotUpperCaseConstructor">

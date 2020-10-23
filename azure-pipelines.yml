@@ -1,14 +1,49 @@
 # CI and PR triggers
 trigger:
-- master
-- dev16.1
-- feature/*
-- release/*
+  branches:
+    include:
+    - main
+    - dev16.1
+    - feature/*
+    - release/*
+  paths:
+    include:
+    - '*'
+    exclude:
+    - .github/*
+    - docs/compiler-guide.md
+    - attributions.md
+    - CODE_OF_CONDUCT.md
+    - DEVGUIDE.md
+    - INTERNAL.md
+    - Language-Version-History.md
+    - License.txt
+    - README.md
+    - release-notes.md
+    - TESTGUIDE.md
+
 pr:
-- master
-- dev16.1
-- feature/*
-- release/*
+  branches:
+    include:
+    - main
+    - dev16.1
+    - feature/*
+    - release/*
+  paths:
+    include:
+    - '*'
+    exclude:
+    - .github/*
+    - docs/compiler-guide.md
+    - attributions.md
+    - CODE_OF_CONDUCT.md
+    - DEVGUIDE.md
+    - INTERNAL.md
+    - Language-Version-History.md
+    - License.txt
+    - README.md
+    - release-notes.md
+    - TESTGUIDE.md
 
 variables:
   - name: _TeamName
@@ -279,28 +314,6 @@ stages:
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
             displayName: End to end build tests
 
-        # Source Build Linux - disabled until MSBuild/NuGet issues are resolved
-        # - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-        #   - job: SourceBuild_Linux
-        #     pool:
-        #       vmImage: ubuntu-latest
-        #     steps:
-        #     - checkout: self
-        #       clean: true
-        #     - script: ./eng/cibuild.sh --configuration Release /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
-        #       displayName: Build
-        #     - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-        #       displayName: Dump NuGet cache contents
-        #       condition: failed()
-        #     - task: PublishBuildArtifacts@1
-        #       displayName: Publish NuGet cache contents
-        #       inputs:
-        #         PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-        #         ArtifactName: 'NuGetPackageContents SourceBuild_Linux'
-        #         publishLocation: Container
-        #       continueOnError: true
-        #       condition: failed()
-
         # Source Build Windows
         - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
           - job: SourceBuild_Windows
@@ -309,125 +322,132 @@ stages:
             steps:
             - checkout: self
               clean: true
-            - script: eng\CIBuild.cmd -configuration Release -noSign /p:DotNetBuildFromSource=true /p:FSharpSourceBuild=true
+            - script: eng\CIBuild.cmd -configuration Release -noSign -prepareMachine -sourceBuild
               displayName: Build
-            - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-              displayName: Dump NuGet cache contents
-              condition: failed()
-            - task: PublishBuildArtifacts@1
-              displayName: Publish NuGet cache contents
+            - task: PublishPipelineArtifact@1
+              displayName: Publish Logs
               inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
-                ArtifactName: 'NuGetPackageContents SourceBuild_Windows'
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                artifactName: 'SourceBuild_Windows Logs'
+              continueOnError: true
+              condition: not(succeeded())
+            - task: PublishBuildArtifacts@1
+              displayName: Publish Logs
+              inputs:
+                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                ArtifactName: 'SourceBuild_Windows_Test'
                 publishLocation: Container
               continueOnError: true
-              condition: failed()
+              condition: not(succeeded())
 
-        # Up-to-date
-        - job: UpToDate_Windows
-          pool:
-            vmImage: windows-2019
-          steps:
-          - checkout: self
-            clean: true
-          - task: PowerShell@2
-            displayName: Run up-to-date build check
-            inputs:
-              filePath: eng\tests\UpToDate.ps1
-              arguments: -configuration $(_BuildConfig) -ci -binaryLog
+        # Up-to-date - disabled due to it being flaky
+        #- job: UpToDate_Windows
+        #  pool:
+        #    vmImage: windows-2019
+        #  steps:
+        #  - checkout: self
+        #    clean: true
+        #  - task: PowerShell@2
+        #    displayName: Run up-to-date build check
+        #    inputs:
+        #      filePath: eng\tests\UpToDate.ps1
+        #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
-  #-------------------------------------------------------------------------------------------------------------------#
-  #                                                   FCS builds                                                      #
-  #-------------------------------------------------------------------------------------------------------------------#
+        # Source Build Semi-Official
+        # used until https://github.com/dotnet/source-build/issues/1795 is fixed
+        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+          - job: SourceBuild_Official
+            pool:
+              name: NetCorePublic-Pool
+              queue: BuildPool.Ubuntu.1604.amd64.Open
+            timeoutInMinutes: 90
+            steps:
+            - checkout: self
+              clean: true
+            - script: ./eng/cibuild.sh --configuration Release --prepareMachine --docker --sourceBuild
+              displayName: Build
+            - task: PublishPipelineArtifact@1
+              displayName: Publish Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                artifactName: 'SourceBuild_Official Logs'
+              continueOnError: true
+              condition: not(succeeded())
+            - task: PublishBuildArtifacts@1
+              displayName: Publish Logs
+              inputs:
+                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                ArtifactName: 'SourceBuild_Official_Test'
+                publishLocation: Container
+              continueOnError: true
+              condition: not(succeeded())
 
-  - ${{ if eq(variables['System.TeamProject'], 'public') }}:
-    - template: /eng/common/templates/jobs/jobs.yml
-      parameters:
-        enableMicrobuild: true
-        enablePublishTestResults: false
-        enablePublishBuildAssets: true
-        enablePublishUsingPipelines: false
-        enableTelemetry: true
-        helixRepo: dotnet/fsharp
-        jobs:
+        # Plain build Windows
+        # Disabled until the Windows Proto compiler is coreclr
+        # - job: Plain_Build_Windows
+        #   pool:
+        #     vmImage: windows-latest
+        #   variables:
+        #   - name: _BuildConfig
+        #     value: Debug
+        #   steps:
+        #   - checkout: self
+        #     clean: true
+        #   - script: .\Build.cmd
+        #     displayName: Initial build
+        #   - script: dotnet --list-sdks
+        #     displayName: Report dotnet SDK versions
+        #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+        #     displayName: Regular rebuild
 
-        - job: Windows_FCS
-          pool:
-            vmImage: windows-2019
-          variables:
-          - name: _SignType
-            value: Test
-          steps:
-          - checkout: self
-            clean: true
-          - task: UseDotNet@2
-            displayName: 'Use .NET Core sdk'
-            inputs:
-              useGlobalJson: true
-              workingDirectory: fcs
-          - script: fcs\build.cmd TestAndNuget
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-              publishRunAttachments: true
-            continueOnError: true
-            condition: always()
-
-        - job: Linux_FCS
+        # Plain build Linux
+        - job: Plain_Build_Linux
           pool:
             vmImage: ubuntu-latest
           variables:
-          - name: _SignType
-            value: Test
+          - name: _BuildConfig
+            value: Debug
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: 'Use .NET Core sdk'
-            inputs:
-              useGlobalJson: true
-              workingDirectory: fcs
-          - script: ./fcs/build.sh
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-              publishRunAttachments: true
-            continueOnError: true
-            condition: always()
+          - script: ./build.sh
+            displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            displayName: Regular rebuild
 
-        - job: MacOS_FCS
+        # Plain build Mac
+        - job: Plain_Build_MacOS
           pool:
-            vmImage: macOS-latest
+            vmImage: macos-latest
           variables:
-          - name: _SignType
-            value: Test
+          - name: _BuildConfig
+            value: Debug
           steps:
           - checkout: self
             clean: true
-          - task: UseDotNet@2
-            displayName: 'Use .NET Core sdk'
-            inputs:
-              useGlobalJson: true
-              workingDirectory: fcs
-          - script: ./fcs/build.sh
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-              publishRunAttachments: true
-            continueOnError: true
-            condition: always()
+          - script: ./build.sh
+            displayName: Initial build
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
+            displayName: Regular rebuild
+
+    # Arcade-powered source build
+    # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
+    # - template: /eng/common/templates/jobs/jobs.yml
+    #   parameters:
+    #     enablePublishUsingPipelines: true
+    #     enablePublishBuildArtifacts: true
+    #     enablePublishBuildAssets: true
+    #     artifacts:
+    #       publish:
+    #         artifacts: true
+    #         manifests: true
+    #     runSourceBuild: true
+    #     sourceBuildParameters:
+    #       includeDefaultManagedPlatform: true
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                    Post Build                                                       #
@@ -435,6 +455,7 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/common/templates/post-build/post-build.yml
     parameters:
+      publishingInfraVersion: 3
       # Symbol validation is not entirely reliable as of yet, so should be turned off until https://github.com/dotnet/arcade/issues/2871 is resolved.
       enableSymbolValidation: false
       # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
@@ -446,7 +467,7 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev16.6
-      insertTargetBranch: rel/d16.6
+      componentBranchName: release/dev16.8
+      insertTargetBranch: master
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'

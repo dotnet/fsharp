@@ -31,7 +31,7 @@
       <PathToNGen64>$(windir)\Microsoft.NET\Framework64\v4.0.30319\ngen.exe</PathToNGen64>
     </PropertyGroup>
 
-    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /nologo /silent /ExeConfig:$(TargetPath)' 
+    <Exec Command='"$(PathToNGen32)" install "$(TargetPath)" /nologo /silent /ExeConfig:"$(TargetPath)"' 
           Condition = "Exists('$(PathToNGen32)') AND '$(PlatformTarget)' != 'x64' AND Exists('$(TargetPath).config') AND '$(OutputType)' == 'Exe' AND '$(IsAdministrator)' == 'true'"
           ConsoleToMSBuild="true"
           IgnoreStandardErrorWarningFormat="true" />
@@ -41,7 +41,7 @@
           ConsoleToMSBuild="true"
           IgnoreStandardErrorWarningFormat="true"/>
 
-    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /nologo /silent /ExeConfig:$(TargetPath)' 
+    <Exec Command='"$(PathToNGen64)" install "$(TargetPath)" /nologo /silent /ExeConfig:"$(TargetPath)"' 
           Condition = "Exists('$(PathToNGen64)') AND '$(PlatformTarget)' != 'x86' AND Exists('$(TargetPath).config') AND '$(OutputType)' == 'Exe' AND '$(IsAdministrator)' == 'true'"
           ConsoleToMSBuild="true"
           IgnoreStandardErrorWarningFormat="true" />

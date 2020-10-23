@@ -2,7 +2,7 @@
 
 module FSharp.Core.UnitTests.Collections.Utils
 
-open NUnit.Framework
+open Xunit
 
 type Result<'a> = 
 | Success of 'a

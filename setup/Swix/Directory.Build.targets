@@ -15,7 +15,7 @@
 
   <Target Name="Build"
           DependsOnTargets="ResolveProjectReferences"
-          Condition="'$(DotNetBuildFromSource)' != 'true'">
+          Condition="'$(DotNetBuildFromSource)' != 'true' AND '$(ArcadeBuildFromSource)' != 'true'">
     <MakeDir Directories="$(IntermediateOutputPath)" ContinueOnError="True"/>
   </Target>
 

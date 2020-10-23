@@ -15,15 +15,9 @@ open Microsoft.FSharp.Core
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-#if LOCALIZATION_FSBUILD
-    let FSharpBannerVersion = FSBuild.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
-#else
-#if LOCALIZATION_FSCOMP
-    let FSharpBannerVersion = FSComp.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
-#else
-    let FSharpBannerVersion = sprintf "%s for F# %s" (FSharp.BuildProperties.fsProductVersion) (FSharp.BuildProperties.fsLanguageVersion)
-#endif
-#endif
+    let FSharpBannerVersion = UtilsStrings.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
+
+    let FSharpProductName = UtilsStrings.SR.buildProductName(FSharpBannerVersion)
 
     let versionOf<'t> =
         typeof<'t>.Assembly.GetName().Version.ToString()

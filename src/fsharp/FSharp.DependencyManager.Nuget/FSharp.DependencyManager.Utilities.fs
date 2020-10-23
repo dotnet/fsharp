@@ -9,6 +9,14 @@ open System.Reflection
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
 
+/// The result of building the package resolution files.
+type PackageBuildResolutionResult =
+    { success: bool
+      projectPath: string
+      stdOut: string array
+      stdErr: string array
+      resolutionsFile: string option }
+
 module internal Utilities =
 
     /// Return a string array delimited by commas
@@ -126,13 +134,13 @@ module internal Utilities =
             | value when not (String.IsNullOrEmpty(value)) ->
                 Some value                           // Value set externally
             | _ ->
-                // Probe for netsdk install
+                // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
                 let dotnetLocation =
                     let dotnetApp =
                         let platform = Environment.OSVersion.Platform
                         if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
-                    let assemblyLocation = typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location
-                    Path.Combine(assemblyLocation, "../../..", dotnetApp)
+                    let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+                    Path.GetFullPath(Path.Combine(assemblyLocation, "../../..", dotnetApp))
 
                 if File.Exists(dotnetLocation) then
                     Some dotnetLocation
@@ -166,6 +174,7 @@ module internal Utilities =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
+            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
             use p = new Process()
@@ -175,17 +184,12 @@ module internal Utilities =
             let stdOut = drainStreamToMemory p.StandardOutput
             let stdErr = drainStreamToMemory p.StandardError
 
-#if Debug
+#if DEBUG
             File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), stdOut)
             File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), stdErr)
 #endif
 
             p.WaitForExit()
-
-            if p.ExitCode <> 0 then
-                //Write StandardError.txt to err stream
-                for line in stdOut do Console.Out.WriteLine(line)
-                for line in stdErr do Console.Error.WriteLine(line)
 
             p.ExitCode = 0, stdOut, stdErr
 
@@ -202,18 +206,22 @@ module internal Utilities =
             | None -> ""
 
         let arguments prefix =
-            sprintf "%s -restore %s %c%s%c /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
+            sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
 
-        let succeeded, stdOut, stdErr =
+        let success, stdOut, stdErr =
             if not (isRunningOnCoreClr) then
                 // The Desktop build uses "msbuild" to build
-                executeBuild msbuildExePath (arguments "") workingDir
+                executeBuild msbuildExePath (arguments "-v:quiet") workingDir
             else
                 // The coreclr uses "dotnet msbuild" to build
-                executeBuild dotnetHostPath (arguments "msbuild") workingDir
+                executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir
 
         let outputFile = projectPath + ".resolvedReferences.paths"
-        let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
-        succeeded, stdOut, stdErr, resultOutFile
+        let resolutionsFile = if success && File.Exists(outputFile) then Some outputFile else None
+        { success = success
+          projectPath = projectPath
+          stdOut = stdOut
+          stdErr = stdErr
+          resolutionsFile = resolutionsFile }

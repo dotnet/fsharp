@@ -279,8 +279,10 @@ type VersionHelper() =
     /// <summary>
     /// Parses a version string of the form "major [ '.' minor [ '.' build [ '.' revision ] ] ]".
     /// </summary>
+    ///
     /// <param name="s">The version string to parse.</param>
     /// <param name="version">If parsing succeeds, the parsed version. Otherwise a version that represents as much of the input as could be parsed successfully.</param>
+    ///
     /// <returns>True when parsing succeeds completely (i.e. every character in the string was consumed), false otherwise.</returns>
     static member TryParse(s: string, [<Out>] version: byref<Version>) = 
         VersionHelper.TryParse (s, false, UInt16.MaxValue, true, ref version)
@@ -289,12 +291,14 @@ type VersionHelper() =
     /// Parses a version string of the form "major [ '.' minor [ '.' ( '*' | ( build [ '.' ( '*' | revision ) ] ) ) ] ]"
     /// as accepted by System.Reflection.AssemblyVersionAttribute.
     /// </summary>
+    ///
     /// <param name="s">The version string to parse.</param>
     /// <param name="allowWildcard">Indicates whether or not a wildcard is accepted as the terminal component.</param>
     /// <param name="version">
     /// If parsing succeeded, the parsed version. Otherwise a version instance with all parts set to zero.
     /// If <paramref name="s"/> contains * the version build and/or revision numbers are set to <see cref="ushort.MaxValue"/>.
     /// </param>
+    ///
     /// <returns>True when parsing succeeds completely (i.e. every character in the string was consumed), false otherwise.</returns>
 
     static member TryParseAssemblyVersion (s: string, allowWildcard: bool, [<Out>] version: byref<Version>) = 
@@ -306,6 +310,7 @@ type VersionHelper() =
     /// Parses a version string of the form "major [ '.' minor [ '.' ( '*' | ( build [ '.' ( '*' | revision ) ] ) ) ] ]"
     /// as accepted by System.Reflection.AssemblyVersionAttribute.
     /// </summary>
+    ///
     /// <param name="s">The version string to parse.</param>
     /// <param name="allowWildcard">Indicates whether or not we're parsing an assembly version string. If so, wildcards are accepted and each component must be less than 65535.</param>
     /// <param name="maxValue">The maximum value that a version component may have.</param>
@@ -314,6 +319,7 @@ type VersionHelper() =
     /// If parsing succeeded, the parsed version. When <paramref name="allowPartialParse"/> is true a version with values up to the first invalid character set. Otherwise a version with all parts set to zero.
     /// If <paramref name="s"/> contains * and wildcard is allowed the version build and/or revision numbers are set to <see cref="ushort.MaxValue"/>.
     /// </param>
+    ///
     /// <returns>True when parsing succeeds completely (i.e. every character in the string was consumed), false otherwise.</returns>
     static member private TryParse(s: string, allowWildcard: bool, maxValue: uint16, allowPartialParse: bool, [<Out>] version: byref<Version>) = 
         Debug.Assert (not allowWildcard || maxValue < UInt16.MaxValue)

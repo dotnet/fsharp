@@ -327,7 +327,7 @@
     } // end of method a@49::.ctor
 
     .method private hidebysig newslot virtual final 
-            instance int32  'CompiledNameAttribute04-ITestInterface-M'(int32 x) cil managed
+            instance int32  CompiledNameAttribute04.ITestInterface.M(int32 x) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.InteropServices.PreserveSigAttribute::.ctor() = ( 01 00 00 00 ) 
       .override CompiledNameAttribute04/ITestInterface::M
@@ -338,7 +338,7 @@
       IL_0001:  ldc.i4.1
       IL_0002:  add
       IL_0003:  ret
-    } // end of method a@49::'CompiledNameAttribute04-ITestInterface-M'
+    } // end of method a@49::CompiledNameAttribute04.ITestInterface.M
 
   } // end of class a@49
 

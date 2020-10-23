@@ -105,12 +105,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
                 "fsi"
             else
                 "FSharp.Core"
-        let targetCore =
-            if targetFramework.StartsWith("netstandard", StringComparison.InvariantCultureIgnoreCase) || targetFramework.StartsWith("netcoreapp", StringComparison.InvariantCultureIgnoreCase) then 
-                "netstandard2.0"
-            else
-                "net45"
-        (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/" + targetCore + "/FSharp.Core.dll")
+        (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/netstandard2.0/FSharp.Core.dll")
 
     let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
         let computeInclude src =

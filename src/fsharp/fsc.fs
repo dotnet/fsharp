@@ -9,7 +9,6 @@
 //    - Compiling (including optimizing)
 //    - Linking (including ILX-IL transformation)
 
-
 module internal FSharp.Compiler.Driver 
 
 open System
@@ -24,25 +23,31 @@ open System.Threading
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Filename
+open Internal.Utilities.StructuredFormat
 
-open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.ILBinaryReader 
+open FSharp.Compiler
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal
-open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOps
-open FSharp.Compiler.CompileOptions
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.OptimizeInputs
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
@@ -51,6 +56,9 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.XmlDoc
+open Microsoft.DotNet.DependencyManager
+
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -201,7 +209,7 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, a
         exiter.Exit 1
 
 /// Check for .fsx and, if present, compute the load closure for of #loaded files.
-let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager) =
+let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager, dependencyProvider) =
 
     let combineFilePath file =
         try
@@ -226,7 +234,8 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
         if IsScript filename then 
             let closure = 
                 LoadClosure.ComputeClosureOfScriptFiles
-                   (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager)
+                   (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, 
+                    lexResourceManager, dependencyProvider)
 
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
@@ -322,22 +331,13 @@ module InterfaceFileWriter =
         for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
-              (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Layout.squashTo 80 |> Layout.showL)
+              (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> Layout.showL)
        
         if tcConfig.printSignatureFile <> "" then os.Dispose()
 
 module XmlDocWriter =
 
-    let getDoc xmlDoc = 
-        match XmlDoc.Process xmlDoc with
-        | XmlDoc [| |] -> ""
-        | XmlDoc strs  -> strs |> Array.toList |> String.concat Environment.NewLine
-
-    let hasDoc xmlDoc =
-        // No need to process the xml doc - just need to know if there's anything there
-        match xmlDoc with
-        | XmlDoc [| |] -> false
-        | _ -> true
+    let hasDoc (doc: XmlDoc) = not doc.IsEmpty
         
     let computeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
@@ -389,7 +389,7 @@ module XmlDocWriter =
         let mutable members = []
         let addMember id xmlDoc = 
             if hasDoc xmlDoc then
-                let doc = getDoc xmlDoc
+                let doc = xmlDoc.GetXmlText()
                 members <- (id, doc) :: members
         let doVal (v: Val) = addMember v.XmlDocSig v.XmlDoc
         let doUnionCase (uc: UnionCase) = addMember uc.XmlDocSig uc.XmlDoc
@@ -912,7 +912,7 @@ module MainModuleBuilder =
                         [  ]
                 let reflectedDefinitionResource = 
                   { Name=reflectedDefinitionResourceName
-                    Location = ILResourceLocation.Local(ByteMemory.FromArray(reflectedDefinitionBytes).AsReadOnly())
+                    Location = ILResourceLocation.Local(ByteStorage.FromByteArray(reflectedDefinitionBytes))
                     Access= ILResourceAccess.Public
                     CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
                     MetadataIndex = NoMetadataIdx }
@@ -956,7 +956,7 @@ module MainModuleBuilder =
                          let bytes = FileSystem.ReadAllBytesShim file
                          name, bytes, pub
                  yield { Name=name 
-                         Location=ILResourceLocation.Local(ByteMemory.FromArray(bytes).AsReadOnly())
+                         Location=ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
                          Access=pub 
                          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs 
                          MetadataIndex = NoMetadataIdx }
@@ -1121,7 +1121,6 @@ module MainModuleBuilder =
 
 /// Optional static linking of all DLLs that depend on the F# Library, plus other specified DLLs
 module StaticLinker =
-
 
     // Handles TypeForwarding for the generated IL model
     type TypeForwarding (tcImports: TcImports) =
@@ -1315,7 +1314,7 @@ module StaticLinker =
                   data=ilxMainModule // any old module
                   edges = [] 
                   visited = true }
-            let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities" ]      
+            let assumedIndependentSet = set [ "mscorlib";  "System"; "System.Core"; "System.Xml"; "Microsoft.Build.Framework"; "Microsoft.Build.Utilities"; "netstandard" ]
 
             begin 
                 let mutable remaining = (computeILRefs ilGlobals ilxMainModule).AssemblyReferences
@@ -1325,7 +1324,7 @@ module StaticLinker =
                     if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then 
                         depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                     else
-                        if not (depModuleTable.ContainsKey ilAssemRef.Name) then 
+                        if not (depModuleTable.ContainsKey ilAssemRef.Name) then
                             match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with 
                             | Some dllInfo ->
                                 let ccu = 
@@ -1675,16 +1674,16 @@ let GetStrongNameSigner signingInfo =
     // REVIEW: favor the container over the key file - C# appears to do this
     match container with
     | Some container ->
-        Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container)
+        Some (ILStrongNameSigner.OpenKeyContainer container)
     | None ->
         match signer with 
         | None -> None
         | Some s ->
             try 
                 if publicsign || delaysign then
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
+                    Some (ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
                 else
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
+                    Some (ILStrongNameSigner.OpenKeyPairFile s) 
             with _ -> 
                 // Note :: don't use errorR here since we really want to fail and not produce a binary
                 error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
@@ -1772,6 +1771,8 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
+    let dependencyProvider = new DependencyProvider()
+
     // process command line, flags and collect filenames 
     let sourceFiles = 
 
@@ -1780,7 +1781,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         try 
             let sourceFiles = 
                 let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
-                AdjustForScriptCompile(ctok, tcConfigB, files, lexResourceManager)
+                AdjustForScriptCompile(ctok, tcConfigB, files, lexResourceManager, dependencyProvider)
             sourceFiles
 
         with e -> 
@@ -1864,12 +1865,12 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     if tcConfig.printAst then                
         inputs |> List.iter (fun (input, _filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
 
-    let tcConfig = (tcConfig, inputs) ||> List.fold (fun z (x, m) -> ApplyMetaCommandsFromInputToTcConfig(z, x, m))
+    let tcConfig = (tcConfig, inputs) ||> List.fold (fun z (x, m) -> ApplyMetaCommandsFromInputToTcConfig(z, x, m, dependencyProvider))
     let tcConfigP = TcConfigProvider.Constant tcConfig
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
-    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved)  |> Cancellable.runWithoutCancellation
+    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)  |> Cancellable.runWithoutCancellation
 
     // register tcImports to be disposed in future
     disposables.Register tcImports
@@ -1946,8 +1947,8 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
 
 // This is for the compile-from-AST feature of FCS.
-// TODO: consider removing this feature from FCS, which as far as I know is not used by anyone.
-let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
+// TODO: consider extracting TC in standalone phase to avoid duplication
+let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, disposables : DisposablesTracker, inputs : ParsedInput list) =
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
@@ -1958,7 +1959,20 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
-    tcConfigB.framework <- not noframework 
+    let primaryAssembly =
+        // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
+        // pick a primary assembly based on the current runtime.
+        // It's an ugly compromise used to avoid exposing primaryAssembly in the public api for this function.
+        let isNetCoreAppProcess = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription.StartsWith ".NET Core"
+        if isNetCoreAppProcess then PrimaryAssembly.System_Runtime
+        else PrimaryAssembly.Mscorlib
+
+    tcConfigB.target <- target
+    tcConfigB.primaryAssembly <- primaryAssembly
+    if noframework then
+        tcConfigB.framework <- false
+        tcConfigB.implicitlyResolveAssemblies <- false
+
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch    tcConfigB None (
@@ -1966,9 +1980,10 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         | Some _ -> OptionSwitch.On
         | None -> OptionSwitch.Off)
     SetTailcallSwitch tcConfigB OptionSwitch.On
-    tcConfigB.target <- target
-        
-    let errorLogger = errorLoggerProvider.CreateErrorLoggerUpToMaxErrors (tcConfigB, exiter)
+
+    // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
+    let delayForFlagsLogger =  errorLoggerProvider.CreateDelayAndForwardLogger exiter
+    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)  
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines
 
@@ -1980,49 +1995,55 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         try
             TcConfig.Create(tcConfigB,validate=false)
         with e ->
+            delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
             exiter.Exit 1
+
+    let dependencyProvider = new DependencyProvider()
+    let errorLogger =  errorLoggerProvider.CreateErrorLoggerUpToMaxErrors(tcConfigB, exiter)
+
+    // Install the global error logger and never remove it. This logger does have all command-line flags considered.
+    let _unwindEL_2 = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
+
+    // Forward all errors from flags
+    delayForFlagsLogger.CommitDelayedDiagnostics errorLogger
     
+    // Resolve assemblies
+    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
-    let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
-    let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
+    let sysRes, otherRes, knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
+
+    // Import basic assemblies
+    let tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
+
+    // Register framework tcImports to be disposed in future
+    disposables.Register frameworkTcImports
 
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse) 
 
     let meta = Directory.GetCurrentDirectory()
-    let tcConfig = (tcConfig,inputs) ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig (tcc, inp,meta))
+    let tcConfig = (tcConfig,inputs) ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig (tcc, inp, meta, dependencyProvider))
     let tcConfigP = TcConfigProvider.Constant tcConfig
 
-    let tcGlobals,tcImports =  
-        let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes,knownUnresolved) |> Cancellable.runWithoutCancellation
-        tcGlobals,tcImports
+    // Import other assemblies
+    ReportTime tcConfig "Import non-system references"
+    let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)  |> Cancellable.runWithoutCancellation
 
+    // register tcImports to be disposed in future
+    disposables.Register tcImports
+
+    // Build the initial type checking environment
+    ReportTime tcConfig "Typecheck"
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
+    // Type check the inputs
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs,exiter)
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
-    let generatedCcu = tcState.Ccu
-    generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
+    AbortOnError(errorLogger, exiter)
+    ReportTime tcConfig "Typechecked"
 
-    use unwindPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.CodeGen)
-    let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-
-    // Try to find an AssemblyVersion attribute 
-    let assemVerFromAttrib = 
-        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" "AssemblyVersionAttribute" topAttrs.assemblyAttrs tcConfig.deterministic with
-        | Some v -> 
-            match tcConfig.version with 
-            | VersionNone -> Some v
-            | _ -> warning(Error(FSComp.SR.fscAssemblyVersionAttributeIgnored(),Range.range0)); None
-        | _ -> None
-
-    // Pass on only the minimum information required for the next phase to ensure GC kicks in.
-    // In principle the JIT should be able to do good liveness analysis to clean things up, but the
-    // data structures involved here are so large we can't take the risk.
-    Args(ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, 
-         generatedCcu, outfile, typedAssembly, topAttrs, pdbFile, assemblyName, 
-         assemVerFromAttrib, signingInfo,exiter)
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbFile, assemblyName, errorLogger, exiter)
 
   
 /// Phase 2a: encode signature data, optimize, encode optimization data
@@ -2214,8 +2235,10 @@ let compileOfAst
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, 
         outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
 
-    main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, 
-                dllReferences, noframework, exiter, errorLoggerProvider, inputs)
+    use d = new DisposablesTracker()
+    main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, 
+                dllReferences, noframework, exiter, errorLoggerProvider, d, inputs)
+    |> main1
     |> main2a
     |> main2b (tcImportsCapture, dynamicAssemblyCreator)
     |> main3
