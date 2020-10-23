@@ -7,6 +7,7 @@ open System
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
@@ -47,12 +48,12 @@ module internal IncrementalBuilderEventTesting =
 type internal TcInfo =
     {
         tcState: TcState
-        tcEnvAtEndOfFile: TypeChecker.TcEnv
+        tcEnvAtEndOfFile: CheckExpressions.TcEnv
 
         /// Disambiguation table for module names
         moduleNamesDict: ModuleNamesDict
 
-        topAttribs: TypeChecker.TopAttribs option
+        topAttribs: TopAttribs option
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
