@@ -28,6 +28,7 @@ fsiExceptionDuringPrettyPrinting,"\n\nException raised during pretty printing.\n
 fsiIntroTextHeader1directives,"  F# Interactive directives:"
 fsiIntroTextHashrInfo,"Reference (dynamically load) the given DLL"
 fsiIntroTextHashIInfo,"Add the given search path for referenced DLLs"
+fsiIntroPackageSourceUriInfo,"Include package source uri when searching for packages"
 fsiIntroTextHashloadInfo,"Load the given file(s) as if compiled and referenced"
 fsiIntroTextHashtimeInfo,"Toggle timing on/off"
 fsiIntroTextHashhelpInfo,"Display help"

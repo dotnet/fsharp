@@ -25,6 +25,7 @@ let rnd = System.Random()
 
 let test t (s1:Lazy<string>) s2 = 
   if runEveryTest || (rnd.Next() % 10) = 0 then
+      stdout.WriteLine ("running test "+t+"...")   
       let s1 = s1.Force()
       if s1 <> s2 then 
         report_failure ("test "+t+": expected \n\t'"+s2+"' but produced \n\t'"+s1+"'")

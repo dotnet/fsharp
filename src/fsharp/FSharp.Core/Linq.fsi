@@ -8,6 +8,13 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Quotations
 
+/// <summary>
+/// Contains functionality to convert F# quotations to LINQ expression trees.
+/// </summary>
+///
+/// <namespacedoc><summary>
+///   Library functionality associated with converting F# quotations to .NET LINQ expression trees.
+/// </summary></namespacedoc>
 module LeafExpressionConverter =
     /// When used in a quotation, this function indicates a specific conversion
     /// should be performed when converting the quotation to a LINQ expression. 

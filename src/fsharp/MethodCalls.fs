@@ -619,7 +619,7 @@ type ArgumentAnalysis =
 let InferLambdaArgsForLambdaPropagation origRhsExpr = 
     let rec loop e = 
         match e with 
-        | SynExpr.Lambda (_, _, _, rest, _) -> 1 + loop rest
+        | SynExpr.Lambda (_, _, _, rest, _, _) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
         | _ -> 0
     loop origRhsExpr
@@ -853,7 +853,8 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
     match tryTcrefOfAppTy amap.g declaringType with
     | ValueSome declaringEntity ->
         if not declaringEntity.IsLocalRef && ccuEq declaringEntity.nlr.Ccu amap.g.fslibCcu then
-            match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, methodName)) with 
+            let n = mbase.PUntaint((fun x -> x.GetParameters().Length), m)
+            match amap.g.knownIntrinsics.TryGetValue ((declaringEntity.LogicalName, None, methodName, n)) with 
             | true, vref -> Some vref
             | _ -> 
             match amap.g.knownFSharpCoreModules.TryGetValue declaringEntity.LogicalName with
@@ -1751,8 +1752,8 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
 
     // Static IL interfaces fields are not supported in lower F# versions.
     if isInterfaceTy g finfo.ApparentEnclosingType then    
-        tryLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-        tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
     CheckILFieldAttributes g finfo m
 

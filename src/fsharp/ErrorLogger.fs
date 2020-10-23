@@ -691,15 +691,20 @@ let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeatu
     else
         None
 
-let internal tryLanguageFeatureError langVersion langFeature m =
+let internal checkLanguageFeatureError langVersion langFeature m =
     match tryLanguageFeatureErrorAux langVersion langFeature m with
     | Some e -> error (e)
     | None -> ()
 
-let internal tryLanguageFeatureErrorRecover langVersion langFeature m =
+let internal checkLanguageFeatureErrorRecover langVersion langFeature m =
     match tryLanguageFeatureErrorAux langVersion langFeature m with
     | Some e -> errorR e
     | None -> ()
 
 let internal tryLanguageFeatureErrorOption langVersion langFeature m =
-    tryLanguageFeatureErrorAux langVersion langFeature m 
+    tryLanguageFeatureErrorAux langVersion langFeature m
+
+let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
+    let featureStr = langVersion.GetFeatureString langFeature
+    let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+    error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary(featureStr, suggestedVersionStr), m))

@@ -196,7 +196,10 @@ module CoreTests =
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun' "core/letrec-mutrec2" FSI_BASIC
 
     [<Test>]
-    let ``printf-FSC_BASIC`` () = singleTestBuildAndRun' "core/printf" FSC_BASIC
+    let ``printf`` () = singleTestBuildAndRun' "core/printf" FSC_BASIC
+
+    [<Test>]
+    let ``printf-interpolated`` () = singleTestBuildAndRunVersion' "core/printf-interpolated" FSC_BASIC "preview"
 
     [<Test>]
     let ``tlr-FSC_BASIC`` () = singleTestBuildAndRun' "core/tlr" FSC_BASIC
@@ -713,7 +716,7 @@ module CoreTests =
         exec cfg ("." ++ "test.exe") ""
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
-        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g --define:LANGVERSION_PREVIEW --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -781,8 +784,6 @@ module CoreTests =
         fsiStdin cfg "test.fsx" "--maxerrors:1"  []
 
         testOkFile.CheckExists()
-
-
 
     [<Test>]
     let ``genericmeasures-AS_DLL`` () = singleTestBuildAndRun' "core/genericmeasures" AS_DLL
@@ -2275,6 +2276,25 @@ module TypecheckTests =
         exec cfg ("." ++ "pos36-srtp-app.exe") ""
 
     [<Test>]
+    let ``sigs pos37`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos37.dll --warnaserror" cfg.fsc_flags ["pos37.fs"]
+        peverify cfg "pos37.dll"
+
+    [<Test>]
+    let ``sigs pos38`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos38.dll --warnaserror" cfg.fsc_flags ["pos38.fs"]
+        peverify cfg "pos38.dll"
+
+    [<Test>]
+    let ``sigs pos39`` () =
+        let cfg = testConfig' "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos39.exe" cfg.fsc_flags ["pos39.fs"]
+        peverify cfg "pos39.exe"
+        exec cfg ("." ++ "pos39.exe") ""
+
+    [<Test>]
     let ``sigs pos23`` () =
         let cfg = testConfig' "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
@@ -2817,6 +2837,9 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg129`` () = singleNegTest (testConfig' "typecheck/sigs") "neg129"
+
+    [<Test>]
+    let ``type check neg130`` () = singleNegTest (testConfig' "typecheck/sigs") "neg130"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig' "typecheck/sigs") "neg_anon_1"

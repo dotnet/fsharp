@@ -20,7 +20,7 @@ type SemanticClassificationType =
     | Property
     | MutableVar
     | Module
-    | NameSpace
+    | Namespace
     | Printf
     | ComputationExpression
     | IntrinsicFunction
@@ -29,7 +29,8 @@ type SemanticClassificationType =
     | TypeArgument
     | Operator
     | DisposableType
-    | DisposableValue
+    | DisposableTopLevelValue
+    | DisposableLocalValue
     | Method
     | ExtensionMethod
     | ConstructorForReferenceType
@@ -47,6 +48,7 @@ type SemanticClassificationType =
     | LocalValue
     | Type
     | TypeDef
+    | Plaintext
 
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]

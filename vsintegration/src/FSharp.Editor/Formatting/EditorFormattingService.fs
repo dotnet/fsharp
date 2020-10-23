@@ -29,7 +29,7 @@ type internal FSharpEditorFormattingService
     
     static let getIndentation (line : string) = line |> Seq.takeWhile ((=) ' ') |> Seq.length
 
-    static member GetFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option, position: int) =
+    static member GetFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, parsingOptions: FSharpParsingOptions, position: int) =
         // Logic for determining formatting changes:
         // If first token on the current line is a closing brace,
         // match the indent with the indent on the line that opened it
@@ -40,8 +40,6 @@ type internal FSharpEditorFormattingService
             // (this is what C# does)
             do! Option.guard (indentStyle = FormattingOptions.IndentStyle.Smart)
 
-            let! parsingOptions, _projectOptions = options
-            
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -140,8 +138,12 @@ type internal FSharpEditorFormattingService
                 let removeIndentation =
                     let nextLineIndent = fixedPasteText.Lines.[1].ToString() |> getIndentation
 
-                    if nextLineShouldBeIndented then nextLineIndent - tabSize
-                    else nextLineIndent
+                    let res =
+                        if nextLineShouldBeIndented then
+                            nextLineIndent - tabSize
+                        else nextLineIndent
+
+                    max 0 res
                 
                 return stripIndentation removeIndentation
         }
@@ -151,8 +153,8 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let! projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
+            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document)
+            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, parsingOptions, position)
             return textChange |> Option.toList |> toIList
         }
         
@@ -162,12 +164,9 @@ type internal FSharpEditorFormattingService
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
-            match! projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken) with
-            | Some (parsingOptions, _) ->
-                let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
-                return textChanges |> Option.defaultValue Seq.empty |> toIList
-            | None ->
-                return toIList Seq.empty
+            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document) 
+            let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
+            return textChanges |> Option.defaultValue Seq.empty |> toIList
         }
         
     interface IFSharpEditorFormattingService with

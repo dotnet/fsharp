@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,12 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly MethodImplNoInline
 {
@@ -25,20 +30,20 @@
 }
 .mresource public FSharpSignatureData.MethodImplNoInline
 {
-  // Offset: 0x00000000 Length: 0x000002FF
+  // Offset: 0x00000000 Length: 0x000002F9
 }
 .mresource public FSharpOptimizationData.MethodImplNoInline
 {
-  // Offset: 0x00000308 Length: 0x000000F5
+  // Offset: 0x00000300 Length: 0x000000F5
 }
 .module MethodImplNoInline.exe
-// MVID: {59B19213-4480-09E2-A745-03831392B159}
+// MVID: {5F1F9A50-4480-09E2-A745-0383509A1F5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00D80000
+// Image base: 0x054F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,7 +60,7 @@
     IL_0000:  ldstr      "Hey!"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_000a:  stloc.0
-    IL_000b:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_000b:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
     IL_0010:  ldloc.0
     IL_0011:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

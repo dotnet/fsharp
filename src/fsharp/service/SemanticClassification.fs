@@ -28,7 +28,7 @@ type SemanticClassificationType =
     | Property
     | MutableVar
     | Module
-    | NameSpace
+    | Namespace
     | Printf
     | ComputationExpression
     | IntrinsicFunction
@@ -37,7 +37,8 @@ type SemanticClassificationType =
     | TypeArgument
     | Operator
     | DisposableType
-    | DisposableValue
+    | DisposableTopLevelValue
+    | DisposableLocalValue
     | Method
     | ExtensionMethod
     | ConstructorForReferenceType
@@ -55,6 +56,7 @@ type SemanticClassificationType =
     | LocalValue
     | Type
     | TypeDef
+    | Plaintext
 
 [<AutoOpen>]
 module TcResolutionsExtensions =
@@ -69,7 +71,8 @@ module TcResolutionsExtensions =
                     | ItemOccurence.UseInAttribute
                     | ItemOccurence.Use _
                     | ItemOccurence.Binding _
-                    | ItemOccurence.Pattern _ -> Some()
+                    | ItemOccurence.Pattern _ 
+                    | ItemOccurence.Open -> Some()
                     | _ -> None
 
                 let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
@@ -163,8 +166,10 @@ module TcResolutionsExtensions =
                         add m SemanticClassificationType.IntrinsicFunction
 
                     | (Item.Value vref), _, _, _, _, m when isFunction g vref.Type ->
-                        if valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
-                            ()
+                        if isDiscard vref.DisplayName then
+                            add m SemanticClassificationType.Plaintext
+                        elif valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then
+                            add m SemanticClassificationType.Operator
                         elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                             add m SemanticClassificationType.Property
                         elif vref.IsMember then
@@ -176,7 +181,10 @@ module TcResolutionsExtensions =
 
                     | (Item.Value vref), _, _, _, _, m ->
                         if isValRefDisposable vref then
-                            add m SemanticClassificationType.DisposableValue
+                            if vref.IsCompiledAsTopLevel then
+                                add m SemanticClassificationType.DisposableTopLevelValue
+                            else
+                                add m SemanticClassificationType.DisposableLocalValue
                         elif Option.isSome vref.LiteralValue then
                             add m SemanticClassificationType.Literal
                         elif not vref.IsCompiledAsTopLevel && not(isDiscard vref.DisplayName) then
@@ -212,21 +220,29 @@ module TcResolutionsExtensions =
                             add m SemanticClassificationType.Property
 
                     | Item.CtorGroup (_, minfos), _, _, _, _, m ->
-                        if minfos |> List.forall (fun minfo -> isDisposableTy minfo.ApparentEnclosingType) then
-                            add m SemanticClassificationType.DisposableType
-                        elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
-                            add m SemanticClassificationType.ConstructorForValueType
-                        else
+                        match minfos with
+                        | [] ->
                             add m SemanticClassificationType.ConstructorForReferenceType
+                        | _ ->
+                            if minfos |> List.forall (fun minfo -> isDisposableTy minfo.ApparentEnclosingType) then
+                                add m SemanticClassificationType.DisposableType
+                            elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
+                                add m SemanticClassificationType.ConstructorForValueType
+                            else
+                                add m SemanticClassificationType.ConstructorForReferenceType
 
                     | (Item.DelegateCtor _ | Item.FakeInterfaceCtor _), _, _, _, _, m ->
                         add m SemanticClassificationType.ConstructorForReferenceType
 
                     | Item.MethodGroup (_, minfos, _), _, _, _, _, m ->
-                        if minfos |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember) then
-                            add m SemanticClassificationType.ExtensionMethod
-                        else
+                        match minfos with
+                        | [] ->
                             add m SemanticClassificationType.Method
+                        | _ ->
+                            if minfos |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember) then
+                                add m SemanticClassificationType.ExtensionMethod
+                            else
+                                add m SemanticClassificationType.Method
 
                     // Special case measures for struct types
                     | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
@@ -294,7 +310,7 @@ module TcResolutionsExtensions =
 
                     | Item.ModuleOrNamespaces (modref :: _), LegitTypeOccurence, _, _, _, m ->
                         if modref.IsNamespace then
-                            add m SemanticClassificationType.NameSpace
+                            add m SemanticClassificationType.Namespace
                         else
                             add m SemanticClassificationType.Module
 
@@ -330,7 +346,7 @@ module TcResolutionsExtensions =
                         elif tcref.IsModule then
                             add m SemanticClassificationType.Module
                         elif tcref.IsNamespace then
-                            add m SemanticClassificationType.NameSpace
+                            add m SemanticClassificationType.Namespace
                         elif tcref.IsUnionTycon || tcref.IsRecordTycon then
                             if isStructTyconRef tcref then
                                 add m SemanticClassificationType.ValueType
@@ -350,8 +366,8 @@ module TcResolutionsExtensions =
                             else
                                 add m SemanticClassificationType.ReferenceType
 
-                    | _ ->
-                        ())
+                    | _, _, _, _, _, m ->
+                        add m SemanticClassificationType.Plaintext)
                 results.AddRange(formatSpecifierLocations |> Array.map (fun (m, _) -> struct(m, SemanticClassificationType.Printf)))
                 results.ToArray()
                ) 

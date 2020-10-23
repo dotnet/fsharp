@@ -77,18 +77,6 @@ type FSharpSymbolUse with
                     | projects -> Some (SymbolDeclarationLocation.Projects (projects, isSymbolLocalForProject))
             | None -> None
 
-type FSharpMemberOrFunctionOrValue with
-        
-    member x.IsConstructor = x.CompiledName = ".ctor"
-        
-    member x.IsOperatorOrActivePattern =
-        let name = x.DisplayName
-        if name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
-        then name.IndexOf(' ', 2, name.Length - 4) = -1
-        else false
-        
-
-
 type FSharpEntity with
     member x.AllBaseTypes =
         let rec allBaseTypes (entity:FSharpEntity) =

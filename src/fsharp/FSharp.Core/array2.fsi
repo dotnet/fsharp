@@ -8,9 +8,12 @@ namespace Microsoft.FSharp.Collections
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on 2-dimensional arrays.</summary>
+    /// <summary>Contains operations for working with 2-dimensional arrays.</summary>
     ///
-    /// <remarks>F# and CLI multi-dimensional arrays are typically zero-based. 
+    /// <remarks>
+    ///  <para>See also <a href="https://docs.microsoft.com/dotnet/fsharp/language-reference/arrays">F# Language Guide - Arrays</a>.</para>
+    /// 
+    /// <para>F# and CLI multi-dimensional arrays are typically zero-based. 
     /// However, CLI multi-dimensional arrays used in conjunction with external
     /// libraries (e.g. libraries associated with Visual Basic) be 
     /// non-zero based, using a potentially different base for each dimension.
@@ -18,7 +21,8 @@ namespace Microsoft.FSharp.Collections
     /// the basing on an input array will be propagated to a matching output
     /// array on the <c>Array2D.map</c> and <c>Array2D.mapi</c> operations.
     /// Non-zero-based arrays can also be created using <c>Array2D.zeroCreateBased</c>, 
-    /// <c>Array2D.createBased</c> and <c>Array2D.initBased</c>.</remarks>
+    /// <c>Array2D.createBased</c> and <c>Array2D.initBased</c>.</para>
+    /// </remarks>
     module Array2D = 
 
         /// <summary>Fetches the base-index for the first dimension of the array.</summary>
@@ -58,7 +62,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="targetIndex2">The second-dimension index to begin copying into in the target array.</param>
         /// <param name="length1">The number of elements to copy across the first dimension of the arrays.</param>
         /// <param name="length2">The number of elements to copy across the second dimension of the arrays.</param>
-        /// <exception cref="System.ArgumentException">Thrown when any of the indices are negative or if either of
+        /// <exception cref="T:System.ArgumentException">Thrown when any of the indices are negative or if either of
         /// the counts are larger than the dimensions of the array allow.</exception>
         [<CompiledName("CopyTo")>]
         val blit: source:'T[,] -> sourceIndex1:int -> sourceIndex2:int -> target:'T[,] -> targetIndex1:int -> targetIndex2:int -> length1:int -> length2:int -> unit
@@ -70,7 +74,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="initializer">A function to produce elements of the array given the two indices.</param>
         ///
         /// <returns>The generated array.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when either of the lengths is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when either of the lengths is negative.</exception>
         [<CompiledName("Initialize")>]
         val init: length1:int -> length2:int -> initializer:(int -> int -> 'T) -> 'T[,]
 
@@ -81,7 +85,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="value">The value to populate the new array.</param>
         ///
         /// <returns>The created array.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when length1 or length2 is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when length1 or length2 is negative.</exception>
         [<CompiledName("Create")>]
         val create: length1:int -> length2:int -> value:'T -> 'T[,]
 
@@ -91,7 +95,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="length2">The length of the second dimension of the array.</param>
         ///
         /// <returns>The created array.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when length1 or length2 is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when length1 or length2 is negative.</exception>
         [<CompiledName("ZeroCreate")>]
         val zeroCreate : length1:int -> length2:int -> 'T[,]
 
@@ -104,7 +108,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="initializer">A function to produce elements of the array given the two indices.</param>
         ///
         /// <returns>The created array.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
         [<CompiledName("InitializeBased")>]
         val initBased: base1:int -> base2:int -> length1:int -> length2:int -> initializer:(int -> int -> 'T) -> 'T[,]
 
@@ -117,7 +121,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="initial">The value to populate the new array.</param>
         ///
         /// <returns>The created array.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
         [<CompiledName("CreateBased")>]
         val createBased: base1:int -> base2:int -> length1:int -> length2:int -> initial: 'T -> 'T[,]
 
@@ -129,7 +133,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="length2">The length of the second dimension of the array.</param>
         ///
         /// <returns>The created array.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when base1, base2, length1, or length2 is negative.</exception>
         [<CompiledName("ZeroCreateBased")>]
         val zeroCreateBased : base1:int -> base2:int -> length1:int -> length2:int -> 'T[,]
 
@@ -209,7 +213,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="index1">The index along the first dimension.</param>
         /// <param name="index2">The index along the second dimension.</param>
         /// <param name="value">The value to set in the array.</param>
-        /// <exception cref="System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception> 
+        /// <exception cref="T:System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception> 
         [<CompiledName("Set")>]
         val set: array:'T[,] -> index1:int -> index2:int -> value:'T -> unit
 
@@ -220,7 +224,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="index2">The index along the second dimension.</param>
         ///
         /// <returns>The value of the array at the given index.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the indices are negative or exceed the bounds of the array.</exception>
         [<CompiledName("Get")>]
         val get: array:'T[,] -> index1:int -> index2:int -> 'T
 

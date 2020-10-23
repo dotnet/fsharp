@@ -299,7 +299,11 @@ let CheckFSharpAttributes (g:TcGlobals) attribs m =
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
-            if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
+            // If we are using a compiler that supports nameof then error 3501 is always suppressed.
+            // See attribute on FSharp.Core 'nameof'
+            if n = 3501 then CompleteD
+            elif isError && (not g.compilingFslib || n <> 1204) then ErrorD msg 
+            else WarnD msg
         | _ -> 
             CompleteD
         ) ++ (fun () -> 

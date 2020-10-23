@@ -27,6 +27,11 @@
         <target state="translated">{0}에는 값이 있어야 합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="sourceDirectoryDoesntExist">
+        <source>The source directory '{0}' not found</source>
+        <target state="new">The source directory '{0}' not found</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">암시적 인수 번호 {0}을(를) 적용할 수 없습니다.</target>

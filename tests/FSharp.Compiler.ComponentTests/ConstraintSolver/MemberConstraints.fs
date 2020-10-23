@@ -12,7 +12,7 @@ module MemberConstraints =
         FSharp """
  let inline length (x: ^a) : int = (^a : (member Length : int with get, set) (x, ()))
         """
-        |> withOptions ["--test:ErrorRanges"]
+        |> withErrorRanges
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 697, Line 2, Col 43, Line 2, Col 76, "Invalid constraint")

@@ -1358,7 +1358,7 @@ neg1.fsx(341,110,341,114): typecheck error FS0001: This expression was expected 
 but here has type
     'bool'    
 
-neg1.fsx(342,110,342,114): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'string'.
+neg1.fsx(342,104,342,114): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'string'.
 
 neg1.fsx(345,104,345,106): typecheck error FS3045: Invalid static argument to provided type. Expected an argument of kind 'float'.
 

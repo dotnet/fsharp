@@ -4,8 +4,9 @@ module FSharp.Core.UnitTests.LibraryTestFx
 
 open System
 open System.Collections.Generic
-
-open NUnit.Framework
+open System.IO
+open System.Reflection
+open Xunit
 
 // Workaround for bug 3601, we are issuing an unnecessary warning
 #nowarn "0004"
@@ -131,7 +132,7 @@ module SurfaceArea =
         else
 
             let logFile =
-                let workDir = TestContext.CurrentContext.WorkDirectory
+                let workDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
                 sprintf "%s\\FSharp.Core.SurfaceArea.%s.txt" workDir platform
             System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
 

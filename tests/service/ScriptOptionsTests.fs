@@ -8,11 +8,9 @@ module Tests.Service.ScriptOptions
 #endif
 
 open NUnit.Framework
-open FsUnit
-open System
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open System.IO
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Text
 
 // Add additional imports/constructs into this script text to verify that common scenarios
 // for FCS script typechecking can be supported
@@ -25,11 +23,11 @@ let pi = Math.PI
 [<TestCase(false, true, [| "--targetprofile:netcore" |])>]
 [<Test>]
 let ``can generate options for different frameworks regardless of execution environment``(assumeNetFx, useSdk, flags) =
-    let path = IO.Path.GetTempPath()
-    let file = IO.Path.GetTempFileName()
-    let tempFile = IO.Path.Combine(path, file)
-    let (options, errors) =
-        checker.GetProjectOptionsFromScript(tempFile, Text.SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
+    let path = Path.GetTempPath()
+    let file = Path.GetTempFileName()
+    let tempFile = Path.Combine(path, file)
+    let (_, errors) =
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
         |> Async.RunSynchronously
     match errors with
     | [] -> ()

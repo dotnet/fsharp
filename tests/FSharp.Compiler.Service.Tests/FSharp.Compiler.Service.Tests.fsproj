@@ -1,0 +1,80 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <NoWarn>$(NoWarn);44;75;</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UnitTestType>nunit</UnitTestType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="LibraryTestFx.fs" />
+    <Compile Include="SurfaceArea.netstandard.fs" />
+    <Compile Include="..\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
+    <Compile Include="..\service\Common.fs">
+      <Link>Common.fs</Link>
+    </Compile>
+    <Compile Include="..\service\AssemblyReaderShim.fs">
+      <Link>AssemblyReaderShim.fs</Link>
+    </Compile>
+    <Compile Include="..\service\EditorTests.fs">
+      <Link>EditorTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\Symbols.fs">
+      <Link>Symbols.fs</Link>
+    </Compile>
+    <Compile Include="..\service\FileSystemTests.fs">
+      <Link>FileSystemTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ProjectAnalysisTests.fs">
+      <Link>ProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\MultiProjectAnalysisTests.fs">
+      <Link>MultiProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\PerfTests.fs">
+      <Link>PerfTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\InteractiveCheckerTests.fs">
+      <Link>InteractiveCheckerTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ExprTests.fs">
+      <Link>ExprTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\CSharpProjectAnalysis.fs">
+      <Link>CSharpProjectAnalysis.fs</Link>
+    </Compile>
+    <Compile Include="..\service\StructureTests.fs">
+      <Link>StructureTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\TokenizerTests.fs">
+      <Link>TokenizerTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceUntypedParseTests.fs">
+      <Link>ServiceUntypedParseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\TreeVisitorTests.fs">
+      <Link>TreeVisitorTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\PatternMatchCompilationTests.fs">
+      <Link>PatternMatchCompilationTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ScriptOptionsTests.fs">
+      <Link>ScriptOptionsTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\Program.fs">
+      <Link>Program.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
+    <ProjectReference Include="..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
+</Project>

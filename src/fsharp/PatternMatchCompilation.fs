@@ -792,7 +792,7 @@ let CompilePatternBasic
                     mkInt g matchm 0
 
                 | Rethrow ->
-                    // Rethrow unmatched try-catch exn. No sequence point at the target since its not real code.
+                    // Rethrow unmatched try-with exn. No sequence point at the target since its not real code.
                     mkReraise matchm resultTy
 
                 | Throw ->
@@ -813,7 +813,7 @@ let CompilePatternBasic
                             )
                         )
 
-                    // We use throw, or EDI.Capture(exn).Throw() when EDI is supported, instead of rethrow on unmatched try-catch in a computation expression.
+                    // We use throw, or EDI.Capture(exn).Throw() when EDI is supported, instead of rethrow on unmatched try-with in a computation expression.
                     // But why? Because this isn't a real .NET exception filter/handler but just a function we're passing
                     // to a computation expression builder to simulate one.
                     let ediCaptureMethInfo, ediThrowMethInfo =

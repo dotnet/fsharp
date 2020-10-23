@@ -5,20 +5,19 @@ namespace FSharp.Core.UnitTests.Collections
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>][<Category "Collections.List">][<Category "FSharp.Core.Collections">]
-type ObsoleteListFunctions() =        
-    [<Test>]
+type ObsoleteListFunctions() =
+    [<Fact>]
     member this.Nth() = 
         // integer List 
-        let resultInt = List.nth [3;7;9;4;8;1;1;2] 3        
+        let resultInt = List.nth [3;7;9;4;8;1;1;2] 3
         Assert.AreEqual(4, resultInt)
-        
+
         // string List
-        let resultStr = List.nth   ["a";"b";"c";"d"] 3        
+        let resultStr = List.nth   ["a";"b";"c";"d"] 3
         Assert.AreEqual("d", resultStr)
-        
+
         // empty List 
         CheckThrowsArgumentException ( fun() -> List.nth List.empty 1)
 

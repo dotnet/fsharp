@@ -75,6 +75,7 @@ type internal FSharpClassificationService
     static let userOpName = "SemanticColorization"
 
     static let getLexicalClassifications(filePath: string, defines, text: SourceText, textSpan: TextSpan, ct) =
+        let text = text.GetSubText(textSpan)
         let result = ImmutableArray.CreateBuilder()
         let tokenCallback =
             fun (tok: FSharpSyntaxToken) ->
@@ -94,7 +95,7 @@ type internal FSharpClassificationService
                 | _ -> ()
                 
         let flags = FSharpLexerFlags.Default &&& ~~~FSharpLexerFlags.Compiling &&& ~~~FSharpLexerFlags.UseLexFilter
-        FSharpLexer.Lex(text.GetSubText(textSpan).ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
+        FSharpLexer.Lex(text.ToFSharpSourceText(), tokenCallback, filePath = filePath, conditionalCompilationDefines = defines, flags = flags, ct = ct)
 
         result.ToImmutable()
 
@@ -157,7 +158,7 @@ type internal FSharpClassificationService
             asyncMaybe {
                 use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
-                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken)
+                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // If we are trying to get semantic classification for a document that is not open, get the results from the background and cache it.

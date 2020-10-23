@@ -14,7 +14,7 @@ open NUnit.Framework.Constraints
 open Salsa.Salsa
 open Salsa.VsOpsUtils               
 open FSharp.Compiler
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.IncrementalBuild
 open FSharp.Compiler.AbstractIL.Internal.Library

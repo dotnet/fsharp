@@ -176,7 +176,7 @@ while true do
             let sourceText = SourceText.From(template)
 
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-            let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some (parsingOptions, projectOptions))
+            let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, parsingOptions)
             match expectedIndentation with
             | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
             | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
@@ -189,7 +189,7 @@ while true do
             let sourceText = SourceText.From(template)
 
             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-            let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some (parsingOptions, projectOptions))
+            let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, parsingOptions)
             match expectedIndentation with
             | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
             | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)

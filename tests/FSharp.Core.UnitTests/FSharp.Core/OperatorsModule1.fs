@@ -7,12 +7,11 @@ namespace FSharp.Core.UnitTests.Operators
 
 open System
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
-[<TestFixture>]
 type OperatorsModule1() =
 
-    [<Test>]
+    [<Fact>]
     member _.KeyValue() =
 
         let funcKeyValue x =
@@ -33,7 +32,7 @@ type OperatorsModule1() =
         
         CheckThrowsNullRefException(fun () -> nullstring.ToString() |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.OptimizedRangesGetArraySlice() =
 
         let param1 = Some(1)
@@ -51,7 +50,7 @@ type OperatorsModule1() =
         let stringslice = Operators.OperatorIntrinsics.GetArraySlice [|null;null;null|] param1 param2
         Assert.AreEqual([|null;null|], stringslice)
 
-    [<Test>]
+    [<Fact>]
     member _.OptimizedRangesGetArraySlice2D() =
 
         let param1D1 = Some(0)
@@ -75,7 +74,7 @@ type OperatorsModule1() =
         let nullslice = Operators.OperatorIntrinsics.GetArraySlice2D nullArray2D param1D1 param1D2 param2D1 param2D2
         Assert.AreEqual(null, nullslice.[1,1])
 
-    [<Test>]
+    [<Fact>]
     member _.OptimizedRangesGetStringSlice() =
         let param1 = Some(4)
         let param2 = Some(6)
@@ -87,7 +86,7 @@ type OperatorsModule1() =
         // null
         CheckThrowsNullRefException(fun () -> Operators.OperatorIntrinsics.GetStringSlice null param1 param2 |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.OptimizedRangesSetArraySlice() =
         let param1 = Some(1)
         let param2 = Some(2)
@@ -110,7 +109,7 @@ type OperatorsModule1() =
         Operators.OperatorIntrinsics.SetArraySlice nullArray1  param1 param2 nullArray2
         CheckThrowsNullRefException(fun () -> nullArray1.[0].ToString() |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.OptimizedRangesSetArraySlice2D() =
         let param1D1 = Some(0)
         let param1D2 = Some(1)
@@ -135,21 +134,21 @@ type OperatorsModule1() =
         Operators.OperatorIntrinsics.SetArraySlice2D nullArray2D1 param1D1 param1D2 param2D1 param2D2 nullArray2D2
         CheckThrowsNullRefException(fun () -> nullArray2D1.[0,0].ToString()  |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.OptimizedRangesSetArraySlice3D() =
         let intArray1 = Array3D.init 2 3 4 (fun i j k -> i*10+j)
         let intArray2 = Array3D.init 2 3 4 (fun i j k -> i*100+j)
         Operators.OperatorIntrinsics.SetArraySlice3D intArray1 (Some 0) (Some 1) (Some 0) (Some 1) (Some 0) (Some 1) intArray2
         Assert.AreEqual(101, intArray1.[1,1,1])
 
-    [<Test>]
+    [<Fact>]
     member _.OptimizedRangesSetArraySlice4D() =
         let intArray1 = Array4D.init 2 3 4 5 (fun i j k l -> i*10+j)
         let intArray2 = Array4D.init 2 3 4 5 (fun i j k l -> i*100+j)
         Operators.OperatorIntrinsics.SetArraySlice4D intArray1 (Some 0) (Some 1) (Some 0) (Some 1) (Some 0) (Some 1) (Some 0) (Some 1) intArray2
         Assert.AreEqual(101, intArray1.[1,1,1,1])
 
-    [<Test>]
+    [<Fact>]
     member _.Uncheckeddefaultof () =
         
         // int
@@ -164,7 +163,7 @@ type OperatorsModule1() =
         let structdefault = Operators.Unchecked.defaultof<DateTime>
         Assert.AreEqual(1,  structdefault.Day)
 
-    [<Test>]
+    [<Fact>]
     member _.abs () =
         
         // int
@@ -179,7 +178,7 @@ type OperatorsModule1() =
         let decimalabs = Operators.abs (-1000M)
         Assert.AreEqual(1000M, decimalabs)
 
-    [<Test>]
+    [<Fact>]
     member _.acos () =
         
         // min value
@@ -194,7 +193,7 @@ type OperatorsModule1() =
         let maxacos = Operators.acos (1.0)
         Assert.AreEqual(0.0, maxacos)
 
-    [<Test>]
+    [<Fact>]
     member _.asin () =
         
         // min value
@@ -209,7 +208,7 @@ type OperatorsModule1() =
         let maxasin = Operators.asin (1.0)
         Assert.AreNearEqual(1.5707963267948966, maxasin)
 
-    [<Test>]
+    [<Fact>]
     member _.atan () =
         
         // min value
@@ -224,7 +223,7 @@ type OperatorsModule1() =
         let maxatan = Operators.atan (infinity)
         Assert.AreNearEqual(1.5707963267948966, maxatan)
 
-    [<Test>]
+    [<Fact>]
     member _.atan2 () =
         
         // min value
@@ -239,7 +238,7 @@ type OperatorsModule1() =
         let maxatan2 = Operators.atan2 (1.0) (0.0)
         Assert.AreNearEqual(1.5707963267948966, maxatan2)
 
-    [<Test>]
+    [<Fact>]
     member _.box () =
         
         // int value
@@ -254,7 +253,7 @@ type OperatorsModule1() =
         let nullbox = Operators.box null
         CheckThrowsNullRefException(fun () -> nullbox.ToString()  |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member _.byte() =
         // int type
         let intByte = Operators.byte 100
@@ -295,7 +294,7 @@ type OperatorsModule1() =
         // OverflowException, from decimal is always checked
         CheckThrowsOverflowException(fun() -> Operators.byte Decimal.MinValue |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member _.ceil() =
         // min value
         let minceil = Operators.ceil 0.1
@@ -309,7 +308,7 @@ type OperatorsModule1() =
         let maxceil = Operators.ceil 1.7E+308
         Assert.AreEqual(1.7E+308, maxceil)
         
-    [<Test>]
+    [<Fact>]
     member _.char() =
         // int type
         let intchar = Operators.char 48
@@ -319,7 +318,7 @@ type OperatorsModule1() =
         let stringchar = Operators.char " "
         Assert.AreEqual(' ', stringchar)
        
-    [<Test>]
+    [<Fact>]
     member _.compare() =
         // int type
         let intcompare = Operators.compare 100 101
@@ -333,7 +332,7 @@ type OperatorsModule1() =
         let boundcompare = Operators.compare null null
         Assert.AreEqual(0, boundcompare)
 
-    [<Test>]
+    [<Fact>]
     member _.cos () =
         
         // min value
@@ -348,7 +347,7 @@ type OperatorsModule1() =
         let maxcos = Operators.cos (1.57)
         Assert.AreNearEqual(0.00079632671073326335, maxcos)
 
-    [<Test>]
+    [<Fact>]
     member _.cosh () =
 
         // min value
@@ -363,7 +362,7 @@ type OperatorsModule1() =
         let maxcosh = Operators.cosh (1.57)
         Assert.AreNearEqual(2.5073466880660993, maxcosh)
 
-    [<Test>]
+    [<Fact>]
     member _.decimal () =
         
         // int value
@@ -374,7 +373,7 @@ type OperatorsModule1() =
         let maxdecimal = Operators.decimal (1.0)
         Assert.AreEqual(1M, maxdecimal)
 
-    [<Test>]
+    [<Fact>]
     member _.decr() =
         // zero
         let zeroref = ref 0
@@ -391,7 +390,7 @@ type OperatorsModule1() =
         Operators.decr (normalref)
         Assert.AreEqual((ref 99), normalref)
         
-    [<Test>]
+    [<Fact>]
     member _.defaultArg() =
         // zero
         let zeroOption = Some(0)
@@ -408,7 +407,7 @@ type OperatorsModule1() =
         let normalfaultArg = Operators.defaultArg normalOption 100
         Assert.AreEqual(100, normalfaultArg)
         
-    [<Test>]
+    [<Fact>]
     member _.double() =
         // int type
         let intdouble = Operators.float 100
@@ -418,7 +417,7 @@ type OperatorsModule1() =
         let chardouble = Operators.float '0'
         Assert.AreEqual(48.0, chardouble)
 
-    [<Test>]
+    [<Fact>]
     member _.enum() =
         // zero
         let intarg : int32 = 0
@@ -455,7 +454,7 @@ type OperatorsModule1() =
         Assert.AreEqual(0, boundexit)
 #endif
 
-    [<Test>]
+    [<Fact>]
     member _.exp() =
         // zero
         let zeroexp = Operators.exp 0.0
@@ -469,7 +468,7 @@ type OperatorsModule1() =
         let normalexp = Operators.exp 100.0
         Assert.AreEqual(2.6881171418161356E+43, normalexp)
         
-    [<Test>]
+    [<Fact>]
     member _.failwith() =
         try
             let _ = Operators.failwith "failwith"
@@ -479,7 +478,7 @@ type OperatorsModule1() =
             | Failure("failwith") -> ()
             |_ -> Assert.Fail("Throw unexpected exception")
 
-    [<Test>]
+    [<Fact>]
     member _.float() =
         // int type
         let intfloat = Operators.float 100
@@ -489,7 +488,7 @@ type OperatorsModule1() =
         let charfloat = Operators.float '0'
         Assert.AreEqual((float)48, charfloat)
 
-    [<Test>]
+    [<Fact>]
     member _.float32() =
         // int type
         let intfloat32 = Operators.float32 100
@@ -499,7 +498,7 @@ type OperatorsModule1() =
         let charfloat32 = Operators.float32 '0'
         Assert.AreEqual((float32)48, charfloat32)
 
-    [<Test>]
+    [<Fact>]
     member _.floor() =
         // float type
         let intfloor = Operators.floor 100.9
@@ -509,7 +508,7 @@ type OperatorsModule1() =
         let charfloor = Operators.floor ((float32)100.9)
         Assert.AreEqual(100.0f, charfloor)
     
-    [<Test>]
+    [<Fact>]
     member _.fst() =
         // int type
         let intfst = Operators.fst (100,101)
@@ -523,7 +522,7 @@ type OperatorsModule1() =
         let boundfst = Operators.fst (null,null)
         Assert.AreEqual(null, boundfst)
         
-    [<Test>]
+    [<Fact>]
     member _.hash() =
         // int type (stable between JIT versions)
         let inthash = Operators.hash 100
@@ -537,7 +536,7 @@ type OperatorsModule1() =
         //let boundhash = Operators.hash "A"
         //Assert.AreEqual(-842352673, boundhash)
         
-    [<Test>]
+    [<Fact>]
     member _.id() =
         // int type
         let intid = Operators.id 100
@@ -551,7 +550,7 @@ type OperatorsModule1() =
         let boundid = Operators.id "A"
         Assert.AreEqual("A", boundid)
 
-    [<Test>]
+    [<Fact>]
     member _.ignore() =
         // value type
         let result = Operators.ignore 10
@@ -561,7 +560,7 @@ type OperatorsModule1() =
         let result = Operators.ignore "A"
         Assert.AreEqual(null, result)
 
-    [<Test>]
+    [<Fact>]
     member _.incr() =
         // legit value
         let result = ref 10
@@ -573,12 +572,12 @@ type OperatorsModule1() =
         Operators.incr result
         Assert.AreEqual(System.Int32.MinValue, !result)
 
-    [<Test>]
+    [<Fact>]
     member _.infinity() =
         
         let inf = Operators.infinity
         let result = inf > System.Double.MaxValue
-        Assert.IsTrue(result)
+        Assert.True(result)
         
         // arithmetic operation
         let result = infinity + 3.0
@@ -592,12 +591,12 @@ type OperatorsModule1() =
         let result = infinity / 3.0
         Assert.AreEqual(Double.PositiveInfinity, result)
 
-    [<Test>]
+    [<Fact>]
     member _.infinityf() =
         
         let inf = Operators.infinityf
         let result = inf > System.Single.MaxValue
-        Assert.IsTrue(result)
+        Assert.True(result)
         
         // arithmetic operation
         let result = infinityf + 3.0f

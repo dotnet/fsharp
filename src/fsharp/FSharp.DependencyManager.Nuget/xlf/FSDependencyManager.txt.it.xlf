@@ -27,6 +27,11 @@
         <target state="translated">Con {0} è richiesto un valore</target>
         <note />
       </trans-unit>
+      <trans-unit id="sourceDirectoryDoesntExist">
+        <source>The source directory '{0}' not found</source>
+        <target state="new">The source directory '{0}' not found</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">Non è possibile applicare il numero di argomento implicito {0}</target>

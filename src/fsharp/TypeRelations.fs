@@ -285,7 +285,6 @@ let IteratedAdjustArityOfLambda g amap topValInfo e =
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
-    if not (isAppTy g ty2) then None else
     let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
     supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
     

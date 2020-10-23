@@ -194,13 +194,11 @@ namespace Internal.Utilities.Text.Lexing
         let mutable startPos = Position.Empty
         let mutable endPos = Position.Empty
 
-        // Throw away all the input besides the lexeme
+        // Throw away all the input besides the lexeme, which is placed at start of buffer
         let discardInput () = 
-            let keep = Array.sub buffer bufferScanStart bufferScanLength
-            let nkeep = keep.Length 
-            Array.blit keep 0 buffer 0 nkeep
+            Array.blit buffer bufferScanStart buffer 0 bufferScanLength
             bufferScanStart <- 0
-            bufferMaxScanLength <- nkeep
+            bufferMaxScanLength <- bufferScanLength
 
         member lexbuf.EndOfScan () : int =
             //Printf.eprintf "endOfScan, lexBuffer.lexemeLength = %d\n" lexBuffer.lexemeLength;
@@ -221,7 +219,9 @@ namespace Internal.Utilities.Text.Lexing
            with get() = endPos
            and  set b =  endPos <- b
 
-        member lexbuf.Lexeme         = Array.sub buffer bufferScanStart lexemeLength
+        member lexbuf.LexemeView         = System.ReadOnlySpan<'Char>(buffer, bufferScanStart, lexemeLength)
+        member lexbuf.LexemeChar n   = buffer.[n+bufferScanStart]
+        member lexbuf.LexemeContains (c:'Char) =  array.IndexOf(buffer, c, bufferScanStart, lexemeLength) >= 0
         member lexbuf.BufferLocalStore = (context :> IDictionary<_,_>)
         member lexbuf.LexemeLength        with get() : int = lexemeLength    and set v = lexemeLength <- v
         member lexbuf.Buffer              with get() : 'Char[] = buffer              and set v = buffer <- v

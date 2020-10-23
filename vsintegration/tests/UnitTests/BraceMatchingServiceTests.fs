@@ -86,6 +86,19 @@ type BraceMatchingServiceTests()  =
     member this.BracketInExpression() = 
         this.VerifyBraceMatch("let x = (3*5)-1", "(3*", ")-1")
 
+    [<Test>]
+    member this.BraceInInterpolatedStringSimple() = 
+        this.VerifyBraceMatch("let x = $\"abc{1}def\"", "{1", "}def")
+
+    [<Test>]
+    member this.BraceInInterpolatedStringTwoHoles() = 
+        this.VerifyBraceMatch("let x = $\"abc{1}def{2+3}hij\"", "{2", "}hij")
+
+    [<Test>]
+    member this.BraceInInterpolatedStringNestedRecord() = 
+        this.VerifyBraceMatch("let x = $\"abc{ id{contents=3}.contents }\"", "{contents", "}.contents")
+        this.VerifyBraceMatch("let x = $\"abc{ id{contents=3}.contents }\"", "{ id", "}\"")
+
     [<TestCase("[start")>]
     [<TestCase("]end")>]
     member this.BraceInMultiLineCommentShouldNotBeMatched(startMarker: string) = 

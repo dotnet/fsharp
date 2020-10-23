@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,12 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly ForEachOnList01
 {
@@ -29,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.ForEachOnList01
 {
-  // Offset: 0x00000000 Length: 0x000002ED
+  // Offset: 0x00000000 Length: 0x000002E7
 }
 .mresource public FSharpOptimizationData.ForEachOnList01
 {
-  // Offset: 0x000002F8 Length: 0x000000DB
+  // Offset: 0x000002F0 Length: 0x000000DB
 }
 .module ForEachOnList01.dll
-// MVID: {59B18AEE-56DF-F74F-A745-0383EE8AB159}
+// MVID: {5F1FBE49-56DF-F74F-A745-038349BE1F5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x04F10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -72,7 +77,7 @@
       // Code size       4 (0x4)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 39,39 : 21,26 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\ForEachOnList01.fs'
+      .line 39,39 : 21,26 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnList01.fs'
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.1
       IL_0002:  add
@@ -362,7 +367,7 @@
     IL_002e:  ldstr      "%A"
     IL_0033:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_0038:  stloc.s    V_4
-    IL_003a:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_003a:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
     IL_003f:  ldloc.s    V_4
     IL_0041:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -424,7 +429,7 @@
     IL_003c:  ldstr      "%O"
     IL_0041:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_0046:  stloc.3
-    IL_0047:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_0047:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
     IL_004c:  ldloc.3
     IL_004d:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -493,7 +498,7 @@
     IL_0040:  ldstr      "%O"
     IL_0045:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_004a:  stloc.s    V_4
-    IL_004c:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_004c:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
     IL_0051:  ldloc.s    V_4
     IL_0053:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

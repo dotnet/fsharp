@@ -1548,6 +1548,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
 
     let oddActivePatternCase = oddSymbol :?> FSharpActivePatternCase
     oddActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
+    oddActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
     oddActivePatternCase.XmlDocSig |> shouldEqual ""
     let oddGroup = oddActivePatternCase.Group
     oddGroup.IsTotal |> shouldEqual true
@@ -1562,6 +1563,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     evenSymbol.ToString() |> shouldEqual "symbol Even"
     let evenActivePatternCase = evenSymbol :?> FSharpActivePatternCase
     evenActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Total active pattern for even/odd integers"]
+    evenActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Total active pattern for even/odd integers"; "</summary>"]
     evenActivePatternCase.XmlDocSig |> shouldEqual ""
     let evenGroup = evenActivePatternCase.Group
     evenGroup.IsTotal |> shouldEqual true
@@ -1606,6 +1608,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
 
     let floatActivePatternCase = floatSymbol :?> FSharpActivePatternCase
     floatActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual ["Partial active pattern for floats"]
+    floatActivePatternCase.ElaboratedXmlDoc |> Seq.toList |> shouldEqual ["<summary>"; "Partial active pattern for floats"; "</summary>"]
     floatActivePatternCase.XmlDocSig |> shouldEqual ""
     let floatGroup = floatActivePatternCase.Group
     floatGroup.IsTotal |> shouldEqual false
@@ -3800,7 +3803,7 @@ let ``Test Project26 parameter symbols`` () =
     
     let rec isByRef (ty: FSharpType) = 
         if ty.IsAbbreviation then isByRef ty.AbbreviatedType 
-        else ty.IsNamedType && ty.NamedEntity.IsByRef
+        else ty.HasTypeDefinition && ty.TypeDefinition.IsByRef
 
     // check we can get the CurriedParameterGroups
     let objMethodsCurriedParameterGroups = 
@@ -5568,7 +5571,7 @@ module Nested =
     |> List.ofSeq
     |> List.map(fun openDeclaration -> tups openDeclaration.AppliedScope)
     |> shouldEqual
-           [ (4, 5), (7, 15)
+           [ (4, 0), (7, 15)
              (6, 0), (7, 15)
-             (11, 5), (14, 15)
+             (11, 0), (14, 15)
              (13, 0), (14, 15) ]

@@ -81,12 +81,14 @@ let GetSuperTypeOfType g amap m ty =
         elif isRefTy g ty && not (isObjTy g ty) then
             Some g.obj_ty
         elif isStructTupleTy g ty then
-            Some g.obj_ty
+            Some g.system_Value_ty
         elif isFSharpStructOrEnumTy g ty then
             if isFSharpEnumTy g ty then
                 Some g.system_Enum_ty
             else
                 Some g.system_Value_ty
+        elif isStructAnonRecdTy g ty then
+            Some g.system_Value_ty
         elif isAnonRecdTy g ty then
             Some g.obj_ty
         elif isRecdTy g ty || isUnionTy g ty then
@@ -146,12 +148,22 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m ty =
                     tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g ty))
         | _ -> []
 
+    
+    // NOTE: Anonymous record types are not directly considered to implement IComparable,
+    // IComparable<T> or IEquatable<T>. This is because whether they support these interfaces depend on their
+    // consitutent types, which may not yet be known in type inference.
+    //
+    // NOTE: Tuples could in theory always support IComparable etc. because this
+    // is in the .NET metadata for System.Tuple etc.  However from the F# perspective tuple types don't
+    // always support the 'comparable' and 'equality' constraints (again, it depends on their constitutent types).
+
     // .NET array types are considered to implement IList<T>
     let itys =
         if isArray1DTy g ty then
             mkSystemCollectionsGenericIListTy g (destArrayTy g ty) :: itys
         else
             itys
+
     itys
 
 [<RequireQualifiedAccess>]
@@ -1052,7 +1064,8 @@ type MethInfo =
         | DefaultStructCtor _ -> XmlDoc.Empty
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(_, mi, _, m)->
-            XmlDoc (mi.PUntaint((fun mix -> (mix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(mi.TypeProvider.PUntaintNoFailure id)), m))
+            let lines = mi.PUntaint((fun mix -> (mix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(mi.TypeProvider.PUntaintNoFailure id)), m)
+            XmlDoc (lines, m)
 #endif
 
     /// Try to get an arbitrary F# ValRef associated with the member. This is to determine if the member is virtual, amongst other things.
@@ -2150,7 +2163,8 @@ type PropInfo =
         | FSProp(_, _, None, None) -> failwith "unreachable"
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(_, pi, m) ->
-            XmlDoc (pi.PUntaint((fun pix -> (pix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(pi.TypeProvider.PUntaintNoFailure id)), m))
+            let lines = pi.PUntaint((fun pix -> (pix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(pi.TypeProvider.PUntaintNoFailure id)), m)
+            XmlDoc (lines, m)
 #endif
 
     /// Get the TcGlobals associated with the object
@@ -2404,7 +2418,8 @@ type EventInfo =
         | FSEvent (_, p, _, _) -> p.XmlDoc
 #if !NO_EXTENSIONTYPING
         | ProvidedEvent (_, ei, m) ->
-            XmlDoc (ei.PUntaint((fun eix -> (eix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(ei.TypeProvider.PUntaintNoFailure id)), m))
+            let lines = ei.PUntaint((fun eix -> (eix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(ei.TypeProvider.PUntaintNoFailure id)), m)
+            XmlDoc (lines, m)
 #endif
 
     /// Get the logical name of the event.

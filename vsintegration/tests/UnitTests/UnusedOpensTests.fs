@@ -6,7 +6,10 @@ open System
 open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
-open FsUnit
+
+
+/// like "should equal", but validates same-type
+let shouldEqual (x: 'a) (y: 'a) = Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
 
 let private filePath = "C:\\test.fs"
 

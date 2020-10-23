@@ -1540,6 +1540,18 @@ val normalizeEnumTy : TcGlobals -> TType -> TType
 /// Determine if a type is a struct type
 val isStructTy                   : TcGlobals -> TType -> bool
 
+/// Determine if a type is a variable type with the ': struct' constraint.
+///
+/// Note, isStructTy does not include type parameters with the ': struct' constraint
+/// This predicate is used to detect those type parameters.
+val isNonNullableStructTyparTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is a variable type with the ': not struct' constraint.
+///
+/// Note, isRefTy does not include type parameters with the ': not struct' constraint
+/// This predicate is used to detect those type parameters.
+val isReferenceTyparTy : TcGlobals -> TType -> bool
+
 /// Determine if a type is an unmanaged type
 val isUnmanagedTy                : TcGlobals -> TType -> bool
 
@@ -1791,7 +1803,7 @@ val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
 // Construct calls to some intrinsic functions
 //------------------------------------------------------------------------- 
 
-val mkCallNewFormat              : TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> Expr -> Expr
+val mkCallNewFormat: TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
 
 val mkCallUnbox       : TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -1990,6 +2002,9 @@ val mkCallSeqMap             : TcGlobals -> range -> TType  -> TType -> Expr -> 
 val mkCallSeqSingleton       : TcGlobals -> range -> TType  -> Expr -> Expr
 
 val mkCallSeqEmpty           : TcGlobals -> range -> TType  -> Expr
+
+/// Make a call to the 'isprintf' function for string interpolation
+val mkCall_sprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
 
 val mkILAsmCeq                   : TcGlobals -> range -> Expr -> Expr -> Expr
 
@@ -2384,8 +2399,6 @@ val (|NewDelegateExpr|_|): TcGlobals -> Expr -> (Val list list * Expr * range) o
 /// Match 'if __useResumableStateMachines then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|) : TcGlobals -> Expr -> (Expr * Expr) option
 
-val isStaticClass: g: TcGlobals -> tcref: TyconRef -> bool
-
 val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
 /// Recognise a 'match __resumableEntry() with ...' expression
@@ -2397,8 +2410,8 @@ val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr 
 /// Recognise a for-loop expression
 val (|ForLoopExpr|_|): Expr -> (DebugPointAtFor * ForLoopStyle * Expr * Expr * Val * Expr * range) option
 
-/// Recognise a try-catch expression
-val (|TryCatchExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) option
+/// Recognise a try-with expression
+val (|TryWithExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) option
 
 /// Recognise a try-finally expression
 val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) option

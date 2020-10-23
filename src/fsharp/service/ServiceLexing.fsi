@@ -86,8 +86,16 @@ module FSharpTokenTag =
     val String : int
     /// Indicates the token is an identifier (synonym for FSharpTokenTag.Identifier)
     val IDENT : int
-    /// Indicates the token is an string (synonym for FSharpTokenTag.String)
+    /// Indicates the token is a string (synonym for FSharpTokenTag.String)
     val STRING : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_BEGIN_END : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_BEGIN_PART : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_PART : int
+    /// Indicates the token is a part of an interpolated string
+    val INTERP_STRING_END : int
     /// Indicates the token is a `(`
     val LPAREN : int
     /// Indicates the token is a `)`
@@ -236,15 +244,29 @@ type FSharpTokenInfo =
 [<Sealed>] 
 type FSharpLineTokenizer =
     /// Scan one token from the line
-    member ScanToken : lexState:FSharpTokenizerLexState -> FSharpTokenInfo option * FSharpTokenizerLexState
-    static member ColorStateOfLexState : FSharpTokenizerLexState -> FSharpTokenizerColorState
-    static member LexStateOfColorState : FSharpTokenizerColorState -> FSharpTokenizerLexState
+    member ScanToken: lexState:FSharpTokenizerLexState -> FSharpTokenInfo option * FSharpTokenizerLexState
+
+    /// Get the color state from the lexer state
+    static member ColorStateOfLexState: FSharpTokenizerLexState -> FSharpTokenizerColorState
+
+    /// Get a default lexer state for a color state.
+    ///
+    /// NOTE: This may result in an inaccurate lexer state
+    /// not taking into account things such as the #if/#endif and string interpolation context
+    /// within the file
+    static member LexStateOfColorState: FSharpTokenizerColorState -> FSharpTokenizerLexState
     
 /// Tokenizer for a source file. Holds some expensive-to-compute resources at the scope of the file.
 [<Sealed>]
 type FSharpSourceTokenizer =
+
+    /// Create a tokenizer for a source file.
     new : conditionalDefines:string list * fileName:string option -> FSharpSourceTokenizer
-    member CreateLineTokenizer : lineText:string -> FSharpLineTokenizer
+
+    /// Create a tokenizer for a line of this source file
+    member CreateLineTokenizer: lineText:string -> FSharpLineTokenizer
+
+    /// Create a tokenizer for a line of this source file using a buffer filler
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     
 module internal TestExpose =     

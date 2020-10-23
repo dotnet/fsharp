@@ -30,6 +30,7 @@ usage()
   echo "  --docker                   Run in a docker container if applicable"
   echo "  --skipAnalyzers            Do not run analyzers during build operations"
   echo "  --prepareMachine           Prepare machine for CI run, clean up processes after build"
+  echo "  --sourceBuild              Simulate building for source-build"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -130,14 +131,12 @@ while [[ $# > 0 ]]; do
       ;;
     --docker)
       docker=true
-      shift
-      continue
+      ;;
+    --sourcebuild)
+      source_build=true
       ;;
     /p:*)
       properties="$properties $1"
-      if [[ "$1" == "/p:dotnetbuildfromsource=true" ]]; then
-        source_build=true
-      fi
       ;;
     *)
       echo "Invalid argument: $1"
@@ -157,6 +156,7 @@ function TestUsingNUnit() {
   BuildMessage="Error running tests"
   testproject=""
   targetframework=""
+  notestfilter=0
   while [[ $# > 0 ]]; do
     opt="$(echo "$1" | awk '{print tolower($0)}')"
     case "$opt" in
@@ -166,6 +166,10 @@ function TestUsingNUnit() {
         ;;
       --targetframework)
         targetframework=$2
+        shift
+        ;;
+      --notestfilter)
+        notestfilter=1
         shift
         ;;
       *)
@@ -182,7 +186,7 @@ function TestUsingNUnit() {
   fi
 
   filterArgs=""
-  if [[ "${RunningAsPullRequest:-}" != "true" ]]; then
+  if [[ "${RunningAsPullRequest:-}" != "true" && $notestfilter == 0 ]]; then
     filterArgs=" --filter TestCategory!=PullRequest"
   fi
 
@@ -274,6 +278,7 @@ function BuildSolution {
     /p:ContinuousIntegrationBuild=$ci \
     /p:QuietRestore=$quiet_restore \
     /p:QuietRestoreBinaryLog="$binary_log" \
+    /p:DotNetBuildFromSource=$source_build \
     $properties
 }
 
@@ -294,7 +299,8 @@ BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=netcoreapp3.1
-  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
