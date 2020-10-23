@@ -16,15 +16,20 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
@@ -36,10 +41,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
-open FSharp.Compiler.Infos
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 open Internal.Utilities
