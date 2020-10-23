@@ -17,6 +17,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.ErrorLogger
@@ -3409,7 +3410,7 @@ module EstablishTypeDefinitionCores =
 
 
     /// Check and establish a 'type X = ABC<...>' provided type definition
-    let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon: Tycon, rhsType: SynType, tcrefForContainer: TyconRef, theRootType: Tainted<ProvidedType>, checkTypeName, args, m) =
+    let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes (cenv: cenv) inSig (tycon: Tycon, rhsType: SynType, tcrefForContainer: TyconRef, theRootType: Tainted<ProvidedType>, checkTypeName, args, m) =
         // Explanation: We are definitely on the compilation thread here, we just have not propagated the token this far.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
@@ -5671,7 +5672,7 @@ let rec IterTyconsOfModuleOrNamespaceType f (mty: ModuleOrNamespaceType) =
 
 // Defaults get applied before the module signature is checked and before the implementation conditions on virtuals/overrides. 
 // Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
-let ApplyDefaults cenv g denvAtEnd m mexpr extraAttribs = 
+let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs = 
     try
         let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
@@ -5712,7 +5713,7 @@ let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m =
       try check implFileTypePriorToSig with e -> errorRecovery e m
 
 
-let SolveInternalUnknowns g cenv denvAtEnd mexpr extraAttribs =
+let SolveInternalUnknowns g (cenv: cenv) denvAtEnd mexpr extraAttribs =
     let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
     unsolved |> List.iter (fun tp -> 
@@ -5771,7 +5772,12 @@ let TypeCheckOneImplFile
        (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
 
  eventually {
-    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring)    
+    let cenv = 
+        cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
+            conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+            tcSequenceExpressionEntry=TcSequenceExpressionEntry,
+            tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
+            tcComputationExpression=TcComputationExpression)    
 
     let envinner, mtypeAcc = MakeInitialEnv env 
 
@@ -5872,7 +5878,14 @@ let TypeCheckOneImplFile
 /// Check an entire signature file
 let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (_, qualNameOfFile, _, _, sigFileFrags)) = 
  eventually {     
-    let cenv = cenv.Create (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring)
+    let cenv = 
+        cenv.Create 
+            (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink,
+             (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+             tcSequenceExpressionEntry=TcSequenceExpressionEntry,
+             tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
+             tcComputationExpression=TcComputationExpression)
+
     let envinner, mtypeAcc = MakeInitialEnv tcEnv 
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
