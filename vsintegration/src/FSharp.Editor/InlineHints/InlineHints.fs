@@ -41,7 +41,7 @@ type internal FSharpInlineHintsService
                 let typeHints = ImmutableArray.CreateBuilder()
                 let parameterHints = ImmutableArray.CreateBuilder()
 
-                let isValid (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+                let isValidForTypeHint (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
                     not (parseFileResults.IsTypeAnnotationGiven symbolUse.RangeAlternate.Start) &&
                     symbolUse.IsFromDefinition &&
                     (funcOrValue.IsValue || funcOrValue.IsFunction) &&
@@ -52,7 +52,7 @@ type internal FSharpInlineHintsService
 
                 for symbolUse in symbolUses |> Array.distinctBy (fun su -> su.RangeAlternate) do
                     match symbolUse.Symbol with
-                    | :? FSharpMemberOrFunctionOrValue as funcOrValue when isValid funcOrValue symbolUse ->
+                    | :? FSharpMemberOrFunctionOrValue as funcOrValue when isValidForTypeHint funcOrValue symbolUse ->
                         let typeInfo = ResizeArray()
                             
                         funcOrValue.FormatLayout symbolUse.DisplayContext
@@ -105,33 +105,30 @@ type internal FSharpInlineHintsService
                         let hint = FSharpInlineHint(TextSpan(symbolSpan.End, 0), displayParts.ToImmutableArray(), getDescriptionAsync symbolSpan.Start)
                         typeHints.Add(hint)
 
-                    | :? FSharpMemberOrFunctionOrValue as func when func.IsFunction && not symbolUse.IsFromDefinition ->
-                        let appliedArgRangesOpt = parseFileResults.GetAllArgumentsForFunctionApplication symbolUse.RangeAlternate.Start
-                        match appliedArgRangesOpt with
-                        | Some [] -> ()
-                        | Some appliedArgRanges ->
-                            match func.PossibleArgumentList with
-                            | Some [] -> ()
-                            | Some definitionArgNames ->
+                    // parameter name hints, disabled for now
+                    //| :? FSharpMemberOrFunctionOrValue as func when func.IsFunction && not symbolUse.IsFromDefinition ->
+                    //    let appliedArgRangesOpt = parseFileResults.GetAllArgumentsForFunctionApplication symbolUse.RangeAlternate.Start
+                    //    match appliedArgRangesOpt with
+                    //    | Some [] -> ()
+                    //    | Some appliedArgRanges ->
+                    //        match func.PossibleArgumentList with
+                    //        | Some [] -> ()
+                    //        | Some definitionArgNames ->
 
-                                let appliedArgRanges = appliedArgRanges |> Array.ofList
-                                let definitionArgNames = definitionArgNames |> Array.ofList
+                    //            let appliedArgRanges = appliedArgRanges |> Array.ofList
+                    //            let definitionArgNames = definitionArgNames |> Array.ofList
 
-                                for idx = 0 to appliedArgRanges.Length - 1 do
-                                    let appliedArgRange = appliedArgRanges.[idx]
-                                    let definitionArgName = definitionArgNames.[idx]
-                                    let appledArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, appliedArgRange)
-                                    let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, definitionArgName + ": "))
-                                    let hint = FSharpInlineHint(TextSpan(appledArgSpan.Start, 0), displayParts)
-                                    parameterHints.Add(hint)
-                            | _ ->
-                                ()
-                        | None ->
-                            ()
-
-                        ()
-
-                    // TODO - support method calls, ctors, etc
+                    //            for idx = 0 to appliedArgRanges.Length - 1 do
+                    //                let appliedArgRange = appliedArgRanges.[idx]
+                    //                let definitionArgName = definitionArgNames.[idx]
+                    //                let appledArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, appliedArgRange)
+                    //                let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, definitionArgName + ": "))
+                    //                let hint = FSharpInlineHint(TextSpan(appledArgSpan.Start, 0), displayParts)
+                    //                parameterHints.Add(hint)
+                    //        | _ ->
+                    //            ()
+                    //    | None ->
+                    //        ()
 
                     | _ -> ()
 
