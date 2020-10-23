@@ -29,6 +29,8 @@ type internal FSharpInlineHintsService
     interface IFSharpInlineHintsService with
         member _.GetInlineHintsAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken) =
             asyncMaybe {
+                do! Option.guard (not (isSignatureFile document.FilePath))
+
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
@@ -39,19 +41,21 @@ type internal FSharpInlineHintsService
                 let typeHints = ImmutableArray.CreateBuilder()
                 let parameterHints = ImmutableArray.CreateBuilder()
 
-                let isValidValue (value: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
-                    value.IsValue &&
-                    not value.IsMemberThisValue &&
-                    not value.IsConstructorThisValue &&
+                let isValid (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+                    not (parseFileResults.IsTypeAnnotationGiven symbolUse.RangeAlternate.Start) &&
                     symbolUse.IsFromDefinition &&
-                    not (parseFileResults.IsTypeAnnotationGiven symbolUse.RangeAlternate.Start)
+                    (funcOrValue.IsValue || funcOrValue.IsFunction) &&
+                    not funcOrValue.IsMember &&
+                    not funcOrValue.IsMemberThisValue &&
+                    not funcOrValue.IsConstructorThisValue &&
+                    not (PrettyNaming.IsOperatorName funcOrValue.DisplayName)
 
-                for symbolUse in symbolUses do
+                for symbolUse in symbolUses |> Array.distinctBy (fun su -> su.RangeAlternate) do
                     match symbolUse.Symbol with
-                    | :? FSharpMemberOrFunctionOrValue as value when isValidValue value symbolUse ->
+                    | :? FSharpMemberOrFunctionOrValue as funcOrValue when isValid funcOrValue symbolUse ->
                         let typeInfo = ResizeArray()
                             
-                        value.FormatLayout symbolUse.DisplayContext
+                        funcOrValue.FormatLayout symbolUse.DisplayContext
                         |> Layout.renderL (Layout.taggedTextListR typeInfo.Add)
                         |> ignore
                             

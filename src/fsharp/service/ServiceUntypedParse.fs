@@ -118,20 +118,30 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
         | Some parseTree ->
             let res =
                 AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
-                    member __.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                    member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
                         match expr with
-                        | SynExpr.Typed (_expr, _typeExpr, range) ->
-                            rangeContainsPos range pos
-                            |> Some
-                        | _ -> defaultTraverse(expr)
+                        | SynExpr.Typed (_expr, _typeExpr, range) when rangeContainsPos range pos ->
+                            Some range
+                        | _ -> defaultTraverse expr
+
+                    override _.VisitSimplePats(pats) =
+                        match pats with
+                        | [] -> None
+                        | _ ->
+                            let exprFunc pat =
+                                match pat with
+                                | SynSimplePat.Typed (_pat, _targetExpr, range) when rangeContainsPos range pos ->
+                                    Some range
+                                | _ ->
+                                    None
+
+                            pats |> List.tryPick exprFunc
 
                     override _.VisitPat(defaultTraverse, pat) =
                         match pat with
-                        | SynPat.Typed (_pat, _targetType, range) ->
-                            rangeContainsPos range pos
-                            |> Some
-                        | _ ->
-                            defaultTraverse pat })
+                        | SynPat.Typed (_pat, _targetType, range) when rangeContainsPos range pos ->
+                            Some range
+                        | _ -> defaultTraverse pat })
             res.IsSome
         | None ->
             false
