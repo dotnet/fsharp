@@ -262,11 +262,6 @@
         <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</target>
         <note />
       </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
         <source>Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected.</source>
         <target state="translated">補間された文字列が無効です。この補間された文字列式の塗りつぶしが空です。式が必要です。</target>
@@ -1205,11 +1200,6 @@
       <trans-unit id="FieldNotContainedLiteralsDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe 'literal' modifiers differ</source>
         <target state="translated">モジュールにはフィールド\n    {0}    \nが含まれますが、シグネチャでは\n    {1}    \nを指定しています。'literal' 修飾子が異なります。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FieldNotContainedTypesDiffer">
-        <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
-        <target state="translated">モジュールにはフィールド\n    {0}    \nが含まれますが、シグネチャでは\n    {1}    \nを指定しています。型が異なります。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
@@ -4055,11 +4045,6 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsErrorInReturnForLetIncorrectIndentation">
-        <source>Error in the return expression for this 'let'. Possible incorrect indentation.</source>
-        <target state="new">Error in the return expression for this 'let'. Possible incorrect indentation.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationsCannotHaveInterfaceDeclaration">
@@ -7615,11 +7600,6 @@
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
         <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagerError">
-        <source>{0}</source>
-        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
