@@ -103,7 +103,8 @@ type internal FSharpFindUsagesService
                                         |> Option.defaultValue externalDefinitionItem
 
                                 let referenceItem = FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, textSpan))
-                                do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask }
+                                // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
+                                try do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask with | _ -> () }
             
             match symbolUse.GetDeclarationLocation document with
             | Some SymbolDeclarationLocation.CurrentDocument ->

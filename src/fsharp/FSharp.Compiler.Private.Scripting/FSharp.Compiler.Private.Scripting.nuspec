@@ -6,6 +6,11 @@
         <dependencies>
             <group targetFramework=".NETStandard2.0">
                 <dependency id="FSharp.Core" version="$FSharpCorePackageVersion$" />
+                <dependency id="System.Collections.Immutable" version="$SystemCollectionsImmutablePackageVersion$" />
+                <dependency id="System.Reflection.Metadata" version="$SystemReflectionMetadataPackageVersion$" />
+                <dependency id="Microsoft.Build.Framework" version="$MicrosoftBuildFrameworkPackageVersion$" />
+                <dependency id="Microsoft.Build.Tasks.Core" version="$MicrosoftBuildTasksCorePackageVersion$" />
+                <dependency id="Microsoft.Build.Utilities.Core" version="$MicrosoftBuildUtilitiesCorePackageVersion$" />
             </group>
         </dependencies>
     </metadata>

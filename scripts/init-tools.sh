@@ -9,7 +9,7 @@ __DOTNET_PATH=$__TOOLRUNTIME_DIR/dotnetcli
 __DOTNET_CMD=$__DOTNET_PATH/dotnet
 __DOTNET_VERSION=$(cat $__scriptpath/../DotnetCLIVersion.txt)
 
-if [ -z "$__BUILDTOOLS_SOURCE" ]; then __BUILDTOOLS_SOURCE=https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json; fi
+if [ -z "$__BUILDTOOLS_SOURCE" ]; then __BUILDTOOLS_SOURCE=https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json; fi
 __BUILD_TOOLS_PACKAGE_VERSION=$(cat $__scriptpath/../BuildToolsVersion.txt)
 
 

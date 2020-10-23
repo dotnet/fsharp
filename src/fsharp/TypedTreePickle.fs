@@ -2486,7 +2486,7 @@ and p_op x st =
     | TOp.While _                    -> p_byte 20 st
     | TOp.For (_, dir)                 -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
     | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st
-    | TOp.TryCatch _                 -> p_byte 23 st
+    | TOp.TryWith _                 -> p_byte 23 st
     | TOp.TryFinally _               -> p_byte 24 st
     | TOp.ValFieldGetAddr (a, _)     -> p_byte 25 st; p_rfref a st
     | TOp.UInt16s arr                -> p_byte 26 st; p_array p_uint16 arr st
@@ -2552,7 +2552,7 @@ and u_op st =
     | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
             TOp.For (DebugPointAtFor.No, dir)
     | 22 -> TOp.Bytes (u_bytes st)
-    | 23 -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
+    | 23 -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
     | 24 -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
     | 25 -> let a = u_rfref st
             TOp.ValFieldGetAddr (a, false)

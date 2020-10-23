@@ -178,7 +178,7 @@ let notNullText = "some-non-null-value"
 let otherSubtypeText = "some-other-subtype"
 
 /// Create a TAST const value from an IL-initialized field read from .NET metadata
-// (Originally moved from TcFieldInit in TypeChecker.fs -- feel free to move this somewhere more appropriate)
+// (Originally moved from TcFieldInit in CheckExpressions.fs -- feel free to move this somewhere more appropriate)
 let ilFieldToTastConst lit =
     match lit with
     | ILFieldInit.String s -> Const.String s
@@ -792,7 +792,7 @@ let CompilePatternBasic
                     mkInt g matchm 0
 
                 | Rethrow ->
-                    // Rethrow unmatched try-catch exn. No sequence point at the target since its not real code.
+                    // Rethrow unmatched try-with exn. No sequence point at the target since its not real code.
                     mkReraise matchm resultTy
 
                 | Throw ->
@@ -813,7 +813,7 @@ let CompilePatternBasic
                             )
                         )
 
-                    // We use throw, or EDI.Capture(exn).Throw() when EDI is supported, instead of rethrow on unmatched try-catch in a computation expression.
+                    // We use throw, or EDI.Capture(exn).Throw() when EDI is supported, instead of rethrow on unmatched try-with in a computation expression.
                     // But why? Because this isn't a real .NET exception filter/handler but just a function we're passing
                     // to a computation expression builder to simulate one.
                     let ediCaptureMethInfo, ediThrowMethInfo =

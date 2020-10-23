@@ -16,6 +16,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Range
@@ -615,7 +616,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     let fsx = 
         match filename with
         | None -> false
-        | Some value -> CompileOps.IsScript value
+        | Some value -> ParseAndCheckInputs.IsScript value
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...

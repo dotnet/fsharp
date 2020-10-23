@@ -14,7 +14,7 @@ open System.Diagnostics
 open System.Text.RegularExpressions
  
 open FSharp.Compiler.AbstractIL.Internal.Library  
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
