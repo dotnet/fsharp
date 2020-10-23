@@ -1593,8 +1593,7 @@ tyconClassDefn:
        needsCheck, (TyconUnspecified, decls), mopt }
 
   | classOrInterfaceOrStruct classDefnBlock END 
-     { let m = (rhs parseState 1, $2) ||> unionRangeWithListBy (fun (d:SynMemberDefn) -> d.Range)
-       false, ($1, $2), Some(m) }
+     { false, ($1, $2), Some (rhs2 parseState 1 3) }
 
   | classOrInterfaceOrStruct classDefnBlock recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedClassInterfaceOrStruct())
@@ -1603,7 +1602,7 @@ tyconClassDefn:
 
   | classOrInterfaceOrStruct error END
      { // silent recovery 
-       false, ($1, []), Some(rhs parseState 1) }
+       false, ($1, []), Some (rhs2 parseState 1 3) }
 
 
 /* The right-hand-side of a object type definition where the class/interface/struct kind has not been specified */

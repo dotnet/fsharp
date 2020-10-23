@@ -35,7 +35,7 @@ The following are the key data formats and internal data representations of the 
 
 * _Typed Abstract Syntax Tree (Typed Tree)_, see [TypedTree.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTree.fs), [TypedTreeBasics.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTree.fs), [TypedTreeOps.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTreeOps.fs), and related files. The typed, bound syntax tree including both type/module definitions and their backing expressions, resulting from type checking and the subject of successive phases of optimization and representation change.
 
-* _Type checking context/state_, see for example [`TcState` in CompileOps.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CompileOps.fsi) and its constituent parts, particularly `TcEnv` in [TypeChecker.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypeChecker.fsi) and `NameResolutionEnv` in [NameResolution.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/NameResolution.fsi). A set of tables representing the available names, assemblies etc. in scope during type checking, plus associated information.
+* _Type checking context/state_, see for example [`TcState` in CompileOps.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CompileOps.fsi) and its constituent parts, particularly `TcEnv` in [CheckExpressions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckExpressions.fsi) and `NameResolutionEnv` in [NameResolution.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/NameResolution.fsi). A set of tables representing the available names, assemblies etc. in scope during type checking, plus associated information.
 
 * _Abstract IL_, the output of code generation, then used for binary generation, and the input format when reading .NET assemblies, see [`ILModuleDef` in il.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/il.fsi).
 
@@ -75,8 +75,10 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Importing referenced F# binaries and optimization information as Typed Tree data structures_, see [TypedTreePickle.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypedTreePickle.fs). Accepts binary data and produces  Typed Tree nodes for each referenced assembly, including information about its type/module/function/member definitions.
 
-* _Sequentially type checking files_, see [TypeChecker.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypeChecker.fsi)/[TypeChecker.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypeChecker.fs). Accepts an AST plus a type checking context/state and produces new Typed Tree nodes
-  incorporated into an updated type checking state, plus additional Typed Tree Expression nodes used during code generation.
+* _Sequentially type checking files_, see [CheckDeclarations.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckDeclarations.fsi)/[CheckDeclarations.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckDeclarations.fs). Accepts an AST plus a type checking context/state and produces new Typed Tree nodes
+  incorporated into an updated type checking state, plus additional Typed Tree Expression nodes used during code generation.  A key part of this is
+  checking syntactic types and expressions, see [CheckExpressions.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/CheckDeclarations.fsi)/[CheckExpressions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/TypeCCheckDeclshecker.fs) including the state held across the checking of a file (see `TcFileState`) and the
+  environment active as we traverse declarations and expressions (see `TcEnv`).
 
 * _Pattern match compilation_, see [PatternMatchCompilation.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/PatternMatchCompilation.fsi)/[PatternMatchCompilation.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/PatternMatchCompilation.fs). Accepts a subset of checked Typed Tree nodes representing F# pattern matching and produces Typed Tree expressions implementing the pattern matching. Called during type checking as each construct involving pattern matching is processed.
 
@@ -90,12 +92,12 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Code generation_, see [IlxGen.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/IlxGen.fsi)/[IlxGen.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/IlxGen.fs). Accepts Typed Tree nodes and produces Abstract IL nodes, sometimes applying optimizations.
 
-* _Abstract IL code rewriting_, see [EraseClosures.fs](https://github.com/dotnet/fsharp/blob/master/src/ilx/EraseClosures.fs) and
-  [EraseUnions.fs](https://github.com/dotnet/fsharp/blob/master/src/ilx/EraseUnions.fs). Eliminates some constructs by rewriting Abstract IL nodes.
+* _Abstract IL code rewriting_, see [EraseClosures.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ilx/EraseClosures.fs) and
+  [EraseUnions.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ilx/EraseUnions.fs). Eliminates some constructs by rewriting Abstract IL nodes.
   
-* _Binary emit_, see [ilwrite.fsi](https://github.com/dotnet/fsharp/blob/master/src/absil/ilwrite.fsi)/[ilwrite.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/ilwrite.fs).
+* _Binary emit_, see [ilwrite.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/absil/ilwrite.fsi)/[ilwrite.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/ilwrite.fs).
 
-* _Reflection-Emit_, see [ilreflect.fs](https://github.com/dotnet/fsharp/blob/master/src/absil/ilreflect.fs).
+* _Reflection-Emit_, see [ilreflect.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/absil/ilreflect.fs).
 
 These and transformations used to build the following:
 

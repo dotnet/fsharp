@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedText Include="$(FSharpSourcesRoot)\utils\UtilsStrings.txt" />
-    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\utils\UtilsStrings.txt" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
     <Compile Include="..\unittests\TestLib.Utils.fs">

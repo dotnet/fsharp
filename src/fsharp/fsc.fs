@@ -34,6 +34,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -54,7 +56,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.XmlDoc
 open Microsoft.DotNet.DependencyManager
 
@@ -796,7 +797,7 @@ module AttributeHelpers =
                  errorR(Error(FSComp.SR.fscAssemblyWildcardAndDeterminism(attribName, versionString), Range.rangeStartup))
              try Some (IL.parseILVersion versionString)
              with e ->
-                 // Warning will be reported by TypeChecker.fs
+                 // Warning will be reported by CheckExpressions.fs
                  None
         | _ -> None
 
@@ -870,7 +871,7 @@ module MainModuleBuilder =
         | None -> assemblyVersion
         | Some (AttributeHelpers.ILVersion v) -> v
         | Some _ ->
-            // Warning will be reported by TypeChecker.fs
+            // Warning will be reported by CheckExpressions.fs
             assemblyVersion
 
     let productVersion findStringAttr (fileVersion: ILVersionInfo) =
@@ -880,7 +881,7 @@ module MainModuleBuilder =
         | None | Some "" -> fileVersion |> toDotted
         | Some (AttributeHelpers.ILVersion v) -> v |> toDotted
         | Some v -> 
-            // Warning will be reported by TypeChecker.fs
+            // Warning will be reported by CheckExpressions.fs
             v
 
     let productVersionToILVersionInfo (version: string) : ILVersionInfo =

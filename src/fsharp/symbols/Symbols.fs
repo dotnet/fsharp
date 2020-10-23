@@ -9,6 +9,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
@@ -2445,7 +2446,7 @@ and FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, own
     override x.ToString() = 
         "parameter " + (match x.Name with None -> "<unnamed" | Some s -> s)
 
-and FSharpAssemblySignature (cenv, topAttribs: TypeChecker.TopAttribs option, optViewedCcu: CcuThunk option, mtyp: ModuleOrNamespaceType) = 
+and FSharpAssemblySignature (cenv, topAttribs: TopAttribs option, optViewedCcu: CcuThunk option, mtyp: ModuleOrNamespaceType) = 
 
     // Assembly signature for a referenced/linked assembly
     new (cenv: SymbolEnv, ccu: CcuThunk) = 
