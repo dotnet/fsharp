@@ -577,7 +577,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         !size
 
-let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseRVA: int32) =
+let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
    let resources =
        unlinkedResources
        |> Seq.map (fun s -> new MemoryStream(s))
@@ -592,7 +592,7 @@ let linkNativeResources (unlinkedResources: byte[] list)  (ulLinkedResourceBaseR
                                id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
                                typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
    let bb = new System.Reflection.Metadata.BlobBuilder()
-   NativeResourceWriter.SerializeWin32Resources(bb, resources, ulLinkedResourceBaseRVA)
+   NativeResourceWriter.SerializeWin32Resources(bb, resources, rva)
    bb.ToArray()
 
 let unlinkResource (ulLinkedResourceBaseRVA: int32) (pbLinkedResource: byte[]) =

@@ -2344,7 +2344,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 
@@ -2360,7 +2360,7 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           viewCcu= viewCcu
           isLastCompiland=isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
-          tcVal = tcVal
+          tcVal = tcValF
           entryPointGiven=false}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.
