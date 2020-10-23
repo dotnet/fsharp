@@ -294,7 +294,7 @@ let ConvertStateMachineExprToObject g overallExpr =
             | Some bodyExpr2 -> Some (mkWhile g (sp1, sp2, guardExpr, bodyExpr2, m))
             | None -> None
 
-        | TryCatchExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
+        | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
             match TryApplyMacroDef env bodyExpr args with
             | Some bodyExpr2 -> Some (mkTryWith g (bodyExpr2, filterVar, filterExpr, handlerVar, handlerExpr, m, resTy, spTry, spWith))
             | None -> None
@@ -635,8 +635,8 @@ let ConvertStateMachineExprToObject g overallExpr =
                   asyncVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
 
             // The expanded code for state machines may use try/with....
-            | TryCatchExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
-                if sm_verbose then printfn "TryCatchExpr" 
+            | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
+                if sm_verbose then printfn "TryWithExpr" 
                 let resBody = ConvertStateMachineCode env pcValInfo bodyExpr
                 let resFilter = ConvertStateMachineCode env pcValInfo filterExpr
                 let resHandler = ConvertStateMachineCode env pcValInfo handlerExpr

@@ -2102,11 +2102,6 @@
         <target state="new">whitespace relexation</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSingleUnderscorePattern">
-        <source>single underscore pattern</source>
-        <target state="new">single underscore pattern</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="new">string interpolation</target>
@@ -3310,11 +3305,6 @@
       <trans-unit id="moreThanOneInvokeMethodFound">
         <source>More than one Invoke method found for delegate type</source>
         <target state="new">More than one Invoke method found for delegate type</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="nativeResourceFormatError">
-        <source>Stream does not begin with a null resource and is not in '.RES' format.</source>
-        <target state="new">Stream does not begin with a null resource and is not in '.RES' format.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceHeaderMalformed">
@@ -5005,11 +4995,6 @@
       <trans-unit id="tcAllowNullTypesMayOnlyInheritFromAllowNullTypes">
         <source>Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal</source>
         <target state="new">Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAndBangNotSupported">
-        <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
-        <target state="new">This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdCcuMismatch">

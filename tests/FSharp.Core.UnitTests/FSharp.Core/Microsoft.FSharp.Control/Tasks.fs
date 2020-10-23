@@ -24,29 +24,26 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Control
 #if STANDALONE
-[<AttributeUsage(AttributeTargets.Class, AllowMultiple=false)>]
-type TestFixtureAttribute() = inherit Attribute()
 [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
-type TestAttribute() = inherit Attribute()
+type FactAttribute() = inherit Attribute()
 #else
-open NUnit.Framework
+open Xunit
 #endif
 
 
 type ITaskThing =
     abstract member Taskify : 'a option -> 'a Task
 
-[<TestFixture>]
 type SmokeTestsForCompilation() =
 
-    [<Test>]
+    [<Fact>]
     member __.tinyTask() =
         task {
             return 1
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     member __.tbind() =
         task {
             let! x = Task.FromResult(1)
@@ -54,7 +51,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     member __.tnested() =
         task {
             let! x = task { return 1 }
@@ -62,7 +59,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     member __.tcatch0() =
         task {
             try 
@@ -72,7 +69,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     member __.tcatch1() =
         task {
             try 
@@ -85,7 +82,7 @@ type SmokeTestsForCompilation() =
         |> ignore
 
 
-    [<Test>]
+    [<Fact>]
     member __.t3() =
         let t2() =
             task {
@@ -100,7 +97,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     member __.t3b() =
         task {
             System.Console.WriteLine("hello")
@@ -110,7 +107,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     member __.t3c() =
         task {
             System.Console.WriteLine("hello")
@@ -120,7 +117,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     // This tests an exception match
     member __.t67() =
         task {
@@ -134,7 +131,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     // This tests compiling an incomplete exception match
     member __.t68() =
         task {
@@ -146,7 +143,7 @@ type SmokeTestsForCompilation() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     member __.testCompileAsyncWhileLoop() =
         task {
             let mutable i = 0
@@ -167,9 +164,8 @@ module Helpers =
     let require x msg = if not x then failwith msg
     let failtest str = raise (TestException str)
 
-[<TestFixture>]
 type Basics() = 
-    [<Test>]
+    [<Fact>]
     member __.testShortCircuitResult() =
         printfn "Running testShortCircuitResult..."
         let t =
@@ -182,7 +178,7 @@ type Basics() =
         printfn "t.Result = %A" t.Result
         require (t.Result = 3) "wrong result"
 
-    [<Test>]
+    [<Fact>]
     member __.testDelay() =
         printfn "Running testDelay..."
         let mutable x = 0
@@ -196,7 +192,7 @@ type Basics() =
         printfn "waiting...."
         t.Wait()
 
-    [<Test>]
+    [<Fact>]
     member __.testNoDelay() =
         printfn "Running testNoDelay..."
         let mutable x = 0
@@ -209,7 +205,7 @@ type Basics() =
         require (x = 1) "first part didn't run yet"
         t.Wait()
 
-    [<Test>]
+    [<Fact>]
     member __.testNonBlocking() =
         printfn "Running testNonBlocking..."
         let sw = Stopwatch()
@@ -223,7 +219,7 @@ type Basics() =
         require (sw.ElapsedMilliseconds < 50L) "sleep blocked caller"
         t.Wait()
 
-    [<Test>]
+    [<Fact>]
     member __.testCatching1() =
         printfn "Running testCatching1..."
         let mutable x = 0
@@ -247,7 +243,7 @@ type Basics() =
         require (y = 1) "bailed after exn"
         require (x = 0) "ran past failure"
 
-    [<Test>]
+    [<Fact>]
     member __.testCatching2() =
         printfn "Running testCatching2..."
         let mutable x = 0
@@ -270,7 +266,7 @@ type Basics() =
         require (y = 1) "bailed after exn"
         require (x = 0) "ran past failure"
 
-    [<Test>]
+    [<Fact>]
     member __.testNestedCatching() =
         printfn "Running testNestedCatching..."
         let mutable counter = 1
@@ -307,7 +303,7 @@ type Basics() =
         require (caughtInner = 1) "didn't catch inner"
         require (caughtOuter = 2) "didn't catch outer"
 
-    [<Test>]
+    [<Fact>]
     member __.testWhileLoopSync() =
         printfn "Running testWhileLoopSync..."
         let t =
@@ -321,7 +317,7 @@ type Basics() =
         require (t.IsCompleted) "didn't do sync while loop properly - not completed"
         require (t.Result = 10) "didn't do sync while loop properly - wrong result"
 
-    [<Test>]
+    [<Fact>]
     member __.testWhileLoopAsyncZeroIteration() =
         printfn "Running testWhileLoopAsyncZeroIteration..."
         for i in 1 .. 5 do 
@@ -336,7 +332,7 @@ type Basics() =
             t.Wait()
             require (t.Result = 0) "didn't do while loop properly"
 
-    [<Test>]
+    [<Fact>]
     member __.testWhileLoopAsyncOneIteration() =
         printfn "Running testWhileLoopAsyncOneIteration..."
         for i in 1 .. 5 do 
@@ -351,7 +347,7 @@ type Basics() =
             t.Wait()
             require (t.Result = 1) "didn't do while loop properly"
 
-    [<Test>]
+    [<Fact>]
     member __.testWhileLoopAsync() =
         printfn "Running testWhileLoopAsync..."
         for i in 1 .. 5 do 
@@ -366,7 +362,7 @@ type Basics() =
             t.Wait()
             require (t.Result = 10) "didn't do while loop properly"
 
-    [<Test>]
+    [<Fact>]
     member __.testTryFinallyHappyPath() =
         printfn "Running testTryFinallyHappyPath..."
         for i in 1 .. 5 do 
@@ -382,7 +378,7 @@ type Basics() =
                 }
             t.Wait()
             require ran "never ran"
-    [<Test>]
+    [<Fact>]
     member __.testTryFinallySadPath() =
         printfn "Running testTryFinallySadPath..."
         for i in 1 .. 5 do 
@@ -403,7 +399,7 @@ type Basics() =
             | _ -> ()
             require ran "never ran"
 
-    [<Test>]
+    [<Fact>]
     member __.testTryFinallyCaught() =
         printfn "Running testTryFinallyCaught..."
         for i in 1 .. 5 do 
@@ -425,7 +421,7 @@ type Basics() =
             require (t.Result = 2) "wrong return"
             require ran "never ran"
     
-    [<Test>]
+    [<Fact>]
     member __.testUsing() =
         printfn "Running testUsing..."
         for i in 1 .. 5 do 
@@ -440,7 +436,7 @@ type Basics() =
             t.Wait()
             require disposed "never disposed B"
 
-    [<Test>]
+    [<Fact>]
     member __.testUsingFromTask() =
         printfn "Running testUsingFromTask..."
         let mutable disposedInner = false
@@ -462,7 +458,7 @@ type Basics() =
         t.Wait()
         require disposed "never disposed C"
 
-    [<Test>]
+    [<Fact>]
     member __.testUsingSadPath() =
         printfn "Running testUsingSadPath..."
         let mutable disposedInner = false
@@ -491,7 +487,7 @@ type Basics() =
         t.Wait()
         require (not disposed) "disposed thing that never should've existed"
 
-    [<Test>]
+    [<Fact>]
     member __.testForLoopA() =
         printfn "Running testForLoopA..."
         let list = ["a"; "b"; "c"] |> Seq.ofList
@@ -508,7 +504,7 @@ type Basics() =
             }
         t.Wait()
 
-    [<Test>]
+    [<Fact>]
     member __.testForLoopComplex() =
         printfn "Running testForLoopComplex..."
         let mutable disposed = false
@@ -567,7 +563,7 @@ type Basics() =
         require disposed "never disposed D"
         require (t.Result = 1) "wrong result"
 
-    [<Test>]
+    [<Fact>]
     member __.testForLoopSadPath() =
         printfn "Running testForLoopSadPath..."
         for i in 1 .. 5 do 
@@ -583,7 +579,7 @@ type Basics() =
                 }
             require (t.Result = 1) "wrong result"
 
-    [<Test>]
+    [<Fact>]
     member __.testForLoopSadPathComplex() =
         printfn "Running testForLoopSadPathComplex..."
         for i in 1 .. 5 do 
@@ -638,7 +634,7 @@ type Basics() =
             require caught "didn't catch exception"
             require disposed "never disposed A"
     
-    [<Test>]
+    [<Fact>]
     member __.testExceptionAttachedToTaskWithoutAwait() =
         for i in 1 .. 5 do 
             let mutable ranA = false
@@ -671,7 +667,7 @@ type Basics() =
             require catcher.Result "didn't catch"
             require caught "didn't catch"
 
-    [<Test>]
+    [<Fact>]
     member __.testExceptionAttachedToTaskWithAwait() =
         printfn "running testExceptionAttachedToTaskWithAwait"
         for i in 1 .. 5 do 
@@ -706,7 +702,7 @@ type Basics() =
             require catcher.Result "didn't catch"
             require caught "didn't catch"
     
-    [<Test>]
+    [<Fact>]
     member __.testExceptionThrownInFinally() =
         printfn "running testExceptionThrownInFinally"
         for i in 1 .. 5 do 
@@ -734,7 +730,7 @@ type Basics() =
             require ranNext "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
 
-    [<Test>]
+    [<Fact>]
     member __.test2ndExceptionThrownInFinally() =
         printfn "running test2ndExceptionThrownInFinally"
         for i in 1 .. 5 do 
@@ -763,7 +759,7 @@ type Basics() =
             require ranNext "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
     
-    [<Test>]
+    [<Fact>]
     member __.testFixedStackWhileLoop() =
         printfn "running testFixedStackWhileLoop"
         for i in 1 .. 100 do 
@@ -784,7 +780,7 @@ type Basics() =
             t.Wait()
             require (t.Result = BIG) "didn't get to big number"
 
-    [<Test>]
+    [<Fact>]
     member __.testFixedStackForLoop() =
         for i in 1 .. 100 do 
             printfn "running testFixedStackForLoop"
@@ -805,7 +801,7 @@ type Basics() =
             t.Wait()
             require ran "didn't run all"
 
-    [<Test>]
+    [<Fact>]
     member __.testTypeInference() =
         let t1 : string Task =
             task {
@@ -818,7 +814,7 @@ type Basics() =
             }
         t2.Wait()
 
-    [<Test>]
+    [<Fact>]
     member __.testNoStackOverflowWithImmediateResult() =
         printfn "running testNoStackOverflowWithImmediateResult"
         let longLoop =
@@ -830,7 +826,7 @@ type Basics() =
             }
         longLoop.Wait()
     
-    [<Test>]
+    [<Fact>]
     member __.testNoStackOverflowWithYieldResult() =
         printfn "running testNoStackOverflowWithYieldResult"
         let longLoop =
@@ -847,7 +843,7 @@ type Basics() =
             }
         longLoop.Wait()
 
-    [<Test>]
+    [<Fact>]
     member __.testSmallTailRecursion() =
         printfn "running testSmallTailRecursion"
         let rec loop n =
@@ -865,7 +861,7 @@ type Basics() =
             }
         shortLoop.Wait()
     
-    [<Test>]
+    [<Fact>]
     member __.testTryOverReturnFrom() =
         printfn "running testTryOverReturnFrom"
         let inner() =
@@ -884,7 +880,7 @@ type Basics() =
             }
         require (t.Result = 2) "didn't catch"
 
-    [<Test>]
+    [<Fact>]
     member __.testTryFinallyOverReturnFromWithException() =
         printfn "running testTryFinallyOverReturnFromWithException"
         let inner() =
@@ -908,7 +904,7 @@ type Basics() =
         | :? AggregateException -> ()
         require (m = 1) "didn't run finally"
     
-    [<Test>]
+    [<Fact>]
     member __.testTryFinallyOverReturnFromWithoutException() =
         printfn "running testTryFinallyOverReturnFromWithoutException"
         let inner() =
@@ -945,7 +941,7 @@ type Basics() =
             return f x
         }
 
-    [<Test>]
+    [<Fact>]
     member __.testAsyncsMixedWithTasks() =
         let t =
             task {
@@ -961,7 +957,7 @@ type Basics() =
         let result = t.Result
         require (result = 8) "something weird happened"
 
-    [<Test>]
+    [<Fact>]
     // no need to call this, we just want to check that it compiles w/o warnings
     member __.testDefaultInferenceForReturnFrom() =
         let t = task { return Some "x" }
@@ -974,7 +970,7 @@ type Basics() =
         }
         |> ignore
 
-    [<Test>]
+    [<Fact>]
     // no need to call this, just check that it compiles
     member __.testCompilerInfersArgumentOfReturnFrom() =
         task {
