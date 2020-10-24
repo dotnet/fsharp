@@ -36,18 +36,22 @@ exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
 
+/// Determine if an IL resource attached to an F# assembly is an F# signature data resource (data stream B)
+val IsSignatureDataResourceB: ILResource -> bool
+
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource: ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
+
 val GetSignatureDataResourceName: ILResource -> string
 
-/// Write F# signature data as an IL resource
-val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource
+/// Write F# signature data as one or more IL resources
+val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource * ILResource option
 
-/// Write F# optimization data as an IL resource
-val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
+/// Write F# optimization data as an IL resource(s)
+val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource * ILResource option
 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =

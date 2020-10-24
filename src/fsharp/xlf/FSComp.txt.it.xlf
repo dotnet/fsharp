@@ -410,6 +410,8 @@
       <trans-unit id="tcNullnessCheckingNotEnabled">
         <source>The /checknulls language feature is not enabled</source>
         <target state="new">The /checknulls language feature is not enabled</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
         <source>Cannot assign a value to another value marked literal</source>
         <target state="new">Cannot assign a value to another value marked literal</target>

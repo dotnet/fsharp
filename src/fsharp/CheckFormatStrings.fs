@@ -448,7 +448,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
               | 'a' ->
                   checkOtherFlags ch
                   let xty = NewInferenceType g 
-                  let fty = printerArgTy --> (xty --> printerResidueTy)
+                  let fty = mkFunTy g printerArgTy (mkFunTy g xty printerResidueTy)
                   collectSpecifierLocation fragLine fragCol 2
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, fragLine, fragCol+1) fragments

@@ -1528,7 +1528,15 @@ type internal FsiDynamicCompiler
                         let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
 
                         match dm with
-                        | _, dependencyManager when not(isNull dependencyManager) ->
+                        | null, null ->
+                           errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
+                           st
+
+                        | _, null when directive = Directive.Include ->
+                            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+                            st
+
+                        | _, NonNull dependencyManager ->
                             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                                 fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
                                 st
@@ -1536,12 +1544,8 @@ type internal FsiDynamicCompiler
                                 errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                                 st
 
-                        | _, _ when directive = Directive.Include ->
-                            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
-                            st
-
                         // #r "Assembly"
-                        | path, _ ->
+                        | NonNull path, _ ->
                             snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
                     ),
                     (fun _ _ -> ()))  
@@ -2176,18 +2180,6 @@ type internal FsiInteractionProcessor
                 istate, CompletedWithAlreadyReportedError
 
             | NonNull p, null ->
-               if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                   fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
-                   istate, Completed None
-               else
-                   errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
-                   istate, Completed None
-
-            | _, _ when directive = Directive.Include ->
-                errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
-                istate,Completed None
-
-            | NonNull p, null ->
                 let path =
                     if String.IsNullOrWhiteSpace(p) then ""
                     else p
@@ -2209,6 +2201,18 @@ type internal FsiInteractionProcessor
                             FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
                     fsiConsoleOutput.uprintnfnn "%s" format)
                 istate,Completed None
+
+            | _, null when directive = Directive.Include ->
+                errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+                istate,Completed None
+
+            | _, NonNull dependencyManager ->
+               if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                   fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
+                   istate, Completed None
+               else
+                   errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                   istate, Completed None
 
         istate |> InteractiveCatch errorLogger (fun istate ->
             match action with 

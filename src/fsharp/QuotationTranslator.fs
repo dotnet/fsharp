@@ -825,7 +825,6 @@ and ConvLValueExpr cenv env expr =
 
 // This function has to undo the work of mkExprAddrOfExpr 
 and ConvLValueExprCore cenv env expr = 
-    let g = cenv.g
     match expr with 
     | Expr.Op(op, tyargs, args, m) -> 
         match op, args, tyargs  with

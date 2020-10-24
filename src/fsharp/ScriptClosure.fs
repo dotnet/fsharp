@@ -220,7 +220,7 @@ module ScriptPreprocessClosure =
                             | null ->
                                 errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
 
-                            | dependencyManager ->
+                            | NonNull dependencyManager ->
                                 let directive d =
                                     match d with
                                     | Directive.Resolution -> "r"
