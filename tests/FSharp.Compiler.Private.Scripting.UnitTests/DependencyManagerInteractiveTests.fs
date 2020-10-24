@@ -80,7 +80,7 @@ type DependencyManagerInteractiveTests() =
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
 
-        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")
@@ -109,7 +109,7 @@ type DependencyManagerInteractiveTests() =
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
 
-        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
 
         let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite, 3.1.8"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result.Success)
@@ -132,7 +132,7 @@ type DependencyManagerInteractiveTests() =
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
 
-        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result = dp.Resolve(idm, ".fsx", [|"r", "System.Collections.Immutable.DoesNotExist"|], reportError, "net472")
@@ -163,7 +163,7 @@ type DependencyManagerInteractiveTests() =
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
 
-        let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")
             Assert.Equal(true, result1.Success)
@@ -184,7 +184,7 @@ type DependencyManagerInteractiveTests() =
         Assert.True((result2.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
 
         use dp2 = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
-        let idm2 = dp2.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let idm2 = dp2.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result3 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "net472")
@@ -218,7 +218,7 @@ type DependencyManagerInteractiveTests() =
                 | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
             ResolvingErrorReport (report)
 
-        let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let idm1 = dp1.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net472")
@@ -287,7 +287,7 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
         // Restore packages, Get Reference dll paths and package roots
         let result =
             use dp = new DependencyProvider(AssemblyResolutionProbe(assemblyProbingPaths), NativeResolutionProbe(nativeProbingRoots))
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.True(result.Success, "resolve failed")
@@ -383,7 +383,7 @@ printfn ""%A"" result
         // Restore packages, Get Reference dll paths and package roots
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.True(result.Success, "resolve failed")
@@ -464,7 +464,7 @@ printfn ""%A"" result
         // Restore packages, Get Reference dll paths and package roots
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.True(result.Success, "resolve failed")
@@ -521,7 +521,7 @@ x |> Seq.iter(fun r ->
         // Restore packages, Get Reference dll paths and package roots
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
             dp.Resolve(idm, ".fsx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         // Expected: error FS3217: PackageManager can not reference the System Package 'FSharp.Core'
@@ -547,7 +547,7 @@ x |> Seq.iter(fun r ->
         // Restore packages, Get Reference dll paths and package roots
         let result =
             use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
-            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
             dp.Resolve(idm, ".csx", packagemanagerlines, reportError, "netcoreapp3.1")
 
         Assert.True(result.Success, "resolve failed but should have succeeded")
@@ -582,7 +582,7 @@ x |> Seq.iter(fun r ->
         Assert.False (found, "Invoke the nativeProbingRoots callback -- Error the ResolvingUnmanagedDll still fired ")
 
         use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
-        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget").Value
 
         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
             let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")

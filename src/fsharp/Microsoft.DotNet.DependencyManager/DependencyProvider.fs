@@ -365,11 +365,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
         DependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
-#else
-    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string? * IDependencyManagerProvider? =
-#endif
+    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string option * IDependencyManagerProvider option =
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -378,36 +374,32 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                 | None ->
                     let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, (path.Split(':').[0]), reportError)
                     reportError.Invoke(ErrorReportType.Error, err, msg)
-                    null, null
+                    None, None
 
-                | Some kv -> path, kv.Value
+                | Some kv ->
+                    Some path, Some kv.Value
             else
-                path, null
+                Some path, None
         with 
         | e ->
             let e = stripTieWrapper e
             let err, msg = DependencyManager.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
-            null, null
+            None, None
 
     /// Fetch a dependencymanager that supports a specific key
-#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
-#else
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider? =
-#endif
+    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider option =
 
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key
-            |> Option.defaultValue Unchecked.defaultof<IDependencyManagerProvider>
 
         with
         | e ->
             let e = stripTieWrapper e
             let err, msg = DependencyManager.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
-            Unchecked.defaultof<IDependencyManagerProvider>
+            None
 
     /// Resolve reference for a list of package manager lines
     member _.Resolve (packageManager:IDependencyManagerProvider,

@@ -787,24 +787,24 @@ type TcConfigBuilder =
                 | ErrorReportType.Warning -> warning(Error(error, m))
                 | ErrorReportType.Error -> errorR(Error(error, m)))
 
-        let dm = dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, output , reportError, path)
+        let dm = dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, output, reportError, path)
 
         match dm with
-        | null, null ->
-           errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
+        // #r "Assembly"
+        | Some path, None ->
+            tcConfigB.AddReferencedAssemblyByPath (m, path)
 
-        | _, null when directive = Directive.Include ->
-            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
-
-        | _, NonNull dependencyManager ->
+        | _, Some dependencyManager ->
             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                 tcConfigB.AddDependencyManagerText (dependencyManager, directive, m, path)
             else
                 errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
 
-        // #r "Assembly"
-        | NonNull path, null ->
-            tcConfigB.AddReferencedAssemblyByPath (m, path)
+        | None, None when directive = Directive.Include ->
+            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+
+        | None, None ->
+           errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
 
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (Range.equals ar.Range m) || ar.Text <> path)

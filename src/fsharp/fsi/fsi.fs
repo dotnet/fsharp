@@ -1478,10 +1478,10 @@ type internal FsiDynamicCompiler
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
                 match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
-                | null ->
+                | None ->
                     errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
                     istate
-                | NonNull dependencyManager ->
+                | Some dependencyManager ->
                     let directive d =
                         match d with
                         | Directive.Resolution -> "r"
@@ -1529,15 +1529,15 @@ type internal FsiDynamicCompiler
                         let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
 
                         match dm with
-                        | null, null ->
+                        | None, None ->
                            errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
                            st
 
-                        | _, null when directive = Directive.Include ->
+                        | _, None when directive = Directive.Include ->
                             errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
                             st
 
-                        | _, NonNull dependencyManager ->
+                        | _, Some dependencyManager ->
                             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                                 fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
                                 st
@@ -1546,7 +1546,7 @@ type internal FsiDynamicCompiler
                                 st
 
                         // #r "Assembly"
-                        | NonNull path, _ ->
+                        | Some path, _ ->
                             snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
                     ),
                     (fun _ _ -> ()))  
@@ -2176,11 +2176,11 @@ type internal FsiInteractionProcessor
         let packageManagerDirective directive path m =
             let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
-            | null, null ->
+            | None, None ->
                 // error already reported
                 istate, CompletedWithAlreadyReportedError
 
-            | NonNull p, null ->
+            | Some p, None ->
                 let path =
                     if String.IsNullOrWhiteSpace(p) then ""
                     else p
@@ -2203,11 +2203,11 @@ type internal FsiInteractionProcessor
                     fsiConsoleOutput.uprintnfnn "%s" format)
                 istate,Completed None
 
-            | _, null when directive = Directive.Include ->
+            | None, None when directive = Directive.Include ->
                 errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
                 istate,Completed None
 
-            | _, NonNull dependencyManager ->
+            | _, Some dependencyManager ->
                if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                    fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
                    istate, Completed None
