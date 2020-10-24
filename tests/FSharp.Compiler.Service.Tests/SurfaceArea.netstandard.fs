@@ -18355,7 +18355,6 @@ FSharp.Compiler.AbstractIL.Internal.Library+String: System.String lowerCaseFirst
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String lowercase(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String make(Int32, Char)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String sub(System.String, Int32, Int32)
-FSharp.Compiler.AbstractIL.Internal.Library+String: System.String trim(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String uncapitalize(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String uppercase(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String[] getLines(System.String)
@@ -18488,7 +18487,6 @@ FSharp.Compiler.AbstractIL.Internal.Library: System.Lazy`1[a] notlazy[a](a)
 FSharp.Compiler.AbstractIL.Internal.Library: Void DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent(CompilationThreadToken)
 FSharp.Compiler.AbstractIL.Internal.Library: Void RequireCompilationThread(CompilationThreadToken)
 FSharp.Compiler.AbstractIL.Internal.Library: a getHole[a](Microsoft.FSharp.Core.FSharpRef`1[Microsoft.FSharp.Core.FSharpOption`1[a]])
-FSharp.Compiler.AbstractIL.Internal.Library: a nonNull[a](System.String, a)
 FSharp.Compiler.AbstractIL.Internal.Library: a notFound[a]()
 FSharp.Compiler.AbstractIL.Internal.Library: d foldOn[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[b,d]], c, a)
 FSharp.Compiler.AbstractIL.Internal.Utils: Boolean get_runningOnMono()
@@ -20178,6 +20176,10 @@ FSharp.Compiler.PrettyNaming: System.String qmark
 FSharp.Compiler.PrettyNaming: System.String qmarkSet
 FSharp.Compiler.PrettyNaming: System.String unassignedTyparName
 FSharp.Compiler.PrettyNaming: System.Tuple`2[System.String,System.Tuple`2[System.String,System.String][]] demangleProvidedTypeName(System.String)
+FSharp.Compiler.PrettyNaming: System.String FSharpOptimizationDataResourceNameB
+FSharp.Compiler.PrettyNaming: System.String FSharpSignatureDataResourceNameB
+FSharp.Compiler.PrettyNaming: System.String get_FSharpOptimizationDataResourceNameB()
+FSharp.Compiler.PrettyNaming: System.String get_FSharpSignatureDataResourceNameB()
 FSharp.Compiler.QuickParse: Boolean TestMemberOrOverrideDeclaration(FSharp.Compiler.SourceCodeServices.FSharpTokenInfo[])
 FSharp.Compiler.QuickParse: FSharp.Compiler.PartialLongName GetPartialLongNameEx(System.String, Int32)
 FSharp.Compiler.QuickParse: Int32 CorrectIdentifierToken(System.String, Int32)
@@ -23232,6 +23234,10 @@ FSharp.Compiler.SourceCodeServices.FSharpType: System.Collections.Generic.IList`
 FSharp.Compiler.SourceCodeServices.FSharpType: System.String Format(FSharp.Compiler.SourceCodeServices.FSharpDisplayContext)
 FSharp.Compiler.SourceCodeServices.FSharpType: System.String ToString()
 FSharp.Compiler.SourceCodeServices.FSharpType: System.Tuple`2[System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]],FSharp.Compiler.SourceCodeServices.FSharpParameter] Prettify(System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]], FSharp.Compiler.SourceCodeServices.FSharpParameter)
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean HasNullAnnotation
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean IsNullAmbivalent
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean get_HasNullAnnotation()
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean get_IsNullAmbivalent()
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: Boolean HasFields
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: Boolean IsAccessible(FSharp.Compiler.SourceCodeServices.FSharpAccessibilityRights)
@@ -41698,6 +41704,27 @@ FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynValInfo
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynValSig
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynValTyparDecls
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+TyparStaticReq
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparSubtypeOfType()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparSupportsMember()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Int32 Tag
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Int32 get_Tag()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: SynTypar genericName
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: SynTypar get_genericName()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: System.String ToString()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: range get_range()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: range range
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSubtypeOfType: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSubtypeOfType: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsMember: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsMember: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsNull: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsNull: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: SynTypeConstraint NewWhereTyparNotSupportsNull(SynTypar, range)
 FSharp.Compiler.SyntaxTreeOps+SynArgNameGenerator: System.String New()
 FSharp.Compiler.SyntaxTreeOps+SynArgNameGenerator: Void .ctor()
 FSharp.Compiler.SyntaxTreeOps+SynArgNameGenerator: Void Reset()
