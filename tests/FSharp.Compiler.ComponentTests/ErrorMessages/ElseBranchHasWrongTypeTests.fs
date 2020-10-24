@@ -166,6 +166,6 @@ else
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Warning 20, Line 3, Col 1,  Line 6, Col 13, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
             (Error   1,  Line 5, Col 19, Line 5, Col 22, "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'bool'. This branch returns a value of type 'string'.")
-            (Error   1,  Line 6, Col 10, Line 6, Col 13, "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'bool'. This branch returns a value of type 'string'.")]
+            (Error   1,  Line 6, Col 10, Line 6, Col 13, "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'bool'. This branch returns a value of type 'string'.")
+            (Warning 20, Line 3, Col 1,  Line 6, Col 13, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")]
