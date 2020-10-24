@@ -22442,6 +22442,7 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsType
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsUnresolved
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsValCompiledAsMethod
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsValue
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsFunction
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_EventIsStandard()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_HasGetterMethod()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_HasSetterMethod()
@@ -22475,6 +22476,7 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_Is
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsUnresolved()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsValCompiledAsMethod()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsValue()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsFunction()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: FSharp.Compiler.SourceCodeServices.FSharpAccessibility Accessibility
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: FSharp.Compiler.SourceCodeServices.FSharpAccessibility get_Accessibility()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: FSharp.Compiler.SourceCodeServices.FSharpAssembly Assembly
@@ -22500,6 +22502,8 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: FSharp.Compile
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Int32 GetEffectivelySameAsHash()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Int32 GetHashCode()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Internal.Utilities.StructuredFormat.Layout FormatLayout(FSharp.Compiler.SourceCodeServices.FSharpDisplayContext)
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption1[Internal.Utilities.StructuredFormat.Layout] GetReturnTypeLayout(FSharp.Compiler.SourceCodeServices.FSharpDisplayContext)
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption1[Internal.Utilities.StructuredFormat.Layout]
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] ImplementationLocation
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] SignatureLocation
@@ -22521,6 +22525,8 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collect
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpGenericParameter] get_GenericParameters()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]] CurriedParameterGroups
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]] get_CurriedParameterGroups()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption1[Microsoft.FSharp.Collections.FSharpList1[System.String]] PossibleArgumentList
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption1[Microsoft.FSharp.Collections.FSharpList1[System.String]] get_PossibleArgumentList()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] XmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
@@ -22737,6 +22743,8 @@ FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.Sourc
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.SourceCodeServices.FSharpNavigationItems GetNavigationItems()
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] ValidateBreakpointLocation(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpNoteworthyParamInfoLocations] FindNoteworthyParamInfoLocations(pos)
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Boolean IsTypeAnnotationGiven(pos)
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Range+range]] GetAllArgumentsForFunctionApplication(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] ParseTree
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] get_ParseTree()
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: System.String FileName

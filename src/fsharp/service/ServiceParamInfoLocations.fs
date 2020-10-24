@@ -298,6 +298,7 @@ module internal FunctionApplicationArgumentLocationsImpl =
                 Found (e.Range :: ranges), Some inner
             | _ -> NotFound, Some inner
 
+    // TODO - doesn't handle infix cases like this: 'string x + y', where 'x' should have a label
     let findFSharpFunctionArgInfos pos parseTree =
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
             member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
@@ -319,3 +320,4 @@ module internal FunctionApplicationArgumentLocationsImpl =
                         | NotFound, Some cache -> cache
                         | _ -> traverseSynExpr argExpr
                 | _ -> defaultTraverse expr })
+        |> Option.map List.rev

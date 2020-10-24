@@ -2120,8 +2120,8 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-    
-    // TODO - this is NOT fully implemented, as far as I can tell
+
+    // TODO - consider the other types
     member x.GetReturnTypeLayout (denv: FSharpDisplayContext) =
         match x.IsMember, d with
         | true, _ ->

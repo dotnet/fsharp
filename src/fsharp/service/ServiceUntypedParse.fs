@@ -107,10 +107,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
 
     member scope.GetAllArgumentsForFunctionApplication pos =
         match input with
-        | Some input ->
-            // TODO - ideally we shouldn't be having to reverse it here I guess
-            FunctionApplicationArgumentLocationsImpl.findFSharpFunctionArgInfos pos input
-            |> Option.map List.rev
+        | Some input -> FunctionApplicationArgumentLocationsImpl.findFSharpFunctionArgInfos pos input
         | None -> None
 
     member scope.IsTypeAnnotationGiven pos =

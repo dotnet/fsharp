@@ -1200,22 +1200,16 @@ module private PrintTypes =
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
         layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
 
-    let prettyLayoutOfReturnType denv (v: Val) =
-        //let ty, _cxs = PrettyTypes.PrettifyType denv. g ty
-
-        let tps, tau = v.TypeScheme
-        
-        // adjust the type in case this is the 'this' pointer stored in a reference cell
-        let tau = StripSelfRefCell(denv.g, v.BaseOrThisInfo, tau)
-        
-        let (_prettyTyparInst, _prettyTypars, _prettyTauTy), cxs = PrettyTypes.PrettifyInstAndTyparsAndType denv.g (emptyTyparInst, tps, tau)
-
-        
-        let env = SimplifyTypes.CollectInfo true [tau] cxs
-
-        let _argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
-        
-        layoutReturnType denv env rty
+    let prettyLayoutOfValReturnType denv (v: ValRef) =
+        match v.ValReprInfo with 
+        | None ->
+            let _, tau = v.TypeScheme
+            let _argtysl, rty = stripFunTy denv.g tau
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
+        | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
+            let tau = v.TauType
+            let _c, rty = GetTopTauTypeInFSharpForm denv.g argInfos tau Range.range0
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
 
     let layoutAssemblyName _denv (ty: TType) =
         ty.GetAssemblyName()
@@ -2220,8 +2214,6 @@ let prettyLayoutOfType denv x = x |> PrintTypes.prettyLayoutOfType denv
 
 let prettyLayoutOfTypeNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv
 
-let prettyLayoutOfReturnType denv x = x |> PrintTypes.prettyLayoutOfReturnType denv
-
 let prettyStringOfTy denv x = x |> PrintTypes.prettyLayoutOfType denv |> showL
 
 let prettyStringOfTyNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv |> showL
@@ -2242,7 +2234,9 @@ let prettyLayoutOfValOrMember denv typarInst v = PrintTastMemberOrVals.prettyLay
 
 let prettyLayoutOfValOrMemberNoInst denv v = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv v
 
-let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v 
+let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v
+
+let prettyLayoutOfValReturnType denv x = x |> PrintTypes.prettyLayoutOfValReturnType denv
 
 let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 
