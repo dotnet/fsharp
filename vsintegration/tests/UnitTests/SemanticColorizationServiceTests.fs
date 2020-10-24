@@ -7,6 +7,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.Classification
 
 [<TestFixture; Category "Roslyn Services">]
 type SemanticClassificationServiceTests() =
@@ -57,13 +58,13 @@ type SemanticClassificationServiceTests() =
         let anyData = ranges |> List.exists (fun struct (range, sct) -> Range.rangeContainsPos range markerPos && ((FSharpClassificationTypes.getClassificationTypeName sct) = classificationType))
         Assert.False(anyData, "Classification data was found when it wasn't expected.")
 
-    [<TestCase("(*1*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*2*)", FSharpClassificationTypes.ReferenceType)>]
-    [<TestCase("(*3*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*4*)", FSharpClassificationTypes.ReferenceType)>]
-    [<TestCase("(*5*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*6*)", FSharpClassificationTypes.ValueType)>]
-    [<TestCase("(*7*)", FSharpClassificationTypes.ReferenceType)>]
+    [<TestCase("(*1*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*2*)", ClassificationTypeNames.ClassName)>]
+    [<TestCase("(*3*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*4*)", ClassificationTypeNames.ClassName)>]
+    [<TestCase("(*5*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*6*)", ClassificationTypeNames.StructName)>]
+    [<TestCase("(*7*)", ClassificationTypeNames.ClassName)>]
     member __.Measured_Types(marker: string, classificationType: string) =
         verifyClassificationAtEndOfMarker(
                 """#light (*Light*)

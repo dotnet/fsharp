@@ -52,6 +52,7 @@ type internal FSharpCodeLensService
     ) as self =
 
     let lineLens = codeLens
+    let userOpName = "FSharpCodeLensService"
 
     let visit pos parseTree = 
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
@@ -154,7 +155,7 @@ type internal FSharpCodeLensService
             logInfof "Rechecking code due to buffer edit!"
 #endif
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
-            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token)
+            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token, userOpName)
             let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
 #if DEBUG
             logInfof "Getting uses of all symbols!"

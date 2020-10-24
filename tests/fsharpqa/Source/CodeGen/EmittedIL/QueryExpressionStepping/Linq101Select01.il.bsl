@@ -13,11 +13,16 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
 }
 .assembly extern Utils
 {
   .ver 0:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly Linq101Select01
 {
@@ -44,13 +49,17 @@
   // Offset: 0x000006A0 Length: 0x00000204
 }
 .module Linq101Select01.exe
+<<<<<<< HEAD
 // MVID: {5E172EEB-6057-8F80-A745-0383EB2E175E}
+=======
+// MVID: {5F1FA088-6057-8F80-A745-038388A01F5F}
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x058D0000
+// Image base: 0x05950000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -2679,13 +2688,13 @@
       IL_001a:  ldc.i4.0
       IL_001b:  ldc.i4.0
       IL_001c:  ldc.i4.2
-      IL_001d:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
-                                                                         int32,
-                                                                         int32,
-                                                                         bool,
-                                                                         uint8)
-      IL_0022:  call       bool [mscorlib]System.Decimal::op_LessThan(valuetype [mscorlib]System.Decimal,
-                                                                      valuetype [mscorlib]System.Decimal)
+      IL_001d:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
+                                                                            int32,
+                                                                            int32,
+                                                                            bool,
+                                                                            uint8)
+      IL_0022:  call       bool [netstandard]System.Decimal::op_LessThan(valuetype [netstandard]System.Decimal,
+                                                                         valuetype [netstandard]System.Decimal)
       IL_0027:  ret
     } // end of method 'orders@84-2'::Invoke
 
@@ -2882,8 +2891,8 @@
       IL_0021:  stloc.3
       IL_0022:  ldloc.2
       IL_0023:  ldloc.3
-      IL_0024:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
-                                                                    valuetype [mscorlib]System.DateTime)
+      IL_0024:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
+                                                                       valuetype [netstandard]System.DateTime)
       IL_0029:  ldc.i4.0
       IL_002a:  clt
       IL_002c:  ldc.i4.0
@@ -3077,13 +3086,13 @@
       IL_001a:  ldc.i4.0
       IL_001b:  ldc.i4.0
       IL_001c:  ldc.i4.1
-      IL_001d:  newobj     instance void [mscorlib]System.Decimal::.ctor(int32,
-                                                                         int32,
-                                                                         int32,
-                                                                         bool,
-                                                                         uint8)
-      IL_0022:  call       bool [mscorlib]System.Decimal::op_GreaterThanOrEqual(valuetype [mscorlib]System.Decimal,
-                                                                                valuetype [mscorlib]System.Decimal)
+      IL_001d:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
+                                                                            int32,
+                                                                            int32,
+                                                                            bool,
+                                                                            uint8)
+      IL_0022:  call       bool [netstandard]System.Decimal::op_GreaterThanOrEqual(valuetype [netstandard]System.Decimal,
+                                                                                   valuetype [netstandard]System.Decimal)
       IL_0027:  ret
     } // end of method 'orders3@102-2'::Invoke
 
@@ -3199,8 +3208,8 @@
       IL_0000:  ldarg.1
       IL_0001:  callvirt   instance string [Utils]Utils/Customer::get_Region()
       IL_0006:  ldstr      "WA"
-      IL_000b:  call       bool [mscorlib]System.String::Equals(string,
-                                                                string)
+      IL_000b:  call       bool [netstandard]System.String::Equals(string,
+                                                                   string)
       IL_0010:  ret
     } // end of method 'orders4@112-1'::Invoke
 
@@ -3347,8 +3356,8 @@
       IL_001a:  stloc.3
       IL_001b:  ldloc.2
       IL_001c:  ldloc.3
-      IL_001d:  call       int32 [mscorlib]System.DateTime::Compare(valuetype [mscorlib]System.DateTime,
-                                                                    valuetype [mscorlib]System.DateTime)
+      IL_001d:  call       int32 [netstandard]System.DateTime::Compare(valuetype [netstandard]System.DateTime,
+                                                                       valuetype [netstandard]System.DateTime)
       IL_0022:  ldc.i4.0
       IL_0023:  clt
       IL_0025:  ldc.i4.0

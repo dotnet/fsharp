@@ -8,21 +8,20 @@ namespace FSharp.Core.UnitTests
 open System
 open System.Numerics 
 open FSharp.Core.UnitTests.LibraryTestFx
-open NUnit.Framework
+open Xunit
 
 [<Measure>]
 type m
 
-[<TestFixture>]
 type LanguagePrimitivesModule() =
 
-    [<Test>]    
+    [<Fact>]
     member _.CastingUint () =
         let expected = 12u
         let actual = uint 12
         Assert.AreEqual(expected, actual)
 
-    [<Test>]
+    [<Fact>]
     member this.CastingUnits() =
         let f = 2.5
         Assert.AreEqual(f, f |> LanguagePrimitives.FloatWithMeasure<m> |> float)
@@ -45,25 +44,25 @@ type LanguagePrimitivesModule() =
         let y = 2y
         Assert.AreEqual(y, y |> LanguagePrimitives.SByteWithMeasure<m> |> sbyte)
 
-    [<Test>]
+    [<Fact>]
     member this.MaxMinNan() =
-        Assert.IsTrue(Double.IsNaN(max nan 1.0))
-        Assert.IsTrue(Double.IsNaN(max 1.0 nan))
-        Assert.IsTrue(Double.IsNaN(max nan nan))
+        Assert.True(Double.IsNaN(max nan 1.0))
+        Assert.True(Double.IsNaN(max 1.0 nan))
+        Assert.True(Double.IsNaN(max nan nan))
 
-        Assert.IsTrue(Single.IsNaN(max Single.NaN 1.0f))
-        Assert.IsTrue(Single.IsNaN(max 1.0f Single.NaN))
-        Assert.IsTrue(Single.IsNaN(max Single.NaN Single.NaN))
+        Assert.True(Single.IsNaN(max Single.NaN 1.0f))
+        Assert.True(Single.IsNaN(max 1.0f Single.NaN))
+        Assert.True(Single.IsNaN(max Single.NaN Single.NaN))
         
-        Assert.IsTrue(Double.IsNaN(min nan 1.0))
-        Assert.IsTrue(Double.IsNaN(min 1.0 nan))
-        Assert.IsTrue(Double.IsNaN(min nan nan))
+        Assert.True(Double.IsNaN(min nan 1.0))
+        Assert.True(Double.IsNaN(min 1.0 nan))
+        Assert.True(Double.IsNaN(min nan nan))
 
-        Assert.IsTrue(Single.IsNaN(min Single.NaN 1.0f))
-        Assert.IsTrue(Single.IsNaN(min 1.0f Single.NaN))
-        Assert.IsTrue(Single.IsNaN(min Single.NaN Single.NaN))
+        Assert.True(Single.IsNaN(min Single.NaN 1.0f))
+        Assert.True(Single.IsNaN(min 1.0f Single.NaN))
+        Assert.True(Single.IsNaN(min Single.NaN Single.NaN))
 
-    [<Test>]
+    [<Fact>]
     member this.DivideByInt() =
         // float32 
         let resultFloat32 = LanguagePrimitives.DivideByInt 3.0f 3
@@ -77,27 +76,27 @@ type LanguagePrimitivesModule() =
         let resultDecimal = LanguagePrimitives.DivideByInt 3.9M 3
         Assert.AreEqual(1.3M, resultDecimal)   
 
-    [<Test>]
+    [<Fact>]
     member this.EnumOfValue() =  
         let monday = System.DayOfWeek.Monday
         let result = LanguagePrimitives.EnumOfValue<int,System.DayOfWeek>(1)
         
         Assert.AreEqual(monday, result)
     
-    [<Test>]
+    [<Fact>]
     member this.EnumToValue() =
         let monday = System.DayOfWeek.Monday
         let result = LanguagePrimitives.EnumToValue monday
 
         Assert.AreEqual(1, result)
         
-    [<Test>]
+    [<Fact>]
     member this.GuidToString() =
         let s = "F99D95E0-2A5E-47c4-9B92-6661D65AE6B3"
         let guid = new Guid(s)
         Assert.AreEqual((string guid).ToLowerInvariant(), s.ToLowerInvariant())
 
-    [<Test>]
+    [<Fact>]
     member this.GenericComparison() =
         // value type
         let resultValue = LanguagePrimitives.GenericComparison 1 1
@@ -115,7 +114,7 @@ type LanguagePrimitivesModule() =
 #if NETSTANDARD1_6 || NETCOREAPP
 // TODO named #define ?
 #else  
-    [<Test>]
+    [<Fact>]
     member this.GenericComparisonBiModal() =
         // value type
         let resultValue = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default 100 1
@@ -149,90 +148,90 @@ type LanguagePrimitivesModule() =
         
 #endif
         
-    [<Test>]
+    [<Fact>]
     member this.GenericEquality() =
         // value type
         let resultValue = LanguagePrimitives.GenericEquality 1 1
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
 
         let resultValue = LanguagePrimitives.GenericEquality 1 2
-        Assert.IsFalse(resultValue)
+        Assert.False(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericEquality "ABC" "ABC"
-        Assert.IsTrue(resultRef)
+        Assert.True(resultRef)
 
         let resultRef = LanguagePrimitives.GenericEquality "ABC" "ABCDE"
-        Assert.IsFalse(resultRef)
+        Assert.False(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericEquality null null
-        Assert.IsTrue(resultNul)
+        Assert.True(resultNul)
 
         let resultNul = LanguagePrimitives.GenericEquality "ABC" null
-        Assert.IsFalse(resultNul)
+        Assert.False(resultNul)
         
-    [<Test>]
+    [<Fact>]
     member this.GenericGreaterOrEqual() =
         // value type
         let resultValue = LanguagePrimitives.GenericGreaterOrEqual 1 1
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
 
         let resultValue = LanguagePrimitives.GenericGreaterOrEqual 2 1
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
 
         let resultValue = LanguagePrimitives.GenericGreaterOrEqual 1 2
-        Assert.IsFalse(resultValue)
+        Assert.False(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericGreaterOrEqual "abcde" "abc"
-        Assert.IsTrue(resultRef)
+        Assert.True(resultRef)
 
         let resultRef = LanguagePrimitives.GenericGreaterOrEqual "ABCDE" "ABCDE"
-        Assert.IsTrue(resultRef)
+        Assert.True(resultRef)
 
         let resultRef = LanguagePrimitives.GenericGreaterOrEqual "ABC" "ABCDE"
-        Assert.IsFalse(resultRef)
+        Assert.False(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericGreaterOrEqual null null
-        Assert.IsTrue(resultNul)
+        Assert.True(resultNul)
 
         let resultNul = LanguagePrimitives.GenericGreaterOrEqual null "ABCDE"
-        Assert.IsFalse(resultNul)
+        Assert.False(resultNul)
         
         
-    [<Test>]
+    [<Fact>]
     member this.GenericGreaterThan() =
         // value type
         let resultValue = LanguagePrimitives.GenericGreaterThan 1 1
-        Assert.IsFalse(resultValue)
+        Assert.False(resultValue)
 
         let resultValue = LanguagePrimitives.GenericGreaterThan 2 1
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericGreaterThan "ABC" "ABCDE"
-        Assert.IsFalse(resultRef)
+        Assert.False(resultRef)
 
         let resultRef = LanguagePrimitives.GenericGreaterThan "ABCDE" "ABCDE"
-        Assert.IsFalse(resultRef)
+        Assert.False(resultRef)
 
         let resultRef = LanguagePrimitives.GenericGreaterThan "abc" "a"
-        Assert.IsTrue(resultRef)
+        Assert.True(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericGreaterThan null null
-        Assert.IsFalse(resultNul)
+        Assert.False(resultNul)
 
         let resultNul = LanguagePrimitives.GenericGreaterThan null "ABC"
-        Assert.IsFalse(resultNul)
+        Assert.False(resultNul)
 
         let resultNul = LanguagePrimitives.GenericGreaterThan "ABC" null
-        Assert.IsTrue(resultNul)
+        Assert.True(resultNul)
         
         
-    [<Test>]
+    [<Fact>]
     member this.GenericHash() =
         // value type
         let resultValue = LanguagePrimitives.GenericHash 1 
@@ -252,72 +251,72 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(0, resultNul)
         
         
-    [<Test>]
+    [<Fact>]
     member this.GenericLessOrEqual() =
         // value type
         let resultValue = LanguagePrimitives.GenericLessOrEqual 1 1
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
 
         let resultValue = LanguagePrimitives.GenericLessOrEqual 1 2
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
 
         let resultValue = LanguagePrimitives.GenericLessOrEqual -1 0
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericLessOrEqual "ABC" "ABCDE"
-        Assert.IsTrue(resultRef)
+        Assert.True(resultRef)
 
         let resultRef = LanguagePrimitives.GenericLessOrEqual "ABCDE" "ABCDE"
-        Assert.IsTrue(resultRef)
+        Assert.True(resultRef)
 
         let resultRef = LanguagePrimitives.GenericLessOrEqual "abcde" "abc"
-        Assert.IsFalse(resultRef)
+        Assert.False(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericLessOrEqual null null
-        Assert.IsTrue(resultNul)
+        Assert.True(resultNul)
 
         let resultNul = LanguagePrimitives.GenericLessOrEqual null "abc"
-        Assert.IsTrue(resultNul)
+        Assert.True(resultNul)
 
         let resultNul = LanguagePrimitives.GenericLessOrEqual "abc" null
-        Assert.IsFalse(resultNul)
+        Assert.False(resultNul)
         
         
-    [<Test>]
+    [<Fact>]
     member this.GenericLessThan() =
         // value type
         let resultValue = LanguagePrimitives.GenericLessThan 1 1
-        Assert.IsFalse(resultValue)
+        Assert.False(resultValue)
 
         let resultValue = LanguagePrimitives.GenericLessThan -2 -4
-        Assert.IsFalse(resultValue)
+        Assert.False(resultValue)
 
         let resultValue = LanguagePrimitives.GenericLessThan 1 2
-        Assert.IsTrue(resultValue)
+        Assert.True(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericLessThan "ABC" "ABCDE"
-        Assert.IsTrue(resultRef)
+        Assert.True(resultRef)
 
         let resultRef = LanguagePrimitives.GenericLessThan "ABC" "ABC"
-        Assert.IsFalse(resultRef)
+        Assert.False(resultRef)
 
         let resultRef = LanguagePrimitives.GenericLessThan "abc" "a"
-        Assert.IsFalse(resultRef)
+        Assert.False(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericLessThan null "abc"
-        Assert.IsTrue(resultNul)
+        Assert.True(resultNul)
 
         let resultNul = LanguagePrimitives.GenericLessThan "aa" null
-        Assert.IsFalse(resultNul)
+        Assert.False(resultNul)
 
         let resultNul = LanguagePrimitives.GenericLessThan null null
-        Assert.IsFalse(resultNul)
+        Assert.False(resultNul)
 
-    [<Test>]
+    [<Fact>]
     member this.GenericMaximum() =
         // value type
         let resultValue = LanguagePrimitives.GenericMaximum 8 9
@@ -336,7 +335,7 @@ type LanguagePrimitivesModule() =
         
         // null reference
         let resultNul = LanguagePrimitives.GenericMaximum null null
-        Assert.IsNull(resultNul)
+        Assert.Null(resultNul)
 
         let resultNul = LanguagePrimitives.GenericMaximum null "ABCDE"
         Assert.AreEqual("ABCDE", resultNul)
@@ -344,7 +343,7 @@ type LanguagePrimitivesModule() =
         let resultNul = LanguagePrimitives.GenericMaximum "ABCDE" null
         Assert.AreEqual("ABCDE", resultNul)
         
-    [<Test>]
+    [<Fact>]
     member this.GenericMinimum() =
         // value type
         let resultValue = LanguagePrimitives.GenericMinimum 8 9
@@ -362,15 +361,15 @@ type LanguagePrimitivesModule() =
         
         // null reference
         let resultNul = LanguagePrimitives.GenericMinimum null null
-        Assert.IsNull(resultNul)
+        Assert.Null(resultNul)
 
         let resultNul = LanguagePrimitives.GenericMinimum null "ABC"
-        Assert.IsNull(resultNul)
+        Assert.Null(resultNul)
 
         let resultNul = LanguagePrimitives.GenericMinimum "ABC" null
-        Assert.IsNull(resultNul)
+        Assert.Null(resultNul)
         
-    [<Test>]
+    [<Fact>]
     member this.GenericOne() =
         // int type
         let resultValue = LanguagePrimitives.GenericOne<int> 
@@ -384,7 +383,7 @@ type LanguagePrimitivesModule() =
         let resultValue = LanguagePrimitives.GenericOne<bigint> 
         Assert.AreEqual(1I, resultValue)
         
-    [<Test>]
+    [<Fact>]
     member this.GenericZero() =
         // int type
         let resultValue = LanguagePrimitives.GenericZero<int> 
@@ -398,7 +397,7 @@ type LanguagePrimitivesModule() =
         let resultValue = LanguagePrimitives.GenericZero<bigint> 
         Assert.AreEqual(0I, resultValue)
         
-    [<Test>]
+    [<Fact>]
     member this.ParseInt32() =
         let resultValue = LanguagePrimitives.ParseInt32 "100" 
         Assert.AreEqual(typeof<int>, resultValue.GetType())
@@ -417,7 +416,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseInt32 null  |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member this.ParseInt64() =
         let resultValue = LanguagePrimitives.ParseInt64 "100" 
         Assert.AreEqual(typeof<int64>, resultValue.GetType())    
@@ -436,7 +435,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseInt64 null  |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.ParseBinaryInt64() =
         let resultValue = LanguagePrimitives.ParseInt64 "0b1100100" 
         Assert.AreEqual(typeof<int64>, resultValue.GetType())    
@@ -453,7 +452,7 @@ type LanguagePrimitivesModule() =
 
         CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseInt64 "0b10000000000000000000000000000000000000000000000000000000000000000" |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.ParseOctalInt64() =
         let resultValue = LanguagePrimitives.ParseInt64 "0o144"
         Assert.AreEqual(typeof<int64>, resultValue.GetType())
@@ -470,7 +469,7 @@ type LanguagePrimitivesModule() =
 
         CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseInt64 "0o2000000000000000000000" |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.ParseUInt32() =
         let resultValue = LanguagePrimitives.ParseUInt32 "100" 
         Assert.AreEqual(typeof<uint32>, resultValue.GetType())   
@@ -480,7 +479,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseUInt32 null  |> ignore)
         
-    [<Test>]
+    [<Fact>]
     member this.ParseUInt64() =
         let resultValue = LanguagePrimitives.ParseUInt64 "100" 
         Assert.AreEqual(typeof<uint64>, resultValue.GetType()) 
@@ -491,7 +490,7 @@ type LanguagePrimitivesModule() =
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseUInt64 null  |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.ParseBinaryUInt64() =
         let resultValue = LanguagePrimitives.ParseUInt64 "0b1100100" 
         Assert.AreEqual(typeof<uint64>, resultValue.GetType()) 
@@ -500,7 +499,7 @@ type LanguagePrimitivesModule() =
         CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseUInt64 "-0b1" |> ignore)
         CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt64 "0b10000000000000000000000000000000000000000000000000000000000000000" |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.ParseOctalUInt64() =
         let resultValue = LanguagePrimitives.ParseUInt64 "0o144" 
         Assert.AreEqual(typeof<uint64>, resultValue.GetType()) 
@@ -509,7 +508,7 @@ type LanguagePrimitivesModule() =
         CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseUInt64 "-0o1" |> ignore)
         CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt64 "0o2000000000000000000000" |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.ParseStringViaConversionOps() =
         let s : string = null
         CheckThrowsArgumentNullException2 "sbyte" (fun () -> sbyte s |> ignore)
@@ -526,80 +525,80 @@ type LanguagePrimitivesModule() =
         CheckThrowsArgumentNullException2 "decimal" (fun () -> decimal s |> ignore)
         CheckThrowsArgumentNullException2 "char" (fun () -> char s |> ignore)
 
-    [<Test>]
+    [<Fact>]
     member this.PhysicalEquality() =
         // revordtype
         let ref1 = ref 8
         let ref2 = ref 8
         let resultValue = LanguagePrimitives.PhysicalEquality ref1 ref2
-        Assert.IsFalse(resultValue)
-        Assert.IsTrue(LanguagePrimitives.PhysicalEquality ref1 ref1)
-        Assert.IsTrue(LanguagePrimitives.PhysicalEquality ref2 ref2)
+        Assert.False(resultValue)
+        Assert.True(LanguagePrimitives.PhysicalEquality ref1 ref1)
+        Assert.True(LanguagePrimitives.PhysicalEquality ref2 ref2)
         
         // reference type
         let resultRef0 = LanguagePrimitives.PhysicalEquality "ABC" "ABC"
-        Assert.IsTrue(resultRef0)
+        Assert.True(resultRef0)
         
         let resultRef1 = LanguagePrimitives.PhysicalEquality "ABC" "DEF"
-        Assert.IsFalse(resultRef1)
+        Assert.False(resultRef1)
         
         // object type
         let resultRef2 = LanguagePrimitives.PhysicalEquality (obj()) (obj())
-        Assert.IsFalse(resultRef2)
+        Assert.False(resultRef2)
         
         // object type
         let o = obj()
         let resultRef3 = LanguagePrimitives.PhysicalEquality o o 
-        Assert.IsTrue(resultRef3)
+        Assert.True(resultRef3)
         
         // System.ValueType type
         let resultRef4 = LanguagePrimitives.PhysicalEquality (1 :> System.ValueType) (1 :> System.ValueType)
-        Assert.IsFalse(resultRef4)
+        Assert.False(resultRef4)
         
         // System.ValueType type
         let resultRef5 = LanguagePrimitives.PhysicalEquality (1 :> System.ValueType) (2 :> System.ValueType)
-        Assert.IsFalse(resultRef5)
+        Assert.False(resultRef5)
         
         // null reference
         let resultNul = LanguagePrimitives.PhysicalEquality null null
-        Assert.IsTrue(resultNul)
+        Assert.True(resultNul)
 
-[<TestFixture>]
+
 type HashCompareModule() = // this module is internal/obsolete, but contains code reachable from many public APIs
     member inline this.ComparisonsFor< ^T when ^T : comparison>(x : ^T, y : ^T) =
-        Assert.IsTrue( x < y )
-        Assert.IsTrue( y > x ) 
-        Assert.IsTrue( (x = x) )
-        Assert.IsFalse( y < x )
-        Assert.IsFalse( x > y )
-        Assert.IsFalse( (x = y) )
+        Assert.True( x < y )
+        Assert.True( y > x ) 
+        Assert.True( (x = x) )
+        Assert.False( y < x )
+        Assert.False( x > y )
+        Assert.False( (x = y) )
 
-    [<Test>]
+    [<Fact>]
     member this.ComparisonsForArraysOfNativeInts() =
         this.ComparisonsFor( [|0n|], [|1n|] )
         this.ComparisonsFor( [|0un|], [|1un|] )
 
-    [<Test>]
+    [<Fact>]
     member this.ComparisonsForArraysOfFloatingPoints() =
         this.ComparisonsFor( [|0.0|], [|1.0|] )
         this.ComparisonsFor( [|0.0f|], [|1.0f|] )
-        Assert.IsFalse( [| System.Double.NaN |] = [| System.Double.NaN |] )
-        Assert.IsFalse( [| System.Single.NaN |] = [| System.Single.NaN |] )
-        Assert.IsFalse( [| System.Double.NaN |] < [| System.Double.NaN |] )
-        Assert.IsFalse( [| System.Single.NaN |] < [| System.Single.NaN |] )
+        Assert.False( [| System.Double.NaN |] = [| System.Double.NaN |] )
+        Assert.False( [| System.Single.NaN |] = [| System.Single.NaN |] )
+        Assert.False( [| System.Double.NaN |] < [| System.Double.NaN |] )
+        Assert.False( [| System.Single.NaN |] < [| System.Single.NaN |] )
 
-    [<Test>]
+    [<Fact>]
     member this.ComparisonsForOtherArrays() =
         this.ComparisonsFor( [|0uy|], [|1uy|] )
         this.ComparisonsFor( [|'a'|], [|'b'|] )
         this.ComparisonsFor( [|0UL|], [|1UL|] )
 
-    [<Test>]
+    [<Fact>]
     member this.ComparisonsForStrings() =
         this.ComparisonsFor( "bar", "foo" )
         this.ComparisonsFor( [| "bar" |], [| "foo" |] )
 
-    [<Test>]
+    [<Fact>]
     member this.ComparisonsForMultidimensionalIntArrays() =
         let N = 10
         let M = 100
@@ -618,7 +617,7 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         y.[2,2,2] <- Z
         this.ComparisonsFor( x, y )
 
-    [<Test>]
+    [<Fact>]
     member this.ComparisonsForMultidimensionalInt64Arrays() =
         let N = 10L
         let M = 100L
@@ -637,17 +636,17 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         y.[2,2,2] <- Z
         this.ComparisonsFor( x, y )
     
-    [<Test>]
+    [<Fact>]
     member this.MonsterTuple() =
         let mt = 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         let mt2 = 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         Assert.AreEqual(mt,mt2)
-    
-[<TestFixture>]
+
+
 type UnitType() =
 
     // interface
-    [<Test>]
+    [<Fact>]
     member this.IComparable() =        
         let u:Unit = ()
         // value type
@@ -655,42 +654,41 @@ type UnitType() =
         CheckThrowsNullRefException(fun() ->ic.CompareTo(3) |>ignore) 
         
     // Base class methods
-    [<Test>]
+    [<Fact>]
     member this.ObjectGetHashCode() =
         let u:Unit = ()
         CheckThrowsNullRefException(fun() ->u.GetHashCode() |>ignore) 
         
-    [<Test>]
+    [<Fact>]
     member this.ObjectEquals() =
         let u:Unit = ()
         CheckThrowsNullRefException(fun() ->u.Equals(null) |>ignore) 
 
 #if NETSTANDARD1_6 || NETCOREAPP
 // TODO named #define ?
-#else     
-[<TestFixture>]
+#else
 type SourceConstructFlagsEnum() =
 
-    [<Test>]
+    [<Fact>]
     member this.Getvalue() =
         let names = [| "None";"SumType";"RecordType";"ObjectType";"Field";
                        "Exception";"Closure";"Module";"UnionCase";"Value";
                        "KindMask";"NonPublicRepresentation" |]
         Assert.AreEqual(names, SourceConstructFlags.GetNames(typeof<SourceConstructFlags>))
-        
-[<TestFixture>]
+
+
 type CompilationRepresentationFlagsEnum() =
 
-    [<Test>]
+    [<Fact>]
     member this.Getvalue() =
         let names = [| "None";"Static";"Instance";"ModuleSuffix";"UseNullAsTrueValue";"Event" |]
         Assert.AreEqual(names, SourceConstructFlags.GetNames(typeof<CompilationRepresentationFlags>))
 #endif
 
-[<TestFixture>]
+
 type MiscStuff() =
 
-    [<Test>]
+    [<Fact>]
     member this.ListToString() =
         Assert.AreEqual("[]", [].ToString())
         Assert.AreEqual("[1]", [1].ToString())
@@ -698,44 +696,42 @@ type MiscStuff() =
         Assert.AreEqual("[1; 2; 3]", [1;2;3].ToString())
         Assert.AreEqual("[1; 2; 3; ... ]", [1;2;3;4].ToString())
 
-    [<Test>]
+    [<Fact>]
     member this.Refs() =
         let x = ref 0
         incr x
         incr x
         decr x
-        Assert.IsTrue( 1 = !x )
-        
-        
+        Assert.True( 1 = !x )
 
-[<TestFixture>]
+
 type UnboxAndOptionStuff() =
-    [<Test>]
+    [<Fact>]
     member this.TryUnbox() =
-        Assert.IsTrue( tryUnbox (box ([] : int list)) = Some ([]: int list))
-        Assert.IsTrue( tryUnbox (box ([1] : int list)) = Some ([1]: int list))
-        Assert.IsTrue( tryUnbox (box ([] : string list)) = (None : int list option)) // Option uses 'null' as representation
-        Assert.IsTrue( tryUnbox<int list> (box ([] : string list)) = None)
-        Assert.IsTrue( tryUnbox (box (None : int option)) = Some (None: int option))
-        Assert.IsTrue( tryUnbox (box (None : string option)) = Some (None: string option))
-        Assert.IsTrue( tryUnbox (box (None : string option)) = Some (None: int option)) // Option uses 'null' as representation
-        Assert.IsTrue( tryUnbox (box "") = Some "")
-        Assert.IsTrue( tryUnbox<int option> (box null) = Some None) // Option uses 'null' as representation
-        Assert.IsTrue( tryUnbox<int list> (box null) = None)
-        Assert.IsTrue( tryUnbox<int> (box null) = None)
-        Assert.IsTrue( tryUnbox<int> (box "1") = None)
-        Assert.IsTrue( tryUnbox<int> (box 1) = Some 1)
-        Assert.IsTrue( tryUnbox<string> (box "") = Some "")
-        Assert.IsTrue( tryUnbox<string> (box 1) = None)
+        Assert.True( tryUnbox (box ([] : int list)) = Some ([]: int list))
+        Assert.True( tryUnbox (box ([1] : int list)) = Some ([1]: int list))
+        Assert.True( tryUnbox (box ([] : string list)) = (None : int list option)) // Option uses 'null' as representation
+        Assert.True( tryUnbox<int list> (box ([] : string list)) = None)
+        Assert.True( tryUnbox (box (None : int option)) = Some (None: int option))
+        Assert.True( tryUnbox (box (None : string option)) = Some (None: string option))
+        Assert.True( tryUnbox (box (None : string option)) = Some (None: int option)) // Option uses 'null' as representation
+        Assert.True( tryUnbox (box "") = Some "")
+        Assert.True( tryUnbox<int option> (box null) = Some None) // Option uses 'null' as representation
+        Assert.True( tryUnbox<int list> (box null) = None)
+        Assert.True( tryUnbox<int> (box null) = None)
+        Assert.True( tryUnbox<int> (box "1") = None)
+        Assert.True( tryUnbox<int> (box 1) = Some 1)
+        Assert.True( tryUnbox<string> (box "") = Some "")
+        Assert.True( tryUnbox<string> (box 1) = None)
 
-    [<Test>]
+    [<Fact>]
     member this.IsNull() =
-        Assert.IsTrue( isNull (null : string))
-        Assert.IsTrue( isNull (null : string[]))
-        Assert.IsTrue( isNull (null : int[]))
-        Assert.IsTrue( not (isNull [| |]))
-        Assert.IsTrue( not (isNull ""))
-        Assert.IsTrue( not (isNull "1"))
+        Assert.True( isNull (null : string))
+        Assert.True( isNull (null : string[]))
+        Assert.True( isNull (null : int[]))
+        Assert.True( not (isNull [| |]))
+        Assert.True( not (isNull ""))
+        Assert.True( not (isNull "1"))
 
 
 module internal RangeTestsHelpers =
@@ -855,23 +851,23 @@ module internal RangeTestsHelpers =
         Assert.AreEqual ([min0 .. max2 .. max0], [min0; min0 + max2])
         Assert.AreEqual ([min0 .. max3 .. max0], [min0; min0 + max3])
 
-[<TestFixture>]
-type RangeTests() =
-    [<Test>] member __.``Range.SByte``  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
-    [<Test>] member __.``Range.Byte``   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
-    [<Test>] member __.``Range.Int16``  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
-    [<Test>] member __.``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
-    [<Test>] member __.``Range.Int32``  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
-    [<Test>] member __.``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
-    [<Test>] member __.``Range.Int64``  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
-    [<Test>] member __.``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
 
-    [<Test>]
+type RangeTests() =
+    [<Fact>] member __.``Range.SByte``  () = RangeTestsHelpers.signed   System.SByte.MinValue  System.SByte.MaxValue
+    [<Fact>] member __.``Range.Byte``   () = RangeTestsHelpers.unsigned System.Byte.MinValue   System.Byte.MaxValue
+    [<Fact>] member __.``Range.Int16``  () = RangeTestsHelpers.signed   System.Int16.MinValue  System.Int16.MaxValue
+    [<Fact>] member __.``Range.UInt16`` () = RangeTestsHelpers.unsigned System.UInt16.MinValue System.UInt16.MaxValue
+    [<Fact>] member __.``Range.Int32``  () = RangeTestsHelpers.signed   System.Int32.MinValue  System.Int32.MaxValue
+    [<Fact>] member __.``Range.UInt32`` () = RangeTestsHelpers.unsigned System.UInt32.MinValue System.UInt32.MaxValue
+    [<Fact>] member __.``Range.Int64``  () = RangeTestsHelpers.signed   System.Int64.MinValue  System.Int64.MaxValue
+    [<Fact>] member __.``Range.UInt64`` () = RangeTestsHelpers.unsigned System.UInt64.MinValue System.UInt64.MaxValue
+
+    [<Fact>]
     member __.``Range.IntPtr`` () =
         if System.IntPtr.Size >= 4 then RangeTestsHelpers.signed (System.IntPtr System.Int32.MinValue) (System.IntPtr System.Int32.MaxValue)
         if System.IntPtr.Size >= 8 then RangeTestsHelpers.signed (System.IntPtr System.Int64.MinValue) (System.IntPtr System.Int64.MaxValue)
         
-    [<Test>]
+    [<Fact>]
     member __.``Range.UIntPtr`` () =
         if System.UIntPtr.Size >= 4 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt32.MinValue) (System.UIntPtr System.UInt32.MaxValue)
         if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
@@ -880,10 +876,9 @@ type RangeTests() =
 open NonStructuralComparison
 
 
-[<TestFixture>]
 type NonStructuralComparisonTests() =
 
-    [<Test>]
+    [<Fact>]
     member __.CompareFloat32() = // https://github.com/Microsoft/visualfsharp/pull/4493
 
         let x = 32 |> float32

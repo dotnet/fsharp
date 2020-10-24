@@ -97,13 +97,10 @@ namespace Microsoft.FSharp.Control
                     // CreateDelegate creates a delegate that is fast to invoke.
                     invoker.Invoke(multicast, sender, args) |> ignore
 
-        member x.Publish = 
-            // Note, we implement each interface explicitly: this works around a bug in the CLR 
-            // implementation on CompactFramework 3.7, used on Windows Phone 7
+        member x.Publish =
             { new obj() with
                   member x.ToString() = "<published event>"
-              interface IEvent<'Delegate,'Args> 
-              interface IDelegateEvent<'Delegate> with 
+              interface IEvent<'Delegate,'Args> with 
                 member e.AddHandler(d) =
                     multicast <- System.Delegate.Combine(multicast, d) :?> 'Delegate 
                 member e.RemoveHandler(d) = 
@@ -126,13 +123,10 @@ namespace Microsoft.FSharp.Control
             match x.multicast with 
             | null -> ()
             | d -> d.Invoke(null,arg) |> ignore
-        member x.Publish = 
-            // Note, we implement each interface explicitly: this works around a bug in the CLR 
-            // implementation on CompactFramework 3.7, used on Windows Phone 7
+        member x.Publish =
             { new obj() with
                   member x.ToString() = "<published event>"
-              interface IEvent<'T> 
-              interface IDelegateEvent<Handler<'T>> with 
+              interface IEvent<'T> with 
                 member e.AddHandler(d) =
                     x.multicast <- (System.Delegate.Combine(x.multicast, d) :?> Handler<'T>)
                 member e.RemoveHandler(d) = 

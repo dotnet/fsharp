@@ -13,6 +13,7 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
@@ -683,23 +684,62 @@ let CheckNoReraise cenv freesOpt (body: Expr) =
 /// Check if a function is a quotation splice operator
 let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref 
 
-/// Check conditions associated with implementing multiple instantiations of a generic interface
-let CheckMultipleInterfaceInstantiations cenv interfaces m = 
+
+/// Examples:
+/// I<int> & I<int> => ExactlyEqual.
+/// I<int> & I<string> => NotEqual.
+/// I<int> & I<'T> => FeasiblyEqual.
+/// with '[<Measure>] type kg': I< int<kg> > & I<int> => FeasiblyEqual.
+/// with 'type MyInt = int': I<MyInt> & I<int> => FeasiblyEqual.
+///
+/// The differences could also be nested, example:
+/// I<List<int*string>> vs I<List<int*'T>> => FeasiblyEqual.
+type TTypeEquality =
+    | ExactlyEqual
+    | FeasiblyEqual
+    | NotEqual
+
+let compareTypesWithRegardToTypeVariablesAndMeasures g amap m typ1 typ2 =
+    
+    if (typeEquiv g typ1 typ2) then
+        ExactlyEqual
+    else
+        if (typeEquiv g typ1 typ2 || TypesFeasiblyEquivStripMeasures g amap m typ1 typ2) then 
+            FeasiblyEqual
+        else
+            NotEqual
+
+let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
     let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
-    let table = interfaces |> MultiMap.initBy keyf
-    let firstInterfaceWithMultipleGenericInstantiations = 
-        interfaces |> List.tryPick (fun typ1 -> 
-            table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
-                   if // same nominal type
-                       tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
-                       // different instantiations
-                       not (typeEquivAux EraseNone cenv.g typ1 typ2) 
-                    then Some (typ1, typ2)
-                    else None))
-    match firstInterfaceWithMultipleGenericInstantiations with 
+    let groups = interfaces |> List.groupBy keyf
+    let errors = seq {
+        for (_, items) in groups do
+            for i1 in 0 .. items.Length - 1 do
+                for i2 in i1 + 1 .. items.Length - 1 do
+                    let typ1 = items.[i1]
+                    let typ2 = items.[i2]
+                    let tcRef1 = tcrefOfAppTy cenv.g typ1
+                    match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
+                    | ExactlyEqual -> ()
+                    | FeasiblyEqual ->
+                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
+                        | None -> ()
+                        | Some e -> yield e
+                        let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
+                        let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+                        if isObjectExpression then
+                            yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                        else
+                            let typStr = NicePrint.minimalStringOfType cenv.denv typ
+                            yield (Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m))
+                    | NotEqual ->
+                        match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
+                        | None -> ()
+                        | Some e -> yield e
+    }
+    match Seq.tryHead errors with
     | None -> ()
-    | Some (typ1, typ2) -> 
-         errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)), m))
+    | Some e -> errorR(e)
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
@@ -804,7 +844,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv: cenv) expr =
             | OptionalCoerce(Expr.Val (failwithfFunc, _, funcRange)) when valRefEq g failwithfFunc g.failwithf_vref  ->
                 match argsl with
                 | Expr.App (Expr.Val (newFormat, _, _), _, [_; typB; typC; _; _], [Expr.Const (Const.String formatString, formatRange, _)], _) :: xs when valRefEq g newFormat g.new_format_vref ->
-                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g formatString typB typC with
+                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g false formatString typB typC with
                     | Some n ->
                         let expected = n + 1
                         let actual = List.length xs + 1
@@ -1008,7 +1048,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                   yield! AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
             |> List.filter (isInterfaceTy g)
 
-        CheckMultipleInterfaceInstantiations cenv interfaces m
+        CheckMultipleInterfaceInstantiations cenv ty interfaces true m
         NoLimit
 
     // Allow base calls to F# methods
@@ -1031,8 +1071,8 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f)
 
     // Allow base calls to IL methods
-    | Expr.Op (TOp.ILCall (virt, _, _, _, _, _, _, mref, enclTypeArgs, methTypeArgs, tys), tyargs, (Expr.Val (baseVal, _, _) :: rest), m) 
-          when not virt && baseVal.BaseOrThisInfo = BaseVal ->
+    | Expr.Op (TOp.ILCall (isVirtual, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), tyargs, (Expr.Val (baseVal, _, _) :: rest), m) 
+          when not isVirtual && baseVal.BaseOrThisInfo = BaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
         match tryTcrefOfAppTy g baseVal.Type with
@@ -1042,16 +1082,16 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                 // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare
                 // type equality, and it would be much better to remove any F# dependency on that implementation of IL type
                 // equality. It would be better to make this check in tc.fs when we have the Abstract IL metadata for the method to hand.
-                let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
+                let mdef = resolveILMethodRef tcref.ILTyconRawMetadata ilMethRef
                 if mdef.IsAbstract then
                     errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(mdef.Name), m))
             with _ -> () // defensive coding
         | _ -> ()
 
         CheckTypeInstNoByrefs cenv env m tyargs
-        CheckTypeInstNoByrefs cenv env m enclTypeArgs
-        CheckTypeInstNoByrefs cenv env m methTypeArgs
-        CheckTypeInstNoByrefs cenv env m tys
+        CheckTypeInstNoByrefs cenv env m enclTypeInst
+        CheckTypeInstNoByrefs cenv env m methInst
+        CheckTypeInstNoByrefs cenv env m retTypes
         CheckValRef cenv env baseVal m PermitByRefExpr.No
         CheckExprsPermitByRefLike cenv env rest
 
@@ -1187,7 +1227,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env [e1;e2;e3]
 
-    | TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
         ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
@@ -1195,21 +1235,21 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         let limit2 = CheckExpr cenv env e3 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         CombineTwoLimits limit1 limit2
         
-    | TOp.ILCall (_, _, _, _, _, _, _, methRef, enclTypeArgs, methTypeArgs, tys), _, _ ->
+    | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), _, _ ->
         CheckTypeInstNoByrefs cenv env m tyargs
-        CheckTypeInstNoByrefs cenv env m enclTypeArgs
-        CheckTypeInstNoByrefs cenv env m methTypeArgs
-        CheckTypeInstNoInnerByrefs cenv env m tys // permit byref returns
+        CheckTypeInstNoByrefs cenv env m enclTypeInst
+        CheckTypeInstNoByrefs cenv env m methInst
+        CheckTypeInstNoInnerByrefs cenv env m retTypes // permit byref returns
 
         let hasReceiver = 
-            (methRef.CallingConv.IsInstance || methRef.CallingConv.IsInstanceExplicit) &&
+            (ilMethRef.CallingConv.IsInstance || ilMethRef.CallingConv.IsInstanceExplicit) &&
             not args.IsEmpty
 
         let returnTy = tyOfExpr g expr
 
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
-        match tys with
+        match retTypes with
         | [ty] when context.PermitOnlyReturnable && isByrefLikeTy g m ty -> 
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts context
@@ -1375,8 +1415,8 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         // Recursively check in same context, e.g. if at PermitOnlyReturnable the obj arg must also be returnable
         CheckExpr cenv env obj context
 
-    | TOp.ILAsm (instrs, tys), _, _  ->
-        CheckTypeInstNoInnerByrefs cenv env m tys
+    | TOp.ILAsm (instrs, retTypes), _, _  ->
+        CheckTypeInstNoInnerByrefs cenv env m retTypes
         CheckTypeInstNoByrefs cenv env m tyargs
         match instrs, args with
         // Write a .NET instance field
@@ -2186,7 +2226,6 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 for (argty, _) in argtys do 
                      CheckTypeNoInnerByrefs cenv env vref.Range argty
             CheckTypeNoInnerByrefs cenv env vref.Range rty
-                
         | None -> ()
 
     // Supported interface may not have byrefs
@@ -2234,11 +2273,11 @@ let CheckEntityDefn cenv env (tycon: Entity) =
  
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 
-            let immediateInterfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m ty
-            let interfaces = 
-              [ for ty in immediateInterfaces do
-                    yield! AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
-            CheckMultipleInterfaceInstantiations cenv interfaces m
+            let interfaces =
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g cenv.amap m ty
+                |> List.collect (AllSuperTypesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes)
+                |> List.filter (isInterfaceTy g)
+            CheckMultipleInterfaceInstantiations cenv ty interfaces false m
         
         // Check fields. We check these late because we have to have first checked that the structs are
         // free of cycles

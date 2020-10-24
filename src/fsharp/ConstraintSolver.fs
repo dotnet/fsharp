@@ -1863,12 +1863,12 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         // This is important for calls to operators on generated provided types. There is an (unchecked) condition
         // that generative providers do not re=order arguments or insert any more information into operator calls.
         match callMethInfoOpt, callExpr with 
-        | Some methInfo, Expr.Op (TOp.ILCall (_useCallVirt, _isProtected, _, _isNewObj, NormalValUse, _isProp, _noTailCall, ilMethRef, _actualTypeInst, actualMethInst, _ilReturnTys), [], args, m)
-             when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val(v, _, _) -> valEq v.Deref b | _ -> false) ->
+        | Some methInfo, Expr.Op (TOp.ILCall (_, _, _, _, NormalValUse, _, _, ilMethRef, _, methInst, _), [], args, m)
+             when (args, (objArgVars@allArgVars)) ||> List.lengthsEqAndForall2 (fun a b -> match a with Expr.Val (v, _, _) -> valEq v.Deref b | _ -> false) ->
                 let declaringType = Import.ImportProvidedType amap m (methInfo.PApply((fun x -> nonNull<ProvidedType> x.DeclaringType), m))
                 if isILAppTy g declaringType then 
                     let extOpt = None  // EXTENSION METHODS FROM TYPE PROVIDERS: for extension methods coming from the type providers we would have something here.
-                    ILMethSln(declaringType, extOpt, ilMethRef, actualMethInst)
+                    ILMethSln(declaringType, extOpt, ilMethRef, methInst)
                 else
                     closedExprSln
         | _ -> 
@@ -2436,6 +2436,8 @@ and SolveTypeIsNonNullableValueType (csenv: ConstraintSolverEnv) ndeep m2 trace 
             if isStructTy g underlyingTy then
                 if isNullableTy g underlyingTy then
                     return! ErrorD (ConstraintSolverError(FSComp.SR.csTypeParameterCannotBeNullable(), m, m))
+                else
+                    return! CompleteD
             else
                 return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructType(NicePrint.minimalStringOfType denv ty), m, m2))
     }            
@@ -2484,11 +2486,20 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
     let denv = csenv.DisplayEnv
     let ty = stripTyEqnsAndMeasureEqns g origTy
     match tryDestTyparTy g ty with
-    | ValueSome destTypar ->
-        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.RequiresDefaultConstructor m)
+    | ValueSome tp ->
+        AddConstraint csenv ndeep m2 trace tp (TyparConstraint.RequiresDefaultConstructor m)
     | _ ->
-        if isStructTy g ty && TypeHasDefaultValueOld g m ty then 
-            CompleteD
+        if isStructTy g ty && (isStructTupleTy g ty || isStructAnonRecdTy g ty || TypeHasDefaultValueOld g m ty) then
+            if isStructTupleTy g ty then 
+                destStructTupleTy g ty |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
+            elif isStructAnonRecdTy g ty then 
+                match tryDestAnonRecdTy g ty with
+                | ValueNone -> CompleteD
+                | ValueSome (_, ptys) -> ptys |> IterateD (SolveTypeRequiresDefaultValue csenv ndeep m trace)
+            elif TypeHasDefaultValueOld g m ty then
+                CompleteD
+            else
+                failwith "unreachable" // ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
                |> List.exists (fun x -> x.IsNullary && IsMethInfoAccessible amap m AccessibleFromEverywhere x)
@@ -2507,6 +2518,27 @@ and SolveTypeRequiresDefaultConstructor (csenv: ConstraintSolverEnv) ndeep m2 tr
                     CompleteD
                 | _ -> 
                     ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
+
+// Note, this constraint arises structurally when processing the element types of struct tuples and struct anonymous records.
+//
+// In the case of type variables, it requires that the type variable already have been pre-established to be either a (non-nullable) struct
+// or a reference type.
+and SolveTypeRequiresDefaultValue (csenv: ConstraintSolverEnv) ndeep m2 trace origTy =
+    let g = csenv.g
+    let m = csenv.m
+    let ty = stripTyEqnsAndMeasureEqns g origTy
+    if isTyparTy g ty then
+        if isNonNullableStructTyparTy g ty then
+            SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
+        elif isReferenceTyparTy g ty then
+            SolveTypeSupportsNull csenv ndeep m2 trace ty
+        else
+            ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructOrReferenceConstraint(), m, m2))
+    else
+        if isStructTy g ty then
+             SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
+        else
+             SolveTypeSupportsNull csenv ndeep m2 trace ty
 
 // Parameterized compatibility relation between member signatures.  The real work
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"
@@ -3103,8 +3135,8 @@ and ResolveOverloading
     
         // Static IL interfaces methods are not supported in lower F# versions.
         if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
-            tryLanguageFeatureRuntimeErrorRecover csenv.InfoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-            tryLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+            checkLanguageFeatureRuntimeErrorRecover csenv.InfoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+            checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
         calledMethOpt, 
         trackErrors {

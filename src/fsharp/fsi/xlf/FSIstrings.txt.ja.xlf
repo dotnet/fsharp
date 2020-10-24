@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiIntroPackageSourceUriInfo">
+        <source>Include package source uri when searching for packages</source>
+        <target state="new">Include package source uri when searching for packages</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
         <source>Operation could not be completed due to earlier error</source>
         <target state="translated">以前のエラーが原因で操作を完了できませんでした</target>
@@ -120,11 +125,6 @@
       <trans-unit id="fsiDirectoryDoesNotExist">
         <source>Directory '{0}' doesn't exist</source>
         <target state="translated">ディレクトリ "{0}" は存在しません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fsiInvalidDirective">
-        <source>Invalid directive '#{0} {1}'</source>
-        <target state="translated">無効なディレクティブ '#{0} {1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLineTooLong">

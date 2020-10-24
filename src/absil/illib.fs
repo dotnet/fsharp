@@ -422,6 +422,17 @@ module List =
 
     let mapiFoldSquared f z xss = mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i, j, x)))
 
+    let duplicates (xs: 'T list) =
+        xs
+        |> List.groupBy id
+        |> List.filter (fun (_, elems) -> Seq.length elems > 1) 
+        |> List.map fst 
+
+    let internal allEqual (xs: 'T list) =
+        match xs with 
+        | [] -> true
+        | h::t -> t |> List.forall (fun h2 -> h = h2)
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.

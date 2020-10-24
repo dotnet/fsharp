@@ -49,6 +49,13 @@ type public Fsc () as this =
     let mutable sources : ITaskItem[] = [||]
     let mutable tailcalls : bool = true
     let mutable toolExe : string = "fsc.exe"
+    let defaultToolPath =
+        let locationOfThisDll =
+            try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
+            with _ -> None
+        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
+        | Some s -> s
+        | None -> ""
     let mutable treatWarningsAsErrors : bool = false
     let mutable useStandardResourceNames : bool = false
     let mutable vserrors : bool = false
@@ -528,11 +535,6 @@ type public Fsc () as this =
     member fsc.TreatWarningsAsErrors
         with get() = treatWarningsAsErrors
         and set(p) = treatWarningsAsErrors <- p
-        
-    // For targeting other folders for "fsc.exe" (or ToolExe if different)
-    member fsc.ToolPath
-        with get() = toolPath
-        and set(s) = toolPath <- s
 
     // When set to true, generate resource names in the same way as C# with root namespace and folder names
     member fsc.UseStandardResourceNames
@@ -593,8 +595,9 @@ type public Fsc () as this =
     override fsc.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
     override fsc.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
     override fsc.GenerateFullPathToTool() =
-        if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
-        System.IO.Path.Combine(toolPath, fsc.ToolExe)
+        if defaultToolPath = "" then
+            raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
+        System.IO.Path.Combine(defaultToolPath, fsc.ToolExe)
     override fsc.LogToolCommand (message:string) =
         fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |>ignore
 
@@ -636,8 +639,8 @@ type public Fsc () as this =
                     invokeCompiler baseCallDelegate
                 with
                 | e ->
-                        Debug.Assert(false, "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
-                        reraise()
+                    Debug.Fail("HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. " + (e.ToString()))
+                    reraise()
 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()

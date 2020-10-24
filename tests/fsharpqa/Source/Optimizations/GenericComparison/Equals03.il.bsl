@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +17,16 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+<<<<<<< HEAD
   .ver 4:7:0:0
+=======
+  .ver 5:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly Equals03
 {
@@ -29,24 +42,36 @@
 }
 .mresource public FSharpSignatureData.Equals03
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000230
 }
 .mresource public FSharpSignatureDataB.Equals03
 {
   // Offset: 0x00000238 Length: 0x00000003
+=======
+  // Offset: 0x00000000 Length: 0x0000022E
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .mresource public FSharpOptimizationData.Equals03
 {
-  // Offset: 0x00000240 Length: 0x000000B6
+  // Offset: 0x00000238 Length: 0x000000B6
 }
 .module Equals03.dll
+<<<<<<< HEAD
 // MVID: {5E1730AF-0759-3313-A745-0383AF30175E}
+=======
+// MVID: {5F1FBE49-0759-3313-A745-038349BE1F5F}
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x057B0000
+=======
+// Image base: 0x071F0000
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -66,7 +91,11 @@
       .locals init ([0] bool x,
                [1] int32 i)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
       .line 5,5 : 8,29 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals03.fsx'
+=======
+      .line 5,5 : 8,29 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals03.fsx'
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
       .line 8,8 : 8,32 ''
@@ -77,8 +106,8 @@
       .line 9,9 : 12,26 ''
       IL_0006:  ldstr      "5"
       IL_000b:  ldstr      "5"
-      IL_0010:  call       bool [mscorlib]System.String::Equals(string,
-                                                                string)
+      IL_0010:  call       bool [netstandard]System.String::Equals(string,
+                                                                   string)
       IL_0015:  brfalse.s  IL_002e
 
       .line 16707566,16707566 : 0,0 ''

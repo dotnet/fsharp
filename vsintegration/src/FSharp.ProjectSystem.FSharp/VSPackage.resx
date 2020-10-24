@@ -464,10 +464,10 @@
     <value>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</value>
   </data>
   <data name="ProductDetails" xml:space="preserve">
-    <value>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</value>
+    <value>Microsoft Visual F# Tools</value>
   </data>
   <data name="9002" xml:space="preserve">
-    <value>Microsoft Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</value>
+    <value>Microsoft Visual F# Tools</value>
   </data>
   <data name="ProductID" xml:space="preserve">
     <value>1.0</value>
@@ -476,7 +476,7 @@
     <value>Microsoft Visual F# Tools</value>
   </data>
   <data name="9001" xml:space="preserve">
-    <value>Visual F# Tools {{FSProductVersion}} for F# {{FSLanguageVersion}}</value>
+    <value>Visual F# Tools</value>
   </data>
   <data name="9027" xml:space="preserve">
     <value>F# Interactive</value>

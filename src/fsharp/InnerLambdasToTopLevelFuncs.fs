@@ -897,7 +897,7 @@ module Pass4_RewriteAssembly =
     ///
     /// Top-level status ends when stepping inside a lambda, where a lambda is:
     ///   Expr.TyLambda, Expr.Lambda, Expr.Obj (and tmethods).
-    ///   [... also, try_catch handlers, and switch targets...]
+    ///   [... also, try_with handlers, and switch targets...]
     ///
     /// Top* repr bindings already at top-level do not need moving...
     ///   [and should not be, since they may lift over unmoved defns on which they depend].

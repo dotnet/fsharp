@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +17,16 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+<<<<<<< HEAD
   .ver 4:7:0:0
+=======
+  .ver 5:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly NoIEnumerable02
 {
@@ -29,6 +42,7 @@
 }
 .mresource public FSharpSignatureData.NoIEnumerable02
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x000001CD
 }
 .mresource public FSharpSignatureDataB.NoIEnumerable02
@@ -41,12 +55,26 @@
 }
 .module NoIEnumerable02.dll
 // MVID: {5E1730A7-5066-4012-A745-0383A730175E}
+=======
+  // Offset: 0x00000000 Length: 0x000001CB
+}
+.mresource public FSharpOptimizationData.NoIEnumerable02
+{
+  // Offset: 0x000001D0 Length: 0x0000006C
+}
+.module NoIEnumerable02.dll
+// MVID: {5F1FBE49-5066-4012-A745-038349BE1F5F}
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x06710000
+=======
+// Image base: 0x07280000
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +91,11 @@
              [1] int32 i,
              [2] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
     .line 7,7 : 4,24 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\NoIEnumerable02.fsx'
+=======
+    .line 7,7 : 4,24 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\NoIEnumerable02.fsx'
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
     IL_0000:  ldc.i4.s   100
     IL_0002:  stloc.1
     IL_0003:  ldarg.0
@@ -76,7 +108,7 @@
     IL_0009:  ldstr      "aaa"
     IL_000e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_0013:  stloc.2
-    IL_0014:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_0014:  call       class [netstandard]System.IO.TextWriter [netstandard]System.Console::get_Out()
     IL_0019:  ldloc.2
     IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

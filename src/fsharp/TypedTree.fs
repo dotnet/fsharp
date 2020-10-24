@@ -745,7 +745,9 @@ type Entity =
     member x.XmlDoc = 
 #if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id)))
+        | TProvidedTypeExtensionPoint info ->
+            let lines = info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure id))
+            XmlDoc (lines, x.DefinitionRange)
         | _ -> 
 #endif
         match x.entity_opt_data with
@@ -1912,9 +1914,9 @@ type ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, en
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and generic arity. This means that for generic 
     /// types "List`1", the entry (List, 1) will be present.
-    member mtyp.TypesByDemangledNameAndArity m = 
+    member mtyp.TypesByDemangledNameAndArity = 
         cacheOptByref &tyconsByDemangledNameAndArityCache (fun () -> 
-           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDemangledNameAndArity tc.LogicalName (tc.Typars m) tc) |> List.toArray))
+           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc: Tycon) -> Construct.KeyTyconByDecodedName tc.LogicalName tc) |> List.toArray))
 
     /// Get a table of types defined within this module, namespace or type. The 
     /// table is indexed by both name and, for generic types, also by mangled name.
@@ -2141,7 +2143,7 @@ type Typar =
     member x.SetAttribs attribs = 
         match attribs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_constraints = [] } ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_constraints = [] } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_attribs <- attribs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
@@ -2171,7 +2173,7 @@ type Typar =
     member x.SetConstraints cs =
         match cs, x.typar_opt_data with
         | [], None -> ()
-        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_attribs = [] } ->
+        | [], Some { typar_il_name = None; typar_xmldoc = doc; typar_attribs = [] } when doc.IsEmpty ->
             x.typar_opt_data <- None
         | _, Some optData -> optData.typar_constraints <- cs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
@@ -4436,6 +4438,9 @@ type ValReprInfo =
             | (_ :: _ :: h) :: t -> loop t (acc + h.Length + 2) 
         loop args 0
 
+    member x.ArgNames =
+        Some [ for argtys in x.ArgInfos do for arginfo in argtys do match arginfo.Name with None -> () | Some nm -> nm.idText ]
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
@@ -4689,8 +4694,8 @@ type TOp =
     /// An operation representing a lambda-encoded for loop
     | For of DebugPointAtFor * ForLoopStyle (* count up or down? *)
 
-    /// An operation representing a lambda-encoded try/catch
-    | TryCatch of DebugPointAtTry * DebugPointAtWith
+    /// An operation representing a lambda-encoded try/with
+    | TryWith of DebugPointAtTry * DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
     | TryFinally of DebugPointAtTry * DebugPointAtFinally
@@ -4736,7 +4741,9 @@ type TOp =
     | TupleFieldGet of TupInfo * int 
 
     /// IL assembly code - type list are the types pushed on the stack 
-    | ILAsm of ILInstr list * TTypes 
+    | ILAsm of 
+        instrs: ILInstr list * 
+        retTypes: TTypes 
 
     /// Generate a ldflda on an 'a ref. 
     | RefAddrGet of bool
@@ -4762,16 +4769,22 @@ type TOp =
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 
 
-    /// ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, noTailCall, mref, actualTypeInst, actualMethInst, retTy)
-    ///  
     /// IL method calls.
-    ///     value -- is the object a value type? 
-    ///     isProp -- used for quotation reflection.
-    ///     noTailCall - DllImport? if so don't tailcall 
-    ///     actualTypeInst -- instantiation of the enclosing type
-    ///     actualMethInst -- instantiation of the method
-    ///     retTy -- the types of pushed values, if any 
-    | ILCall of bool * bool * bool * bool * ValUseFlag * bool * bool * ILMethodRef * TypeInst * TypeInst * TTypes   
+    ///     isProperty -- used for quotation reflection, property getters & setters  
+    ///     noTailCall - DllImport? if so don't tailcall  
+    ///     retTypes -- the types of pushed values, if any
+    | ILCall of 
+        isVirtual: bool * 
+        isProtected: bool * 
+        isStruct: bool * 
+        isCtor: bool * 
+        valUseFlag: ValUseFlag * 
+        isProperty: bool * 
+        noTailCall: bool * 
+        ilMethRef: ILMethodRef * 
+        enclTypeInst: TypeInst * 
+        methInst: TypeInst * 
+        retTypes: TTypes   
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4788,7 +4801,7 @@ type TOp =
         | UInt16s _ -> "UInt16s(..)"
         | While _ -> "While"
         | For _ -> "For"
-        | TryCatch _ -> "TryCatch"
+        | TryWith _ -> "TryWith"
         | TryFinally _ -> "TryFinally"
         | Recd (_, tcref) -> "Recd(" + tcref.LogicalName + ")"
         | ValFieldSet rfref -> "ValFieldSet(" + rfref.FieldName + ")"
@@ -4811,7 +4824,7 @@ type TOp =
         | Label n -> "Label(" + string n + ")"
         | TraitCall info -> "TraitCall(" + info.MemberName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
-        | ILCall (_,_,_,_,_,_,_,m,_,_,_) -> "ILCall(" + m.ToString() + ",..)"
+        | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
 
 /// Represents the kind of record construction operation.
 type RecordConstructionInfo = 
@@ -5043,8 +5056,19 @@ type TypedImplFile =
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+type TypedImplFileAfterOptimization = 
+    { ImplFile: TypedImplFile 
+      OptimizeDuringCodeGen: (bool -> Expr -> Expr) }
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    override x.ToString() = "TypedImplFileAfterOptimization(...)"
+
+/// Represents a complete typechecked assembly, made up of multiple implementation files.
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TypedAssemblyAfterOptimization = 
-    | TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
+    | TypedAssemblyAfterOptimization of TypedImplFileAfterOptimization list
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5378,9 +5402,9 @@ type Construct() =
 
     static let taccessPublic = TAccess [] 
     
-    /// Key a Tycon or TyconRef by demangled name and arity
-    static member KeyTyconByDemangledNameAndArity<'T> (nm: string) (typars: Typar list) (x: 'T) : KeyValuePair<NameArityPair, 'T> = 
-        KeyValuePair(NameArityPair(DemangleGenericTypeName nm, typars.Length), x)
+    /// Key a Tycon or TyconRef by decoded name
+    static member KeyTyconByDecodedName<'T> (nm: string) (x: 'T) : KeyValuePair<NameArityPair, 'T> = 
+        KeyValuePair(DecodeGenericTypeName nm, x)
 
     /// Key a Tycon or TyconRef by both mangled and demangled name.
     /// Generic types can be accessed either by 'List' or 'List`1'.
@@ -5509,7 +5533,7 @@ type Construct() =
             entity_il_repr_cache = newCache()
             entity_opt_data =
                 match xml, access with
-                | XmlDoc [||], TAccess [] -> None
+                | doc, TAccess [] when doc.IsEmpty -> None
                 | _ -> Some { Entity.NewEmptyEntityOptData() with
                                  entity_xmldoc = xml
                                  entity_tycon_repr_accessibility = access
@@ -5562,7 +5586,7 @@ type Construct() =
           OtherRangeOpt = None } 
 
     /// Create a new TAST Entity node for an F# exception definition
-    static member NewExn cpath (id: Ident) access repr attribs doc = 
+    static member NewExn cpath (id: Ident) access repr attribs (doc: XmlDoc) = 
         Tycon.New "exnc"
           { entity_stamp=newStamp()
             entity_attribs=attribs
@@ -5578,7 +5602,7 @@ type Construct() =
             entity_il_repr_cache= newCache()
             entity_opt_data =
                 match doc, access, repr with
-                | XmlDoc [||], TAccess [], TExnNone -> None
+                | doc, TAccess [], TExnNone when doc.IsEmpty -> None
                 | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = doc; entity_accessibility = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
 
     /// Create a new TAST RecdField node for an F# class, struct or record field
@@ -5600,7 +5624,7 @@ type Construct() =
 
     
     /// Create a new type definition node
-    static member NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
+    static member NewTycon (cpath, nm, m, access, reprAccess, kind, typars, doc: XmlDoc, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =
         let stamp = newStamp() 
         Tycon.New "tycon"
           { entity_stamp=stamp
@@ -5616,9 +5640,9 @@ type Construct() =
             entity_cpath = cpath
             entity_il_repr_cache = newCache()
             entity_opt_data =
-                match kind, docOption, reprAccess, access with
-                | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
-                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessibility=access } } 
+                match kind, doc, reprAccess, access with
+                | TyparKind.Type, doc, TAccess [], TAccess [] when doc.IsEmpty -> None
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_kind = kind; entity_xmldoc = doc; entity_tycon_repr_accessibility = reprAccess; entity_accessibility=access } } 
 
     /// Create a new type definition node for a .NET type definition
     static member NewILTycon nlpath (nm, m) tps (scoref: ILScopeRef, enc, tdef: ILTypeDef) mtyp =
@@ -5631,7 +5655,7 @@ type Construct() =
     /// Create a new Val node
     static member NewVal 
            (logicalName: string, m: range, compiledName, ty, isMutable, isCompGen, arity, access,
-            recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc, isModuleOrMemberBinding,
+            recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc: XmlDoc, isModuleOrMemberBinding,
             isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal,
             konst, actualParent) : Val =
 
@@ -5644,7 +5668,7 @@ type Construct() =
             val_type = ty
             val_opt_data =
                 match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
-                | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
+                | None, None, None, TAccess [], doc, None, ParentNone, [] when doc.IsEmpty -> None
                 | _ -> 
                     Some { Val.NewEmptyValOptData() with
                              val_compiled_name = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)

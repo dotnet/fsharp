@@ -5,3 +5,4 @@ latest
 latestmajor
 4.6
 4.7 (Default)
+5.0

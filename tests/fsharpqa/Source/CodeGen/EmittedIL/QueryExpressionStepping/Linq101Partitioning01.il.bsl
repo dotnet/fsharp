@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,11 +17,20 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+<<<<<<< HEAD
   .ver 4:7:0:0
+=======
+  .ver 5:0:0:0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly extern Utils
 {
   .ver 0:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly Linq101Partitioning01
 {
@@ -33,6 +46,7 @@
 }
 .mresource public FSharpSignatureData.Linq101Partitioning01
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x000003D2
 }
 .mresource public FSharpSignatureDataB.Linq101Partitioning01
@@ -45,12 +59,26 @@
 }
 .module Linq101Partitioning01.exe
 // MVID: {5E172EEB-B280-A6A2-A745-0383EB2E175E}
+=======
+  // Offset: 0x00000000 Length: 0x000003D0
+}
+.mresource public FSharpOptimizationData.Linq101Partitioning01
+{
+  // Offset: 0x000003D8 Length: 0x00000138
+}
+.module Linq101Partitioning01.exe
+// MVID: {5F1FA088-B280-A6A2-A745-038388A01F5F}
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x05A80000
+=======
+// Image base: 0x04B00000
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -104,7 +132,11 @@
       .locals init ([0] int32 V_0,
                [1] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
       .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Partitioning01.fs'
+=======
+      .line 100001,100001 : 0,0 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Partitioning01.fs'
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Partitioning01/first3Numbers@12::pc
       IL_0006:  ldc.i4.1
@@ -526,8 +558,8 @@
       IL_000e:  ldloc.0
       IL_000f:  callvirt   instance string [Utils]Utils/Customer::get_Region()
       IL_0014:  ldstr      "WA"
-      IL_0019:  call       bool [mscorlib]System.String::Equals(string,
-                                                                string)
+      IL_0019:  call       bool [netstandard]System.String::Equals(string,
+                                                                   string)
       IL_001e:  ret
     } // end of method 'WAOrders@22-2'::Invoke
 
@@ -1043,8 +1075,8 @@
       IL_000e:  ldloc.0
       IL_000f:  callvirt   instance string [Utils]Utils/Customer::get_Region()
       IL_0014:  ldstr      "WA"
-      IL_0019:  call       bool [mscorlib]System.String::Equals(string,
-                                                                string)
+      IL_0019:  call       bool [netstandard]System.String::Equals(string,
+                                                                   string)
       IL_001e:  ret
     } // end of method 'WAOrders2@38-2'::Invoke
 

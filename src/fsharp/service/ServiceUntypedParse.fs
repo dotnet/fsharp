@@ -14,7 +14,7 @@ open System.Diagnostics
 open System.Text.RegularExpressions
  
 open FSharp.Compiler.AbstractIL.Internal.Library  
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
@@ -83,7 +83,7 @@ type CompletionContext =
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
-    | OpenDeclaration
+    | OpenDeclaration of isOpenType: bool
     /// completing pattern type (e.g. foo (x: |))
     | PatternType
 
@@ -209,6 +209,12 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                   | SynExpr.Paren (e, _, _, _) -> 
                       yield! walkExpr false e
 
+                  | SynExpr.InterpolatedString (parts, _) -> 
+                      yield! walkExprs [ for part in parts do 
+                                            match part with 
+                                            | SynInterpolatedStringPart.String _ -> ()
+                                            | SynInterpolatedStringPart.FillExpr (fillExpr, _) -> yield fillExpr ]
+
                   | SynExpr.YieldOrReturn (_, e, _)
                   | SynExpr.YieldOrReturnFrom (_, e, _)
                   | SynExpr.DoBang  (e, _) ->
@@ -272,7 +278,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
 
-                  | SynExpr.Lambda (_, _, _, e, _) -> 
+                  | SynExpr.Lambda (_, _, _, e, _, _) -> 
                       yield! walkExpr true e 
 
                   | SynExpr.Match (spBind, e, cl, _) ->
@@ -353,7 +359,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                 [ match memb with
                   | SynMemberDefn.LetBindings(binds, _, _, _) -> yield! walkBinds binds
                   | SynMemberDefn.AutoProperty(_attribs, _isStatic, _id, _tyOpt, _propKind, _, _xmlDoc, _access, synExpr, _, _) -> yield! walkExpr true synExpr
-                  | SynMemberDefn.ImplicitCtor(_, _, _, _, m) -> yield! checkRange m
+                  | SynMemberDefn.ImplicitCtor(_, _, _, _, _, m) -> yield! checkRange m
                   | SynMemberDefn.Member(bind, _) -> yield! walkBind bind
                   | SynMemberDefn.Interface(_, Some membs, _) -> for m in membs do yield! walkMember m
                   | SynMemberDefn.Inherit(_, _, m) -> 
@@ -848,7 +854,7 @@ module UntypedParseImpl =
             | SynExpr.ForEach (_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.ArrayOrListOfSeqExpr (_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.CompExpr (_, _, e, _) -> walkExprWithKind parentKind e
-            | SynExpr.Lambda (_, _, _, e, _) -> walkExprWithKind parentKind e
+            | SynExpr.Lambda (_, _, _, e, _, _) -> walkExprWithKind parentKind e
             | SynExpr.MatchLambda (_, _, synMatchClauseList, _, _) -> 
                 List.tryPick walkClause synMatchClauseList
             | SynExpr.Match (_, e, synMatchClauseList, _) -> 
@@ -928,7 +934,7 @@ module UntypedParseImpl =
         and walkMember = function
             | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
             | SynMemberDefn.Member(binding, _) -> walkBinding binding
-            | SynMemberDefn.ImplicitCtor(_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _) -> 
+            | SynMemberDefn.ImplicitCtor(_, Attributes attrs, SynSimplePats.SimplePats(simplePats, _), _, _, _) -> 
                 List.tryPick walkAttribute attrs |> Option.orElse (List.tryPick walkSimplePat simplePats)
             | SynMemberDefn.ImplicitInherit(t, e, _, _) -> walkType t |> Option.orElse (walkExpr e)
             | SynMemberDefn.LetBindings(bindings, _, _, _) -> List.tryPick walkBinding bindings
@@ -1326,7 +1332,7 @@ module UntypedParseImpl =
 
                     member __.VisitModuleDecl(defaultTraverse, decl) =
                         match decl with
-                        | SynModuleDecl.Open(_, m) -> 
+                        | SynModuleDecl.Open(target, m) -> 
                             // in theory, this means we're "in an open"
                             // in practice, because the parse tree/walkers do not handle attributes well yet, need extra check below to ensure not e.g. $here$
                             //     open System
@@ -1334,8 +1340,12 @@ module UntypedParseImpl =
                             //     let f() = ()
                             // inside an attribute on the next item
                             let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
-                            if rangeContainsPos m pos then  
-                                Some CompletionContext.OpenDeclaration
+                            if rangeContainsPos m pos then
+                                let isOpenType =
+                                    match target with
+                                    | SynOpenDeclTarget.Type _ -> true
+                                    | SynOpenDeclTarget.ModuleOrNamespace _ -> false
+                                Some (CompletionContext.OpenDeclaration isOpenType)
                             else
                                 None
                         | _ -> defaultTraverse decl

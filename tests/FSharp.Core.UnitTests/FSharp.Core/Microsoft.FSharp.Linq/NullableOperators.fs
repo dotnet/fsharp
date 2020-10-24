@@ -2,12 +2,12 @@
 
 namespace FSharp.Core.UnitTests.FSharp_Core.Linq.NullableOperators
 
-open NUnit.Framework
+open Xunit
 open Microsoft.FSharp.Linq
 
 [<TestFixture>]
 type NullableOperators() =
-    [<Test>]    
+    [<Fact>]    
     member _.CastingUint () =
         let expected = Nullable(12u)
         let actual = Nullable.uint (Nullable(12))

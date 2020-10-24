@@ -16,9 +16,10 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOps
-open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Layout
@@ -26,9 +27,11 @@ open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
@@ -844,14 +847,14 @@ type internal TypeCheckInfo
                          | _ when IsAttribute infoReader cItem.Item -> true
                          | _ -> false), denv, m)
             
-            | Some(CompletionContext.OpenDeclaration) ->
+            | Some(CompletionContext.OpenDeclaration isOpenType) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                     items 
                     |> List.filter (fun x ->
                         match x.Item with
                         | Item.ModuleOrNamespaces _ -> true
-                        | Item.Types (_, tcrefs) when tcrefs |> List.exists (fun ty -> isAppTy g ty && isStaticClass g (tcrefOfAppTy g ty)) -> true
+                        | Item.Types _ when isOpenType -> true
                         | _ -> false), denv, m)
             
             // Completion at '(x: ...)"
@@ -1051,7 +1054,21 @@ type internal TypeCheckInfo
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
-            | [] -> FSharpStructuredToolTipText.FSharpToolTipText []
+            | [] -> 
+                let matches =
+                    match loadClosure with
+                    | None -> None
+                    | Some(loadClosure) -> 
+                        loadClosure.PackageReferences
+                        |> Array.tryFind (fun (m, _) -> Range.rangeContainsPos m pos)
+                match matches with 
+                | None -> FSharpStructuredToolTipText.FSharpToolTipText []
+                | Some (_, lines) -> 
+                    let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
+                    FSharpStructuredToolTipText.FSharpToolTipText 
+                       [ for line in lines -> 
+                            let tip = wordL (TaggedTextOps.tagStringLiteral line)
+                            FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
             dataTipOfReferences
@@ -1431,11 +1448,11 @@ module internal ParseAndCheckFile =
     let getLightSyntaxStatus fileName options =
         let lower = String.lowercase fileName
         let lightOnByDefault = List.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
-        let lightSyntaxStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
-        LightSyntaxStatus(lightSyntaxStatus, true)
+        let lightStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
+        LightSyntaxStatus(lightStatus, true)
 
     let createLexerFunction fileName options lexbuf (errHandler: ErrorHandler) =
-        let lightSyntaxStatus = getLightSyntaxStatus fileName options
+        let lightStatus = getLightSyntaxStatus fileName options
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
@@ -1446,10 +1463,10 @@ module internal ParseAndCheckFile =
         
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
-        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
+        let lexargs = mkLexargs(defines, lightStatus, lexResourceManager, [], errHandler.ErrorLogger, PathMap.empty)
         let lexargs = { lexargs with applyLineDirectives = false }
 
-        let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
+        let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
         tokenizer.Lexer
 
     // Public callers are unable to answer LanguageVersion feature support questions.
@@ -1479,8 +1496,13 @@ module internal ParseAndCheckFile =
                 match t1, t2 with
                 | (LPAREN, RPAREN)
                 | (LPAREN, RPAREN_IS_HERE)
-                | (LBRACE, RBRACE)
-                | (LBRACE, RBRACE_IS_HERE)
+                | (LBRACE _, RBRACE _)
+                | (LBRACE_BAR, BAR_RBRACE)
+                | (LBRACE _, RBRACE_IS_HERE)
+                | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_END _)
+                | (INTERP_STRING_BEGIN_PART _, INTERP_STRING_PART _)
+                | (INTERP_STRING_PART _, INTERP_STRING_PART _)
+                | (INTERP_STRING_PART _, INTERP_STRING_END _)
                 | (SIG, END)
                 | (STRUCT, END)
                 | (LBRACK_BAR, BAR_RBRACK)
@@ -1489,13 +1511,49 @@ module internal ParseAndCheckFile =
                 | (BEGIN, END) -> true
                 | (LQUOTE q1, RQUOTE q2) -> q1 = q2
                 | _ -> false
+
             let rec matchBraces stack =
                 match lexfun lexbuf, stack with
-                | tok2, ((tok1, m1) :: stack') when parenTokensBalance tok1 tok2 ->
-                    matchingBraces.Add(m1, lexbuf.LexemeRange)
-                    matchBraces stack'
-                | ((LPAREN | LBRACE | LBRACK | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
+                | tok2, ((tok1, m1) :: stackAfterMatch) when parenTokensBalance tok1 tok2 ->
+                    let m2 = lexbuf.LexemeRange
+
+                    // For INTERP_STRING_PART and INTERP_STRING_END grab the one character
+                    // range that corresponds to the "}" at the start of the token
+                    let m2Start =
+                        match tok2 with 
+                        | INTERP_STRING_PART _
+                        | INTERP_STRING_END _ -> 
+                           Range.mkFileIndexRange m2.FileIndex m2.Start (mkPos m2.Start.Line (m2.Start.Column+1))
+                        | _ -> m2
+
+                    matchingBraces.Add(m1, m2Start)
+
+                    // INTERP_STRING_PART corresponds to both "} ... {" i.e. both the completion
+                    // of a match and the start of a potential new one.
+                    let stackAfterMatch = 
+                        match tok2 with 
+                        | INTERP_STRING_PART _ -> 
+                           let m2End = Range.mkFileIndexRange m2.FileIndex (mkPos m2.End.Line (max (m2.End.Column-1) 0)) m2.End
+                           (tok2, m2End) :: stackAfterMatch
+                        | _ -> stackAfterMatch
+
+                    matchBraces stackAfterMatch
+
+                | ((LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
                      matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+
+                // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
+                //
+                // INTERP_STRING_PART corresponds to "} ... {" in the middle of an interpolated string (in
+                //   this case it msut not have matched something on the stack, e.g. an incomplete '[' in the
+                //   interpolation expression)
+                //
+                // Either way we start a new potential match at the last character
+                | ((INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _) as tok), _ ->
+                     let m = lexbuf.LexemeRange
+                     let m2 = Range.mkFileIndexRange m.FileIndex (mkPos m.End.Line (max (m.End.Column-1) 0)) m.End
+                     matchBraces ((tok, m2) :: stack)
+
                 | (EOF _ | LEX_FAILURE _), _ -> ()
                 | _ -> matchBraces stack
             matchBraces [])
@@ -1512,7 +1570,7 @@ module internal ParseAndCheckFile =
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
-                    CompileOps.IsScript(fileName)
+                    ParseAndCheckInputs.IsScript(fileName)
                 let isExe = options.IsExe
                 try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
                 with e ->
@@ -1582,7 +1640,7 @@ module internal ParseAndCheckFile =
             
         | None -> 
             // For non-scripts, check for disallow #r and #load.
-            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName) |> ignore
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName, tcImports.DependencyProvider) |> ignore
                     
     // Type check a single file against an initial context, gleaning both errors and intellisense information.
     let CheckOneFile
@@ -1915,7 +1973,10 @@ type FSharpCheckFileResults
         scopeOptX 
         |> Option.map (fun scope -> 
             let cenv = scope.SymbolEnv
-            scope.OpenDeclarations |> Array.map (fun x -> FSharpOpenDeclaration(x.LongId, x.Range, (x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))), x.AppliedScope, x.IsOwnNamespace)))
+            scope.OpenDeclarations |> Array.map (fun x -> 
+                let modules = x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))
+                let types = x.Types |> List.map (fun x -> FSharpType(cenv, x))
+                FSharpOpenDeclaration(x.Target, x.Range, modules, types, x.AppliedScope, x.IsOwnNamespace)))
         |> Option.defaultValue [| |]
 
     override __.ToString() = "FSharpCheckFileResults(" + filename + ")"
@@ -2012,7 +2073,7 @@ type FSharpCheckProjectResults
           keepAssemblyContents: bool, 
           errors: FSharpErrorInfo[], 
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
-                   TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef *
+                   TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
                    AccessorDomain * TypedImplFile list option * string[]) option) =
 
     let getDetails() = 
@@ -2066,7 +2127,7 @@ type FSharpCheckProjectResults
         let mimpls =
             match optimizedImpls with
             | TypedAssemblyAfterOptimization files ->
-                files |> List.map fst
+                files |> List.map (fun implFile -> implFile.ImplFile)
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
@@ -2119,8 +2180,8 @@ type FSharpCheckProjectResults
 type FsiInteractiveChecker(legacyReferenceResolver, 
                            reactorOps: IReactorOperations,
                            tcConfig: TcConfig,
-                           tcGlobals,
-                           tcImports,
+                           tcGlobals: TcGlobals,
+                           tcImports: TcImports,
                            tcState) =
 
     let keepAssemblyContents = false
@@ -2141,8 +2202,8 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             let assumeDotNetFramework = tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
 
             let applyCompilerOptions tcConfigB  = 
-                let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
-                CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
+                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
+                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
@@ -2150,7 +2211,9 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
-                    tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
+                    tryGetMetadataSnapshot=(fun _ -> None),
+                    reduceMemoryUsage=reduceMemoryUsage,
+                    dependencyProvider=tcImports.DependencyProvider)
 
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile

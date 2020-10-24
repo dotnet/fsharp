@@ -2,17 +2,43 @@
 
 namespace Microsoft.FSharp.Core
 
-type PrintfFormat<'Printer,'State,'Residue,'Result>(value:string) =
-        member x.Value = value
+open System
+open System.IO
+open System.Text
 
-        override __.ToString() = value
+open System.Collections.Concurrent
+open System.Globalization
+open System.Reflection
+
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.Operators
+open Microsoft.FSharp.Collections
+
+open LanguagePrimitives.IntrinsicOperators
+
+type PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value:string, captures: obj[], captureTys: Type[]) =
+        
+    new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, null, null) 
+
+    member _.Value = value
+
+    member _.Captures = captures
+
+    member _.CaptureTypes = captureTys
+
+    override _.ToString() = value
     
-type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) = 
-    inherit PrintfFormat<'Printer,'State,'Residue,'Result>(value)
+type PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value:string, captures, captureTys: Type[]) = 
 
-type Format<'Printer,'State,'Residue,'Result> = PrintfFormat<'Printer,'State,'Residue,'Result>
-type Format<'Printer,'State,'Residue,'Result,'Tuple> = PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>
+    inherit PrintfFormat<'Printer, 'State, 'Residue, 'Result>(value, captures, captureTys)
 
+    new (value) = new PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>(value, null, null)
+
+type Format<'Printer, 'State, 'Residue, 'Result> = PrintfFormat<'Printer, 'State, 'Residue, 'Result>
+
+type Format<'Printer, 'State, 'Residue, 'Result, 'Tuple> = PrintfFormat<'Printer, 'State, 'Residue, 'Result, 'Tuple>
+
+[<AutoOpen>]
 module internal PrintfImpl =
 
     /// Basic idea of implementation:
@@ -36,18 +62,6 @@ module internal PrintfImpl =
     /// with just one reflection call
     /// 2. we can make combinable parts independent from particular printf implementation. Thus final result can be cached and shared. 
     /// i.e when first call to printf "%s %s" will trigger creation of the specialization. Subsequent calls will pick existing specialization
-    open System
-    open System.IO
-    open System.Text
-
-    open System.Collections.Generic
-    open System.Reflection
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Collections
-    open LanguagePrimitives.IntrinsicOperators
-
-    open System.IO
     
     [<Flags>]
     type FormatFlags = 
@@ -78,677 +92,442 @@ module internal PrintfImpl =
             Precision: int
             Width: int
             Flags: FormatFlags
+            InteropHoleDotNetFormat: string voption
         }
-        member this.IsStarPrecision = this.Precision = StarValue
-        member this.IsPrecisionSpecified = this.Precision <> NotSpecifiedValue
-        member this.IsStarWidth = this.Width = StarValue
-        member this.IsWidthSpecified = this.Width <> NotSpecifiedValue
+        member spec.IsStarPrecision = (spec.Precision = StarValue)
 
-        override this.ToString() = 
+        member spec.IsPrecisionSpecified = (spec.Precision <> NotSpecifiedValue)
+
+        member spec.IsStarWidth = (spec.Width = StarValue)
+
+        member spec.IsWidthSpecified = (spec.Width <> NotSpecifiedValue)
+
+        member spec.ArgCount = 
+            let n = 
+                if spec.TypeChar = 'a' then 2 
+                elif spec.IsStarWidth || spec.IsStarPrecision then
+                    if spec.IsStarWidth = spec.IsStarPrecision then 3 
+                    else 2
+                else 1
+
+            let n = if spec.TypeChar = '%' then n - 1 else n
+                
+            assert (n <> 0)
+
+            n
+
+        override spec.ToString() = 
             let valueOf n = match n with StarValue -> "*" | NotSpecifiedValue -> "-" | n -> n.ToString()
             System.String.Format
                 (
                     "'{0}', Precision={1}, Width={2}, Flags={3}", 
-                    this.TypeChar, 
-                    (valueOf this.Precision),
-                    (valueOf this.Width), 
-                    this.Flags
+                    spec.TypeChar, 
+                    (valueOf spec.Precision),
+                    (valueOf spec.Width), 
+                    spec.Flags
                 )
+
+        member spec.IsDecimalFormat = 
+            spec.TypeChar = 'M'
+
+        member spec.GetPadAndPrefix allowZeroPadding = 
+            let padChar = if allowZeroPadding && isPadWithZeros spec.Flags then '0' else ' ';
+            let prefix = 
+                if isPlusForPositives spec.Flags then "+" 
+                elif isSpaceForPositives spec.Flags then " "
+                else ""
+            padChar, prefix    
+
+        member spec.IsGFormat = 
+            spec.IsDecimalFormat || System.Char.ToLower(spec.TypeChar) = 'g'
+
     
     /// Set of helpers to parse format string
     module private FormatString =
 
-        let intFromString (s: string) pos =
-            let rec go acc i =
-                if Char.IsDigit s.[i] then 
-                    let n = int s.[i] - int '0'
-                    go (acc * 10 + n) (i + 1)
-                else acc, i
-            go 0 pos
+        let intFromString (s: string) (i: byref<int>) =
+            let mutable res = 0
+            while (Char.IsDigit s.[i]) do
+                let n = int s.[i] - int '0'
+                res <- res * 10 + n
+                i <- i + 1
+            res
 
-        let parseFlags (s: string) i = 
-            let rec go flags i = 
+        let parseFlags (s: string) (i: byref<int>) = 
+            let mutable flags = FormatFlags.None
+            let mutable fin = false
+            while not fin do
                 match s.[i] with
-                | '0' -> go (flags ||| FormatFlags.PadWithZeros) (i + 1)
-                | '+' -> go (flags ||| FormatFlags.PlusForPositives) (i + 1)
-                | ' ' -> go (flags ||| FormatFlags.SpaceForPositives) (i + 1)
-                | '-' -> go (flags ||| FormatFlags.LeftJustify) (i + 1)
-                | _ -> flags, i
-            go FormatFlags.None i
+                | '0' -> 
+                    flags <- flags ||| FormatFlags.PadWithZeros
+                    i <- i + 1
+                | '+' -> 
+                    flags <- flags ||| FormatFlags.PlusForPositives
+                    i <- i + 1
+                | ' ' -> 
+                    flags <- flags ||| FormatFlags.SpaceForPositives
+                    i <- i + 1
+                | '-' -> 
+                    flags <- flags ||| FormatFlags.LeftJustify
+                    i <- i + 1
+                | _ ->
+                    fin <- true
+            flags
 
-        let parseWidth (s: string) i = 
-            if s.[i] = '*' then StarValue, (i + 1)
-            elif Char.IsDigit s.[i] then intFromString s i
-            else NotSpecifiedValue, i
+        let parseWidth (s: string) (i: byref<int>) = 
+            if s.[i] = '*' then 
+                i <- i + 1
+                StarValue
+            elif Char.IsDigit s.[i] then
+                intFromString s (&i)
+            else 
+                NotSpecifiedValue
 
-        let parsePrecision (s: string) i = 
+        let parsePrecision (s: string) (i: byref<int>) = 
             if s.[i] = '.' then
-                if s.[i + 1] = '*' then StarValue, i + 2
-                elif Char.IsDigit s.[i + 1] then intFromString s (i + 1)
+                if s.[i + 1] = '*' then 
+                    i <- i + 2
+                    StarValue
+                elif Char.IsDigit s.[i + 1] then
+                    i <- i + 1
+                    intFromString s (&i)
                 else raise (ArgumentException("invalid precision value"))
-            else NotSpecifiedValue, i
+            else 
+                NotSpecifiedValue
         
-        let parseTypeChar (s: string) i = 
-            s.[i], (i + 1)
+        let parseTypeChar (s: string) (i: byref<int>) = 
+            let res = s.[i]
+            i <- i + 1
+            res
+
+        let parseInterpolatedHoleDotNetFormat typeChar (s: string) (i: byref<int>) =
+            if typeChar = 'P' then 
+                if i < s.Length && s.[i] = '(' then  
+                     let i2 = s.IndexOf(")", i)
+                     if i2 = -1 then 
+                         ValueNone
+                     else 
+                         let res = s.[i+1..i2-1]
+                         i <- i2+1
+                         ValueSome res
+                else
+                    ValueNone
+            else
+                ValueNone
+
+        // Skip %P() added for hole in "...%d{x}..."
+        let skipInterpolationHole typeChar (fmt: string) (i: byref<int>) =
+            if typeChar <> 'P' then 
+              if i+1 < fmt.Length && fmt.[i] = '%' && fmt.[i+1] = 'P'  then
+                i <- i + 2
+                if i+1 < fmt.Length && fmt.[i] = '('  && fmt.[i+1] = ')' then 
+                    i <- i+2
     
-        let findNextFormatSpecifier (s: string) i = 
-            let rec go i (buf: Text.StringBuilder) =
+        let findNextFormatSpecifier (s: string) (i: byref<int>) = 
+            let buf = StringBuilder()
+            let mutable fin = false
+            while not fin do 
                 if i >= s.Length then 
-                    s.Length, buf.ToString()
+                    fin <- true
                 else
                     let c = s.[i]
                     if c = '%' then
                         if i + 1 < s.Length then
-                            let _, i1 = parseFlags s (i + 1)
-                            let w, i2 = parseWidth s i1
-                            let p, i3 = parsePrecision s i2
-                            let typeChar, i4 = parseTypeChar s i3
+                            let mutable i2 = i+1
+                            let _ = parseFlags s &i2
+                            let w = parseWidth s &i2
+                            let p = parsePrecision s &i2
+                            let typeChar = parseTypeChar s &i2
+
                             // shortcut for the simpliest case
                             // if typeChar is not % or it has star as width\precision - resort to long path
                             if typeChar = '%' && not (w = StarValue || p = StarValue) then 
                                 buf.Append('%') |> ignore
-                                go i4 buf
+                                i <- i2
                             else 
-                                i, buf.ToString()
+                                fin <- true
                         else
                             raise (ArgumentException("Missing format specifier"))
                     else 
                         buf.Append c |> ignore
-                        go (i + 1) buf
-            go i (Text.StringBuilder())
+                        i <- i + 1
+            buf.ToString()
+
+    [<NoComparison; NoEquality>]
+    /// Represents one step in the execution of a format string
+    type Step =
+        | StepWithArg of prefix: string * conv: (obj -> string) 
+        | StepWithTypedArg of prefix: string * conv: (obj -> Type -> string) 
+        | StepString of prefix: string 
+        | StepLittleT of prefix: string 
+        | StepLittleA of prefix: string
+        | StepStar1 of prefix: string * conv: (obj -> int -> string) 
+        | StepPercentStar1 of prefix: string
+        | StepStar2 of prefix: string * conv: (obj -> int -> int -> string)
+        | StepPercentStar2 of prefix: string
+
+        // Count the number of string fragments in a sequence of steps
+        static member BlockCount(steps: Step[]) =
+            let mutable count = 0
+            for step in steps do 
+                match step with 
+                | StepWithArg (prefix, _conv) ->
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepWithTypedArg (prefix, _conv) ->
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepString prefix ->
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                | StepLittleT(prefix) -> 
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepLittleA(prefix) -> 
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepStar1(prefix, _conv) -> 
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepPercentStar1(prefix) ->
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepStar2(prefix, _conv) -> 
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+                | StepPercentStar2(prefix) -> 
+                    if not (String.IsNullOrEmpty prefix) then count <- count + 1
+                    count <- count + 1
+            count
 
     /// Abstracts generated printer from the details of particular environment: how to write text, how to produce results etc...
     [<AbstractClass>]
-    type PrintfEnv<'State, 'Residue, 'Result> =
-        val State: 'State
-        new(s: 'State) = { State = s }
+    type PrintfEnv<'State, 'Residue, 'Result>(state: 'State) =
+        member _.State = state
+
         abstract Finish: unit -> 'Result
+
         abstract Write: string -> unit
+        
+        /// Write the result of a '%t' format.  If this is a string it is written. If it is a 'unit' value
+        /// the side effect has already happened
         abstract WriteT: 'Residue -> unit
+
+        member env.WriteSkipEmpty(s: string) = 
+            if not (String.IsNullOrEmpty s) then 
+                env.Write s
     
-    type Utils =
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b) =
-            env.Write a
-            env.Write b
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c) =
-            Utils.Write(env, a, b)
-            env.Write c
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d) =
-            Utils.Write(env, a, b)
-            Utils.Write(env, c, d)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e) =
-            Utils.Write(env, a, b, c)
-            Utils.Write(env, d, e)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e, f) =
-            Utils.Write(env, a, b, c, d)
-            Utils.Write(env, e, f)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e, f, g) =
-            Utils.Write(env, a, b, c, d, e)
-            Utils.Write(env, f, g)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e, f, g, h) =
-            Utils.Write(env, a, b, c, d, e, f)
-            Utils.Write(env, g, h)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e, f, g, h, i) =
-            Utils.Write(env, a, b, c, d, e, f, g)
-            Utils.Write(env, h, i)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e, f, g, h, i, j) =
-            Utils.Write(env, a, b, c, d, e, f, g, h)
-            Utils.Write(env, i, j)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e, f, g, h, i, j, k) =
-            Utils.Write(env, a, b, c, d, e, f, g, h, i)
-            Utils.Write(env, j, k)
-        static member inline Write (env: PrintfEnv<_, _, _>, a, b, c, d, e, f, g, h, i, j, k, l, m) =
-            Utils.Write(env, a, b, c, d, e, f, g, h, i, j, k)
-            Utils.Write(env, l, m)
+        member env.RunSteps (args: obj[], argTys: Type[], steps: Step[]) =
+            let mutable argIndex = 0
+            let mutable tyIndex = 0
+
+            for step in steps do 
+                match step with 
+                | StepWithArg (prefix, conv) ->
+                    env.WriteSkipEmpty prefix
+                    let arg = args.[argIndex]
+                    argIndex <- argIndex + 1
+                    env.Write(conv arg)
+
+                | StepWithTypedArg (prefix, conv) ->
+                    env.WriteSkipEmpty prefix
+                    let arg = args.[argIndex]
+                    let argTy = argTys.[tyIndex]
+                    argIndex <- argIndex + 1
+                    tyIndex <- tyIndex + 1
+                    env.Write(conv arg argTy)
+
+                | StepString prefix ->
+                    env.WriteSkipEmpty prefix
+
+                | StepLittleT(prefix) -> 
+                    env.WriteSkipEmpty prefix
+                    let farg = args.[argIndex]
+                    argIndex <- argIndex + 1
+                    let f = farg :?> ('State -> 'Residue)
+                    env.WriteT(f env.State)
+
+                | StepLittleA(prefix) -> 
+                    env.WriteSkipEmpty prefix
+                    let farg = args.[argIndex]
+                    argIndex <- argIndex + 1
+                    let arg = args.[argIndex]
+                    argIndex <- argIndex + 1
+                    let f = farg :?> ('State -> obj -> 'Residue)
+                    env.WriteT(f env.State arg)
+
+                | StepStar1(prefix, conv) -> 
+                    env.WriteSkipEmpty prefix
+                    let star1 = args.[argIndex] :?> int
+                    argIndex <- argIndex + 1
+                    let arg1 = args.[argIndex]
+                    argIndex <- argIndex + 1
+                    env.Write (conv arg1 star1)
+       
+                | StepPercentStar1(prefix) ->
+                    argIndex <- argIndex + 1
+                    env.WriteSkipEmpty prefix
+                    env.Write("%")
+
+                | StepStar2(prefix, conv) -> 
+                    env.WriteSkipEmpty prefix
+                    let star1 = args.[argIndex] :?> int
+                    argIndex <- argIndex + 1
+                    let star2 = args.[argIndex] :?> int
+                    argIndex <- argIndex + 1
+                    let arg1 = args.[argIndex]
+                    argIndex <- argIndex + 1
+                    env.Write (conv arg1 star1 star2)
+
+                | StepPercentStar2(prefix) -> 
+                    env.WriteSkipEmpty prefix
+                    argIndex <- argIndex + 2
+                    env.Write("%")
     
-    /// Type of results produced by specialization
-    /// This is function that accepts thunk to create PrintfEnv on demand and returns concrete instance of Printer (curried function)
-    /// After all arguments is collected, specialization obtains concrete PrintfEnv from the thunk and use it to output collected data.
-    type PrintfFactory<'State, 'Residue, 'Result, 'Printer> = (unit -> PrintfEnv<'State, 'Residue, 'Result>) -> 'Printer
+            env.Finish()
+
+    /// Type of results produced by specialization.
+    ///
+    /// This is a function that accepts a thunk to create PrintfEnv on demand (at the very last
+    /// appliction of an argument) and returns a concrete instance of an appriate curried printer.
+    ///
+    /// After all arguments are collected, specialization obtains concrete PrintfEnv from the thunk
+    /// and uses it to output collected data.
+    ///
+    /// Note the arguments must be captured in an *immutable* collection.  For example consider
+    ///    let f1 = printf "%d%d%d" 3 // activation captures '3'  (args --> [3])
+    ///    let f2 = f1 4  // same activation captures 4 (args --> [3;4])
+    ///    let f3 = f1 5  // same activation captures 5 (args --> [3;5])
+    ///    f2 7           // same activation captures 7 (args --> [3;4;7])
+    ///    f3 8           // same activation captures 8 (args --> [3;5;8])
+    ///
+    /// If we captured into an mutable array then these would interfere 
+    type PrintfInitial<'State, 'Residue, 'Result> = (unit -> PrintfEnv<'State, 'Residue, 'Result>)
+    type PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result> = 
+        delegate of obj list * PrintfInitial<'State, 'Residue, 'Result> -> 'Printer
 
     [<Literal>]
-    let MaxArgumentsInSpecialization = 5
+    let MaxArgumentsInSpecialization = 3
 
-    /// Specializations are created via factory methods. These methods accepts 2 kinds of arguments
-    /// - parts of format string that corresponds to raw text
-    /// - functions that can transform collected values to strings
-    /// basic shape of the signature of specialization
-    /// <prefix-string> + <converter for arg1> + <suffix that comes after arg1> + ... <converter for arg-N> + <suffix that comes after arg-N>
-    type Specializations<'State, 'Residue, 'Result> private ()=
+    let revToArray extra (args: 'T list) = 
+        // We've reached the end, now fill in the array, reversing steps, avoiding reallocating
+        let n = args.Length
+        let res = Array.zeroCreate (n+extra)
+        let mutable j = 0
+        for arg in args do
+            res.[n-j-1] <- arg
+            j <- j + 1
+        res
+
+    type Specializations<'State, 'Residue, 'Result>() =
      
-        static member Final1<'A>
-            (
-                s0, conv1, s1
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) ->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1)
-                    env.Finish()
+        static member Final0(allSteps) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                let env = initial()
+                env.RunSteps(revToArray 0 args, null, allSteps)
+            )
+
+        static member CaptureFinal1<'A>(allSteps) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                (fun (arg1: 'A) ->
+                    let env = initial()
+                    let argArray = revToArray 1 args
+                    argArray.[argArray.Length-1] <- box arg1
+                    env.RunSteps(argArray, null, allSteps)
                 )
             )
 
-        static member FinalFastEnd1<'A>
-            (
-                s0, conv1
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) ->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a))
-                    env.Finish()
+        static member CaptureFinal2<'A, 'B>(allSteps) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                (fun (arg1: 'A) (arg2: 'B) ->
+                    let env = initial()
+                    let argArray = revToArray 2 args
+                    argArray.[argArray.Length-1] <- box arg2
+                    argArray.[argArray.Length-2] <- box arg1
+                    env.RunSteps(argArray, null, allSteps)
                 )
             )
 
-        static member FinalFastStart1<'A>
-            (
-                conv1, s1
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) ->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1)
-                    env.Finish()
+        static member CaptureFinal3<'A, 'B, 'C>(allSteps) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                (fun (arg1: 'A) (arg2: 'B) (arg3: 'C) ->
+                    let env = initial()
+                    let argArray = revToArray 3 args
+                    argArray.[argArray.Length-1] <- box arg3
+                    argArray.[argArray.Length-2] <- box arg2
+                    argArray.[argArray.Length-3] <- box arg1
+                    env.RunSteps(argArray, null, allSteps)
                 )
             )
 
-        static member FinalFast1<'A>
-            (
-                conv1
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) ->
-                    let env = env()
-                    env.Write (conv1 a)
-                    env.Finish()
+        static member Capture1<'A, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                (fun (arg1: 'A) ->
+                    let args = (box arg1 :: args)
+                    next.Invoke(args, initial) : 'Tail
                 )
             )
 
-        static member Final2<'A, 'B>
-            (
-                s0, conv1, s1, conv2, s2
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) ->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2)
-                    env.Finish()
+        static member CaptureLittleA<'A, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                (fun (f: 'State -> 'A -> 'Residue) (arg1: 'A) ->
+                    let args = box arg1 :: box (fun s (arg:obj) -> f s (unbox arg)) :: args
+                    next.Invoke(args, initial) : 'Tail
                 )
             )
 
-        static member FinalFastEnd2<'A, 'B>
-            (
-                s0, conv1, s1, conv2
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) ->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b))
-                    env.Finish()
+        static member Capture2<'A, 'B, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                (fun (arg1: 'A) (arg2: 'B) ->
+                    let args = box arg2 :: box arg1 :: args
+                    next.Invoke(args, initial) : 'Tail
                 )
             )
 
-        static member FinalFastStart2<'A, 'B>
-            (
-                conv1, s1, conv2, s2
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) ->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2)
-                    env.Finish()
+        static member Capture3<'A, 'B, 'C, 'Tail>(next: PrintfFuncFactory<_, 'State, 'Residue, 'Result>) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun args initial -> 
+                (fun (arg1: 'A) (arg2: 'B) (arg3: 'C) ->
+                    let args = box arg3 :: box arg2 :: box arg1 :: args
+                    next.Invoke(args, initial) : 'Tail
                 )
             )
 
-        static member FinalFast2<'A, 'B>
-            (
-                conv1, s1, conv2
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) ->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b))
-                    env.Finish()
-                )
+        // Special case for format strings containing just one '%d' etc, i.e. StepWithArg then StepString.
+        // This avoids allocating an argument array, and unfolds the single iteration of RunSteps.
+        static member OneStepWithArg<'A>(prefix1, conv1, prefix2) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun _args initial -> 
+                // Note this is the actual computed/stored closure for 
+                //     sprintf "prefix1 %d prefix2"
+                // for any simple format specifiers, where conv1 and conv2 will depend on the format specifiers etc.
+                (fun (arg1: 'A) ->
+                    let env = initial()
+                    env.WriteSkipEmpty prefix1
+                    env.Write(conv1 (box arg1))
+                    env.WriteSkipEmpty prefix2
+                    env.Finish())
             )
 
-        static member Final3<'A, 'B, 'C>
-            (
-                s0, conv1, s1, conv2, s2, conv3, s3
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) ->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3)
-                    env.Finish()
-                )
+        // Special case for format strings containing two simple formats like '%d %s' etc, i.e. 
+        ///StepWithArg then StepWithArg then StepString. This avoids allocating an argument array, 
+        // and unfolds the two iteration of RunSteps.
+        static member TwoStepWithArg<'A, 'B>(prefix1, conv1, prefix2, conv2, prefix3) =
+            PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun _args initial -> 
+                // Note this is the actual computed/stored closure for 
+                //     sprintf "prefix1 %d prefix2 %s prefix3"
+                // for any simple format specifiers, where conv1 and conv2 will depend on the format specifiers etc.
+                (fun (arg1: 'A) (arg2: 'B) ->
+                    let env = initial()
+                    env.WriteSkipEmpty prefix1
+                    env.Write(conv1 (box arg1))
+                    env.WriteSkipEmpty prefix2
+                    env.Write(conv2 (box arg2))
+                    env.WriteSkipEmpty prefix3
+                    env.Finish())
             )
 
-        static member FinalFastEnd3<'A, 'B, 'C>
-            (
-                s0, conv1, s1, conv2, s2, conv3
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) ->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c))
-                    env.Finish()
-                )
-            )
-
-        static member FinalFastStart3<'A, 'B, 'C>
-            (
-                conv1, s1, conv2, s2, conv3, s3
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) ->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3)
-                    env.Finish()
-                )
-            )
-
-        static member FinalFast3<'A, 'B, 'C>
-            (
-                conv1, s1, conv2, s2, conv3
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) ->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c))
-                    env.Finish()
-                )
-            )
-
-        static member Final4<'A, 'B, 'C, 'D>
-            (
-                s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D)->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4)
-                    env.Finish()
-                )
-            )
-
-        static member FinalFastEnd4<'A, 'B, 'C, 'D>
-            (
-                s0, conv1, s1, conv2, s2, conv3, s3, conv4
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D)->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
-                    env.Finish()
-                )
-            )
-
-        static member FinalFastStart4<'A, 'B, 'C, 'D>
-            (
-                conv1, s1, conv2, s2, conv3, s3, conv4, s4
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D)->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4)
-                    env.Finish()
-                )
-            )
-
-        static member FinalFast4<'A, 'B, 'C, 'D>
-            (
-                conv1, s1, conv2, s2, conv3, s3, conv4
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D)->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
-                    env.Finish()
-                )
-            )
-
-        static member Final5<'A, 'B, 'C, 'D, 'E>
-            (
-                s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5, s5
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e), s5)
-                    env.Finish()
-                )
-            )
-
-        static member FinalFastEnd5<'A, 'B, 'C, 'D, 'E>
-            (
-                s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
-                    let env = env()
-                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
-                    env.Finish()
-                )
-            )
-
-        static member FinalFastStart5<'A, 'B, 'C, 'D, 'E>
-            (
-                conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5, s5
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e), s5)
-                    env.Finish()
-                )
-            )
-
-        static member FinalFast5<'A, 'B, 'C, 'D, 'E>
-            (
-                conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
-                    let env = env()
-                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
-                    env.Finish()
-                )
-            )
-
-        static member Chained1<'A, 'Tail>
-            (
-                s0, conv1,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) ->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, s0, (conv1 a))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-         static member ChainedFastStart1<'A, 'Tail>
-            (
-                conv1,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) ->
-                    let env() = 
-                        let env = env()
-                        env.Write(conv1 a)
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member Chained2<'A, 'B, 'Tail>
-            (
-                s0, conv1, s1, conv2,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) ->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, s0, (conv1 a), s1, (conv2 b))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member ChainedFastStart2<'A, 'B, 'Tail>
-            (
-                conv1, s1, conv2,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) ->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, (conv1 a), s1, (conv2 b))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member Chained3<'A, 'B, 'C, 'Tail>
-            (
-                s0, conv1, s1, conv2, s2, conv3,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) ->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member ChainedFastStart3<'A, 'B, 'C, 'Tail>
-            (
-                conv1, s1, conv2, s2, conv3,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) ->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member Chained4<'A, 'B, 'C, 'D, 'Tail>
-            (
-                s0, conv1, s1, conv2, s2, conv3, s3, conv4,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D)->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member ChainedFastStart4<'A, 'B, 'C, 'D, 'Tail>
-            (
-                conv1, s1, conv2, s2, conv3, s3, conv4,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D)->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member Chained5<'A, 'B, 'C, 'D, 'E, 'Tail>
-            (
-                s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member ChainedFastStart5<'A, 'B, 'C, 'D, 'E, 'Tail>
-            (
-                conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5,
-                next
-            ) =
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (a: 'A) (b: 'B) (c: 'C) (d: 'D) (e: 'E)->
-                    let env() = 
-                        let env = env()
-                        Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
-                        env
-                    next env : 'Tail
-                )
-            )
-
-        static member TFinal(s1: string, s2: string) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (f: 'State -> 'Residue) -> 
-                    let env = env()
-                    env.Write s1
-                    env.WriteT(f env.State)
-                    env.Write s2
-                    env.Finish()
-                )
-            )
-        static member TChained<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (f: 'State -> 'Residue) -> 
-                    let env() = 
-                        let env = env()
-                        env.Write s1
-                        env.WriteT(f env.State)
-                        env
-                    next env: 'Tail
-                )
-            )
-
-        static member LittleAFinal<'A>(s1: string, s2: string) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (f: 'State -> 'A ->'Residue) (a: 'A) -> 
-                    let env = env()
-                    env.Write s1
-                    env.WriteT(f env.State a)
-                    env.Write s2
-                    env.Finish()
-                )
-            )
-        static member LittleAChained<'A, 'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (f: 'State -> 'A ->'Residue) (a: 'A) -> 
-                    let env() = 
-                        let env = env()
-                        env.Write s1
-                        env.WriteT(f env.State a)
-                        env
-                    next env: 'Tail
-                )
-            )
-
-        static member StarFinal1<'A>(s1: string, conv, s2: string) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (a: 'A) -> 
-                    let env = env()
-                    env.Write s1
-                    env.Write (conv a star1: string)
-                    env.Write s2
-                    env.Finish()
-                )
-            )   
-       
-        static member PercentStarFinal1(s1: string, s2: string) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) -> 
-                    let env = env()
-                    env.Write s1
-                    env.Write("%")
-                    env.Write s2
-                    env.Finish()
-                )
-            )
-
-        static member StarFinal2<'A>(s1: string, conv, s2: string) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (star2: int) (a: 'A) -> 
-                    let env = env()
-                    env.Write s1
-                    env.Write (conv a star1 star2: string)
-                    env.Write s2
-                    env.Finish()
-                )
-            )
-
-        /// Handles case when '%*.*%' is used at the end of string
-        static member PercentStarFinal2(s1: string, s2: string) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) (_star2 : int) -> 
-                    let env = env()
-                    env.Write s1
-                    env.Write("%")
-                    env.Write s2
-                    env.Finish()
-                )
-            )
-
-        static member StarChained1<'A, 'Tail>(s1: string, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (a: 'A) -> 
-                    let env() =
-                        let env = env()
-                        env.Write s1
-                        env.Write(conv a star1 : string)
-                        env
-                    next env : 'Tail
-                )
-            )
-        
-        /// Handles case when '%*%' is used in the middle of the string so it needs to be chained to another printing block
-        static member PercentStarChained1<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) -> 
-                    let env() =
-                        let env = env()
-                        env.Write s1
-                        env.Write("%")
-                        env
-                    next env: 'Tail
-                )
-            )
-
-        static member StarChained2<'A, 'Tail>(s1: string, conv, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (star1: int) (star2: int) (a: 'A) -> 
-                    let env() =
-                        let env = env()
-                        env.Write s1
-                        env.Write(conv a star1 star2 : string)
-                        env
-                    next env : 'Tail
-                )
-            )
-        
-        /// Handles case when '%*.*%' is used in the middle of the string so it needs to be chained to another printing block
-        static member PercentStarChained2<'Tail>(s1: string, next: PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
-            (fun (env: unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
-                (fun (_star1 : int) (_star2 : int) -> 
-                    let env() =
-                        let env = env()
-                        env.Write s1
-                        env.Write("%")
-                        env
-                    next env : 'Tail
-                )
-            )
-    
     let inline (===) a b = Object.ReferenceEquals(a, b)
-    let invariantCulture = System.Globalization.CultureInfo.InvariantCulture 
 
     let inline boolToString v = if v then "true" else "false"
+
     let inline stringToSafeString v = 
         match v with
         | null -> ""
@@ -757,7 +536,18 @@ module internal PrintfImpl =
     [<Literal>]
     let DefaultPrecision = 6
 
+    /// A wrapper struct used to slightly strengthen the types of "ValueConverter" objects produced during composition of
+    /// the dynamic implementation.  These are always functions but sometimes they take one argument, sometimes two.
+    [<Struct; NoEquality; NoComparison>]
+    type ValueConverter private (f: obj) =
+        member x.FuncObj = f
+
+        static member inline Make (f: obj -> string) = ValueConverter(box f)
+        static member inline Make (f: obj -> int -> string) = ValueConverter(box f)
+        static member inline Make (f: obj -> int-> int -> string) = ValueConverter(box f)
+
     let getFormatForFloat (ch: char) (prec: int) = ch.ToString() +  prec.ToString()
+
     let normalizePrecision prec = min (max prec 0) 99
 
     /// Contains helpers to convert printer functions to functions that prints value with respect to specified justification
@@ -768,32 +558,33 @@ module internal PrintfImpl =
     /// - withPadding - adapts first category
     /// - withPaddingFormatted - adapts second category
     module Padding = 
+
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
         /// adaptPaddedFormatted returns boxed function that has various number of arguments depending on if width\precision flags has '*' value 
-        let inline adaptPaddedFormatted (spec: FormatSpecifier) getFormat (basic: string -> 'T -> string) (pad: string -> int -> 'T -> string) = 
+        let adaptPaddedFormatted (spec: FormatSpecifier) getFormat (basic: string -> obj -> string) (pad: string -> int -> obj -> string) : ValueConverter =
             if spec.IsStarWidth then
                 if spec.IsStarPrecision then
                     // width=*, prec=*
-                    box(fun v width prec -> 
+                    ValueConverter.Make (fun v width prec -> 
                         let fmt = getFormat (normalizePrecision prec)
                         pad fmt width v)
                 else 
                     // width=*, prec=?
                     let prec = if spec.IsPrecisionSpecified then normalizePrecision spec.Precision else DefaultPrecision
                     let fmt = getFormat prec
-                    box(fun v width -> 
+                    ValueConverter.Make (fun v width -> 
                         pad fmt width v)
 
             elif spec.IsStarPrecision then
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
-                    box(fun v prec -> 
+                    ValueConverter.Make (fun v prec -> 
                         let fmt = getFormat prec
                         pad fmt spec.Width v)
                 else
                     // width=X, prec=*
-                    box(fun v prec -> 
+                    ValueConverter.Make (fun v prec -> 
                         let fmt = getFormat prec
                         basic fmt v)                        
             else
@@ -801,75 +592,88 @@ module internal PrintfImpl =
                 let fmt = getFormat prec
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
-                    box(fun v -> 
+                    ValueConverter.Make (fun v -> 
                         pad fmt spec.Width v)
                 else
                     // width=X, prec=*
-                    box(fun v -> 
+                    ValueConverter.Make (fun v -> 
                         basic fmt v)
 
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
         /// adaptPadded returns boxed function that has various number of arguments depending on if width flags has '*' value 
-        let inline adaptPadded (spec: FormatSpecifier) (basic: 'T -> string) (pad: int -> 'T -> string) = 
+        let adaptPadded (spec: FormatSpecifier) (basic: obj -> string) (pad: int -> obj -> string) : ValueConverter = 
             if spec.IsStarWidth then
-                    // width=*, prec=?
-                    box(fun v width -> 
-                        pad width v)
+                // width=*, prec=?
+                ValueConverter.Make (fun v width -> 
+                    pad width v)
             else
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
-                    box(fun v -> 
+                    ValueConverter.Make (fun v -> 
                         pad spec.Width v)
                 else
                     // width=X, prec=*
-                    box(fun v -> 
+                    ValueConverter.Make (fun v -> 
                         basic v)
 
-        let inline withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  'T -> string) left right =
+        let withPaddingFormatted (spec: FormatSpecifier) getFormat  (defaultFormat: string) (f: string ->  obj -> string) left right : ValueConverter =
             if not (spec.IsWidthSpecified || spec.IsPrecisionSpecified) then
-                box (f defaultFormat)
+                ValueConverter.Make (f defaultFormat)
             else
                 if isLeftJustify spec.Flags then
                     adaptPaddedFormatted spec getFormat f left
                 else
                     adaptPaddedFormatted spec getFormat f right
 
-        let inline withPadding (spec: FormatSpecifier) (f: 'T -> string) left right =
+        let withPadding (spec: FormatSpecifier) (f: obj -> string) left right : ValueConverter =
             if not spec.IsWidthSpecified then
-                box f
+                ValueConverter.Make f
             else
                 if isLeftJustify spec.Flags then
                     adaptPadded spec f left
                 else
                     adaptPadded  spec f right
 
-    let inline isNumber (x: ^T) =
-        not (^T: (static member IsPositiveInfinity: 'T -> bool) x) && not (^T: (static member IsNegativeInfinity: 'T -> bool) x) && not (^T: (static member IsNaN: 'T -> bool) x)
-
-    let inline isInteger n = 
-        n % LanguagePrimitives.GenericOne = LanguagePrimitives.GenericZero
-    
-    let inline isPositive n = 
-        n >= LanguagePrimitives.GenericZero
-
-    /// contains functions to handle left\right justifications for non-numeric types (strings\bools)
+    /// Contains functions to handle left/right justifications for non-numeric types (strings/bools)
     module Basic =
-        let inline leftJustify (f: 'T -> string) padChar = 
+        let leftJustify (f: obj -> string) padChar = 
             fun (w: int) v -> 
                 (f v).PadRight(w, padChar)
     
-        let inline rightJustify (f: 'T -> string) padChar = 
+        let rightJustify (f: obj -> string) padChar = 
             fun (w: int) v -> 
                 (f v).PadLeft(w, padChar)
     
-    /// contains functions to handle left\right and no justification case for numbers
+        let withPadding (spec: FormatSpecifier) f =
+            let padChar, _ = spec.GetPadAndPrefix false 
+            Padding.withPadding spec f (leftJustify f padChar) (rightJustify f padChar)
+    
+    /// Contains functions to handle left/right and no justification case for numbers
     module GenericNumber =
+
+        let isPositive (n: obj) = 
+            match n with 
+            | :? int8 as n -> n >= 0y
+            | :? uint8 -> true
+            | :? int16 as n -> n >= 0s
+            | :? uint16 -> true
+            | :? int32 as n -> n >= 0
+            | :? uint32 -> true
+            | :? int64 as n -> n >= 0L
+            | :? uint64 -> true
+            | :? nativeint as n -> n >= 0n
+            | :? unativeint -> true
+            | :? single as n -> n >= 0.0f
+            | :? double as n -> n >= 0.0
+            | :? decimal as n -> n >= 0.0M
+            | _ -> failwith "isPositive: unreachable"
+
         /// handles right justification when pad char = '0'
         /// this case can be tricky:
         /// - negative numbers, -7 should be printed as '-007', not '00-7'
         /// - positive numbers when prefix for positives is set: 7 should be '+007', not '00+7'
-        let inline rightJustifyWithZeroAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
+        let rightJustifyWithZeroAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
             System.Diagnostics.Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
             if isNumber then
                 if isPositive then
@@ -884,12 +688,12 @@ module internal PrintfImpl =
                 str.PadLeft(w, ' ')
         
         /// handler right justification when pad char = ' '
-        let inline rightJustifyWithSpaceAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
+        let rightJustifyWithSpaceAsPadChar (str: string) isNumber isPositive w (prefixForPositives: string) =
             System.Diagnostics.Debug.Assert(prefixForPositives.Length = 0 || prefixForPositives.Length = 1)
             (if isNumber && isPositive then prefixForPositives + str else str).PadLeft(w, ' ')
         
         /// handles left justification with formatting with 'G'\'g' - either for decimals or with 'g'\'G' is explicitly set 
-        let inline leftJustifyWithGFormat (str: string) isNumber isInteger isPositive w (prefixForPositives: string) padChar  =
+        let leftJustifyWithGFormat (str: string) isNumber isInteger isPositive w (prefixForPositives: string) padChar  =
             if isNumber then
                 let str = if isPositive then prefixForPositives + str else str
                 // NOTE: difference - for 'g' format we use isInt check to detect situations when '5.0' is printed as '5'
@@ -901,7 +705,7 @@ module internal PrintfImpl =
             else
                 str.PadRight(w, ' ') // pad NaNs with ' '
 
-        let inline leftJustifyWithNonGFormat (str: string) isNumber isPositive w (prefixForPositives: string) padChar  =
+        let leftJustifyWithNonGFormat (str: string) isNumber isPositive w (prefixForPositives: string) padChar  =
             if isNumber then
                 let str = if isPositive then prefixForPositives + str else str
                 str.PadRight(w, padChar)
@@ -909,163 +713,217 @@ module internal PrintfImpl =
                 str.PadRight(w, ' ') // pad NaNs with ' ' 
         
         /// processes given string based depending on values isNumber\isPositive
-        let inline noJustificationCore (str: string) isNumber isPositive prefixForPositives = 
+        let noJustificationCore (str: string) isNumber isPositive prefixForPositives = 
             if isNumber && isPositive then prefixForPositives + str
             else str
         
         /// noJustification handler for f: 'T -> string - basic integer types
-        let inline noJustification f (prefix: string) isUnsigned =
+        let noJustification (f: obj -> string) (prefix: string) isUnsigned =
             if isUnsigned then
-                fun v -> noJustificationCore (f v) true true prefix
+                fun (v: obj) -> noJustificationCore (f v) true true prefix
             else 
-                fun v -> noJustificationCore (f v) true (isPositive v) prefix
+                fun (v: obj) -> noJustificationCore (f v) true (isPositive v) prefix
 
-        /// noJustification handler for f: string -> 'T -> string - floating point types
-        let inline noJustificationWithFormat f (prefix: string) = 
-            fun (fmt: string) v -> noJustificationCore (f fmt v) true (isPositive v) prefix
+    /// contains functions to handle left\right and no justification case for numbers
+    module Integer =
+    
+        let eliminateNative (v: obj) = 
+            match v with
+            | :? nativeint as n ->
+                if IntPtr.Size = 4 then box (n.ToInt32())
+                else box (n.ToInt64())
+            | :? unativeint as n ->
+                if IntPtr.Size = 4 then box (uint32 (n.ToUInt32()))
+                else box (uint64 (n.ToUInt64()))
+            | _ -> v
 
-        /// leftJustify handler for f: 'T -> string - basic integer types
-        let inline leftJustify isGFormat f (prefix: string) padChar isUnsigned = 
+        let rec toString (v: obj) =
+            match v with
+            | :? int32 as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? int64 as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? sbyte as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? byte as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? int16 as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? uint16 as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? uint32 as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? uint64 as n -> n.ToString(CultureInfo.InvariantCulture)
+            | :? nativeint | :? unativeint -> toString (eliminateNative v)
+            | _ -> failwith "toString: unreachable"
+
+        let rec toFormattedString fmt (v: obj) = 
+            match v with
+            | :? int32 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? int64 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? sbyte as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? byte as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? int16 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? uint16 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? uint32 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? uint64 as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? nativeint | :? unativeint -> toFormattedString fmt (eliminateNative v)
+            | _ -> failwith "toFormattedString: unreachable"
+
+        let rec toUnsigned (v: obj) = 
+            match v with
+            | :? int32 as n -> box (uint32 n)
+            | :? int64 as n -> box (uint64 n)
+            | :? sbyte as n -> box (byte n)
+            | :? int16 as n -> box (uint16 n)
+            | :? nativeint | :? unativeint -> toUnsigned (eliminateNative v)
+            | _ -> v
+
+        /// Left justification handler for f: 'T -> string - basic integer types
+        let leftJustify isGFormat (f: obj -> string) (prefix: string) padChar isUnsigned = 
             if isUnsigned then
                 if isGFormat then
-                    fun (w: int) v ->
-                        leftJustifyWithGFormat (f v) true (isInteger v) true w prefix padChar
+                    fun (w: int) (v: obj) ->
+                        GenericNumber.leftJustifyWithGFormat (f v) true true true w prefix padChar
                 else
-                    fun (w: int) v ->
-                        leftJustifyWithNonGFormat (f v) true true w prefix padChar
+                    fun (w: int) (v: obj) ->
+                        GenericNumber.leftJustifyWithNonGFormat (f v) true true w prefix padChar
             else
                 if isGFormat then
-                    fun (w: int) v ->
-                        leftJustifyWithGFormat (f v) true (isInteger v) (isPositive v) w prefix padChar
+                    fun (w: int) (v: obj) ->
+                        GenericNumber.leftJustifyWithGFormat (f v) true true (GenericNumber.isPositive v) w prefix padChar
                 else
-                    fun (w: int) v ->
-                        leftJustifyWithNonGFormat (f v) true (isPositive v) w prefix padChar
+                    fun (w: int) (v: obj) ->
+                        GenericNumber.leftJustifyWithNonGFormat (f v) true (GenericNumber.isPositive v) w prefix padChar
         
-        /// leftJustify handler for f: string -> 'T -> string - floating point types                    
-        let inline leftJustifyWithFormat isGFormat f (prefix: string) padChar = 
-            if isGFormat then
-                fun (fmt: string) (w: int) v ->
-                    leftJustifyWithGFormat (f fmt v) true (isInteger v) (isPositive v) w prefix padChar
-            else
-                fun (fmt: string) (w: int) v ->
-                    leftJustifyWithNonGFormat (f fmt v) true (isPositive v) w prefix padChar    
-
-        /// rightJustify handler for f: 'T -> string - basic integer types
-        let inline rightJustify f (prefixForPositives: string) padChar isUnsigned =
+        /// Right justification handler for f: 'T -> string - basic integer types
+        let rightJustify f (prefixForPositives: string) padChar isUnsigned =
             if isUnsigned then
                 if padChar = '0' then
-                    fun (w: int) v ->
-                        rightJustifyWithZeroAsPadChar (f v) true true w prefixForPositives
+                    fun (w: int) (v: obj) ->
+                        GenericNumber.rightJustifyWithZeroAsPadChar (f v) true true w prefixForPositives
                 else
                     System.Diagnostics.Debug.Assert((padChar = ' '))
-                    fun (w: int) v ->
-                        rightJustifyWithSpaceAsPadChar (f v) true true w prefixForPositives
+                    fun (w: int) (v: obj) ->
+                        GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true true w prefixForPositives
             else
                 if padChar = '0' then
-                    fun (w: int) v ->
-                        rightJustifyWithZeroAsPadChar (f v) true (isPositive v) w prefixForPositives
+                    fun (w: int) (v: obj) ->
+                        GenericNumber.rightJustifyWithZeroAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
 
                 else
                     System.Diagnostics.Debug.Assert((padChar = ' '))
                     fun (w: int) v ->
-                        rightJustifyWithSpaceAsPadChar (f v) true (isPositive v) w prefixForPositives
+                        GenericNumber.rightJustifyWithSpaceAsPadChar (f v) true (GenericNumber.isPositive v) w prefixForPositives
 
-        /// rightJustify handler for f: string -> 'T -> string - floating point types                    
-        let inline rightJustifyWithFormat f (prefixForPositives: string) padChar =
-            if padChar = '0' then
-                fun (fmt: string) (w: int) v ->
-                    rightJustifyWithZeroAsPadChar (f fmt v) true (isPositive v) w prefixForPositives
+        /// Computes a new function from 'f' that wraps the basic conversion given
+        /// by 'f' with padding for 0, spacing and justification, if the flags specify
+        /// it.  If they don't, f is made into a value converter
+        let withPadding (spec: FormatSpecifier) isUnsigned (f: obj -> string)  =
+            let allowZeroPadding = not (isLeftJustify spec.Flags) || spec.IsDecimalFormat
+            let padChar, prefix = spec.GetPadAndPrefix allowZeroPadding
+            Padding.withPadding spec
+                (GenericNumber.noJustification f prefix isUnsigned)
+                (leftJustify spec.IsGFormat f prefix padChar isUnsigned)
+                (rightJustify f prefix padChar isUnsigned)
 
-            else
-                System.Diagnostics.Debug.Assert((padChar = ' '))
-                fun (fmt: string) (w: int) v ->
-                    rightJustifyWithSpaceAsPadChar (f fmt v) true (isPositive v) w prefixForPositives
-    module Float = 
-        let inline noJustification f (prefixForPositives: string) = 
-            fun (fmt: string) v -> 
-                GenericNumber.noJustificationCore (f fmt v) (isNumber v) (isPositive v) prefixForPositives
+        let getValueConverter (spec: FormatSpecifier) : ValueConverter =
+            let c = spec.TypeChar
+            if c = 'd' || c = 'i' then
+                withPadding spec false toString
+            elif c = 'u' then
+                withPadding spec true  (toUnsigned >> toString) 
+            elif c = 'x' then
+                withPadding spec true (toFormattedString "x")
+            elif c = 'X' then
+                withPadding spec true (toFormattedString "X")
+            elif c = 'o' then
+                withPadding spec true (fun (v: obj) ->
+                    match toUnsigned v with 
+                    | :? uint64 as u -> Convert.ToString(int64 u, 8)
+                    | u -> Convert.ToString(Convert.ToInt64 u, 8))
+            else raise (ArgumentException())    
     
-        let inline leftJustify isGFormat f (prefix: string) padChar = 
+    module FloatAndDecimal = 
+
+        let rec toFormattedString fmt (v: obj) = 
+            match v with
+            | :? single as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? double as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | :? decimal as n -> n.ToString(fmt, CultureInfo.InvariantCulture)
+            | _ -> failwith "toFormattedString: unreachable"
+
+        let isNumber (x: obj) =
+            match x with
+            | :? single as x -> 
+                not (Single.IsPositiveInfinity(x)) &&
+                not (Single.IsNegativeInfinity(x)) &&
+                not (Single.IsNaN(x))
+            | :? double as x -> 
+                not (Double.IsPositiveInfinity(x)) &&
+                not (Double.IsNegativeInfinity(x)) &&
+                not (Double.IsNaN(x))
+            | :? decimal -> true
+            | _ -> failwith "isNumber: unreachable"
+
+        let isInteger (n: obj) = 
+            match n with 
+            | :? single as n -> n % 1.0f = 0.0f
+            | :? double as n -> n % 1. = 0.
+            | :? decimal as n -> n % 1.0M = 0.0M
+            | _ -> failwith "isInteger: unreachable"
+
+        let noJustification (prefixForPositives: string) = 
+            fun (fmt: string) (v: obj) -> 
+                GenericNumber.noJustificationCore (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) prefixForPositives
+    
+        let leftJustify isGFormat (prefix: string) padChar = 
             if isGFormat then
-                fun (fmt: string) (w: int) v ->
-                    GenericNumber.leftJustifyWithGFormat (f fmt v) (isNumber v) (isInteger v) (isPositive v) w prefix padChar
+                fun (fmt: string) (w: int) (v: obj) ->
+                    GenericNumber.leftJustifyWithGFormat (toFormattedString fmt v) (isNumber v) (isInteger v) (GenericNumber.isPositive v) w prefix padChar
             else
-                fun (fmt: string) (w: int) v ->
-                    GenericNumber.leftJustifyWithNonGFormat (f fmt v) (isNumber v) (isPositive v) w prefix padChar  
+                fun (fmt: string) (w: int) (v: obj) ->
+                    GenericNumber.leftJustifyWithNonGFormat (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefix padChar  
 
-        let inline rightJustify f (prefixForPositives: string) padChar =
+        let rightJustify (prefixForPositives: string) padChar =
             if padChar = '0' then
-                fun (fmt: string) (w: int) v ->
-                    GenericNumber.rightJustifyWithZeroAsPadChar (f fmt v) (isNumber v) (isPositive v) w prefixForPositives
+                fun (fmt: string) (w: int) (v: obj) ->
+                    GenericNumber.rightJustifyWithZeroAsPadChar (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefixForPositives
             else
                 System.Diagnostics.Debug.Assert((padChar = ' '))
-                fun (fmt: string) (w: int) v ->
-                    GenericNumber.rightJustifyWithSpaceAsPadChar (f fmt v) (isNumber v) (isPositive v) w prefixForPositives
+                fun (fmt: string) (w: int) (v: obj) ->
+                    GenericNumber.rightJustifyWithSpaceAsPadChar (toFormattedString fmt v) (isNumber v) (GenericNumber.isPositive v) w prefixForPositives
 
-    let isDecimalFormatSpecifier (spec: FormatSpecifier) = 
-        spec.TypeChar = 'M'
+        let withPadding (spec: FormatSpecifier) getFormat defaultFormat =
+            let padChar, prefix = spec.GetPadAndPrefix true 
+            Padding.withPaddingFormatted spec getFormat defaultFormat
+                (noJustification prefix)
+                (leftJustify spec.IsGFormat prefix padChar)
+                (rightJustify prefix padChar)
 
-    let getPadAndPrefix allowZeroPadding (spec: FormatSpecifier) = 
-        let padChar = if allowZeroPadding && isPadWithZeros spec.Flags then '0' else ' ';
-        let prefix = 
-            if isPlusForPositives spec.Flags then "+" 
-            elif isSpaceForPositives spec.Flags then " "
-            else ""
-        padChar, prefix    
-
-    let isGFormat(spec: FormatSpecifier) = 
-        isDecimalFormatSpecifier spec || System.Char.ToLower(spec.TypeChar) = 'g'
-
-    let inline basicWithPadding (spec: FormatSpecifier) f =
-        let padChar, _ = getPadAndPrefix false spec
-        Padding.withPadding spec f (Basic.leftJustify f padChar) (Basic.rightJustify f padChar)
-    
-    let inline numWithPadding (spec: FormatSpecifier) isUnsigned f  =
-        let allowZeroPadding = not (isLeftJustify spec.Flags) || isDecimalFormatSpecifier spec
-        let padChar, prefix = getPadAndPrefix allowZeroPadding spec
-        let isGFormat = isGFormat spec
-        Padding.withPadding spec (GenericNumber.noJustification f prefix isUnsigned) (GenericNumber.leftJustify isGFormat f prefix padChar isUnsigned) (GenericNumber.rightJustify f prefix padChar isUnsigned)
-
-    let inline decimalWithPadding (spec: FormatSpecifier) getFormat defaultFormat f =
-        let padChar, prefix = getPadAndPrefix true spec
-        let isGFormat = isGFormat spec
-        Padding.withPaddingFormatted spec getFormat defaultFormat (GenericNumber.noJustificationWithFormat f prefix) (GenericNumber.leftJustifyWithFormat isGFormat f prefix padChar) (GenericNumber.rightJustifyWithFormat f prefix padChar)
-
-    let inline floatWithPadding (spec: FormatSpecifier) getFormat defaultFormat f =
-        let padChar, prefix = getPadAndPrefix true spec
-        let isGFormat = isGFormat spec
-        Padding.withPaddingFormatted spec getFormat defaultFormat (Float.noJustification f prefix) (Float.leftJustify isGFormat f prefix padChar) (Float.rightJustify f prefix padChar)
-    
-    let inline identity v =  v
-    let inline toString  v =   (^T : (member ToString: IFormatProvider -> string)(v, invariantCulture))
-    let inline toFormattedString fmt = fun (v: ^T) -> (^T: (member ToString: string * IFormatProvider -> string)(v, fmt, invariantCulture))
-
-    let inline numberToString c spec alt unsignedConv  =
-        if c = 'd' || c = 'i' then
-            numWithPadding spec false (alt >> toString: ^T -> string)
-        elif c = 'u' then
-            numWithPadding spec true  (alt >> unsignedConv >> toString: ^T -> string) 
-        elif c = 'x' then
-            numWithPadding spec true (alt >> toFormattedString "x": ^T -> string)
-        elif c = 'X' then
-            numWithPadding spec true (alt >> toFormattedString "X": ^T -> string )
-        elif c = 'o' then
-            numWithPadding spec true (fun (v: ^T) -> Convert.ToString(int64(unsignedConv (alt v)), 8))
-        else raise (ArgumentException())    
-    
     type ObjectPrinter = 
-        static member ObjectToString<'T>(spec: FormatSpecifier) = 
-            basicWithPadding spec (fun (v: 'T) -> match box v with null -> "<null>" | x -> x.ToString())
+
+        static member ObjectToString(spec: FormatSpecifier) : ValueConverter = 
+            Basic.withPadding spec (fun (v: obj) ->
+                match v with
+                | null -> "<null>"
+                | x -> x.ToString())
+        
+        /// Convert an interpoland to a string
+        static member InterpolandToString(spec: FormatSpecifier) : ValueConverter = 
+            let fmt = 
+                match spec.InteropHoleDotNetFormat with 
+                | ValueNone -> null
+                | ValueSome fmt -> "{0:" + fmt + "}"
+            Basic.withPadding spec (fun (vobj: obj) ->
+                match vobj with
+                | null -> ""
+                | x -> 
+                    match fmt with 
+                    | null -> x.ToString()
+                    | fmt -> String.Format(fmt, x))
         
         static member GenericToStringCore(v: 'T, opts: Microsoft.FSharp.Text.StructuredPrintfImpl.FormatOptions, bindingFlags) = 
-            // printfn %0A is considered to mean 'print width zero'
-            match box v with
-            | null ->
-                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, typeof<'T>)
-            | _ ->
-                Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, v.GetType())
+            let vty = 
+                match box v with
+                | null -> typeof<'T>
+                | _ -> v.GetType()
+            Microsoft.FSharp.Text.StructuredPrintfImpl.Display.anyToStringForPrintf opts bindingFlags (v, vty)
 
-        static member GenericToString<'T>(spec: FormatSpecifier) = 
+        static member GenericToString<'T>(spec: FormatSpecifier) : ValueConverter = 
             let bindingFlags = 
                 if isPlusForPositives spec.Flags then BindingFlags.Public ||| BindingFlags.NonPublic
                 else BindingFlags.Public 
@@ -1079,100 +937,70 @@ module internal PrintfImpl =
                     else o
                 if spec.IsPrecisionSpecified then { o with PrintSize = spec.Precision}
                 else o
+
             match spec.IsStarWidth, spec.IsStarPrecision with
             | true, true ->
-                box (fun (v: 'T) (width: int) (prec: int) ->
+                ValueConverter.Make (fun (vobj: obj) (width: int) (prec: int) ->
+                    let v = unbox<'T> vobj
                     let opts = { opts with PrintSize = prec }
                     let opts  = if not useZeroWidth then { opts with PrintWidth = width} else opts
                     ObjectPrinter.GenericToStringCore(v, opts, bindingFlags)
                     )
+
             | true, false ->
-                box (fun (v: 'T) (width: int) ->
+                ValueConverter.Make (fun (vobj: obj) (width: int) ->
+                    let v = unbox<'T> vobj
                     let opts  = if not useZeroWidth then { opts with PrintWidth = width} else opts
-                    ObjectPrinter.GenericToStringCore(v, opts, bindingFlags)
-                    )
+                    ObjectPrinter.GenericToStringCore(v, opts, bindingFlags))
+
             | false, true ->
-                box (fun (v: 'T) (prec: int) ->
+                ValueConverter.Make (fun (vobj: obj) (prec: int) ->
+                    let v = unbox<'T> vobj
                     let opts = { opts with PrintSize = prec }
-                    ObjectPrinter.GenericToStringCore(v, opts, bindingFlags)
-                    )
+                    ObjectPrinter.GenericToStringCore(v, opts, bindingFlags) )
+
             | false, false ->
-                box (fun (v: 'T) ->
-                    ObjectPrinter.GenericToStringCore(v, opts, bindingFlags)
-                    )
-    
-    let basicNumberToString (ty: Type) (spec: FormatSpecifier) =
-        System.Diagnostics.Debug.Assert(not spec.IsPrecisionSpecified, "not spec.IsPrecisionSpecified")
-
-        let ch = spec.TypeChar
-
-        match Type.GetTypeCode ty with
-        | TypeCode.Int32    -> numberToString ch spec identity (uint32: int -> uint32) 
-        | TypeCode.Int64    -> numberToString ch spec identity (uint64: int64 -> uint64)
-        | TypeCode.Byte     -> numberToString ch spec identity (byte: byte -> byte) 
-        | TypeCode.SByte    -> numberToString ch spec identity (byte: sbyte -> byte)
-        | TypeCode.Int16    -> numberToString ch spec identity (uint16: int16 -> uint16)
-        | TypeCode.UInt16   -> numberToString ch spec identity (uint16: uint16 -> uint16)
-        | TypeCode.UInt32   -> numberToString ch spec identity (uint32: uint32 -> uint32)
-        | TypeCode.UInt64   -> numberToString ch spec identity (uint64: uint64 -> uint64)
-        | _ ->
-        if ty === typeof<nativeint> then 
-            if IntPtr.Size = 4 then 
-                numberToString ch spec (fun (v: IntPtr) -> v.ToInt32()) uint32
-            else
-                numberToString ch spec (fun (v: IntPtr) -> v.ToInt64()) uint64
-        elif ty === typeof<unativeint> then 
-            if IntPtr.Size = 4 then
-                numberToString ch spec (fun (v: UIntPtr) -> v.ToUInt32()) uint32
-            else
-                numberToString ch spec (fun (v: UIntPtr) -> v.ToUInt64()) uint64
-
-        else raise (ArgumentException(ty.Name + " not a basic integer type"))
-
-    let basicFloatToString ty spec = 
+                ValueConverter.Make (fun (vobj: obj) ->
+                    let v = unbox<'T> vobj
+                    ObjectPrinter.GenericToStringCore(v, opts, bindingFlags))
+        
+    let basicFloatToString spec = 
         let defaultFormat = getFormatForFloat spec.TypeChar DefaultPrecision
-        match Type.GetTypeCode ty with
-        | TypeCode.Single   -> floatWithPadding spec (getFormatForFloat spec.TypeChar) defaultFormat (fun fmt (v: float32) -> toFormattedString fmt v)
-        | TypeCode.Double   -> floatWithPadding spec (getFormatForFloat spec.TypeChar) defaultFormat (fun fmt (v: float) -> toFormattedString fmt v)
-        | TypeCode.Decimal  -> decimalWithPadding spec (getFormatForFloat spec.TypeChar) defaultFormat (fun fmt (v: decimal) -> toFormattedString fmt v)
-        | _ -> raise (ArgumentException(ty.Name + " not a basic floating point type"))
+        FloatAndDecimal.withPadding spec (getFormatForFloat spec.TypeChar) defaultFormat
 
     let private NonPublicStatics = BindingFlags.NonPublic ||| BindingFlags.Static
 
-    let private getValueConverter (ty: Type) (spec: FormatSpecifier) : obj = 
+    let mi_GenericToString = typeof<ObjectPrinter>.GetMethod("GenericToString", NonPublicStatics)
+
+    let private getValueConverter (ty: Type) (spec: FormatSpecifier) : ValueConverter = 
         match spec.TypeChar with
         | 'b' ->  
-            System.Diagnostics.Debug.Assert(ty === typeof<bool>, "ty === typeof<bool>")
-            basicWithPadding spec boolToString
+            Basic.withPadding spec (unbox >> boolToString)
         | 's' ->
-            System.Diagnostics.Debug.Assert(ty === typeof<string>, "ty === typeof<string>")
-            basicWithPadding spec stringToSafeString
+            Basic.withPadding spec (unbox >> stringToSafeString)
         | 'c' ->
-            System.Diagnostics.Debug.Assert(ty === typeof<char>, "ty === typeof<char>")
-            basicWithPadding spec (fun (c: char) -> c.ToString())
+            Basic.withPadding spec (fun (c: obj) -> (unbox<char> c).ToString())
         | 'M'  ->
-            System.Diagnostics.Debug.Assert(ty === typeof<decimal>, "ty === typeof<decimal>")
-            decimalWithPadding spec (fun _ -> "G") "G" (fun fmt (v: decimal) -> toFormattedString fmt v) // %M ignores precision
+            FloatAndDecimal.withPadding spec (fun _ -> "G") "G" // %M ignores precision
         | 'd' | 'i' | 'x' | 'X' | 'u' | 'o'-> 
-            basicNumberToString ty spec
+            Integer.getValueConverter spec
         | 'e' | 'E' 
         | 'f' | 'F' 
         | 'g' | 'G' -> 
-            basicFloatToString ty spec
+            basicFloatToString spec
         | 'A' ->
-            let mi = typeof<ObjectPrinter>.GetMethod("GenericToString", NonPublicStatics)
-            let mi = mi.MakeGenericMethod ty
-            mi.Invoke(null, [| box spec |])
+            let mi = mi_GenericToString.MakeGenericMethod ty
+            mi.Invoke(null, [| box spec |]) |> unbox
         | 'O' -> 
-            let mi = typeof<ObjectPrinter>.GetMethod("ObjectToString", NonPublicStatics)
-            let mi = mi.MakeGenericMethod ty
-            mi.Invoke(null, [| box spec |])
+            ObjectPrinter.ObjectToString(spec) 
+        | 'P' -> 
+            ObjectPrinter.InterpolandToString(spec) 
         | _ -> 
             raise (ArgumentException(SR.GetString(SR.printfBadFormatSpecifier)))
     
     let extractCurriedArguments (ty: Type) n = 
         System.Diagnostics.Debug.Assert(n = 1 || n = 2 || n = 3, "n = 1 || n = 2 || n = 3")
-        let buf = Array.zeroCreate (n + 1)
+        let buf = Array.zeroCreate n
         let rec go (ty: Type) i = 
             if i < n then
                 match ty.GetGenericArguments() with
@@ -1182,470 +1010,440 @@ module internal PrintfImpl =
                 | _ -> failwith (String.Format("Expected function with {0} arguments", n))
             else 
                 System.Diagnostics.Debug.Assert((i = n), "i = n")
-                buf.[i] <- ty
-                buf           
+                (buf, ty)
         go ty 0    
-    
-    type private PrintfBuilderStack() = 
-        let args = Stack 10
-        let types = Stack 5
 
-        let stackToArray size start count (s: Stack<_>) = 
-            let arr = Array.zeroCreate size
-            for i = 0 to count - 1 do
-                arr.[start + i] <- s.Pop()
-            arr
-        
-        member __.GetArgumentAndTypesAsArrays
-            (
-                argsArraySize, argsArrayStartPos, argsArrayTotalCount, 
-                typesArraySize, typesArrayStartPos, typesArrayTotalCount 
-            ) = 
-            let argsArray = stackToArray argsArraySize argsArrayStartPos argsArrayTotalCount args
-            let typesArray = stackToArray typesArraySize typesArrayStartPos typesArrayTotalCount types
-            argsArray, typesArray
 
-        member __.PopContinuationWithType() = 
-            System.Diagnostics.Debug.Assert(args.Count = 1, "args.Count = 1")
-            System.Diagnostics.Debug.Assert(types.Count = 1, "types.Count = 1")
-            
-            let cont = args.Pop()
-            let contTy = types.Pop()
-
-            cont, contTy
-
-        member __.PopValueUnsafe() = args.Pop()
-
-        member this.PushContinuationWithType (cont: obj, contTy: Type) = 
-            System.Diagnostics.Debug.Assert(this.IsEmpty, "this.IsEmpty")
-            System.Diagnostics.Debug.Assert(
-                (
-                    let _arg, retTy = Microsoft.FSharp.Reflection.FSharpType.GetFunctionElements(cont.GetType())
-                    contTy.IsAssignableFrom retTy
-                ),
-                "incorrect type"
-                )
-
-            this.PushArgumentWithType(cont, contTy)
-
-        member __.PushArgument(value: obj) =
-            args.Push value
-
-        member __.PushArgumentWithType(value: obj, ty) =
-            args.Push value
-            types.Push ty
-
-        member __.HasContinuationOnStack expectedNumberOfArguments = 
-            types.Count = expectedNumberOfArguments + 1
-
-        member __.IsEmpty = 
-            System.Diagnostics.Debug.Assert(args.Count = types.Count, "args.Count = types.Count")
-            args.Count = 0
-
-    /// Parses format string and creates result printer function.
-    /// First it recursively consumes format string up to the end, then during unwinding builds printer using PrintfBuilderStack as storage for arguments.
-    /// idea of implementation is very simple: every step can either push argument to the stack (if current block of 5 format specifiers is not yet filled) 
-    //  or grab the content of stack, build intermediate printer and push it back to stack (so it can later be consumed by as argument) 
-    type private PrintfBuilder<'S, 'Re, 'Res>() =
-    
-        let mutable count = 0
-        let mutable optimizedArgCount = 0
-#if DEBUG
-        let verifyMethodInfoWasTaken (mi: System.Reflection.MemberInfo) =
-            if isNull mi then 
-                ignore (System.Diagnostics.Debugger.Launch())
-#endif
-            
-        let buildSpecialChained(spec: FormatSpecifier, argTys: Type[], prefix: string, tail: obj, retTy) = 
-            if spec.TypeChar = 'a' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAChained", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-
-                let mi = mi.MakeGenericMethod([| argTys.[1];  retTy |])
-                let args = [| box prefix; tail   |]
-                mi.Invoke(null, args)
-            elif spec.TypeChar = 't' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TChained", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-                let mi = mi.MakeGenericMethod([| retTy |])
-                let args = [| box prefix; tail |]
-                mi.Invoke(null, args)
-            else
-                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
-
-                let mi = 
-                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
-                    let prefix = if spec.TypeChar = '%' then "PercentStarChained" else "StarChained"
-                    let name = prefix + (string n)
-                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-#if DEBUG                
-                verifyMethodInfoWasTaken mi
-#endif                
-                let argTypes, args =
-                    if spec.TypeChar = '%' then
-                        [| retTy |], [| box prefix; tail |]
-                    else
-                        let argTy = argTys.[argTys.Length - 2]
-                        let conv = getValueConverter argTy spec 
-                        [| argTy; retTy |], [| box prefix; box conv; tail |]
-                
-                let mi = mi.MakeGenericMethod argTypes
-                mi.Invoke(null, args)
-            
-        let buildSpecialFinal(spec: FormatSpecifier, argTys: Type[], prefix: string, suffix: string) =
-            if spec.TypeChar = 'a' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAFinal", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-                let mi = mi.MakeGenericMethod(argTys.[1] : Type)
-                let args = [| box prefix; box suffix |]
-                mi.Invoke(null, args)
-            elif spec.TypeChar = 't' then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TFinal", NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-                let args = [| box prefix; box suffix |]
-                mi.Invoke(null, args)
-            else
-                System.Diagnostics.Debug.Assert(spec.IsStarPrecision || spec.IsStarWidth, "spec.IsStarPrecision || spec.IsStarWidth ")
-
-                let mi = 
-                    let n = if spec.IsStarWidth = spec.IsStarPrecision then 2 else 1
-                    let prefix = if spec.TypeChar = '%' then "PercentStarFinal" else "StarFinal"
-                    let name = prefix + (string n)
-                    typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-
-                let mi, args = 
-                    if spec.TypeChar = '%' then 
-                        mi, [| box prefix; box suffix  |]
-                    else
-                        let argTy = argTys.[argTys.Length - 2]
-                        let mi = mi.MakeGenericMethod argTy
-                        let conv = getValueConverter argTy spec 
-                        mi, [| box prefix; box conv; box suffix  |]
-
-                mi.Invoke(null, args)
-
-        let buildPlainFinal(args: obj[], argTypes: Type[]) =
-            let argsCount = args.Length
-            let methodName,args =
-                if argsCount > 0 && args.[0].ToString() = "" then
-                    if argsCount > 1 && args.[argsCount - 1].ToString() = "" then
-                        let args = Array.sub args 1 (argsCount - 2)
-                        optimizedArgCount <- optimizedArgCount + 2
-                        "FinalFast", args
-                    else
-                        optimizedArgCount <- optimizedArgCount + 1
-                        "FinalFastStart", args |> Array.skip 1
-                elif argsCount > 0 && args.[argsCount - 1].ToString() = "" then
-                    let args = Array.sub args 0 (argsCount - 1)
-                    optimizedArgCount <- optimizedArgCount + 1
-                    "FinalFastEnd", args
-                else
-                    "Final",args
-
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName + argTypes.Length.ToString(), NonPublicStatics)
-#if DEBUG
-            verifyMethodInfoWasTaken mi
-#endif
-            let mi = mi.MakeGenericMethod argTypes
-            mi.Invoke(null, args)
-    
-        let buildPlainChained(args: obj[], argTypes: Type[]) =
-            let argsCount = args.Length
-            let methodName,args =
-                if argsCount > 0 && args.[0].ToString() = "" then
-                    optimizedArgCount <- optimizedArgCount + 1
-                    "ChainedFastStart", args |> Array.skip 1
-                else
-                    "Chained", args
-
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName + (argTypes.Length - 1).ToString(), NonPublicStatics)
-#if DEBUG
-            verifyMethodInfoWasTaken mi
-#endif
-            let mi = mi.MakeGenericMethod argTypes
-            mi.Invoke(null, args)
-
-        let builderStack = PrintfBuilderStack()
-
-        let ContinuationOnStack = -1
-
-        let buildPlain numberOfArgs prefix = 
-            let n = numberOfArgs * 2
-            let hasCont = builderStack.HasContinuationOnStack numberOfArgs
-
-            let extra = if hasCont then 1 else 0
-            let plainArgs, plainTypes = 
-                builderStack.GetArgumentAndTypesAsArrays(n + 1, 1, n, (numberOfArgs + extra), 0, numberOfArgs)
-
-            plainArgs.[0] <- box prefix
-
-            if hasCont then
-                let cont, contTy = builderStack.PopContinuationWithType()
-                plainArgs.[plainArgs.Length - 1] <- cont
-                plainTypes.[plainTypes.Length - 1] <- contTy
-
-                buildPlainChained(plainArgs, plainTypes)
-            else
-                buildPlainFinal(plainArgs, plainTypes)
-
-        let rec parseFromFormatSpecifier (prefix: string) (s: string) (funcTy: Type) i: int = 
-            
-            if i >= s.Length then 0
-            else
-            
-            System.Diagnostics.Debug.Assert(s.[i] = '%', "s.[i] = '%'")
-            count <- count + 1
-
-            let flags, i = FormatString.parseFlags s (i + 1)
-            let width, i = FormatString.parseWidth s i
-            let precision, i = FormatString.parsePrecision s i
-            let typeChar, i = FormatString.parseTypeChar s i
-            let spec = { TypeChar = typeChar; Precision = precision; Flags = flags; Width = width}
-            
-            let next, suffix = FormatString.findNextFormatSpecifier s i
-
-            let argTys = 
-                let n = 
-                    if spec.TypeChar = 'a' then 2 
-                    elif spec.IsStarWidth || spec.IsStarPrecision then
-                        if spec.IsStarWidth = spec.IsStarPrecision then 3 
-                        else 2
-                    else 1
-
-                let n = if spec.TypeChar = '%' then n - 1 else n
-                
-                System.Diagnostics.Debug.Assert(n <> 0, "n <> 0")
-
-                extractCurriedArguments funcTy n
-
-            let retTy = argTys.[argTys.Length - 1]
-
-            let numberOfArgs = parseFromFormatSpecifier suffix s retTy next
-
-            if spec.TypeChar = 'a' || spec.TypeChar = 't' || spec.IsStarWidth || spec.IsStarPrecision then
-                if numberOfArgs = ContinuationOnStack then
-
-                    let cont, contTy = builderStack.PopContinuationWithType()
-                    let currentCont = buildSpecialChained(spec, argTys, prefix, cont, contTy)
-                    builderStack.PushContinuationWithType(currentCont, funcTy)
-
-                    ContinuationOnStack
-                else
-                    if numberOfArgs = 0 then
-                        System.Diagnostics.Debug.Assert(builderStack.IsEmpty, "builderStack.IsEmpty")
-
-                        let currentCont = buildSpecialFinal(spec, argTys, prefix, suffix)
-                        builderStack.PushContinuationWithType(currentCont, funcTy)
-                        ContinuationOnStack
-                    else
-                        let hasCont = builderStack.HasContinuationOnStack numberOfArgs
-                        
-                        let expectedNumberOfItemsOnStack = numberOfArgs * 2
-                        let sizeOfTypesArray = 
-                            if hasCont then numberOfArgs + 1
-                            else numberOfArgs
-                                                
-                        let plainArgs, plainTypes = 
-                            builderStack.GetArgumentAndTypesAsArrays(expectedNumberOfItemsOnStack + 1, 1, expectedNumberOfItemsOnStack, sizeOfTypesArray, 0, numberOfArgs )
-
-                        plainArgs.[0] <- box suffix
-
-                        let next =
-                            if hasCont then
-                                let nextCont, nextContTy = builderStack.PopContinuationWithType()
-                                plainArgs.[plainArgs.Length - 1] <- nextCont
-                                plainTypes.[plainTypes.Length - 1] <- nextContTy
-                                buildPlainChained(plainArgs, plainTypes)
-                            else
-                                buildPlainFinal(plainArgs, plainTypes)
-                            
-                        let next = buildSpecialChained(spec, argTys, prefix, next, retTy)
-                        builderStack.PushContinuationWithType(next, funcTy)
-
-                        ContinuationOnStack
-            else
-                if numberOfArgs = ContinuationOnStack then
-                    let idx = argTys.Length - 2
-                    builderStack.PushArgument suffix
-                    builderStack.PushArgumentWithType((getValueConverter argTys.[idx] spec), argTys.[idx])
-                    1
-                else
-                    builderStack.PushArgument suffix
-                    builderStack.PushArgumentWithType((getValueConverter argTys.[0] spec), argTys.[0])
-                    
-                    if numberOfArgs = MaxArgumentsInSpecialization - 1 then
-                        let cont = buildPlain (numberOfArgs + 1) prefix
-                        builderStack.PushContinuationWithType(cont, funcTy)
-                        ContinuationOnStack
-                    else 
-                        numberOfArgs + 1
-
-        let parseFormatString (s: string) (funcTy: System.Type) : obj = 
-            optimizedArgCount <- 0
-            let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
-            if prefixPos = s.Length then 
-                box (fun (env: unit -> PrintfEnv<'S, 'Re, 'Res>) -> 
-                    let env = env()
-                    env.Write prefix
-                    env.Finish()
-                    )
-            else
-                let n = parseFromFormatSpecifier prefix s funcTy prefixPos
-                
-                if n = ContinuationOnStack || n = 0 then
-                    builderStack.PopValueUnsafe()
-                else
-                    buildPlain n prefix
-
-        member __.Build<'T>(s: string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s typeof<'T> :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
-
-    /// Type of element that is stored in cache 
-    /// Pair: factory for the printer + number of text blocks that printer will produce (used to preallocate buffers)
-    type CachedItem<'T, 'State, 'Residue, 'Result> = PrintfFactory<'State, 'Residue, 'Result, 'T> * int
-
-    /// 2-level cache.
-    /// 1st-level stores last value that was consumed by the current thread in thread-static field thus providing shortcuts for scenarios when 
-    /// printf is called in tight loop
-    /// 2nd level is global dictionary that maps format string to the corresponding PrintfFactory
-    type Cache<'T, 'State, 'Residue, 'Result>() =
-        static let generate fmt = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
-        static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
-        static let getOrAddFunc = Func<_, _>(generate)
-        static let get (key: string) = map.GetOrAdd(key, getOrAddFunc)
-
-        [<DefaultValue>]
-        [<ThreadStatic>]
-        static val mutable private last: string * CachedItem<'T, 'State, 'Residue, 'Result>
-    
-        static member Get(key: Format<'T, 'State, 'Residue, 'Result>) =
-            if not (Cache<'T, 'State, 'Residue, 'Result>.last === null) 
-                && key.Value.Equals (fst Cache<'T, 'State, 'Residue, 'Result>.last) then
-                    snd Cache<'T, 'State, 'Residue, 'Result>.last
-            else
-                let v = get key.Value
-                Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
-                v
-
-    type StringPrintfEnv<'Result>(k, n) = 
+    type LargeStringPrintfEnv<'Result>(continuation, blockSize) = 
         inherit PrintfEnv<unit, string, 'Result>(())
-
-        let buf: string[] = Array.zeroCreate n
+        let buf: string[] = Array.zeroCreate blockSize
         let mutable ptr = 0
 
-        override __.Finish() : 'Result = k (String.Concat buf)
-        override __.Write(s: string) = 
-            buf.[ptr] <- s
-            ptr <- ptr + 1
-        override __.WriteT s =
+        override _.Finish() : 'Result = continuation (String.Concat buf)
+
+        override _.Write(s: string) = 
             buf.[ptr] <- s
             ptr <- ptr + 1
 
-    type SmallStringPrintfEnv<'Result>(k) = 
-        inherit PrintfEnv<unit, string, 'Result>(())
-        
+        override x.WriteT s = x.Write(s)
+
+    type SmallStringPrintfEnv2() = 
+        inherit PrintfEnv<unit, string, string>(())
         let mutable c = null
 
-        override __.Finish() : 'Result = k c
-        override __.Write(s: string) = if isNull c then c <- s else c <- c + s
-        override __.WriteT s = if isNull c then c <- s else c <- c + s
+        override _.Finish() : string = if isNull c then "" else c
+        override _.Write(s: string) = if isNull c then c <- s else c <- c + s
+        override x.WriteT s = x.Write(s)
 
-    type StringBuilderPrintfEnv<'Result>(k, buf) = 
-        inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
-        override __.Finish() : 'Result = k ()
-        override __.Write(s: string) = ignore(buf.Append s)
-        override __.WriteT(()) = ()
+    type SmallStringPrintfEnv4() = 
+        inherit PrintfEnv<unit, string, string>(())
+        let mutable s1 : string = null
+        let mutable s2 : string = null
+        let mutable s3 : string = null
+        let mutable s4 : string = null
 
-    type TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
-        inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
-        override __.Finish() : 'Result = k()
-        override __.Write(s: string) = tw.Write s
-        override __.WriteT(()) = ()
+        override _.Finish() : string = String.Concat(s1, s2, s3, s4)
+        override _.Write(s: string) =
+            if isNull s1 then s1 <- s 
+            elif isNull s2 then s2 <- s 
+            elif isNull s3 then s3 <- s 
+            else s4 <- s
+        override x.WriteT s = x.Write(s)
+
+    let StringPrintfEnv blockSize = 
+        if blockSize <= 2 then
+            SmallStringPrintfEnv2() :> PrintfEnv<_,_,_>
+        elif blockSize <= 4 then
+            SmallStringPrintfEnv4() :> PrintfEnv<_,_,_>
+        else
+            LargeStringPrintfEnv(id, blockSize) :> PrintfEnv<_,_,_>
+
+    let StringBuilderPrintfEnv<'Result>(k, buf) = 
+        { new PrintfEnv<Text.StringBuilder, unit, 'Result>(buf) with
+            override _.Finish() : 'Result = k ()
+            override _.Write(s: string) = ignore(buf.Append s)
+            override _.WriteT(()) = () }
+
+    let TextWriterPrintfEnv<'Result>(k, tw: IO.TextWriter) =
+        { new PrintfEnv<IO.TextWriter, unit, 'Result>(tw) with 
+            override _.Finish() : 'Result = k()
+            override _.Write(s: string) = tw.Write s
+            override _.WriteT(()) = () }
+
+    let MAX_CAPTURE = 3
+
+    /// Parses format string and creates resulting step list and printer factory function.
+    [<AllowNullLiteral>]
+    type FormatParser<'Printer, 'State, 'Residue, 'Result>(fmt: string) =
     
-    let inline doPrintf fmt f = 
-        let formatter, n = Cache<_, _, _, _>.Get fmt
-        let env() = f n
-        formatter env
+        let buildCaptureFunc (spec: FormatSpecifier, allSteps, argTys: Type[], retTy, nextInfo) = 
+            let (next:obj, nextCanCombine: bool, nextArgTys: Type[], nextRetTy, nextNextOpt) = nextInfo
+            assert (argTys.Length > 0)
+
+            // See if we can compress a capture to a multi-capture
+            //     CaptureN + Final --> CaptureFinalN
+            //     Capture1 + Capture1 --> Capture2
+            //     Capture1 + Capture2 --> Capture3
+            //     Capture2 + Capture1 --> Capture3
+            match argTys.Length, nextArgTys.Length with 
+            |  _ when spec.TypeChar = 'a' ->
+                // %a has an existential type which must be converted to obj
+                assert (argTys.Length = 2)
+                let captureMethName = "CaptureLittleA" 
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = mi.MakeGenericMethod([| argTys.[1]; retTy |])
+                let factoryObj = mi.Invoke(null, [| next  |])
+                factoryObj, false, argTys, retTy, None
+
+            | n1, n2 when nextCanCombine && n1 + n2 <= MAX_CAPTURE ->
+                // 'next' is thrown away on this path and replaced by a combined Capture
+                let captureCount = n1 + n2
+                let combinedArgTys = Array.append argTys nextArgTys
+                match nextNextOpt with 
+                | None ->
+                    let captureMethName = "CaptureFinal" + string captureCount
+                    let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                    let mi = mi.MakeGenericMethod(combinedArgTys)
+                    let factoryObj = mi.Invoke(null, [| allSteps |])
+                    factoryObj, true, combinedArgTys, nextRetTy, None
+                | Some nextNext ->
+                    let captureMethName = "Capture" + string captureCount
+                    let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                    let mi = mi.MakeGenericMethod(Array.append combinedArgTys [| nextRetTy |])
+                    let factoryObj = mi.Invoke(null, [| nextNext |])
+                    factoryObj, true, combinedArgTys, nextRetTy, nextNextOpt
+
+            | captureCount, _ ->
+                let captureMethName = "Capture" + string captureCount
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = mi.MakeGenericMethod(Array.append argTys [| retTy |])
+                let factoryObj = mi.Invoke(null, [| next  |])
+                factoryObj, true, argTys, retTy, Some next
+
+        let buildStep (spec: FormatSpecifier) (argTys: Type[]) prefix = 
+            if spec.TypeChar = 'a' then
+                StepLittleA prefix
+            elif spec.TypeChar = 't' then
+                StepLittleT prefix
+            elif spec.IsStarPrecision || spec.IsStarWidth then
+                let isTwoStar = (spec.IsStarWidth = spec.IsStarPrecision)
+                match isTwoStar, spec.TypeChar with 
+                | false, '%' -> StepPercentStar1 prefix
+                | true, '%' -> StepPercentStar2 prefix
+                | _ ->
+                    // For curried interpolated string format processing, the static types of the '%A' arguments 
+                    // are provided via the argument typed extracted from the curried function. They are known on first phase.
+                    let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[argTys.Length - 1]
+                    let conv = getValueConverter argTy spec 
+                    if isTwoStar then 
+                        let convFunc = conv.FuncObj :?> (obj -> int -> int -> string)
+                        StepStar2 (prefix, convFunc)
+                    else
+                        let convFunc = conv.FuncObj :?> (obj -> int -> string)
+                        StepStar1 (prefix, convFunc)
+            else
+                // For interpolated string format processing, the static types of the '%A' arguments 
+                // are provided via CaptureTypes and are only known on second phase.
+                match argTys with
+                | null when spec.TypeChar = 'A' ->
+                    let convFunc arg argTy = 
+                        let mi = mi_GenericToString.MakeGenericMethod [| argTy |]
+                        let f = mi.Invoke(null, [| box spec |]) :?> ValueConverter
+                        let f2 = f.FuncObj :?> (obj -> string)
+                        f2 arg
+
+                    StepWithTypedArg (prefix, convFunc)
+
+                | _ -> 
+                    // For curried interpolated string format processing, the static types of the '%A' arguments 
+                    // are provided via the argument typed extracted from the curried function. They are known on first phase.
+                    let argTy = match argTys with null -> typeof<obj> | _ -> argTys.[0]
+                    let conv = getValueConverter argTy spec
+                    let convFunc = conv.FuncObj :?> (obj -> string)
+                    StepWithArg (prefix, convFunc)
+            
+        let parseSpec (i: byref<int>) = 
+            i <- i + 1
+            let flags = FormatString.parseFlags fmt &i
+            let width = FormatString.parseWidth fmt &i
+            let precision = FormatString.parsePrecision fmt &i
+            let typeChar = FormatString.parseTypeChar fmt &i
+            let interpHoleDotnetFormat = FormatString.parseInterpolatedHoleDotNetFormat typeChar fmt &i
+
+            // Skip %P insertion points added after %d{...} etc. in interpolated strings
+            FormatString.skipInterpolationHole typeChar fmt &i
+
+            let spec = 
+                { TypeChar = typeChar
+                  Precision = precision
+                  Flags = flags
+                  Width = width
+                  InteropHoleDotNetFormat = interpHoleDotnetFormat }
+            spec
+            
+        // The steps, populated on-demand. This is for the case where the string is being used
+        // with interpolands captured in the Format object, including the %A capture types.
+        //
+        // We may initialize this twice, but the assignment is atomic and the computation will give functionally
+        // identical results each time, so it is ok.
+        let mutable stepsForCapturedFormat = Unchecked.defaultof<_>
+
+        // The function factory, populated on-demand, for the case where the string is being used to make a curried function for printf.
+        //
+        // We may initialize this twice, but the assignment is atomic and the computation will give functionally
+        // identical results each time, so it is ok.
+        let mutable factory = Unchecked.defaultof<PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result>>
+        let mutable printer = Unchecked.defaultof<'Printer>
+
+        // The function factory, populated on-demand.
+        //
+        // We may initialize this twice, but the assignment is atomic and the computation will give functionally
+        // identical results each time, so it is ok.
+        let mutable stringCount = 0
+
+        // A simplified parser. For the case where the string is being used with interpolands captured in the Format object. 
+        let rec parseAndCreateStepsForCapturedFormatAux steps (prefix: string) (i: byref<int>) = 
+            if i >= fmt.Length then 
+                let step = StepString(prefix)
+                let allSteps = revToArray 1 steps
+                allSteps.[allSteps.Length-1] <- step
+                stringCount <- Step.BlockCount allSteps
+                stepsForCapturedFormat <- allSteps
+            else
+                let spec = parseSpec &i
+                let suffix = FormatString.findNextFormatSpecifier fmt &i
+                let step = buildStep spec null prefix
+                parseAndCreateStepsForCapturedFormatAux (step::steps) suffix &i
+
+        let parseAndCreateStepsForCapturedFormat () =
+            let mutable i = 0
+            let prefix = FormatString.findNextFormatSpecifier fmt &i
+            parseAndCreateStepsForCapturedFormatAux [] prefix &i
+
+        /// The more advanced parser which both builds the steps (with %A types extracted from the funcTy),
+        /// and produces a curried function value of the right type guided by funcTy
+        let rec parseAndCreateFuncFactoryAux steps (prefix: string) (funcTy: Type) (i: byref<int>) = 
+            
+            if i >= fmt.Length then 
+                let step = StepString(prefix)
+                let allSteps = revToArray 1 steps
+                allSteps.[allSteps.Length-1] <- step
+                let last = Specializations<'State, 'Residue, 'Result>.Final0(allSteps)
+                stringCount <- Step.BlockCount allSteps
+                let nextInfo = (box last, true, [| |], funcTy, None)
+                (allSteps, nextInfo)
+            else
+                assert (fmt.[i] = '%')
+                let spec = parseSpec &i
+                let suffix = FormatString.findNextFormatSpecifier fmt &i
+                let n = spec.ArgCount
+                let (argTys, retTy) =  extractCurriedArguments funcTy n
+                let step = buildStep spec argTys prefix
+                let (allSteps, nextInfo) = parseAndCreateFuncFactoryAux (step::steps) suffix retTy &i
+                let nextInfoNew = buildCaptureFunc (spec, allSteps, argTys, retTy, nextInfo)
+                (allSteps, nextInfoNew)
+
+        let parseAndCreateFunctionFactory () =
+            let funcTy = typeof<'Printer>
+
+            // Find the first format specifier
+            let mutable i = 0
+            let prefix = FormatString.findNextFormatSpecifier fmt &i
+            
+            let (allSteps, (factoryObj, _, combinedArgTys, _, _)) = parseAndCreateFuncFactoryAux [] prefix funcTy &i
+            
+            // If there are no format specifiers then take a simple path
+            match allSteps with 
+            | [| StepString prefix |] ->
+                PrintfFuncFactory<_, 'State, 'Residue, 'Result>(fun _args initial -> 
+                    let env = initial()
+                    env.WriteSkipEmpty prefix
+                    env.Finish()
+                ) |> box
+
+            // If there is one simple format specifier then we can create an even better factory function
+            | [| StepWithArg (prefix1, conv1); StepString prefix2 |] ->
+                let captureMethName = "OneStepWithArg" 
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = mi.MakeGenericMethod(combinedArgTys)
+                let factoryObj = mi.Invoke(null, [| box prefix1; box conv1; box prefix2  |])
+                factoryObj
+
+            // If there are two simple format specifiers then we can create an even better factory function
+            | [| StepWithArg (prefix1, conv1); StepWithArg (prefix2, conv2); StepString prefix3 |] ->
+                let captureMethName = "TwoStepWithArg" 
+                let mi = typeof<Specializations<'State, 'Residue, 'Result>>.GetMethod(captureMethName, NonPublicStatics)
+                let mi = mi.MakeGenericMethod(combinedArgTys)
+                let factoryObj = mi.Invoke(null, [| box prefix1; box conv1; box prefix2; box conv2; box prefix3 |])
+                factoryObj
+
+            | _ -> 
+                factoryObj
+
+        /// The format string, used to help identify the cache entry (the cache index types are taken
+        /// into account as well).
+        member _.FormatString = fmt
+
+        /// The steps involved in executing the format string when interpolands are captured
+        ///
+        /// If %A patterns are involved these steps are only accurate when the %A capture types
+        /// are given in the format string through interpolation capture.
+        member _.GetStepsForCapturedFormat() =
+            match stepsForCapturedFormat with
+            | null -> parseAndCreateStepsForCapturedFormat () 
+            | _ -> ()
+            stepsForCapturedFormat
+
+        /// The number of strings produced for a sprintf
+        member _.BlockCount = stringCount
+            
+        /// The factory function used to generate the result or the resulting function.  
+        member _.GetCurriedPrinterFactory() =
+            match box factory with
+            | null -> 
+                let factoryObj = parseAndCreateFunctionFactory () 
+                let p = (factoryObj :?> PrintfFuncFactory<'Printer, 'State, 'Residue, 'Result>)
+                // We may initialize this twice, but the assignment is atomic and the computation will give functionally
+                // identical results each time it is ok
+                factory <- p
+                p
+            | _ -> factory
+
+        /// This avoids reallocation and application of 'initial' for sprintf printers
+        member this.GetCurriedStringPrinter() =
+            match box printer with
+            | null -> 
+                let f = this.GetCurriedPrinterFactory()
+                let initial() = (StringPrintfEnv stringCount |> box :?> PrintfEnv<'State, 'Residue, 'Result>)
+                let p = f.Invoke([], initial)
+                // We may initialize this twice, but the assignment is atomic and the computation will give functionally
+                // identical results each time it is ok
+                printer <- p
+                p
+            | _ -> printer
+
+
+    /// 2-level cache, keyed by format string and index types
+    type Cache<'Printer, 'State, 'Residue, 'Result>() =
+
+        /// 1st level cache (type-indexed). Stores last value that was consumed by the current thread in
+        /// thread-static field thus providing shortcuts for scenarios when printf is called in tight loop.
+        [<DefaultValue; ThreadStatic>]
+        static val mutable private mostRecent: FormatParser<'Printer, 'State, 'Residue, 'Result>
+    
+        // 2nd level cache (type-indexed). Dictionary that maps format string to the corresponding cache entry
+        static let mutable dict : ConcurrentDictionary<string, FormatParser<'Printer, 'State, 'Residue, 'Result>> = null
+
+        static member GetParser(format: Format<'Printer, 'State, 'Residue, 'Result>) =
+            let recent = Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent
+            let fmt = format.Value
+            if isNull recent then 
+                let parser = FormatParser(fmt)
+                Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent <- parser
+                parser
+            elif fmt.Equals recent.FormatString then 
+                recent
+            else
+                // Initialize the 2nd level cache if necessary.  Note there's a race condition but it doesn't
+                // matter if we initialize these values twice (and lose one entry)
+                if isNull dict then 
+                    dict <- ConcurrentDictionary<_,_>()
+
+                let parser = 
+                    match dict.TryGetValue(fmt) with 
+                    | true, res -> res
+                    | _ -> 
+                        let parser = FormatParser(fmt)
+                        // There's a race condition - but the computation is functional and it doesn't matter if we do it twice
+                        dict.TryAdd(fmt, parser) |> ignore
+                        parser
+                Cache<'Printer, 'State, 'Residue, 'Result>.mostRecent <- parser
+                parser
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Printf =
 
-    open System
-    open System.IO
-    open System.Text
-    open PrintfImpl
-
-    type BuilderFormat<'T,'Result>    = Format<'T, StringBuilder, unit, 'Result>
-    type StringFormat<'T,'Result>     = Format<'T, unit, string, 'Result>
-    type TextWriterFormat<'T,'Result> = Format<'T, TextWriter, unit, 'Result>
-    type BuilderFormat<'T>     = BuilderFormat<'T,unit>
-    type StringFormat<'T>      = StringFormat<'T,string>
+    type BuilderFormat<'T, 'Result> = Format<'T, StringBuilder, unit, 'Result>
+    type StringFormat<'T, 'Result> = Format<'T, unit, string, 'Result>
+    type TextWriterFormat<'T, 'Result> = Format<'T, TextWriter, unit, 'Result>
+    type BuilderFormat<'T> = BuilderFormat<'T,unit>
+    type StringFormat<'T> = StringFormat<'T,string>
     type TextWriterFormat<'T>  = TextWriterFormat<'T,unit>
 
+    let gprintf envf (format: Format<'Printer, 'State, 'Residue, 'Result>) = 
+        let cacheItem = Cache.GetParser format
+        match format.Captures with 
+        | null -> 
+            // The ksprintf "...%d ...." arg path, producing a function
+            let factory = cacheItem.GetCurriedPrinterFactory()
+            let initial() = (envf cacheItem.BlockCount :> PrintfEnv<_,_,_>)
+            factory.Invoke([], initial)
+        | captures -> 
+            // The ksprintf $"...%d{3}...." path, running the steps straight away to produce a string
+            let steps = cacheItem.GetStepsForCapturedFormat()
+            let env = envf cacheItem.BlockCount :> PrintfEnv<_,_,_>
+            let res = env.RunSteps(captures, format.CaptureTypes, steps)
+            unbox res // prove 'T = 'Result
+            //continuation res
+    
     [<CompiledName("PrintFormatToStringThen")>]
     let ksprintf continuation (format: StringFormat<'T, 'Result>) : 'T = 
-        doPrintf format (fun n ->
-            if n <= 2 then
-                SmallStringPrintfEnv continuation :> PrintfEnv<_, _, _>
-            else
-                StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
-        )
+        gprintf (fun stringCount -> LargeStringPrintfEnv(continuation, stringCount)) format
 
     [<CompiledName("PrintFormatToStringThen")>]
     let sprintf (format: StringFormat<'T>) =
-        doPrintf format (fun n ->
-            if n <= 2 then
-                SmallStringPrintfEnv id :> PrintfEnv<_, _, _>
-            else
-                StringPrintfEnv(id, n) :> PrintfEnv<_, _, _>
-        )
+        // We inline gprintf by hand here to be sure to remove a few allocations
+        let cacheItem = Cache.GetParser format
+        match format.Captures with 
+        | null ->
+            // The sprintf "...%d ...." arg path, producing a function
+            cacheItem.GetCurriedStringPrinter()
+        | captures -> 
+            // The sprintf $"...%d{3}...." path, running the steps straight away to produce a string
+            let steps = cacheItem.GetStepsForCapturedFormat()
+            let env = StringPrintfEnv cacheItem.BlockCount
+            let res = env.RunSteps(captures, format.CaptureTypes, steps)
+            unbox res // proves 'T = string
 
     [<CompiledName("PrintFormatThen")>]
     let kprintf continuation format = ksprintf continuation format
 
     [<CompiledName("PrintFormatToStringBuilderThen")>]
-    let kbprintf continuation (builder: StringBuilder) format = 
-        doPrintf format (fun _ -> 
-            StringBuilderPrintfEnv(continuation, builder) :> PrintfEnv<_, _, _> 
-        )
+    let kbprintf continuation (builder: StringBuilder) (format: BuilderFormat<'T, 'Result>) : 'T = 
+        gprintf (fun _stringCount -> StringBuilderPrintfEnv(continuation, builder)) format
     
     [<CompiledName("PrintFormatToTextWriterThen")>]
-    let kfprintf continuation textWriter format =
-        doPrintf format (fun _ -> 
-            TextWriterPrintfEnv(continuation, textWriter) :> PrintfEnv<_, _, _>
-        )
+    let kfprintf continuation textWriter (format: TextWriterFormat<'T, 'Result>) =
+        gprintf (fun _stringCount -> TextWriterPrintfEnv(continuation, textWriter)) format
 
     [<CompiledName("PrintFormatToStringBuilder")>]
-    let bprintf builder format  = kbprintf ignore builder format 
+    let bprintf builder format =
+        kbprintf ignore builder format 
 
     [<CompiledName("PrintFormatToTextWriter")>]
-    let fprintf (textWriter: TextWriter) format  = kfprintf ignore textWriter format 
+    let fprintf (textWriter: TextWriter) format =
+        kfprintf ignore textWriter format 
 
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    let fprintfn (textWriter: TextWriter) format  = kfprintf (fun _ -> textWriter.WriteLine()) textWriter format
+    let fprintfn (textWriter: TextWriter) format =
+        kfprintf (fun _ -> textWriter.WriteLine()) textWriter format
 
     [<CompiledName("PrintFormatToStringThenFail")>]
-    let failwithf format = ksprintf failwith format
+    let failwithf format =
+        ksprintf failwith format
 
     [<CompiledName("PrintFormat")>]
-    let printf format = fprintf Console.Out format
+    let printf format =
+        fprintf Console.Out format
 
     [<CompiledName("PrintFormatToError")>]
-    let eprintf format = fprintf Console.Error format
+    let eprintf format =
+        fprintf Console.Error format
 
     [<CompiledName("PrintFormatLine")>]
-    let printfn format = fprintfn Console.Out format
+    let printfn format =
+        fprintfn Console.Out format
 
     [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn format = fprintfn Console.Error format
+    let eprintfn format =
+        fprintfn Console.Error format

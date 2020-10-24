@@ -68,10 +68,10 @@ let GetCompletionTypeNames (project:FSharpProject) (fileName:string) (caretPosit
     let sigHelp = GetSignatureHelp project fileName caretPosition
     match sigHelp with
         | None -> [||]
-        | Some (items, _applicableSpan, _argumentIndex, _argumentCount, _argumentName) ->
+        | Some data ->
             let completionTypeNames =
-                items
-                |> Array.map (fun (_, _, _, _, _, x, _) -> x |> Array.map (fun (_, _, x, _, _) -> x))
+                data.SignatureHelpItems
+                |> Array.map (fun r -> r.Parameters |> Array.map (fun p -> p.CanonicalTypeTextForSorting))
             completionTypeNames
 
 let GetCompletionTypeNamesFromCursorPosition (project:FSharpProject) =
@@ -185,7 +185,7 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
             let actual = 
                 match triggered with 
                 | None -> None
-                | Some (_,applicableSpan,argumentIndex,argumentCount,argumentName) -> Some (applicableSpan.ToString(),argumentIndex,argumentCount,argumentName)
+                | Some data -> Some (data.ApplicableSpan.ToString(),data.ArgumentIndex,data.ArgumentCount,data.ArgumentName)
 
             if expected <> actual then 
                 sb.AppendLine(sprintf "FSharpCompletionProvider.ProvideMethodsAsyncAux() gave unexpected results, expected %A, got %A" expected actual) |> ignore

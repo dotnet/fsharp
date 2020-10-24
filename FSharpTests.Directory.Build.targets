@@ -39,4 +39,5 @@
           <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
       </ItemGroup>
   </Target>
+
 </Project>

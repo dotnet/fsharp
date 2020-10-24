@@ -41,7 +41,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                 do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
                 do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
-                let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken)
+                let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
                 let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync

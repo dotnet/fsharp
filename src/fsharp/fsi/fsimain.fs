@@ -302,9 +302,13 @@ let evaluateSession(argv: string[]) =
     | e -> eprintf "Exception by fsi.exe:\n%+A\n" e; 1
 
 // Mark the main thread as STAThread since it is a GUI thread
+// We only set this for the desktop build of fsi.exe.  When we run on the coreclr we choose not to rely
+// On apartment threads.  A windows NanoServer docker container does not support apartment thread
+#if !FX_NO_WINFORMS
+[<STAThread()>]
+#endif
 [<EntryPoint>]
-[<STAThread()>]    
-[<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
+[<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()

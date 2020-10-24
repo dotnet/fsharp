@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +17,11 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+<<<<<<< HEAD
   .ver 4:7:0:0
+=======
+  .ver 5:0:0:0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly extern System.Core
 {
@@ -23,6 +31,11 @@
 .assembly extern Utils
 {
   .ver 0:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
 }
 .assembly Linq101Grouping01
 {
@@ -38,6 +51,7 @@
 }
 .mresource public FSharpSignatureData.Linq101Grouping01
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000403
 }
 .mresource public FSharpSignatureDataB.Linq101Grouping01
@@ -50,12 +64,26 @@
 }
 .module Linq101Grouping01.exe
 // MVID: {5E172EEB-FB79-E5BF-A745-0383EB2E175E}
+=======
+  // Offset: 0x00000000 Length: 0x00000401
+}
+.mresource public FSharpOptimizationData.Linq101Grouping01
+{
+  // Offset: 0x00000408 Length: 0x00000129
+}
+.module Linq101Grouping01.exe
+// MVID: {5F1FA088-FB79-E5BF-A745-038388A01F5F}
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x06EC0000
+=======
+// Image base: 0x06480000
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -93,7 +121,11 @@
       .maxstack  6
       .locals init ([0] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
       .line 14,14 : 9,28 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Grouping01.fs'
+=======
+      .line 14,14 : 9,28 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Grouping01.fs'
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 15,15 : 9,29 ''
@@ -328,7 +360,7 @@
       .line 25,25 : 24,25 ''
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.0
-      IL_0002:  callvirt   instance char [mscorlib]System.String::get_Chars(int32)
+      IL_0002:  callvirt   instance char [netstandard]System.String::get_Chars(int32)
       IL_0007:  ret
     } // end of method 'wordGroups@25-2'::Invoke
 

@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+=======
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +17,16 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
+<<<<<<< HEAD
   .ver 4:7:0:0
+=======
+  .ver 5:0:0:0
+}
+.assembly extern netstandard
+{
+  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
+  .ver 2:0:0:0
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly TestFunction3c
 {
@@ -29,6 +42,7 @@
 }
 .mresource public FSharpSignatureData.TestFunction3c
 {
+<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x000001FC
 }
 .mresource public FSharpSignatureDataB.TestFunction3c
@@ -41,12 +55,26 @@
 }
 .module TestFunction3c.exe
 // MVID: {5E172EE9-A662-4FAC-A745-0383E92E175E}
+=======
+  // Offset: 0x00000000 Length: 0x000001FA
+}
+.mresource public FSharpOptimizationData.TestFunction3c
+{
+  // Offset: 0x00000200 Length: 0x0000008A
+}
+.module TestFunction3c.exe
+// MVID: {5F1FA088-A662-4FAC-A745-038388A01F5F}
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
+<<<<<<< HEAD
 // Image base: 0x00BA0000
+=======
+// Image base: 0x06AD0000
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -60,7 +88,11 @@
     // Code size       36 (0x24)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+<<<<<<< HEAD
     .line 5,5 : 5,20 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction3c.fs'
+=======
+    .line 5,5 : 5,20 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction3c.fs'
+>>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
     IL_0000:  ldstr      "Hello"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -117,8 +149,8 @@
       IL_002c:  stloc.s    msg
       IL_002e:  ldloc.s    msg
       IL_0030:  ldstr      "hello"
-      IL_0035:  call       bool [mscorlib]System.String::Equals(string,
-                                                                string)
+      IL_0035:  call       bool [netstandard]System.String::Equals(string,
+                                                                   string)
       IL_003a:  brfalse.s  IL_003e
 
       IL_003c:  br.s       IL_0040

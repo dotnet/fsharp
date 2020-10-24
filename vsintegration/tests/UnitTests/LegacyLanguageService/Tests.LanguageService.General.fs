@@ -330,8 +330,8 @@ type UsingMSBuild() =
           Parser.RPAREN, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces) ]
       let matching =           
         [ // Other cases where we expect MatchBraces
-          Parser.LQUOTE("", false); Parser.LBRACK; Parser.LBRACE; Parser.LBRACK_BAR;
-          Parser.RQUOTE("", false); Parser.RBRACK; Parser.RBRACE; Parser.BAR_RBRACK ]
+          Parser.LQUOTE("", false); Parser.LBRACK; Parser.LBRACE (Unchecked.defaultof<_>); Parser.LBRACK_BAR;
+          Parser.RQUOTE("", false); Parser.RBRACK; Parser.RBRACE (Unchecked.defaultof<_>); Parser.BAR_RBRACK ]
         |> List.map (fun n -> n, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces))
       for tok, expected in List.concat [ important; matching ] do
         let info = TestExpose.TokenInfo tok

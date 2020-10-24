@@ -18,7 +18,8 @@ module XmlDocParsing =
         | Pats ps -> ps
         | NamePatPairs(xs, _) -> List.map snd xs
 
-    let rec digNamesFrom = function
+    let rec digNamesFrom pat =
+        match pat with
         | SynPat.Named(_innerPat,id,_isTheThisVar,_access,_range) -> [id.idText]
         | SynPat.Typed(pat,_type,_range) -> digNamesFrom pat
         | SynPat.Attrib(pat,_attrs,_range) -> digNamesFrom pat
@@ -49,12 +50,10 @@ module XmlDocParsing =
             i
 
         let isEmptyXmlDoc (preXmlDoc: PreXmlDoc) =
-            match preXmlDoc.ToXmlDoc() with 
-            | XmlDoc [||] -> true
-            | XmlDoc [|x|] when x.Trim() = "" -> true
-            | _ -> false
+            preXmlDoc.ToXmlDoc(false, None).IsEmpty
 
-        let rec getXmlDocablesSynModuleDecl = function
+        let rec getXmlDocablesSynModuleDecl decl =
+            match decl with 
             | SynModuleDecl.NestedModule(_,  _, synModuleDecls, _, _) -> 
                 (synModuleDecls |> List.collect getXmlDocablesSynModuleDecl)
             | SynModuleDecl.Let(_, synBindingList, range) -> 
@@ -121,12 +120,12 @@ module XmlDocParsing =
                     let paramNames = digNamesFrom synPat 
                     [XmlDocable(line,indent,paramNames)]
                 else []
-            | SynMemberDefn.AbstractSlot(ValSpfn(synAttributes, _, _, _, SynValInfo(args, _), _, _, preXmlDoc, _, _, _), _, range) -> 
+            | SynMemberDefn.AbstractSlot(ValSpfn(synAttributes, _, _, _, synValInfo, _, _, preXmlDoc, _, _, _), _, range) -> 
                 if isEmptyXmlDoc preXmlDoc then
                     let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) range
                     let line = fullRange.StartLine 
                     let indent = indentOf line
-                    let paramNames = args |> List.collect (fun az -> az |> List.choose (fun (SynArgInfo(_synAttributes, _, idOpt)) -> match idOpt with | Some id -> Some(id.idText) | _ -> None))
+                    let paramNames = synValInfo.ArgNames
                     [XmlDocable(line,indent,paramNames)]
                 else []
             | SynMemberDefn.Interface(_synType, synMemberDefnsOption, _range) -> 

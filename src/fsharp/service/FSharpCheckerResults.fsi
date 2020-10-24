@@ -6,10 +6,13 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Range
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
@@ -236,11 +239,9 @@ type public FSharpCheckFileResults =
     member GetDisplayContextForPos : pos : pos -> Async<FSharpDisplayContext option>
 
     /// Determines if a long ident is resolvable at a specific point.
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
 
     /// Determines if a long ident is resolvable at a specific point.
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol * ?userOpName: string -> Async<bool>
 
     /// Represents complete typechecked implementation file, including its typechecked signatures if any.
