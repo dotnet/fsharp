@@ -1316,8 +1316,8 @@ module Display =
         let formatter = ObjectGraphFormatter(opts, BindingFlags.Public) 
         formatter.Format (ShowTopLevelBinding, x, xty)
 #else
-    let internal anyToStringForPrintf options (bindingFlags:BindingFlags) (x, xty) = 
+    let internal anyToStringForPrintf options (bindingFlags:BindingFlags) (value, xty) = 
         let formatter = ObjectGraphFormatter(options, bindingFlags) 
-        formatter.Format (ShowAll, x, xty) |> layout_to_string options
+        formatter.Format (ShowAll, value, xty) |> layout_to_string options
 #endif
 

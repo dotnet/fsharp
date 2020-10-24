@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
-=======
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -17,16 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-<<<<<<< HEAD
   .ver 4:7:0:0
-=======
-  .ver 5:0:0:0
-}
-.assembly extern netstandard
-{
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
-  .ver 2:0:0:0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly Compare04
 {
@@ -42,36 +29,24 @@
 }
 .mresource public FSharpSignatureData.Compare04
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000233
 }
 .mresource public FSharpSignatureDataB.Compare04
 {
   // Offset: 0x00000238 Length: 0x00000003
-=======
-  // Offset: 0x00000000 Length: 0x00000231
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .mresource public FSharpOptimizationData.Compare04
 {
   // Offset: 0x00000238 Length: 0x000000B9
 }
 .module Compare04.dll
-<<<<<<< HEAD
 // MVID: {5E1730AF-053B-F88E-A745-0383AF30175E}
-=======
-// MVID: {5F1FBE49-053B-F88E-A745-038349BE1F5F}
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
 // Image base: 0x06B40000
-=======
-// Image base: 0x06750000
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -95,11 +70,7 @@
                [4] int32 V_4,
                [5] int32 V_5)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-<<<<<<< HEAD
       .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare04.fsx'
-=======
-      .line 5,5 : 8,25 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Compare04.fsx'
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
       IL_0000:  ldc.i4.1
       IL_0001:  stloc.0
       .line 8,8 : 8,32 ''

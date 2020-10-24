@@ -49,11 +49,7 @@
   // Offset: 0x000006A0 Length: 0x00000204
 }
 .module Linq101Select01.exe
-<<<<<<< HEAD
 // MVID: {5E172EEB-6057-8F80-A745-0383EB2E175E}
-=======
-// MVID: {5F1FA088-6057-8F80-A745-038388A01F5F}
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

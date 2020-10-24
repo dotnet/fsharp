@@ -43,7 +43,6 @@
 }
 .mresource public FSharpSignatureData.Linq101Aggregates01
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000608
 }
 .mresource public FSharpSignatureDataB.Linq101Aggregates01
@@ -56,16 +55,6 @@
 }
 .module Linq101Aggregates01.exe
 // MVID: {5E172EEB-D281-4783-A745-0383EB2E175E}
-=======
-  // Offset: 0x00000000 Length: 0x00000606
-}
-.mresource public FSharpOptimizationData.Linq101Aggregates01
-{
-  // Offset: 0x00000610 Length: 0x00000211
-}
-.module Linq101Aggregates01.exe
-// MVID: {5F1FA088-D281-4783-A745-038388A01F5F}
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

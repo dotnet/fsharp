@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
-=======
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -17,16 +13,12 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-<<<<<<< HEAD
-  .ver 4:7:0:0
-=======
   .ver 5:0:0:0
 }
 .assembly extern netstandard
 {
   .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
   .ver 2:0:0:0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly MethodImplNoInline
 {
@@ -38,7 +30,6 @@
 }
 .mresource public FSharpSignatureData.MethodImplNoInline
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x000002FB
 }
 .mresource public FSharpSignatureDataB.MethodImplNoInline
@@ -55,26 +46,12 @@
 }
 .module MethodImplNoInline.exe
 // MVID: {5E172EE9-4480-09E2-A745-0383E92E175E}
-=======
-  // Offset: 0x00000000 Length: 0x000002F9
-}
-.mresource public FSharpOptimizationData.MethodImplNoInline
-{
-  // Offset: 0x00000300 Length: 0x000000F5
-}
-.module MethodImplNoInline.exe
-// MVID: {5F1F9A50-4480-09E2-A745-0383509A1F5F}
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
 // Image base: 0x056D0000
-=======
-// Image base: 0x054F0000
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

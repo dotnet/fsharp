@@ -407,11 +407,11 @@
         <target state="translated">use!, and! ile birleştirilemez</target>
         <note />
       </trans-unit>
-<<<<<<< HEAD
       <trans-unit id="tcNullnessCheckingNotEnabled">
         <source>The /checknulls language feature is not enabled</source>
         <target state="new">The /checknulls language feature is not enabled</target>
-=======
+        <note />
+      </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
         <source>Cannot assign a value to another value marked literal</source>
         <target state="new">Cannot assign a value to another value marked literal</target>
@@ -420,7 +420,6 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="new">Cannot assign '{0}' to a value marked literal</target>
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -428,15 +427,14 @@
         <target state="translated">'let! ... and! ...' yapısı, yalnızca hesaplama ifadesi oluşturucu bir '{0}' metodunu ya da uygun 'MergeSource' ve 'Bind' metotlarını tanımlarsa kullanılabilir</target>
         <note />
       </trans-unit>
-<<<<<<< HEAD
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
         <source>The type '{0}' does not support a nullness qualitification.</source>
         <target state="new">The type '{0}' does not support a nullness qualitification.</target>
-=======
+        <note />
+      </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="new">Invalid interpolated string. {0}</target>
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">

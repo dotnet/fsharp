@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
-=======
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -17,16 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-<<<<<<< HEAD
   .ver 4:7:0:0
-=======
-  .ver 5:0:0:0
-}
-.assembly extern netstandard
-{
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
-  .ver 2:0:0:0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly ForEachOnString01
 {
@@ -42,36 +29,24 @@
 }
 .mresource public FSharpSignatureData.ForEachOnString01
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x00000350
 }
 .mresource public FSharpSignatureDataB.ForEachOnString01
 {
   // Offset: 0x00000358 Length: 0x0000001B
-=======
-  // Offset: 0x00000000 Length: 0x0000034E
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .mresource public FSharpOptimizationData.ForEachOnString01
 {
   // Offset: 0x00000378 Length: 0x000000FF
 }
 .module ForEachOnString01.dll
-<<<<<<< HEAD
 // MVID: {5E1730A7-105C-852B-A745-0383A730175E}
-=======
-// MVID: {5F1FBE49-105C-852B-A745-038349BE1F5F}
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
 // Image base: 0x05680000
-=======
-// Image base: 0x06CB0000
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -101,11 +76,7 @@
       // Code size       6 (0x6)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-<<<<<<< HEAD
       .line 55,55 : 21,39 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnString01.fs'
-=======
-      .line 55,55 : 21,39 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnString01.fs'
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
       IL_0000:  ldarg.1
       IL_0001:  conv.i4
       IL_0002:  ldc.i4.1

@@ -49,11 +49,7 @@
   // Offset: 0x00000A70 Length: 0x00000035
 }
 .module StaticInit_Struct01.dll
-<<<<<<< HEAD
 // MVID: {5E172EE8-05F6-D6CB-A745-0383E82E175E}
-=======
-// MVID: {5F1FA087-05F6-D6CB-A745-038387A01F5F}
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

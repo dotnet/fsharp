@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
-=======
 //  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -17,11 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-<<<<<<< HEAD
-  .ver 4:7:0:0
-=======
   .ver 5:0:0:0
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 }
 .assembly extern Utils
 {
@@ -46,7 +38,6 @@
 }
 .mresource public FSharpSignatureData.Linq101ElementOperators01
 {
-<<<<<<< HEAD
   // Offset: 0x00000000 Length: 0x0000037E
 }
 .mresource public FSharpSignatureDataB.Linq101ElementOperators01
@@ -59,26 +50,12 @@
 }
 .module Linq101ElementOperators01.exe
 // MVID: {5E172EEB-19D7-C20D-A745-0383EB2E175E}
-=======
-  // Offset: 0x00000000 Length: 0x0000037C
-}
-.mresource public FSharpOptimizationData.Linq101ElementOperators01
-{
-  // Offset: 0x00000380 Length: 0x00000127
-}
-.module Linq101ElementOperators01.exe
-// MVID: {5F1FA088-19D7-C20D-A745-038388A01F5F}
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-<<<<<<< HEAD
-// Image base: 0x05170000
-=======
 // Image base: 0x05260000
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -132,11 +109,7 @@
       .locals init ([0] class [Utils]Utils/Product V_0,
                [1] class [Utils]Utils/Product p)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-<<<<<<< HEAD
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101ElementOperators01.fs'
-=======
       .line 100001,100001 : 0,0 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101ElementOperators01.fs'
->>>>>>> 2702b33d4204d7142f34f7acfebf6234d9a43a5c
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101ElementOperators01/products12@12::pc
       IL_0006:  ldc.i4.1
