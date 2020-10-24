@@ -2212,7 +2212,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 /// Entry point typecheckAndCompile
 let typecheckAndCompile 
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
-        defaultCopyFSharpCore, exiter: Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
+        defaultCopyFSharpCore, exiter: Exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use d = new DisposablesTracker()
     let savedOut = System.Console.Out
@@ -2223,7 +2223,7 @@ let typecheckAndCompile
                     System.Console.SetOut(savedOut)
                 with _ -> ()}
 
-    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, d)
+    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, loggerProvider, d)
     |> main1
     |> main2a
     |> main2b (tcImportsCapture,dynamicAssemblyCreator)
@@ -2233,11 +2233,11 @@ let typecheckAndCompile
 
 let compileOfAst 
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, 
-        outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
+        targetDll, targetPdb, dependencies, noframework, exiter, loggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
 
     use d = new DisposablesTracker()
-    main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, 
-                dllReferences, noframework, exiter, errorLoggerProvider, d, inputs)
+    main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, targetDll, targetPdb, 
+                dependencies, noframework, exiter, loggerProvider, d, inputs)
     |> main1
     |> main2a
     |> main2b (tcImportsCapture, dynamicAssemblyCreator)
@@ -2246,9 +2246,9 @@ let compileOfAst
 
 let mainCompile 
         (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
-         defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
+         defaultCopyFSharpCore, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
 
     typecheckAndCompile
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
-        defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
+        defaultCopyFSharpCore, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator)
 

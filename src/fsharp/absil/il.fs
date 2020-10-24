@@ -687,7 +687,7 @@ and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugT
 
     member x.GenericArgs=x.tspecInst
 
-    static member Create (tref, inst) = { tspecTypeRef =tref; tspecInst=inst }
+    static member Create (typeRef, instantiation) = { tspecTypeRef =typeRef; tspecInst=instantiation }
 
     member x.BasicQualifiedName =
         let tc = x.TypeRef.BasicQualifiedName
@@ -823,8 +823,13 @@ type ILMethodRef =
 
     member x.CallingSignature = mkILCallSig (x.CallingConv, x.ArgTypes, x.ReturnType)
 
-    static member Create (a, b, c, d, e, f) =
-        { mrefParent=a; mrefCallconv=b; mrefName=c; mrefGenericArity=d; mrefArgs=e; mrefReturn=f }
+    static member Create (enclosingTypeRef, callingConv, name, genericArity, argTypes, returnType) =
+        { mrefParent=enclosingTypeRef
+          mrefCallconv=callingConv
+          mrefName=name
+          mrefGenericArity=genericArity
+          mrefArgs=argTypes
+          mrefReturn=returnType }
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -910,10 +915,10 @@ type ILSourceDocument =
       sourceDocType: ILGuid option
       sourceFile: string }
 
-    static member Create (language, vendor, docType, file) =
+    static member Create (language, vendor, documentType, file) =
         { sourceLanguage=language
           sourceVendor=vendor
-          sourceDocType=docType
+          sourceDocType=documentType
           sourceFile=file }
 
     member x.Language=x.sourceLanguage
@@ -2913,8 +2918,8 @@ type ILFieldSpec with
 // Make a method mbody
 // --------------------------------------------------------------------
 
-let mkILMethodBody (zeroinit, locals, maxstack, code, tag) : ILMethodBody =
-    { IsZeroInit=zeroinit
+let mkILMethodBody (initlocals, locals, maxstack, code, tag) : ILMethodBody =
+    { IsZeroInit=initlocals
       MaxStack=maxstack
       NoInlining=false
       AggressiveInlining=false
@@ -3149,10 +3154,10 @@ let mkILLiteralField (nm, ty, init, at, access) = mkILField (true, nm, ty, Some 
 // Scopes for allocating new temporary variables.
 // --------------------------------------------------------------------
 
-type ILLocalsAllocator (numPrealloc: int) =
+type ILLocalsAllocator (preAlloc: int) =
     let newLocals = ResizeArray<ILLocal>()
     member tmps.AllocLocal loc =
-        let locn = uint16 (numPrealloc + newLocals.Count)
+        let locn = uint16 (preAlloc + newLocals.Count)
         newLocals.Add loc
         locn
 
@@ -3294,7 +3299,7 @@ let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) =
   let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
 
-let mkILSimpleModule assemblyName modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion =
+let mkILSimpleModule assemblyName moduleName dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion =
     let manifest =
         { Name=assemblyName
           AuxModuleHashAlgorithm= match hashalg with | Some alg -> alg | _ -> 0x8004 // SHA1
@@ -3313,7 +3318,7 @@ let mkILSimpleModule assemblyName modname dll subsystemVersion useHighEntropyVA 
           MetadataIndex = NoMetadataIdx }
     { Manifest= Some manifest
       CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-      Name=modname
+      Name=moduleName
       NativeResources=[]
       TypeDefs=tdefs
       SubsystemVersion = subsystemVersion

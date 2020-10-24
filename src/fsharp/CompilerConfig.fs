@@ -1146,8 +1146,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         let result = ComputeMakePathAbsolute tcConfig.implicitIncludeDir path
         result
 
-    member _.ResolveSourceFile(m, nm, pathLoadedFrom) = 
-        data.ResolveSourceFile(m, nm, pathLoadedFrom)
+    member _.ResolveSourceFile(m, filename, pathLoadedFrom) = 
+        data.ResolveSourceFile(m, filename, pathLoadedFrom)
 
     member _.PrimaryAssemblyDllReference() = primaryAssemblyReference
 
