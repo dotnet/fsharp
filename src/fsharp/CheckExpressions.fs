@@ -1170,9 +1170,9 @@ let PublishModuleDefn cenv env mspec =
     let item = Item.ModuleOrNamespaces([mkLocalModRef mspec])
     CallNameResolutionSink cenv.tcSink (mspec.Range, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
 
-let PublishTypeDefn cenv env tycon = 
+let PublishTypeDefn cenv env mspec = 
     UpdateAccModuleOrNamespaceType cenv env (fun _ mty -> 
-       mty.AddEntity tycon)
+       mty.AddEntity mspec)
 
 let PublishValueDefnPrim cenv env (vspec: Val) = 
     UpdateAccModuleOrNamespaceType cenv env (fun _ mty -> 
@@ -1273,7 +1273,7 @@ let CheckForAbnormalOperatorNames cenv (idRange: range) coreDisplayName (memberI
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
         | PrettyNaming.Other -> ()
 
-let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme, attrs, doc, literalValue, isGeneratedEventVal) =
+let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme, attrs, doc, konst, isGeneratedEventVal) =
 
     let (ValScheme(id, typeScheme, topValData, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, compgen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
 
@@ -1381,7 +1381,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
             (logicalName, id.idRange, compiledName, ty, mut,
              compgen, topValData, vis, vrec, memberInfoOpt, baseOrThis, attrs, inlineFlag,
              doc, isTopBinding, isExtrinsic, isIncrClass, isTyFunc, 
-             (hasDeclaredTypars || inSig), isGeneratedEventVal, literalValue, actualParent)
+             (hasDeclaredTypars || inSig), isGeneratedEventVal, konst, actualParent)
 
     
     CheckForAbnormalOperatorNames cenv id.idRange vspec.CoreDisplayName memberInfoOpt
@@ -1517,8 +1517,8 @@ let ChooseCanonicalDeclaredTyparsAfterInference g denv declaredTypars m =
 
     declaredTypars
 
-let ChooseCanonicalValSchemeAfterInference g denv valscheme m =
-    let (ValScheme(id, typeScheme, arityInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, compgen, isIncrClass, isTyFunc, hasDeclaredTypars)) = valscheme
+let ChooseCanonicalValSchemeAfterInference g denv vscheme m =
+    let (ValScheme(id, typeScheme, arityInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, compgen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
     let (TypeScheme(generalizedTypars, ty)) = typeScheme
     let generalizedTypars = ChooseCanonicalDeclaredTyparsAfterInference g denv generalizedTypars m
     let typeScheme = TypeScheme(generalizedTypars, ty)
@@ -2405,8 +2405,8 @@ module BindingNormalization =
                 NormalizedBindingPat(pat, rhsExpr, valSynData, inferredTyparDecls) 
         normPattern pat
 
-    let NormalizeBinding isObjExprBinding cenv (env: TcEnv) b = 
-        match b with 
+    let NormalizeBinding isObjExprBinding cenv (env: TcEnv) binding = 
+        match binding with 
         | Binding (vis, bkind, isInline, isMutable, Attributes attrs, doc, valSynData, p, retInfo, rhsExpr, mBinding, spBind) ->
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) = 
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData p (NormalizedBindingRhs ([], retInfo, rhsExpr))
@@ -3269,16 +3269,16 @@ let EliminateInitializationGraphs
       g 
       mustHaveArity
       denv 
-      (fixupsAndBindingsWithoutLaziness: 'Bindings list) 
-      (shapesIterBindings: ((PreInitializationGraphEliminationBinding list -> unit) -> 'Bindings list -> unit))
-      (shapesLets: Binding list -> 'Result)
-      (shapesMap: (PreInitializationGraphEliminationBinding list -> Binding list) -> 'Bindings list -> 'Result list)
+      (bindings: 'Bindings list) 
+      (iterBindings: ((PreInitializationGraphEliminationBinding list -> unit) -> 'Bindings list -> unit))
+      (buildLets: Binding list -> 'Result)
+      (mapBindings: (PreInitializationGraphEliminationBinding list -> Binding list) -> 'Bindings list -> 'Result list)
       bindsm =
 
     let recursiveVals = 
         let hash = ValHash<Val>.Create()
         let add (pgrbind: PreInitializationGraphEliminationBinding) = let c = pgrbind.Binding.Var in hash.Add(c, c)
-        fixupsAndBindingsWithoutLaziness |> shapesIterBindings (List.iter add)
+        bindings |> iterBindings (List.iter add)
         hash
 
     // The output of the analysis
@@ -3414,7 +3414,7 @@ let EliminateInitializationGraphs
             let (TBind(v, e, _)) = pgrbind.Binding
             check (mkLocalValRef v) e 
             availIfInOrder.Add(v, 1)
-        fixupsAndBindingsWithoutLaziness |> shapesIterBindings (List.iter checkBind)
+        bindings |> iterBindings (List.iter checkBind)
     end
     
     // ddg = definiteDependencyGraph 
@@ -3455,12 +3455,12 @@ let EliminateInitializationGraphs
         let newTopBinds = ResizeArray<_>()
         let morphBindings pgrbinds = pgrbinds |> List.map morphBinding |> List.unzip |> (fun (a, b) -> newTopBinds.Add (List.concat a); List.concat b)
 
-        let res = fixupsAndBindingsWithoutLaziness |> shapesMap morphBindings
+        let res = bindings |> mapBindings morphBindings
         if newTopBinds.Count = 0 then res
-        else shapesLets (List.concat newTopBinds) :: res
+        else buildLets (List.concat newTopBinds) :: res
     else
         let noMorph (pgrbinds: PreInitializationGraphEliminationBinding list) = pgrbinds |> List.map (fun pgrbind -> pgrbind.Binding) 
-        fixupsAndBindingsWithoutLaziness |> shapesMap noMorph
+        bindings |> mapBindings noMorph
 
 //-------------------------------------------------------------------------
 // Check the shape of an object constructor and rewrite calls 
@@ -3797,9 +3797,9 @@ let CanInferExtraGeneralizedTyparsForRecBinding (pgrbind: PreGeneralizationRecur
     canInferTypars 
 
 /// Get the "this" variable from an instance member binding
-let GetInstanceMemberThisVariable (v: Val, x) =
+let GetInstanceMemberThisVariable (vspec: Val, expr) =
     // Skip over LAM tps. Choose 'a. 
-    if v.IsInstanceMember then
+    if vspec.IsInstanceMember then
         let rec firstArg e =
           match e with
             | Expr.TyLambda (_, _, b, _, _) -> firstArg b
@@ -3807,7 +3807,7 @@ let GetInstanceMemberThisVariable (v: Val, x) =
             | Expr.Lambda (_, _, _, [v], _, _, _) -> Some v
             | _ -> failwith "GetInstanceMemberThisVariable: instance member did not have expected internal form"
        
-        firstArg x
+        firstArg expr
     else
         None
 
@@ -4362,10 +4362,10 @@ and TcTypesOrMeasures optKinds cenv newOk checkCxs occ env tpenv args m =
         elif isNil kinds then error(Error(FSComp.SR.tcUnexpectedTypeArguments(), m))
         else error(Error(FSComp.SR.tcTypeParameterArityMismatch((List.length kinds), (List.length args)), m))
 
-and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
+and TcTyparConstraints cenv newOk checkCxs occ env tpenv synConstraints =
     // Mark up default constraints with a priority in reverse order: last gets 0, second 
     // last gets 1 etc. See comment on TyparConstraint.DefaultsTo 
-    let _, tpenv = List.fold (fun (ridx, tpenv) tc -> ridx - 1, TcTyparConstraint ridx cenv newOk checkCxs occ env tpenv tc) (List.length wcs - 1, tpenv) wcs
+    let _, tpenv = List.fold (fun (ridx, tpenv) tc -> ridx - 1, TcTyparConstraint ridx cenv newOk checkCxs occ env tpenv tc) (List.length synConstraints - 1, tpenv) synConstraints
     tpenv
 
 #if !NO_EXTENSIONTYPING
