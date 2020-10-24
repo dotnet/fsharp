@@ -521,6 +521,12 @@
     <Compile Include="..\CheckExpressions.fs">
       <Link>Logic\CheckExpressions.fs</Link>
     </Compile>
+    <Compile Include="..\CheckComputationExpressions.fsi">
+      <Link>Logic\CheckComputationExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\CheckComputationExpressions.fs">
+      <Link>Logic\CheckComputationExpressions.fs</Link>
+    </Compile>
     <Compile Include="..\CheckDeclarations.fsi">
       <Link>Logic\CheckDeclarations.fsi</Link>
     </Compile>
