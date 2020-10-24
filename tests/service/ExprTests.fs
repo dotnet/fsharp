@@ -1,13 +1,12 @@
 ﻿
 #if INTERACTIVE
-#r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
-#r "../../artifacts/bin/fcs/net461/nunit.framework.dll"
+#r "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0/FSharp.Compiler.Service.dll"
+#r "../../artifacts/bin/FSharp.Compiler.UnitTests/Debug/net472/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
 module FSharp.Compiler.Service.Tests.ExprTests
 #endif
-
 
 open NUnit.Framework
 open FsUnit
@@ -99,6 +98,8 @@ module internal Utils =
         | BasicPatterns.AddressSet(e1,e2) -> printExpr 0 e1 + " <- " + printExpr 0 e2
         | BasicPatterns.Application(f,tyargs,args) -> quote low (printExpr 10 f + printTyargs tyargs + " " + printCurriedArgs args)
         | BasicPatterns.BaseValue(_) -> "base"
+        | BasicPatterns.CallWithWitnesses(Some obj,v,tyargs1,tyargs2,witnessL,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs (witnessL @ argsL)
+        | BasicPatterns.CallWithWitnesses(None,v,tyargs1,tyargs2,witnessL,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs (witnessL @ argsL)
         | BasicPatterns.Call(Some obj,v,tyargs1,tyargs2,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs argsL
         | BasicPatterns.Call(None,v,tyargs1,tyargs2,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs argsL
         | BasicPatterns.Coerce(ty1,e1) -> quote low (printExpr 10 e1 + " :> " + printTy ty1)
@@ -218,6 +219,7 @@ module internal Utils =
                 yield text
             | FSharpImplementationFileDeclaration.InitAction(e) ->
                 yield sprintf "do %s" (printExpr 0 e) }
+
     and printDeclarations excludes ds = 
         seq { for d in ds do 
                 yield! printDeclaration excludes d }
@@ -3048,3 +3050,109 @@ let ``Test expressions of both optimized and unoptimized declarations for Stress
         ``Test expressions of declarations stress big expressions`` ()
     finally
         Utils.cleanupTempFiles filenames
+
+//---------------------------------------------------------------------------------------------------------
+// This project is for witness arguments (CallWithWitnesses)
+
+module internal ProjectForWitnesses = 
+
+    let fileSource1 = """
+module M
+
+/// One witness
+let inline callX (x: ^T) (y: ^U) = ((^T or ^U): (static member X : ^T * ^U -> ^V) (x,y))
+
+/// Two witnesses
+let inline callXY (x: ^T) (y: ^U) =
+    ((^T or ^U): (static member Y1 : ^T * ^U -> unit) (x,y))
+    ((^T or ^U): (static member Y2 : ^T * ^U -> unit) (x,y))
+
+type C() =
+    static member X(a: C, b: C) = C()
+    static member X(a: C, b: D) = D()
+    static member Y1(a: C, b: C) = ()
+    static member Y1(a: C, b: D) = ()
+    static member Y2(a: C, b: C) = ()
+    static member Y2(a: C, b: D) = ()
+
+and D() =
+    static member X(a: D, b: D) = D()
+    static member X(a: D, b: C) = C()
+    static member Y1(a: D, b: D) = ()
+    static member Y1(a: D, b: C) = ()
+    static member Y2(a: D, b: D) = ()
+    static member Y2(a: D, b: C) = ()
+
+let f1() = callX (C()) (C())
+let f2() = callX (D()) (D())
+let f3() = callX (C()) (D())
+let f4() = callX (D()) (C())
+
+let f5() = callXY (C()) (C())
+let f6() = callXY (D()) (D())
+let f7() = callXY (C()) (D())
+let f8() = callXY (D()) (C())
+    """
+
+    let createOptions() =
+        let temp1 = Utils.getTempFileName()
+        let temp2 = Utils.getTempFileName()
+        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs"  
+        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" 
+        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" 
+
+        Utils.createTempDir()
+        File.WriteAllText(fileName1, fileSource1)
+        let fileNames = [fileName1]
+        let args = [| yield "--langversion:preview"; yield! mkProjectCommandLineArgs (dllName, fileNames) |]
+        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+        [fileName1; dllName; projFileName], options
+
+    let options = lazy createOptions()
+
+[<Test>]
+let ``Test ProjectForWitnesses`` () =
+  let filenames = fst ProjectForWitnesses.options.Value
+  try
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectForWitnesses.options.Value) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "Project1 error: <<<%s>>>" e.Message
+
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+
+    let expected = 
+        ["type M"; "let callX(x) (y) = trait call X(x,y) @ (5,35--5,88)";
+         "let callXY(x) (y) = (trait call Y1(x,y); trait call Y2(x,y)) @ (9,4--10,60)";
+         "type C"; "type D";
+         "member .ctor(unitVar0) = (new Object(); ()) @ (12,5--12,6)";
+         "member X(a,b) = new C(()) @ (13,34--13,37)";
+         "member X(a,b) = new D(()) @ (14,34--14,37)";
+         "member Y1(a,b) = () @ (15,35--15,37)"; "member Y1(a,b) = () @ (16,35--16,37)";
+         "member Y2(a,b) = () @ (17,35--17,37)"; "member Y2(a,b) = () @ (18,35--18,37)";
+         "member .ctor(unitVar0) = (new Object(); ()) @ (20,4--20,5)";
+         "member X(a,b) = new D(()) @ (21,34--21,37)";
+         "member X(a,b) = new C(()) @ (22,34--22,37)";
+         "member Y1(a,b) = () @ (23,35--23,37)"; "member Y1(a,b) = () @ (24,35--24,37)";
+         "member Y2(a,b) = () @ (25,35--25,37)"; "member Y2(a,b) = () @ (26,35--26,37)";
+         "let f1(unitVar0) = M.callX<M.C,M.C,M.C> (fun arg0_0 -> fun arg1_0 -> C.X (arg0_0,arg1_0),new C(()),new C(())) @ (28,11--28,28)";
+         "let f2(unitVar0) = M.callX<M.D,M.D,M.D> (fun arg0_0 -> fun arg1_0 -> D.X (arg0_0,arg1_0),new D(()),new D(())) @ (29,11--29,28)";
+         "let f3(unitVar0) = M.callX<M.C,M.D,M.D> (fun arg0_0 -> fun arg1_0 -> C.X (arg0_0,arg1_0),new C(()),new D(())) @ (30,11--30,28)";
+         "let f4(unitVar0) = M.callX<M.D,M.C,M.C> (fun arg0_0 -> fun arg1_0 -> D.X (arg0_0,arg1_0),new D(()),new C(())) @ (31,11--31,28)";
+         "let f5(unitVar0) = M.callXY<M.C,M.C> (fun arg0_0 -> fun arg1_0 -> C.Y1 (arg0_0,arg1_0),fun arg0_0 -> fun arg1_0 -> C.Y2 (arg0_0,arg1_0),new C(()),new C(())) @ (33,11--33,29)";
+         "let f6(unitVar0) = M.callXY<M.D,M.D> (fun arg0_0 -> fun arg1_0 -> D.Y1 (arg0_0,arg1_0),fun arg0_0 -> fun arg1_0 -> D.Y2 (arg0_0,arg1_0),new D(()),new D(())) @ (34,11--34,29)";
+         "let f7(unitVar0) = M.callXY<M.C,M.D> (fun arg0_0 -> fun arg1_0 -> C.Y1 (arg0_0,arg1_0),fun arg0_0 -> fun arg1_0 -> C.Y2 (arg0_0,arg1_0),new C(()),new D(())) @ (35,11--35,29)";
+         "let f8(unitVar0) = M.callXY<M.D,M.C> (fun arg0_0 -> fun arg1_0 -> D.Y1 (arg0_0,arg1_0),fun arg0_0 -> fun arg1_0 -> D.Y2 (arg0_0,arg1_0),new D(()),new C(())) @ (36,11--36,29)"]
+
+    let actual = 
+      printDeclarations None (List.ofSeq file1.Declarations)
+      |> Seq.toList 
+    printfn "actual:\n\n%A" actual
+    actual
+      |> shouldPairwiseEqual expected
+
+    finally
+        Utils.cleanupTempFiles filenames
+

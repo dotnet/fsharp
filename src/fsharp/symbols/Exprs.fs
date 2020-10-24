@@ -143,10 +143,11 @@ and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSha
 /// The type of expressions provided through the compiler API.
 and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range, ty) =
 
+    let mutable e = match f with None -> e | Some _ -> Unchecked.defaultof<E>
     member x.Range = m
     member x.Type = FSharpType(cenv, ty)
     member x.cenv = cenv
-    member x.E = match f with None -> e | Some f -> f().E
+    member x.E = match box e with null -> (e <- f.Value().E); e | _ -> e
     override x.ToString() = sprintf "%+A" x.E
 
     member x.ImmediateSubExpressions = 
@@ -1149,7 +1150,6 @@ module FSharpExprConvert =
                 E.NewObject(v, enclTyArgsR, callArgsR) 
             else 
                 E.Call(objR, v, enclTyArgsR, methTyArgsR, witnessArgsR, callArgsR))
-
 
     and ConvExprs cenv env args = List.map (ConvExpr cenv env) args 
 
