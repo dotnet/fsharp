@@ -2104,10 +2104,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName
         with _  -> "??"
 
-    member x.FormatLayout (context:FSharpDisplayContext) =
+    member x.FormatLayout (displayContext: FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (displayContext.Contents cenv.g) with showMemberContainers=true } v.Deref
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -2119,10 +2119,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
-            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            NicePrint.prettyLayoutOfTypeNoCx (displayContext.Contents cenv.g) ty
 
     // TODO - consider the other types
-    member x.GetReturnTypeLayout (denv: FSharpDisplayContext) =
+    member x.GetReturnTypeLayout (displayContext: FSharpDisplayContext) =
         match x.IsMember, d with
         | true, _ ->
             None

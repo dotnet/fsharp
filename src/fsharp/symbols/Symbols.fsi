@@ -911,6 +911,7 @@ type FSharpMemberOrFunctionOrValue =
     member IsConstructor: bool
     
     /// Format the type using the rules of the given display context
+<<<<<<< HEAD
     member FormatLayout: context: FSharpDisplayContext -> Layout
     
     /// Format the type using the rules of the given display context
@@ -919,6 +920,13 @@ type FSharpMemberOrFunctionOrValue =
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
     member GetWitnessPassingInfo: unit -> (string * IList<FSharpParameter>) option
+=======
+    member FormatLayout : displayContext: FSharpDisplayContext -> Layout
+
+    /// Format the type using the rules of the given display context
+    member GetReturnTypeLayout : displayContext: FSharpDisplayContext -> Layout option
+
+>>>>>>> ac5c7ef5f... Match names
 
 /// A subtype of FSharpSymbol that represents a parameter 
 [<Class>]
