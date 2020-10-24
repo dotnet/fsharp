@@ -3248,18 +3248,6 @@ let ConvertArbitraryExprToEnumerable (cenv: cenv) ty (env: TcEnv) (expr: Expr) =
                    (mkLambda m enumeratorVar (betterCurrentExpr, enumElemTy)))
         expr, enumElemTy           
 
-<<<<<<< HEAD
-let mkSeqEmpty cenv env m genTy =
-    // We must discover the 'zero' of the monadic algebra being generated in order to compile failing matches.
-    let genResultTy = NewInferenceType cenv.g
-    UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
-    mkCallSeqEmpty cenv.g m genResultTy 
-
-let mkSeqCollect cenv env m enumElemTy genTy lam enumExpr =
-    let genResultTy = NewInferenceType cenv.g
-    UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
-    let enumExpr = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g enumElemTy) (tyOfExpr cenv.g enumExpr) enumExpr
-    mkCallSeqCollect cenv.g m enumElemTy genResultTy lam enumExpr
 //-------------------------------------------------------------------------
 // Post-transform initialization graphs using the 'lazy' interpretation.
 // See ML workshop paper.
