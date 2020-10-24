@@ -1396,7 +1396,7 @@ let mkFor (g: TcGlobals) (spFor, v, e1, dir, e2, e3: Expr, m) =
     Expr.Op (TOp.For (spFor, dir), [], [mkDummyLambda g (e1, g.int_ty) ;mkDummyLambda g (e2, g.int_ty);mkLambda e3.Range v (e3, g.unit_ty)], m)
 
 let mkTryWith g (e1, vf, ef: Expr, vh, eh: Expr, m, ty, spTry, spWith) = 
-    Expr.Op (TOp.TryCatch (spTry, spWith), [ty], [mkDummyLambda g (e1, ty);mkLambda ef.Range vf (ef, ty);mkLambda eh.Range vh (eh, ty)], m)
+    Expr.Op (TOp.TryWith (spTry, spWith), [ty], [mkDummyLambda g (e1, ty);mkLambda ef.Range vf (ef, ty);mkLambda eh.Range vh (eh, ty)], m)
 
 let mkTryFinally (g: TcGlobals) (e1, e2, m, ty, spTry, spFinally) = 
     Expr.Op (TOp.TryFinally (spTry, spFinally), [ty], [mkDummyLambda g (e1, ty);mkDummyLambda g (e2, g.unit_ty)], m)
@@ -3918,20 +3918,20 @@ module DebugPrint =
                 atomL x --- (wordL(tagText ":>") ^^ typeL ty) 
             | Expr.Op (TOp.Reraise, [_], [], _) -> 
                 wordL(tagText "Rethrow!")
-            | Expr.Op (TOp.ILAsm (a, tys), tyargs, args, _) -> 
-                let instrs = a |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
+            | Expr.Op (TOp.ILAsm (instrs, retTypes), tyargs, args, _) -> 
+                let instrs = instrs |> List.map (sprintf "%+A" >> tagText >> wordL) |> spaceListL // %+A has + since instrs are from an "internal" type  
                 let instrs = leftL(tagText "(#") ^^ instrs ^^ rightL(tagText "#)")
                 (appL g instrs tyargs args ---
-                    wordL(tagText ":") ^^ spaceListL (List.map typeAtomL tys)) |> wrap
+                    wordL(tagText ":") ^^ spaceListL (List.map typeAtomL retTypes)) |> wrap
             | Expr.Op (TOp.LValueOp (lvop, vr), _, args, _) -> 
                 (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
-            | Expr.Op (TOp.ILCall (_isVirtCall, _isProtectedCall, _valu, _isNewObjCall, _valUseFlags, _isProperty, _noTailCall, ilMethRef, tinst, minst, _tys), tyargs, args, _) ->
+            | Expr.Op (TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, _), tyargs, args, _) ->
                 let meth = ilMethRef.Name
                 wordL(tagText "ILCall") ^^
                    aboveListL 
                       [ yield wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth)
-                        if not tinst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL tinst
-                        if not minst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL minst
+                        if not enclTypeInst.IsEmpty then yield wordL(tagText "tinst ") --- listL typeL enclTypeInst
+                        if not methInst.IsEmpty then yield wordL (tagText "minst ") --- listL typeL methInst
                         if not tyargs.IsEmpty then yield wordL (tagText "tyargs") --- listL typeL tyargs
                         if not args.IsEmpty then yield listL exprL args ] 
                     |> wrap
@@ -3941,8 +3941,8 @@ module DebugPrint =
                 (wordL(tagText "while") ^^ exprL x1 ^^ wordL(tagText "do")) @@-- exprL x2
             | Expr.Op (TOp.For _, [], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _);Expr.Lambda (_, _, _, [_], x3, _, _)], _) -> 
                 wordL(tagText "for") ^^ aboveListL [(exprL x1 ^^ wordL(tagText "to") ^^ exprL x2 ^^ wordL(tagText "do")); exprL x3 ] ^^ rightL(tagText "done")
-            | Expr.Op (TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) -> 
-                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh) 
+            | Expr.Op (TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], xf, _, _);Expr.Lambda (_, _, _, [_], xh, _, _)], _) ->
+                (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "with-filter") @@-- exprL xf) @@ (wordL(tagText "with") @@-- exprL xh)
             | Expr.Op (TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], x1, _, _);Expr.Lambda (_, _, _, [_], x2, _, _)], _) -> 
                 (wordL (tagText "try") @@-- exprL x1) @@ (wordL(tagText "finally") @@-- exprL x2)
             | Expr.Op (TOp.Bytes _, _, _, _) -> 
@@ -3953,7 +3953,7 @@ module DebugPrint =
             | Expr.Op (TOp.ExnFieldGet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldGet...")
             | Expr.Op (TOp.ExnFieldSet _, _tyargs, _args, _) -> wordL(tagText "TOp.ExnFieldSet...")
             | Expr.Op (TOp.TryFinally _, _tyargs, _args, _) -> wordL(tagText "TOp.TryFinally...")
-            | Expr.Op (TOp.TryCatch _, _tyargs, _args, _) -> wordL(tagText "TOp.TryCatch...")
+            | Expr.Op (TOp.TryWith _, _tyargs, _args, _) -> wordL(tagText "TOp.TryWith...")
             | Expr.Op (TOp.Goto l, _tys, args, _) -> wordL(tagText ("Expr.Goto " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (TOp.Label l, _tys, args, _) -> wordL(tagText ("Expr.Label " + string l)) ^^ bracketL (commaListL (List.map atomL args)) 
             | Expr.Op (_, _tys, args, _) -> wordL(tagText "Expr.Op ...") ^^ bracketL (commaListL (List.map atomL args)) 
@@ -4696,7 +4696,7 @@ and accFreeInExprNonLinear opts x acc =
             let acc = accFreeInDecisionTree opts dtree acc
             accFreeInTargets opts targets acc
             
-    | Expr.Op (TOp.TryCatch _, tinst, [expr1; expr2; expr3], _) ->
+    | Expr.Op (TOp.TryWith _, tinst, [expr1; expr2; expr3], _) ->
         unionFreeVars 
           (accFreeVarsInTys opts tinst
             (accFreeInExprs opts [expr1; expr2] acc))
@@ -4716,7 +4716,7 @@ and accFreeInOp opts op acc =
     // Things containing no references
     | TOp.Bytes _ 
     | TOp.UInt16s _ 
-    | TOp.TryCatch _ 
+    | TOp.TryWith _
     | TOp.TryFinally _ 
     | TOp.For _ 
     | TOp.Coerce 
@@ -4759,8 +4759,8 @@ and accFreeInOp opts op acc =
         let acc = accUsesFunctionLocalConstructs (kind = RecdExprIsObjInit) acc
         (accUsedRecdOrUnionTyconRepr opts tcref.Deref (accFreeTyvars opts accFreeTycon tcref acc)) 
 
-    | TOp.ILAsm (_, tys) ->  
-        accFreeVarsInTys opts tys acc
+    | TOp.ILAsm (_, retTypes) ->  
+        accFreeVarsInTys opts retTypes acc
     
     | TOp.Reraise -> 
         accUsesRethrow true acc
@@ -4774,12 +4774,12 @@ and accFreeInOp opts op acc =
     | TOp.LValueOp (_, vref) -> 
         accFreeValRef opts vref acc
 
-    | TOp.ILCall (_, isProtectedCall, _, _, valUseFlags, _, _, _, enclTypeArgs, methTypeArgs, tys) ->
-       accFreeVarsInTys opts enclTypeArgs 
-         (accFreeVarsInTys opts methTypeArgs  
-           (accFreeInValFlags opts valUseFlags
-             (accFreeVarsInTys opts tys 
-               (accUsesFunctionLocalConstructs isProtectedCall acc))))
+    | TOp.ILCall (_, isProtected, _, _, valUseFlag, _, _, _, enclTypeInst, methInst, retTypes) ->
+       accFreeVarsInTys opts enclTypeInst 
+         (accFreeVarsInTys opts methInst  
+           (accFreeInValFlags opts valUseFlag
+             (accFreeVarsInTys opts retTypes 
+               (accUsesFunctionLocalConstructs isProtected acc))))
 
 and accFreeInTargets opts targets acc = 
     Array.foldBack (accFreeInTarget opts) targets acc
@@ -5314,16 +5314,16 @@ and remapOp tmenv op =
     | TOp.UnionCaseFieldGet (ucref, n) -> TOp.UnionCaseFieldGet (remapUnionCaseRef tmenv.tyconRefRemap ucref, n)
     | TOp.UnionCaseFieldGetAddr (ucref, n, readonly) -> TOp.UnionCaseFieldGetAddr (remapUnionCaseRef tmenv.tyconRefRemap ucref, n, readonly)
     | TOp.UnionCaseFieldSet (ucref, n) -> TOp.UnionCaseFieldSet (remapUnionCaseRef tmenv.tyconRefRemap ucref, n)
-    | TOp.ILAsm (instrs, tys) -> 
-        let tys2 = remapTypes tmenv tys
-        if tys === tys2 then op else
-        TOp.ILAsm (instrs, tys2)
+    | TOp.ILAsm (instrs, retTypes) -> 
+        let retTypes2 = remapTypes tmenv retTypes
+        if retTypes === retTypes2 then op else
+        TOp.ILAsm (instrs, retTypes2)
     | TOp.TraitCall traitInfo -> TOp.TraitCall (remapTraitInfo tmenv traitInfo)
     | TOp.LValueOp (kind, lvr) -> TOp.LValueOp (kind, remapValRef tmenv lvr)
-    | TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, valUseFlags, isProperty, noTailCall, ilMethRef, enclTypeArgs, methTypeArgs, tys) -> 
-       TOp.ILCall (isVirtCall, isProtectedCall, valu, isNewObjCall, remapValFlags tmenv valUseFlags, 
-                   isProperty, noTailCall, ilMethRef, remapTypes tmenv enclTypeArgs, 
-                   remapTypes tmenv methTypeArgs, remapTypes tmenv tys)
+    | TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, valUseFlag, isProperty, noTailCall, ilMethRef, enclTypeInst, methInst, retTypes) -> 
+       TOp.ILCall (isVirtual, isProtected, isStruct, isCtor, remapValFlags tmenv valUseFlag, 
+                   isProperty, noTailCall, ilMethRef, remapTypes tmenv enclTypeInst, 
+                   remapTypes tmenv methInst, remapTypes tmenv retTypes)
     | _ -> op
     
 and remapValFlags tmenv x =
@@ -5348,7 +5348,7 @@ and remapDecisionTree g compgen tmenv x =
                     | DecisionTreeTest.IsInst (srcty, tgty) -> DecisionTreeTest.IsInst (remapType tmenv srcty, remapType tmenv tgty) 
                     | DecisionTreeTest.IsNull -> DecisionTreeTest.IsNull 
                     | DecisionTreeTest.ActivePatternCase _ -> failwith "DecisionTreeTest.ActivePatternCase should only be used during pattern match compilation"
-                    | DecisionTreeTest.Error _ -> failwith "DecisionTreeTest.Error should only be used during pattern match compilation"
+                    | DecisionTreeTest.Error(m) -> DecisionTreeTest.Error(m)
                   TCase(test', remapDecisionTree g compgen tmenv y)) csl, 
                 Option.map (remapDecisionTree g compgen tmenv) dflt, 
                 m)
@@ -5685,7 +5685,7 @@ let rec remarkExpr m x =
         let op = 
             match op with 
             | TOp.TryFinally (_, _) -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
-            | TOp.TryCatch (_, _) -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
+            | TOp.TryWith (_, _) -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
             | _ -> op
         Expr.Op (op, tinst, remarkExprs m args, m)
 
@@ -5858,7 +5858,7 @@ let rec tyOfExpr g e =
     | Expr.Op (op, tinst, _, _) -> 
         match op with 
         | TOp.Coerce -> (match tinst with [to_ty;_fromTy] -> to_ty | _ -> failwith "bad TOp.Coerce node")
-        | (TOp.ILCall (_, _, _, _, _, _, _, _, _, _, rtys) | TOp.ILAsm (_, rtys)) -> (match rtys with [h] -> h | _ -> g.unit_ty)
+        | (TOp.ILCall (_, _, _, _, _, _, _, _, _, _, retTypes) | TOp.ILAsm (_, retTypes)) -> (match retTypes with [h] -> h | _ -> g.unit_ty)
         | TOp.UnionCase uc -> actualResultTyOfUnionCase tinst uc 
         | TOp.UnionCaseProof uc -> mkProvenUnionCaseTy uc tinst  
         | TOp.Recd (_, tcref) -> mkAppTy tcref tinst
@@ -5871,7 +5871,7 @@ let rec tyOfExpr g e =
         | TOp.AnonRecd anonInfo -> mkAnyAnonRecdTy g anonInfo tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
-        | (TOp.TryCatch _ | TOp.TryFinally _) -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
+        | (TOp.TryWith _ | TOp.TryFinally _) -> (match tinst with [ty] -> ty | _ -> failwith "bad TOp_try node")
         | TOp.ValFieldGetAddr (fref, readonly) -> mkByrefTyWithFlag g readonly (actualTyOfRecdFieldRef fref tinst)
         | TOp.ValFieldGet fref -> actualTyOfRecdFieldRef fref tinst
         | (TOp.ValFieldSet _ | TOp.UnionCaseFieldSet _ | TOp.ExnFieldSet _ | TOp.LValueOp ((LSet | LByrefSet), _)) ->g.unit_ty
@@ -9094,8 +9094,8 @@ let (|RangeInt32Step|_|) g expr =
 
 let (|GetEnumeratorCall|_|) expr =   
     match expr with   
-    | Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, iLMethodRef, _, _, _), _, [Expr.Val (vref, _, _) | Expr.Op (_, _, [Expr.Val (vref, ValUseFlag.NormalValUse, _)], _) ], _) ->  
-        if iLMethodRef.Name = "GetEnumerator" then Some vref  
+    | Expr.Op (TOp.ILCall ( _, _, _, _, _, _, _, ilMethodRef, _, _, _), _, [Expr.Val (vref, _, _) | Expr.Op (_, _, [Expr.Val (vref, ValUseFlag.NormalValUse, _)], _) ], _) ->  
+        if ilMethodRef.Name = "GetEnumerator" then Some vref  
         else None  
     | _ -> None  
 
@@ -9329,9 +9329,9 @@ let (|ForLoopExpr|_|) expr =
         Some (sp1, sp2, e1, e2, v, e3, m)
     | _ -> None
 
-let (|TryCatchExpr|_|) expr = 
+let (|TryWithExpr|_|) expr =
     match expr with 
-    | Expr.Op (TOp.TryCatch (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) -> 
+    | Expr.Op (TOp.TryWith (spTry, spWith), [resTy], [Expr.Lambda (_, _, _, [_], bodyExpr, _, _); Expr.Lambda (_, _, _, [filterVar], filterExpr, _, _); Expr.Lambda (_, _, _, [handlerVar], handlerExpr, _, _)], m) ->
         Some (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
     | _ -> None
 

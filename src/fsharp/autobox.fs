@@ -60,7 +60,7 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
     | TOp.For (_), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         exprF (exprF (exprF z e1) e2) e3
 
-    | TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         exprF (exprF (exprF z e1) _e2) e3
         // In Check code it said
         //     e2; -- don't check filter body - duplicates logic in 'catch' body 

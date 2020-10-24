@@ -239,7 +239,7 @@ function Make-BootstrapBuild() {
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $buildToolsProject = "$RepoRoot\src\buildtools\buildtools.proj"
+    $buildToolsProject = "`"$RepoRoot\src\buildtools\buildtools.proj`""
 
     $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
     $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
@@ -256,7 +256,7 @@ function Make-BootstrapBuild() {
     Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\netcoreapp3.1" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
-    $protoProject = "$RepoRoot\proto.proj"
+    $protoProject = "`"$RepoRoot\proto.proj`""
     $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"

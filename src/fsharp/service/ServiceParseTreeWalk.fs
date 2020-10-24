@@ -391,7 +391,7 @@ module public AstTraversal =
                     else
                     traverseSynExpr synExpr
 
-                | SynExpr.Lambda (_, _, synSimplePats, synExpr, _range) ->
+                | SynExpr.Lambda (_, _, synSimplePats, synExpr, _, _range) ->
                     match synSimplePats with
                     | SynSimplePats.SimplePats(pats,_) ->
                         match visitor.VisitSimplePats(pats) with
@@ -659,7 +659,7 @@ module public AstTraversal =
             [
                 match synTypeDefnRepr with
                 | SynTypeDefnRepr.Exception _ -> 
-                    // This node is generated in TypeChecker.fs, not in the AST.  
+                    // This node is generated in CheckExpressions.fs, not in the AST.  
                     // But note exception declarations are missing from this tree walk.
                     () 
                 | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->

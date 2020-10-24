@@ -198,7 +198,7 @@ let rec isIfBlockContinuator token =
     | ODUMMY token -> isIfBlockContinuator token
     | _ -> false
 
-/// Determine the token that may align with the 'try' of a 'try/catch' or 'try/finally' without closing
+/// Determine the token that may align with the 'try' of a 'try/with' or 'try/finally' without closing
 /// the construct
 let rec isTryBlockContinuator token =
     match token with 
@@ -427,12 +427,18 @@ type TokenTupPool() =
     [<Literal>]
     let maxSize = 100
 
-    let stack = System.Collections.Generic.Stack(Array.init maxSize (fun _ -> TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)))
+    let mutable currentPoolSize = 0
+    let stack = System.Collections.Generic.Stack(10)
 
-    member _.Rent() = 
+    member this.Rent() = 
         if stack.Count = 0 then
-            assert false
-            TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+            if currentPoolSize < maxSize then
+                stack.Push(TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>))
+                currentPoolSize <- currentPoolSize + 1
+                this.Rent()
+            else
+                assert false
+                TokenTup(Unchecked.defaultof<_>, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
         else
             stack.Pop()
 

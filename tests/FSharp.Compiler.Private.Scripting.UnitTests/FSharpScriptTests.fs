@@ -186,15 +186,14 @@ stacktype.Name = "Stack"
     [<Fact>]
     member __.``ML - use assembly with native dependencies``() =
         let code = @"
-#r ""nuget:RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json""
 #r ""nuget:Microsoft.ML,version=1.4.0-preview""
 #r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
-#r ""nuget:Microsoft.Data.DataFrame,version=0.1.1-e191008-1""
+#r ""nuget:Microsoft.Data.Analysis,version=0.4.0""
 
 open System
 open System.IO
 open System.Linq
-open Microsoft.Data
+open Microsoft.Data.Analysis
 
 let Shuffle (arr:int[]) =
     let rnd = Random()
@@ -206,9 +205,9 @@ let Shuffle (arr:int[]) =
     arr
 
 let housingPath = ""housing.csv""
-let housingData = DataFrame.ReadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
-let testSize = int (float (housingData.RowCount) * 0.1)
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
 let trainRows = randomIndices.[testSize..]
 let testRows = randomIndices.[..testSize]
 let housing_train = housingData.[trainRows]
@@ -249,21 +248,26 @@ printfn ""%A"" result
                 if line.Contains("error NU1101:") && line.Contains("FSharp.Really.Not.A.Package") then
                     found <- found + 1
                 outp.Add(line))
-        let _result, _errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
-        Assert.True( (found = 1), "Expected to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+        let result, errors = script.Eval("""#r "nuget:FSharp.Really.Not.A.Package" """)
+        Assert.True( (found = 0), "Did not expect to see output contains 'error NU1101:' and 'FSharp.Really.Not.A.Package'")
+        Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("error NU1101:")), "Expect to error containing 'error NU1101:'")
+        Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")), "Expect to error containing 'FSharp.Really.Not.A.Package'")
 
     [<Fact>]
     member __.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let mutable foundResolve = 0
-        output.OutputProduced.Add (fun line -> if line.Contains("Microsoft (R) Build Engine version") then foundResolve <- foundResolve + 1)
-        let _result, _errors =
+        output.OutputProduced.Add (fun line -> if line.Contains("error NU1101:") then foundResolve <- foundResolve + 1)
+        let result, errors =
             script.Eval("""
 #r "nuget:FSharp.Really.Not.A.Package"
 #r "nuget:FSharp.Really.Not.Another.Package"
                 """)
-        Assert.True( (foundResolve = 1), (sprintf "Expected to see 'Microsoft (R) Build Engine version' only once actually resolved %d times" foundResolve))
+        Assert.True( (foundResolve = 0), (sprintf "Did not expected to see 'error NU1101:' in output" ))
+        Assert.Equal(2, (errors |> Seq.filter (fun error -> error.Message.Contains("error NU1101:")) |> Seq.length))
+        Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")) |> Seq.length))
+        Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.Another.Package")) |> Seq.length))
 
     [<Fact>]
     member __.``ML - use assembly with ref dependencies``() =

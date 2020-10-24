@@ -21481,7 +21481,7 @@ FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: System.String[] De
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Boolean ImplicitlyStartBackgroundWork
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Boolean get_ImplicitlyStartBackgroundWork()
-FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.ReferenceResolver+Resolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.ReferenceResolver+Resolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker Instance
 FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker get_Instance()
 FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Object])
@@ -31673,6 +31673,8 @@ FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynExpr body
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynExpr get_body()
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynSimplePats args
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: SynSimplePats get_args()
+FSharp.Compiler.SyntaxTree+SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]] parsedData
+FSharp.Compiler.SyntaxTree+SynExpr+Lambda: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]] get_parsedData()
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: System.String ToString()
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: range Range
 FSharp.Compiler.SyntaxTree+SynExpr+Lambda: range RangeOfFirstPortion
@@ -36769,7 +36771,7 @@ FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredDowncast(SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInferredUpcast(SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewInterpolatedString(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynInterpolatedStringPart], range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewJoinIn(SynExpr, range, SynExpr, range)
-FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLambda(Boolean, Boolean, SynSimplePats, SynExpr, range)
+FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLambda(Boolean, Boolean, SynSimplePats, SynExpr, Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynPat],FSharp.Compiler.SyntaxTree+SynExpr]], range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLazy(SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLetOrUse(Boolean, Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynBinding], SynExpr, range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewLetOrUseBang(DebugPointForBinding, Boolean, Boolean, SynPat, SynExpr, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`6[FSharp.Compiler.SyntaxTree+DebugPointForBinding,System.Boolean,System.Boolean,FSharp.Compiler.SyntaxTree+SynPat,FSharp.Compiler.SyntaxTree+SynExpr,FSharp.Compiler.Range+range]], SynExpr, range)
@@ -41783,7 +41785,7 @@ FSharp.Compiler.SyntaxTreeOps: SynExpr mkSynTrifix(range, System.String, SynExpr
 FSharp.Compiler.SyntaxTreeOps: SynExpr mkSynUnit(range)
 FSharp.Compiler.SyntaxTreeOps: SynExpr |SynExprErrorSkip|(SynExpr)
 FSharp.Compiler.SyntaxTreeOps: SynField mkAnonField(SynType)
-FSharp.Compiler.SyntaxTreeOps: SynField mkNamedField(Ident, SynType)
+FSharp.Compiler.SyntaxTreeOps: SynField mkNamedField(Ident, SynType, range)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynPatMaybeVar(LongIdentWithDots, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], range)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynPatVar(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], Ident)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynThisPatVar(Ident)
@@ -42401,6 +42403,7 @@ Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.Int
 Microsoft.DotNet.DependencyManager.DependencyProvider: System.Tuple`2[System.String,Microsoft.DotNet.DependencyManager.IDependencyManagerProvider] TryFindDependencyManagerInPath(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
 Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe, Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
 Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor(Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
+Microsoft.DotNet.DependencyManager.DependencyProvider: Void .ctor()
 Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Error
 Microsoft.DotNet.DependencyManager.ErrorReportType+Tags: Int32 Warning
 Microsoft.DotNet.DependencyManager.ErrorReportType: Boolean Equals(Microsoft.DotNet.DependencyManager.ErrorReportType)

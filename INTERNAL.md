@@ -17,6 +17,10 @@ navigating through an existing PR.
 
 [VS 15.0 to 15.5](https://dev.azure.com/devdiv/DevDiv/_build?definitionId=5037)
 
+## Branch auto-merge definitions
+
+Branch auto-merge definitions are specified [here](https://github.com/dotnet/roslyn-tools/blob/master/src/GitHubCreateMergePRs/config.xml).
+
 ## VS Insertion Generators
 
 VS 16.4 to current - part of the build definition.  [See below](#vs-insertions-as-part-of-the-build-definition).
@@ -65,8 +69,5 @@ a package from every build of `main` to the [Nightly VSIX feed](README.md#using-
 [Nightly VSIX (preview) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=71).  Uploads
 a package from every build of the branch that corresponds to the current Visual Studio preview to the
 [Preview VSIX feed](README.md#using-nightly-releases-in-visual-studio).
-
-[MyGet package uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=69).  Uploads various
-packages for internal consumption.  Feed URL is `https://dotnet.myget.org/F/fsharp/api/v3/index.json`.
 
 [Internal source mirror](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp).

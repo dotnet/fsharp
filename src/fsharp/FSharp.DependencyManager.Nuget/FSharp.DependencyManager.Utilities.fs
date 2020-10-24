@@ -9,6 +9,14 @@ open System.Reflection
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
 
+/// The result of building the package resolution files.
+type PackageBuildResolutionResult =
+    { success: bool
+      projectPath: string
+      stdOut: string array
+      stdErr: string array
+      resolutionsFile: string option }
+
 module internal Utilities =
 
     /// Return a string array delimited by commas
@@ -176,17 +184,12 @@ module internal Utilities =
             let stdOut = drainStreamToMemory p.StandardOutput
             let stdErr = drainStreamToMemory p.StandardError
 
-#if Debug
+#if DEBUG
             File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), stdOut)
             File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), stdErr)
 #endif
 
             p.WaitForExit()
-
-            if p.ExitCode <> 0 then
-                //Write StandardError.txt to err stream
-                for line in stdOut do Console.Out.WriteLine(line)
-                for line in stdErr do Console.Error.WriteLine(line)
 
             p.ExitCode = 0, stdOut, stdErr
 
@@ -203,11 +206,11 @@ module internal Utilities =
             | None -> ""
 
         let arguments prefix =
-            sprintf "%s -restore %s %c%s%c /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
+            sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
         let workingDir = Path.GetDirectoryName projectPath
 
-        let succeeded, stdOut, stdErr =
+        let success, stdOut, stdErr =
             if not (isRunningOnCoreClr) then
                 // The Desktop build uses "msbuild" to build
                 executeBuild msbuildExePath (arguments "-v:quiet") workingDir
@@ -216,5 +219,9 @@ module internal Utilities =
                 executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir
 
         let outputFile = projectPath + ".resolvedReferences.paths"
-        let resultOutFile = if succeeded && File.Exists(outputFile) then Some outputFile else None
-        succeeded, stdOut, stdErr, resultOutFile
+        let resolutionsFile = if success && File.Exists(outputFile) then Some outputFile else None
+        { success = success
+          projectPath = projectPath
+          stdOut = stdOut
+          stdErr = stdErr
+          resolutionsFile = resolutionsFile }

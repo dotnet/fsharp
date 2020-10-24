@@ -29,8 +29,12 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.CompileOps
+open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
@@ -41,13 +45,15 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Range
 open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -601,7 +607,11 @@ let internal directoryName (s:string) =
 //----------------------------------------------------------------------------
 
 /// Process the command line options 
-type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: string[], tcConfigB, fsiConsoleOutput: FsiConsoleOutput) = 
+type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
+                argv: string[], 
+                tcConfigB,
+                fsiConsoleOutput: FsiConsoleOutput) = 
+
     let mutable enableConsoleKeyProcessing = 
        // Mono on Win32 doesn't implement correct console processing
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
@@ -747,7 +757,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     /// Rather than start processing, just collect names, then process them. 
     let sourceFiles = 
         let collect name = 
-            let fsx = CompileOps.IsScript name
+            let fsx = IsScript name
             inputFilesAcc <- inputFilesAcc @ [(name,fsx)] // O(n^2), but n small...
         try 
            let fsiCompilerOptions = fsiUsagePrefix tcConfigB @ GetCoreFsiCompilerOptions tcConfigB @ fsiUsageSuffix tcConfigB
@@ -756,6 +766,9 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
         inputFilesAcc
+
+    // We need a dependency provider with native resolution.  Managed resolution is handled by generated `#r`
+    let dependencyProvider = new DependencyProvider(NativeResolutionProbe(tcConfigB.GetNativeProbingRoots))
 
     do 
         if tcConfigB.utf8output then
@@ -797,7 +810,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
         fsiConsoleOutput.uprintfn  """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo())
 
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-            for msg in tcConfigB.dependencyProvider.GetRegisteredDependencyManagerHelpText(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
+            for msg in dependencyProvider.GetRegisteredDependencyManagerHelpText(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
                 fsiConsoleOutput.uprintfn "%s" msg
 
         fsiConsoleOutput.uprintfn  """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo())   (* last thing you want to do, last thing in the list - stands out more *)
@@ -823,6 +836,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     member __.PeekAheadOnConsoleToPermitTyping = peekAheadOnConsoleToPermitTyping
     member __.SourceFiles = sourceFiles
     member __.Gui = gui
+
+    member _.DependencyProvider = dependencyProvider
 
 /// Set the current ui culture for the current thread.
 let internal SetCurrentUICultureForThread (lcid : int option) =
@@ -1461,9 +1476,9 @@ type internal FsiDynamicCompiler
             | { Directive=_; LineStatus=_; Line=_; Range=m } :: _ ->
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
-                match tcConfigB.dependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
+                match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
                 | null ->
-                    errorR(Error(tcConfigB.dependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
+                    errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
                     istate
                 | dependencyManager ->
                     let directive d =
@@ -1475,13 +1490,10 @@ type internal FsiDynamicCompiler
                         packageManagerLines |> List.map (fun line -> directive line.Directive, line.Line)
 
                     try
-                        let result = tcConfigB.dependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
-                        match result.Success with
-                        | false ->
-                            tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
-                            istate // error already reported
-
-                        | true ->
+                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
+                        if result.Success then
+                            for line in result.StdOut do Console.Out.WriteLine(line)
+                            for line in result.StdError do Console.Error.WriteLine(line)
                             tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
                             for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")
@@ -1489,6 +1501,15 @@ type internal FsiDynamicCompiler
                             if not (isNil scripts) then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
                             else istate
+                        else
+                            // Send outputs via diagnostics
+                            if (result.StdOut.Length > 0 || result.StdError.Length > 0) then
+                                for line in Array.append result.StdOut result.StdError do
+                                    errorR(Error(FSComp.SR.packageManagerError(line), m))
+                            //Write outputs in F# Interactive and compiler
+                            tcConfigB.packageManagerLines <- PackageManagerLine.RemoveUnprocessedLines packageManagerKey tcConfigB.packageManagerLines
+                            istate // error already reported
+
 
                     with _ ->
                         // An exception occured during processing, so remove the lines causing the error from the package manager list.
@@ -1502,8 +1523,27 @@ type internal FsiDynamicCompiler
            (fun () ->
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
-                    (fun st (m,nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
-                    (fun st (packageManagerPrefix, lt, m, nm) -> fsiDynamicCompiler.EvalDependencyManagerTextFragment (packageManagerPrefix, lt, m, nm); st),
+                    (fun st (m, path, directive) -> 
+
+                        let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
+
+                        match dm with
+                        | _, dependencyManager when not(isNull dependencyManager) ->
+                            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                                fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
+                                st
+                            else
+                                errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                                st
+
+                        | _, _ when directive = Directive.Include ->
+                            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+                            st
+
+                        // #r "Assembly"
+                        | path, _ ->
+                            snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
+                    ),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
 
@@ -1517,7 +1557,11 @@ type internal FsiDynamicCompiler
          
           // Close the #load graph on each file and gather the inputs from the scripts.
           let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-          let closure = LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig, sourceFiles, CodeContext.CompilationAndEvaluation, lexResourceManager=lexResourceManager)
+
+          let closure =
+              LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig,
+                 sourceFiles, CodeContext.CompilationAndEvaluation,
+                 lexResourceManager, fsiOptions.DependencyProvider)
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
@@ -1606,8 +1650,8 @@ type internal FsiDynamicCompiler
             // Build a simple module with a single 'let' decl with a default value.
             let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
             let tcEnvAtEndOfLastInput = 
-                TypeChecker.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
-                |> TypeChecker.AddLocalVal TcResultsSink.NoSink range0 v
+                CheckDeclarations.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
+                |> CheckExpressions.AddLocalVal TcResultsSink.NoSink range0 v
 
             // Generate IL for the given typled impl and create new interactive state.
             let ilxGenerator = istate.ilxGenerator
@@ -2106,7 +2150,7 @@ type internal FsiInteractionProcessor
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
         let packageManagerDirective directive path m =
-            let dm = tcConfigB.dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
+            let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
             | null, null ->
                 // error already reported
@@ -2749,7 +2793,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
   
     do updateBannerText() // setting the correct banner so that 'fsi -?' display the right thing
 
-    let fsiOptions       = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
+    let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
+
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 
     do
@@ -2791,7 +2836,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let tcImports =  
       try 
-          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) |> Cancellable.runWithoutCancellation
+          TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) |> Cancellable.runWithoutCancellation
       with e -> 
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 

@@ -36,8 +36,9 @@ param (
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
     [string]$bootstrapTfm = "net472",
-    [switch][Alias('bl')]$binaryLog,
-    [switch][Alias('nobl')]$excludeCIBinaryLog,
+    [switch][Alias('bl')]$binaryLog = $true,
+    [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
+    [switch][Alias('nolog')]$noBinaryLog = $false,
     [switch]$ci,
     [switch]$official,
     [switch]$procdump,
@@ -58,6 +59,7 @@ param (
     [switch]$testpack,
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
+    [switch]$sourceBuild,
 
     [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
 
@@ -72,6 +74,7 @@ function Print-Usage() {
     Write-Host "  -verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
     Write-Host "  -deployExtensions         Deploy built vsixes"
     Write-Host "  -binaryLog                Create MSBuild binary log (short: -bl)"
+    Write-Host "  -noLog                    Turn off logging (short: -nolog)"
     Write-Host "  -excludeCIBinaryLog       When running on CI, allow no binary log (short: -nobl)"
     Write-Host ""
     Write-Host "Actions:"
@@ -108,6 +111,7 @@ function Print-Usage() {
     Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
     Write-Host "  -useGlobalNuGetCache      Use global NuGet cache."
     Write-Host "  -noVisualStudio           Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
+    Write-Host "  -sourceBuild              Simulate building for source-build."
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -154,10 +158,15 @@ function Process-Arguments() {
         $script:pack = $True;
     }
 
+    if ($sourceBuild) {
+        $script:testpack = $False;
+    }
+
+    if ($noBinaryLog) {
+        $script:binaryLog = $False;
+    }
+
     foreach ($property in $properties) {
-        if ($property.StartsWith("/p:DotNetBuildFromSource=true", "InvariantCultureIgnoreCase")) {
-            $script:testpack = $False;
-        }
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
             Print-Usage
@@ -189,10 +198,6 @@ function BuildSolution() {
 
     Write-Host "$($solution):"
 
-    if ($binaryLog -and $excludeCIBinaryLog) {
-        Write-Host "Invalid argument -binarylog(-bl) and -excludeCIBinaryLog(-nobl) cannot be set at the same time"
-        ExitWithExitCode 1
-        }
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
 
     $projects = Join-Path $RepoRoot $solution
@@ -220,6 +225,7 @@ function BuildSolution() {
         /p:QuietRestore=$quietRestore `
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
+        /p:DotNetBuildFromSource=$sourceBuild `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
@@ -297,8 +303,8 @@ function BuildCompiler() {
     if ($bootstrapTfm -eq "netcoreapp3.1") {
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-        $fscProject = "$RepoRoot\src\fsharp\fsc\fsc.fsproj"
-        $fsiProject = "$RepoRoot\src\fsharp\fsi\fsi.fsproj"
+        $fscProject = "`"$RepoRoot\src\fsharp\fsc\fsc.fsproj`""
+        $fsiProject = "`"$RepoRoot\src\fsharp\fsi\fsi.fsproj`""
 
         $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
         $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
@@ -483,7 +489,6 @@ try {
     if ($testDesktop) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
@@ -534,7 +539,6 @@ try {
     }
 
     if ($testCompilerService) {
-        TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
     }
 

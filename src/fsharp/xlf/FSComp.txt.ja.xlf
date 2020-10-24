@@ -252,6 +252,16 @@
         <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe 'static' modifiers differ</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagementRequiresVFive">
+        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
+        <target state="needs-review-translation">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FieldNotContainedTypesDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
         <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</target>
@@ -2612,6 +2622,11 @@
         <target state="new">In verbose syntax, indicates the start of a class definition.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionConst">
+        <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
+        <target state="new">Keyword to specify a constant literal as a type parameter argument in Type Providers.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionDefault">
         <source>Indicates an implementation of an abstract method; used together with an abstract method declaration to create a virtual method.</source>
         <target state="new">Indicates an implementation of an abstract method; used together with an abstract method declaration to create a virtual method.</target>
@@ -3857,11 +3872,6 @@
         <target state="new">Write the xmldoc of the assembly to the given file</target>
         <note />
       </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
-        <note />
-      </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
         <target state="new">{0}</target>
@@ -4035,6 +4045,11 @@
       <trans-unit id="parsEofInVerbatimStringInComment">
         <source>End of file in verbatim string embedded in comment begun at or before here</source>
         <target state="new">End of file in verbatim string embedded in comment begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorInReturnForLetIncorrectIndentation">

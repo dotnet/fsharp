@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.Scripting.DependencyManager.UnitTests
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
@@ -13,7 +12,10 @@ open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Scripting
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Scripting.UnitTests
+open FSharp.DependencyManager.Nuget
 open Microsoft.DotNet.DependencyManager
+
+open Internal.Utilities
 
 open Xunit
 
@@ -54,10 +56,8 @@ type DependencyManagerInteractiveTests() =
 #r @"nuget:System.Collections.Immutable.DoesNotExist, version=1.5.0"
 0"""
         use script = new scriptHost()
-        let opt = script.Eval(text) |> getValue
-        let value = opt.Value
-        Assert.Equal(typeof<int>, value.ReflectionType)
-        Assert.Equal(0, value.ReflectionValue :?> int)
+        let opt, errors = script.Eval(text)
+        Assert.Equal(errors.Length, 1)
 
 (*
     [<Theory>]
@@ -87,13 +87,35 @@ type DependencyManagerInteractiveTests() =
             Assert.Equal(true, result.Success)
             Assert.Equal(1, result.Resolutions |> Seq.length)
             Assert.Equal(1, result.SourceFiles |> Seq.length)
-            Assert.Equal(1, result.Roots |> Seq.length)
+            Assert.Equal(2, result.Roots |> Seq.length)
 
         let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result.Success)
         Assert.Equal(1, result.Resolutions |> Seq.length)
         Assert.Equal(1, result.SourceFiles |> Seq.length)
         Assert.Equal(1, result.Roots |> Seq.length)
+        ()
+
+    [<Fact>]
+    member __.``Dependency Manager Reports package root for nuget package with no build artifacts``() =
+
+        let nativeProbingRoots () = Seq.empty<string>
+
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+
+        let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite, 3.1.8"|], reportError, "netcoreapp3.1")
+        Assert.Equal(true, result.Success)
+        Assert.True((result.Resolutions |> Seq.length) > 1)
+        Assert.Equal(1, result.SourceFiles |> Seq.length)
+        Assert.True(Option.isSome(result.Roots |> Seq.tryFind(fun root -> root.EndsWith("microsoft.data.sqlite/3.1.8/"))))
         ()
 
 
@@ -146,19 +168,16 @@ type DependencyManagerInteractiveTests() =
             let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")
             Assert.Equal(true, result1.Success)
             Assert.Equal(1, result1.Resolutions |> Seq.length)
-            Assert.True((result1.Resolutions |> Seq.head).Contains("\\net45\\"))
+            Assert.True((result1.Resolutions |> Seq.head).Contains("/net45/"))
             Assert.Equal(1, result1.SourceFiles |> Seq.length)
-            Assert.Equal(1, result1.Roots |> Seq.length)
+            Assert.Equal(2, result1.Roots |> Seq.length)
             Assert.True((result1.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
+            Assert.True((result1.Roots |> Seq.last).EndsWith("/microsoft.netframework.referenceassemblies/1.0.0/"))
 
         let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data, 3.3.3"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result2.Success)
         Assert.Equal(1, result2.Resolutions |> Seq.length)
-        let expected2 =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                "\\netstandard2.0\\"
-            else
-                "/netstandard2.0/"
+        let expected2 = "/netstandard2.0/"
         Assert.True((result2.Resolutions |> Seq.head).Contains(expected2))
         Assert.Equal(1, result2.SourceFiles |> Seq.length)
         Assert.Equal(1, result2.Roots |> Seq.length)
@@ -171,7 +190,7 @@ type DependencyManagerInteractiveTests() =
             let result3 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "net472")
             Assert.Equal(true, result3.Success)
             Assert.Equal(1, result3.Resolutions |> Seq.length)
-            Assert.True((result3.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
+            Assert.True((result3.Resolutions |> Seq.head).Contains("/netstandard2.0/"))
             Assert.Equal(1, result3.SourceFiles |> Seq.length)
             Assert.Equal(1, result3.SourceFiles |> Seq.length)
             Assert.True((result3.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
@@ -179,11 +198,7 @@ type DependencyManagerInteractiveTests() =
         let result4 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result4.Success)
         Assert.Equal(1, result4.Resolutions |> Seq.length)
-        let expected4 =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                "\\netstandard2.0\\"
-            else
-                "/netstandard2.0/"
+        let expected4 = "/netstandard2.0/"
         Assert.True((result4.Resolutions |> Seq.head).Contains(expected4))
         Assert.Equal(1, result4.SourceFiles |> Seq.length)
         Assert.Equal(1, result4.Roots |> Seq.length)
@@ -209,9 +224,9 @@ type DependencyManagerInteractiveTests() =
             let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net472")
             Assert.Equal(true, result1.Success)
             Assert.Equal(6, result1.Resolutions |> Seq.length)
-            Assert.True((result1.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
+            Assert.True((result1.Resolutions |> Seq.head).Contains("/netstandard2.0/"))
             Assert.Equal(1, result1.SourceFiles |> Seq.length)
-            Assert.Equal(6, result1.Roots |> Seq.length)
+            Assert.Equal(7, result1.Roots |> Seq.length)
             Assert.True((result1.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
 
         // Netstandard gets fewer dependencies than desktop, because desktop framework doesn't contain assemblies like System.Memory
@@ -219,11 +234,7 @@ type DependencyManagerInteractiveTests() =
         let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result2.Success)
         Assert.Equal(2, result2.Resolutions |> Seq.length)
-        let expected =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                "\\netcoreapp3.1\\"
-            else
-                "/netcoreapp3.1/"
+        let expected = "/netcoreapp3.1/"
         Assert.True((result2.Resolutions |> Seq.head).Contains(expected))
         Assert.Equal(1, result2.SourceFiles |> Seq.length)
         Assert.Equal(2, result2.Roots |> Seq.length)
@@ -232,7 +243,7 @@ type DependencyManagerInteractiveTests() =
 
 /// Native dll resolution is not implemented on desktop
 #if NETCOREAPP
-    [<Fact>]
+    [<Fact(Skip="downloads very large ephemeral packages"); >]
     member __.``Script using TorchSharp``() =
         let text = """
 #r "nuget:RestoreSources=https://donsyme.pkgs.visualstudio.com/TorchSharp/_packaging/packages2/nuget/v3/index.json"
@@ -254,10 +265,9 @@ TorchSharp.Tensor.LongTensor.From([| 0L .. 100L |]).Device
     [<Fact>]
     member __.``Use Dependency Manager to restore packages with native dependencies, build and run script that depends on the results``() =
         let packagemanagerlines = [|
-            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
         |]
 
         let reportError =
@@ -308,7 +318,7 @@ $(REFERENCES)
 open System
 open System.IO
 open System.Linq
-open Microsoft.Data
+open Microsoft.Data.Analysis
 
 let Shuffle (arr:int[]) =
     let rnd = Random()
@@ -320,9 +330,9 @@ let Shuffle (arr:int[]) =
     arr
 
 let housingPath = ""housing.csv""
-let housingData = DataFrame.ReadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
-let testSize = int (float (housingData.RowCount) * 0.1)
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
 let trainRows = randomIndices.[testSize..]
 let testRows = randomIndices.[..testSize]
 let housing_train = housingData.[trainRows]
@@ -351,10 +361,9 @@ printfn ""%A"" result
     [<Fact>]
     member __.``Use NativeResolver to resolve native dlls.``() =
         let packagemanagerlines = [|
-            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
         |]
 
         let reportError =
@@ -394,7 +403,7 @@ $(REFERENCES)
 open System
 open System.IO
 open System.Linq
-open Microsoft.Data
+open Microsoft.Data.Analysis
 
 let Shuffle (arr:int[]) =
     let rnd = Random()
@@ -406,9 +415,9 @@ let Shuffle (arr:int[]) =
     arr
 
 let housingPath = ""housing.csv""
-let housingData = DataFrame.ReadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
-let testSize = int (float (housingData.RowCount) * 0.1)
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
 let trainRows = randomIndices.[testSize..]
 let testRows = randomIndices.[..testSize]
 let housing_train = housingData.[trainRows]
@@ -434,10 +443,9 @@ printfn ""%A"" result
     [<Fact>]
     member __.``Use AssemblyResolver to resolve assemblies``() =
         let packagemanagerlines = [|
-            "r", "RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json"
             "r", "Microsoft.ML,version=1.4.0-preview"
             "r", "Microsoft.ML.AutoML,version=0.16.0-preview"
-            "r", "Microsoft.Data.DataFrame,version=0.1.1-e191008-1"
+            "r", "Microsoft.Data.Analysis,version=0.4.0"
         |]
 
         let reportError =
@@ -581,7 +589,7 @@ x |> Seq.iter(fun r ->
             Assert.Equal(true, result.Success)
             Assert.Equal(1, result.Resolutions |> Seq.length)
             Assert.Equal(1, result.SourceFiles |> Seq.length)
-            Assert.Equal(1, result.Roots |> Seq.length)
+            Assert.Equal(2, result.Roots |> Seq.length)
 
         let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result.Success)
@@ -744,4 +752,3 @@ x |> Seq.iter(fun r ->
         output.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
-

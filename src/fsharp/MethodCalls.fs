@@ -619,7 +619,7 @@ type ArgumentAnalysis =
 let InferLambdaArgsForLambdaPropagation origRhsExpr = 
     let rec loop e = 
         match e with 
-        | SynExpr.Lambda (_, _, _, rest, _) -> 1 + loop rest
+        | SynExpr.Lambda (_, _, _, rest, _, _) -> 1 + loop rest
         | SynExpr.MatchLambda _ -> 1
         | _ -> 0
     loop origRhsExpr

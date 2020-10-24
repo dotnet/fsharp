@@ -16,27 +16,31 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.CompileOps
-open FSharp.Compiler.CompileOptions
-open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.CompilerDiagnostics
+open FSharp.Compiler.CompilerImports
+open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
-open FSharp.Compiler.Infos
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 open Internal.Utilities
@@ -1051,7 +1055,21 @@ type internal TypeCheckInfo
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
-            | [] -> FSharpStructuredToolTipText.FSharpToolTipText []
+            | [] -> 
+                let matches =
+                    match loadClosure with
+                    | None -> None
+                    | Some(loadClosure) -> 
+                        loadClosure.PackageReferences
+                        |> Array.tryFind (fun (m, _) -> Range.rangeContainsPos m pos)
+                match matches with 
+                | None -> FSharpStructuredToolTipText.FSharpToolTipText []
+                | Some (_, lines) -> 
+                    let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
+                    FSharpStructuredToolTipText.FSharpToolTipText 
+                       [ for line in lines -> 
+                            let tip = wordL (TaggedTextOps.tagStringLiteral line)
+                            FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
             dataTipOfReferences
@@ -1553,7 +1571,7 @@ module internal ParseAndCheckFile =
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
-                    CompileOps.IsScript(fileName)
+                    ParseAndCheckInputs.IsScript(fileName)
                 let isExe = options.IsExe
                 try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
                 with e ->
@@ -1621,7 +1639,7 @@ module internal ParseAndCheckFile =
             
         | None -> 
             // For non-scripts, check for disallow #r and #load.
-            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName) |> ignore
+            ApplyMetaCommandsFromInputToTcConfig (tcConfig, parsedMainInput, Path.GetDirectoryName mainInputFileName, tcImports.DependencyProvider) |> ignore
                     
     // Type check a single file against an initial context, gleaning both errors and intellisense information.
     let CheckOneFile
@@ -2054,7 +2072,7 @@ type FSharpCheckProjectResults
           keepAssemblyContents: bool, 
           errors: FSharpErrorInfo[], 
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
-                   TopAttribs option * CompileOps.IRawFSharpAssemblyData option * ILAssemblyRef *
+                   TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
                    AccessorDomain * TypedImplFile list option * string[]) option) =
 
     let getDetails() = 
@@ -2161,8 +2179,8 @@ type FSharpCheckProjectResults
 type FsiInteractiveChecker(legacyReferenceResolver, 
                            reactorOps: IReactorOperations,
                            tcConfig: TcConfig,
-                           tcGlobals,
-                           tcImports,
+                           tcGlobals: TcGlobals,
+                           tcImports: TcImports,
                            tcState) =
 
     let keepAssemblyContents = false
@@ -2183,8 +2201,8 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             let assumeDotNetFramework = tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
 
             let applyCompilerOptions tcConfigB  = 
-                let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
-                CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
+                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
+                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
             let loadClosure =
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
@@ -2192,7 +2210,9 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
                     tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
-                    tryGetMetadataSnapshot=(fun _ -> None), reduceMemoryUsage=reduceMemoryUsage)
+                    tryGetMetadataSnapshot=(fun _ -> None),
+                    reduceMemoryUsage=reduceMemoryUsage,
+                    dependencyProvider=tcImports.DependencyProvider)
 
             let! tcErrors, tcFileInfo =  
                 ParseAndCheckFile.CheckOneFile

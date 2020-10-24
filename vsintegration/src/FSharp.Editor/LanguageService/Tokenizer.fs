@@ -33,7 +33,8 @@ type internal LexerSymbolKind =
     | GenericTypeParameter = 3
     | StaticallyResolvedTypeParameter = 4
     | ActivePattern = 5
-    | Other = 6
+    | String = 6
+    | Other = 7
 
 type internal LexerSymbol =
     { Kind: LexerSymbolKind
@@ -147,11 +148,14 @@ module internal Tokenizer =
         | FSharpGlyph.Variable -> Glyph.Local
         | FSharpGlyph.Error -> Glyph.Error
 
-    let GetImageIdForSymbol(symbol:FSharpSymbol, kind:LexerSymbolKind) =
+    let GetImageIdForSymbol(symbolOpt:FSharpSymbol option, kind:LexerSymbolKind) =
         let imageId =
             match kind with
             | LexerSymbolKind.Operator -> KnownImageIds.Operator
             | _ ->
+                match symbolOpt with
+                | None -> KnownImageIds.Package
+                | Some symbol ->
                 match symbol with
                 | :? FSharpUnionCase as x ->
                     match Some x.Accessibility with
@@ -345,6 +349,7 @@ module internal Tokenizer =
         member token.IsIdentifier = (token.CharClass = FSharpTokenCharKind.Identifier)
         member token.IsOperator = (token.ColorClass = FSharpTokenColorKind.Operator)
         member token.IsPunctuation = (token.ColorClass = FSharpTokenColorKind.Punctuation)
+        member token.IsString = (token.ColorClass = FSharpTokenColorKind.String)
     
     /// This is the information we save for each token in a line for each active document.
     /// It is a memory-critical data structure - do not make larger. This used to be ~100 bytes class, is now 8-byte struct
@@ -375,6 +380,7 @@ module internal Tokenizer =
                 if token.IsOperator then LexerSymbolKind.Operator 
                 elif token.IsIdentifier then LexerSymbolKind.Ident 
                 elif token.IsPunctuation then LexerSymbolKind.Punctuation
+                elif token.IsString then LexerSymbolKind.String
                 else LexerSymbolKind.Other
             Debug.Assert(uint32 token.Tag < 0xFFFFu)
             Debug.Assert(uint32 kind < 0xFFu)
@@ -612,7 +618,8 @@ module internal Tokenizer =
             linePos: LinePosition, 
             lineStr: string, 
             lookupKind: SymbolLookupKind,
-            wholeActivePatterns: bool
+            wholeActivePatterns: bool,
+            allowStringToken: bool
         ) 
         : LexerSymbol option =
         
@@ -704,6 +711,7 @@ module internal Tokenizer =
             | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
             | _ -> false) 
         |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun token -> token.Kind = LexerSymbolKind.Operator))
+        |> Option.orElseWith (fun _ -> if allowStringToken then tokensUnderCursor |> List.tryFind (fun token -> token.Kind = LexerSymbolKind.String) else None)
         |> Option.map (fun token ->
             let partialName = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
             let identStr = lineStr.Substring(token.LeftColumn, token.MatchedLength)
@@ -767,13 +775,14 @@ module internal Tokenizer =
             fileName: string, 
             defines: string list, 
             lookupKind: SymbolLookupKind,
-            wholeActivePatterns: bool
+            wholeActivePatterns: bool,
+            allowStringToken: bool
         ) 
         : LexerSymbol option =
         
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
-            getSymbolFromSavedTokens(fileName, lineData.SavedTokens, textLinePos, lineContents, lookupKind, wholeActivePatterns)
+            getSymbolFromSavedTokens(fileName, lineData.SavedTokens, textLinePos, lineContents, lookupKind, wholeActivePatterns, allowStringToken)
         with 
         | :? System.OperationCanceledException -> reraise()
         |  ex -> 

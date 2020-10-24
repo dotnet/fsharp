@@ -13,5 +13,5 @@ module ByteMemoryTests =
     [<Fact>]
     let ``ByteMemory.CreateMemoryMappedFile succeeds with byte length of zero``() =
         let memory = ByteMemory.Empty.AsReadOnly()
-        let newMemory = ByteMemory.CreateMemoryMappedFile memory
+        let newMemory = ByteStorage.FromByteMemoryAndCopy(memory, useBackingMemoryMappedFile = true).GetByteMemory()
         Assert.shouldBe(0, newMemory.Length)
