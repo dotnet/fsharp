@@ -20178,6 +20178,10 @@ FSharp.Compiler.PrettyNaming: System.String qmark
 FSharp.Compiler.PrettyNaming: System.String qmarkSet
 FSharp.Compiler.PrettyNaming: System.String unassignedTyparName
 FSharp.Compiler.PrettyNaming: System.Tuple`2[System.String,System.Tuple`2[System.String,System.String][]] demangleProvidedTypeName(System.String)
+FSharp.Compiler.PrettyNaming: System.String expansionFunctionPrefix
+FSharp.Compiler.PrettyNaming: System.String prefixForVariablesThatMayNotBeEliminated
+FSharp.Compiler.PrettyNaming: System.String stackStepName
+FSharp.Compiler.PrettyNaming: System.String suffixForVariablesThatMayNotBeEliminated
 FSharp.Compiler.QuickParse: Boolean TestMemberOrOverrideDeclaration(FSharp.Compiler.SourceCodeServices.FSharpTokenInfo[])
 FSharp.Compiler.QuickParse: FSharp.Compiler.PartialLongName GetPartialLongNameEx(System.String, Int32)
 FSharp.Compiler.QuickParse: Int32 CorrectIdentifierToken(System.String, Int32)
