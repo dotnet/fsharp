@@ -321,7 +321,6 @@ module Keywords =
        FSHARP, "__token_ODO"       ,ODO
        FSHARP, "__token_OLET"      ,OLET(true)
        FSHARP, "__token_constraint",CONSTRAINT
-       FSHARP, "__hacknull",HACKNULL
        FSHARP, "__ambivalent",AMBIVALENT
       ]
     (*------- reserved keywords which are ml-compatibility ids *) 

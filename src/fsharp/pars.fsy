@@ -246,7 +246,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token GREATER_RBRACK STRUCT SIG 
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT 
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
-%token HACKNULL AMBIVALENT
+%token AMBIVALENT
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -1497,13 +1497,13 @@ tyconDefn:
   | typeNameInfo 
      { TypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], $1.Range) }
 
-  | typeNameInfo opt_equals tyconDefnRhsBlock 
-     { if not $2 then (
-            let (ComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
-            // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
-            let typeNameId = List.last lid
-            raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
-       )
+  | typeNameInfo EQUALS tyconDefnRhsBlock 
+     { //if not $2 then (
+       //     let (ComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
+       //     // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
+       //     let typeNameId = List.last lid
+       //     raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
+       //)
        let nameRange = rhs parseState 1
        let (tcDefRepr:SynTypeDefnRepr), members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
@@ -4922,19 +4922,12 @@ appTypeConPower:
     { $1 }
 
 appType:
-  | appType HACKNULL
-    { SynType.WithNull($1, false, lhs parseState) }
-
   | appType AMBIVALENT
     { SynType.WithNull($1, true, lhs parseState) }
 
   | appType QMARK
     { SynType.WithNull($1, false, lhs parseState) }
 
-/*
-| appType OR NULL
-    { SynType.WithNull($1, false lhs parseState) }
-*/
   | appType arrayTypeSuffix 
       {  SynType.Array($2, $1, lhs parseState) }
 
@@ -5471,10 +5464,6 @@ opt_ODECLEND:
 deprecated_opt_equals: 
   | EQUALS      { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () } 
   | /* EMPTY */ {  }
-
-opt_equals:
-  | EQUALS      { true }
-  | /* EMPTY */ { false } 
 
 opt_OBLOCKSEP: 
   | OBLOCKSEP   { }

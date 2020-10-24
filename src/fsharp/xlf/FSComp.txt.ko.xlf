@@ -107,6 +107,11 @@
         <target state="translated">'{0}' 어셈블리 특성이 로드할 수 없거나 존재하지 않는 디자이너 어셈블리'{1}'을(를) 참조합니다. 보고된 예외: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="new">{0} for F# {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">적용 가능한 계산 식</target>
@@ -155,11 +160,6 @@
       <trans-unit id="featureNullnessChecking">
         <source>nullness checking</source>
         <target state="new">nullness checking</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="new">open static classes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">

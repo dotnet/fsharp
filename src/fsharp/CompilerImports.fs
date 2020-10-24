@@ -1171,7 +1171,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         match dependencyProviderOpt with 
         | None ->
             Debug.Assert(false, "this should never be called on FrameworkTcImports")
-            new DependencyProvider(null, null)
+            new DependencyProvider()
         | Some dependencyProvider -> dependencyProvider
 
     member tcImports.GetImportMap() = 

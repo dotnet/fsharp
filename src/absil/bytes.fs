@@ -538,7 +538,7 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
         byteMemory
 
     member _.GetByteMemory() =
-        match cached with
+        match box cached with
         | null -> getAndCache ()
         | _ ->
             match cached.TryGetTarget() with

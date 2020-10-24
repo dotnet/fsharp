@@ -267,8 +267,6 @@ let add (s:string) = ()
 let f0c line = 
     add (nonNull<string> "") // WRONG: should not give a nullness warning
 
-let f1 (x: (string __hacknull)) = x;;
-
 //let f2 (x: string or null) = x;;
 let f3 (x: string?) = x
 let f5 x = (x: int)

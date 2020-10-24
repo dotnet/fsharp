@@ -997,7 +997,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     //      f<x ' x>x
                     //      f<x?>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN 
-                    | QMARK | HACKNULL | AMBIVALENT
+                    | QMARK | AMBIVALENT
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR

@@ -107,6 +107,11 @@
         <target state="translated">L'attributo di assembly '{0}' fa riferimento a un assembly '{1}' della finestra di progettazione che non è stato caricato o non esiste. L'eccezione restituita è {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="new">{0} for F# {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">espressioni di calcolo applicativo</target>
@@ -155,11 +160,6 @@
       <trans-unit id="featureNullnessChecking">
         <source>nullness checking</source>
         <target state="new">nullness checking</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="new">open static classes</target>
         <note />
       </trans-unit>
       <trans-unit id="featureOpenTypeDeclaration">

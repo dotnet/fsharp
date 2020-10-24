@@ -162,14 +162,14 @@
         <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature requires that the type supports the interface {2} but the interface has not been implemented</target>
         <note />
       </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="new">{0} for F# {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullnessChecking">
         <source>nullness checking</source>
         <target state="new">nullness checking</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureOpenStaticClasses">
-        <source>open static classes</source>
-        <target state="new">open static classes</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleNamesDiffer">
@@ -1307,11 +1307,6 @@
         <target state="new">The argument types don't match</target>
         <note />
       </trans-unit>
-      <trans-unit id="csAvailableOverloads">
-        <source>Available overloads:\n{0}</source>
-        <target state="new">Available overloads:\n{0}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csCandidates">
         <source>Candidates:\n{0}</source>
         <target state="new">Candidates:\n{0}</target>
@@ -1517,11 +1512,6 @@
         <target state="new">No overloads match for method '{0}'.</target>
         <note />
       </trans-unit>
-      <trans-unit id="csNoOverloadsFoundArgumentsPrefixPlural">
-        <source>Known types of arguments: {0}</source>
-        <target state="new">Known types of arguments: {0}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csNoOverloadsFoundArgumentsPrefixSingular">
         <source>Known type of argument: {0}</source>
         <target state="new">Known type of argument: {0}</target>
@@ -1550,11 +1540,6 @@
       <trans-unit id="csOptionalArgumentNotPermittedHere">
         <source>Optional arguments not permitted here</source>
         <target state="new">Optional arguments not permitted here</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csOverloadCandidateIndexedArgumentTypeMismatch">
-        <source>Argument at index {0} doesn't match</source>
-        <target state="new">Argument at index {0} doesn't match</target>
         <note />
       </trans-unit>
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
@@ -1965,11 +1950,6 @@
       <trans-unit id="etProviderErrorWithContext">
         <source>The type provider '{0}' reported an error in the context of provided type '{1}', member '{2}'. The error: {3}</source>
         <target state="new">The type provider '{0}' reported an error in the context of provided type '{1}', member '{2}'. The error: {3}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="etProviderHasDesignerAssemblyDependency">
-        <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
-        <target state="new">The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyException">
@@ -3695,11 +3675,6 @@
       <trans-unit id="optsInvalidWarningLevel">
         <source>Invalid warning level '{0}'</source>
         <target state="new">Invalid warning level '{0}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLib">
@@ -6062,11 +6037,6 @@
         <target state="new">'use!' bindings must be of the form 'use! &lt;var&gt; = &lt;expr&gt;'</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
-        <source>use! may not be combined with and!</source>
-        <target state="new">use! may not be combined with and!</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcInvalidUseBinding">
         <source>'use' bindings must be of the form 'use &lt;var&gt; = &lt;expr&gt;'</source>
         <target state="new">'use' bindings must be of the form 'use &lt;var&gt; = &lt;expr&gt;'</target>
@@ -6675,11 +6645,6 @@
       <trans-unit id="tcRequireBuilderMethod">
         <source>This control construct may only be used if the computation expression builder defines a '{0}' method</source>
         <target state="new">This control construct may only be used if the computation expression builder defines a '{0}' method</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcRequireMergeSourcesOrBindN">
-        <source>The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</source>
-        <target state="new">The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a '{0}' method or appropriate 'MergeSource' and 'Bind' methods</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireVarConstRecogOrLiteral">
@@ -7415,11 +7380,6 @@
       <trans-unit id="typrelExplicitImplementationOfGetHashCodeOrEquals">
         <source>The struct, record or union type '{0}' has an explicit implementation of 'Object.GetHashCode' or 'Object.Equals'. You must apply the 'CustomEquality' attribute to the type</source>
         <target state="new">The struct, record or union type '{0}' has an explicit implementation of 'Object.GetHashCode' or 'Object.Equals'. You must apply the 'CustomEquality' attribute to the type</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
-        <source>Interface member '{0}' does not have a most specific implementation.</source>
-        <target state="new">Interface member '{0}' does not have a most specific implementation.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceWithConcreteAndVariable">

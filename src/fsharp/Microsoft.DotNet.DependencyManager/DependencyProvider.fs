@@ -274,19 +274,19 @@ type ReflectionDependencyManagerProvider(theType: Type,
 
 /// Provides DependencyManagement functions.
 /// Class is IDisposable
-type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) =
+type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
     let dllResolveHandler =
         match nativeProbingRoots with 
-        | null -> { new IDisposable with member _.Dispose() = () }
-        | _ -> new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
+        | None -> { new IDisposable with member _.Dispose() = () }
+        | Some nativeProbingRoots -> new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
 
     // Note: creating a AssemblyResolveHandler currently installs process-wide handlers
     let assemblyResolveHandler = 
         match assemblyProbingPaths with 
-        | null -> { new IDisposable with member _.Dispose() = () }
-        | _ -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
+        | None -> { new IDisposable with member _.Dispose() = () }
+        | Some assemblyProbingPaths -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
     // Resolution Path = Location of FSharp.Compiler.Private.dll
     let assemblySearchPaths = lazy (
@@ -345,9 +345,11 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
 
     let cache = ConcurrentDictionary<_,Result<IResolveDependenciesResult, _>>(HashIdentity.Structural)
 
-    new (nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(null, nativeProbingRoots)
+    new (assemblyProbingPaths: AssemblyResolutionProbe, nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(Some assemblyProbingPaths, Some nativeProbingRoots)
 
-    new () = new DependencyProvider(null, null)
+    new (nativeProbingRoots: NativeResolutionProbe) = new DependencyProvider(None, Some nativeProbingRoots)
+
+    new () = new DependencyProvider(None, None)
 
     /// Returns a formatted help messages for registered dependencymanagers for the host to present
     member _.GetRegisteredDependencyManagerHelpText (compilerTools, outputDir, errorReport) = [|
