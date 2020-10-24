@@ -3051,15 +3051,14 @@ module TypecheckTests =
 
     // The code in this test starts to compile once FS-1043 is enabled.
     [<Test>] 
-    let ``type check neg134 4_7`` () =
-        singleVersionedNegTest (testConfig' "typecheck/sigs") "4.7" "neg134"
-
-    [<Test>] 
-    let ``type check neg134 preview`` () =
+    let ``type check neg130 preview`` () =
         let cfg = testConfig' "typecheck/sigs"
-        fsc cfg "%s -o:neg134-preview.exe --langversion:preview --warnaserror" cfg.fsc_flags ["neg134.fs"]
-        peverify cfg "neg134-preview.exe"
-        exec cfg ("." ++ "neg134-preview.exe") ""
+        fsc cfg "%s -o:neg130-preview.exe --langversion:preview --warnaserror" cfg.fsc_flags ["neg130.fs"]
+        peverify cfg "neg130-preview.exe"
+        exec cfg ("." ++ "neg130-preview.exe") ""
+
+    [<Test>]
+    let ``type check neg130`` () = singleNegTest (testConfig' "typecheck/sigs") "neg130"
 
     [<Test>] 
     let ``type check neg131 4_7`` () =
@@ -3091,9 +3090,6 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg133 preview`` () = singleVersionedNegTest (testConfig' "typecheck/sigs") "preview" "neg133"
-
-    [<Test>]
-    let ``type check neg130`` () = singleNegTest (testConfig' "typecheck/sigs") "neg130"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig' "typecheck/sigs") "neg_anon_1"
