@@ -305,3 +305,68 @@ type T =
     new (x:int) = ()
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 20) ]
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - Single arg``() =
+        let source = """
+let f x = ()
+f 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2)]
+        | None ->
+            Assert.Fail("No functions found for source code - test is likely incorrect")
+
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - Multi arg``() =
+        let source = """
+let f x y z = ()
+f 1 2 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 4); (3, 6)]
+        | None ->
+            Assert.Fail("No functions found for source code - test is likely incorrect")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - Multi arg parentheses``() =
+        let source = """
+let f x y z = ()
+f (1) (2) (3)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 6); (3, 10)]
+        | None ->
+            Assert.Fail("No functions found for source code - test is likely incorrect")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - Multi arg nested parentheses``() =
+        let source = """
+let f x y z = ()
+f ((1)) (((2))) ((((3))))
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 8); (3, 16)]
+        | None ->
+            Assert.Fail("No functions found for source code - test is likely incorrect")
