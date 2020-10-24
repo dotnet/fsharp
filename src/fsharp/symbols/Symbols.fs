@@ -2120,7 +2120,23 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
-
+    
+    // TODO - this is NOT fully implemented, as far as I can tell
+    member x.GetReturnTypeLayout (denv: FSharpDisplayContext) =
+        match x.IsMember, d with
+        | true, _ ->
+            None
+        | false, _ ->
+            checkIsResolved()
+            match d with 
+            | E _e -> None
+            | P _p -> None
+            | M _m | C _m -> 
+                None
+            | V v ->
+                NicePrint.prettyLayoutOfReturnType (denv.Contents cenv.g) v.Deref
+                |> Some        
+    
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
             match d with 

@@ -55,7 +55,15 @@ type internal FSharpInlineHintsService
                     | :? FSharpMemberOrFunctionOrValue as funcOrValue when isValidForTypeHint funcOrValue symbolUse ->
                         let typeInfo = ResizeArray()
                             
-                        funcOrValue.FormatLayout symbolUse.DisplayContext
+                        // TODO - this must surely be simpler to do
+                        let layout =
+                            if funcOrValue.IsFunction then
+                                funcOrValue.GetReturnTypeLayout symbolUse.DisplayContext
+                                |> Option.defaultValue Layout.emptyL
+                            else
+                                funcOrValue.FormatLayout symbolUse.DisplayContext
+                        
+                        layout
                         |> Layout.renderL (Layout.taggedTextListR typeInfo.Add)
                         |> ignore
                             

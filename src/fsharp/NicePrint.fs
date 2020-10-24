@@ -1198,7 +1198,24 @@ module private PrintTypes =
 
     let prettyLayoutOfTypeNoConstraints denv ty = 
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty 
+        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
+
+    let prettyLayoutOfReturnType denv (v: Val) =
+        //let ty, _cxs = PrettyTypes.PrettifyType denv. g ty
+
+        let tps, tau = v.TypeScheme
+        
+        // adjust the type in case this is the 'this' pointer stored in a reference cell
+        let tau = StripSelfRefCell(denv.g, v.BaseOrThisInfo, tau)
+        
+        let (_prettyTyparInst, _prettyTypars, _prettyTauTy), cxs = PrettyTypes.PrettifyInstAndTyparsAndType denv.g (emptyTyparInst, tps, tau)
+
+        
+        let env = SimplifyTypes.CollectInfo true [tau] cxs
+
+        let _argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
+        
+        layoutReturnType denv env rty
 
     let layoutAssemblyName _denv (ty: TType) =
         ty.GetAssemblyName()
@@ -2202,6 +2219,8 @@ let stringOfTy denv x = x |> PrintTypes.layoutType denv |> showL
 let prettyLayoutOfType denv x = x |> PrintTypes.prettyLayoutOfType denv
 
 let prettyLayoutOfTypeNoCx denv x = x |> PrintTypes.prettyLayoutOfTypeNoConstraints denv
+
+let prettyLayoutOfReturnType denv x = x |> PrintTypes.prettyLayoutOfReturnType denv
 
 let prettyStringOfTy denv x = x |> PrintTypes.prettyLayoutOfType denv |> showL
 
