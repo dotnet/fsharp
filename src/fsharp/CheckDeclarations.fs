@@ -17,6 +17,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.ErrorLogger
@@ -5775,7 +5776,12 @@ let TypeCheckOneImplFile
 
     let tcVal = LightweightTcValForUsingInBuildMethodCall g envinner.TraitContext
     
-    let cenv = cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring)    
+    let cenv = 
+        cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
+            conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
+            tcSequenceExpressionEntry=TcSequenceExpressionEntry,
+            tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
+            tcComputationExpression=TcComputationExpression)    
 
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
     let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None defs
@@ -5878,7 +5884,13 @@ let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, condition
 
     let tcVal = LightweightTcValForUsingInBuildMethodCall g envinner.TraitContext
 
-    let cenv = cenv.Create (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring)
+    let cenv = 
+        cenv.Create 
+            (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink,
+             tcVal, isInternalTestSpanStackReferring,
+             tcSequenceExpressionEntry=TcSequenceExpressionEntry,
+             tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
+             tcComputationExpression=TcComputationExpression)
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
     let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None specs
