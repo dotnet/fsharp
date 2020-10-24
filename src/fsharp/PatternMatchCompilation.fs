@@ -178,7 +178,7 @@ let notNullText = "some-non-null-value"
 let otherSubtypeText = "some-other-subtype"
 
 /// Create a TAST const value from an IL-initialized field read from .NET metadata
-// (Originally moved from TcFieldInit in TypeChecker.fs -- feel free to move this somewhere more appropriate)
+// (Originally moved from TcFieldInit in CheckExpressions.fs -- feel free to move this somewhere more appropriate)
 let ilFieldToTastConst lit =
     match lit with
     | ILFieldInit.String s -> Const.String s

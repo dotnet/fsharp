@@ -1151,7 +1151,7 @@ module internal SymbolHelpers =
                     | None -> emptyL
                     | Some v ->
                         WordL.equals ^^
-                        try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (TypeChecker.TcFieldInit m v) with _ -> emptyL
+                        try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
                 )
             FSharpStructuredToolTipElement.Single (layout, xml)
 
