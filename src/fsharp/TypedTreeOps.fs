@@ -894,9 +894,9 @@ let convertToTypeWithMetadataIfPossible g ty =
 
 let stripMeasuresFromTType g tt = 
     match tt with
-    | TType_app(a,b) ->
+    | TType_app(a,b,nullness) ->
         let b' = b |> List.filter (isMeasureTy g >> not)
-        TType_app(a, b')
+        TType_app(a, b',nullness)
     | _ -> tt
 
 //---------------------------------------------------------------------------
@@ -2975,14 +2975,14 @@ let tyconRefToFullName (tc:TyconRef) =
 
 let rec qualifiedInterfaceImplementationNameAux g (x:TType) : string =
     match stripMeasuresFromTType g (stripTyEqnsAndErase true g x) with
-    | TType_app (a,[]) -> tyconRefToFullName a
+    | TType_app (a,[],_) -> tyconRefToFullName a
     | TType_anon (a,b) ->
         let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
         sprintf "%s<%s>" (a.ILTypeRef.FullName) genericParameters
-    | TType_app (a,b) ->
+    | TType_app (a,b,_) ->
         let genericParameters = b |> Seq.map (qualifiedInterfaceImplementationNameAux g) |> String.concat ", "
         sprintf "%s<%s>" (tyconRefToFullName a) genericParameters
-    | TType_var (v) -> "'" + v.Name
+    | TType_var (v,_) -> "'" + v.Name
     | _ -> failwithf "unexpected: expected TType_app but got %O" (x.GetType())
 
 /// for types in the global namespace, `global is prepended (note the backtick)
@@ -8301,10 +8301,6 @@ let TypeNullNotLiked g m ty =
        not (TypeNullIsExtraValueOld g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
-
-// The non-inferring counter-part to SolveTypeSupportsNull
-let TypeSatisfiesNullConstraint g m ty = 
-    TypeNullIsExtraValue g m ty  
 
 let rec TypeHasDefaultValue isNew g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty

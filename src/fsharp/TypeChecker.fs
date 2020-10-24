@@ -9664,7 +9664,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                           | Item.CtorGroup _
                           | Item.FakeInterfaceCtor _ -> false
                           | _ -> true) -> 
-                    let overallTy = match overallTyOpt with None -> NewInferenceType() | Some t -> t 
+                    let overallTy = match overallTyOpt with None -> NewInferenceType cenv.g | Some t -> t 
                     let _, _ = TcItemThen cenv overallTy env tpenv res delayed
                     true
                 | _ ->
@@ -16524,12 +16524,10 @@ module EstablishTypeDefinitionCores =
             let noAllowNullLiteralAttributeCheck() = 
                 if hasAllowNullLiteralAttr then errorR (Error(FSComp.SR.tcRecordsUnionsAbbreviationsStructsMayNotHaveAllowNullLiteralAttribute(), m))
                 
-                
             let allowNullLiteralAttributeCheck() = 
                 if hasAllowNullLiteralAttr then 
                     tycon.TypeContents.tcaug_super |> Option.iter (fun ty -> if not (TypeNullIsExtraValueOld g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
                     tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (fun ty -> if not (TypeNullIsExtraValueOld g m ty) then errorR (Error(FSComp.SR.tcAllowNullTypesMayOnlyInheritFromAllowNullTypes(), m)))
-                
                 
             let structLayoutAttributeCheck allowed = 
                 let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit

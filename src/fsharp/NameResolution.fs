@@ -1257,7 +1257,7 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
     let nenv = AddStaticPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m nenv None tcref
     let nenv = 
         if CanAutoOpenTyconRef g m tcref then
-            let ty = generalizedTyconRef tcref
+            let ty = generalizedTyconRef g tcref
             AddStaticContentOfTypeToNameEnv g amap ad m nenv ty
         else
             nenv
@@ -1438,7 +1438,7 @@ let FreshenTycon (ncenv: NameResolver) m (tcref: TyconRef) =
 let FreshenTyconWithEnclosingTypeInst (ncenv: NameResolver) m (tinstEnclosing: TypeInst) (tcref: TyconRef) =
     let tps = ncenv.InstantiationGenerator m (tcref.Typars m)
     let tinst = List.skip tinstEnclosing.Length tps
-    let improvedTy = ncenv.g.decompileType tcref (tinstEnclosing @ tinst)
+    let improvedTy = ncenv.g.decompileType tcref (tinstEnclosing @ tinst) ncenv.g.knownWithoutNull
     improvedTy
 
 /// Convert a reference to a union case into a UnionCaseInfo that includes

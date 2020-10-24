@@ -2531,14 +2531,14 @@ and SolveTypeRequiresDefaultValue (csenv: ConstraintSolverEnv) ndeep m2 trace or
         if isNonNullableStructTyparTy g ty then
             SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
         elif isReferenceTyparTy g ty then
-            SolveTypeSupportsNull csenv ndeep m2 trace ty
+            SolveTypeUseSupportsNull csenv ndeep m2 trace ty
         else
             ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresStructOrReferenceConstraint(), m, m2))
     else
         if isStructTy g ty then
              SolveTypeRequiresDefaultConstructor csenv ndeep m2 trace ty 
         else
-             SolveTypeSupportsNull csenv ndeep m2 trace ty
+             SolveTypeUseSupportsNull csenv ndeep m2 trace ty
 
 // Parameterized compatibility relation between member signatures.  The real work
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"
