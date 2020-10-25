@@ -3049,14 +3049,6 @@ module TypecheckTests =
         fsc cfg "%s --target:library -o:neg129-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg129.fs"]
         peverify cfg "neg129-preview.dll"
 
-    // The code in this test starts to compile once FS-1043 is enabled.
-    [<Test>] 
-    let ``type check neg130 preview`` () =
-        let cfg = testConfig' "typecheck/sigs"
-        fsc cfg "%s -o:neg130-preview.exe --langversion:preview --warnaserror" cfg.fsc_flags ["neg130.fs"]
-        peverify cfg "neg130-preview.exe"
-        exec cfg ("." ++ "neg130-preview.exe") ""
-
     [<Test>]
     let ``type check neg130`` () = singleNegTest (testConfig' "typecheck/sigs") "neg130"
 
