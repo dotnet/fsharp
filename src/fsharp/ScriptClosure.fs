@@ -487,21 +487,21 @@ type LoadClosure with
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText
                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-                      filename: string, sourceText: ISourceText, codeContext, useSimpleResolution: bool, 
+                      filename: string, sourceText: ISourceText, implicitDefines, useSimpleResolution: bool, 
                       useFsiAuxLib, useSdkRefs, lexResourceManager: Lexhelp.LexResourceManager, 
-                      applyCommandLineArgs, defaultToDotNetFramework, tryGetMetadataSnapshot,
+                      applyCompilerOptions, defaultToDotNetFramework, tryGetMetadataSnapshot,
                       reduceMemoryUsage, dependencyProvider) = 
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
             (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, 
-             codeContext, useSimpleResolution, useFsiAuxLib, useSdkRefs, lexResourceManager, 
-             applyCommandLineArgs, defaultToDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
+             implicitDefines, useSimpleResolution, useFsiAuxLib, useSdkRefs, lexResourceManager, 
+             applyCompilerOptions, defaultToDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
 
     /// Analyze a set of script files and find the closure of their references.
     static member ComputeClosureOfScriptFiles
-                     (ctok, tcConfig: TcConfig, files:(string*range) list, codeContext,
+                     (ctok, tcConfig: TcConfig, files:(string*range) list, implicitDefines,
                       lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        ScriptPreprocessClosure.GetFullClosureOfScriptFiles (ctok, tcConfig, files, codeContext, lexResourceManager, dependencyProvider)
+        ScriptPreprocessClosure.GetFullClosureOfScriptFiles (ctok, tcConfig, files, implicitDefines, lexResourceManager, dependencyProvider)

@@ -16,10 +16,10 @@ type internal IParseState =
     member InputRange: index:int -> Position * Position
 
     /// Get the end position for the terminal or non-terminal at a given index matched by the production.
-    member InputEndPosition: int -> Position 
+    member InputEndPosition: index:int -> Position 
 
     /// Get the start position for the terminal or non-terminal at a given index matched by the production.
-    member InputStartPosition: int -> Position 
+    member InputStartPosition: index:int -> Position 
 
     /// Get the start of the range of positions matched by the production.
     member ResultStartPosition: Position
@@ -31,7 +31,7 @@ type internal IParseState =
     member ResultRange: Position * Position
 
     /// Get the value produced by the terminal or non-terminal at the given position.
-    member GetInput   : int -> obj 
+    member GetInput   : index:int -> obj 
 
     /// Raise an error in this parse context.
     member RaiseError<'b> : unit -> 'b 
@@ -118,7 +118,7 @@ type internal Tables<'tok> =
 
     /// Interpret the parser table taking input from the given lexer, using the given lex buffer, and the given start state.
     /// Returns an object indicating the final synthesized value for the parse.
-    member Interpret :  lexer:(LexBuffer<char> -> 'tok) * lexbuf:LexBuffer<char> * startState:int -> obj 
+    member Interpret :  lexer:(LexBuffer<char> -> 'tok) * lexbuf:LexBuffer<char> * initialState:int -> obj 
 
 /// Indicates an accept action has occurred.
 exception internal Accept of obj

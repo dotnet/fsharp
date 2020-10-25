@@ -1021,12 +1021,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member __.DownsizeCaches(userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "DownsizeCaches", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                checkFileInProjectCachePossiblyStale.Resize(ltok, keepStrongly=1)
-                checkFileInProjectCache.Resize(ltok, keepStrongly=1)
-                parseFileCache.Resize(ltok, keepStrongly=1))
-            incrementalBuildersCache.Resize(ctok, keepStrongly=1, keepMax=1)
+                checkFileInProjectCachePossiblyStale.Resize(ltok, newKeepStrongly=1)
+                checkFileInProjectCache.Resize(ltok, newKeepStrongly=1)
+                parseFileCache.Resize(ltok, newKeepStrongly=1))
+            incrementalBuildersCache.Resize(ctok, newKeepStrongly=1, newKeepMax=1)
             frameworkTcImportsCache.Downsize(ctok)
-            scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Resize(ltok,keepStrongly=1, keepMax=1))
+            scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Resize(ltok,newKeepStrongly=1, newKeepMax=1))
             cancellable.Return ())
          
     member __.FrameworkImportsCache = frameworkTcImportsCache
@@ -1184,7 +1184,7 @@ type FSharpChecker(legacyReferenceResolver,
        }
       )
 
-    member __.CompileToDynamicAssembly (asts:ParsedInput list, assemblyName:string, dependencies:string list, execute: (TextWriter * TextWriter) option, ?debug:bool, ?noframework:bool, ?userOpName: string) =
+    member __.CompileToDynamicAssembly (ast:ParsedInput list, assemblyName:string, dependencies:string list, execute: (TextWriter * TextWriter) option, ?debug:bool, ?noframework:bool, ?userOpName: string) =
       let userOpName = defaultArg userOpName "Unknown"
       backgroundCompiler.Reactor.EnqueueAndAwaitOpAsync (userOpName, "CompileToDynamicAssembly", assemblyName, fun ctok -> 
        cancellable {
@@ -1207,7 +1207,7 @@ type FSharpChecker(legacyReferenceResolver,
 
         // Perform the compilation, given the above capturing function.
         let errorsAndWarnings, result = 
-            CompileHelpers.compileFromAsts (ctok, legacyReferenceResolver, asts, assemblyName, outFile, dependencies, noframework, None, Some execute.IsSome, tcImportsCapture, dynamicAssemblyCreator)
+            CompileHelpers.compileFromAsts (ctok, legacyReferenceResolver, ast, assemblyName, outFile, dependencies, noframework, None, Some execute.IsSome, tcImportsCapture, dynamicAssemblyCreator)
 
         // Retrieve and return the results
         let assemblyOpt = 
@@ -1241,7 +1241,7 @@ type FSharpChecker(legacyReferenceResolver,
             let userOpName = "MaxMemoryReached"
             backgroundCompiler.CompleteAllQueuedOps()
             maxMemoryReached <- true
-            braceMatchCache.Resize(AssumeAnyCallerThreadWithoutEvidence(), keepStrongly=10)
+            braceMatchCache.Resize(AssumeAnyCallerThreadWithoutEvidence(), newKeepStrongly=10)
             backgroundCompiler.DownsizeCaches(userOpName) |> Async.RunSynchronously
             maxMemEvent.Trigger( () )
 
@@ -1326,13 +1326,13 @@ type FSharpChecker(legacyReferenceResolver,
           ExtraProjectInfo=extraProjectInfo
           Stamp = None }
 
-    member __.GetParsingOptionsFromCommandLineArgs(initialSourceFiles, argv, ?isInteractive) =
+    member __.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive) =
         let isInteractive = defaultArg isInteractive false
         use errorScope = new ErrorScope()
         let tcConfigBuilder = TcConfigBuilder.Initial
 
         // Apply command-line arguments and collect more source files if they are in the arguments
-        let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, initialSourceFiles, argv)
+        let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, sourceFiles, argv)
         FSharpParsingOptions.FromTcConfigBuilder(tcConfigBuilder, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
 
     member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool) =

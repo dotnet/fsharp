@@ -153,7 +153,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
 
         
 
-type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongly, areSame, ?isStillValid : 'Key*'Value->bool, ?areSimilar, ?requiredToKeep, ?onStrongDiscard, ?keepMax) =
+type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongly, areSame, ?isStillValid : 'Key*'Value->bool, ?areSimilar, ?requiredToKeep, ?onDiscard, ?keepMax) =
         
     /// Default behavior of <c>areSimilar</c> function is areSame.
     let areSimilar = defaultArg areSimilar areSame
@@ -161,7 +161,7 @@ type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongl
     /// The list of items in the cache. Youngest is at the end of the list.
     /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
-    let cache = AgedLookup<'Token, 'Key,'Value>(keepStrongly=keepStrongly,areSimilar=areSimilar,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax,?requiredToKeep=requiredToKeep)
+    let cache = AgedLookup<'Token, 'Key,'Value>(keepStrongly=keepStrongly,areSimilar=areSimilar,?onStrongDiscard=onDiscard,?keepMax=keepMax,?requiredToKeep=requiredToKeep)
         
     /// Whether or not this result value is still valid.
     let isStillValid = defaultArg isStillValid (fun _ -> true)
