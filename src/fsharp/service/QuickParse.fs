@@ -173,11 +173,11 @@ module QuickParse =
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
     let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string) (index: int) : (string * int * bool) option =
-        if String.IsNullOrEmpty tokenText then None
+        if String.IsNullOrEmpty lineStr then None
         else     
-            let directResult = GetCompleteIdentifierIslandImpl tokenText index
+            let directResult = GetCompleteIdentifierIslandImpl lineStr index
             if tolerateJustAfter && directResult = None then 
-                GetCompleteIdentifierIslandImpl tokenText (index - 1)
+                GetCompleteIdentifierIslandImpl lineStr (index - 1)
             else 
                 directResult
 
