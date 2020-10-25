@@ -882,7 +882,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
          ipubpaths = new_itbl "ipubpaths (fake)" [| |] 
          isimpletys = new_itbl "isimpletys (fake)" [| |] 
          ifile=file
-         ilModule = ilModule }
+         iILModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
     let z1 = u_int st2
     let ntycons = if z1 < 0 then -z1-1 else z1
