@@ -1203,11 +1203,12 @@ let CompilePatternBasic
                 else
                     if i = i' then
                             let accessf' _j tpinst _ =
-                                // TODO address of the struct?
+                                let expr = Option.get inpExprOpt
                                 if isStruct then
-                                  mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkValueSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                  let _, addrExp, _, _ = mkExprAddrOfExprAux g true false NeverMutates expr None matchm
+                                  mkUnionCaseFieldGetUnprovenViaExprAddr (addrExp, mkValueSomeCase g, instTypes tpinst resTys, 0, exprm)
                                 else
-                                  mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                  mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
                             mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path, int64 j))
                     else
                         // Successful active patterns  don't refute other patterns
