@@ -867,7 +867,7 @@ let check (ilscope: ILScopeRef) (inMap: NodeInTable<_,_>) =
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
         // then be printed indicating the name of the item.
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) (phase1bytesB: ReadOnlyByteMemory) =
+let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) (phase1bytesB: ReadOnlyByteMemory) =
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
          isB = ByteStream.FromBytes (ByteMemory.FromArray([| |]).AsReadOnly(),0,0) 
@@ -882,7 +882,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
          ipubpaths = new_itbl "ipubpaths (fake)" [| |] 
          isimpletys = new_itbl "isimpletys (fake)" [| |] 
          ifile=file
-         iILModule = iILModule }
+         ilModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
     let z1 = u_int st2
     let ntycons = if z1 < 0 then -z1-1 else z1
@@ -901,22 +901,22 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
     let pubpathTab   = new_itbl "ipubpaths"   (Array.map (decode_pubpath st2 stringTab) pubpathTab)
     let nlerefTab    = new_itbl "inlerefs"    (Array.map (decode_nleref st2 ccuTab stringTab) nlerefTab)
     let simpletypTab = new_itbl "simpleTyTab" (Array.map (decode_simpletyp st2 ccuTab stringTab nlerefTab) simpleTyTab)
-    let data = 
-        let st1 = 
-           { is = ByteStream.FromBytes (phase1bytes, 0, phase1bytes.Length) 
+    let data =
+        let st1 =
+           { is = ByteStream.FromBytes (phase1bytes, 0, phase1bytes.Length)
              isB = ByteStream.FromBytes (phase1bytesB, 0, phase1bytesB.Length) 
-             iccus =  ccuTab 
-             iilscope = ilscope
-             ientities = NodeInTable<_, _>.Create(Tycon.NewUnlinked,(fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"ientities", ntycons) 
-             itypars = NodeInTable<_, _>.Create(Typar.NewUnlinked,(fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"itypars", ntypars) 
-             ivals =  NodeInTable<_, _>.Create(Val.NewUnlinked  ,(fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"ivals", nvals)
-             ianoninfos = NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked),"ianoninfos", nanoninfos)
+             iccus=  ccuTab
+             iilscope= viewedScope
+             ientities= NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
+             itypars= NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
+             ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
+             ianoninfos=NodeInTable<_, _>.Create(AnonRecdTypeInfo.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ianoninfos", nanoninfos)
              istrings = stringTab
              ipubpaths = pubpathTab
              inlerefs = nlerefTab
              isimpletys = simpletypTab
              ifile = file
-             iILModule = iILModule }
+             iILModule = ilModule }
         let res = u st1
         check ilscope st1.ientities
         check ilscope st1.ientities

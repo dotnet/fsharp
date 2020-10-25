@@ -127,9 +127,9 @@ module internal ExtensionTyping =
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
     let GetTypeProvidersOfAssembly
-            (runTimeAssemblyFileName: string, 
+            (runtimeAssemblyFilename: string, 
              ilScopeRefOfRuntimeAssembly: ILScopeRef, 
-             designTimeAssemblyNameString: string, 
+             designTimeName: string, 
              resolutionEnvironment: ResolutionEnvironment, 
              isInvalidationSupported: bool, 
              isInteractive: bool, 
@@ -142,12 +142,12 @@ module internal ExtensionTyping =
                 try
                     let designTimeAssemblyName = 
                         try
-                            if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                                Some (System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyNameString))
+                            if designTimeName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
+                                Some (System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeName))
                             else
-                                Some (System.Reflection.AssemblyName designTimeAssemblyNameString)
+                                Some (System.Reflection.AssemblyName designTimeName)
                         with :? ArgumentException ->
-                            errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runTimeAssemblyFileName, designTimeAssemblyNameString), m))
+                            errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runtimeAssemblyFilename, designTimeName), m))
                             None
 
                     [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
@@ -158,10 +158,10 @@ module internal ExtensionTyping =
                           ()
 
                       | Some _, _ ->
-                          let provImplTypes = GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m, compilerToolPaths)
+                          let provImplTypes = GetTypeProviderImplementationTypes (runtimeAssemblyFilename, designTimeName, m, compilerToolPaths)
                           for t in provImplTypes do
                             let resolver =
-                                CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported,
+                                CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
                                     isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
                             | null -> ()
@@ -1327,7 +1327,7 @@ module internal ExtensionTyping =
 
     /// Given a mangled name reference to a non-nested provided type, resolve it.
     /// If necessary, demangle its static arguments before applying them.
-    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: string[], typeLogicalName: string, m: range) =
+    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: string[], typeLogicalName: string, range: range) =
         
         // Demangle the static parameters
         let typeName, argNamesAndValues = 
@@ -1348,12 +1348,12 @@ module internal ExtensionTyping =
                 typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, resolver) ->
                     typeBeforeArguments.GetStaticParameters resolver),range=range0)
 
-            let staticParameters = staticParameters.PApplyArray(id, "", m)
+            let staticParameters = staticParameters.PApplyArray(id, "", range)
             
             let staticArgs = 
                 staticParameters |> Array.map (fun sp -> 
-                      let typeBeforeArgumentsName = typeBeforeArguments.PUntaint ((fun st -> st.Name), m)
-                      let spName = sp.PUntaint ((fun sp -> sp.Name), m)
+                      let typeBeforeArgumentsName = typeBeforeArguments.PUntaint ((fun st -> st.Name), range)
+                      let spName = sp.PUntaint ((fun sp -> sp.Name), range)
                       match argSpecsTable.TryGetValue spName with
                       | true, arg ->
                           /// Find the name of the representation type for the static parameter
@@ -1361,7 +1361,7 @@ module internal ExtensionTyping =
                               sp.PUntaint((fun sp -> 
                                   let pt = sp.ParameterType
                                   let uet = if pt.IsEnum then pt.GetEnumUnderlyingType() else pt
-                                  uet.FullName), m)
+                                  uet.FullName), range)
 
                           match spReprTypeName with 
                           | "System.SByte" -> box (sbyte arg)
@@ -1381,8 +1381,8 @@ module internal ExtensionTyping =
                           | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
 
                       | _ ->
-                          if sp.PUntaint ((fun sp -> sp.IsOptional), m) then 
-                              match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
+                          if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
+                              match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
                               | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
                               | v -> v
                           else
@@ -1421,10 +1421,10 @@ module internal ExtensionTyping =
             GetPartsOfNamespaceRecover namespaceName
 
     /// Get the parts of the name that encloses the .NET type including nested types. 
-    let GetFSharpPathToProvidedType (st: Tainted<ProvidedType>, m) = 
+    let GetFSharpPathToProvidedType (st: Tainted<ProvidedType>, range) = 
         // Can't use st.Fullname because it may be like IEnumerable<Something>
         // We want [System;Collections;Generic]
-        let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), m))
+        let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), range))
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
         let rec walkUpNestedClasses(st: Tainted<ProvidedType>, soFar) =
 #else
@@ -1432,9 +1432,9 @@ module internal ExtensionTyping =
 #endif
             match st with
             | Tainted.Null -> soFar
-            | Tainted.NonNull st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), m), soFar) @ [st.PUntaint((fun st -> st.Name), m)]
+            | Tainted.NonNull st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), range), soFar) @ [st.PUntaint((fun st -> st.Name), range)]
 
-        walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), m), namespaceParts)
+        walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), range), namespaceParts)
 
 
     /// Get the ILAssemblyRef for a provided assembly. Do not take into account
@@ -1445,20 +1445,20 @@ module internal ExtensionTyping =
 
     /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
     /// any type relocations or static linking for generated types.
-    let GetOriginalILTypeRefOfProvidedType (st: Tainted<ProvidedType>, m) = 
+    let GetOriginalILTypeRefOfProvidedType (st: Tainted<ProvidedType>, range) = 
         
-        let aref = GetOriginalILAssemblyRefOfProvidedAssembly (st.PApply((fun st -> nonNull<ProvidedAssembly> st.Assembly), m), m) // TODO: why is explicit instantiation needed here
+        let aref = GetOriginalILAssemblyRefOfProvidedAssembly (st.PApply((fun st -> nonNull<ProvidedAssembly> st.Assembly), range), range) // NULLNESS TODO: why is explicit instantiation needed here
         let scoperef = ILScopeRef.Assembly aref
-        let enc, nm = ILPathToProvidedType (st, m)
+        let enc, nm = ILPathToProvidedType (st, range)
         let tref = ILTypeRef.Create(scoperef, enc, nm)
         tref
 
     /// Get the ILTypeRef for the provided type (including for nested types). Take into account
     /// any type relocations or static linking for generated types.
-    let GetILTypeRefOfProvidedType (st: Tainted<ProvidedType>, m) = 
-        match st.PUntaint((fun st -> st.TryGetILTypeRef()), m) with 
+    let GetILTypeRefOfProvidedType (st: Tainted<ProvidedType>, range) = 
+        match st.PUntaint((fun st -> st.TryGetILTypeRef()), range) with 
         | Some ilTypeRef -> ilTypeRef
-        | None -> GetOriginalILTypeRefOfProvidedType (st, m)
+        | None -> GetOriginalILTypeRefOfProvidedType (st, range)
 
     type ProviderGeneratedType = ProviderGeneratedType of (*ilOrigTyRef*)ILTypeRef * (*ilRenamedTyRef*)ILTypeRef * ProviderGeneratedType list
 
