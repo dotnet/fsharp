@@ -21401,6 +21401,8 @@ FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.Collections.Generic.I
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`4[FSharp.Compiler.SourceCodeServices.FSharpType,System.String,System.Boolean,System.Object]] get_NamedArguments()
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.String Format(FSharp.Compiler.SourceCodeServices.FSharpDisplayContext)
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.String ToString()
+FSharp.Compiler.SourceCodeServices.FSharpAttribute: range Range
+FSharp.Compiler.SourceCodeServices.FSharpAttribute: range get_Range()
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer)
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -21764,6 +21766,8 @@ FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String get_QualifiedName
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String get_XmlDocSig()
 FSharp.Compiler.SourceCodeServices.FSharpEntity: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpEntity: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpEntity: Boolean IsAbstractClass
+FSharp.Compiler.SourceCodeServices.FSharpEntity: Boolean get_IsAbstractClass()
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity Severity
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity get_Severity()
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: Int32 EndColumn
@@ -22829,6 +22833,8 @@ FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: System.String get_Full
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: System.String get_Name()
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range Range
+FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range get_Range()
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean IsAccessible(FSharp.Compiler.SourceCodeServices.FSharpAccessibilityRights)
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean IsEffectivelySameAs(FSharp.Compiler.SourceCodeServices.FSharpSymbol)

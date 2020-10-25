@@ -55,19 +55,19 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
         let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
-type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTy: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
+type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
 
     let tcVal = CheckExpressions.LightweightTcValForUsingInBuildMethodCall g
 
-    new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTy: ModuleOrNamespaceType option, tcImports: TcImports) =
+    new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
         let infoReader = InfoReader(g, amap)
-        SymbolEnv(g, thisCcu, thisCcuTy, tcImports, amap, infoReader)
+        SymbolEnv(g, thisCcu, thisCcuTyp, tcImports, amap, infoReader)
 
     member _.g = g
     member _.amap = amap
     member _.thisCcu = thisCcu
-    member _.thisCcuTy = thisCcuTy
+    member _.thisCcuTy = thisCcuTyp
     member _.infoReader = infoReader
     member _.tcImports = tcImports
     member _.tcValF = tcVal

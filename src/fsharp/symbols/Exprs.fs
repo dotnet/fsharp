@@ -483,21 +483,26 @@ module FSharpExprConvert =
             if isMember then 
                 let callArgs = (objArgs :: untupledCurriedArgs) |> List.concat
                 let enclTyArgs, methTyArgs = List.splitAfter numEnclTypeArgs tyargs
-                let witnessArgsR = GetWitnessArgs cenv env m tps tyargs
+                let witnessArgsR = GetWitnessArgs cenv env vref m tps tyargs
                 // tailcall
                 ConvObjectModelCallLinear cenv env (isNewObj, FSharpMemberOrFunctionOrValue(cenv, vref), enclTyArgs, methTyArgs, witnessArgsR, callArgs) contf2
             else
                 let v = FSharpMemberOrFunctionOrValue(cenv, vref)
-                let witnessArgsR = GetWitnessArgs cenv env m vref.Typars tyargs
+                let witnessArgsR = GetWitnessArgs cenv env vref m vref.Typars tyargs
                 // tailcall
                 ConvObjectModelCallLinear cenv env (false, v, [], tyargs, witnessArgsR, List.concat untupledCurriedArgs) contf2
 
-    and GetWitnessArgs cenv (env: ExprTranslationEnv) m tps tyargs : FSharpExpr list =
+    and GetWitnessArgs cenv (env: ExprTranslationEnv) (vref: ValRef) m tps tyargs : FSharpExpr list =
         let g = cenv.g
         if cenv.g.langVersion.SupportsFeature(Features.LanguageFeature.WitnessPassing) && not env.suppressWitnesses then 
             let witnessExprs = 
-                ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcValF g cenv.amap m tps tyargs 
-                |> CommitOperationResult
+                match ConstraintSolver.CodegenWitnessesForTyparInst cenv.tcValF g cenv.amap m tps tyargs with
+                // There is a case where optimized code makes expressions that do a shift-left on the 'char'
+                // type.  There is no witness for this case.  This is due to the code
+                //    let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
+                // in FSharp.Core. 
+                | ErrorResult _  when vref.LogicalName =  "op_LeftShift" && tyargs.Length = 1 -> []
+                | res -> CommitOperationResult res
             let env = { env with suppressWitnesses = true }
             witnessExprs |> List.map (fun arg -> 
                 match arg with 
