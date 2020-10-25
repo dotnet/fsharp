@@ -398,11 +398,11 @@ type TaskBuilder() =
 
             completed)
 
-    member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (disp : 'Resource, __expand_body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
+    member inline builder.Using<'Resource, 'TOverall, 'T when 'Resource :> IDisposable> (resource : 'Resource, __expand_body : 'Resource -> TaskCode<'TOverall, 'T>) : TaskCode<'TOverall, 'T> = 
         // A using statement is just a try/finally with the finally block disposing if non-null.
         builder.TryFinally(
-            TaskCode<_, _>(fun sm -> (__expand_body disp).Invoke(&sm)),
-            (fun () -> if not (isNull (box disp)) then disp.Dispose()))
+            TaskCode<_, _>(fun sm -> (__expand_body resource).Invoke(&sm)),
+            (fun () -> if not (isNull (box resource)) then resource.Dispose()))
 
     member inline builder.For (sequence : seq<'T>, __expand_body : 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         // A for loop is just a using statement on the sequence's enumerator...
@@ -472,9 +472,10 @@ module ContextSensitiveTasks =
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                  (_priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+                  (priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
+                ignore priority
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
                 let cont = 
@@ -497,7 +498,7 @@ module ContextSensitiveTasks =
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1)>
-                  (_priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+                  (priority: IPriority2, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -518,10 +519,11 @@ module ContextSensitiveTasks =
                         let result = (^Awaiter : (member GetResult : unit -> ^TResult1)(awaiter))
                         (__expand_continuation result).Invoke(&sm)
                 else
-                    TaskWitnesses.CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall>(_priority, task, __expand_continuation).Invoke(&sm))
+                    TaskWitnesses.CanBindDynamic< ^TaskLike, ^TResult1, 'TResult2, ^Awaiter , 'TOverall>(priority, task, __expand_continuation).Invoke(&sm))
 
-        static member inline CanBindDynamic (_priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+        static member inline CanBindDynamic (priority: IPriority1, task: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
             TaskCode<_, _>(fun sm -> 
+                ignore priority
                 let mutable awaiter = task.GetAwaiter()
 
                 let cont = 
@@ -539,7 +541,7 @@ module ContextSensitiveTasks =
                     sm.ResumptionFunc <- cont
                     false)
 
-        static member inline CanBind (_priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+        static member inline CanBind (priority: IPriority1, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -559,19 +561,20 @@ module ContextSensitiveTasks =
                         let result = awaiter.GetResult()
                         (__expand_continuation result).Invoke(&sm)
                 else
-                    TaskWitnesses.CanBindDynamic(_priority, task, __expand_continuation).Invoke(&sm))
+                    TaskWitnesses.CanBindDynamic(priority, task, __expand_continuation).Invoke(&sm))
 
-        static member inline CanBind (_priority: IPriority1, computation: Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
-            TaskWitnesses.CanBind (_priority, Async.StartAsTask computation, __expand_continuation)
+        static member inline CanBind (priority: IPriority1, computation: Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =
+            TaskWitnesses.CanBind (priority, Async.StartAsTask computation, __expand_continuation)
 
         static member inline CanReturnFromDynamic< ^TaskLike, ^Awaiter, ^T
                                            when  ^TaskLike: (member GetAwaiter:  unit ->  ^Awaiter)
                                            and ^Awaiter :> ICriticalNotifyCompletion
                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
                                            and ^Awaiter: (member GetResult: unit ->  ^T)>
-              (_priority: IPriority2, task: ^TaskLike) : TaskCode< ^T, ^T > =
+              (priority: IPriority2, task: ^TaskLike) : TaskCode< ^T, ^T > =
 
             TaskCode<_, _>(fun sm -> 
+                ignore priority
                 let mutable awaiter = (^TaskLike: (member GetAwaiter : unit -> ^Awaiter)(task)) 
 
                 let cont =
@@ -594,7 +597,7 @@ module ContextSensitiveTasks =
                                            and ^Awaiter :> ICriticalNotifyCompletion
                                            and ^Awaiter: (member get_IsCompleted: unit -> bool)
                                            and ^Awaiter: (member GetResult: unit ->  ^T)>
-              (_priority: IPriority2, task: ^TaskLike) : TaskCode< ^T, ^T > =
+              (priority: IPriority2, task: ^TaskLike) : TaskCode< ^T, ^T > =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -615,9 +618,9 @@ module ContextSensitiveTasks =
                         sm.Result <- (^Awaiter : (member GetResult : unit -> ^T)(awaiter))
                         true
                 else
-                    TaskWitnesses.CanReturnFromDynamic(_priority, task).Invoke(&sm))
+                    TaskWitnesses.CanReturnFromDynamic(priority, task).Invoke(&sm))
 
-        static member inline CanReturnFrom (_priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
+        static member inline CanReturnFrom (priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
 
             TaskCode<_, _>(fun sm -> 
                 if __useResumableStateMachines then 
@@ -636,11 +639,12 @@ module ContextSensitiveTasks =
                         sm.Result <- awaiter.GetResult()
                         true
                 else
-                    TaskWitnesses.CanReturnFromDynamic(_priority, task).Invoke(&sm))
+                    TaskWitnesses.CanReturnFromDynamic(priority, task).Invoke(&sm))
 
-        static member CanReturnFromDynamic (_priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
+        static member CanReturnFromDynamic (priority: IPriority1, task: Task<'T>) : TaskCode<'T, 'T> =
 
             TaskCode<_, _>(fun sm -> 
+                ignore priority
                 let mutable awaiter = task.GetAwaiter()
 
                 let cont =
@@ -659,8 +663,8 @@ module ContextSensitiveTasks =
                     sm.ResumptionFunc <- cont
                     false)
 
-        static member inline CanReturnFrom (_priority: IPriority1, computation: Async<'T>) : TaskCode<'T, 'T> =
-            TaskWitnesses.CanReturnFrom (_priority, Async.StartAsTask computation)
+        static member inline CanReturnFrom (priority: IPriority1, computation: Async<'T>) : TaskCode<'T, 'T> =
+            TaskWitnesses.CanReturnFrom (priority, Async.StartAsTask computation)
 
     [<AutoOpen>]
     module TaskHelpers = 
@@ -696,9 +700,10 @@ module ContextInsensitiveTasks =
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted:  unit -> bool)
                                             and ^Awaiter: (member GetResult:  unit ->  ^TResult1)> 
-                     (_priority: IPriority3, sm: TaskStateMachine<'TOverall>, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
+                     (priority: IPriority3, sm: TaskStateMachine<'TOverall>, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
 
             // get an awaiter from the task
+            ignore priority
             let mutable awaiter = (^TaskLike : (member GetAwaiter : unit -> ^Awaiter)(task))
             match __resumableEntry() with 
             | Some contID -> 
@@ -718,8 +723,9 @@ module ContextInsensitiveTasks =
                                             and ^Awaiter :> ICriticalNotifyCompletion
                                             and ^Awaiter: (member get_IsCompleted: unit -> bool)
                                             and ^Awaiter: (member GetResult: unit -> ^TResult1)> 
-                     (_priority: IPriority2, sm: TaskStateMachine<'TOverall>, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
+                     (priority: IPriority2, sm: TaskStateMachine<'TOverall>, task: ^TaskLike, __expand_continuation: (^TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
 
+            ignore priority
             let awaitable = (^TaskLike : (member ConfigureAwait : bool -> ^Awaitable)(task, false))
             // get an awaiter from the task
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(awaitable))
@@ -732,7 +738,8 @@ module ContextInsensitiveTasks =
                 TaskStep<'TResult2>(false)
 
         [<NoDynamicInvocation>]
-        static member inline CanBind (_priority :IPriority1, sm: TaskStateMachine<'TOverall>, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
+        static member inline CanBind (priority :IPriority1, sm: TaskStateMachine<'TOverall>, task: Task<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
+            ignore priority
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
             let CONT = __resumableEntry (fun () -> __expand_continuation (awaiter.GetResult()))
             if awaiter.IsCompleted then
@@ -742,8 +749,8 @@ module ContextInsensitiveTasks =
                 TaskStep<'TResult2>(false)
 
         [<NoDynamicInvocation>]
-        static member inline CanBind (_priority: IPriority1, sm: TaskStateMachine<'TOverall>, computation : Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
-            TaskWitnesses.CanBind (_priority, sm, Async.StartAsTask computation, __expand_continuation)
+        static member inline CanBind (priority: IPriority1, sm: TaskStateMachine<'TOverall>, computation : Async<'TResult1>, __expand_continuation: ('TResult1 -> TaskStep<'TResult2>)) : TaskStep<'TResult2> =
+            TaskWitnesses.CanBind (priority, sm, Async.StartAsTask computation, __expand_continuation)
 
         [<NoDynamicInvocation>]
         static member inline CanReturnFrom< ^Awaitable, ^Awaiter, ^T
@@ -751,9 +758,10 @@ module ContextInsensitiveTasks =
                                     and ^Awaiter :> ICriticalNotifyCompletion 
                                     and ^Awaiter : (member get_IsCompleted : unit -> bool)
                                     and ^Awaiter : (member GetResult : unit -> ^T) >
-               (_priority: IPriority3, sm: TaskStateMachine< ^T >, task: ^Awaitable) =
+               (priority: IPriority3, sm: TaskStateMachine< ^T >, task: ^Awaitable) =
 
             // get an awaiter from the task
+            ignore priority
             let mutable awaiter = (^Awaitable : (member GetAwaiter : unit -> ^Awaiter)(task))
             let CONT = __resumableEntry (fun () -> sm.SetResult (^Awaiter : (member GetResult : unit -> ^T)(awaiter)); TaskStep<'T>(true))
 
@@ -785,7 +793,8 @@ module ContextInsensitiveTasks =
                 TaskStep< ^T >(false)
 
         [<NoDynamicInvocation>]
-        static member inline CanReturnFrom (_priority: IPriority1, sm: TaskStateMachine<'T>, task: Task<'T>) : TaskStep<'T> =
+        static member inline CanReturnFrom (priority: IPriority1, sm: TaskStateMachine<'T>, task: Task<'T>) : TaskStep<'T> =
+            ignore priority
             let mutable awaiter = task.ConfigureAwait(false).GetAwaiter()
             let CONT = __resumableEntry (fun () -> sm.SetResult (awaiter.GetResult()); TaskStep<'T>(true))
             if task.IsCompleted then
@@ -795,8 +804,8 @@ module ContextInsensitiveTasks =
                 TaskStep<'T>(false)
 
         [<NoDynamicInvocation>]
-        static member inline CanReturnFrom (_priority: IPriority1, sm: TaskStateMachine<'T>, computation: Async<'T>) =
-            TaskWitnesses.CanReturnFrom (_priority, sm, Async.StartAsTask computation)
+        static member inline CanReturnFrom (priority: IPriority1, sm: TaskStateMachine<'T>, computation: Async<'T>) =
+            TaskWitnesses.CanReturnFrom (priority, sm, Async.StartAsTask computation)
 
     type TaskStateMachine<'TOverall> with
         [<NoDynamicInvocation>]
