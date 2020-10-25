@@ -46,16 +46,16 @@ module internal ExtensionTyping =
 
     /// Find and instantiate the set of ITypeProvider components for the given assembly reference
     val GetTypeProvidersOfAssembly : 
-          runtimeAssemblyFilename: string 
-          * ilScopeRefOfRuntimeAssembly:ILScopeRef
-          * designerAssemblyName: string 
-          * ResolutionEnvironment 
-          * bool
-          * isInteractive: bool
-          * systemRuntimeContainsType : (string -> bool)
-          * systemRuntimeAssemblyVersion : System.Version
-          * compilerToolsPath : string list
-          * range -> Tainted<ITypeProvider> list
+          runtimeAssemblyFilename: string  *
+          ilScopeRefOfRuntimeAssembly:ILScopeRef *
+          designTimeName: string *
+          resolutionEnvironment: ResolutionEnvironment *
+          isInvalidationSupported: bool *
+          isInteractive: bool *
+          systemRuntimeContainsType : (string -> bool) *
+          systemRuntimeAssemblyVersion : System.Version *
+          compilerToolPaths : string list * 
+          range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
     val DisplayNameOfTypeProvider : Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> * range -> string
@@ -296,7 +296,7 @@ module internal ExtensionTyping =
     val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:obj[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
 
     /// Try to apply a provided method to the given static arguments. 
-    val TryApplyProvidedMethod : methBeforeArguments:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * range -> Tainted<ProvidedMethodBase> option
+    val TryApplyProvidedMethod : methBeforeArgs:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * range -> Tainted<ProvidedMethodBase> option
 
     /// Try to resolve a type in the given extension type resolver
     val TryResolveProvidedType : Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option

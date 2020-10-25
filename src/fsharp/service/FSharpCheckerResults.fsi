@@ -101,7 +101,7 @@ type public FSharpCheckFileResults =
 
     /// <summary>Get the items for a declaration list</summary>
     ///
-    /// <param name="ParsedFileResultsOpt">
+    /// <param name="parsedFileResults">
     ///    If this is present, it is used to filter declarations based on location in the
     ///    parse tree, specifically at 'open' declarations, 'inherit' of class or interface
     ///    'record field' locations and r.h.s. of 'range' operator a..b
@@ -123,11 +123,11 @@ type public FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
+    member GetDeclarationListInfo : parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
-    /// <param name="ParsedFileResultsOpt">
+    /// <param name="parsedFileResults">
     ///    If this is present, it is used to filter declarations based on location in the
     ///    parse tree, specifically at 'open' declarations, 'inherit' of class or interface
     ///    'record field' locations and r.h.s. of 'range' operator a..b
@@ -149,7 +149,7 @@ type public FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
+    member GetDeclarationListSymbols : parsedFileResults:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///
@@ -236,7 +236,7 @@ type public FSharpCheckFileResults =
     member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<ModuleOrNamespaceRef[]>
 
     /// Find the most precise display environment for the given line and column.
-    member GetDisplayContextForPos : pos : pos -> Async<FSharpDisplayContext option>
+    member GetDisplayContextForPos : cursorPos : pos -> Async<FSharpDisplayContext option>
 
     /// Determines if a long ident is resolvable at a specific point.
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
