@@ -3296,6 +3296,14 @@ let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
 
 let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
 
+let mkValueNoneCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueNone"
+
+let mkValueSomeCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueSome"
+
+let mkValueSome g ty arg m = mkUnionCaseExpr(mkValueSomeCase g, [ty], [arg], m)
+
+let mkValueNone g ty m = mkUnionCaseExpr(mkValueNoneCase g, [ty], [], m)
+
 let mkOptionGetValueUnprovenViaAddr g expr ty m = mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, [ty], 0, m)
 
 type ValRef with 

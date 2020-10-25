@@ -936,6 +936,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.fslibCcu                 = fslibCcu
   member val refcell_tcr_canon    = v_refcell_tcr_canon
   member val option_tcr_canon     = mk_MFCore_tcref     fslibCcu "Option`1"
+  member val valueoption_tcr_canon    = mk_MFCore_tcref     fslibCcu "ValueOption`1"
   member __.list_tcr_canon       = v_list_tcr_canon
   member val set_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Set`1"
   member val map_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Map`2"

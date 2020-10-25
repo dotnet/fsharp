@@ -1169,6 +1169,10 @@ let CompilePatternBasic
             match pat with
             | TPat_wild _ | TPat_as _ | TPat_tuple _ | TPat_disjs _ | TPat_conjs _ | TPat_recd _ -> failwith "Unexpected projection pattern"
             | TPat_query ((_, resTys, apatVrefOpt, idx, apinfo), p, m) ->
+                let isStruct =
+                    match apatVrefOpt with
+                    | Some (vref, _) -> HasFSharpAttribute g g.attrib_StructAttribute vref.Attribs
+                    | _ -> false
 
                 if apinfo.IsTotal then
                     let hasParam = (match apatVrefOpt with None -> true | Some (vref, _) -> doesActivePatternHaveFreeTypars g vref)
@@ -1194,9 +1198,11 @@ let CompilePatternBasic
                 else
                     if i = i' then
                             let accessf' _j tpinst _ =
-                                // TODO: In the future we will want active patterns to be able to return struct-unions
-                                //       In that eventuality, we need to check we are taking the address correctly
-                                mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                // TODO address of the struct?
+                                if isStruct then
+                                  mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkValueSomeCase g, instTypes tpinst resTys, 0, exprm)
+                                else
+                                  mkUnionCaseFieldGetUnprovenViaExprAddr (Option.get inpExprOpt, mkSomeCase g, instTypes tpinst resTys, 0, exprm)
                             mkSubFrontiers path accessf' active' [p] (fun path j -> PathQuery(path, int64 j))
                     else
                         // Successful active patterns  don't refute other patterns

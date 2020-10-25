@@ -1701,6 +1701,12 @@ val mkNoneCase  : TcGlobals -> UnionCaseRef
 /// Create the union case 'Some(expr)' for an option type
 val mkSomeCase: TcGlobals -> UnionCaseRef
 
+/// Create the struct union case 'ValueNone' for a voption type
+val mkValueNoneCase: TcGlobals -> UnionCaseRef
+
+/// Create the struct union case 'ValueSome(expr)' for a voption type
+val mkValueSomeCase: TcGlobals -> UnionCaseRef
+
 /// Create the expression '[]' for a list type
 val mkNil  : TcGlobals -> range -> TType -> Expr
 
@@ -1712,6 +1718,12 @@ val mkSome : TcGlobals -> TType -> Expr -> range -> Expr
 
 /// Create the expression 'None' for an option-type
 val mkNone: TcGlobals -> TType -> range -> Expr
+
+/// Create the expression 'ValueSome(expr)'
+val mkValueSome: TcGlobals -> TType -> Expr -> range -> Expr
+
+/// Create the expression 'ValueNone' for a voption-type
+val mkValueNone: TcGlobals -> TType -> range -> Expr
 
 /// Create the expression 'expr.Value' for an option-typed expression
 val mkOptionGetValueUnprovenViaAddr: TcGlobals -> Expr -> TType -> range -> Expr
