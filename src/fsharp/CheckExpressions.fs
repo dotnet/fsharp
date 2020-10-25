@@ -4969,10 +4969,12 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             if not (isNil activePatArgsAsSynPats) && apinfo.ActiveTags.Length <> 1 then 
                 errorR (Error (FSComp.SR.tcRequireActivePatternWithOneResult (), m))
 
+            let isStruct = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute vref.Attribs
+
             let activePatArgsAsSynExprs = List.map convSynPatToSynExpr activePatArgsAsSynPats
 
             let activePatResTys = NewInferenceTypes apinfo.Names
-            let activePatType = apinfo.OverallType cenv.g m ty activePatResTys 
+            let activePatType = apinfo.OverallType cenv.g m ty activePatResTys isStruct
 
             let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, arg, unionRanges (rangeOfLid longId) arg.Range)) 
             let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
@@ -9417,7 +9419,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         | Some (apinfo, ty, _) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
             let _, rty = stripFunTy cenv.g ty
-            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys) rty
+            let isStruct = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
+            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys isStruct) rty
         | None -> 
             ()
 

@@ -1692,6 +1692,9 @@ val mkListTy         : TcGlobals -> TType -> TType
 /// Create the option type for a given element type
 val mkOptionTy       : TcGlobals -> TType -> TType
 
+/// Create the voption type for a given element type
+val mkValueOptionTy  : TcGlobals -> TType -> TType
+
 /// Create the Nullable type for a given element type
 val mkNullableTy: TcGlobals -> TType -> TType
 
@@ -2278,9 +2281,9 @@ type PrettyNaming.ActivePatternInfo with
 
     member Names : string list 
 
-    member ResultType : TcGlobals -> range -> TType list -> TType
+    member ResultType : TcGlobals -> range -> TType list -> bool -> TType
 
-    member OverallType : TcGlobals -> range -> TType -> TType list -> TType
+    member OverallType : TcGlobals -> range -> TType -> TType list -> bool -> TType
 
 val doesActivePatternHaveFreeTypars : TcGlobals -> ValRef -> bool
 

@@ -3229,6 +3229,8 @@ let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr
 
 let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty])
 
+let mkValueOptionTy (g: TcGlobals) ty = TType_app (g.valueoption_tcr_nice, [ty])
+
 let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty])
 
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
@@ -8473,12 +8475,14 @@ let mkChoiceCaseRef g m n i =
 type PrettyNaming.ActivePatternInfo with 
     member x.Names = x.ActiveTags
 
-    member apinfo.ResultType g m rtys = 
+    member apinfo.ResultType g m rtys isStruct = 
         let choicety = mkChoiceTy g m rtys
-        if apinfo.IsTotal then choicety else mkOptionTy g choicety
+        if apinfo.IsTotal then choicety 
+        elif isStruct then mkValueOptionTy g choicety
+        else mkOptionTy g choicety
     
-    member apinfo.OverallType g m dty rtys = 
-        mkFunTy dty (apinfo.ResultType g m rtys)
+    member apinfo.OverallType g m dty rtys isStruct = 
+        mkFunTy dty (apinfo.ResultType g m rtys isStruct)
 
 //---------------------------------------------------------------------------
 // Active pattern validation

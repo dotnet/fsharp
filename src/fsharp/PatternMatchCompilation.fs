@@ -1039,10 +1039,15 @@ let CompilePatternBasic
 #endif
 
          // Active pattern matches: create a variable to hold the results of executing the active pattern.
-         | (EdgeDiscrim(_, (DecisionTreeTest.ActivePatternCase(activePatExpr, resTys, _, _, apinfo)), m) :: _) ->
+         | (EdgeDiscrim(_, (DecisionTreeTest.ActivePatternCase(activePatExpr, resTys, apatVrefOpt, _, apinfo)), m) :: _) ->
 
              if not (isNil origInputValTypars) then error(InternalError("Unexpected generalized type variables when compiling an active pattern", m))
-             let resTy = apinfo.ResultType g m resTys
+
+             let isStruct =
+                 match apatVrefOpt with
+                 | Some (vref, _) -> HasFSharpAttribute g g.attrib_StructAttribute vref.Attribs
+                 | _ -> false
+             let resTy = apinfo.ResultType g m resTys isStruct
              let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
              if origInputVal.IsMemberOrModuleBinding then
                  AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
