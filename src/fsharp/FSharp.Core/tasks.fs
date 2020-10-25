@@ -47,7 +47,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         let __resumeAt<'T> (programLabel: int) : 'T = 
-            ignore pc
+            ignore programLabel
             failwith "__resumeAt should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
