@@ -871,7 +871,7 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
          isB = ByteStream.FromBytes (ByteMemory.FromArray([| |]).AsReadOnly(),0,0) 
-         iilscope= ilscope
+         iilscope= viewedScope
          iccus= new_itbl "iccus (fake)" [| |] 
          ientities= NodeInTable<_,_>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"ientities",0) 
          itypars= NodeInTable<_,_>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg),(fun osgn -> osgn.IsLinked),"itypars",0) 
@@ -918,10 +918,10 @@ let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) 
              ifile = file
              iILModule = ilModule }
         let res = u st1
-        check ilscope st1.ientities
-        check ilscope st1.ientities
-        check ilscope st1.ivals
-        check ilscope st1.itypars
+        check viewedScope st1.ientities
+        check viewedScope st1.ientities
+        check viewedScope st1.ivals
+        check viewedScope st1.itypars
         res
 
     {RawData=data; FixupThunks=ccuTab.itbl_rows }
