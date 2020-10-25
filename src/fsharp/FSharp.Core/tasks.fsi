@@ -39,38 +39,55 @@ namespace Microsoft.FSharp.Core.CompilerServices
     [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     module StateMachineHelpers = 
 
+        /// <summary>
         /// Statically determines whether resumable code is being used
+        /// </summary>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val __useResumableStateMachines<'T> : bool 
 
+        /// <summary>
         /// Indicates a resumption point within resumable code
+        /// </summary>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val __resumableEntry: unit -> int option
 
+        /// <summary>
         /// Indicates to jump to a resumption point within resumable code.
         /// If the 'pc' is statically known then this is a 'goto' into resumable code.  If the 'pc' is not statically
         /// known it must be a valid resumption point within this block of resumable code.
+        /// </summary>
+        /// <param name="programLabel"></param>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __resumeAt : pc: int -> 'T
+        val __resumeAt : programLabel: int -> 'T
 
+        /// <summary>
         /// Attempts to convert a computation description to a state machine with resumable code 
+        /// </summary>
+        /// <param name="stateMachineSpecification">An object expression that represents a state machine.</param>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __resumableStateMachine<'T> : _obj: 'T -> 'T
+        val __resumableStateMachine<'T> : stateMachineSpecification: 'T -> 'T
 
+        /// <summary>
         /// Within a compiled state machine, indicates the given methods provide implementations of the
         /// IAsyncStateMachine functionality for a struct state machine.
+        /// </summary>
         ///
-        /// The template type guides the generation of a new struct type.  Any mention of the template in
-        /// any of the code is rewritten to the new struct type.  'moveNext' and 'setMachineState' are
+        /// <remarks>
+        /// The template type must be a struct type and guides the generation of a new struct type by the F# compiler.  Any mention of the template in
+        /// any of the code is rewritten to this newly generated struct type.  'moveNext' and 'setMachineState' are
         /// used to implement the methods on the interface implemented by the struct type. The 'after'
         /// method is executed after the state machine has been created.
+        /// </remarks>
+        /// <param name="moveNextMethod">Gives the implementation of the MoveNext method on IAsyncResult.</param>
+        /// <param name="setMachineStateMethod">Gives the implementation of the SetStateMachine method on IAsyncResult.</param>
+        /// <param name="afterMethod">Gives code to execute after the generation of the state machine and to produce the final result.</param>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
-        val __resumableStateMachineStruct<'Template, 'Result> : moveNext: MoveNextMethod<'Template> -> _setMachineState: SetMachineStateMethod<'Template> -> after: AfterMethod<'Template, 'Result> -> 'Result
+        val __resumableStateMachineStruct<'Template, 'Result> : moveNextMethod: MoveNextMethod<'Template> -> setMachineStateMethod: SetMachineStateMethod<'Template> -> afterMethod: AfterMethod<'Template, 'Result> -> 'Result
 
 #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 namespace Microsoft.FSharp.Control

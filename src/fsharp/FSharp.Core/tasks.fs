@@ -46,15 +46,20 @@ namespace Microsoft.FSharp.Core.CompilerServices
             failwith "__resumableEntry should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __resumeAt<'T> (_pc: int) : 'T = 
+        let __resumeAt<'T> (programLabel: int) : 'T = 
+            ignore pc
             failwith "__resumeAt should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __resumableStateMachine<'T> (_x: 'T) : 'T =
+        let __resumableStateMachine<'T> (stateMachineSpecification: 'T) : 'T =
+            ignore stateMachineSpecification
             failwith "__resumableStateMachine should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        let __resumableStateMachineStruct<'Template, 'Result> (_moveNext: MoveNextMethod<'Template>) (_setMachineState: SetMachineStateMethod<'Template>) (_after: AfterMethod<'Template, 'Result>): 'Result =
+        let __resumableStateMachineStruct<'Template, 'Result> (moveNextMethod: MoveNextMethod<'Template>) (setMachineStateMethod: SetMachineStateMethod<'Template>) (afterMethod: AfterMethod<'Template, 'Result>): 'Result =
+            ignore moveNextMethod
+            ignore setMachineStateMethod
+            ignore afterMethod
             failwith "__resumableStateMachineStruct should always be guarded by __useResumableStateMachines and only used in valid state machine implementations"
         
 #endif
