@@ -164,8 +164,8 @@ type env =
         }
 
 /// Detect prefix of state machine expressions 
-let rec IsPossibleStateMachineExpr g expr = 
-    match expr with
+let rec IsPossibleStateMachineExpr g overallExpr = 
+    match overallExpr with
     | Expr.Let (macroBind, bodyExpr, _, _) when isExpandVar macroBind.Var -> IsPossibleStateMachineExpr g bodyExpr
     | IfUseResumableStateMachinesExpr g _ -> true
     | _ -> false
