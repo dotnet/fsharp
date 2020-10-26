@@ -36,22 +36,18 @@
 {
   // Offset: 0x00000000 Length: 0x00000180
 }
-.mresource public FSharpSignatureDataB.Lock01
-{
-  // Offset: 0x00000188 Length: 0x00000001
-}
 .mresource public FSharpOptimizationData.Lock01
 {
-  // Offset: 0x00000190 Length: 0x00000064
+  // Offset: 0x00000188 Length: 0x00000064
 }
 .module Lock01.exe
-// MVID: {5F1F9A50-2BCA-B308-A745-0383509A1F5F}
+// MVID: {5F972A55-2BCA-B308-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06970000
+// Image base: 0x06940000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -81,7 +77,7 @@
       // Code size       2 (0x2)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 20,20 : 19,21 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Lock01.fs'
+      .line 20,20 : 19,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Lock01.fs'
       IL_0000:  ldnull
       IL_0001:  ret
     } // end of method clo@20::Invoke

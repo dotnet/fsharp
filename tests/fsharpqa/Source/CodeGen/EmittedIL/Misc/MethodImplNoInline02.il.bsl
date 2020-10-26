@@ -32,26 +32,18 @@
 {
   // Offset: 0x00000000 Length: 0x00000301
 }
-.mresource public FSharpSignatureDataB.MethodImplNoInline02
-{
-  // Offset: 0x00000308 Length: 0x00000008
-}
 .mresource public FSharpOptimizationData.MethodImplNoInline02
 {
-  // Offset: 0x00000318 Length: 0x000000F9
-}
-.mresource public FSharpOptimizationDataB.MethodImplNoInline02
-{
-  // Offset: 0x00000418 Length: 0x00000009
+  // Offset: 0x00000308 Length: 0x000000F9
 }
 .module MethodImplNoInline02.exe
-// MVID: {5E172EE9-084F-1A8E-A745-0383E92E175E}
+// MVID: {5F972A55-084F-1A8E-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04E70000
+// Image base: 0x072F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

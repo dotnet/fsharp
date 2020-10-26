@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
 }
 .assembly Match02
 {
@@ -29,24 +29,24 @@
 }
 .mresource public FSharpSignatureDataB.Match02
 {
-  // Offset: 0x00000488 Length: 0x00000035
+  // Offset: 0x00000488 Length: 0x00000008
 }
 .mresource public FSharpOptimizationData.Match02
 {
-  // Offset: 0x000004C8 Length: 0x000002EE
+  // Offset: 0x00000498 Length: 0x000002EE
 }
 .mresource public FSharpOptimizationDataB.Match02
 {
-  // Offset: 0x000007C0 Length: 0x0000004C
+  // Offset: 0x00000790 Length: 0x0000000C
 }
 .module Match02.dll
-// MVID: {5E1730AF-6125-4D81-A745-0383AF30175E}
+// MVID: {5F972DF5-6125-4D81-A745-0383F52D975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x056F0000
+// Image base: 0x06930000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

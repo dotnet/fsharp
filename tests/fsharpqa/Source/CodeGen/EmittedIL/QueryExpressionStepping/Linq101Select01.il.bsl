@@ -40,22 +40,18 @@
 {
   // Offset: 0x00000000 Length: 0x00000657
 }
-.mresource public FSharpSignatureDataB.Linq101Select01
-{
-  // Offset: 0x00000660 Length: 0x00000035
-}
 .mresource public FSharpOptimizationData.Linq101Select01
 {
-  // Offset: 0x000006A0 Length: 0x00000204
+  // Offset: 0x00000660 Length: 0x00000204
 }
 .module Linq101Select01.exe
-// MVID: {5E172EEB-6057-8F80-A745-0383EB2E175E}
+// MVID: {5F972A56-6057-8F80-A745-0383562A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05950000
+// Image base: 0x073A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -86,7 +82,7 @@
       .maxstack  5
       .locals init ([0] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 12,12 : 9,28 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Select01.fs'
+      .line 12,12 : 9,28 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Select01.fs'
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 13,13 : 9,23 ''

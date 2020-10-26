@@ -38,24 +38,20 @@
 }
 .mresource public FSharpSignatureDataB.StaticInit_Struct01
 {
-  // Offset: 0x000007A8 Length: 0x0000009B
+  // Offset: 0x000007A8 Length: 0x00000002
 }
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
-  // Offset: 0x00000848 Length: 0x0000021F
-}
-.mresource public FSharpOptimizationDataB.StaticInit_Struct01
-{
-  // Offset: 0x00000A70 Length: 0x00000035
+  // Offset: 0x000007B0 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
-// MVID: {5E172EE8-05F6-D6CB-A745-0383E82E175E}
+// MVID: {5F972A68-05F6-D6CB-A745-0383682A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x053B0000
+// Image base: 0x07130000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -85,7 +81,7 @@
       .locals init ([0] valuetype StaticInit_Struct01/C& V_0,
                [1] class [mscorlib]System.Collections.IComparer V_1)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 4,4 : 6,7 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
+      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()

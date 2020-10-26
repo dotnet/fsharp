@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
 }
 .assembly DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
@@ -33,20 +33,20 @@
 }
 .mresource public FSharpSignatureDataB.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000298 Length: 0x00000008
+  // Offset: 0x00000298 Length: 0x00000001
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x000002A8 Length: 0x000000BA
+  // Offset: 0x000002A0 Length: 0x000000BA
 }
 .module DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.exe
-// MVID: {5E172EEA-1475-D984-A745-0383EA2E175E}
+// MVID: {5F972A55-1475-D984-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00B10000
+// Image base: 0x04CB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -66,7 +66,7 @@
       .maxstack  5
       .locals init ([0] int32 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\dev\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs'
       IL_0000:  ldarg.1
       IL_0001:  stloc.0
       .line 6,6 : 80,82 ''

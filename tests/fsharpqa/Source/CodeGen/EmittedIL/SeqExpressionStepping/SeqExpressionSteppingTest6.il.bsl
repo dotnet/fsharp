@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
 }
 .assembly SeqExpressionSteppingTest6
 {
@@ -31,22 +31,18 @@
 {
   // Offset: 0x00000000 Length: 0x00000298
 }
-.mresource public FSharpSignatureDataB.SeqExpressionSteppingTest6
-{
-  // Offset: 0x000002A0 Length: 0x00000006
-}
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest6
 {
-  // Offset: 0x000002B0 Length: 0x000000BA
+  // Offset: 0x000002A0 Length: 0x000000BA
 }
 .module SeqExpressionSteppingTest6.exe
-// MVID: {5E172EEB-2432-94A2-A745-0383EB2E175E}
+// MVID: {5F972A56-2432-94A2-A745-0383562A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05500000
+// Image base: 0x06A50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

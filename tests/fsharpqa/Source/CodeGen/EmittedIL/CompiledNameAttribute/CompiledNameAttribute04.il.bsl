@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
 }
 .assembly CompiledNameAttribute04
 {
@@ -29,28 +29,28 @@
 }
 .mresource public FSharpSignatureData.CompiledNameAttribute04
 {
-  // Offset: 0x00000000 Length: 0x00000CD1
+  // Offset: 0x00000000 Length: 0x00000CD9
 }
 .mresource public FSharpSignatureDataB.CompiledNameAttribute04
 {
-  // Offset: 0x00000CD8 Length: 0x00000110
+  // Offset: 0x00000CE0 Length: 0x00000007
 }
 .mresource public FSharpOptimizationData.CompiledNameAttribute04
 {
-  // Offset: 0x00000DF0 Length: 0x000002CB
+  // Offset: 0x00000CF0 Length: 0x000002CB
 }
 .mresource public FSharpOptimizationDataB.CompiledNameAttribute04
 {
-  // Offset: 0x000010C0 Length: 0x0000004E
+  // Offset: 0x00000FC0 Length: 0x00000002
 }
 .module CompiledNameAttribute04.exe
-// MVID: {5E172EE9-34DF-584F-A745-0383E92E175E}
+// MVID: {5F972A55-34DF-584F-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05A80000
+// Image base: 0x06E70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

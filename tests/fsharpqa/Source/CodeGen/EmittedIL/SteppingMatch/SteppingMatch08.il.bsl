@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.7.3081.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
 }
 .assembly SteppingMatch08
 {
@@ -31,22 +31,18 @@
 {
   // Offset: 0x00000000 Length: 0x000001DB
 }
-.mresource public FSharpSignatureDataB.SteppingMatch08
-{
-  // Offset: 0x000001E0 Length: 0x00000003
-}
 .mresource public FSharpOptimizationData.SteppingMatch08
 {
-  // Offset: 0x000001E8 Length: 0x00000079
+  // Offset: 0x000001E0 Length: 0x00000079
 }
 .module SteppingMatch08.dll
-// MVID: {5E172EE8-F238-BA3A-A745-0383E82E175E}
+// MVID: {5F972A68-F238-BA3A-A745-0383682A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x056B0000
+// Image base: 0x06AF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
