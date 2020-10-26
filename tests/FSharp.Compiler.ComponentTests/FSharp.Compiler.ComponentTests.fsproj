@@ -50,7 +50,7 @@
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
-    <!-- NOTE: "The following tests were automatically migrated from fsharpqa test suite. -->
+    <!-- NOTE: The following tests were automatically migrated from fsharpqa test suite. -->
   </ItemGroup>
 
   <ItemGroup>
