@@ -285,11 +285,17 @@ module internal FunctionApplicationArgumentLocationsImpl =
         /// TODO - need to handle things like tuples, parens using functions as inputs, etc.
         // should probably be test-driven!
 
-        | SynExprParen(SynExprParen(_, _, _, _) as _synExpr, _, _, parenRange) ->
+        | SynExprParen(SynExprParen(_, _, _, _), _, _, parenRange) ->
             Found(parenRange :: ranges), None
 
         | SynExpr.ArbitraryAfterError (_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
             Found(range :: ranges), None
+
+        | SynExpr.Const(SynConst.Unit, _) ->
+            NotFound, None
+
+        | SynExprParen(SynExpr.App (_, _isInfix, _, _, _range), _, _, parenRange) ->
+            Found (parenRange :: ranges), None
 
         | e -> 
             let inner = traverseSynExpr e
@@ -303,7 +309,7 @@ module internal FunctionApplicationArgumentLocationsImpl =
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
             member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App (_exprAtomicFlag, isInfix, funcExpr, argExpr, _range) ->
+                | SynExpr.App (_exprAtomicFlag, isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
                     let isInfixFuncExpr =
                         match funcExpr with
                         | SynExpr.App (_, isInfix, _, _, _) -> isInfix
