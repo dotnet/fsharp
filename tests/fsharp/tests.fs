@@ -229,11 +229,11 @@ module CoreTests =
 #if !NETCOREAPP
     [<Test>]
     let ``subtype-langversion-50-checknulls`` () =
-        let cfg = testConfig "core/subtype"
+        let cfg = testConfig' "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-checknulls.exe -g --langversion:latest --checknulls" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
@@ -241,11 +241,11 @@ module CoreTests =
 
     [<Test>]
     let ``subtype-langversion-50-no-checknulls`` () =
-        let cfg = testConfig "core/subtype"
+        let cfg = testConfig' "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:latest --checknulls-" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:preview --checknulls-" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-no-checknulls.exe") ""
 
@@ -253,7 +253,7 @@ module CoreTests =
 
     [<Test>]
     let ``subtype-langversion-45`` () =
-        let cfg = testConfig "core/subtype"
+        let cfg = testConfig' "core/subtype"
 
         use testOkFile = fileguard cfg "test.ok"
 
@@ -265,7 +265,7 @@ module CoreTests =
 
     [<Test>]
     let nullness_no_checknulls () =
-        let cfg = testConfig "core/nullness"
+        let cfg = testConfig' "core/nullness"
 
         use testOkFile = fileguard cfg "test.ok"
 
@@ -277,11 +277,11 @@ module CoreTests =
 
     [<Test>]
     let nullness_checknulls () =
-        let cfg = testConfig "core/nullness"
+        let cfg = testConfig' "core/nullness"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls --langversion:preview" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
@@ -1230,12 +1230,12 @@ module CoreTests =
     let ``libtest-AS_DLL`` () = singleTestBuildAndRun' "core/libtest" AS_DLL
 
     [<Test>]
-    let ``libtest-langversion-50-checknulls`` () =
-        let cfg = testConfig "core/libtest"
+    let ``libtest-langversion-preview-checknulls`` () =
+        let cfg = testConfig' "core/libtest"
 
         use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test-checknulls.exe -g --langversion:latest --checknulls" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
 
         exec cfg ("." ++ "test-checknulls.exe") ""
 
@@ -1244,7 +1244,7 @@ module CoreTests =
  
     [<Test>]
     let ``libtest-langversion-45`` () =
-        let cfg = testConfig "core/libtest"
+        let cfg = testConfig' "core/libtest"
 
         use testOkFile = fileguard cfg "test.ok"
 

@@ -76,7 +76,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.StringInterpolation, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
-            LanguageFeature.NullnessChecking, languageVersion47 // TODO: currently always on because requires FSharp.Core build
+            LanguageFeature.NullnessChecking, previewVersion // TODO: currently always on because requires FSharp.Core build
         ]
 
     let specified =

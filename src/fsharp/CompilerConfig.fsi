@@ -171,7 +171,6 @@ type TcConfigBuilder =
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility:bool
-      mutable assumeNullOnImport: bool
       mutable checkNullness: bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
@@ -352,7 +351,6 @@ type TcConfig =
     member embedResources: string list
     member errorSeverityOptions: FSharpErrorSeverityOptions
     member mlCompatibility:bool
-    member assumeNullOnImport: bool
     member checkNullness: bool
     member checkOverflow:bool
     member showReferenceResolutions:bool

@@ -1844,7 +1844,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
                                   tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
-                                  tcConfig.isInteractive, tcConfig.assumeNullOnImport, tcConfig.checkNullness, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
+                                  tcConfig.isInteractive, tcConfig.checkNullness, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
                                   tcConfig.noDebugData, tcConfig.pathMap, tcConfig.langVersion)
 
 #if DEBUG

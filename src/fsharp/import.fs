@@ -165,16 +165,18 @@ let ImportTyconRefApp (env: ImportMap) tcref tyargs nullness =
     env.g.improveType tcref tyargs nullness
 
 let ImportNullness (g: TcGlobals) =
-    if g.langFeatureNullness && g.assumeNullOnImport then
-        KnownWithNull
-    else
-        KnownAmbivalentToNull
+    ignore g
+    // if g.langFeatureNullness && g.assumeNullOnImport then
+    //     KnownWithNull
+    // else
+    KnownAmbivalentToNull
 
 let ImportNullnessForTyconRef (g: TcGlobals) (m: range) (tcref: TyconRef) =
-    if g.langFeatureNullness && g.assumeNullOnImport && TyconRefNullIsExtraValueOld g m tcref then
-        KnownWithNull
-    else
-        KnownAmbivalentToNull
+    ignore (g, tcref)
+    // if g.langFeatureNullness && g.assumeNullOnImport && TyconRefNullIsExtraValueOld g m tcref then
+    //     KnownWithNull
+    // else
+    KnownAmbivalentToNull
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env: ImportMap) m tinst ty =  

@@ -408,8 +408,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcNullnessCheckingNotEnabled">
-        <source>The /checknulls language feature is not enabled</source>
-        <target state="new">The /checknulls language feature is not enabled</target>
+        <source>The --checknulls language feature is not enabled</source>
+        <target state="new">The --checknulls language feature is not enabled</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">

@@ -163,7 +163,7 @@ let tname_IAsyncResult = "System.IAsyncResult"
 //------------------------------------------------------------------------- 
 
 type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, directoryToResolveRelativePaths, 
-                      mlCompatibility: bool, isInteractive:bool, assumeNullOnImport: bool, checkNullness: bool,
+                      mlCompatibility: bool, isInteractive:bool, checkNullness: bool,
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
                       emitDebugInfoInQuotations: bool, noDebugData: bool,
@@ -933,8 +933,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   /// A table of all intrinsics that the compiler cares about
   member __.knownIntrinsics                = v_knownIntrinsics
-
-  member __.assumeNullOnImport = assumeNullOnImport
 
   member __.checkNullness = checkNullness
 

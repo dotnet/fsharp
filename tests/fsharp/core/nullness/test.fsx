@@ -292,10 +292,10 @@ module NullConstraintTests =
 #endif
 
 #if !NO_CHECKNULLS
-     // This gave an error in F# 4.5.  It now only gives a warning when /checknulls is on which is sort of ok
+     // This gave an error in F# 4.5.  It now only gives a warning when --checknulls is on which is sort of ok
      // since we are treating .NET and F# types more symmetrically.
      //
-     // TODO: However it gives no error or warning at all with /checknulls off in F# 5.0...  That seems bad.
+     // TODO: However it gives no error or warning at all with --checknulls off in F# 5.0...  That seems bad.
     let f2 (y : C<int list>) = y
 
     let f3 (y : C<string>) = y // Expect a Nullness warning

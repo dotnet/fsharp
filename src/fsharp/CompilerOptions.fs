@@ -1033,7 +1033,6 @@ let testFlag tcConfigB =
             ("test", tagString,
              OptionString (fun s -> 
                 match s with
-                | "AssumeNullOnImport" -> tcConfigB.assumeNullOnImport <- true
                 | "StackSpan"        -> tcConfigB.internalTestSpanStackReferring <- true
                 | "ErrorRanges"      -> tcConfigB.errorStyle <- ErrorStyle.TestErrors
                 | "Tracking"         -> Lib.tracking <- true (* general purpose on/off diagnostics flag *)

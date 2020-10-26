@@ -351,7 +351,6 @@ type TcConfigBuilder =
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility: bool
-      mutable assumeNullOnImport: bool
       mutable checkNullness: bool
       mutable checkOverflow: bool
       mutable showReferenceResolutions: bool
@@ -517,7 +516,6 @@ type TcConfigBuilder =
           subsystemVersion = 4, 0 // per spec for 357994
           useHighEntropyVA = false
           mlCompatibility = false
-          assumeNullOnImport = false
           checkNullness = false
           checkOverflow = false
           showReferenceResolutions = false
@@ -925,7 +923,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.embedResources = data.embedResources
     member x.errorSeverityOptions = data.errorSeverityOptions
     member x.mlCompatibility = data.mlCompatibility
-    member x.assumeNullOnImport = data.assumeNullOnImport
     member x.checkNullness = data.checkNullness
     member x.checkOverflow = data.checkOverflow
     member x.showReferenceResolutions = data.showReferenceResolutions
