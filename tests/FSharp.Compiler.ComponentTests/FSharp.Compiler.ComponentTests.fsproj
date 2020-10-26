@@ -50,6 +50,7 @@
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
+    <!-- NOTE: "The following tests were automatically migrated from fsharpqa test suite. -->
   </ItemGroup>
 
   <ItemGroup>
@@ -58,7 +59,4 @@
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="NewFolder\" />
-  </ItemGroup>
 </Project>
