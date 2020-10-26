@@ -157,7 +157,7 @@ open FSharp.Compiler.AbstractIL.Internal.Utils
         let validateRSAField (field: byte[]?) expected (name: string) =
 #endif
             match field with 
-            | null -> ()
+            | Null -> ()
             | NonNull field ->
                 if field.Length <> expected then 
                     raise (CryptographicException(String.Format(getResourceString(FSComp.SR.ilSignInvalidRSAParams()), name)))

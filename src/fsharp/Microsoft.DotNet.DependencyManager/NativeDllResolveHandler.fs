@@ -30,7 +30,7 @@ type NativeAssemblyLoadContext () =
 
 
 /// Type that encapsulates Native library probing for managed packages
-type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) =
+type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe option) =
     let probingFileNames (name: string) =
         // coreclr native library probing algorithm: https://github.com/dotnet/coreclr/blob/9773db1e7b1acb3ec75c9cc0e36bd62dcbacd6d5/src/System.Private.CoreLib/shared/System/Runtime/Loader/LibraryNameVariation.Unix.cs
         let isRooted = Path.IsPathRooted name
@@ -78,8 +78,8 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
         let probe =
             match nativeProbingRoots with
-            | null -> None
-            | _ ->  
+            | None -> None
+            | Some nativeProbingRoots ->  
                 nativeProbingRoots.Invoke()
                 |> Seq.tryPick(fun root ->
                     probingFileNames name |> Seq.tryPick(fun name ->
@@ -108,7 +108,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
 #endif
 
-type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
+type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe option) =
 
     let handler:IDisposable option =
 #if NETSTANDARD

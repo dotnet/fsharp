@@ -21,8 +21,10 @@ let notlazy v = Lazy<_>.CreateFromValue v
 let inline isNil l = List.isEmpty l
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+// Shim to match nullness checking library support in preview
+let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
 let inline nonNull<'T> (x: 'T) = x
+let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
 
 /// Returns true if the list has less than 2 elements. Otherwise false.
@@ -1338,7 +1340,7 @@ module Shim =
                 let isInvalidPath(p: string?) = 
 #endif
                     match p with 
-                    | null | "" -> true
+                    | Null | "" -> true
                     | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -1347,7 +1349,7 @@ module Shim =
                 let isInvalidFilename(p: string?) = 
 #endif
                     match p with 
-                    | null | "" -> true
+                    | Null | "" -> true
                     | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -1356,7 +1358,7 @@ module Shim =
                 let isInvalidDirectory(d: string?) = 
 #endif
                     match d with 
-                    | null -> true
+                    | Null -> true
                     | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
                 isInvalidPath path || 

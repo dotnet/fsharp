@@ -38,7 +38,7 @@ type internal RoamingProfileStorageLocation(keyName: string) =
     member __.GetKeyNameForLanguage(languageName: string?) =
         let unsubstitutedKeyName = keyName
         match languageName with
-        | null -> unsubstitutedKeyName
+        | Null -> unsubstitutedKeyName
         | NonNull languageName ->
             let substituteLanguageName = if languageName = FSharpConstants.FSharpLanguageName then "FSharp" else languageName
             unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)

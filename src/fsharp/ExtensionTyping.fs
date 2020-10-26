@@ -60,7 +60,7 @@ module internal ExtensionTyping =
                     [ for t in exportedTypes do 
                           let ca = t.GetCustomAttributes(typeof<TypeProviderAttribute>, true)
                           match ca with 
-                          | null -> ()
+                          | Null -> ()
                           | NonNull ca -> 
                               if ca.Length > 0 then 
                                   yield t ]
@@ -164,7 +164,7 @@ module internal ExtensionTyping =
                                 CreateTypeProvider (t, runtimeAssemblyFilename, resolutionEnvironment, isInvalidationSupported,
                                     isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
                             match box resolver with 
-                            | null -> ()
+                            | Null -> ()
                             | _ -> yield (resolver, ilScopeRefOfRuntimeAssembly)
 
                       |   None, _ -> 
@@ -228,7 +228,7 @@ module internal ExtensionTyping =
     let ValidateNamespaceName(name, typeProvider: Tainted<ITypeProvider>, m, nsp:string?) =
 #endif
         match nsp with 
-        | null -> ()
+        | Null -> ()
         | NonNull nsp -> 
             if String.IsNullOrWhiteSpace nsp then
                 // Empty namespace is not allowed
@@ -262,7 +262,7 @@ module internal ExtensionTyping =
     type ProvidedTypeComparer() = 
         let key (ty: ProvidedType) =
             match ty.Assembly with
-            | null -> ("", ty.FullName)
+            | Null -> ("", ty.FullName)
             | NonNull a -> (a.FullName, ty.FullName)
         static member val Instance = ProvidedTypeComparer()
         interface IEqualityComparer<ProvidedType> with
@@ -420,14 +420,14 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedType? = 
 #endif
             match x with 
-            | null -> null 
+            | Null -> null 
             | NonNull t -> ProvidedType (t, ctxt)
 
         static member CreateNonNull ctxt x = ProvidedType (x, ctxt)
 
         static member CreateWithNullCheck ctxt name x = 
             match x with
-            | null -> nullArg name 
+            | Null -> nullArg name 
             | t -> ProvidedType (t, ctxt)
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -436,7 +436,7 @@ module internal ExtensionTyping =
         static member CreateArray ctxt (xs: Type[]?) : ProvidedType[]? = 
 #endif
             match xs with
-            | null -> null
+            | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedType.CreateNonNull ctxt)
 
         static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
@@ -551,7 +551,7 @@ module internal ExtensionTyping =
         static member Create ctxt (x: ParameterInfo?) : ProvidedParameterInfo? = 
 #endif
             match x with 
-            | null -> null 
+            | Null -> null 
             | NonNull x -> ProvidedParameterInfo (x, ctxt)
 
         static member CreateNonNull ctxt x = ProvidedParameterInfo (x, ctxt)
@@ -562,12 +562,12 @@ module internal ExtensionTyping =
         static member CreateArray ctxt (xs: ParameterInfo[]?) : ProvidedParameterInfo[]? = 
 #endif
             match xs with 
-            | null -> null
+            | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
         
         static member CreateArrayNonNull ctxt xs : ProvidedParameterInfo[] = 
             match box xs with 
-            | null -> [| |]
+            | Null -> [| |]
             | _  -> xs |> Array.map (ProvidedParameterInfo.CreateNonNull ctxt)
         
         interface IProvidedCustomAttributeProvider with 
@@ -667,7 +667,7 @@ module internal ExtensionTyping =
                             [| typeof<System.Reflection.MethodBase>; typeof<string>; typeof<obj[]> |], null)  
 
                     match meth with 
-                    | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
+                    | Null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                     | _ -> 
                     let mbAsObj = 
                        try meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
@@ -697,7 +697,7 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedFieldInfo? = 
 #endif
             match x with 
-            | null -> null 
+            | Null -> null 
             | NonNull x -> ProvidedFieldInfo (x, ctxt)
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -706,7 +706,7 @@ module internal ExtensionTyping =
         static member CreateArray ctxt (xs: FieldInfo[]?) : ProvidedFieldInfo[]? = 
 #endif
             match xs with 
-            | null -> null
+            | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedFieldInfo.CreateNonNull ctxt)
 
         member __.IsInitOnly = x.IsInitOnly
@@ -747,7 +747,7 @@ module internal ExtensionTyping =
         static member Create ctxt (x: MethodInfo?) : ProvidedMethodInfo? = 
 #endif
             match x with 
-            | null -> null
+            | Null -> null
             | NonNull x -> ProvidedMethodInfo (x, ctxt)
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -756,7 +756,7 @@ module internal ExtensionTyping =
         static member CreateArray ctxt (xs: MethodInfo[]?) : ProvidedMethodInfo[]? = 
 #endif
             match xs with 
-            | null -> null
+            | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedMethodInfo.CreateNonNull ctxt)
 
         member __.Handle = x
@@ -786,7 +786,7 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedPropertyInfo? = 
 #endif
             match x with 
-            | null -> null 
+            | Null -> null 
             | NonNull x -> ProvidedPropertyInfo (x, ctxt)
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -795,7 +795,7 @@ module internal ExtensionTyping =
         static member CreateArray ctxt (xs: PropertyInfo[]?) : ProvidedPropertyInfo[]? = 
 #endif
             match xs with
-            | null -> null
+            | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedPropertyInfo.CreateNonNull ctxt)
 
         member __.Handle = x
@@ -831,7 +831,7 @@ module internal ExtensionTyping =
         static member Create ctxt x : ProvidedEventInfo? = 
 #endif
             match x with 
-            | null -> null 
+            | Null -> null 
             | NonNull x -> ProvidedEventInfo (x, ctxt)
         
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -840,7 +840,7 @@ module internal ExtensionTyping =
         static member CreateArray ctxt (xs: EventInfo[]?) : ProvidedEventInfo[]? = 
 #endif
             match xs with 
-            | null -> null
+            | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedEventInfo.CreateNonNull ctxt)
         
         member __.Handle = x
@@ -872,7 +872,7 @@ module internal ExtensionTyping =
         static member Create ctxt (x: ConstructorInfo?) : ProvidedConstructorInfo? = 
 #endif
             match x with 
-            | null -> null 
+            | Null -> null 
             | NonNull x -> ProvidedConstructorInfo (x, ctxt)
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -881,7 +881,7 @@ module internal ExtensionTyping =
         static member CreateArray ctxt (xs: ConstructorInfo[]?) : ProvidedConstructorInfo[]? = 
 #endif
             match xs with 
-            | null -> null
+            | Null -> null
             | NonNull xs -> xs |> Array.map (ProvidedConstructorInfo.CreateNonNull ctxt)
 
         member __.Handle = x
@@ -976,7 +976,7 @@ module internal ExtensionTyping =
         static member Create ctxt t : ProvidedExpr? = 
 #endif
             match box t with 
-            | null -> null 
+            | Null -> null 
             | _ -> ProvidedExpr (t, ctxt)
 
         static member CreateNonNull ctxt t : ProvidedExpr = 
@@ -984,7 +984,7 @@ module internal ExtensionTyping =
 
         static member CreateArray ctxt xs : ProvidedExpr[] = 
             match box xs with 
-            | null -> [| |]
+            | Null -> [| |]
             | _ -> xs |> Array.map (ProvidedExpr.CreateNonNull ctxt)
 
         override __.Equals y = match y with :? ProvidedExpr as y -> x.Equals y.Handle | _ -> false
@@ -1008,7 +1008,7 @@ module internal ExtensionTyping =
 
         static member CreateArray ctxt xs : ProvidedVar[] = 
             match box xs with 
-            | null -> [| |]
+            | Null -> [| |]
             | _ -> xs |> Array.map (ProvidedVar.CreateNonNull ctxt)
 
         override __.Equals y = match y with :? ProvidedVar as y -> x.Equals y.Handle | _ -> false
@@ -1058,7 +1058,7 @@ module internal ExtensionTyping =
 
         let path = 
             [|  match namespaceName with 
-                | null -> ()
+                | Null -> ()
                 | NonNull namespaceName -> yield! namespaceName.Split([|'.'|])
                 yield! declaringTypes st [] |]
         
@@ -1259,7 +1259,7 @@ module internal ExtensionTyping =
             match st.PApply((fun st -> st.DeclaringType), m) with 
             | Tainted.Null -> 
                match st.PUntaint((fun st -> st.Namespace), m) with 
-               | null -> typeName
+               | Null -> typeName
                | NonNull ns -> ns + "." + typeName
             | _ -> typeName
 
@@ -1383,7 +1383,7 @@ module internal ExtensionTyping =
                       | _ ->
                           if sp.PUntaint ((fun sp -> sp.IsOptional), range) then 
                               match sp.PUntaint((fun sp -> sp.RawDefaultValue), range) with
-                              | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
+                              | Null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
                               | v -> v
                           else
                               error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument spName, range0)))
@@ -1402,7 +1402,7 @@ module internal ExtensionTyping =
     let GetPartsOfNamespaceRecover(namespaceName: string?) = 
 #endif
         match namespaceName with 
-        | null -> [] 
+        | Null -> [] 
         | NonNull namespaceName -> 
             if namespaceName.Length = 0 then ["<NonExistentNamespace>"]
             else splitNamespace (nonNull namespaceName)
@@ -1414,7 +1414,7 @@ module internal ExtensionTyping =
     let GetProvidedNamespaceAsPath (m, resolver:Tainted<ITypeProvider>, namespaceName:string?) = 
 #endif
         match namespaceName with 
-        | null -> [] 
+        | Null -> [] 
         | NonNull namespaceName -> 
             if namespaceName.Length = 0 then
                 errorR(Error(FSComp.SR.etEmptyNamespaceNotAllowed(DisplayNameOfTypeProvider(resolver.TypeProvider, m)), m))  

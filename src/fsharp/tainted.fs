@@ -130,7 +130,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         let a : 'U[]? = this.Protect f range
 #endif
         match a with 
-        | null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
 
     member this.PApplyOption(f,range:range) =        

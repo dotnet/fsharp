@@ -1478,10 +1478,10 @@ type internal FsiDynamicCompiler
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
                 match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
-                | None ->
+                | Null ->
                     errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
                     istate
-                | Some dependencyManager ->
+                | NonNull dependencyManager ->
                     let directive d =
                         match d with
                         | Directive.Resolution -> "r"
@@ -1529,7 +1529,7 @@ type internal FsiDynamicCompiler
                         let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
 
                         match dm with
-                        | _, Some dependencyManager ->
+                        | _, NonNull dependencyManager ->
                             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                                 fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
                                 st
@@ -1542,10 +1542,10 @@ type internal FsiDynamicCompiler
                             st
 
                         // #r "Assembly"
-                        | Some path, _ ->
+                        | NonNull path, _ ->
                             snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
 
-                        | None, None ->
+                        | Null, Null ->
                            st
                     ),
                     (fun _ _ -> ()))  
@@ -2003,9 +2003,9 @@ type internal FsiStdinLexerProvider
           (isFeatureSupported, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readF()) with :? EndOfStreamException -> None
-            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with null -> "" | NonNull t -> t) + "\n"))
+            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with Null -> "" | NonNull t -> t) + "\n"))
             match inputOption with 
-            |  Some(null) | None -> 
+            |  Some(Null) | None -> 
                  if progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -2027,12 +2027,12 @@ type internal FsiStdinLexerProvider
     //----------------------------------------------------------------------------
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    let removeZeroCharsFromString (str:string) = (* bug://4466 *)
+    let removeZeroCharsFromString (str:string) =
 #else
-    let removeZeroCharsFromString (str:string?) : string? = (* bug://4466 *)
+    let removeZeroCharsFromString (str:string?) : string? =
 #endif
         match str with 
-        | null -> str
+        | Null -> str
         | NonNull str -> 
             if str.Contains("\000") then
               System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
@@ -2175,11 +2175,11 @@ type internal FsiInteractionProcessor
         let packageManagerDirective directive path m =
             let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
-            | None, None ->
+            | Null, Null ->
                 // error already reported
                 istate, CompletedWithAlreadyReportedError
 
-            | _, Some dependencyManager ->
+            | _, NonNull dependencyManager ->
                if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                    fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
                    istate, Completed None
@@ -2191,7 +2191,7 @@ type internal FsiInteractionProcessor
                 errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
                 istate,Completed None
 
-            | Some p, None ->
+            | NonNull p, Null ->
                 let path =
                     if String.IsNullOrWhiteSpace(p) then ""
                     else p

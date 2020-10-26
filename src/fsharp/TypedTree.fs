@@ -5180,7 +5180,7 @@ type CcuThunk =
     member ccu.Deref = 
         match ccu.target with 
         | null -> raise(UnresolvedReferenceNoRange ccu.name)
-        | NonNull tg -> tg
+        | NonNullQuick tg -> tg
 
     member ccu.IsUnresolvedReference = isNull ccu.target
 #endif
@@ -5449,7 +5449,7 @@ type Construct() =
               IsDelegate = (fun () -> st.PUntaint((fun st -> 
                                    let baseType = st.BaseType 
                                    match baseType with 
-                                   | null -> false
+                                   | Null -> false
                                    | NonNull x -> 
                                    match x with 
                                    | x when x.IsGenericType -> false
@@ -5721,7 +5721,7 @@ type Construct() =
     static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : range option =
         let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))
         match attrs with
-        | None | Some (null, _, _) -> None
+        | None | Some (Null, _, _) -> None
         | Some (NonNull filePath, line, column) -> 
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns

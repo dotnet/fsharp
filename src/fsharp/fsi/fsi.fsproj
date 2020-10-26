@@ -12,7 +12,6 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --checknulls --langversion:preview</OtherFlags>
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
-    <OtherFlags>--warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
     <NGenBinary>true</NGenBinary>
   </PropertyGroup>

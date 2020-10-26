@@ -789,19 +789,19 @@ type TcConfigBuilder =
 
         match dm with
         // #r "Assembly"
-        | Some path, None ->
+        | NonNull path, Null ->
             tcConfigB.AddReferencedAssemblyByPath (m, path)
 
-        | _, Some dependencyManager ->
+        | _, NonNull dependencyManager ->
             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                 tcConfigB.AddDependencyManagerText (dependencyManager, directive, m, path)
             else
                 errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
 
-        | None, None when directive = Directive.Include ->
+        | Null, Null when directive = Directive.Include ->
             errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
 
-        | None, None ->
+        | Null, Null ->
            errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
 
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =

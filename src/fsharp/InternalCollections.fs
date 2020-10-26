@@ -75,8 +75,8 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
             | Weak(weakReference) ->
 #if FX_NO_GENERIC_WEAKREFERENCE
                 match weakReference.Target with 
-                | null -> assert onStrongDiscard.IsNone; ()
-                | value -> yield key,(value:?>'Value) ]
+                | Null -> assert onStrongDiscard.IsNone; ()
+                | NonNull value -> yield key,(value:?>'Value) ]
 #else
                 match weakReference.TryGetTarget () with
                 | false, _ -> assert onStrongDiscard.IsNone; ()

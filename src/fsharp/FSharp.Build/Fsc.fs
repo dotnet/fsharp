@@ -12,9 +12,10 @@ open Microsoft.Build.Utilities
 open Internal.Utilities
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+// Shim to match nullness checking library support in preview
 [<AutoOpen>]
 module Utils = 
-    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
 
 //There are a lot of flags on fsc.exe.
@@ -145,7 +146,7 @@ type public Fsc () as this =
         // DebugType
         builder.AppendSwitchIfNotNull("--debug:",
             match debugType with 
-            | null -> null
+            | Null -> null
             | NonNull debugType -> 
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
@@ -192,7 +193,7 @@ type public Fsc () as this =
 #else
             let ToUpperInvariant (s:string?) =
 #endif
-                match s with null -> null | NonNull s -> s.ToUpperInvariant()
+                match s with Null -> null | NonNull s -> s.ToUpperInvariant()
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
@@ -203,7 +204,7 @@ type public Fsc () as this =
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull("--checksumalgorithm:",
             match checksumAlgorithm with
-            | null -> null
+            | Null -> null
             | NonNull checksumAlgorithm ->
                 match checksumAlgorithm.ToUpperInvariant() with
                 | "SHA1" -> "Sha1"
@@ -230,7 +231,7 @@ type public Fsc () as this =
         // ReferencePath
         let referencePathArray = // create a array of strings
             match referencePath with
-            | null -> null
+            | Null -> null
             | NonNull referencePath ->
                  referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
@@ -239,7 +240,7 @@ type public Fsc () as this =
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
             match targetType with 
-            | null -> null
+            | Null -> null
             | NonNull targetType -> 
                 match targetType.ToUpperInvariant() with
                 | "LIBRARY" -> "library"
@@ -250,7 +251,7 @@ type public Fsc () as this =
 
         // NoWarn
         match disabledWarnings with
-        | null -> ()
+        | Null -> ()
         | NonNull disabledWarnings ->
             builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
         
@@ -266,14 +267,14 @@ type public Fsc () as this =
         // REVIEW: why is this logic here? In any case these are errors already by default!
         let warningsAsErrorsArray =
             match warningsAsErrors with
-            | null -> [|"76"|]
+            | Null -> [|"76"|]
             | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         // WarningsNotAsErrors
         match warningsNotAsErrors with
-        | null -> ()
+        | Null -> ()
         | NonNull warningsNotAsErrors ->
             builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
@@ -313,7 +314,7 @@ type public Fsc () as this =
         
         let pathMapArray = // create a array of strings
             match pathMap with
-            | null -> null
+            | Null -> null
             | NonNull pathMap ->
                  pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
@@ -645,7 +646,7 @@ type public Fsc () as this =
     override fsc.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
         match dotnetFscCompilerPath with
-        | null | "" -> ()
+        | Null | "" -> ()
         | NonNull dotnetFscCompilerPath ->
             builder.AppendSwitch(dotnetFscCompilerPath)
         builder.ToString()

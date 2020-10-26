@@ -400,7 +400,7 @@ let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type, typB, typeDef)=
 let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type?, typB, typeDef)= 
 #endif
     match typT with 
-    | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
+    | Null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
     | NonNull typT ->
         {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
 
@@ -535,7 +535,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
         | true, false -> typT                                          
         | _, false -> null
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+    | Null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
     | NonNull res -> res
       
 and convTypeAux cenv emEnv preferCreated ty =
@@ -673,7 +673,7 @@ let typeIsNotQueryable (ty: Type) =
 let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )  
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
     | NonNull res -> res
     
 let nonQueryableTypeGetField (parentTI: Type) (fieldInfo: FieldInfo) : FieldInfo = 
@@ -681,7 +681,7 @@ let nonQueryableTypeGetField (parentTI: Type) (fieldInfo: FieldInfo) : FieldInfo
         if parentTI.IsGenericType then TypeBuilder.GetField(parentTI, fieldInfo) 
         else fieldInfo
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
     | NonNull res -> res
 
 
@@ -834,7 +834,7 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) : MethodInfo =
             else 
                 queryableTypeGetMethod cenv emEnv parentTI mref 
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
     | NonNull res -> res 
 
 //----------------------------------------------------------------------------
@@ -864,7 +864,7 @@ let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) :
         convTypesToArray cenv emEnv mref.ArgTypes
     let res = parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, null, reqArgTs, null)  
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
     | NonNull res -> res
 
 
@@ -892,7 +892,7 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
             else
                 queryableTypeGetConstructor cenv emEnv parentTI mref 
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
     | NonNull res -> res
 
 let emitLabelMark emEnv (ilG: ILGenerator) (label: ILCodeLabel) =

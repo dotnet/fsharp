@@ -193,7 +193,7 @@ type BraceCompletionSession
         member this.PreBackspace handledCommand =
             handledCommand <- false
             match openingPoint with 
-            | null -> ()
+            | Null -> ()
             | NonNull openingPoint -> 
 
             let caretPos = tryGetCaretPosition this

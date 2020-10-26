@@ -333,7 +333,7 @@ type internal FSharpCodeLensService
 #endif
                             // TODO NULLNESS - check that doing nothing when codeLens.UiElement is null is ok
                             match codeLens.UiElement with 
-                            | null -> ()
+                            | Null -> ()
                             | NonNull uiElement ->
                             let animation = 
                                 DoubleAnimation(
@@ -362,7 +362,7 @@ type internal FSharpCodeLensService
                 // logInfof "Trackingspan %A is being added." trackingSpan 
                 if codeLens.Computed then 
                     match codeLens.UiElement with 
-                    | null -> ()
+                    | Null -> ()
                     | NonNull uiElement ->
                         lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
                 else

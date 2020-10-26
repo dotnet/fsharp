@@ -26,7 +26,7 @@ let dispose (x:System.IDisposable) =
 #else
 let dispose (x:System.IDisposable?) = 
 #endif
-    match x with null -> () | NonNull x -> x.Dispose()
+    match x with null -> () | NonNullQuick x -> x.Dispose()
 
 //-------------------------------------------------------------------------
 // Library: bits
@@ -464,7 +464,7 @@ module internal AsyncUtil =
 #endif
                 match sc with
                 | null -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
-                | NonNull sc ->
+                | NonNullQuick sc ->
                     sc.Post((fun _ -> cont res), state=null)
 
             // Run continuations outside the lock

@@ -13,7 +13,10 @@ open System.Collections.Generic
 [<AutoOpen>]
 module internal ConsoleOptions =
 
-  let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+  // Shim to match nullness checking library support in preview
+  let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
 
   let readKeyFixup (c:char) =
       // Assumes the c:char is actually a byte in the System.Console.InputEncoding.
@@ -48,7 +51,7 @@ type internal History() =
     member x.Add (line: string?) = 
 #endif
         match line with 
-        | null | "" -> ()
+        | Null | "" -> ()
         | NonNull line -> list.Add(line)
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -57,7 +60,7 @@ type internal History() =
     member x.AddLast (line: string?) =  
 #endif
         match line with 
-        | null | "" -> ()
+        | Null | "" -> ()
         | NonNull line ->
             list.Add(line)
             current <- list.Count

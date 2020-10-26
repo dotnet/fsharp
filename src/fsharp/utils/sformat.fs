@@ -114,11 +114,14 @@ type IEnvironment =
     abstract MaxColumns: int
     abstract MaxRows: int
 
-module TaggedTextOps =
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
-    let inline nonNull<'T> (x: 'T) = x
+[<AutoOpen>]
+module NullShim =
+    // Shim to match nullness checking library support in preview
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
+
+module TaggedTextOps =
     let mkTag tag text = 
         { new TaggedText with 
             member _.Tag = tag
@@ -409,7 +412,7 @@ module ReflectUtils =
         // of an F# value.
         let GetValueInfoOfObject (bindingFlags: BindingFlags) (obj: obj) =
             match obj with 
-            | null -> NullValue
+            | Null -> NullValue
             | _ -> 
             let reprty = obj.GetType() 
 
@@ -459,7 +462,7 @@ module ReflectUtils =
         let GetValueInfo bindingFlags (x: 'a, ty: Type)  (* x could be null *) = 
             let obj = (box x)
             match obj with 
-            | null ->
+            | Null ->
                 let isNullaryUnion =
                     match ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false) with
                     | [|:? CompilationRepresentationAttribute as attr|] -> 
@@ -470,7 +473,7 @@ module ReflectUtils =
                     UnionCaseValue(nullaryCase.Name, [| |])
                 elif isUnitType ty then UnitValue
                 else NullValue
-            | _ -> 
+            | NonNull obj -> 
                 GetValueInfoOfObject bindingFlags (obj) 
 
 module Display = 
@@ -714,8 +717,8 @@ module Display =
 
     let getListValueInfo bindingFlags (x:obj, ty:Type) =
         match x with 
-        | null -> None 
-        | _ -> 
+        | Null -> None 
+        | NonNull x -> 
             match Value.GetValueInfo bindingFlags (x, ty) with
             | UnionCaseValue ("Cons", recd) -> Some (unpackCons recd)
             | UnionCaseValue ("Empty", [| |]) -> None
@@ -839,9 +842,9 @@ module Display =
             try
                 if depthLim<=0 || exceededPrintSize() then wordL (tagPunctuation "...") else
                 match x with 
-                | null -> 
+                | Null -> 
                     reprL showMode (depthLim-1) prec info x
-                | _ ->
+                | NonNull x ->
                     if (path.ContainsKey(x)) then 
                         wordL (tagPunctuation "...")
                     else 
@@ -855,7 +858,7 @@ module Display =
                             else
                                 // Try the StructuredFormatDisplayAttribute extensibility attribute
                                 match ty.GetCustomAttributes (typeof<StructuredFormatDisplayAttribute>, true) with
-                                | null | [| |] -> None
+                                | Null | [| |] -> None
                                 | NonNull res -> 
                                 structuredFormatObjectL showMode ty depthLim (res.[0] :?> StructuredFormatDisplayAttribute) x
 
@@ -1221,7 +1224,7 @@ module Display =
 
     let leafFormatter (opts:FormatOptions) (obj :obj) =
         match obj with 
-        | null -> tagKeyword "null"
+        | Null -> tagKeyword "null"
         | :? double as d -> 
             let s = d.ToString(opts.FloatingPointFormat,opts.FormatProvider)
             let t = 
@@ -1265,7 +1268,7 @@ module Display =
                 try 
                     let text = obj.ToString()
                     match text with
-                    | null -> ""
+                    | Null -> ""
                     | _ -> text
                 with e ->
                     // If a .ToString() call throws an exception, catch it and use the message as the result.

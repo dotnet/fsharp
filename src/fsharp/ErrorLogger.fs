@@ -3,6 +3,7 @@
 module public FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Range
 open FSharp.Compiler.Features
 open System
@@ -319,14 +320,14 @@ type internal CompileThreadStatic =
         with get() = 
             match box CompileThreadStatic.buildPhase with
             // FUTURE: reenable these asserts, which have historically fired in some compiler service scenarios
-            | null -> (* assert false; *) BuildPhase.DefaultPhase
+            | Null -> (* assert false; *) BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
             
     static member ErrorLogger
         with get() = 
             match box CompileThreadStatic.errorLogger with
-            | null -> AssertFalseErrorLogger
+            | Null -> AssertFalseErrorLogger
             | _ -> CompileThreadStatic.errorLogger
         and set v = CompileThreadStatic.errorLogger <- v
 

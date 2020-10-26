@@ -25,7 +25,7 @@ module private Symbol =
     let fullName (root: ISymbol) : string =
         let rec inner parts (sym: ISymbol?) =
             match sym with
-            | null ->
+            | Null ->
                 parts
             // TODO: do we have any other terminating cases?
             | NonNull sym when sym.Kind = SymbolKind.NetModule || sym.Kind = SymbolKind.Assembly ->

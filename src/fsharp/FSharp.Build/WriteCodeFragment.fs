@@ -14,8 +14,9 @@ open Microsoft.Build.Utilities
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 [<AutoOpen>]
+// Shim to match nullness checking library support in preview
 module UtilsWriteCodeFragment = 
-    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
 
 type WriteCodeFragment() =
@@ -123,7 +124,7 @@ type WriteCodeFragment() =
         member this.Execute() =
             try
                 match _outputFile with 
-                | null -> failwith "Output location must be specified"
+                | Null -> failwith "Output location must be specified"
                 | NonNull outputFile -> 
 
                 let boilerplate =
@@ -151,7 +152,7 @@ type WriteCodeFragment() =
 
                 let outputFileItem =
                     match _outputDirectory with 
-                    | null -> outputFile
+                    | Null -> outputFile
                     | NonNull outputDirectory -> 
                         if Path.IsPathRooted(fileName) then 
                             outputFile

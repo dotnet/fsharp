@@ -69,6 +69,11 @@ module ReflectionHelper =
             e.InnerException
         | _ -> e
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    // Shim to match nullness checking library support in preview
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
+
 /// Indicate the type of error to report
 [<RequireQualifiedAccess>]
 type ErrorReportType =
@@ -277,16 +282,10 @@ type ReflectionDependencyManagerProvider(theType: Type,
 type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
-    let dllResolveHandler =
-        match nativeProbingRoots with 
-        | None -> { new IDisposable with member _.Dispose() = () }
-        | Some nativeProbingRoots -> new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
+    let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
 
     // Note: creating a AssemblyResolveHandler currently installs process-wide handlers
-    let assemblyResolveHandler = 
-        match assemblyProbingPaths with 
-        | None -> { new IDisposable with member _.Dispose() = () }
-        | Some assemblyProbingPaths -> new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
+    let assemblyResolveHandler = new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
 
     // Resolution Path = Location of FSharp.Compiler.Private.dll
     let assemblySearchPaths = lazy (
@@ -365,7 +364,11 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
         DependencyManager.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths, compilerTools), registeredKeys)
 
     /// Fetch a dependencymanager that supports a specific key
-    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string option * IDependencyManagerProvider option =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string * IDependencyManagerProvider =
+#else
+    member this.TryFindDependencyManagerInPath (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, path: string): string? * IDependencyManagerProvider? =
+#endif
         try
             if path.Contains ":" && not (Path.IsPathRooted path) then
                 let managers = RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
@@ -374,32 +377,37 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                 | None ->
                     let err, msg = this.CreatePackageManagerUnknownError(compilerTools, outputDir, (path.Split(':').[0]), reportError)
                     reportError.Invoke(ErrorReportType.Error, err, msg)
-                    None, None
+                    null, null
 
                 | Some kv ->
-                    Some path, Some kv.Value
+                    path, kv.Value
             else
-                Some path, None
+                path, null
         with 
         | e ->
             let e = stripTieWrapper e
             let err, msg = DependencyManager.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
-            None, None
+            null, null
 
     /// Fetch a dependencymanager that supports a specific key
-    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider option =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider =
+#else
+    member _.TryFindDependencyManagerByKey (compilerTools: string seq, outputDir: string, reportError: ResolvingErrorReport, key: string): IDependencyManagerProvider? =
+#endif
 
         try
             RegisteredDependencyManagers compilerTools (Option.ofString outputDir) reportError
             |> Map.tryFind key
+            |> Option.toObj
 
         with
         | e ->
             let e = stripTieWrapper e
             let err, msg = DependencyManager.SR.packageManagerError(e.Message)
             reportError.Invoke(ErrorReportType.Error, err, msg)
-            None
+            null
 
     /// Resolve reference for a list of package manager lines
     member _.Resolve (packageManager:IDependencyManagerProvider,
@@ -407,7 +415,11 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                        packageManagerTextLines: (string * string) seq,
                        reportError: ResolvingErrorReport,
                        executionTfm: string,
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                        [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
+#else
+                       [<Optional;DefaultParameterValue(null:string?)>]executionRid: string?,
+#endif
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
                        [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
@@ -418,10 +430,9 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
             cache.GetOrAdd(key, System.Func<_,_>(fun _ -> 
                 try
                     let executionRid =
-                        if isNull executionRid then
-                            RidHelpers.platformRid
-                        else
-                            executionRid
+                        match executionRid with
+                        | Null -> RidHelpers.platformRid
+                        | NonNull executionRid -> executionRid
                     Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid))
 
                 with e ->

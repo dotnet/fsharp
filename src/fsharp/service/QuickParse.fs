@@ -75,7 +75,7 @@ module QuickParse =
     let GetCompleteIdentifierIslandImpl (lineStr: string?) (index: int) : (string * int * bool) option =
 #endif
         match lineStr with 
-        | null -> None
+        | Null -> None
         | NonNull lineStr -> 
         if index < 0 || index >= lineStr.Length then None 
         else
@@ -190,7 +190,7 @@ module QuickParse =
     let GetPartialLongName(lineStr: string?, index: int) =
 #endif
         match lineStr with
-        | null -> defaultName
+        | Null -> defaultName
         | NonNull lineStr ->
         if index < 0 then defaultName
         elif index >= lineStr.Length then defaultName
@@ -235,7 +235,7 @@ module QuickParse =
     let GetPartialLongNameEx(lineStr: string?, index: int) : PartialLongName =
 #endif
         match lineStr with
-        | null -> PartialLongName.Empty(index)
+        | Null -> PartialLongName.Empty(index)
         | NonNull lineStr ->
         if index < 0 then PartialLongName.Empty(index)
         elif index >= lineStr.Length then PartialLongName.Empty(index)

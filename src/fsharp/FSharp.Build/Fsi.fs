@@ -13,8 +13,9 @@ open Internal.Utilities
 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 [<AutoOpen>]
+// Shim to match nullness checking library support in preview
 module UtilsFsi = 
-    let inline (|NonNull|) x = match x with null -> raise (NullReferenceException()) | v -> v
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
 
 //There are a lot of flags on fsi.exe.
@@ -108,12 +109,12 @@ type public Fsi () as this =
 
         let referencePathArray = // create a array of strings
             match referencePath with
-            | null -> null
+            | Null -> null
             | NonNull referencePath -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         // NoWarn
         match disabledWarnings with
-        | null -> ()
+        | Null -> ()
         | NonNull disabledWarnings -> builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
@@ -123,13 +124,13 @@ type public Fsi () as this =
         // Change warning 76, HashReferenceNotAllowedInNonScript/HashDirectiveNotAllowedInNonScript/HashIncludeNotAllowedInNonScript, into an error
         let warningsAsErrorsArray =
             match warningsAsErrors with
-            | null -> [| "76" |]
+            | Null -> [| "76" |]
             | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         match warningsNotAsErrors with
-        | null -> ()
+        | Null -> ()
         | NonNull warningsNotAsErrors -> builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
@@ -315,7 +316,7 @@ type public Fsi () as this =
         else
             let host = box fsi.HostObject
             match host with
-            | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
+            | Null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
                 let sources = sources|>Array.map(fun i->i.ItemSpec)
                 let invokeCompiler baseCallDelegate =
@@ -342,7 +343,7 @@ type public Fsi () as this =
     override fsi.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
         match dotnetFsiCompilerPath with
-        | null | "" -> ()
+        | Null | "" -> ()
         | NonNull dotnetFsiCompilerPath ->
             builder.AppendSwitch(dotnetFsiCompilerPath)
         builder.ToString()

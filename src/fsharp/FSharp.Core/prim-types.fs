@@ -3814,24 +3814,24 @@ namespace Microsoft.FSharp.Core
                 raise (System.NullReferenceException())
 
         [<CompiledName("NullMatchPattern")>]
-        let inline (|Null|NotNull|) (value : 'T? when 'T : not null) = 
+        let inline (|Null|NonNull|) (value : 'T? when 'T : not null) = 
             match value with 
             | null -> Null () 
-            | _ -> NotNull (# "" value : 'T #)
+            | _ -> NonNull (# "" value : 'T #)
 
         [<CompiledName("NullValueMatchPattern")>]
-        let inline (|NullV|NotNullV|) (value : Nullable<'T>) = 
-            if value.HasValue then NotNullV value.Value
+        let inline (|NullV|NonNullV|) (value : Nullable<'T>) = 
+            if value.HasValue then NonNullV value.Value
             else NullV ()
 
-        [<CompiledName("NonNullPattern")>]
-        let inline (|NonNull|) (value : 'T? when 'T : not null) =
+        [<CompiledName("NonNullQuickPattern")>]
+        let inline (|NonNullQuick|) (value : 'T? when 'T : not null) =
             match box value with 
             | null -> raise (System.NullReferenceException()) 
             | _ -> (# "" value : 'T #)
 
-        [<CompiledName("NonNullValuePattern")>]
-        let inline (|NonNullV|) (value : Nullable<'T>) =
+        [<CompiledName("NonNullQuickValuePattern")>]
+        let inline (|NonNullQuickV|) (value : Nullable<'T>) =
             if value.HasValue then value.Value
             else raise (System.NullReferenceException()) 
 

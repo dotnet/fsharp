@@ -705,7 +705,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
                 let c = new Dictionary<int32, _>(11)
                 cache :=  c
                 c
-            | NonNull c -> c 
+            | NonNullQuick c -> c 
 
         match cache.TryGetValue idx with
         | true, res ->
@@ -734,7 +734,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
                 let c = new Dictionary<_, _>(11) 
                 cache := c
                 c
-            | NonNull c -> c
+            | NonNullQuick c -> c
 
         match cache.TryGetValue(idx) with
         | true, v ->

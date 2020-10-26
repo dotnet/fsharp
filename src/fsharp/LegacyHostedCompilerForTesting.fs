@@ -140,7 +140,7 @@ type internal FscCompiler(legacyReferenceResolver) =
         // compensate for this in case caller didn't know
         let args =
             match box args with
-            | null -> [|"fsc"|]
+            | Null -> [|"fsc"|]
             | _ -> 
             match args with
             | [||] -> [|"fsc"|]

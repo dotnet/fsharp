@@ -3,15 +3,15 @@
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
 module internal FSharp.Compiler.AccessibilityLogic
 
-open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler 
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.AbstractIL.Internal.Library
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -380,7 +380,7 @@ let IsPropInfoAccessible g amap m ad = function
                 let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodInfo?) = // TODO NULLNESS: using ProvidedMethodBase? gives a nullness warning
 #endif
                     match mi with
-                    | null -> None
+                    | Null -> None
                     | NonNull mi -> 
                         Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
 
