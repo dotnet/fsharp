@@ -1151,7 +1151,7 @@ module internal SymbolHelpers =
                     | None -> emptyL
                     | Some v ->
                         WordL.equals ^^
-                        try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (TypeChecker.TcFieldInit m v) with _ -> emptyL
+                        try NicePrint.layoutConst denv.g (finfo.FieldType(infoReader.amap, m)) (CheckExpressions.TcFieldInit m v) with _ -> emptyL
                 )
             FSharpStructuredToolTipElement.Single (layout, xml)
 
@@ -1513,9 +1513,9 @@ module internal SymbolHelpers =
 
 
     /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isListItem infoReader m denv item = 
+    let FormatStructuredDescriptionOfItem isDecl infoReader m denv item = 
         ErrorScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isListItem infoReader m denv item)
+            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader m denv item)
             (fun err -> FSharpStructuredToolTipElement.CompositionError err)
 
     /// Get rid of groups of overloads an replace them with single items.

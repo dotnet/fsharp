@@ -13,6 +13,8 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerGlobalState
@@ -25,7 +27,6 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps
 
@@ -1021,7 +1022,7 @@ module IncrementalBuilderEventTesting =
     let GetMostRecentIncrementalBuildEvents n = MRU.MostRecentList n
     let GetCurrentIncrementalBuildEventNum() = MRU.CurrentEventNum 
 
-module Tc = FSharp.Compiler.TypeChecker
+module Tc = FSharp.Compiler.CheckExpressions
 
 // This module is only here to contain the SyntaxTree type as to avoid amiguity with the module FSharp.Compiler.SyntaxTree.
 [<AutoOpen>]
@@ -1441,13 +1442,13 @@ type SemanticModel private (tcConfig: TcConfig,
 type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetFrameworkDirectories*)string list * (*fsharpBinaries*)string * (*langVersion*)decimal
 
 /// Represents a cache of 'framework' references that can be shared between multiple incremental builds
-type FrameworkImportsCache(keepStrongly) = 
+type FrameworkImportsCache(size) = 
 
     // Mutable collection protected via CompilationThreadToken 
-    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, (TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x, y) -> x = y)) 
+    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, (TcGlobals * TcImports)>(size, areSimilar=(fun (x, y) -> x = y)) 
 
     /// Reduce the size of the cache in low-memory scenarios
-    member __.Downsize ctok = frameworkTcImportsCache.Resize(ctok, keepStrongly=0)
+    member __.Downsize ctok = frameworkTcImportsCache.Resize(ctok, newKeepStrongly=0)
 
     /// Clear the cache
     member __.Clear ctok = frameworkTcImportsCache.Clear ctok
@@ -2031,7 +2032,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
                        enablePartialTypeChecking: bool,
-                       dependencyProviderOpt) =
+                       dependencyProvider) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
 
@@ -2084,14 +2085,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
-
-                tcConfigB.compilationThread <- 
-                    { new ICompilationThread with 
-                        member __.EnqueueWork work = 
-                            Reactor.Singleton.EnqueueOp ("Unknown", "ICompilationThread.EnqueueWork", "work", fun ctok ->
-                                work ctok
-                            )
-                    }
 
                 tcConfigB, sourceFilesNew
 
@@ -2157,7 +2150,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
-                    dependencyProviderOpt)
+                    dependencyProvider)
             return Some builder
           with e -> 
             errorRecoveryNoRange e

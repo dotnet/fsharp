@@ -34,6 +34,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -53,7 +55,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.XmlDoc
 open Microsoft.DotNet.DependencyManager
 
@@ -752,7 +753,7 @@ module AttributeHelpers =
                  errorR(Error(FSComp.SR.fscAssemblyWildcardAndDeterminism(attribName, versionString), Range.rangeStartup))
              try Some (IL.parseILVersion versionString)
              with e ->
-                 // Warning will be reported by TypeChecker.fs
+                 // Warning will be reported by CheckExpressions.fs
                  None
         | _ -> None
 
@@ -826,7 +827,7 @@ module MainModuleBuilder =
         | None -> assemblyVersion
         | Some (AttributeHelpers.ILVersion v) -> v
         | Some _ ->
-            // Warning will be reported by TypeChecker.fs
+            // Warning will be reported by CheckExpressions.fs
             assemblyVersion
 
     let productVersion findStringAttr (fileVersion: ILVersionInfo) =
@@ -836,7 +837,7 @@ module MainModuleBuilder =
         | None | Some "" -> fileVersion |> toDotted
         | Some (AttributeHelpers.ILVersion v) -> v |> toDotted
         | Some v -> 
-            // Warning will be reported by TypeChecker.fs
+            // Warning will be reported by CheckExpressions.fs
             v
 
     let productVersionToILVersionInfo (version: string) : ILVersionInfo =
@@ -2211,7 +2212,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 /// Entry point typecheckAndCompile
 let typecheckAndCompile 
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
-        defaultCopyFSharpCore, exiter: Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
+        defaultCopyFSharpCore, exiter: Exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use d = new DisposablesTracker()
     let savedOut = System.Console.Out
@@ -2222,7 +2223,7 @@ let typecheckAndCompile
                     System.Console.SetOut(savedOut)
                 with _ -> ()}
 
-    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, d)
+    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, loggerProvider, d)
     |> main1
     |> main2a
     |> main2b (tcImportsCapture,dynamicAssemblyCreator)
@@ -2232,11 +2233,11 @@ let typecheckAndCompile
 
 let compileOfAst 
        (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, 
-        outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
+        targetDll, targetPdb, dependencies, noframework, exiter, loggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
 
     use d = new DisposablesTracker()
-    main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, 
-                dllReferences, noframework, exiter, errorLoggerProvider, d, inputs)
+    main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, targetDll, targetPdb, 
+                dependencies, noframework, exiter, loggerProvider, d, inputs)
     |> main1
     |> main2a
     |> main2b (tcImportsCapture, dynamicAssemblyCreator)
@@ -2245,9 +2246,9 @@ let compileOfAst
 
 let mainCompile 
         (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
-         defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
+         defaultCopyFSharpCore, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
 
     typecheckAndCompile
        (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
-        defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
+        defaultCopyFSharpCore, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator)
 

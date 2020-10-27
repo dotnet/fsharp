@@ -26,6 +26,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.ErrorLogger
 
 open Internal.Utilities
@@ -173,7 +174,7 @@ let CreateIlxAssemblyGenerator (_tcConfig:TcConfig, tcImports:TcImports, tcGloba
 
 let GenerateIlxCode 
        (ilxBackend, isInteractiveItExpr, isInteractiveOnMono,
-        tcConfig:TcConfig, topAttrs: TypeChecker.TopAttribs, optimizedImpls,
+        tcConfig:TcConfig, topAttrs: TopAttribs, optimizedImpls,
         fragName, ilxGenerator: IlxAssemblyGenerator) =
 
     let mainMethodInfo = 

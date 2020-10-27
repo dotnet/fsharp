@@ -16,15 +16,20 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Infos
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
@@ -36,10 +41,6 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Text
-open FSharp.Compiler.Infos
-open FSharp.Compiler.InfoReader
-open FSharp.Compiler.NameResolution
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 open Internal.Utilities
@@ -1911,73 +1912,73 @@ type FSharpCheckFileResults
         | _ -> None
 
     /// Intellisense autocompletions
-    member __.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member __.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         reactorOp userOpName "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
-            scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
+            scope.GetDeclarations(ctok, parsedFileResults, line, lineText, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
-    member __.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member __.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> 
-            scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
+            scope.GetDeclarationListSymbols(ctok, parsedFileResults, line, lineText, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
-    member __.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 
+    member __.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
             reactorOp userOpName "GetStructuredToolTipText" dflt (fun ctok scope -> 
-                scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names))
+                scope.GetStructuredToolTipText(ctok, line, lineText, colAtEndOfNames, names))
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
             reactorOp userOpName "GetReferenceResolutionToolTipText" dflt (fun ctok scope ->
                 scope.GetReferenceResolutionStructuredToolTipText(ctok, line, colAtEndOfNames) )
         | _ -> 
             async.Return dflt
 
-    member info.GetToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, userOpName) = 
-        info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName=userOpName)
+    member info.GetToolTipText(line, colAtEndOfNames, lineText, names, tokenTag, userOpName) = 
+        info.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag, ?userOpName=userOpName)
         |> Tooltips.Map Tooltips.ToFSharpToolTipText
 
-    member __.GetF1Keyword (line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
+    member __.GetF1Keyword (line, colAtEndOfNames, lineText, names, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         reactorOp userOpName "GetF1Keyword" None (fun ctok scope -> 
-            scope.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names))
+            scope.GetF1Keyword (ctok, line, lineText, colAtEndOfNames, names))
 
     // Resolve the names at the given location to a set of methods
-    member __.GetMethods(line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
+    member __.GetMethods(line, colAtEndOfNames, lineText, names, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         let dflt = FSharpMethodGroup("",[| |])
         reactorOp userOpName "GetMethods" dflt (fun ctok scope -> 
-            scope.GetMethods (ctok, line, lineStr, colAtEndOfNames, names))
+            scope.GetMethods (ctok, line, lineText, colAtEndOfNames, names))
             
-    member __.GetDeclarationLocation (line, colAtEndOfNames, lineStr, names, ?preferFlag, ?userOpName: string) = 
+    member __.GetDeclarationLocation (line, colAtEndOfNames, lineText, names, ?preferFlag, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let dflt = FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
         reactorOp userOpName "GetDeclarationLocation" dflt (fun ctok scope -> 
-            scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag))
+            scope.GetDeclarationLocation (ctok, line, lineText, colAtEndOfNames, names, preferFlag))
 
-    member __.GetSymbolUseAtLocation (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
+    member __.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         reactorOp userOpName "GetSymbolUseAtLocation" None (fun ctok scope -> 
-            scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names)
+            scope.GetSymbolUseAtLocation (ctok, line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m)))
 
-    member __.GetMethodsAsSymbols (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
+    member __.GetMethodsAsSymbols (line, colAtEndOfNames, lineText, names, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         reactorOp userOpName "GetMethodsAsSymbols" None (fun ctok scope -> 
-            scope.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names)
+            scope.GetMethodsAsSymbols (ctok, line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
                 symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))))
 
-    member __.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
+    member __.GetSymbolAtLocation (line, colAtEndOfNames, lineText, names, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         reactorOp userOpName "GetSymbolAtLocation" None (fun ctok scope -> 
-            scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names)
+            scope.GetSymbolUseAtLocation (ctok, line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (sym,_,_) -> sym))
 
     member info.GetFormatSpecifierLocations() = 
@@ -2040,23 +2041,23 @@ type FSharpCheckFileResults
             (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
          |> async.Return 
 
-    member __.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item, ?userOpName: string) = 
+    member __.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         reactorOp userOpName "IsRelativeNameResolvable" true (fun ctok scope -> 
             RequireCompilationThread ctok
-            scope.IsRelativeNameResolvable(pos, plid, item))
+            scope.IsRelativeNameResolvable(cursorPos, plid, item))
 
-    member __.IsRelativeNameResolvableFromSymbol(pos: pos, plid: string list, symbol: FSharpSymbol, ?userOpName: string) = 
+    member __.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         reactorOp userOpName "IsRelativeNameResolvableFromSymbol" true (fun ctok scope -> 
             RequireCompilationThread ctok
-            scope.IsRelativeNameResolvableFromSymbol(pos, plid, symbol))
+            scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol))
     
-    member __.GetDisplayContextForPos(pos: pos) : Async<FSharpDisplayContext option> =
+    member __.GetDisplayContextForPos(cursorPos: pos) : Async<FSharpDisplayContext option> =
         let userOpName = "CodeLens"
         reactorOp userOpName "GetDisplayContextAtPos" None (fun ctok scope -> 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
-            let (nenv, _), _ = scope.GetBestDisplayEnvForPos pos
+            let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
             
     member __.ImplementationFile =
@@ -2276,7 +2277,7 @@ type FSharpCheckProjectResults
     override __.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
 
 type FsiInteractiveChecker(legacyReferenceResolver, 
-                           reactorOps: IReactorOperations,
+                           ops: IReactorOperations,
                            tcConfig: TcConfig,
                            tcGlobals: TcGlobals,
                            tcImports: TcImports,
@@ -2318,13 +2319,13 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     (parseResults, sourceText, filename, "project",
                      tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics,
-                     reactorOps, None, userOpName, suggestNamesForErrors)
+                     ops, None, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileInfo with 
                 | Result.Ok tcFileInfo ->
                     let errors = Array.append parseErrors tcErrors
-                    let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, reactorOps, false)   
+                    let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, ops, false)   
                     let projectResults = 
                         FSharpCheckProjectResults (filename, Some tcConfig,
                             keepAssemblyContents, errors, 

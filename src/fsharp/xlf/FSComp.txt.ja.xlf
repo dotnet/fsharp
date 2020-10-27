@@ -4037,6 +4037,11 @@
         <target state="new">End of file in verbatim string embedded in comment begun at or before here</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsErrorInReturnForLetIncorrectIndentation">
         <source>Error in the return expression for this 'let'. Possible incorrect indentation.</source>
         <target state="new">Error in the return expression for this 'let'. Possible incorrect indentation.</target>

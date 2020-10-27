@@ -125,9 +125,9 @@
           DependsOnTargets="InitializeSourceControlInformationFromSourceControlManager"
           Condition="'$(IsPackable)'=='true'">
 
-    <PropertyGroup Condition="$(ScmRepositoryUrl.EndsWith('.git'))">
-        <_GitUrl>$([System.Text.RegularExpressions.Regex]::Replace($(ScmRepositoryUrl), ".git$", ""))</_GitUrl>
-        <PackageReleaseNotes>$(_GitUrl)$(PackageReleaseNotes)</PackageReleaseNotes>
+    <PropertyGroup>
+      <_GitUrl>$([System.Text.RegularExpressions.Regex]::Replace($(ScmRepositoryUrl), ".git$", ""))</_GitUrl>
+      <PackageReleaseNotes>$(_GitUrl)$(PackageReleaseNotes)</PackageReleaseNotes>
     </PropertyGroup>
   </Target>
 

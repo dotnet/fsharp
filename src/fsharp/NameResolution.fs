@@ -1898,7 +1898,7 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
     static member Empty = TcSymbolUses(Unchecked.defaultof<_>, ResizeArray(), Array.empty)
 
 /// An accumulator for the results being emitted into the tcSink.
-type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
+type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedEnvs = ResizeArray<_>()
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<CapturedNameResolution>()
@@ -1916,7 +1916,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
         new System.Collections.Generic.HashSet<range * Item>
             ( { new IEqualityComparer<range * Item> with
                     member __.GetHashCode ((m, _)) = hash m
-                    member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual g item1 item2 } )
+                    member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 } )
 
     let allowedRange (m: range) =
         not m.IsSynthetic
@@ -1965,7 +1965,7 @@ type TcResultsSinkImpl(g, ?sourceText: ISourceText) =
         TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
 
     member this.GetSymbolUses() =
-        TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
+        TcSymbolUses(tcGlobals, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
     member this.GetOpenDeclarations() =
         capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray

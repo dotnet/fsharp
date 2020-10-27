@@ -7,6 +7,7 @@ open System
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
@@ -47,12 +48,12 @@ module internal IncrementalBuilderEventTesting =
 type internal TcInfo =
     {
         tcState: TcState
-        tcEnvAtEndOfFile: TypeChecker.TcEnv
+        tcEnvAtEndOfFile: CheckExpressions.TcEnv
 
         /// Disambiguation table for module names
         moduleNamesDict: ModuleNamesDict
 
-        topAttribs: TypeChecker.TopAttribs option
+        topAttribs: TopAttribs option
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
@@ -205,7 +206,7 @@ type internal IncrementalBuilder =
           ReferenceResolver.Resolver *
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *
-          scriptClosureOptions:LoadClosure option *
+          loadClosureOpt:LoadClosure option *
           sourceFiles:string list *
           commandLineArgs:string list *
           projectReferences: IProjectReference list *
@@ -298,7 +299,7 @@ module internal IncrementalBuild =
     type BuildInput =
         /// Declare a named scalar output.
         static member ScalarInput: node:Scalar<'T> * value: 'T -> BuildInput
-        static member VectorInput: node:Vector<'T> * value: 'T list -> BuildInput
+        static member VectorInput: node:Vector<'T> * values: 'T list -> BuildInput
 
     /// Declare build outputs and bind them to real values.
     /// Only required for unit testing.
@@ -312,5 +313,5 @@ module internal IncrementalBuild =
         member DeclareVectorOutput : output:Vector<'T> -> unit
 
         /// Set the concrete inputs for this build. 
-        member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
+        member GetInitialPartialBuild : inputs: BuildInput list -> PartialBuild
 
