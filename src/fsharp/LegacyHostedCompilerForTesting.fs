@@ -135,7 +135,7 @@ type internal FscCompiler(legacyReferenceResolver) =
         fun arg -> regex.IsMatch(arg)
 
     /// do compilation as if args was argv to fsc.exe
-    member this.Compile(args : string[]) =
+    member this.Compile(args : string array) =
         // args.[0] is later discarded, assuming it is just the path to fsc.
         // compensate for this in case caller didn't know
         let args =

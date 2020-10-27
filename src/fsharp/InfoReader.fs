@@ -884,7 +884,7 @@ let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
     let delRetTy = invokeMethInfo.GetFSharpReturnTy(amap, m, minst)
     CheckMethInfoAttributes g m None invokeMethInfo |> CommitOperationResult
     let fty = mkIteratedFunTy g fsharpViewOfDelArgTys delRetTy
-    SigOfFunctionForDelegate(invokeMethInfo,compiledViewOfDelArgTys, delRetTy, fty)
+    SigOfFunctionForDelegate(invokeMethInfo, compiledViewOfDelArgTys, delRetTy, fty)
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
 let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =

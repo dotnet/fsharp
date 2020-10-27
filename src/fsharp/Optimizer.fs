@@ -1835,7 +1835,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
                     | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)) resultExpr
-                    | None, Some (resultElemTy, qTy)  ->  mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
+                    | None, Some (resultElemTy, qTy) -> mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
             | None -> 
                 None
@@ -1872,11 +1872,10 @@ let IsILMethodRefSystemStringConcatArray (mref: ILMethodRef) =
     
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
-    let g = cenv.g
 
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
-    let expr = NormalizeAndAdjustPossibleSubsumptionExprs g expr
+    let expr = NormalizeAndAdjustPossibleSubsumptionExprs cenv.g expr
 
     let expr = stripExpr expr
 
@@ -1929,8 +1928,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         let ty = mkForallTyIfNeeded tps rty
         OptimizeLambdas None cenv env topValInfo expr ty
 
-    | Expr.TyChoose _  -> 
-        OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr)
+    | Expr.TyChoose _ -> 
+        OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
 
     | Expr.Match (spMatch, exprm, dtree, targets, m, ty) -> 
         OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)
@@ -3198,7 +3197,6 @@ and OptimizeSwitchFallback cenv env (eR, einfo, cases, dflt, m) =
 
 and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
     try 
-        let g = cenv.g
         
         // The aim here is to stop method splitting for direct-self-tailcalls. We do more than that: if an expression
         // occurs in the body of recursively defined values RVS, then we refuse to split
@@ -3260,7 +3258,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     if mbrTyconRef.TryDeref.IsSome then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_ty.IsSome)
-                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef g tcref) cenv.g.system_MarshalByRefObject_ty.Value
+                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef cenv.g tcref) cenv.g.system_MarshalByRefObject_ty.Value
                     else 
                         false
                 | ParentNone -> false) ||

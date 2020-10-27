@@ -1137,7 +1137,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             CheckCall cenv env m returnTy argsl contexts context
 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
-        let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
+        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy cenv.g m argvs rty
         CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 

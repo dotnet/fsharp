@@ -620,7 +620,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let propRetTypeR = ConvType cenv env m fspec.FormalType
             let callArgR = ConvExpr cenv env obj
             let exnTypeR = ConvType cenv env m (generalizedTyconRef g tcref)
-            QP.mkPropGet( (parentTyconR, fspec.Name,propRetTypeR, []), [], [QP.mkCoerce (exnTypeR, callArgR)])
+            QP.mkPropGet( (parentTyconR, fspec.Name, propRetTypeR, []), [], [QP.mkCoerce (exnTypeR, callArgR)])
 
         | TOp.Coerce, [tgtTy;srcTy], [x]  ->
             let xR = ConvExpr cenv env x
@@ -697,19 +697,16 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UInt16s arr, [], [] ->
             ConvExpr cenv env (Expr.Op (TOp.Array, [g.uint16_ty], List.ofArray (Array.map (mkUInt16 g m) arr), m))
 
-        | TOp.UInt16s arr, [], [] -> 
-              ConvExpr cenv env (Expr.Op(TOp.Array, [g.uint16_ty], List.ofArray (Array.map (mkUInt16 g m) arr), m))
-              
         | TOp.UnionCaseProof _, _, [e] ->
             ConvExpr cenv env e  // Note: we erase the union case proof conversions when converting to quotations
 
         | TOp.UnionCaseTagGet _tycr, _tinst, [_cx] ->
             wfail(Error(FSComp.SR.crefQuotationsCantFetchUnionIndexes(), m))
 
-        | TOp.UnionCaseFieldSet (_c, _i), _tinst, [_cx; _x] ->
+        | TOp.UnionCaseFieldSet (_c, _i), _tinst, [_cx;_x] ->
             wfail(Error(FSComp.SR.crefQuotationsCantSetUnionFields(), m))
 
-        | TOp.ExnFieldSet(_tcref, _i), [], [_ex; _x] ->
+        | TOp.ExnFieldSet (_tcref, _i), [], [_ex;_x] ->
             wfail(Error(FSComp.SR.crefQuotationsCantSetExceptionFields(), m))
 
         | TOp.RefAddrGet _, _, _ ->
@@ -749,8 +746,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 | Some expr ->
                     ConvExpr cenv env expr             
 
-        | _ -> 
-            wfail(InternalError( "Unexpected expression shape",m))
+        | _ ->
+            wfail(InternalError( "Unexpected expression shape", m))
 
     | Expr.WitnessArg (traitInfo, m) ->
         ConvWitnessInfo cenv env m traitInfo
@@ -824,9 +821,10 @@ and ConvLValueExpr cenv env expr =
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
 
 // This function has to undo the work of mkExprAddrOfExpr 
-and ConvLValueExprCore cenv env expr = 
-    match expr with 
-    | Expr.Op(op, tyargs, args, m) -> 
+// This function has to undo the work of mkExprAddrOfExpr
+and ConvLValueExprCore cenv env expr =
+    match expr with
+    | Expr.Op (op, tyargs, args, m) ->
         match op, args, tyargs  with
         | TOp.LValueOp (LAddrOf _, vref), _, _ -> ConvValRef false cenv env m vref []
         | TOp.ValFieldGetAddr (rfref, _), _, _ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
@@ -930,10 +928,10 @@ and ConvValRef holeOk cenv env m (vref: ValRef) tyargs =
 and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
     let g = cenv.g
     let v = vref.Deref
-    if env.isinstVals.ContainsVal v then 
+    if env.isinstVals.ContainsVal v then
         let (ty, e) = env.isinstVals.[v]
         ConvExpr cenv env (mkCallUnbox g m ty e)
-    elif env.substVals.ContainsVal v then 
+    elif env.substVals.ContainsVal v then
         let e = env.substVals.[v]
         ConvExpr cenv env e
     elif env.vs.ContainsVal v then
@@ -958,13 +956,12 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
             ConvModuleValueApp cenv env m vref tyargs witnessArgs [] 
 
 and ConvUnionCaseRef cenv (ucref: UnionCaseRef) m =
-    let g = cenv.g
     let ucgtypR = ConvTyconRef cenv ucref.TyconRef m
-    let nm = 
-        if g.unionCaseRefEq ucref g.cons_ucref then "Cons"
-        elif g.unionCaseRefEq ucref g.nil_ucref then "Empty"
-        else ucref.CaseName 
-    (ucgtypR, nm) 
+    let nm =
+        if cenv.g.unionCaseRefEq ucref cenv.g.cons_ucref then "Cons"
+        elif cenv.g.unionCaseRefEq ucref cenv.g.nil_ucref then "Empty"
+        else ucref.CaseName
+    (ucgtypR, nm)
 
 and ConvRecdFieldRef cenv (rfref: RecdFieldRef) m =
     let typR = ConvTyconRef cenv rfref.TyconRef m
@@ -1024,8 +1021,7 @@ and ConvTypes cenv env m tys =
     List.map (ConvType cenv env m) (FilterMeasureTyargs tys)
 
 and ConvConst cenv env m c ty =
-    let g = cenv.g
-    match TryEliminateDesugaredConstants g m c with 
+    match TryEliminateDesugaredConstants cenv.g m c with
     | Some e -> ConvExpr cenv env e
     | None ->
         let tyR = ConvType cenv env m ty
@@ -1044,21 +1040,20 @@ and ConvConst cenv env m c ty =
         | Const.String  s ->  QP.mkString (s, tyR)
         | Const.Char    c ->  QP.mkChar (c, tyR)
         | Const.Unit      ->  QP.mkUnit()
-        | Const.Zero      ->  
-            if isRefTy g ty then 
+        | Const.Zero      ->
+            if isRefTy cenv.g ty then
                 QP.mkNull tyR
             else
                 QP.mkDefaultValue tyR
         | _ ->
             wfail(Error (FSComp.SR.crefQuotationsCantContainThisConstant(), m))
 
-and ConvDecisionTree cenv env tgs typR x = 
-    let g = cenv.g
-    match x with 
-    | TDSwitch(e1, csl, dfltOpt, m) -> 
-        let acc = 
-            match dfltOpt with 
-            | Some d -> ConvDecisionTree cenv env tgs typR d 
+and ConvDecisionTree cenv env tgs typR x =
+    match x with
+    | TDSwitch(e1, csl, dfltOpt, m) ->
+        let acc =
+            match dfltOpt with
+            | Some d -> ConvDecisionTree cenv env tgs typR d
             | None -> wfail(Error(FSComp.SR.crefQuotationsCantContainThisPatternMatch(), m))
 
         let converted =
@@ -1080,10 +1075,10 @@ and ConvDecisionTree cenv env tgs typR x =
                       // Note, reverse the branches
                       QP.mkCond (e1R, acc, ConvDecisionTree cenv env tgs typR dtree)
 
-                  | DecisionTreeTest.Const c -> 
-                      let ty = tyOfExpr g e1
-                      let eq = mkCallEqualsOperator g m ty e1 (Expr.Const (c, m, ty))
-                      let eqR = ConvExpr cenv env eq 
+                  | DecisionTreeTest.Const c ->
+                      let ty = tyOfExpr cenv.g e1
+                      let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (c, m, ty))
+                      let eqR = ConvExpr cenv env eq
                       QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
 
                   | DecisionTreeTest.IsNull ->
@@ -1096,9 +1091,9 @@ and ConvDecisionTree cenv env tgs typR x =
                           // note: reverse the branches - a null test is a failure of an isinst test
                           QP.mkCond (QP.mkTypeTest (tyR, eR), acc, ConvDecisionTree cenv env tgs typR dtree)
                       | _ -> 
-                          let ty = tyOfExpr g e1
-                          let eq = mkCallEqualsOperator g m ty e1 (Expr.Const (Const.Zero, m, ty))
-                          let eqR = ConvExpr cenv env eq 
+                          let ty = tyOfExpr cenv.g e1
+                          let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
+                          let eqR = ConvExpr cenv env eq
                           QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
 
                   | DecisionTreeTest.IsInst (_srcty, tgty) ->
@@ -1133,15 +1128,12 @@ and ConvDecisionTree cenv env tgs typR x =
 
 // Check if this is an provider-generated assembly that will be statically linked
 and IsILTypeRefStaticLinkLocal cenv m (tr: ILTypeRef) =
-#if NO_EXTENSIONTYPING
-        ignore m; ignore cenv; ignore tr
-        false
-#else
-        let g = cenv.g
-        match tr.Scope with 
-        | ILScopeRef.Assembly aref 
-            when not g.isInteractive &&
-                 aref.Name <> g.ilg.primaryAssemblyName && // optimization to avoid this check in the common case
+        ignore cenv; ignore m
+        match tr.Scope with
+#if !NO_EXTENSIONTYPING
+        | ILScopeRef.Assembly aref
+            when not cenv.g.isInteractive &&
+                 aref.Name <> cenv.g.ilg.primaryAssemblyName && // optimization to avoid this check in the common case
 
                  // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
                  // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
@@ -1151,8 +1143,8 @@ and IsILTypeRefStaticLinkLocal cenv m (tr: ILTypeRef) =
                   | ResolvedCcu ccu -> ccu.IsProviderGenerated
                   | UnresolvedCcu _ -> false)
             -> true
-        | _ -> false
 #endif
+        | _ -> false
 
 // Adjust for static linking information, then convert
 and ConvILTypeRefUnadjusted cenv m (tr: ILTypeRef) =
@@ -1183,9 +1175,7 @@ and ConvILTypeRef cenv (tr: ILTypeRef) =
 
         QP.Named(tr.BasicQualifiedName, assemblyRef)
   
-and ConvVoidType cenv m = 
-    let g = cenv.g
-    QP.mkILNamedTy(ConvTyconRef cenv g.system_Void_tcref m, [])
+and ConvVoidType cenv m = QP.mkILNamedTy(ConvTyconRef cenv cenv.g.system_Void_tcref m, [])
 
 and ConvILType cenv env m ty =
     match ty with

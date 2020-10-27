@@ -1237,10 +1237,10 @@ and private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g: TcGlobals)
             // This may explore into an unreferenced assembly if the name
             // is a type abbreviation. If it does, assume the name does not
             // have a constructor.
-            let mayHaveConstruction = 
-                protectAssemblyExploration 
-                    false 
-                    (fun () -> 
+            let mayHaveConstruction =
+                protectAssemblyExploration
+                    false
+                    (fun () ->
                         let ty = generalizedTyconRef g tcref
                         isClassTy g ty || isStructTy g ty)
 
@@ -4516,7 +4516,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
        let recdFields =
            nenv.eFieldLabels
            |> Seq.collect (fun (KeyValue(_, v)) -> v)
-           |> Seq.map (fun fref -> 
+           |> Seq.map (fun fref ->
                 let typeInsts = fref.TyconRef.TyparsNoRange |> List.map mkTyparTy
                 Item.RecdField(RecdFieldInfo(typeInsts, fref)))
            |> List.ofSeq
