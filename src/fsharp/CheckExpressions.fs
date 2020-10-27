@@ -9412,17 +9412,18 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
             else rhsExprChecked
 
-        // Assert the return type of an active pattern
+        // Assert the return type of an active pattern. A Struct attribute may be used on a partial active pattern.
+        let isStructRetTy = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
         match apinfoOpt with 
         | Some (apinfo, apOverallTy, _) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
             let _, apReturnTy = stripFunTy cenv.g apOverallTy
-            let isStructRetTy = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
             if isStructRetTy && apinfo.IsTotal then
                 errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
             UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys isStructRetTy) apReturnTy
         | None -> 
-            ()
+            if isStructRetTy then
+                errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
 
         // Check other attributes
         let hasLiteralAttr, literalValue = TcLiteral cenv overallExprTy env tpenv (valAttribs, rhsExpr)
