@@ -6433,9 +6433,9 @@ and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) e =
         | Expr.TyLambda (_, tyargs, body, _, ttype) when
             (
                 tyargs |> List.forall (fun tp -> tp.IsErased) &&
-                (match StorageForVal g vspec.Range vspec eenv with Local _ -> true | _ -> false) && 
-                (isLocalTypeFunc || 
-                    (match ttype with 
+                (match StorageForVal g vspec.Range vspec eenv with Local _ -> true | _ -> false) &&
+                (isLocalTypeFunc ||
+                    (match ttype with
                      TType_var (typar, _) -> match typar.Solution with Some (TType_app (t, _, _))-> t.IsStructOrEnumTycon | _ -> false
                      | _ -> false))
             ) ->
@@ -7184,7 +7184,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         [], [], []
 
 /// Generate a ToString method that calls 'sprintf "%A"'
-and GenToStringMethod cenv eenv ilThisTy m = 
+and GenToStringMethod cenv eenv ilThisTy m =
     let g = cenv.g
     [ match (eenv.valsInScope.TryFind g.sprintf_vref.Deref,
              eenv.valsInScope.TryFind g.new_format_vref.Deref) with
@@ -7196,18 +7196,18 @@ and GenToStringMethod cenv eenv ilThisTy m =
                                                [// 'T -> string'
                                                funcTy
                                                // rest follow from 'StringFormat<T>'
-                                               GenUnitTy cenv eenv m  
-                                               g.ilg.typ_String 
-                                               g.ilg.typ_String 
+                                               GenUnitTy cenv eenv m
+                                               g.ilg.typ_String
+                                               g.ilg.typ_String
                                                ilThisTy], [])
                // Instantiate with our own type
                let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef, AsObject, [], [funcTy])
                // Here's the body of the method. Call printf, then invoke the function it returns
                let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
-               let mdef = 
+               let mdef =
                    mkILNonGenericVirtualMethod ("ToString", ILMemberAccess.Public, [],
                         mkILReturn g.ilg.typ_String,
-                        mkMethodBody (true, [], 2, nonBranchingInstrsToCode 
+                        mkMethodBody (true, [], 2, nonBranchingInstrsToCode
                                 ([ // load the hardwired format string
                                     yield I_ldstr "%+A"
                                     // make the printf format object
@@ -7344,7 +7344,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         let ilDebugDisplayAttributes =
             [ yield! GenAttrs cenv eenv debugDisplayAttrs
               if generateDebugDisplayAttribute then
-                  yield g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}")  ]
+                  yield g.mkDebuggerDisplayAttribute ("{" + debugDisplayMethodName + "(),nq}") ]
 
         let ilCustomAttrs =
           [ yield! defaultMemberAttrs
@@ -7376,7 +7376,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 tycon.AllFieldsArray |> Array.forall (fun f -> f.IsStatic)
 
             isEmptyStruct && cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty
-
+    
         // Compute a bunch of useful things for each field
         let isCLIMutable = (TryFindFSharpBoolAttribute g g.attrib_CLIMutableAttribute tycon.Attribs = Some true)
         let fieldSummaries =
@@ -7421,9 +7421,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         if useGenuineField then yield! fspec.PropertyAttribs
                         yield! fspec.FieldAttribs ]
 
-
+                        
                   let ilNotSerialized = HasFSharpAttributeOpt g g.attrib_NonSerializedAttribute attribs
-
+              
                   let fattribs =
                       attribs
                       // Do not generate FieldOffset as a true CLI custom attribute, since it is implied by other corresponding CLI metadata
@@ -7437,7 +7437,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                   // AND the field is not mutable (because we can take the address of a mutable field).
                   // Otherwise fields are always accessed via their property getters/setters
                   let isFieldHidden = isPropHidden || (not useGenuineField && not isFSharpMutable)
-
+              
                   let extraAttribs =
                      match tyconRepr with
                      | TRecdRepr _ when not useGenuineField -> [ g.DebuggerBrowsableNeverAttribute ] // hide fields in records in debug display
@@ -7465,8 +7465,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                if requiresExtraField then
                    yield mkILInstanceField("__dummy", g.ilg.typ_Int32, None, ILMemberAccess.Assembly) ]
-
-        // Generate property definitions for the fields compiled as properties 
+     
+        // Generate property definitions for the fields compiled as properties
         let ilPropertyDefsForFields =
              [ for (i, (useGenuineField, _, isFSharpMutable, isStatic, propAttribs, ilPropType, _, fspec)) in Seq.indexed fieldSummaries do
                  if not useGenuineField then
@@ -7527,7 +7527,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                                       [// 'T -> string'
                                                        funcTy
                                                        // rest follow from 'StringFormat<T>'
-                                                       GenUnitTy cenv eenv m 
+                                                       GenUnitTy cenv eenv m
                                                        g.ilg.typ_String
                                                        g.ilg.typ_String
                                                        g.ilg.typ_String], [])
@@ -7589,7 +7589,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
                      yield mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess)
-
+             
                  if not (tycon.HasMember g "ToString" []) then
                     yield! GenToStringMethod cenv eenv ilThisTy m
 
@@ -7618,7 +7618,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
         let ilProperties = mkILProperties (ilPropertyDefsForFields @ abstractPropDefs)
         let ilEvents = mkILEvents abstractEventDefs
         let ilFields = mkILFields ilFieldDefs
-
+    
         let tdef, tdefDiscards =
            let isSerializable = (TryFindFSharpBoolAttribute g g.attrib_AutoSerializableAttribute tycon.Attribs <> Some false)
 
@@ -7675,7 +7675,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                let tdLayout, tdEncoding =
                     match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
-                    | Some (Attrib(_, _, [ AttribInt32Arg(layoutKind) ], namedArgs, _, _, _)) ->
+                    | Some (Attrib(_, _, [ AttribInt32Arg layoutKind ], namedArgs, _, _, _)) ->
                         let decoder = AttributeDecoder namedArgs
                         let ilPack = decoder.FindInt32 "Pack" 0x0
                         let ilSize = decoder.FindInt32 "Size" 0x0
@@ -7862,7 +7862,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
              |> List.unzip4
 
         let ilCtorDef =
-            mkILSimpleStorageCtorWithParamNames(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess) 
+            mkILSimpleStorageCtorWithParamNames(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
 
         // In compiled code, all exception types get a parameterless constructor for use with XML serialization
         // This does default-initialization of all fields

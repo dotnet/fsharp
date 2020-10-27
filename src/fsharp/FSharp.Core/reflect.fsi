@@ -61,7 +61,7 @@ type FSharpValue =
     /// <exception cref="T:System.ArgumentException">Thrown when the input is not a record value.</exception>
     /// <returns>The field from the record.</returns>
     static member GetRecordField:  record:obj * info:PropertyInfo -> obj
-
+    
     /// <summary>Precompute a function for reading a particular field from a record.
     /// Assumes the given type is a RecordType with a field of the given name. 
     /// If not, <see cref="T:System.ArgumentException" /> is raised during pre-computation.</summary>
@@ -165,7 +165,7 @@ type FSharpValue =
     ///
     /// <returns>The description of the union case and its fields.</returns>
     static member GetUnionFields:  value:obj * unionType:Type * ?bindingFlags:BindingFlags -> UnionCaseInfo * obj []
-
+    
     /// <summary>Assumes the given type is a union type. 
     /// If not, <see cref="T:System.ArgumentException" /> is raised during pre-computation.</summary>
     ///
@@ -256,8 +256,8 @@ type FSharpValue =
     /// <exception cref="T:System.ArgumentException">Thrown when the input is not a tuple value.</exception>
     ///
     /// <returns>An array of the fields from the given tuple.</returns>
-    static member GetTupleFields: tuple:obj -> obj[]
-
+    static member GetTupleFields: tuple:obj -> obj []
+    
     /// <summary>Precompute a function for reading the values of a particular tuple type</summary>
     ///
     /// <remarks>Assumes the given type is a TupleType.
@@ -269,7 +269,7 @@ type FSharpValue =
     ///
     /// <returns>A function to read values of the given tuple type.</returns>
     static member PreComputeTupleReader           : tupleType:Type -> (obj -> obj[])
-
+    
     /// <summary>Gets information that indicates how to read a field of a tuple</summary>
     ///
     /// <param name="tupleType">The input tuple type.</param>
@@ -459,7 +459,7 @@ module FSharpReflectionExtensions =
         /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a record type.</exception>
         ///
         /// <returns>The created record.</returns>
-        static member MakeRecord: recordType:Type * values:obj[] * ?allowAccessToPrivateRepresentation : bool -> obj
+        static member MakeRecord: recordType:Type * values:obj [] * ?allowAccessToPrivateRepresentation : bool -> obj
 
         /// <summary>Reads all the fields from a record value.</summary>
         ///
@@ -512,7 +512,7 @@ module FSharpReflectionExtensions =
         ///
         /// <returns>A ConstructorInfo for the given record type.</returns>
         static member PreComputeRecordConstructorInfo: recordType:Type * ?allowAccessToPrivateRepresentation : bool-> ConstructorInfo
-
+    
         /// <summary>Create a union case value.</summary>
         ///
         /// <param name="unionCase">The description of the union case to create.</param>
@@ -520,7 +520,7 @@ module FSharpReflectionExtensions =
         /// <param name="allowAccessToPrivateRepresentation">Optional flag that denotes accessibility of the private representation.</param>    
         ///
         /// <returns>The constructed union case.</returns>
-        static member MakeUnion: unionCase:UnionCaseInfo * args:obj[] * ?allowAccessToPrivateRepresentation : bool-> obj
+        static member MakeUnion: unionCase:UnionCaseInfo * args:obj [] * ?allowAccessToPrivateRepresentation : bool-> obj
 
         /// <summary>Identify the union case and its fields for an object</summary>
         ///
@@ -537,8 +537,8 @@ module FSharpReflectionExtensions =
         /// <exception cref="T:System.ArgumentException">Thrown when the input type is not a union case value.</exception>
         ///
         /// <returns>The description of the union case and its fields.</returns>
-        static member GetUnionFields:  value:obj * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj[]
-
+        static member GetUnionFields:  value:obj * unionType:Type * ?allowAccessToPrivateRepresentation : bool -> UnionCaseInfo * obj []
+    
         /// <summary>Assumes the given type is a union type. 
         /// If not, <see cref="T:System.ArgumentException" /> is raised during pre-computation.</summary>
         ///
