@@ -280,47 +280,47 @@ let addFreeItemOfModuleTy mtyp eUngeneralizableItems =
     else UngeneralizableItem(fun () -> freeInModuleTy mtyp) :: eUngeneralizableItems
 
 /// Add a table of values to the name resolution environment.
-let AddValMapToNameEnv vs nenv = 
-    NameMap.foldBackRange (fun v nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) vs nenv
+let AddValMapToNameEnv g vs nenv = 
+    NameMap.foldBackRange (fun v nenv -> AddValRefToNameEnv g nenv (mkLocalValRef v)) vs nenv
 
 /// Add a list of values to the name resolution environment.
-let AddValListToNameEnv vs nenv = 
-    List.foldBack (fun v nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) vs nenv
+let AddValListToNameEnv g vs nenv = 
+    List.foldBack (fun v nenv -> AddValRefToNameEnv g nenv (mkLocalValRef v)) vs nenv
     
 /// Add a local value to TcEnv 
-let AddLocalValPrimitive (v: Val) env =
+let AddLocalValPrimitive g (v: Val) env =
     { env with
-        eNameResEnv = AddValRefToNameEnv env.eNameResEnv (mkLocalValRef v)
+        eNameResEnv = AddValRefToNameEnv g env.eNameResEnv (mkLocalValRef v)
         eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems } 
 
 /// Add a table of local values to TcEnv 
-let AddLocalValMap tcSink scopem (vals: Val NameMap) env =
+let AddLocalValMap g tcSink scopem (vals: Val NameMap) env =
     let env = 
         if vals.IsEmpty then 
             env
         else
             { env with
-                eNameResEnv = AddValMapToNameEnv vals env.eNameResEnv
+                eNameResEnv = AddValMapToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
     env
 
 /// Add a list of local values to TcEnv and report them to the sink
-let AddLocalVals tcSink scopem (vals: Val list) env =
+let AddLocalVals g tcSink scopem (vals: Val list) env =
     let env = 
         if isNil vals then 
             env
         else
             { env with
-                eNameResEnv = AddValListToNameEnv vals env.eNameResEnv
+                eNameResEnv = AddValListToNameEnv g vals env.eNameResEnv
                 eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.AccessRights)
     env
 
 /// Add a local value to TcEnv and report it to the sink
-let AddLocalVal tcSink scopem v env =
+let AddLocalVal g tcSink scopem v env =
     let env = { env with
-                    eNameResEnv = AddValRefToNameEnv env.eNameResEnv (mkLocalValRef v)
+                    eNameResEnv = AddValRefToNameEnv g env.eNameResEnv (mkLocalValRef v)
                     eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
@@ -1764,7 +1764,7 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) =
 
             values, vspecMap
 
-    let envinner = AddLocalValMap cenv.tcSink m vspecMap env
+    let envinner = AddLocalValMap cenv.g cenv.tcSink m vspecMap env
     envinner, values, vspecMap
 
 //-------------------------------------------------------------------------
@@ -4938,7 +4938,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 errorR (UndefinedName (0, FSComp.SR.undefinedNamePatternDiscriminator, id, NoSuggestions))
                 (fun _ -> TPat_error m), acc
 
-        | Item.ActivePatternCase (APElemRef (apinfo, vref, idx)) as item ->
+        | Item.ActivePatternCase (APElemRef (apinfo, vref, idx, isStructRetTy)) as item ->
             // Report information about the 'active recognizer' occurrence to IDE
             CallNameResolutionSink cenv.tcSink (rangeOfLid longId, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.eAccessRights)
 
@@ -4969,12 +4969,10 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             if not (isNil activePatArgsAsSynPats) && apinfo.ActiveTags.Length <> 1 then 
                 errorR (Error (FSComp.SR.tcRequireActivePatternWithOneResult (), m))
 
-            let isStruct = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute vref.Attribs
-
             let activePatArgsAsSynExprs = List.map convSynPatToSynExpr activePatArgsAsSynPats
 
             let activePatResTys = NewInferenceTypes apinfo.Names
-            let activePatType = apinfo.OverallType cenv.g m ty activePatResTys isStruct
+            let activePatType = apinfo.OverallType cenv.g m ty activePatResTys isStructRetTy
 
             let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, arg, unionRanges (rangeOfLid longId) arg.Range)) 
             let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
@@ -4988,7 +4986,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             // If there are any expression args then we've lost identity. 
             let activePatIdentity = if isNil activePatArgsAsSynExprs then Some (vref, tinst) else None
             (fun values -> 
-                TPat_query((activePatExpr, activePatResTys, activePatIdentity, idx, apinfo), arg' values, m)), acc
+                TPat_query((activePatExpr, activePatResTys, isStructRetTy, activePatIdentity, idx, apinfo), arg' values, m)), acc
 
         | (Item.UnionCase _ | Item.ExnCase _) as item ->
             // Report information about the case occurrence to IDE
@@ -5598,7 +5596,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         let startExpr, tpenv = TcExpr cenv cenv.g.int_ty env tpenv start
         let finishExpr, tpenv = TcExpr cenv cenv.g.int_ty env tpenv finish
         let idv, _ = mkLocal id.idRange id.idText cenv.g.int_ty
-        let envinner = AddLocalVal cenv.tcSink m idv env
+        let envinner = AddLocalVal cenv.g cenv.tcSink m idv env
 
         // notify name resolution sink about loop variable
         let item = Item.Value(mkLocalValRef idv)
@@ -6491,7 +6489,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
             | _ -> error(Error(FSComp.SR.tcNewRequiresObjectConstructor(), mNewExpr))
 
         let baseValOpt = MakeAndPublishBaseVal cenv env baseIdOpt objTy
-        let env = Option.foldBack (AddLocalVal cenv.tcSink mNewExpr) baseValOpt env
+        let env = Option.foldBack (AddLocalVal cenv.g cenv.tcSink mNewExpr) baseValOpt env
         
         
         let impls = (mWholeExpr, objTy, binds) :: extraImpls
@@ -7570,7 +7568,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         let ucaseAppTy = NewInferenceType ()
         let mkConstrApp, argTys, argNames = 
           match item with 
-          | Item.ActivePatternResult(apinfo, _, n, _) -> 
+          | Item.ActivePatternResult(apinfo, _apOverallTy, n, _) -> 
               let aparity = apinfo.Names.Length
               match aparity with 
               | 0 | 1 -> 
@@ -9377,15 +9375,15 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // Add active pattern result names to the environment 
         let envinner = 
             match apinfoOpt with 
-            | Some (apinfo, ty, m) ->
+            | Some (apinfo, apOverallTy, m) ->
                 if Option.isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then 
                     error(Error(FSComp.SR.tcInvalidActivePatternName(), mBinding))
 
                 apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag, tagRange) ->
-                    let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, i, tagRange)
+                    let item = Item.ActivePatternResult(apinfo, apOverallTy, i, tagRange)
                     CallNameResolutionSink cenv.tcSink (tagRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights))
 
-                { envinner with eNameResEnv = AddActivePatternResultTagsToNameEnv apinfo envinner.eNameResEnv ty m }
+                { envinner with eNameResEnv = AddActivePatternResultTagsToNameEnv apinfo envinner.eNameResEnv apOverallTy m }
             | None -> 
                 envinner
         
@@ -9416,11 +9414,13 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         // Assert the return type of an active pattern
         match apinfoOpt with 
-        | Some (apinfo, ty, _) ->
+        | Some (apinfo, apOverallTy, _) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
-            let _, rty = stripFunTy cenv.g ty
-            let isStruct = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
-            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys isStruct) rty
+            let _, apReturnTy = stripFunTy cenv.g apOverallTy
+            let isStructRetTy = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
+            if isStructRetTy && apinfo.IsTotal then
+                errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
+            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys isStructRetTy) apReturnTy
         | None -> 
             ()
 
@@ -9793,7 +9793,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
             else 
                 (bodyExpr, bodyExprTy)
 
-        let envInner = AddLocalValMap cenv.tcSink scopem prelimRecValues env        
+        let envInner = AddLocalValMap cenv.g cenv.tcSink scopem prelimRecValues env        
 
         ((buildExpr >> mkCleanup >> mkPatBind >> mkRhsBind), envInner, tpenv))
 
@@ -10419,8 +10419,8 @@ and TcLetrecBinding
     //  Example 3: 
     //    let f() = []   f: unit -> ?b, can generalize immediately
     //    and g() = []
-    let envRec = Option.foldBack (AddLocalVal cenv.tcSink scopem) baseValOpt envRec
-    let envRec = Option.foldBack (AddLocalVal cenv.tcSink scopem) safeThisValOpt envRec
+    let envRec = Option.foldBack (AddLocalVal cenv.g cenv.tcSink scopem) baseValOpt envRec
+    let envRec = Option.foldBack (AddLocalVal cenv.g cenv.tcSink scopem) safeThisValOpt envRec
 
     // Members can access protected members of parents of the type, and private members in the type 
     let envRec = MakeInnerEnvForMember envRec vspec 
@@ -10628,7 +10628,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
     
         newGeneralizedRecBinds, preGeneralizationRecBinds, tpenv
 
-    let envNonRec = envNonRec |> AddLocalVals cenv.tcSink scopem (newGeneralizedRecBinds |> List.map (fun b -> b.RecBindingInfo.Val))  
+    let envNonRec = envNonRec |> AddLocalVals cenv.g cenv.tcSink scopem (newGeneralizedRecBinds |> List.map (fun b -> b.RecBindingInfo.Val))  
     let generalizedRecBinds = newGeneralizedRecBinds @ generalizedRecBinds        
 
     (envNonRec, generalizedRecBinds, preGeneralizationRecBinds, tpenv, uncheckedRecBindsTable)
@@ -10823,7 +10823,7 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
     let binds = binds |> List.map (fun (RecDefnBindingInfo(a, b, c, bind)) -> NormalizedRecBindingDefn(a, b, c, BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env bind))
     let uncheckedRecBinds, prelimRecValues, (tpenv, _) = AnalyzeAndMakeAndPublishRecursiveValues overridesOK cenv env tpenv binds
 
-    let envRec = AddLocalVals cenv.tcSink scopem prelimRecValues env 
+    let envRec = AddLocalVals cenv.g cenv.tcSink scopem prelimRecValues env 
     
     // Typecheck bindings 
     let uncheckedRecBindsTable = uncheckedRecBinds |> List.map (fun rbind -> rbind.RecBindingInfo.Val.Stamp, rbind) |> Map.ofList 
@@ -10868,7 +10868,7 @@ and TcLetrec overridesOK cenv env tpenv (binds, bindsm, scopem) =
         List.concat results
     
     // Post letrec env 
-    let envbody = AddLocalVals cenv.tcSink scopem prelimRecValues env 
+    let envbody = AddLocalVals cenv.g cenv.tcSink scopem prelimRecValues env 
     binds, envbody, tpenv
 
 //-------------------------------------------------------------------------

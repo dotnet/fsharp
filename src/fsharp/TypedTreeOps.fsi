@@ -1698,17 +1698,14 @@ val mkValueOptionTy  : TcGlobals -> TType -> TType
 /// Create the Nullable type for a given element type
 val mkNullableTy: TcGlobals -> TType -> TType
 
-/// Create the union case 'None' for an option type
-val mkNoneCase  : TcGlobals -> UnionCaseRef
-
 /// Create the union case 'Some(expr)' for an option type
 val mkSomeCase: TcGlobals -> UnionCaseRef
 
-/// Create the struct union case 'ValueNone' for a voption type
-val mkValueNoneCase: TcGlobals -> UnionCaseRef
-
 /// Create the struct union case 'ValueSome(expr)' for a voption type
 val mkValueSomeCase: TcGlobals -> UnionCaseRef
+
+/// Create the struct union case 'Some' or 'ValueSome(expr)' for a voption type
+val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
 
 /// Create the expression '[]' for a list type
 val mkNil  : TcGlobals -> range -> TType -> Expr
@@ -1721,15 +1718,6 @@ val mkSome : TcGlobals -> TType -> Expr -> range -> Expr
 
 /// Create the expression 'None' for an option-type
 val mkNone: TcGlobals -> TType -> range -> Expr
-
-/// Create the expression 'ValueSome(expr)'
-val mkValueSome: TcGlobals -> TType -> Expr -> range -> Expr
-
-/// Create the expression 'ValueNone' for a voption-type
-val mkValueNone: TcGlobals -> TType -> range -> Expr
-
-/// Create the expression 'expr.Value' for an option-typed expression
-val mkOptionGetValueUnprovenViaAddr: TcGlobals -> Expr -> TType -> range -> Expr
 
 val mkOptionToNullable : TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2275,15 +2263,15 @@ type ActivePatternElemRef with
 
 val TryGetActivePatternInfo  : ValRef -> PrettyNaming.ActivePatternInfo option
 
-val mkChoiceCaseRef : TcGlobals -> range -> int -> int -> UnionCaseRef
+val mkChoiceCaseRef: g: TcGlobals -> m: range -> n: int -> i: int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
 
-    member Names : string list 
+    member Names: string list 
 
-    member ResultType : TcGlobals -> range -> TType list -> bool -> TType
+    member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
 
-    member OverallType : TcGlobals -> range -> TType -> TType list -> bool -> TType
+    member OverallType: g: TcGlobals -> m: range -> dty: TType -> rtys: TType list -> isStruct: bool -> TType
 
 val doesActivePatternHaveFreeTypars : TcGlobals -> ValRef -> bool
 

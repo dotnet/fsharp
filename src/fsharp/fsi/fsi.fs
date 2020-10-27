@@ -1651,7 +1651,7 @@ type internal FsiDynamicCompiler
             let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
             let tcEnvAtEndOfLastInput = 
                 CheckDeclarations.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
-                |> CheckExpressions.AddLocalVal TcResultsSink.NoSink range0 v
+                |> CheckExpressions.AddLocalVal tcGlobals TcResultsSink.NoSink range0 v
 
             // Generate IL for the given typled impl and create new interactive state.
             let ilxGenerator = istate.ilxGenerator

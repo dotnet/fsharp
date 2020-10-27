@@ -4262,16 +4262,17 @@ type DecisionTreeTest =
     /// Test if the input to a decision tree is an instance of the given type 
     | IsInst of TType * TType
 
-    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatIdentity, idx, activePatInfo)
+    /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatIdentity, index, activePatInfo)
     ///
     /// Run the active pattern and bind a successful result to a 
     /// variable in the remaining tree. 
     ///     activePatExpr -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys -- The result types (case types) of the active pattern.
+    ///     isStructRetTy -- Is the active pattern a struct return
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
-    ///     idx -- The case number of the active pattern which the test relates to.
-    ///     activePatternInfo -- The extracted info for the active pattern.
-    | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
+    ///     index -- The case number of the active pattern which the test relates to.
+    ///     activePatInfo -- The extracted info for the active pattern.
+    | ActivePatternCase of activePatExpr: Expr * activePatResTys: TTypes * isStructRetTy: bool * activePatIdentity: (ValRef * TypeInst) option * index: int * activePatInfo: ActivePatternInfo
 
     /// Used in error recovery
     | Error of range
@@ -4318,16 +4319,19 @@ type Binding =
 /// integer indicates which choice in the target set is being selected by this item. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ActivePatternElemRef = 
-    | APElemRef of ActivePatternInfo * ValRef * int 
+    | APElemRef of activePatternInfo: ActivePatternInfo * activePatternValRef: ValRef * caseIndex: int * isStructRetTy: bool
 
     /// Get the full information about the active pattern being referred to
-    member x.ActivePatternInfo = (let (APElemRef(info, _, _)) = x in info)
+    member x.ActivePatternInfo = (let (APElemRef(info, _, _, _)) = x in info)
 
     /// Get a reference to the value for the active pattern being referred to
-    member x.ActivePatternVal = (let (APElemRef(_, vref, _)) = x in vref)
+    member x.ActivePatternVal = (let (APElemRef(_, vref, _, _)) = x in vref)
+
+    /// Get a reference to the value for the active pattern being referred to
+    member x.IsStructReturn = (let (APElemRef(_, _, _, isStructRetTy)) = x in isStructRetTy)
 
     /// Get the index of the active pattern element within the overall active pattern 
-    member x.CaseIndex = (let (APElemRef(_, _, n)) = x in n)
+    member x.CaseIndex = (let (APElemRef(_, _, n, _)) = x in n)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()

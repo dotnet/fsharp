@@ -5937,6 +5937,16 @@
         <target state="translated">アセンブリ '{0}' はコマンド ラインに一覧表示されます。アセンブリは '-r' などのコマンド ライン フラグを使用して参照する必要があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeArgumentCount">
+        <source>The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</source>
+        <target state="new">The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
         <target state="translated">サーバーとの通信で問題が発生したため、常駐コンパイル サービスが使用されませんでした。</target>
