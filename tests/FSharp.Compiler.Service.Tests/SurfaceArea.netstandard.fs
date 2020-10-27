@@ -18369,8 +18369,8 @@ FSharp.Compiler.AbstractIL.Internal.Library+UndefinedException: Int32 GetHashCod
 FSharp.Compiler.AbstractIL.Internal.Library+UndefinedException: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.Internal.Library+UndefinedException: Void .ctor()
 FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: Int32 Encode(T)
-FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: KeyCollection Table
-FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: KeyCollection get_Table()
+FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: System.Collections.Generic.ICollection`1[T] Table
+FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: System.Collections.Generic.ICollection`1[T] get_Table()
 FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: Void .ctor()
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOptionInternal: Microsoft.FSharp.Core.FSharpValueOption`1[a] ofOption[a](Microsoft.FSharp.Core.FSharpOption`1[a])
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOptionInternal: Microsoft.FSharp.Core.FSharpValueOption`1[b] bind[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpValueOption`1[b]], Microsoft.FSharp.Core.FSharpValueOption`1[a])
