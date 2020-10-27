@@ -117,7 +117,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                 AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
                     member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
                         match expr with
-                        | SynExpr.Typed (_expr, _typeExpr, range) when posGeq range.Start pos ->
+                        | SynExpr.Typed (_expr, _typeExpr, range) when posEq range.Start pos ->
                             Some range
                         | _ -> defaultTraverse expr
 
@@ -127,7 +127,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                         | _ ->
                             let exprFunc pat =
                                 match pat with
-                                | SynSimplePat.Typed (_pat, _targetExpr, range) when posGeq range.Start pos ->
+                                | SynSimplePat.Typed (_pat, _targetExpr, range) when posEq range.Start pos ->
                                     Some range
                                 | _ ->
                                     None
@@ -136,7 +136,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
 
                     override _.VisitPat(defaultTraverse, pat) =
                         match pat with
-                        | SynPat.Typed (_pat, _targetType, range) when posGeq range.Start pos ->
+                        | SynPat.Typed (_pat, _targetType, range) when posEq range.Start pos ->
                             Some range
                         | _ -> defaultTraverse pat })
             res.IsSome

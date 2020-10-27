@@ -306,6 +306,8 @@ type T =
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 20) ]
 
+module FunctionApplicationArguments =
+
     [<Test>]
     let ``GetAllArgumentsForFunctionApplication - Single arg``() =
         let source = """
@@ -321,7 +323,6 @@ f 12
             |> shouldEqual [(3, 2)]
         | None ->
             Assert.Fail("No arguments found in source code")
-
 
     [<Test>]
     let ``GetAllArgumentsForFunctionApplication - Multi arg``() =
@@ -494,3 +495,200 @@ f (f 1 2) 3
             |> shouldEqual [(3, 5); (3, 7)]
         | None ->
             Assert.Fail("No arguments found in source code")
+
+module TypeAnnotations =
+    [<Test>]
+    let ``IsTypeAnnotationGiven - function - no annotation``() =
+        let source = """
+let f x = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 6), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - function - single arg annotation``() =
+        let source = """
+let f (x: int) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - function - first arg annotated``() =
+        let source = """
+let f (x: int) y = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 15), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - function - second arg annotated``() =
+        let source = """
+let f x (y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 9), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - function - all args annotated``() =
+        let source = """
+let f (x: int) (y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 16), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - constuctor - arg no annotations``() =
+        let source = """
+type C(x) = class end
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - constuctor - first arg unannotated``() =
+        let source = """
+type C(x, y: string) = class end
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 10), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - constuctor - second arg unannotated``() =
+        let source = """
+type C(x: int, y) = class end
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 15), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - constuctor - both args annotated``() =
+        let source = """
+type C(x: int, y: int) = class end
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 15), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method - args no unannotions``() =
+        let source = """
+type C() =
+    member _.M(x, y) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 18), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method - first arg annotated``() =
+        let source = """
+type C() =
+    member _.M(x: int, y) = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 23), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method - second arg annotated``() =
+        let source = """
+type C() =
+    member _.M(x, y: int) = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 18), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method - both args annotated``() =
+        let source = """
+type C() =
+    member _.M(x: int, y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 23), "Expected annotation for argument 'y'")
+
+
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method currying - args no unannotions``() =
+        let source = """
+type C() =
+    member _.M x y = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 17), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method currying - first arg annotated``() =
+        let source = """
+type C() =
+    member _.M (x: int) y = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 24), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method currying - second arg annotated``() =
+        let source = """
+type C() =
+    member _.M x (y: int) = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 16), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 18), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method currying - both args annotated``() =
+        let source = """
+type C() =
+    member _.M (x: int) (y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 25), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - method - only return type annotated``() =
+        let source = """
+type C() =
+    member _.M(x): string = "hello" + x
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - tuple - no annotations``() =
+        let source = """
+let (x, y) = (12, "hello")
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 5), "Expected no annotation for value 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 8), "Expected no annotation for value 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - tuple - first value annotated``() =
+        let source = """
+let (x: int, y) = (12, "hello")
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 5), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 13), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGiven - tuple - second value annotated``() =
+        let source = """
+let (x, y: string) = (12, "hello")
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 5), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 8), "Expected annotation for argument 'y'")
