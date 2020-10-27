@@ -3500,7 +3500,7 @@ module DebugPrint =
         match nullness.Evaluate() with
         | NullnessInfo.WithNull -> coreL ^^ wordL (tagText "?")
         | NullnessInfo.WithoutNull -> coreL
-        | NullnessInfo.AmbivalentToNull -> coreL ^^ wordL (tagText "%")
+        | NullnessInfo.AmbivalentToNull -> coreL //^^ wordL (tagText "%")
 
     and auxTypeWrapL env isAtomic ty = 
         let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
