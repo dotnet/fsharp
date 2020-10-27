@@ -9,8 +9,6 @@ subtitle: This technical guide discusses the FSharp.Core library.
 
 This technical guide discusses the FSharp.Core library.  Please help improve this guide by editing it and submitting a pull-request.
 
-## General Guidance 
-
 Much of the guidance below applies to any .NET library respecting binary compatibility.
 
 ### FSharp.Core is binary compatible
@@ -87,13 +85,22 @@ F# ecosystem libraries should generally target the *earliest, most portable* pro
 If your library is part of an ecosystem, it can be helpful to target the _earliest, most widespread language version_ 
 and the _earliest_ and _most supported_ profiles of the .NET Framework feasible.
 
+The version you choose should be based on the minimum F# language version you want to support. The minimum FSharp.Core version for each language version is listed below:
+
+|Minimum F# language version|Minimum FSharp.Core version|
+|------------------------------|------------------------------|
+|F# 4.1|4.3.4|
+|F# 4.5|4.5.2|
+|F# 4.6|4.6.2|
+|F# 4.7|4.7.2|
+|F# 5.0|5.0.0|
+
 A good choice for libraries is to target `netstandard2.0` and FSharp.Core 4.7.2.
 
     <PackageReference Update="FSharp.Core" Version="4.7.2" />
 
-For personal libraries, or libraries that are effectively part of an application, the choice is yours, just target
+For "libraries" that are effectively part of an application, you can just target
 the latest language version and the framework you're using in your application.
-
 
 ### Applications should target higher versions of FSharp.Core
 
@@ -106,6 +113,11 @@ If your application in being developed by people using multiple versions of F# t
 in open source working) you may need to target a lower version of the language and a correspondingly earlier version
 of FSharp.Core.
 
+### The FSharp.Core used by a script depends on the tool processing the script
+
+If you run a script with `dotnet fsi` then the tool will decide which FSharp.Core is used, and which implementation assemblies are used.
+
+When editing a script, the editing tools will decide which FSharp.Core is referenced. 
 
 ### FSharp.Core and static linking
 {:.no_toc}
@@ -129,6 +141,15 @@ because FSharp.Core is used both to run your script or application, and is refer
 Likewise, if you have a script or library using FSharp.Formatting, then beware that is using FSharp.Compiler.Service.
 For scripts that is normally OK because they are processed using F# Interactive, and the default FSharp.Core is used.
 If you have an application using FSharp.Formatting as a component then see the guide linked above.
+
+### FSharp.Core and new language features
+{:.no_toc}
+
+New versions of FSharp.Core must generally be consumable by previous generations of F# compiler tooling. There is nothing stopping
+older tooling from adding a reference to the new nuget package.
+
+This sometimes limits the new language features that can be used in FSharp.Core or requires careful coding in the serializing/deserializing of
+F# metadata stored in the FSharp.Core.dll binary as resources.
 
 ## Reference: FSharp.Core version and NuGet package numbers
 
