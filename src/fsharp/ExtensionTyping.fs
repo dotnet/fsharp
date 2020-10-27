@@ -267,6 +267,7 @@ module internal ExtensionTyping =
     /// appears that the laziness likely serves no purpose and could be safely removed.
     and ProvidedTypeContext = 
         | NoEntries
+        // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
         | Entries of Dictionary<ProvidedType, ILTypeRef> * Lazy<Dictionary<ProvidedType, obj>>
 
         static member Empty = NoEntries

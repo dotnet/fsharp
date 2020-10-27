@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CompilerConfig
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Text
@@ -177,8 +178,8 @@ type IRawFSharpAssemblyData =
 
 /// Cache of time stamps as we traverse a project description
 type TimeStampCache(defaultTimeStamp: DateTime) = 
-    let files = Dictionary<string, DateTime>()
-    let projects = Dictionary<IProjectReference, DateTime>(HashIdentity.Reference)
+    let files = ConcurrentDictionary<string, DateTime>()
+    let projects = ConcurrentDictionary<IProjectReference, DateTime>(HashIdentity.Reference)
     member cache.GetFileTimeStamp fileName = 
         let ok, v = files.TryGetValue fileName
         if ok then v else
