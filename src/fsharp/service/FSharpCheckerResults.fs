@@ -1780,56 +1780,56 @@ type FSharpCheckFileResults
         | _ -> None
 
     /// Intellisense autocompletions
-    member __.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, ?getAllEntities) = 
+    member __.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         threadSafeOp (fun () -> FSharpDeclarationListInfo.Empty) (fun scope -> 
-            scope.GetDeclarations(parseResultsOpt, line, lineStr, partialName, getAllEntities))
+            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, getAllEntities))
 
-    member __.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, ?getAllEntities) = 
+    member __.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
         threadSafeOp (fun () -> []) (fun scope -> 
-            scope.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities))
+            scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities))
 
     /// Resolve the names at the given location to give a data tip 
-    member __.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag) = 
+    member __.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
             threadSafeOp (fun () -> dflt) (fun scope -> 
-                scope.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names))
+                scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names))
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
             threadSafeOp (fun () -> dflt) (fun scope ->
                 scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ -> 
             dflt
 
-    member info.GetToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag) = 
-        info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag)
+    member info.GetToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
+        info.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag)
         |> Tooltips.ToFSharpToolTipText
 
-    member __.GetF1Keyword (line, colAtEndOfNames, lineStr, names) =
+    member __.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope -> 
-            scope.GetF1Keyword (line, lineStr, colAtEndOfNames, names))
+            scope.GetF1Keyword (line, lineText, colAtEndOfNames, names))
 
     // Resolve the names at the given location to a set of methods
-    member __.GetMethods(line, colAtEndOfNames, lineStr, names) =
+    member __.GetMethods(line, colAtEndOfNames, lineText, names) =
         let dflt = FSharpMethodGroup("",[| |])
         threadSafeOp (fun () -> dflt) (fun scope -> 
-            scope.GetMethods (line, lineStr, colAtEndOfNames, names))
+            scope.GetMethods (line, lineText, colAtEndOfNames, names))
             
-    member __.GetDeclarationLocation (line, colAtEndOfNames, lineStr, names, ?preferFlag) = 
+    member __.GetDeclarationLocation (line, colAtEndOfNames, lineText, names, ?preferFlag) = 
         let dflt = FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
         threadSafeOp (fun () -> dflt) (fun scope -> 
-            scope.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag))
+            scope.GetDeclarationLocation (line, lineText, colAtEndOfNames, names, preferFlag))
 
-    member __.GetSymbolUseAtLocation (line, colAtEndOfNames, lineStr, names) = 
+    member __.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names) = 
         threadSafeOp (fun () -> None) (fun scope -> 
-            scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names)
+            scope.GetSymbolUseAtLocation (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m)))
 
-    member __.GetMethodsAsSymbols (line, colAtEndOfNames, lineStr, names) = 
+    member __.GetMethodsAsSymbols (line, colAtEndOfNames, lineText, names) = 
         threadSafeOp (fun () -> None) (fun scope -> 
-            scope.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names)
+            scope.GetMethodsAsSymbols (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
                 symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))))
 
@@ -1897,17 +1897,17 @@ type FSharpCheckFileResults
             (fun () -> [| |]) 
             (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member __.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item) = 
+    member __.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) = 
         threadSafeOp (fun () -> true) (fun scope -> 
-            scope.IsRelativeNameResolvable(pos, plid, item))
+            scope.IsRelativeNameResolvable(cursorPos, plid, item))
 
-    member __.IsRelativeNameResolvableFromSymbol(pos: pos, plid: string list, symbol: FSharpSymbol) = 
+    member __.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) = 
         threadSafeOp (fun () -> true) (fun scope -> 
-            scope.IsRelativeNameResolvableFromSymbol(pos, plid, symbol))
+            scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol))
     
-    member __.GetDisplayContextForPos(pos: pos) =
+    member __.GetDisplayContextForPos(cursorPos: pos) =
         threadSafeOp (fun () -> None) (fun scope -> 
-            let (nenv, _), _ = scope.GetBestDisplayEnvForPos pos
+            let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
             
     member __.ImplementationFile =

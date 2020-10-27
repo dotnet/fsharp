@@ -178,8 +178,8 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                             interactiveChecker.TryGetRecentCheckResultsForFile(req.FileName,checkOptions)
                     
                     match possibleShortcutResults with 
-                    | Some (parseResults,typedResults,fileversion) -> 
-                        defaultArg syncParseInfoOpt parseResults,Some typedResults, false, false, fileversion // Note: untypedparse and typed results have different timestamps/snapshots, typed may be staler
+                    | Some (parseResults,typedResults,fileVersion) -> 
+                        defaultArg syncParseInfoOpt parseResults,Some typedResults, false, false, fileVersion // Note: untypedparse and typed results have different timestamps/snapshots, typed may be staler
                     | None -> 
                         // Perform a fresh two-phase parse of the source file
                         let parseResults = 

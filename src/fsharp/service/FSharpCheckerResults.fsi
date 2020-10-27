@@ -218,7 +218,7 @@ type public FSharpCheckFileResults =
     member internal GetVisibleNamespacesAndModulesAtPoint : pos -> ModuleOrNamespaceRef[]
 
     /// Find the most precise display environment for the given line and column.
-    member GetDisplayContextForPos : cursorPos : pos -> Async<FSharpDisplayContext option>
+    member GetDisplayContextForPos : cursorPos : pos -> FSharpDisplayContext option
 
     /// Determines if a long ident is resolvable at a specific point.
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> bool

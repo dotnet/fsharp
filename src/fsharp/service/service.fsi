@@ -157,7 +157,7 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("This member should no longer be used, please use 'CheckFileInProject'")>]
-    member CheckFileInProjectAllowingStaleCachedResults : parseResults: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer option>
+    member CheckFileInProjectAllowingStaleCachedResults : parseResults: FSharpParseFileResults * filename: string * fileVersion: int * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer option>
 
     /// <summary>
     /// <para>
@@ -177,7 +177,7 @@ type public FSharpChecker =
     /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CheckFileInProject : parseResults: FSharpParseFileResults * filename: string * fileversion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
+    member CheckFileInProject : parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -196,7 +196,7 @@ type public FSharpChecker =
     /// <param name="sourceText">The source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseAndCheckFileInProject : filename: string * fileversion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+    member ParseAndCheckFileInProject : filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
