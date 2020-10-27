@@ -496,6 +496,21 @@ f (f 1 2) 3
         | None ->
             Assert.Fail("No arguments found in source code")
 
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - nested function application in infix expression``() =
+        let source = """
+let addStr x y = string x + y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 17)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 24)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
 module TypeAnnotations =
     [<Test>]
     let ``IsTypeAnnotationGiven - function - no annotation``() =
@@ -614,8 +629,6 @@ type C() =
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected annotation for argument 'x'")
         Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 23), "Expected annotation for argument 'y'")
-
-
 
     [<Test>]
     let ``IsTypeAnnotationGiven - method currying - args no unannotions``() =
