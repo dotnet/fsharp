@@ -511,6 +511,46 @@ let addStr x y = string x + y
         | None ->
             Assert.Fail("No arguments found in source code")
 
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - nested function application outside of infix expression``() =
+        let source = """
+let addStr x y = x + string y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 21)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 28)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - nested function applications both inside and outside of infix expression``() =
+        let source = """
+let addStr x y = string x + string y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 17)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 24)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+        
+        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 28)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 35)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
 module TypeAnnotations =
     [<Test>]
     let ``IsTypeAnnotationGiven - function - no annotation``() =

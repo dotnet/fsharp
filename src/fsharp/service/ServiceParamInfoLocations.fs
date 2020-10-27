@@ -294,29 +294,29 @@ module internal FunctionApplicationArgumentLocationsImpl =
                 Some (e.Range :: ranges), Some inner
             | _ -> None, Some inner
 
-    // TODO - doesn't handle infix cases like this: 'string x + y', properly
     let findFSharpFunctionArgInfos pos parseTree =
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
             member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 match expr with
-                | SynExpr.App (_exprAtomicFlag, isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
-                    let _isInfixFuncExpr =
+                | SynExpr.App (_exprAtomicFlag, _isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
+                    let isInfixFuncExpr =
                         match funcExpr with
                         | SynExpr.App (_, isInfix, _, _, _) -> isInfix
                         | _ -> false
 
-                    let workingRanges =
-                        if isInfix then
-                            []
-                        else
+                    if isInfixFuncExpr then
+                        traverseSynExpr funcExpr
+                    else
+
+                        let workingRanges =
                             match traverseSynExpr funcExpr with
                             | Some ranges -> ranges
                             | None -> []
-                    
-                    let xResult, cacheOpt = searchSynArgExpr traverseSynExpr pos argExpr workingRanges
-                    match xResult, cacheOpt with
-                    | Some ranges, _ -> Some ranges
-                    | None, Some cache -> cache
-                    | _ -> traverseSynExpr argExpr
+
+                        let xResult, cacheOpt = searchSynArgExpr traverseSynExpr pos argExpr workingRanges
+                        match xResult, cacheOpt with
+                        | Some ranges, _ -> Some ranges
+                        | None, Some cache -> cache
+                        | _ -> traverseSynExpr argExpr
                 | _ -> defaultTraverse expr })
         |> Option.map List.rev
