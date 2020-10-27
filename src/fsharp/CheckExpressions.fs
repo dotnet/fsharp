@@ -8045,71 +8045,6 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         match delayed with 
         | DelayedSet(e2, mStmt) :: otherDelayed ->
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
-            // Static Property Set (possibly indexer) 
-            UnifyTypes cenv env mStmt overallTy g.unit_ty
-            let meths = pinfos |> SettersOfPropInfos
-            if meths.IsEmpty then 
-                let meths = pinfos |> GettersOfPropInfos
-                let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
-                if not isByrefMethReturnSetter then
-                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
-                // x.P <- ... byref setter
-                if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
-            else
-                let args = if pinfo.IsIndexer then args else []
-                if isNil meths then
-                    errorR (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
-                // Note: static calls never mutate a struct object argument
-                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
-        | _ -> 
-            // Static Property Get (possibly indexer) 
-            let meths = pinfos |> GettersOfPropInfos
-            if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
-            // Note: static calls never mutate a struct object argument
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
-
-    | Item.ILField finfo -> 
-
-        ILFieldStaticChecks g cenv.amap cenv.infoReader ad mItem finfo
-        let fref = finfo.ILFieldRef
-        let exprty = finfo.FieldType(cenv.amap, mItem)
-        match delayed with 
-        | DelayedSet(e2, mStmt) :: _delayed' ->
-            UnifyTypes cenv env mStmt overallTy g.unit_ty
-            // Always allow subsumption on assignment to fields
-            let e2', tpenv = TcExprFlex cenv true false exprty env tpenv e2
-            let expr = BuildILStaticFieldSet mStmt finfo e2'
-            expr, tpenv
-        | _ -> 
-           // Get static IL field 
-            let expr = 
-              match finfo.LiteralValue with 
-              | Some lit -> 
-                  Expr.Const (TcFieldInit mItem lit, mItem, exprty) 
-              | None -> 
-                let isValueType = finfo.IsValueType
-                let valu = if isValueType then AsValue else AsObject
-
-                // The empty instantiation on the fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
-                // This ensures we always get the type instantiation right when doing this from 
-                // polymorphic code, after inlining etc. 
-                let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
-
-                // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
-                mkAsmExpr ([ mkNormalLdsfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else []), finfo.TypeInst, [], [exprty], mItem)
-            PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env expr) exprty ExprAtomicFlag.Atomic delayed
-
-    | Item.RecdField rfinfo -> 
-        // Get static F# field or literal 
-        CheckRecdFieldInfoAccessible cenv.amap mItem ad rfinfo
-        if not rfinfo.IsStatic then error (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.Name), mItem))
-        CheckRecdFieldInfoAttributes g rfinfo mItem |> CommitOperationResult        
-        let fref = rfinfo.RecdFieldRef
-        let fieldTy = rfinfo.FieldType
-        match delayed with 
-        | DelayedSet(e2, mStmt) :: otherDelayed ->
-            if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
         
             // Set static F# field 
             CheckRecdFieldMutation mItem env.DisplayEnv rfinfo
@@ -9419,8 +9354,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         | Some (apinfo, ty, _) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
             let _, rty = stripFunTy cenv.g ty
-            let isStruct = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
-            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys isStruct) rty
+            UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys) rty
         | None -> 
             ()
 
