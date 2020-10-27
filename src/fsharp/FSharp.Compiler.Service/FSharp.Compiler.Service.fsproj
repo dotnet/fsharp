@@ -8,7 +8,7 @@
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <OtherFlags>$(OtherFlags) /warnon:1182 /warnon:3390 --times</OtherFlags>
+    <OtherFlags>$(OtherFlags) /warnon:3218 /warnon:1182 /warnon:3390 --times</OtherFlags>
     <Tailcalls>true</Tailcalls>
     <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
@@ -496,6 +496,12 @@
     </Compile>
     <Compile Include="..\CheckExpressions.fs">
       <Link>Logic\CheckExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\CheckComputationExpressions.fsi">
+      <Link>Logic\CheckComputationExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\CheckComputationExpressions.fs">
+      <Link>Logic\CheckComputationExpressions.fs</Link>
     </Compile>
     <Compile Include="..\CheckDeclarations.fsi">
       <Link>Logic\CheckDeclarations.fsi</Link>

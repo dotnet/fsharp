@@ -150,14 +150,14 @@ type public FSharpChecker =
     /// </para>
     /// </summary>
     ///
-    /// <param name="parsed">The results of ParseFile for this file.</param>
+    /// <param name="parseResults">The results of ParseFile for this file.</param>
     /// <param name="filename">The name of the file in the project whose source is being checked.</param>
-    /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
+    /// <param name="fileVersion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("This member should no longer be used, please use 'CheckFileInProject'")>]
-    member CheckFileInProjectAllowingStaleCachedResults : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer option>
+    member CheckFileInProjectAllowingStaleCachedResults : parseResults: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer option>
 
     /// <summary>
     /// <para>
@@ -171,13 +171,13 @@ type public FSharpChecker =
     /// </para>
     /// </summary>
     ///
-    /// <param name="parsed">The results of ParseFile for this file.</param>
+    /// <param name="parseResults">The results of ParseFile for this file.</param>
     /// <param name="filename">The name of the file in the project whose source is being checked.</param>
-    /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
+    /// <param name="fileVersion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
+    member CheckFileInProject : parseResults: FSharpParseFileResults * filename: string * fileversion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -192,7 +192,7 @@ type public FSharpChecker =
     /// </summary>
     ///
     /// <param name="filename">The name of the file in the project whose source is being checked.</param>
-    /// <param name="fileversion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
+    /// <param name="fileVersion">An integer that can be used to indicate the version of the file. This will be returned by TryGetRecentCheckResultsForFile when looking up the file.</param>
     /// <param name="sourceText">The source for the file.</param>
     /// <param name="options">The options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
@@ -214,7 +214,7 @@ type public FSharpChecker =
     /// </summary>
     ///
     /// <param name="filename">Used to differentiate between scripts, to consider each script a separate project. Also used in formatted error messages.</param>
-    /// <param name="sourceText">The source for the file.</param>
+    /// <param name="source">The source for the file.</param>
     /// <param name="previewEnabled">Is the preview compiler enabled.</param>
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
@@ -227,7 +227,7 @@ type public FSharpChecker =
     /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member GetProjectOptionsFromScript:
-        filename: string * sourceText: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime *
+        filename: string * source: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime *
         ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool *
         ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string
             -> Async<FSharpProjectOptions * FSharpErrorInfo list>
@@ -386,9 +386,9 @@ type public FSharpChecker =
 
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
-    /// <param name="startBackgroundCompileIfAlreadySeen">Start a background compile of the project if a project with the same name has already been seen before.</param>
+    /// <param name="startBackgroundCompile">Start a background compile of the project if a project with the same name has already been seen before.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompileIfAlreadySeen: bool * ?userOpName: string -> unit
+    member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool * ?userOpName: string -> unit
 
     /// Clear the internal cache of the given projects.
     /// <param name="options">The given project options.</param>

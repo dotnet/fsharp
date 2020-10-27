@@ -11,7 +11,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FCOMP</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182 /warnon:3390 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:3218 --warnon:1182 /warnon:3390 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
 
@@ -519,6 +519,12 @@
     </Compile>
     <Compile Include="..\CheckExpressions.fs">
       <Link>Logic\CheckExpressions.fs</Link>
+    </Compile>
+    <Compile Include="..\CheckComputationExpressions.fsi">
+      <Link>Logic\CheckComputationExpressions.fsi</Link>
+    </Compile>
+    <Compile Include="..\CheckComputationExpressions.fs">
+      <Link>Logic\CheckComputationExpressions.fs</Link>
     </Compile>
     <Compile Include="..\CheckDeclarations.fsi">
       <Link>Logic\CheckDeclarations.fsi</Link>

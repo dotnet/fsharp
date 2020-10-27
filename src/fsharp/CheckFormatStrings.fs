@@ -471,8 +471,8 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
     let results = parseLoop [] (0, 0, m.StartColumn) fragments
     results, Seq.toList specifierLocations, dotnetFormatString.ToString(), percentATys.ToArray()
 
-let ParseFormatString m ms g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
-    let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m ms g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
+let ParseFormatString m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
+    let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
     let printerTy = List.foldBack (-->) argTys printerResultTy
     let printerTupleTy = mkRefTupledTy g argTys
     argTys, printerTy, printerTupleTy, percentATys, specifierLocations, dotnetFormatString

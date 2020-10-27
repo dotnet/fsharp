@@ -2126,7 +2126,7 @@ type FSharpCheckProjectResults
     override __.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
 
 type FsiInteractiveChecker(legacyReferenceResolver, 
-                           reactorOps: IReactorOperations,
+                           ops: IReactorOperations,
                            tcConfig: TcConfig,
                            tcGlobals: TcGlobals,
                            tcImports: TcImports,
@@ -2168,7 +2168,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     (parseResults, sourceText, filename, "project",
                      tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics,
-                     reactorOps, userOpName, suggestNamesForErrors)
+                     ops, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileInfo with 

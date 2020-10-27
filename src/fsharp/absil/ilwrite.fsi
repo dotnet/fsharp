@@ -27,4 +27,4 @@ type options =
    pathMap : PathMap }
 
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
-val WriteILBinary: filename: string * options:  options * input: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit
+val WriteILBinary: filename: string * options:  options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit

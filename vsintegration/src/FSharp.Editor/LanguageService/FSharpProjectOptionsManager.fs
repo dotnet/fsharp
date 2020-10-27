@@ -224,7 +224,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                                 projectOptions)
                         checkerProvider.Checker.ClearCache(options, userOpName = "tryComputeOptions")
 
-                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = false, userOpName = "computeOptions")
+                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompile = false, userOpName = "computeOptions")
 
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 

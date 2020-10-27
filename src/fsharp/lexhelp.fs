@@ -124,9 +124,9 @@ let stringBufferAsBytes (buf: ByteBuffer) =
 type LexerStringFinisher =
     | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
 
-    member fin.Finish (buf: ByteBuffer) kind isPart cont =
+    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isPart cont
+        f buf kind isInterpolatedStringPart cont
 
     static member Default =
         LexerStringFinisher (fun buf kind isPart cont ->
