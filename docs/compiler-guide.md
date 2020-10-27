@@ -22,7 +22,7 @@ The `FSharp.Compiler.Private` is by far the largest of these components and cont
 
 * Video: [Learn me some F# Compiler, an online chat with Vlad and Don](https://www.youtube.com/watch?v=-dKf15xSWPY)
 
-* Video: [Understanding the F# Optimizer, and onlnie chat with Vlad and Don](https://www.youtube.com/watch?v=sfAe5lDue7k)
+* Video: [Understanding the F# Optimizer, and online chat with Vlad and Don](https://www.youtube.com/watch?v=sfAe5lDue7k)
 
 ## Key data formats and representations
 
