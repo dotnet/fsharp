@@ -171,7 +171,7 @@ module internal ExtensionTyping =
                     tpe.Iter(fun e -> errorR(NumberedError((e.Number, e.ContextualErrorMessage), m)) )
                     []
 
-        let providers = Tainted<_>.CreateAll providerSpecs
+        let providers = Tainted<_>.CreateAll(providerSpecs)
 
         providers
 
@@ -267,6 +267,7 @@ module internal ExtensionTyping =
     /// appears that the laziness likely serves no purpose and could be safely removed.
     and ProvidedTypeContext = 
         | NoEntries
+        // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
         | Entries of Dictionary<ProvidedType, ILTypeRef> * Lazy<Dictionary<ProvidedType, obj>>
 
         static member Empty = NoEntries

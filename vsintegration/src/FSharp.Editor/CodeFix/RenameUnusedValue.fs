@@ -63,7 +63,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, context.Span.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
                 let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()  
-                let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
+                let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
                 let symbolName = symbolUse.Symbol.DisplayName
 
                 match symbolUse.Symbol with
