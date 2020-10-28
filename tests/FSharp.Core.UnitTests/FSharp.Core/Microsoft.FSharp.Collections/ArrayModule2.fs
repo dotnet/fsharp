@@ -44,8 +44,14 @@ type ArrayModule2() =
 
         // null array
         let nullArr = null:string[]      
-        CheckThrowsNullRefException (fun () -> Array.length  nullArr  |> ignore)  
+        CheckThrowsArgumentNullException (fun () -> Array.length  nullArr  |> ignore)  
         
+        // null array, argument name showing up
+        try
+            Array.length nullArr |> ignore
+        with 
+        | :? ArgumentNullException as e -> Assert.Equal("array", e.ParamName) |> ignore
+
         ()
 
     [<Fact>]
