@@ -31,11 +31,11 @@ module internal Zset =
 
     let iter f (s: Zset<_>) = s.Iterate f 
 
-    let forall p (s: Zset<_>) = s.ForAll p 
+    let forall predicate (s: Zset<_>) = s.ForAll predicate 
 
     let count  (s: Zset<_>) = s.Count
 
-    let exists  p (s: Zset<_>) = s.Exists p 
+    let exists predicate (s: Zset<_>) = s.Exists predicate
 
     let subset (s1: Zset<_>) (s2: Zset<_>)  = s1.IsSubsetOf s2
 
@@ -43,7 +43,7 @@ module internal Zset =
 
     let elements (s: Zset<_>) = s.ToList()
 
-    let filter p (s: Zset<_>) = s.Filter p
+    let filter predicate (s: Zset<_>) = s.Filter predicate
 
     let union (s1: Zset<_>) (s2: Zset<_>)  = Internal.Utilities.Collections.Tagged.Set<_,_>.Union(s1,s2)
 

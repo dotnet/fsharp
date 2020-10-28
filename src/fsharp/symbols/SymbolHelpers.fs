@@ -288,7 +288,6 @@ module Tooltips =
     let ToFSharpToolTipText (FSharpStructuredToolTipText.FSharpToolTipText text) = 
         FSharpToolTipText(List.map ToFSharpToolTipElement text)
     
-    let Map f a = async.Bind(a, f >> async.Return)
 
 [<RequireQualifiedAccess>]
 type CompletionItemKind =
@@ -1513,9 +1512,9 @@ module internal SymbolHelpers =
 
 
     /// Format the structured version of a tooltip for an item
-    let FormatStructuredDescriptionOfItem isListItem infoReader m denv item = 
+    let FormatStructuredDescriptionOfItem isDecl infoReader m denv item = 
         ErrorScope.Protect m 
-            (fun () -> FormatItemDescriptionToToolTipElement isListItem infoReader m denv item)
+            (fun () -> FormatItemDescriptionToToolTipElement isDecl infoReader m denv item)
             (fun err -> FSharpStructuredToolTipElement.CompositionError err)
 
     /// Get rid of groups of overloads an replace them with single items.

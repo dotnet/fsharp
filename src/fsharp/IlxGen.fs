@@ -1446,6 +1446,7 @@ and TypeDefsBuilder() =
         tdefs.Add (tdef.Name, (idx, (new TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
 
 type AnonTypeGenerationTable() =
+    // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
     let dict = Dictionary<Stamp, (ILMethodRef * ILMethodRef[] * ILType)>(HashIdentity.Structural)
     member __.Table = dict
 
@@ -1456,6 +1457,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     let gtdefs= new TypeDefsBuilder()
 
     // The definitions of top level values, as quotations.
+    // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
     let mutable reflectedDefinitions: Dictionary<Val, (string * int * Expr)> = Dictionary(HashIdentity.Reference)
     let mutable extraBindingsToGenerate = []
 
@@ -8170,6 +8172,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
     // The incremental state held by the ILX code generator
     let mutable ilxGenEnv = GetEmptyIlxGenEnv tcGlobals ccu
     let anonTypeTable = AnonTypeGenerationTable()
+    // Dictionaries are safe here as they will only be used during the codegen stage - will happen on a single thread.
     let intraAssemblyInfo = { StaticFieldInfo = new Dictionary<_, _>(HashIdentity.Structural) }
     let casApplied = new Dictionary<Stamp, bool>()
 

@@ -5192,32 +5192,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         gpatcc.AssertExactly(0,0)
 
 
-    [<Test>]
-    member this.``BadCompletionAfterQuicklyTyping.Bug177519.NowWorking``() =        
-        // this test is similar to "Bug72561.Noteworthy" but uses name resolutions rather than expression typings
-        // name resolutions currently still respond with stale info
-        let code = [ "let A = 42"
-                     "let B = \"\""
-                     "A.    // quickly backspace and retype B. --> exact name resolution code path" ]
-        let (_, _, file) = this.CreateSingleFileProject(code)
-        
-        TakeCoffeeBreak(this.VS)
-        let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
-        let code2= [ "let A = 42"
-                     "let B = \"\""
-                     "B.    // quickly backspace and retype B. --> exact name resolution code path" ]
-        ReplaceFileInMemoryWithoutCoffeeBreak file code2
-        MoveCursorToEndOfMarker(file, "B.")
-        // Note: no TakeCoffeeBreak(this.VS)
-        let completions = AutoCompleteAtCursor file
-        AssertCompListIsEmpty(completions)  // empty completion list means second-chance intellisense will kick in
-        // if we wait...
-        TakeCoffeeBreak(this.VS)
-        let completions = AutoCompleteAtCursor file
-        // ... we get the expected answer
-        AssertCompListContainsAll(completions, ["Chars"])  // has correct string info
-        gpatcc.AssertExactly(0,0)
-                                             
 //*********************************************Previous Completion test and helper*****
     member private this.VerifyCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
