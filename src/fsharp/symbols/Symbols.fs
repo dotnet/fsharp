@@ -1645,6 +1645,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m | C m -> m.IsDispatchSlot
         | V v -> v.IsDispatchSlot
 
+    member _.IsMethod =
+        match d with
+        | M _ -> true
+        | _ -> false
+
     member x.IsProperty = 
         match d with 
         | P _ -> true
