@@ -31,15 +31,19 @@ type internal FSharpInlineHintsService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parseFileResults, _, checkFileResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, userOpName)
                 let range = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
-                let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFileWithinRange(range) |> liftAsync
+                let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFileWithinRange(range, cancellationToken)
 
                 let typeHints = ImmutableArray.CreateBuilder()
                 let parameterHints = ImmutableArray.CreateBuilder()
 
                 let isValidForTypeHint (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+                    let isLambdaIfFunction =
+                        funcOrValue.IsFunction &&
+                        parseFileResults.IsBindingALambda symbolUse.RangeAlternate.Start
+
+                    (funcOrValue.IsValue || isLambdaIfFunction) &&
                     not (parseFileResults.IsTypeAnnotationGiven symbolUse.RangeAlternate.Start) &&
                     symbolUse.IsFromDefinition &&
-                    (funcOrValue.IsValue || funcOrValue.IsFunction) &&
                     not funcOrValue.IsMember &&
                     not funcOrValue.IsMemberThisValue &&
                     not funcOrValue.IsConstructorThisValue &&

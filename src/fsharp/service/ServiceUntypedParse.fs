@@ -140,8 +140,25 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                             Some range
                         | _ -> defaultTraverse pat })
             res.IsSome
-        | None ->
-            false
+        | None -> false
+
+    member scope.IsBindingALambda(pos) =
+        match input with
+        | Some parseTree ->
+            let res =
+                AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+                    member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                        defaultTraverse expr
+
+                    override _.VisitBinding(defaultTraverse, binding) =
+                        match binding with
+                        | SynBinding.Binding(_, _, _, _, _, _, _, _, _, expr, range, _) when posEq range.Start pos ->
+                            match expr with
+                            | SynExpr.Lambda _ -> Some range
+                            | _ -> None
+                        | _ -> defaultTraverse binding })
+            res.IsSome
+        | None -> false
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =

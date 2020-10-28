@@ -596,6 +596,15 @@ let f (x: int) (y: string) = ()
         Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 16), "Expected annotation for argument 'y'")
 
     [<Test>]
+    let ``IsTypeAnnotationGiven - lambda function - all args annotated``() =
+        let source = """
+let f = fun (x: int) (y: string) -> ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 13), "Expected a annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 22), "Expected a annotation for argument 'y'")
+
+    [<Test>]
     let ``IsTypeAnnotationGiven - constuctor - arg no annotations``() =
         let source = """
 type C(x) = class end
@@ -745,3 +754,41 @@ let (x, y: string) = (12, "hello")
         let parseFileResults, _ = getParseAndCheckResults source
         Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 5), "Expected no annotation for argument 'x'")
         Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 8), "Expected annotation for argument 'y'")
+
+module LambdaRecognition =
+    [<Test>]
+    let ``IsBindingALambda - recognize a lambda``() =
+        let source = """
+let f = fun x y -> x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsBindingALambda (mkPos 2 4), "Expected 'f' to be a lambda expression")
+
+    [<Test>]
+    let ``IsBindingALambda - recognize a nested lambda``() =
+        let source = """
+let f =
+    fun x ->
+        fun y ->
+            x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsBindingALambda (mkPos 2 4), "Expected 'f' to be a lambda expression")
+
+    [<Test>]
+    let ``IsBindingALambda - recognize a "partial" lambda``() =
+        let source = """
+let f x =
+    fun y ->
+        x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsBindingALambda (mkPos 2 4), "Expected 'f' to be a lambda expression")
+
+    [<Test>]
+    let ``IsBindingALambda - not a lambda``() =
+        let source = """
+let f x y = x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsBindingALambda (mkPos 2 4), "'f' is not a lambda expression'")

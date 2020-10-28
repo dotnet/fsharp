@@ -22437,6 +22437,7 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsOver
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsProperty
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsPropertyGetterMethod
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsPropertySetterMethod
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsMethod
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsSetterMethod
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsTypeFunction
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsUnresolved
@@ -22471,6 +22472,7 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_Is
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsProperty()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertyGetterMethod()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsPropertySetterMethod()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsMethod()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsSetterMethod()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsTypeFunction()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsUnresolved()
@@ -22525,8 +22527,8 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collect
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpGenericParameter] get_GenericParameters()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]] CurriedParameterGroups
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]] get_CurriedParameterGroups()
-FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList1[System.String]] PossibleArgumentList
-FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList1[System.String]] get_PossibleArgumentList()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]] PossibleArgumentList
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]] get_PossibleArgumentList()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] ElaboratedXmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] XmlDoc
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.Collections.Generic.IList`1[System.String] get_ElaboratedXmlDoc()
