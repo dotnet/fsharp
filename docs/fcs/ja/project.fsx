@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../artifacts/bin/fcs/net461"
+#I "../../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 コンパイラサービス: プロジェクトの分析
 ======================================
@@ -25,6 +25,7 @@
 open System
 open System.Collections.Generic
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
@@ -157,7 +158,6 @@ let backgroundParseResults1, backgroundTypedParse1 =
 
 let xSymbol = 
     backgroundTypedParse1.GetSymbolUseAtLocation(9,9,"",["xxx"])
-    |> Async.RunSynchronously
 
 (**
 それぞれのシンボルに対して、シンボルへの参照を検索することもできます:
@@ -187,7 +187,7 @@ let allUsesOfAllSymbols = wholeProjectResults.GetAllUsesOfAllSymbols()
 
 *)
 let parseResults1, checkAnswer1 = 
-    checker.ParseAndCheckFileInProject(Inputs.fileName1, 0, Inputs.fileSource1, projectOptions) 
+    checker.ParseAndCheckFileInProject(Inputs.fileName1, 0, SourceText.ofString Inputs.fileSource1, projectOptions) 
     |> Async.RunSynchronously
 
 let checkResults1 = 
@@ -196,7 +196,7 @@ let checkResults1 =
     | _ -> failwith "想定外の終了状態です"
 
 let parseResults2, checkAnswer2 = 
-    checker.ParseAndCheckFileInProject(Inputs.fileName2, 0, Inputs.fileSource2, projectOptions)
+    checker.ParseAndCheckFileInProject(Inputs.fileName2, 0, SourceText.ofString Inputs.fileSource2, projectOptions)
     |> Async.RunSynchronously
 
 let checkResults2 = 
@@ -210,7 +210,6 @@ let checkResults2 =
 
 let xSymbol2 = 
     checkResults1.GetSymbolUseAtLocation(9,9,"",["xxx"]) 
-    |> Async.RunSynchronously
 
 let usesOfXSymbol2 = wholeProjectResults.GetUsesOfSymbol(xSymbol2.Value.Symbol)
 

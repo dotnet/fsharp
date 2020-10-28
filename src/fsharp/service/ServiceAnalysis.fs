@@ -224,7 +224,8 @@ module UnusedOpens =
     /// Async to allow cancellation.
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
-            let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile()
+            let! ct = Async.CancellationToken
+            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
             let symbolUses = filterSymbolUses getSourceLineStr symbolUses
             let symbolUses = splitSymbolUses symbolUses
             let openStatements = getOpenStatements checkFileResults.OpenDeclarations
@@ -243,7 +244,8 @@ module SimplifyNames =
     let getSimplifiableNames (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<SimplifiableRange list> =
         async {
             let result = ResizeArray()
-            let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile()
+            let! ct = Async.CancellationToken
+            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
             let symbolUses =
                 symbolUses
                 |> Array.filter (fun symbolUse -> not symbolUse.IsFromOpenStatement)
@@ -266,19 +268,17 @@ module SimplifyNames =
                         if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
                         else r.Start   
 
-                    let getNecessaryPlid (plid: string list) : Async<string list> =
+                    let getNecessaryPlid (plid: string list) : string list =
                         let rec loop (rest: string list) (current: string list) =
-                            async {
-                                match rest with
-                                | [] -> return current
-                                | headIdent :: restPlid ->
-                                    let! res = checkFileResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol)
-                                    if res then return current
-                                    else return! loop restPlid (headIdent :: current)
-                            }
+                            match rest with
+                            | [] -> current
+                            | headIdent :: restPlid ->
+                                let res = checkFileResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol)
+                                if res then current
+                                else loop restPlid (headIdent :: current)
                         loop (List.rev plid) []
                     
-                    let! necessaryPlid = getNecessaryPlid plid 
+                    let necessaryPlid = getNecessaryPlid plid 
                     
                     match necessaryPlid with
                     | necessaryPlid when necessaryPlid = plid -> ()
@@ -342,7 +342,8 @@ module UnusedDeclarations =
     
     let getUnusedDeclarations(checkFileResults: FSharpCheckFileResults, isScriptFile: bool) : Async<range list> = 
         async {
-            let! allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile()
+            let! ct = Async.CancellationToken
+            let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
             let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile isScriptFile
             return unusedRanges
         }

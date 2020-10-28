@@ -33,6 +33,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
+open System.Collections.ObjectModel
 
 #if DEBUG
 let verboseOptimizationInfo = 
@@ -163,7 +164,7 @@ type ValInfos(entries) =
                 if dict.ContainsKey vkey then 
                     failwithf "dictionary already contains key %A" vkey
                 dict.Add(vkey, p) |> ignore
-            dict), id)
+            ReadOnlyDictionary dict), id)
 
     member x.Entries = valInfoTable.Force().Values
 
