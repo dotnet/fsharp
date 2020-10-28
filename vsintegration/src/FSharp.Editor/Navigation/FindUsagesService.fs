@@ -58,8 +58,8 @@ type internal FSharpFindUsagesService
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, userOpName=userOpName)
-            let! declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false, userOpName=userOpName) |> liftAsync
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
+            let declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false)
             let tags = FSharpGlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 
@@ -108,7 +108,7 @@ type internal FSharpFindUsagesService
             
             match symbolUse.GetDeclarationLocation document with
             | Some SymbolDeclarationLocation.CurrentDocument ->
-                let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
+                let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
                 for symbolUse in symbolUses do
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with
                     | Some textSpan ->
