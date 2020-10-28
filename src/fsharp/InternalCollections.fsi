@@ -11,27 +11,33 @@ namespace Internal.Utilities.Collections
     new : keepStrongly:int
             * areSimilar:('Key * 'Key -> bool) 
             * ?requiredToKeep:('Value -> bool)
-            * ?onStrongDiscard : ('Value -> unit) // this may only be set if keepTotal=keepStrongly, i.e. not weak entries
             * ?keepMax: int
             -> AgedLookup<'Token,'Key,'Value>
+
     /// Lookup the value without making it the most recent.
     /// Returns the original key value because the areSame function
     /// may have unified two different keys.
     member TryPeekKeyValue : 'Token * key:'Key -> ('Key*'Value) option
+
     /// Lookup a value and make it the most recent.
     /// Returns the original key value because the areSame function
     /// may have unified two different keys.
     member TryGetKeyValue : 'Token * key: 'Key -> ('Key*'Value) option    
+
     /// Lookup a value and make it the most recent. Return <c>None</c> if it wasn't there.
     member TryGet : 'Token * key:'Key -> 'Value option        
+
     /// Add an element to the collection. Make it the most recent.
     member Put : 'Token * 'Key * 'Value -> unit
+
     /// Remove the given value from the collection.
     member Remove : 'Token * key:'Key -> unit
+
     /// Remove all elements.
     member Clear : 'Token -> unit
+
     /// Resize
-    member Resize : 'Token * keepStrongly: int * ?keepMax : int -> unit
+    member Resize : 'Token * newKeepStrongly: int * ?newKeepMax : int -> unit
     
   /// Simple priority caching for a small number of key/value associations.
   /// This cache may age-out results that have been Set by the caller.
@@ -39,9 +45,7 @@ namespace Internal.Utilities.Collections
   /// that aren't what was originally passed to the Set function.     
   ///
   /// Concurrency: This collection is thread-safe, though concurrent use may result in different
-  /// threads seeing different live sets of cached items, and may result in the onDiscard action
-  /// being called multiple times. In practice this means the collection is only safe for concurrent
-  /// access if there is no discard action to execute.
+  /// threads seeing different live sets of cached items. 
   ///
   ///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
   type internal MruCache<'Token, 'Key,'Value when 'Value : not struct> =
@@ -50,7 +54,6 @@ namespace Internal.Utilities.Collections
             * ?isStillValid:('Key * 'Value -> bool)
             * ?areSimilar:('Key * 'Key -> bool) 
             * ?requiredToKeep:('Value -> bool)
-            * ?onDiscard:('Value -> unit)
             * ?keepMax:int
             -> MruCache<'Token,'Key,'Value>
 
@@ -79,5 +82,5 @@ namespace Internal.Utilities.Collections
     member Set : 'Token * key:'Key * value:'Value -> unit
 
     /// Resize
-    member Resize : 'Token * keepStrongly: int * ?keepMax : int -> unit
+    member Resize : 'Token * newKeepStrongly: int * ?newKeepMax : int -> unit
 

@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../artifacts/bin/fcs/net461"
+#I "../../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 コンパイラサービス: エディタサービス
 ====================================
@@ -29,6 +29,7 @@
 
 open System
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 // インタラクティブチェッカーのインスタンスを作成
 let checker = FSharpChecker.Create()
@@ -56,7 +57,7 @@ printfn "%s" msg.
 let inputLines = input.Split('\n')
 let file = "/home/user/Test.fsx"
 
-let projOptions, _errors1 = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+let projOptions, _errors1 = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) |> Async.RunSynchronously
 
 let parsingOptions, _errors2 = checker.GetParsingOptionsFromProjectOptions(projOptions)
 
@@ -73,7 +74,7 @@ let parsingOptions, _errors2 = checker.GetParsingOptionsFromProjectOptions(projO
 *)
 // パースを実行
 let parseFileResults =
-    checker.ParseFile(file, input, parsingOptions)
+    checker.ParseFile(file, SourceText.ofString input, parsingOptions)
     |> Async.RunSynchronously
 (**
 `TypeCheckResults` に備えられた興味深い機能の紹介に入る前に、
@@ -84,7 +85,7 @@ F#コードにエラーがあった場合も何らかの型チェックの結果
 
 // 型チェックを実行
 let checkFileAnswer = 
-    checker.CheckFileInProject(parseFileResults, file, 0, input, projOptions) 
+    checker.CheckFileInProject(parseFileResults, file, 0, SourceText.ofString input, projOptions) 
     |> Async.RunSynchronously
 
 (**
@@ -92,7 +93,7 @@ let checkFileAnswer =
 *)
 
 let parseResults2, checkFileAnswer2 =
-    checker.ParseAndCheckFileInProject(file, 0, input, projOptions)
+    checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, projOptions)
     |> Async.RunSynchronously
 
 (**
@@ -178,8 +179,7 @@ printfn "%A" tip
 // 特定の位置における宣言(自動補完)を取得する
 let decls = 
     checkFileResults.GetDeclarationListInfo
-      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun _ -> []), fun _ -> false)
-      |> Async.RunSynchronously
+      (Some parseFileResults, 7, inputLines.[6], PartialLongName.Empty 23, (fun _ -> []))
 
 // 利用可能な項目を表示
 for item in decls.Items do
@@ -213,7 +213,7 @@ for item in decls.Items do
 *)
 //String.Concatメソッドのオーバーロードを取得する
 let methods = 
-    checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
+    checkFileResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"])
 
 // 連結された引数リストを表示
 for mi in methods.Methods do

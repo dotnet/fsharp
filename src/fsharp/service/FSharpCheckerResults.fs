@@ -9,6 +9,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open System.Threading
 
 open FSharp.Core.Printf
 open FSharp.Compiler 
@@ -99,7 +100,6 @@ type internal NameResResult =
     | Members of (ItemWithInst list * DisplayEnv * range)
     | Cancel of DisplayEnv * range
     | Empty
-    | TypecheckStaleAndTextChanged
 
 [<RequireQualifiedAccess>]
 type ResolveOverloads = 
@@ -136,19 +136,15 @@ type internal TypeCheckInfo
            // This is a name resolution environment to use if no better match can be found.
            sFallback: NameResolutionEnv,
            loadClosure : LoadClosure option,
-           reactorOps : IReactorOperations,
-           textSnapshotInfo:obj option,
            implFileOpt: TypedImplFile option,
            openDeclarations: OpenDeclaration[]) = 
-
-    let textSnapshotInfo = defaultArg textSnapshotInfo null
 
     // These strings are potentially large and the editor may choose to hold them for a while.
     // Use this cache to fold together data tip text results that are the same. 
     // Is not keyed on 'Names' collection because this is invariant for the current position in 
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
-    let getToolTipTextCache = AgedLookup<CompilationThreadToken, int*int*string, FSharpToolTipText<Layout>>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
+    let getToolTipTextCache = AgedLookup<AnyCallerThreadToken, int*int*string, FSharpToolTipText<Layout>>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
     
     let amap = tcImports.GetImportMap()
     let infoReader = InfoReader(g,amap)
@@ -221,7 +217,7 @@ type internal TypeCheckInfo
         items
         
     // Filter items to show only valid & return Some if there are any
-    let ReturnItemsOfType (items: ItemWithInst list) g denv (m:range) filterCtors hasTextChangedSinceLastTypecheck =
+    let ReturnItemsOfType (items: ItemWithInst list) g denv (m:range) filterCtors =
         let items = 
             items 
             |> RemoveDuplicateItems g
@@ -229,10 +225,7 @@ type internal TypeCheckInfo
             |> FilterItemsForCtors filterCtors
 
         if not (isNil items) then
-            if hasTextChangedSinceLastTypecheck(textSnapshotInfo, m) then
-                NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
-            else
-                NameResResult.Members (items, denv, m) 
+            NameResResult.Members (items, denv, m) 
         else 
             NameResResult.Empty
 
@@ -256,7 +249,7 @@ type internal TypeCheckInfo
     /// Looks at the exact name resolutions that occurred during type checking
     /// If 'membersByResidue' is specified, we look for members of the item obtained 
     /// from the name resolution and filter them by the specified residue (?)
-    let GetPreciseItemsFromNameResolution(line, colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck) = 
+    let GetPreciseItemsFromNameResolution(line, colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads) = 
         let endOfNamesPos = mkPos line colAtEndOfNames
 
         // Logic below expects the list to be in reverse order of resolution
@@ -269,7 +262,7 @@ type internal TypeCheckInfo
         | CNR(Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ -> 
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true ty 
             let items = List.map ItemWithNoInst items
-            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck 
+            ReturnItemsOfType items g denv m filterCtors
         
         // Value reference from the name resolution. Primarily to disallow "let x.$ = 1"
         // In most of the cases, value references can be obtained from expression typings or from environment,
@@ -302,7 +295,7 @@ type internal TypeCheckInfo
 
               let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty
               let items = List.map ItemWithNoInst items
-              ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
+              ReturnItemsOfType items g denv m filterCtors
         
         // No residue, so the items are the full resolution of the name
         | CNR(_, _, denv, _, _, m) :: _, None -> 
@@ -312,7 +305,7 @@ type internal TypeCheckInfo
                 // "into" is special magic syntax, not an identifier or a library call.  It is part of capturedNameResolutions as an 
                 // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
                 |> List.filter (fun item -> match item.Item with Item.CustomOperation(CustomOperations.Into,_,_) -> false | _ -> true) 
-            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
+            ReturnItemsOfType items g denv m filterCtors
         | _, _ -> NameResResult.Empty
     
     let TryGetTypeFromNameResolution(line, colAtEndOfNames, membersByResidue, resolveOverloads) = 
@@ -338,7 +331,7 @@ type internal TypeCheckInfo
             | _ -> []
         )
 
-    let GetNamedParametersAndSettableFields endOfExprPos hasTextChangedSinceLastTypecheck =
+    let GetNamedParametersAndSettableFields endOfExprPos =
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
         let result =
             match cnrs with
@@ -364,7 +357,7 @@ type internal TypeCheckInfo
             NameResResult.Empty
         | Some (denv, m, items) -> 
             let items = List.map ItemWithNoInst items
-            ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck
+            ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs
     
     /// finds captured typing for the given position
     let GetExprTypingForPosition(endOfExprPos) = 
@@ -408,7 +401,7 @@ type internal TypeCheckInfo
 
     /// Looks at the exact expression types at the position to the left of the 
     /// residue then the source when it was typechecked.
-    let GetPreciseCompletionListFromExprTypings(parseResults:FSharpParseFileResults, endOfExprPos, filterCtors, hasTextChangedSinceLastTypecheck: (obj * range -> bool)) = 
+    let GetPreciseCompletionListFromExprTypings(parseResults:FSharpParseFileResults, endOfExprPos, filterCtors) = 
         
         let thereWereSomeQuals, quals = GetExprTypingForPosition(endOfExprPos)
 
@@ -424,18 +417,15 @@ type internal TypeCheckInfo
                 | Some(input) -> 
                     match UntypedParseImpl.GetRangeOfExprLeftOfDot(endOfExprPos,Some(input)) with   // TODO we say "colAtEndOfNames" everywhere, but that's not really a good name ("foo  .  $" hit Ctrl-Space at $)
                     | Some( exprRange) ->
-                        if hasTextChangedSinceLastTypecheck(textSnapshotInfo, exprRange) then
-                            None, true // typecheck is stale, wait for second-chance IntelliSense to bring up right result
-                        else
-                            // See bug 130733.  We have an up-to-date sync parse, and know the exact range of the prior expression.
-                            // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
-                            // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
-                            // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
-                            let qual = 
-                                quals |> Array.tryFind (fun (_,_,_,r) -> 
-                                                            ignore(r)  // for breakpoint
-                                                            posEq exprRange.Start r.Start)
-                            qual, false
+                        // We have an up-to-date sync parse, and know the exact range of the prior expression.
+                        // The quals all already have the same ending position, so find one with a matching starting position, if it exists.
+                        // If not, then the stale typecheck info does not have a capturedExpressionTyping for this exact expression, and the
+                        // user can wait for typechecking to catch up and second-chance intellisense to give the right result.
+                        let qual = 
+                            quals |> Array.tryFind (fun (_,_,_,r) -> 
+                                                        ignore(r)  // for breakpoint
+                                                        posEq exprRange.Start r.Start)
+                        qual, false
                     | None -> 
                         // TODO In theory I think we should never get to this code path; it would be nice to add an assert.
                         // In practice, we do get here in some weird cases like "2.0 .. 3.0" and hitting Ctrl-Space in between the two dots of the range operator.
@@ -576,7 +566,7 @@ type internal TypeCheckInfo
     
     let getItem (x: ItemWithInst) = x.Item
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, 
-                          filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allSymbols: unit -> AssemblySymbol list) =
+                          filterCtors, resolveOverloads, isInRangeOperator, allSymbols: unit -> AssemblySymbol list) =
 
             // Are the last two chars (except whitespaces) = ".."
             let isLikeRangeOp = 
@@ -591,7 +581,7 @@ type internal TypeCheckInfo
             // This is based on position (i.e. colAtEndOfNamesAndResidue). This is not used if a residueOpt is given.
             let nameResItems = 
                 match residueOpt with 
-                | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck)
+                | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors,resolveOverloads)
                 | Some residue ->
                     // deals with cases when we have spaces between dot and\or identifier, like A  . $
                     // if this is our case - then we need to locate end position of the name skipping whitespaces
@@ -601,7 +591,7 @@ type internal TypeCheckInfo
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->                 
                            let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
-                           GetPreciseItemsFromNameResolution(line, colAtEndOfNames, Some(residue), filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck)
+                           GetPreciseItemsFromNameResolution(line, colAtEndOfNames, Some(residue), filterCtors,resolveOverloads)
                         | None -> NameResResult.Empty
                     | _ -> NameResResult.Empty        
         
@@ -636,7 +626,6 @@ type internal TypeCheckInfo
                     | _ -> ValueNone
 
             match nameResItems with            
-            | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
             | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) -> 
                 // lookup based on name resolution results successful
@@ -660,7 +649,7 @@ type internal TypeCheckInfo
                 
                         match UntypedParseImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(mkPos line colAtEndOfNamesAndResidue,parseResults.ParseTree) with
                         | Some(pos,_) ->
-                            GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors, hasTextChangedSinceLastTypecheck), true
+                            GetPreciseCompletionListFromExprTypings(parseResults, pos, filterCtors), true
                         | None -> 
                             // Can get here in a case like: if "f xxx yyy" is legal, and we do "f xxx y"
                             // We have no interest in expression typings, those are only useful for dot-completion.  We want to fallback
@@ -745,11 +734,10 @@ type internal TypeCheckInfo
         items |> List.map DefaultCompletionItem, denv, m
 
     /// Get the auto-complete items at a particular location.
-    let GetDeclItemsForNamesAtPosition(ctok: CompilationThreadToken, parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, 
+    let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, 
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads, 
-                                       getAllSymbols: unit -> AssemblySymbol list, hasTextChangedSinceLastTypecheck: (obj * range -> bool)) 
+                                       getAllSymbols: unit -> AssemblySymbol list) 
                                        : (CompletionItem list * DisplayEnv * CompletionContext option * range) option = 
-        RequireCompilationThread ctok // the operations in this method need the reactor thread
 
         let loc = 
             match colAtEndOfNamesAndResidue with
@@ -793,7 +781,7 @@ type internal TypeCheckInfo
                 match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
                 | [],_,_ -> 
                     // no record fields found, return completion list as if we were outside any computation expression
-                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, false, fun() -> [])
+                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, false, fun() -> [])
                 | result -> Some(result)
             
             // Completion at ' { XXX = ... with ... } "
@@ -813,11 +801,11 @@ type internal TypeCheckInfo
             
             // Completion at ' SomeMethod( ... ) ' with named arguments 
             | Some(CompletionContext.ParameterList (endPos, fields)) ->
-                let results = GetNamedParametersAndSettableFields endPos hasTextChangedSinceLastTypecheck
+                let results = GetNamedParametersAndSettableFields endPos
             
                 let declaredItems = 
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, 
-                                      hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+                                      false, getAllSymbols)
             
                 match results with
                 | NameResResult.Members(items, denv, m) -> 
@@ -839,7 +827,7 @@ type internal TypeCheckInfo
                 | _ -> declaredItems
             
             | Some(CompletionContext.AttributeApplication) ->
-                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) -> 
                      items 
                      |> List.filter (fun cItem ->
@@ -849,7 +837,7 @@ type internal TypeCheckInfo
                          | _ -> false), denv, m)
             
             | Some(CompletionContext.OpenDeclaration isOpenType) ->
-                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                     items 
                     |> List.filter (fun x ->
@@ -860,7 +848,7 @@ type internal TypeCheckInfo
             
             // Completion at '(x: ...)"
             | Some (CompletionContext.PatternType) ->
-                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                      items 
                      |> List.filter (fun cItem ->
@@ -885,7 +873,7 @@ type internal TypeCheckInfo
                     let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue,
                         residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads,
-                        hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
+                        isInRangeOperator, getAllSymbols)
         
         res |> Option.map (fun (items, denv, m) -> items, denv, completionContext, m)
 
@@ -919,16 +907,16 @@ type internal TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
-    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () ->
 
                 let declItemsOpt =
-                    GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents,
+                    GetDeclItemsForNamesAtPosition(parseResultsOpt, Some partialName.QualifyingIdents,
                         Some partialName.PartialIdent, partialName.LastDotPos, line,
                         lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
-                        getAllEntities, hasTextChangedSinceLastTypecheck)
+                        getAllEntities)
 
                 match declItemsOpt with
                 | None -> FSharpDeclarationListInfo.Empty  
@@ -940,22 +928,22 @@ type internal TypeCheckInfo
                         |> Option.bind (fun x -> x.ParseTree)
                         |> Option.map (fun parsedInput -> UntypedParseImpl.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
                     let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
-                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,isAttributeApplication))
+                    FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,currentNamespaceOrModule,isAttributeApplication))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
                 FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarationListSymbols (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
 
                 let declItemsOpt =
-                    GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents,
+                    GetDeclItemsForNamesAtPosition(parseResultsOpt, Some partialName.QualifyingIdents,
                         Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr,
                         partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes,
-                        getAllEntities, hasTextChangedSinceLastTypecheck)
+                        getAllEntities)
 
                 match declItemsOpt with
                 | None -> List.Empty  
@@ -1029,9 +1017,7 @@ type internal TypeCheckInfo
                 [])
             
     /// Get the "reference resolution" tooltip for at a location
-    member __.GetReferenceResolutionStructuredToolTipText(ctok, line,col) = 
-
-        RequireCompilationThread ctok // the operations in this method need the reactor thread but the reasons why are not yet grounded
+    member __.GetReferenceResolutionStructuredToolTipText(line,col) = 
 
         let pos = mkPos line col
         let isPosMatch(pos, ar:AssemblyReference) : bool = 
@@ -1078,14 +1064,14 @@ type internal TypeCheckInfo
                 FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member __.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names) = 
+    member __.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) = 
         let Compute() = 
             ErrorScope.Protect Range.range0 
                 (fun () -> 
                     let declItemsOpt =
-                        GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, None,
+                        GetDeclItemsForNamesAtPosition(None, Some names, None, None,
                             line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                            ResolveOverloads.Yes, (fun() -> []), (fun _ -> false))
+                            ResolveOverloads.Yes, (fun() -> []))
 
                     match declItemsOpt with
                     | None -> FSharpToolTipText []
@@ -1098,21 +1084,21 @@ type internal TypeCheckInfo
                
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
         let key = line,colAtEndOfNames,lineStr
-        match getToolTipTextCache.TryGet (ctok, key) with 
+        match getToolTipTextCache.TryGet (AnyCallerThread, key) with 
         | Some res -> res
         | None ->
              let res = Compute()
-             getToolTipTextCache.Put(ctok, key,res)
+             getToolTipTextCache.Put(AnyCallerThread, key,res)
              res
 
-    member __.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names) : string option =
+    member __.GetF1Keyword (line, lineStr, colAtEndOfNames, names) : string option =
         ErrorScope.Protect Range.range0
             (fun () ->
 
                 let declItemsOpt =
-                    GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, None,
+                    GetDeclItemsForNamesAtPosition(None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.No, (fun() -> []), (fun _ -> false))
+                        ResolveOverloads.No, (fun() -> []))
 
                 match declItemsOpt with 
                 | None -> None
@@ -1143,14 +1129,14 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetF1Keyword: '%s'" msg)
                 None)
 
-    member __.GetMethods (ctok, line, lineStr, colAtEndOfNames, namesOpt) =
+    member __.GetMethods (line, lineStr, colAtEndOfNames, namesOpt) =
         ErrorScope.Protect Range.range0
             (fun () -> 
 
                 let declItemsOpt =
-                    GetDeclItemsForNamesAtPosition(ctok, None, namesOpt, None, None,
+                    GetDeclItemsForNamesAtPosition(None, namesOpt, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.No, (fun() -> []), (fun _ -> false))
+                        ResolveOverloads.No, (fun() -> []))
 
                 match declItemsOpt with
                 | None -> FSharpMethodGroup("",[| |])
@@ -1167,14 +1153,14 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethods: '%s'" msg)
                 FSharpMethodGroup(msg,[| |]))
 
-    member __.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names) =
+    member __.GetMethodsAsSymbols (line, lineStr, colAtEndOfNames, names) =
         ErrorScope.Protect Range.range0
             (fun () -> 
                 let declItemsOpt =
-                    GetDeclItemsForNamesAtPosition (ctok, None, Some names, None,
+                    GetDeclItemsForNamesAtPosition (None, Some names, None,
                         None, line, lineStr, colAtEndOfNames,
                         ResolveTypeNamesToCtors, ResolveOverloads.No,
-                        (fun() -> []), (fun _ -> false))
+                        (fun() -> []))
 
                 match declItemsOpt with
                 | None | Some ([],_,_,_) -> None
@@ -1187,14 +1173,14 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethodsAsSymbols: '%s'" msg)
                 None)
            
-    member __.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag) =
+    member __.GetDeclarationLocation (line, lineStr, colAtEndOfNames, names, preferFlag) =
         ErrorScope.Protect Range.range0 
             (fun () -> 
                 
                 let declItemsOpt =
-                    GetDeclItemsForNamesAtPosition (ctok, None, Some names, None, None,
+                    GetDeclItemsForNamesAtPosition (None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.Yes, (fun() -> []), (fun _ -> false))
+                        ResolveOverloads.Yes, (fun() -> []))
 
                 match declItemsOpt with
                 | None
@@ -1296,13 +1282,13 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
                 FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown msg))
 
-    member __.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names) =
+    member __.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names) =
         ErrorScope.Protect Range.range0 
             (fun () -> 
                 let declItemsOpt =
-                    GetDeclItemsForNamesAtPosition (ctok, None, Some names, None, None,
+                    GetDeclItemsForNamesAtPosition (None, Some names, None, None,
                         line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,
-                        ResolveOverloads.Yes, (fun() -> []), (fun _ -> false))
+                        ResolveOverloads.Yes, (fun() -> []))
 
                 match declItemsOpt with
                 | None | Some ([], _, _, _) -> None
@@ -1656,8 +1642,6 @@ module internal ParseAndCheckFile =
            // These are the errors and warnings seen by the background compiler for the entire antecedent 
            backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
            reactorOps: IReactorOperations,
-           // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
-           textSnapshotInfo : obj option,
            userOpName: string,
            suggestNamesForErrors: bool) = async {
 
@@ -1747,8 +1731,6 @@ module internal ParseAndCheckFile =
                               sink.GetSymbolUses(),
                               tcEnvAtEnd.NameEnv,
                               loadClosure,
-                              reactorOps,
-                              textSnapshotInfo,
                               List.tryHead implFiles,
                               sink.GetOpenDeclarations())     
                      |> Result.Ok
@@ -1778,29 +1760,15 @@ type FSharpCheckFileResults
          scopeOptX: TypeCheckInfo option, 
          dependencyFiles: string[], 
          builderX: IncrementalBuilder option, 
-         reactorOpsX:IReactorOperations, 
          keepAssemblyContents: bool) =
 
-    // This may be None initially
-    let mutable details = match scopeOptX with None -> None | Some scopeX -> Some (scopeX, builderX, reactorOpsX)
-
-    // Run an operation that needs to access a builder and be run in the reactor thread
-    let reactorOp userOpName opName dflt f = 
-      async {
-        match details with
-        | None -> 
-            return dflt
-        | Some (scope, _, reactor) -> 
-            // Increment the usage count to ensure the builder doesn't get released while running operations asynchronously. 
-            let! res = reactor.EnqueueAndAwaitOpAsync(userOpName, opName, filename, fun ctok ->  f ctok scope |> cancellable.Return)
-            return res
-      }
+    let details = match scopeOptX with None -> None | Some scopeX -> Some (scopeX, builderX)
 
     // Run an operation that can be called from any thread
     let threadSafeOp dflt f = 
         match details with
         | None -> dflt()
-        | Some (scope, _builderOpt, _ops) -> f scope
+        | Some (scope, _builderOpt) -> f scope
 
     member __.Errors = errors
 
@@ -1812,73 +1780,62 @@ type FSharpCheckFileResults
         | _ -> None
 
     /// Intellisense autocompletions
-    member __.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
+    member __.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
-        let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
-        reactorOp userOpName "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
-            scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
+        threadSafeOp (fun () -> FSharpDeclarationListInfo.Empty) (fun scope -> 
+            scope.GetDeclarations(parsedFileResults, line, lineText, partialName, getAllEntities))
 
-    member __.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
-        let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
+    member __.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
-        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> 
-            scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
+        threadSafeOp (fun () -> []) (fun scope -> 
+            scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities))
 
     /// Resolve the names at the given location to give a data tip 
-    member __.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
+    member __.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
-            reactorOp userOpName "GetStructuredToolTipText" dflt (fun ctok scope -> 
-                scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names))
+            threadSafeOp (fun () -> dflt) (fun scope -> 
+                scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names))
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
-            reactorOp userOpName "GetReferenceResolutionToolTipText" dflt (fun ctok scope ->
-                scope.GetReferenceResolutionStructuredToolTipText(ctok, line, colAtEndOfNames) )
+            threadSafeOp (fun () -> dflt) (fun scope ->
+                scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ -> 
-            async.Return dflt
+            dflt
 
-    member info.GetToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, userOpName) = 
-        info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName=userOpName)
-        |> Tooltips.Map Tooltips.ToFSharpToolTipText
+    member info.GetToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
+        info.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag)
+        |> Tooltips.ToFSharpToolTipText
 
-    member __.GetF1Keyword (line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
-        let userOpName = defaultArg userOpName "Unknown"
-        reactorOp userOpName "GetF1Keyword" None (fun ctok scope -> 
-            scope.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names))
+    member __.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
+        threadSafeOp (fun () -> None) (fun scope -> 
+            scope.GetF1Keyword (line, lineText, colAtEndOfNames, names))
 
     // Resolve the names at the given location to a set of methods
-    member __.GetMethods(line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
-        let userOpName = defaultArg userOpName "Unknown"
+    member __.GetMethods(line, colAtEndOfNames, lineText, names) =
         let dflt = FSharpMethodGroup("",[| |])
-        reactorOp userOpName "GetMethods" dflt (fun ctok scope -> 
-            scope.GetMethods (ctok, line, lineStr, colAtEndOfNames, names))
+        threadSafeOp (fun () -> dflt) (fun scope -> 
+            scope.GetMethods (line, lineText, colAtEndOfNames, names))
             
-    member __.GetDeclarationLocation (line, colAtEndOfNames, lineStr, names, ?preferFlag, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
+    member __.GetDeclarationLocation (line, colAtEndOfNames, lineText, names, ?preferFlag) = 
         let dflt = FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
-        reactorOp userOpName "GetDeclarationLocation" dflt (fun ctok scope -> 
-            scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag))
+        threadSafeOp (fun () -> dflt) (fun scope -> 
+            scope.GetDeclarationLocation (line, lineText, colAtEndOfNames, names, preferFlag))
 
-    member __.GetSymbolUseAtLocation (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
-        reactorOp userOpName "GetSymbolUseAtLocation" None (fun ctok scope -> 
-            scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names)
+    member __.GetSymbolUseAtLocation (line, colAtEndOfNames, lineText, names) = 
+        threadSafeOp (fun () -> None) (fun scope -> 
+            scope.GetSymbolUseAtLocation (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (sym,denv,m) -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m)))
 
-    member __.GetMethodsAsSymbols (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
-        reactorOp userOpName "GetMethodsAsSymbols" None (fun ctok scope -> 
-            scope.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names)
+    member __.GetMethodsAsSymbols (line, colAtEndOfNames, lineText, names) = 
+        threadSafeOp (fun () -> None) (fun scope -> 
+            scope.GetMethodsAsSymbols (line, lineText, colAtEndOfNames, names)
             |> Option.map (fun (symbols,denv,m) ->
                 symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))))
 
-    member __.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
-        reactorOp userOpName "GetSymbolAtLocation" None (fun ctok scope -> 
-            scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names)
+    member __.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names) = 
+        threadSafeOp (fun () -> None) (fun scope -> 
+            scope.GetSymbolUseAtLocation (line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (sym,_,_) -> sym))
 
     member info.GetFormatSpecifierLocations() = 
@@ -1914,50 +1871,43 @@ type FSharpCheckFileResults
 
     member __.DependencyFiles = dependencyFiles
 
-    member __.GetAllUsesOfAllSymbolsInFile() = 
+    member __.GetAllUsesOfAllSymbolsInFile(?cancellationToken: CancellationToken ) = 
         threadSafeOp 
             (fun () -> [| |])
             (fun scope ->
                 let cenv = scope.SymbolEnv
                 [| for symbolUseChunk in scope.ScopeSymbolUses.AllUsesOfSymbols do
-                    for symbolUse in symbolUseChunk do
-                    if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                        let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
-                        yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
-         |> async.Return 
+                     for symbolUse in symbolUseChunk do
+                        cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
+                        if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                            let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
+                            yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
 
-    member __.GetUsesOfSymbolInFile(symbol:FSharpSymbol) = 
+    member __.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
                 [| for symbolUse in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
+                     cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                         yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
-         |> async.Return 
 
     member __.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
-         |> async.Return 
 
-    member __.IsRelativeNameResolvable(pos: pos, plid: string list, item: Item, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
-        reactorOp userOpName "IsRelativeNameResolvable" true (fun ctok scope -> 
-            RequireCompilationThread ctok
-            scope.IsRelativeNameResolvable(pos, plid, item))
+    member __.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) = 
+        threadSafeOp (fun () -> true) (fun scope -> 
+            scope.IsRelativeNameResolvable(cursorPos, plid, item))
 
-    member __.IsRelativeNameResolvableFromSymbol(pos: pos, plid: string list, symbol: FSharpSymbol, ?userOpName: string) = 
-        let userOpName = defaultArg userOpName "Unknown"
-        reactorOp userOpName "IsRelativeNameResolvableFromSymbol" true (fun ctok scope -> 
-            RequireCompilationThread ctok
-            scope.IsRelativeNameResolvableFromSymbol(pos, plid, symbol))
+    member __.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) = 
+        threadSafeOp (fun () -> true) (fun scope -> 
+            scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol))
     
-    member __.GetDisplayContextForPos(pos: pos) : Async<FSharpDisplayContext option> =
-        let userOpName = "CodeLens"
-        reactorOp userOpName "GetDisplayContextAtPos" None (fun ctok scope -> 
-            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
-            let (nenv, _), _ = scope.GetBestDisplayEnvForPos pos
+    member __.GetDisplayContextForPos(cursorPos: pos) =
+        threadSafeOp (fun () -> None) (fun scope -> 
+            let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))
             
     member __.ImplementationFile =
@@ -1980,8 +1930,8 @@ type FSharpCheckFileResults
 
     override __.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
-    static member MakeEmpty(filename: string, creationErrors: FSharpErrorInfo[], reactorOps, keepAssemblyContents) = 
-        FSharpCheckFileResults (filename, creationErrors, None, [| |], None, reactorOps, keepAssemblyContents)
+    static member MakeEmpty(filename: string, creationErrors: FSharpErrorInfo[], keepAssemblyContents) = 
+        FSharpCheckFileResults (filename, creationErrors, None, [| |], None, keepAssemblyContents)
 
     static member JoinErrors(isIncompleteTypeCheckEnvironment, 
                              creationErrors: FSharpErrorInfo[], 
@@ -2004,7 +1954,6 @@ type FSharpCheckFileResults
          creationErrors: FSharpErrorInfo[], 
          parseErrors: FSharpErrorInfo[], 
          tcErrors: FSharpErrorInfo[], 
-         reactorOps, 
          keepAssemblyContents,
          ccuSigForFile, 
          thisCcu, tcImports, tcAccessRights, 
@@ -2016,11 +1965,11 @@ type FSharpCheckFileResults
         let tcFileInfo = 
             TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights, 
                           projectFileName, mainInputFileName, sResolutions, sSymbolUses, 
-                          sFallback, loadClosure, reactorOps,
-                          None, implFileOpt, openDeclarations) 
+                          sFallback, loadClosure,
+                          implFileOpt, openDeclarations) 
                 
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
+        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
 
     static member CheckOneFile
         (parseResults: FSharpParseFileResults,
@@ -2035,7 +1984,6 @@ type FSharpCheckFileResults
          loadClosure: LoadClosure option,
          backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
          reactorOps: IReactorOperations,
-         textSnapshotInfo : obj option,
          userOpName: string,
          isIncompleteTypeCheckEnvironment: bool, 
          builder: IncrementalBuilder, 
@@ -2049,13 +1997,13 @@ type FSharpCheckFileResults
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, sourceText, mainInputFileName, projectFileName, tcConfig, tcGlobals, tcImports, 
                      tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, reactorOps, 
-                     textSnapshotInfo, userOpName, suggestNamesForErrors)
+                     userOpName, suggestNamesForErrors)
             match tcFileInfo with 
             | Result.Error ()  ->  
                 return FSharpCheckFileAnswer.Aborted                
             | Result.Ok tcFileInfo -> 
                 let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-                let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
+                let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
                 return FSharpCheckFileAnswer.Succeeded(results)
         }
 
@@ -2131,29 +2079,30 @@ type FSharpCheckProjectResults
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member __.GetUsesOfSymbol(symbol:FSharpSymbol) = 
+    member __.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
         tcSymbolUses
         |> Seq.collect (fun r -> r.GetUsesOfSymbol symbol.Item)
         |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText)
         |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range)
-        |> Seq.map (fun symbolUse -> FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)) 
+        |> Seq.map (fun symbolUse -> 
+               cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
+               FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)) 
         |> Seq.toArray
-        |> async.Return
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member __.GetAllUsesOfAllSymbols() = 
+    member __.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) = 
         let (tcGlobals, tcImports, thisCcu, ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
 
         [| for r in tcSymbolUses do
             for symbolUseChunk in r.AllUsesOfSymbols do
                 for symbolUse in symbolUseChunk do
+                    cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
                     if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                       let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
                       yield FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
-        |> async.Return
 
     member __.ProjectContext = 
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
@@ -2177,7 +2126,7 @@ type FSharpCheckProjectResults
     override __.ToString() = "FSharpCheckProjectResults(" + projectFileName + ")"
 
 type FsiInteractiveChecker(legacyReferenceResolver, 
-                           reactorOps: IReactorOperations,
+                           ops: IReactorOperations,
                            tcConfig: TcConfig,
                            tcGlobals: TcGlobals,
                            tcImports: TcImports,
@@ -2219,13 +2168,13 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                     (parseResults, sourceText, filename, "project",
                      tcConfig, tcGlobals, tcImports,  tcState, 
                      Map.empty, Some loadClosure, backgroundDiagnostics,
-                     reactorOps, None, userOpName, suggestNamesForErrors)
+                     ops, userOpName, suggestNamesForErrors)
 
             return
                 match tcFileInfo with 
                 | Result.Ok tcFileInfo ->
                     let errors = Array.append parseErrors tcErrors
-                    let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, reactorOps, false)   
+                    let typeCheckResults = FSharpCheckFileResults (filename, errors, Some tcFileInfo, dependencyFiles, None, false)   
                     let projectResults = 
                         FSharpCheckProjectResults (filename, Some tcConfig,
                             keepAssemblyContents, errors, 
