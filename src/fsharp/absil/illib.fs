@@ -6,6 +6,7 @@ module public FSharp.Compiler.AbstractIL.Internal.Library
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Reflection
@@ -633,9 +634,9 @@ let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent (_ctok: Co
 /// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
 let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
 
-/// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
+/// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
 type AnyCallerThreadToken() = interface ExecutionToken
-let AssumeAnyCallerThreadWithoutEvidence () = Unchecked.defaultof<AnyCallerThreadToken>
+let AnyCallerThread = Unchecked.defaultof<AnyCallerThreadToken>
 
 /// A base type for various types of tokens that must be passed when a lock is taken.
 /// Each different static lock should declare a new subtype of this type.
@@ -956,16 +957,18 @@ let _ = eventually { use x = null in return 1 }
 
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T : equality>() = 
-    let encodeTab = new Dictionary<'T, int>(HashIdentity.Structural)
+    let gate = obj ()
+    let encodeTab = new ConcurrentDictionary<'T, int>(HashIdentity.Structural)
     let mutable nItems = 0
     let encode str =
         match encodeTab.TryGetValue str with
         | true, idx -> idx
         | _ ->
-            let idx = nItems
-            encodeTab.[str] <- idx
-            nItems <- nItems + 1
-            idx
+            lock gate (fun () ->
+                let idx = nItems
+                encodeTab.[str] <- idx
+                nItems <- nItems + 1
+                idx)
 
     member this.Encode str = encode str
 
@@ -974,7 +977,7 @@ type UniqueStampGenerator<'T when 'T : equality>() =
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) = 
     
-    let table = new Dictionary<'T, 'U>(keyComparer) 
+    let table = new ConcurrentDictionary<'T, 'U>(keyComparer) 
 
     member t.Apply x = 
         if (match canMemoize with None -> true | Some f -> f x) then 
@@ -1063,7 +1066,7 @@ type LazyWithContext<'T, 'ctxt> =
 /// Intern tables to save space.
 module Tables = 
     let memoize f = 
-        let t = new Dictionary<_, _>(1000, HashIdentity.Structural)
+        let t = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 1000, HashIdentity.Structural)
         fun x -> 
             match t.TryGetValue x with
             | true, res -> res

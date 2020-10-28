@@ -757,9 +757,9 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 type TcImportsSafeDisposal
     (disposeActions: ResizeArray<unit -> unit>,
 #if !NO_EXTENSIONTYPING
-     disposeTypeProviderActions: ResizeArray<unit -> unit>,
+     disposeTypeProviderActions: ResizeArray<unit -> unit>
 #endif
-     compilationThread: ICompilationThread) =
+    ) =
 
     let mutable isDisposed = false
 
@@ -769,9 +769,7 @@ type TcImportsSafeDisposal
         if verbose then 
             dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
 #if !NO_EXTENSIONTYPING
-        let actions = disposeTypeProviderActions
-        if actions.Count > 0 then
-            compilationThread.EnqueueWork (fun _ -> for action in actions do action())
+        for action in disposeTypeProviderActions do action()
 #endif
         for action in disposeActions do action()
 
@@ -822,8 +820,7 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option,
-                         ilGlobalsOpt, compilationThread: ICompilationThread, 
-                         dependencyProviderOpt: DependencyProvider option) as this = 
+                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option) as this = 
 
     let mutable resolutions = initialResolutions
     let mutable importsBase: TcImports option = importsBase
@@ -848,7 +845,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
 #endif
 
-    let disposal = new TcImportsSafeDisposal(disposeActions, disposeTypeProviderActions, compilationThread)
+    let disposal = new TcImportsSafeDisposal(disposeActions, disposeTypeProviderActions)
 
     let CheckDisposed() =
         if disposed then assert false
@@ -1327,7 +1324,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             for provider in providers do 
                 tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> 
                     try 
-                        provider.PUntaintNoFailure(fun x -> x).Dispose() 
+                        provider.PUntaintNoFailure(fun x -> x.Dispose())
                     with e -> 
                         ())
             
@@ -1737,7 +1734,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, frameworkDLLs, [])
         let tcAltResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkDLLs, [])
 
-        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None, tcConfig.compilationThread, None) 
+        let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None, None) 
 
         // Fetch the primaryAssembly from the referenced assemblies otherwise 
         let primaryAssemblyReference =
@@ -1871,7 +1868,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         let tcConfig = tcConfigP.Get ctok
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(ctok, tcConfig, nonFrameworkReferences, knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
-        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg, tcConfig.compilationThread, Some dependencyProvider)
+        let tcImports = new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some tcGlobals.ilg, Some dependencyProvider)
         let! _assemblies = tcImports.RegisterAndImportReferencedAssemblies(ctok, references)
         tcImports.ReportUnresolvedAssemblyReferences knownUnresolved
         return tcImports

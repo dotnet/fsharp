@@ -702,7 +702,7 @@ let mkCacheInt32 lowMem _inbase _nm _sz =
         let cache = 
             match !cache with
             | null -> 
-                let c = new Dictionary<int32, _>(11)
+                let c = new ConcurrentDictionary<int32, _>(Environment.ProcessorCount, 11)
                 cache :=  c
                 c
             | NonNullQuick c -> c 
@@ -731,7 +731,7 @@ let mkCacheGeneric lowMem _inbase _nm _sz =
         let cache = 
             match !cache with
             | null -> 
-                let c = new Dictionary<_, _>(11) 
+                let c = new ConcurrentDictionary<_, _>(Environment.ProcessorCount, 11 (* sz: int *) ) 
                 cache := c
                 c
             | NonNullQuick c -> c

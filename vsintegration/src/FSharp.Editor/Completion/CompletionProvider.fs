@@ -122,8 +122,8 @@ type internal FSharpCompletionProvider
                 |> List.filter (fun assemblySymbol -> 
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorName assemblySymbol.Symbol.DisplayName))
 
-            let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
-                                                                        partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
+                                                                       partialName, getAllSymbols)
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-

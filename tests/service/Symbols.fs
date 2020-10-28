@@ -38,7 +38,6 @@ match "foo" with
          let _, checkResults = parseAndCheckFile fileName source options
           
          checkResults.GetAllUsesOfAllSymbolsInFile()
-         |> Async.RunSynchronously
          |> Array.filter (fun su -> su.RangeAlternate.StartLine = line && su.Symbol :? FSharpActivePatternCase)
          |> Array.map (fun su -> su.Symbol :?> FSharpActivePatternCase)
 
@@ -119,7 +118,6 @@ let x = 123
         let _, checkResults = parseAndCheckFile fileName source options
 
         checkResults.GetAllUsesOfAllSymbolsInFile()
-         |> Async.RunSynchronously
          |> Array.tryFind (fun su -> su.Symbol.DisplayName = "x")
          |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
          |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)

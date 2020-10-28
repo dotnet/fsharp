@@ -28,7 +28,7 @@ module InterfaceStubGenerator =
     /// positions of 'member', which indicate the indentation for generating new members
     val getMemberNameAndRanges : InterfaceData -> (string * range) list
 
-    val getImplementedMemberSignatures : getMemberByLocation: (string * range -> Async<FSharpSymbolUse option>) -> FSharpDisplayContext -> InterfaceData -> Async<Set<string>>
+    val getImplementedMemberSignatures : getMemberByLocation: (string * range -> FSharpSymbolUse option) -> FSharpDisplayContext -> InterfaceData -> Async<Set<string>>
 
     /// Check whether an entity is an interface or type abbreviation of an interface
     val isInterface : FSharpEntity -> bool

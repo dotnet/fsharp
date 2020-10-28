@@ -160,7 +160,8 @@ type internal FSharpCodeLensService
 #if DEBUG
             logInfof "Getting uses of all symbols!"
 #endif
-            let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+            let! ct = Async.CancellationToken |> liftAsync
+            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
             let textSnapshot = buffer.CurrentSnapshot
 #if DEBUG
             logInfof "Updating due to buffer edit!"
@@ -184,7 +185,7 @@ type internal FSharpCodeLensService
                         if (lineNumber >= 0 || lineNumber < textSnapshot.LineCount) then
                             match func.FullTypeSafe with
                             | Some _ ->
-                                let! maybeContext = checkFileResults.GetDisplayContextForPos(func.DeclarationLocation.Start)
+                                let maybeContext = checkFileResults.GetDisplayContextForPos(func.DeclarationLocation.Start)
                             
                                 let displayContext = Option.defaultValue displayContext maybeContext
                                 let typeLayout = func.FormatLayout displayContext
