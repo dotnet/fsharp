@@ -4254,6 +4254,7 @@ and refs_of_resources s (tab: ILResources) = List.iter (refs_of_resource s) tab.
 and refs_of_modul s m =
     refs_of_types s m.TypeDefs
     refs_of_resources s m.Resources
+    refs_of_custom_attrs s m.CustomAttrs
     Option.iter (refs_of_manifest s) m.Manifest
 
 and refs_of_manifest s (m: ILAssemblyManifest) =
