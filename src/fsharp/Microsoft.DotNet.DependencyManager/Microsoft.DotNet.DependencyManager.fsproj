@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <IsPackable>true</IsPackable>
     <AssemblyName>Microsoft.DotNet.DependencyManager</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
