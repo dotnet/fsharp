@@ -33,7 +33,10 @@ type public FSharpNoteworthyParamInfoLocations =
     member IsThereACloseParen : bool   
 
     /// Either empty or a name if an actual named parameter; f(0,a=4,?b=None) would be [|None; Some "a"; Some "b"|]
-    member NamedParamNames : string option []  
+    member NamedParamNames : string option []
+
+    /// Array of locations for each argument, and a flag if that argument is named
+    member ArgLocations: {| IsNamedArgument: bool; ArgumentRange: range |} []
 
     /// Find the information about parameter info locations at a particular source location
     static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option

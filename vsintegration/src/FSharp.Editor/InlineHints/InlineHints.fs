@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Collections.Immutable
 open System.Threading
 open System.ComponentModel.Composition
@@ -11,6 +12,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 
 [<Export(typeof<IFSharpInlineHintsService>)>]
 type internal FSharpInlineHintsService
@@ -21,6 +23,13 @@ type internal FSharpInlineHintsService
     ) =
 
     static let userOpName = "FSharpInlineHints"
+
+    static let getFirstPositionAfterParen (str: string) startPos =
+        match str with
+        | null -> -1
+        | str when startPos > str.Length -> -1
+        | str ->
+            str.IndexOf('(') + 1
 
     interface IFSharpInlineHintsService with
         member _.GetInlineHintsAsync(document: Document, textSpan: TextSpan, cancellationToken: CancellationToken) =
@@ -88,11 +97,36 @@ type internal FSharpInlineHintsService
                                 for idx = 0 to appliedArgRanges.Length - 1 do
                                     let appliedArgRange = appliedArgRanges.[idx]
                                     let definitionArgName = definitionArgNames.[idx]
-                                    let appledArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, appliedArgRange)
+                                    let appliedArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, appliedArgRange)
                                     let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, definitionArgName + " ="))
-                                    let hint = FSharpInlineHint(TextSpan(appledArgSpan.Start, 0), displayParts)
+                                    let hint = FSharpInlineHint(TextSpan(appliedArgSpan.Start, 0), displayParts)
                                     parameterHints.Add(hint)
                             | _ -> ()
+
+                    | :? FSharpMemberOrFunctionOrValue as meth when meth.IsMethod ->
+                        // get position that is +1 column from first `(` on the method symbol line
+                        let endPosForMethod = symbolUse.RangeAlternate.End
+                        let line, _ = Pos.toZ endPosForMethod
+                        let afterParenPosInLine = getFirstPositionAfterParen (sourceText.Lines.[line].ToString()) (endPosForMethod.Column)
+
+
+                        let paramInfos = parseFileResults.FindNoteworthyParamInfoLocations(Pos.fromZ line afterParenPosInLine)
+                        match paramInfos with
+                        | None -> ()
+                        | Some paramInfos ->                            
+                            // TODO - how the hell to handle the nested ones?
+                            let groups = meth.CurriedParameterGroups
+                            if groups.Count = 0 || groups.Count > 1 then
+                                ()
+                            else
+                                for idx = 0 to groups.[0].Count - 1 do
+                                    let paramLocationInfo = paramInfos.ArgLocations.[idx]
+                                    let paramName = groups.[0].[idx].DisplayName
+                                    if not paramLocationInfo.IsNamedArgument && not (String.IsNullOrWhiteSpace(paramName)) then
+                                        let appliedArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, paramLocationInfo.ArgumentRange)
+                                        let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, paramName + " ="))
+                                        let hint = FSharpInlineHint(TextSpan(appliedArgSpan.Start, 0), displayParts)
+                                        parameterHints.Add(hint)
                     | _ -> ()
 
                 let typeHints = typeHints.ToImmutableArray()
