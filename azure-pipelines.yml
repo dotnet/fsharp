@@ -154,7 +154,7 @@ stages:
           - task: PublishBuildArtifacts@1
             displayName: Publish Artifact Nightly
             inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpFull.vsix'
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\Insertion\VisualFSharpFull.vsix'
               ArtifactName: 'Nightly'
             condition: succeeded()
           - task: PublishBuildArtifacts@1
