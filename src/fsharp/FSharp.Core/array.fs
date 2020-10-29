@@ -23,7 +23,9 @@ namespace Microsoft.FSharp.Collections
         let inline indexNotFound() = raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
         [<CompiledName("Length")>]
-        let length (array: _[])    = array.Length
+        let length (array: _[])    = 
+            checkNonNull "array" array
+            array.Length
         
         [<CompiledName("Last")>]
         let inline last (array: 'T[]) =
