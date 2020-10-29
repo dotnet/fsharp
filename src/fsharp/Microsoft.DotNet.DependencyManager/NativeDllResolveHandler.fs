@@ -107,23 +107,36 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
             ()
 
 type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
-    let addedPaths = ConcurrentBag<string>()
     let handler:IDisposable option =
         if isRunningOnCoreClr then
             Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
         else
             None
 
-    member internal _.RefreshPathsInEnvironment() =
-        for probePath in (nativeProbingRoots.Invoke()) do
-            let path =
-                let p = Environment.GetEnvironmentVariable("PATH")
-                if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then p + ";"
-                else p
+    let appendSemiColon (p:string) =
+        if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
+            p + ";"
+        else
+            p
 
-            if not (probePath.Contains(path + ";")) then
-                Environment.SetEnvironmentVariable("PATH", path + probePath + ";")
-                addedPaths.Add path
+    let addedPaths = ConcurrentBag<string>()
+
+    let addProbeToProcessPath probePath =
+        let probe = appendSemiColon probePath
+        let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        if not (path.Contains(probe)) then
+            Environment.SetEnvironmentVariable("PATH", path + probe)
+            addedPaths.Add probe
+
+    let removeProbeFromProcessPath probePath =
+        if not(String.IsNullOrWhiteSpace(probePath)) then
+            let probe = appendSemiColon probePath
+            let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
+
+    member internal _.RefreshPathsInEnvironment(roots: string seq) =
+        for probePath in roots do
+            addProbeToProcessPath probePath
 
     interface IDisposable with
         member _.Dispose() =
@@ -131,12 +144,6 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
             | None -> ()
             | Some handler -> handler.Dispose()
 
-            for probePath in addedPaths do
-                let path =
-                    let p = Environment.GetEnvironmentVariable("PATH")
-                    if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then p + ";"
-                    else p
-
-                Environment.SetEnvironmentVariable("PATH", path.Replace(probePath + ";", ""))
-                let mutable _p = null
-                addedPaths.TryTake(ref _p) |> ignore
+            let mutable probe:string = null
+            while (addedPaths.TryTake(&probe)) do
+                removeProbeFromProcessPath probe

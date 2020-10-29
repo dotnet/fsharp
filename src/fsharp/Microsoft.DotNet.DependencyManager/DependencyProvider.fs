@@ -420,7 +420,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
             ))
         match result with
         | Ok res ->
-            dllResolveHandler.RefreshPathsInEnvironment()
+            dllResolveHandler.RefreshPathsInEnvironment(res.Roots)
             res
         | Error (errorNumber, errorData) ->
             reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)

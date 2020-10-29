@@ -14,6 +14,6 @@ type NativeDllResolveHandler =
     /// Construct a new NativeDllResolveHandler
     new: nativeProbingRoots: NativeResolutionProbe -> NativeDllResolveHandler
 
-    member internal RefreshPathsInEnvironment: unit -> unit
+    member internal RefreshPathsInEnvironment: string seq -> unit
 
     interface IDisposable
