@@ -3,6 +3,7 @@
 namespace Microsoft.DotNet.DependencyManager
 
 open System
+open System.Collections.Concurrent
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
@@ -13,7 +14,6 @@ open Internal.Utilities.FSharpEnvironment
 /// host implements this, it's job is to return a list of package roots to probe.
 type NativeResolutionProbe = delegate of Unit -> seq<string>
 
-#if NETSTANDARD
 open System.Runtime.Loader
 
 // Cut down AssemblyLoadContext, for loading native libraries
@@ -27,7 +27,6 @@ type NativeAssemblyLoadContext () =
         raise (NotImplementedException())
 
     static member NativeLoadContext = new NativeAssemblyLoadContext()
-
 
 /// Type that encapsulates Native library probing for managed packages
 type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) =
@@ -65,7 +64,6 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
         |]
 
     let _resolveUnmanagedDll (_: Assembly) (name: string): IntPtr =
-
         // Enumerate probing roots looking for a dll that matches the probing name in the probed locations
         let probeForNativeLibrary root rid name =
             // Look for name in root
@@ -79,7 +77,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
         let probe =
             match nativeProbingRoots with
             | null -> None
-            | _ ->  
+            | _ ->
                 nativeProbingRoots.Invoke()
                 |> Seq.tryPick(fun root ->
                     probingFileNames name |> Seq.tryPick(fun name ->
@@ -98,7 +96,9 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
     let eventInfo = typeof<AssemblyLoadContext>.GetEvent("ResolvingUnmanagedDll")
     let handler = Func<Assembly, string, IntPtr> (_resolveUnmanagedDll)
 
-    do if not (isNull eventInfo) then eventInfo.AddEventHandler(AssemblyLoadContext.Default, handler)
+    do
+        if not (isNull eventInfo) then
+            eventInfo.AddEventHandler(AssemblyLoadContext.Default, handler)
 
     interface IDisposable with
         member _x.Dispose() =
@@ -106,20 +106,44 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
                 eventInfo.RemoveEventHandler(AssemblyLoadContext.Default, handler)
             ()
 
-#endif
-
-type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
-
+type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
     let handler:IDisposable option =
-#if NETSTANDARD
         if isRunningOnCoreClr then
-            Some (new NativeDllResolveHandlerCoreClr(_nativeProbingRoots) :> IDisposable)
+            Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
         else
-#endif
             None
+
+    let appendSemiColon (p:string) =
+        if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
+            p + ";"
+        else
+            p
+
+    let addedPaths = ConcurrentBag<string>()
+
+    let addProbeToProcessPath probePath =
+        let probe = appendSemiColon probePath
+        let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        if not (path.Contains(probe)) then
+            Environment.SetEnvironmentVariable("PATH", path + probe)
+            addedPaths.Add probe
+
+    let removeProbeFromProcessPath probePath =
+        if not(String.IsNullOrWhiteSpace(probePath)) then
+            let probe = appendSemiColon probePath
+            let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
+
+    member internal _.RefreshPathsInEnvironment(roots: string seq) =
+        for probePath in roots do
+            addProbeToProcessPath probePath
 
     interface IDisposable with
         member _.Dispose() =
             match handler with
             | None -> ()
             | Some handler -> handler.Dispose()
+
+            let mutable probe:string = null
+            while (addedPaths.TryTake(&probe)) do
+                removeProbeFromProcessPath probe
