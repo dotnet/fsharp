@@ -19,8 +19,6 @@ open System.Threading
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
-let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-
 type FSharpCore = 
     | FC45 
     | FC46 
@@ -724,6 +722,7 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 let ``Test Unoptimized Declarations Project1`` () =
     let cleanup, options = Project1.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
@@ -858,6 +857,7 @@ let ``Test Unoptimized Declarations Project1`` () =
 let ``Test Optimized Declarations Project1`` () =
     let cleanup, options = Project1.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
@@ -995,6 +995,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
     let filePath = Utils.getTempFilePathChangeExt tempFileName ".fs"
     let dllPath =Utils.getTempFilePathChangeExt tempFileName ".dll"
     let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
 
     begin
         use _cleanup = Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
@@ -2998,6 +2999,7 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 let ``Test expressions of declarations stress big expressions`` () =
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
@@ -3013,6 +3015,7 @@ let ``Test expressions of declarations stress big expressions`` () =
 let ``Test expressions of optimized declarations stress big expressions`` () =
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
@@ -3072,6 +3075,7 @@ let f8() = callXY (D()) (C())
 let ``Test ProjectForWitnesses1`` () =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
@@ -3115,6 +3119,7 @@ let ``Test ProjectForWitnesses1`` () =
 let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
@@ -3194,6 +3199,7 @@ type MyNumberWrapper =
 let ``Test ProjectForWitnesses2`` () =
     let cleanup, options = ProjectForWitnesses2.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
@@ -3248,6 +3254,7 @@ let s2 = sign p1
 let ``Test ProjectForWitnesses3`` () =
     let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:preview"]
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
@@ -3264,7 +3271,7 @@ let ``Test ProjectForWitnesses3`` () =
          "member op_Addition(p1,p2) = {x = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.x,p2.x); y = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.y,p2.y)} @ (9,33--9,68)";
          "let p1 = {x = 1; y = 10} @ (11,9--11,20)";
          "let p2 = {x = 2; y = 20} @ (12,9--12,20)";
-         "let s = ListModule.Sum<M.Point> (fun arg0_0 -> Point.get_Zero (arg0_0),fun arg0_0 -> fun arg1_0 -> Point.op_Addition (arg0_0,arg1_0),Cons(M.p1 (),Cons(M.p2 (),Empty()))) @ (13,8--13,25)";
+         "let s = ListModule.Sum<M.Point> (fun arg0_0 -> Point.get_Zero (()),fun arg0_0 -> fun arg1_0 -> Point.op_Addition (arg0_0,arg1_0),Cons(M.p1 (),Cons(M.p2 (),Empty()))) @ (13,8--13,25)";
          "let s2 = Operators.Sign<M.Point> (fun arg0_0 -> arg0_0.get_Sign(()),M.p1 ()) @ (14,9--14,16)"]
 
     let actual = 
@@ -3278,6 +3285,7 @@ let ``Test ProjectForWitnesses3`` () =
 let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses3.createOptions()
     use _holder = cleanup
+    let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
