@@ -22538,7 +22538,7 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String 
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String get_XmlDocSig()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: range get_DeclarationLocation()
-FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.String,System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpType]]] GetWitnessPassingInfo()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.String,System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]]] GetWitnessPassingInfo()
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: FSharp.Compiler.SourceCodeServices.FSharpMethodGroupItem[] Methods
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: FSharp.Compiler.SourceCodeServices.FSharpMethodGroupItem[] get_Methods()
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: System.String MethodName

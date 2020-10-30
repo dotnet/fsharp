@@ -64,19 +64,20 @@ module internal Utils =
 
     /// Clean up after a test is run. If you need to inspect the create *.fs files, change this function to do nothing, or just break here.
     let cleanupTempFiles files =
-        for fileName in files do 
-            try
-                // cleanup: only the source file is written to the temp dir.
-                File.Delete fileName
-            with _ -> ()
+        { new System.IDisposable with 
+            member _.Dispose() = 
+                for fileName in files do 
+                    try
+                        // cleanup: only the source file is written to the temp dir.
+                        File.Delete fileName
+                    with _ -> ()
 
-        try
-            // remove the dir when empty
-            let tempPath = getTempPath()
-            if Directory.GetFiles tempPath |> Array.isEmpty then
-                Directory.Delete tempPath
-        with _ -> ()
-
+                try
+                    // remove the dir when empty
+                    let tempPath = getTempPath()
+                    if Directory.GetFiles tempPath |> Array.isEmpty then
+                        Directory.Delete tempPath
+                with _ -> () }
 
     /// Given just a filename, returns it with changed extension located in %TEMP%\ExprTests
     let getTempFilePathChangeExt tmp ext =
@@ -349,6 +350,21 @@ module internal Utils =
                 yield! collectMembers e |> Seq.map printMemberSignature
         }
 
+
+let createOptionsAux fileSources extraArgs =
+    let fileNames = fileSources |> List.map (fun _ -> Utils.getTempFileName())
+    let temp2 = Utils.getTempFileName()
+    let fileNames = fileNames |> List.map (fun temp1 -> Utils.getTempFilePathChangeExt temp1 ".fs")
+    let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" 
+    let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" 
+
+    Utils.createTempDir()
+    for (fileSource, fileName) in List.zip fileSources fileNames do
+         File.WriteAllText(fileName, fileSource)
+    let args = [| yield! extraArgs; yield! mkProjectCommandLineArgs (dllName, fileNames) |]
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+    Utils.cleanupTempFiles (fileNames @ [dllName; projFileName]), options
 
 //---------------------------------------------------------------------------------------------------------
 // This project is a smoke test for a whole range of standard and obscure expressions
@@ -642,27 +658,7 @@ let testMutableVar = mutableVar 1
 let testMutableConst = mutableConst ()
     """
 
-    let createOptions() =
-        let temp1 = Utils.getTempFileName()
-        let temp2 = Utils.getTempFileName()
-        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs"  // Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-        let fileName2 = Utils.getTempFilePathChangeExt temp2 ".fs" //Path.ChangeExtension(base2, ".fs")
-        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" //Path.ChangeExtension(base2, ".dll")
-        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" //Path.ChangeExtension(base2, ".fsproj")
-
-        Utils.createTempDir()
-        File.WriteAllText(fileName1, fileSource1)
-        File.WriteAllText(fileName2, fileSource2)
-        let fileNames = [fileName1; fileName2]
-        let args = mkProjectCommandLineArgs (dllName, fileNames)
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-
-        [fileName1; fileName2; dllName; projFileName], options
-
-    let options = lazy createOptions()
-
-    
-
+    let createOptions() = createOptionsAux [fileSource1; fileSource2] []
 
     let operatorTests = """
 module OperatorTests{0}
@@ -724,8 +720,11 @@ let test{0}ToStringOperator   (e1:{1}) = string e1
 """
 
 /// This test is run in unison with its optimized counterpart below
+[<Test>]
 let ``Test Unoptimized Declarations Project1`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd Project1.options.Value) |> Async.RunSynchronously
+    let cleanup, options = Project1.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -855,9 +854,11 @@ let ``Test Unoptimized Declarations Project1`` () =
 
     ()
 
-/// This test is run in unison with its unoptimized counterpart below
+[<Test>]
 let ``Test Optimized Declarations Project1`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd Project1.options.Value) |> Async.RunSynchronously
+    let cleanup, options = Project1.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -988,15 +989,6 @@ let ``Test Optimized Declarations Project1`` () =
 
     ()
 
-[<Test>]
-let ``Test Optimized and Unoptimized Declarations for Project1`` () =
-    let filenames = fst Project1.options.Value
-    try
-        ``Test Optimized Declarations Project1`` ()
-        ``Test Unoptimized Declarations Project1`` ()
-    finally
-        Utils.cleanupTempFiles filenames
-
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
 
     let tempFileName = Utils.getTempFileName()
@@ -1004,7 +996,8 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
     let dllPath =Utils.getTempFilePathChangeExt tempFileName ".dll"
     let projFilePath = Utils.getTempFilePathChangeExt tempFileName ".fsproj"
 
-    try
+    begin
+        use _cleanup = Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
         createTempDir()
         let source = System.String.Format(Project1.operatorTests, dnName, fsName)
         let replace (s:string) r = s.Replace("let " + r, "// let " + r)
@@ -1104,11 +1097,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
         // fail test on first line that fails, show difference in output window
         resultOptFiltered
         |> shouldPairwiseEqual expectedOptFiltered
-
-    finally
-        Utils.cleanupTempFiles [filePath; dllPath; projFilePath]
-
-    ()
+    end
 
 [<Test>]
 let ``Test Operator Declarations for Byte`` () =
@@ -3002,28 +2991,14 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
     """
 
 
-    let createOptions() =
-        let temp1 = Utils.getTempFileName()
-        let temp2 = Utils.getTempFileName()
-        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs" //Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" //Path.ChangeExtension(base2, ".dll")
-        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" //Path.ChangeExtension(base2, ".fsproj")
-
-        Utils.createTempDir()
-        File.WriteAllText(fileName1, fileSource1)
-
-        let fileNames = [fileName1]
-        let args = mkProjectCommandLineArgs (dllName, fileNames)
-        let options =  exprChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-        
-        [fileName1; dllName; projFileName], options
-
-    let options = lazy createOptions()
+    let createOptions() = createOptionsAux [fileSource1] []
 
 
-/// This test is run in unison with its optimized counterpart below
+[<Test>]
 let ``Test expressions of declarations stress big expressions`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectStressBigExpressions.options.Value) |> Async.RunSynchronously
+    let cleanup, options = ProjectStressBigExpressions.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -3034,9 +3009,11 @@ let ``Test expressions of declarations stress big expressions`` () =
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
 
-/// This test is run in unison with its unoptimized counterpart below
+[<Test>]
 let ``Test expressions of optimized declarations stress big expressions`` () =
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectStressBigExpressions.options.Value) |> Async.RunSynchronously
+    let cleanup, options = ProjectStressBigExpressions.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -3046,19 +3023,10 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
-[<Test>]
-let ``Test expressions of both optimized and unoptimized declarations for StressTest Big Expressions`` () =
-    let filenames = fst ProjectStressBigExpressions.options.Value
-    try
-        ``Test expressions of optimized declarations stress big expressions`` ()
-        ``Test expressions of declarations stress big expressions`` ()
-    finally
-        Utils.cleanupTempFiles filenames
-
 //---------------------------------------------------------------------------------------------------------
 // This project is for witness arguments (CallWithWitnesses)
 
-module internal ProjectForWitnesses = 
+module internal ProjectForWitnesses1 = 
 
     let fileSource1 = """
 module M
@@ -3098,28 +3066,13 @@ let f7() = callXY (C()) (D())
 let f8() = callXY (D()) (C())
     """
 
-    let createOptions() =
-        let temp1 = Utils.getTempFileName()
-        let temp2 = Utils.getTempFileName()
-        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs"  
-        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" 
-        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" 
-
-        Utils.createTempDir()
-        File.WriteAllText(fileName1, fileSource1)
-        let fileNames = [fileName1]
-        let args = [| yield "--langversion:preview"; yield! mkProjectCommandLineArgs (dllName, fileNames) |]
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-
-        [fileName1; dllName; projFileName], options
-
-    let options = lazy createOptions()
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
 
 [<Test>]
-let ``Test ProjectForWitnesses`` () =
-  let filenames = fst ProjectForWitnesses.options.Value
-  try
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectForWitnesses.options.Value) |> Async.RunSynchronously
+let ``Test ProjectForWitnesses1`` () =
+    let cleanup, options = ProjectForWitnesses1.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -3157,8 +3110,57 @@ let ``Test ProjectForWitnesses`` () =
     actual
       |> shouldPairwiseEqual expected
 
-    finally
-        Utils.cleanupTempFiles filenames
+
+[<Test>]
+let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
+    let cleanup, options = ProjectForWitnesses1.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "ProjectForWitnesses1 error: <<<%s>>>" e.Message
+
+    begin
+        let symbol = 
+            wholeProjectResults.GetAllUsesOfAllSymbols()
+            |> Array.tryFind (fun su -> su.Symbol.DisplayName = "callX")
+            |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+            |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
+            |> Option.get
+        printfn "symbol = %s" symbol.FullName
+        let wpi = (symbol.GetWitnessPassingInfo())
+        match wpi with 
+        | None -> failwith "witness passing info expected"
+        | Some (nm, argTypes) ->
+            nm |> shouldEqual "callX$W"
+            argTypes.Count |> shouldEqual 1
+            let argText = argTypes.[0].Type.ToString()
+            argText |> shouldEqual "type  ^T ->  ^U ->  ^V"
+    end
+
+
+    begin
+        let symbol = 
+            wholeProjectResults.GetAllUsesOfAllSymbols()
+            |> Array.tryFind (fun su -> su.Symbol.DisplayName = "callXY")
+            |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+            |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
+            |> Option.get
+        printfn "symbol = %s" symbol.FullName
+        let wpi = (symbol.GetWitnessPassingInfo())
+        match wpi with 
+        | None -> failwith "witness passing info expected"
+        | Some (nm, argTypes) ->
+            nm |> shouldEqual "callXY$W"
+            argTypes.Count |> shouldEqual 2
+            let argName1 = argTypes.[0].Name
+            let argText1 = argTypes.[0].Type.ToString()
+            let argName2 = argTypes.[1].Name
+            let argText2 = argTypes.[1].Type.ToString()
+            argText1 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
+            argText2 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
+    end
+
 
 //---------------------------------------------------------------------------------------------------------
 // This project is for witness arguments (CallWithWitnesses)
@@ -3186,32 +3188,18 @@ type MyNumberWrapper =
     { MyNumber: MyNumber }
     """
 
-    let createOptions() =
-        let temp1 = Utils.getTempFileName()
-        let temp2 = Utils.getTempFileName()
-        let fileName1 = Utils.getTempFilePathChangeExt temp1 ".fs"  
-        let dllName = Utils.getTempFilePathChangeExt temp2 ".dll" 
-        let projFileName = Utils.getTempFilePathChangeExt temp2 ".fsproj" 
-
-        Utils.createTempDir()
-        File.WriteAllText(fileName1, fileSource1)
-        let fileNames = [fileName1]
-        let args = [| yield "--langversion:preview"; yield! mkProjectCommandLineArgs (dllName, fileNames) |]
-        let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-
-        [fileName1; dllName; projFileName], options
-
-    let options = lazy createOptions()
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
 
 [<Test>]
 let ``Test ProjectForWitnesses2`` () =
-  let filenames = fst ProjectForWitnesses2.options.Value
-  try
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(snd ProjectForWitnesses2.options.Value) |> Async.RunSynchronously
+    let cleanup, options = ProjectForWitnesses2.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
-        printfn "Project1 error: <<<%s>>>" e.Message
+        printfn "ProjectForWitnesses2 error: <<<%s>>>" e.Message
 
+    wholeProjectResults.Errors.Length |> shouldEqual 0
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
 
@@ -3232,6 +3220,90 @@ let ``Test ProjectForWitnesses2`` () =
     actual
       |> shouldPairwiseEqual expected
 
-    finally
-        Utils.cleanupTempFiles filenames
+//---------------------------------------------------------------------------------------------------------
+// This project is for witness arguments, testing for https://github.com/dotnet/fsharp/issues/10364
+
+module internal ProjectForWitnesses3 = 
+
+    let fileSource1 = """
+module M
+
+type Point =
+    { x: int; y: int }
+    static member Zero = { x=0; y=0 }
+    member p.Sign = sign p.x
+
+    static member (+) (p1, p2) = { x= p1.x + p2.x; y = p1.y + p2.y }
+
+let p1 = {x=1; y=10}
+let p2 = {x=2; y=20}
+let s = List.sum [p1; p2]
+let s2 = sign p1
+
+    """
+
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    
+[<Test>]
+let ``Test ProjectForWitnesses3`` () =
+    let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:preview"]
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
+
+    wholeProjectResults.Errors.Length |> shouldEqual 0
+    wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 1
+    let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
+
+    let expected = 
+        ["type M"; "type Point";
+         "member get_Zero(unitVar0) = {x = 0; y = 0} @ (6,25--6,37)";
+         "member get_Sign(p) (unitVar1) = Operators.Sign<Microsoft.FSharp.Core.int> (fun arg0_0 -> Operators.Sign<Microsoft.FSharp.Core.int> (arg0_0),p.x) @ (7,20--7,28)";
+         "member op_Addition(p1,p2) = {x = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.x,p2.x); y = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.y,p2.y)} @ (9,33--9,68)";
+         "let p1 = {x = 1; y = 10} @ (11,9--11,20)";
+         "let p2 = {x = 2; y = 20} @ (12,9--12,20)";
+         "let s = ListModule.Sum<M.Point> (fun arg0_0 -> Point.get_Zero (arg0_0),fun arg0_0 -> fun arg1_0 -> Point.op_Addition (arg0_0,arg1_0),Cons(M.p1 (),Cons(M.p2 (),Empty()))) @ (13,8--13,25)";
+         "let s2 = Operators.Sign<M.Point> (fun arg0_0 -> arg0_0.get_Sign(()),M.p1 ()) @ (14,9--14,16)"]
+
+    let actual = 
+      printDeclarations None (List.ofSeq file1.Declarations)
+      |> Seq.toList 
+    printfn "actual:\n\n%A" actual
+    actual
+      |> shouldPairwiseEqual expected
+
+[<Test>]
+let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
+    let cleanup, options = ProjectForWitnesses3.createOptions()
+    use _holder = cleanup
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
+
+    begin
+        let symbol = 
+            wholeProjectResults.GetAllUsesOfAllSymbols()
+            |> Array.tryFind (fun su -> su.Symbol.DisplayName = "sum")
+            |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
+            |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
+            |> Option.get
+        printfn "symbol = %s" symbol.FullName
+        let wpi = (symbol.GetWitnessPassingInfo())
+        match wpi with 
+        | None -> failwith "witness passing info expected"
+        | Some (nm, argTypes) ->
+            nm |> shouldEqual "Sum$W"
+            argTypes.Count |> shouldEqual 2
+            let argName1 = argTypes.[0].Name
+            let argText1 = argTypes.[0].Type.ToString()
+            let argName2 = argTypes.[1].Name
+            let argText2 = argTypes.[1].Type.ToString()
+            argName1 |> shouldEqual (Some "get_Zero")
+            argText1 |> shouldEqual "type Microsoft.FSharp.Core.unit ->  ^T"
+            argName2 |> shouldEqual (Some "op_Addition")
+            argText2 |> shouldEqual "type  ^T ->  ^T ->  ^T"
+    end
 

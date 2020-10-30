@@ -908,8 +908,8 @@ type FSharpMemberOrFunctionOrValue =
     member FormatLayout: context: FSharpDisplayContext -> Layout
 
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
-    /// the name of that entrypoint and the types of the witness arguments
-    member GetWitnessPassingInfo: unit -> (string * IList<FSharpType>) option
+    /// the name of that entrypoint and information about the additional witness arguments
+    member GetWitnessPassingInfo: unit -> (string * IList<FSharpParameter>) option
 
 /// A subtype of FSharpSymbol that represents a parameter 
 [<Class>]
