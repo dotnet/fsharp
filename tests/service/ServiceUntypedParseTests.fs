@@ -315,7 +315,7 @@ let f x = ()
 f 12
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
@@ -331,7 +331,7 @@ let f x y z = ()
 f 1 2 3
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
@@ -347,7 +347,7 @@ let f x y z = ()
 f (1) (2) (3)
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
@@ -363,12 +363,12 @@ let f x y z = ()
 f ((1)) (((2))) ((((3))))
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> shouldEqual [(3, 2); (3, 8); (3, 16)]
+            |> shouldEqual [(3, 3); (3, 10); (3, 19)]
         | None ->
             Assert.Fail("No arguments found in source code")
 
@@ -379,7 +379,7 @@ let f () = ()
 f ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         Assert.IsTrue(res.IsNone, "Found argument for unit-accepting function, which shouldn't be the case.")
 
     [<Test>]
@@ -389,7 +389,7 @@ let f x y = x + y
 f 12
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
@@ -406,7 +406,7 @@ let t = (1, 2)
 f t
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 4 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 4 0)
         match res with
         | Some res ->
             res
@@ -422,12 +422,12 @@ let f (t: int * int) = ()
 f (1, 2)
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> shouldEqual [(3, 2)]
+            |> shouldEqual [(3, 3); (3, 6)]
         | None ->
             Assert.Fail("No arguments found in source code")
 
@@ -439,7 +439,7 @@ let t = (1, 2)
 f t
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 4 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 4 0)
         match res with
         | Some res ->
             res
@@ -449,18 +449,34 @@ f t
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - tuple literal with definition that has explicit names``() =
+    let ``GetAllArgumentsForFunctionApplication - tuple literal inside parens``() =
         let source = """
-let f ((x, y): int * int) = ()
-f (1, 2)
+let f (x, y) = ()
+f ((1, 2))
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
             |> List.map (tups >> fst)
-            |> shouldEqual [(3, 2)]
+            |> shouldEqual [(3, 4); (3, 7)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplication - tuples with elements as arguments``() =
+        let source = """
+let f (a, b) = ()
+f (1, 2)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 3); (3, 6)]
         | None ->
             Assert.Fail("No arguments found in source code")
 
@@ -471,7 +487,7 @@ let f x y = x + y
 f (f 1 2) 3
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 0)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
         match res with
         | Some res ->
             res
@@ -487,7 +503,7 @@ let f x y = x + y
 f (f 1 2) 3
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 3 3)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 3)
         match res with
         | Some res ->
             res
@@ -502,7 +518,7 @@ f (f 1 2) 3
 let addStr x y = string x + y
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 17)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 17)
         match res with
         | Some res ->
             res
@@ -517,7 +533,7 @@ let addStr x y = string x + y
 let addStr x y = x + string y
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 21)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 21)
         match res with
         | Some res ->
             res
@@ -532,7 +548,7 @@ let addStr x y = x + string y
 let addStr x y = string x + string y
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 17)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 17)
         match res with
         | Some res ->
             res
@@ -542,7 +558,7 @@ let addStr x y = string x + string y
             Assert.Fail("No arguments found in source code")
 
         
-        let res = parseFileResults.GetAllArgumentsForFunctionApplication (mkPos 2 28)
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 28)
         match res with
         | Some res ->
             res

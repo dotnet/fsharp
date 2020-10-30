@@ -10,6 +10,9 @@ namespace FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 
+/// Represents the location of a tupled argument, which can optionally be a named argument.
+type TupledArgumentLocation = { IsNamedArgument: bool; ArgumentRange: range }
+
 /// Represents the locations relevant to activating parameter info in an IDE
 [<Sealed>]
 type public FSharpNoteworthyParamInfoLocations =
@@ -36,7 +39,7 @@ type public FSharpNoteworthyParamInfoLocations =
     member NamedParamNames : string option []
 
     /// Array of locations for each argument, and a flag if that argument is named
-    member ArgLocations: {| IsNamedArgument: bool; ArgumentRange: range |} []
+    member ArgLocations: TupledArgumentLocation []
 
     /// Find the information about parameter info locations at a particular source location
     static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option

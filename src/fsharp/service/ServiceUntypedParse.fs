@@ -105,7 +105,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
         | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)
         | _ -> None
 
-    member scope.GetAllArgumentsForFunctionApplication pos =
+    member scope.GetAllArgumentsForFunctionApplicationAtPostion pos =
         match input with
         | Some input -> FunctionApplicationArgumentLocationsImpl.findFSharpFunctionArgInfos pos input
         | None -> None

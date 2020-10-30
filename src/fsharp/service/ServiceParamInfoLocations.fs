@@ -6,16 +6,19 @@ open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
 
+type TupledArgumentLocation = { IsNamedArgument: bool; ArgumentRange: range }
+
 [<Sealed>]
 type FSharpNoteworthyParamInfoLocations
     (
         longId: string list,
         longIdRange: range,
         openParenLocation: pos,
-        argRanges: {| IsNamedArgument: bool; ArgumentRange: range |} list, 
+        argRanges: TupledArgumentLocation list, 
         tupleEndLocations: pos list,
         isThereACloseParen: bool,
-        namedParamNames: string option list) =
+        namedParamNames: string option list
+    ) =
 
     let tupleEndLocations = Array.ofList tupleEndLocations
     let namedParamNames = Array.ofList namedParamNames
@@ -59,7 +62,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         | _ -> None
 
     type FindResult = 
-        | Found of openParen: pos * argRanges: {| IsNamedArgument: bool; ArgumentRange: range |} list * commasAndCloseParen: (pos * string option) list * hasClosedParen: bool
+        | Found of openParen: pos * argRanges: TupledArgumentLocation list * commasAndCloseParen: (pos * string option) list * hasClosedParen: bool
         | NotFound
 
     let digOutIdentFromStaticArg (StripParenTypes synType) =
@@ -95,7 +98,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         match inner with
         | None ->
             if AstTraversal.rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive parenRange pos then
-                let argRanges = [{| IsNamedArgument = (getNamedParamName synExpr).IsSome; ArgumentRange = synExpr.Range |}]
+                let argRanges = [{ IsNamedArgument = (getNamedParamName synExpr).IsSome; ArgumentRange = synExpr.Range }]
                 Found (parenRange.Start, argRanges, [(parenRange.End, getNamedParamName synExpr)], rpRangeOpt.IsSome), None
             else
                 NotFound, None
@@ -116,7 +119,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     // argRange, isNamed
                     let argRanges =
                         synExprList
-                        |> List.map (fun e -> {| IsNamedArgument = (getNamedParamName e).IsSome; ArgumentRange = e.Range |})
+                        |> List.map (fun e -> { IsNamedArgument = (getNamedParamName e).IsSome; ArgumentRange = e.Range })
                     let commasAndCloseParen = ((synExprList, commaRanges@[parenRange]) ||> List.map2 (fun e c -> c.End, getNamedParamName e))
                     let r = Found (parenRange.Start, argRanges, commasAndCloseParen, rpRangeOpt.IsSome)
                     r, None
@@ -167,7 +170,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
             if AstTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos && args |> List.forall isStaticArg then
                 let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
-                Some (FSharpNoteworthyParamInfoLocations(pathOfLid lid, lidm, openm.Start, [](* TODO - figure out if need to do anything here *), commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
+                Some (FSharpNoteworthyParamInfoLocations(pathOfLid lid, lidm, openm.Start, [], commasAndCloseParen, closemOpt.IsSome, args |> List.map digOutIdentFromStaticArg))
             else
                 None
         | _ ->
@@ -204,7 +207,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     if AstTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                         // We found it, dig out ident
                         match digOutIdentFromFuncExpr synExpr with
-                        | Some(lid, lidRange) -> Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, op.idRange.Start, [] (* TODO - figure out if need to do anything here *), [ wholem.End ], false, []))
+                        | Some(lid, lidRange) -> Some (FSharpNoteworthyParamInfoLocations(lid, lidRange, op.idRange.Start, [], [ wholem.End ], false, []))
                         | None -> None
                     else
                         None
@@ -242,7 +245,7 @@ module internal NoteworthyParamInfoLocationsImpl =
                     let typeArgsm = mkRange openm.FileName openm.Start wholem.End 
                     if AstTraversal.rangeContainsPosEdgesExclusive typeArgsm pos && tyArgs |> List.forall isStaticArg then
                         let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
-                        let argRanges = tyArgs |> List.map (fun tyarg -> {| IsNamedArgument = false; ArgumentRange = tyarg.Range |})
+                        let argRanges = tyArgs |> List.map (fun tyarg -> { IsNamedArgument = false; ArgumentRange = tyarg.Range })
                         let r = FSharpNoteworthyParamInfoLocations(["dummy"], synExpr.Range, openm.Start, argRanges, commasAndCloseParen, closemOpt.IsSome, tyArgs |> List.map digOutIdentFromStaticArg)
                         Some r
                     else
@@ -288,16 +291,24 @@ type FSharpNoteworthyParamInfoLocations with
         | _ -> None
 
 module internal FunctionApplicationArgumentLocationsImpl =
-    let rec private searchSynArgExpr traverseSynExpr _pos expr ranges =
+    let rec private searchSynArgExpr traverseSynExpr expr ranges =
         match expr with
-        | SynExprParen(SynExprParen(_, _, _, _), _, _, parenRange) ->
-            Some(parenRange :: ranges), None
-
-        | SynExpr.ArbitraryAfterError (_debugStr, range) -> // single argument when e.g. after open paren you hit EOF
-            Some(range :: ranges), None
-
         | SynExpr.Const(SynConst.Unit, _) ->
             None, None
+
+        | SynExprParen(SynExpr.Tuple (_, exprs, _commas, _tupRange), _, _, _parenRange) ->
+            let rec loop (exprs: SynExpr list) ranges =
+                match exprs with
+                | [] -> ranges
+                | h::t ->
+                    loop t (h.Range :: ranges)
+
+            let res = loop exprs ranges
+            Some (res), None
+
+        | SynExprParen(SynExprParen(_, _, _, _) as synExpr, _, _, _parenRange) -> 
+            let r, _cacheOpt = searchSynArgExpr traverseSynExpr synExpr ranges
+            r, None
 
         | SynExprParen(SynExpr.App (_, _isInfix, _, _, _range), _, _, parenRange) ->
             Some (parenRange :: ranges), None
@@ -322,13 +333,12 @@ module internal FunctionApplicationArgumentLocationsImpl =
                     if isInfixFuncExpr then
                         traverseSynExpr funcExpr
                     else
-
                         let workingRanges =
                             match traverseSynExpr funcExpr with
                             | Some ranges -> ranges
                             | None -> []
 
-                        let xResult, cacheOpt = searchSynArgExpr traverseSynExpr pos argExpr workingRanges
+                        let xResult, cacheOpt = searchSynArgExpr traverseSynExpr argExpr workingRanges
                         match xResult, cacheOpt with
                         | Some ranges, _ -> Some ranges
                         | None, Some cache -> cache

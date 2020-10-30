@@ -5,6 +5,7 @@ open System
 open System.Collections.Immutable
 open System.Threading
 open System.ComponentModel.Composition
+open System.Linq
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -83,50 +84,60 @@ type internal FSharpInlineHintsService
                         typeHints.Add(hint)
 
                     | :? FSharpMemberOrFunctionOrValue as func when func.IsFunction && not symbolUse.IsFromDefinition ->
-                        let appliedArgRangesOpt = parseFileResults.GetAllArgumentsForFunctionApplication symbolUse.RangeAlternate.Start
+                        let appliedArgRangesOpt = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion  symbolUse.RangeAlternate.Start
                         match appliedArgRangesOpt with
                         | None -> ()
                         | Some [] -> ()
                         | Some appliedArgRanges ->
-                            match func.PossibleArgumentList with
-                            | Some [] -> ()
-                            | Some definitionArgNames ->
-                                let appliedArgRanges = appliedArgRanges |> Array.ofList
-                                let definitionArgNames = definitionArgNames |> Array.ofList
+                            let parameters = func.CurriedParameterGroups |> Seq.concat
+                            let appliedArgRanges = appliedArgRanges |> Array.ofList
+                            let definitionArgs = parameters |> Array.ofSeq
 
-                                for idx = 0 to appliedArgRanges.Length - 1 do
-                                    let appliedArgRange = appliedArgRanges.[idx]
-                                    let definitionArgName = definitionArgNames.[idx]
+                            for idx = 0 to appliedArgRanges.Length - 1 do
+                                let appliedArgRange = appliedArgRanges.[idx]
+                                let definitionArgName = definitionArgs.[idx].DisplayName
+                                if not (String.IsNullOrWhiteSpace(definitionArgName)) then
                                     let appliedArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, appliedArgRange)
                                     let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, definitionArgName + " ="))
                                     let hint = FSharpInlineHint(TextSpan(appliedArgSpan.Start, 0), displayParts)
                                     parameterHints.Add(hint)
-                            | _ -> ()
 
-                    | :? FSharpMemberOrFunctionOrValue as meth when meth.IsMethod ->
-                        // get position that is +1 column from first `(` on the method symbol line
+                    | :? FSharpMemberOrFunctionOrValue as methodOrConstructor when methodOrConstructor.IsMethod || methodOrConstructor.IsConstructor ->
                         let endPosForMethod = symbolUse.RangeAlternate.End
                         let line, _ = Pos.toZ endPosForMethod
                         let afterParenPosInLine = getFirstPositionAfterParen (sourceText.Lines.[line].ToString()) (endPosForMethod.Column)
+                        let tupledParamInfos = parseFileResults.FindNoteworthyParamInfoLocations(Pos.fromZ line afterParenPosInLine)
+                        let appliedArgRanges = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion  symbolUse.RangeAlternate.Start
+                        match tupledParamInfos, appliedArgRanges with
+                        | None, None -> ()
 
+                        // Prefer looking at the "tupled" view if it exists, even if the other ranges exist.
+                        // M(1, 2) can give results for both, but in that case we want to "tupled" view.
+                        | Some tupledParamInfos, _ ->
+                            let parameters = methodOrConstructor.CurriedParameterGroups |> Seq.concat |> Array.ofSeq
+                            for idx = 0 to parameters.Length - 1 do
+                                let paramLocationInfo = tupledParamInfos.ArgLocations.[idx]
+                                let paramName = parameters.[idx].DisplayName
+                                if not paramLocationInfo.IsNamedArgument && not (String.IsNullOrWhiteSpace(paramName)) then
+                                    let appliedArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, paramLocationInfo.ArgumentRange)
+                                    let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, paramName + " ="))
+                                    let hint = FSharpInlineHint(TextSpan(appliedArgSpan.Start, 0), displayParts)
+                                    parameterHints.Add(hint)
 
-                        let paramInfos = parseFileResults.FindNoteworthyParamInfoLocations(Pos.fromZ line afterParenPosInLine)
-                        match paramInfos with
-                        | None -> ()
-                        | Some paramInfos ->                            
-                            // TODO - how the hell to handle the nested ones?
-                            let groups = meth.CurriedParameterGroups
-                            if groups.Count = 0 || groups.Count > 1 then
-                                ()
-                            else
-                                for idx = 0 to groups.[0].Count - 1 do
-                                    let paramLocationInfo = paramInfos.ArgLocations.[idx]
-                                    let paramName = groups.[0].[idx].DisplayName
-                                    if not paramLocationInfo.IsNamedArgument && not (String.IsNullOrWhiteSpace(paramName)) then
-                                        let appliedArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, paramLocationInfo.ArgumentRange)
-                                        let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, paramName + " ="))
-                                        let hint = FSharpInlineHint(TextSpan(appliedArgSpan.Start, 0), displayParts)
-                                        parameterHints.Add(hint)
+                        // This will only happen for curried methods defined in F#.
+                        | _, Some appliedArgRanges ->
+                            let parameters = methodOrConstructor.CurriedParameterGroups |> Seq.concat
+                            let appliedArgRanges = appliedArgRanges |> Array.ofList
+                            let definitionArgs = parameters |> Array.ofSeq
+
+                            for idx = 0 to appliedArgRanges.Length - 1 do
+                                let appliedArgRange = appliedArgRanges.[idx]
+                                let definitionArgName = definitionArgs.[idx].DisplayName
+                                if not (String.IsNullOrWhiteSpace(definitionArgName)) then
+                                    let appliedArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, appliedArgRange)
+                                    let displayParts = ImmutableArray.Create(TaggedText(TextTags.Text, definitionArgName + " ="))
+                                    let hint = FSharpInlineHint(TextSpan(appliedArgSpan.Start, 0), displayParts)
+                                    parameterHints.Add(hint)
                     | _ -> ()
 
                 let typeHints = typeHints.ToImmutableArray()

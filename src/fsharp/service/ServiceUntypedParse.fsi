@@ -22,13 +22,13 @@ type public FSharpParseFileResults =
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
 
-    // doot doot yeet yeet
-    member GetAllArgumentsForFunctionApplication: pos: pos -> range list option
+    /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
+    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
 
-    // Determines if the expression or pattern at the given position has a type annotation
+    /// Determines if the expression or pattern at the given position has a type annotation
     member IsTypeAnnotationGiven: pos -> bool
 
-    // Determines if the binding at a given position is a lambda expression
+    /// Determines if the binding at a given position is a lambda expression
     member IsBindingALambda: pos -> bool
 
     /// Name of the file for which this information were created

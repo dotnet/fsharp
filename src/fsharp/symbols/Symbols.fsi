@@ -861,10 +861,14 @@ type FSharpMemberOrFunctionOrValue =
     /// Get the name as presented in F# error messages and documentation
     member DisplayName: string
 
+<<<<<<< HEAD
     member CurriedParameterGroups: IList<IList<FSharpParameter>>
-
-    /// doop doop yeet yeet
-    member PossibleArgumentList : string list option
+=======
+    /// List of list of parameters. Typically, there is only one nested list.
+    /// However, code such as 'f (a, b) (c, d)' contains two groups, each with two parameters.
+    /// In that example, there is a list made up of two lists, each with a parameter.
+    member CurriedParameterGroups : IList<IList<FSharpParameter>>
+>>>>>>> 8dc6b59f9... Cleanup, handle method params properly, constructors
 
     /// Gets the overloads for the current method
     /// matchParameterNumber indicates whether to filter the overloads to match the number of parameters in the current symbol
@@ -914,7 +918,6 @@ type FSharpMemberOrFunctionOrValue =
     member IsConstructor: bool
     
     /// Format the type using the rules of the given display context
-<<<<<<< HEAD
     member FormatLayout: context: FSharpDisplayContext -> Layout
     
     /// Format the type using the rules of the given display context
@@ -923,13 +926,6 @@ type FSharpMemberOrFunctionOrValue =
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
     member GetWitnessPassingInfo: unit -> (string * IList<FSharpParameter>) option
-=======
-    member FormatLayout : displayContext: FSharpDisplayContext -> Layout
-
-    /// Format the type using the rules of the given display context
-    member GetReturnTypeLayout : displayContext: FSharpDisplayContext -> Layout option
-
->>>>>>> ac5c7ef5f... Match names
 
 /// A subtype of FSharpSymbol that represents a parameter 
 [<Class>]
