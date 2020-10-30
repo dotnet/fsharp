@@ -657,6 +657,55 @@ x |> Seq.iter(fun r ->
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
         Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 
+    [<Fact>]
+    member __.``Verify that Dispose cleans up the native paths added``() =
+        let nativeProbingRoots () = Seq.empty<string>
+
+        let appendSemiColon (p:string) =
+            if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
+                p + ";"
+            else
+                p
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable initialPath:string = null
+        let mutable currentPath:string = null
+        let mutable finalPath:string =  null
+        do
+            initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let mutable currentPath:string = null
+            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+                let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "netstandard2.0")
+                Assert.Equal(true, result.Success)
+                currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        Assert.True(currentPath <> initialPath)     // The path was modified by #r "nuget: ..."
+        Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
+
+        initialPath <- null
+        currentPath <- null
+        finalPath <-  null
+        do
+            initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            let mutable currentPath:string = null
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "netcoreapp3.1")
+            Assert.Equal(true, result.Success)
+            currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        Assert.True(currentPath <> initialPath)      // The path was modified by #r "nuget: ..."
+        Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
+
+        ()
 
     [<Fact>]
     member __.``Verify that #help produces help text for fsi + dependency manager``() =
