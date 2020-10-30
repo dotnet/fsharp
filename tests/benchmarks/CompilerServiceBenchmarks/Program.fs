@@ -183,129 +183,151 @@ type CompilerService() =
             decentlySizedStandAloneFileCheckResultOpt <- Some checkResult
         | _ -> ()
 
-    //[<Benchmark>]
-    //member __.ParsingTypeCheckerFs() =
-    //    match checkerOpt, sourceOpt with
-    //    | None, _ -> failwith "no checker"
-    //    | _, None -> failwith "no source"
-    //    | Some(checker), Some(source) ->
-    //        let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
-    //        if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
+    [<Benchmark>]
+    member __.ParsingTypeCheckerFs() =
+        match checkerOpt, sourceOpt with
+        | None, _ -> failwith "no checker"
+        | _, None -> failwith "no source"
+        | Some(checker), Some(source) ->
+            let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
+            if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
 
-    //[<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
-    //member __.ParsingTypeCheckerFsSetup() =
-    //    match checkerOpt with
-    //    | None -> failwith "no checker"
-    //    | Some(checker) ->
-    //        checker.InvalidateAll()
-    //        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    //        checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
-    //        ClearAllILModuleReaderCache()
+    [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
+    member __.ParsingTypeCheckerFsSetup() =
+        match checkerOpt with
+        | None -> failwith "no checker"
+        | Some(checker) ->
+            checker.InvalidateAll()
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            checker.ParseFile("dummy.fs", SourceText.ofString "dummy", parsingOptions) |> Async.RunSynchronously |> ignore
+            ClearAllILModuleReaderCache()
 
-    //[<Benchmark>]
-    //member __.ILReading() =
-    //    match assembliesOpt with
-    //    | None -> failwith "no assemblies"
-    //    | Some(assemblies) ->
-    //        // We try to read most of everything in the assembly that matter, mainly types with their properties, methods, and fields.
-    //        // CustomAttrs and SecurityDecls are lazy until you call them, so we call them here for benchmarking.
-    //        assemblies
-    //        |> Array.iter (fun (fileName) ->
-    //            let reader = OpenILModuleReader fileName readerOptions
+    [<Benchmark>]
+    member __.ILReading() =
+        match assembliesOpt with
+        | None -> failwith "no assemblies"
+        | Some(assemblies) ->
+            // We try to read most of everything in the assembly that matter, mainly types with their properties, methods, and fields.
+            // CustomAttrs and SecurityDecls are lazy until you call them, so we call them here for benchmarking.
+            assemblies
+            |> Array.iter (fun (fileName) ->
+                let reader = OpenILModuleReader fileName readerOptions
 
-    //            let ilModuleDef = reader.ILModuleDef
+                let ilModuleDef = reader.ILModuleDef
 
-    //            let ilAssemblyManifest = ilModuleDef.Manifest.Value
+                let ilAssemblyManifest = ilModuleDef.Manifest.Value
 
-    //            ilAssemblyManifest.CustomAttrs |> ignore
-    //            ilAssemblyManifest.SecurityDecls |> ignore
-    //            ilAssemblyManifest.ExportedTypes.AsList
-    //            |> List.iter (fun x ->
-    //               x.CustomAttrs |> ignore
-    //            )
+                ilAssemblyManifest.CustomAttrs |> ignore
+                ilAssemblyManifest.SecurityDecls |> ignore
+                ilAssemblyManifest.ExportedTypes.AsList
+                |> List.iter (fun x ->
+                   x.CustomAttrs |> ignore
+                )
 
-    //            ilModuleDef.CustomAttrs |> ignore
-    //            ilModuleDef.TypeDefs.AsArray
-    //            |> Array.iter (fun ilTypeDef ->
-    //                ilTypeDef.CustomAttrs |> ignore
-    //                ilTypeDef.SecurityDecls |> ignore
+                ilModuleDef.CustomAttrs |> ignore
+                ilModuleDef.TypeDefs.AsArray
+                |> Array.iter (fun ilTypeDef ->
+                    ilTypeDef.CustomAttrs |> ignore
+                    ilTypeDef.SecurityDecls |> ignore
 
-    //                ilTypeDef.Methods.AsArray
-    //                |> Array.iter (fun ilMethodDef ->
-    //                    ilMethodDef.CustomAttrs |> ignore
-    //                    ilMethodDef.SecurityDecls |> ignore
-    //                )
+                    ilTypeDef.Methods.AsArray
+                    |> Array.iter (fun ilMethodDef ->
+                        ilMethodDef.CustomAttrs |> ignore
+                        ilMethodDef.SecurityDecls |> ignore
+                    )
 
-    //                ilTypeDef.Fields.AsList
-    //                |> List.iter (fun ilFieldDef ->
-    //                    ilFieldDef.CustomAttrs |> ignore
-    //                )
+                    ilTypeDef.Fields.AsList
+                    |> List.iter (fun ilFieldDef ->
+                        ilFieldDef.CustomAttrs |> ignore
+                    )
 
-    //                ilTypeDef.Properties.AsList
-    //                |> List.iter (fun ilPropertyDef ->
-    //                    ilPropertyDef.CustomAttrs |> ignore
-    //                )
-    //            )
-    //        )
+                    ilTypeDef.Properties.AsList
+                    |> List.iter (fun ilPropertyDef ->
+                        ilPropertyDef.CustomAttrs |> ignore
+                    )
+                )
+            )
 
-    //[<IterationCleanup(Target = "ILReading")>]
-    //member __.ILReadingSetup() =
-    //    // With caching, performance increases an order of magnitude when re-reading an ILModuleReader.
-    //    // Clear it for benchmarking.
-    //    ClearAllILModuleReaderCache()
+    [<IterationCleanup(Target = "ILReading")>]
+    member __.ILReadingSetup() =
+        // With caching, performance increases an order of magnitude when re-reading an ILModuleReader.
+        // Clear it for benchmarking.
+        ClearAllILModuleReaderCache()
 
-    //member val TypeCheckFileWith100ReferencedProjectsOptions =
-    //    createProject "MainProject"
-    //        [ for i = 1 to 100 do
-    //            yield 
-    //                createProject ("ReferencedProject" + string i) []
-    //        ]
+    member val TypeCheckFileWith100ReferencedProjectsOptions =
+        createProject "MainProject"
+            [ for i = 1 to 100 do
+                yield 
+                    createProject ("ReferencedProject" + string i) []
+            ]
 
-    //member this.TypeCheckFileWith100ReferencedProjectsRun() =
-    //    let options = this.TypeCheckFileWith100ReferencedProjectsOptions
-    //    let file = options.SourceFiles.[0]
+    member this.TypeCheckFileWith100ReferencedProjectsRun() =
+        let options = this.TypeCheckFileWith100ReferencedProjectsOptions
+        let file = options.SourceFiles.[0]
 
-    //    match checkerOpt with
-    //    | None -> failwith "no checker"
-    //    | Some checker ->
-    //        let parseResult, checkResult =                                                                
-    //            checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
-    //            |> Async.RunSynchronously
+        match checkerOpt with
+        | None -> failwith "no checker"
+        | Some checker ->
+            let parseResult, checkResult =                                                                
+                checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
+                |> Async.RunSynchronously
 
-    //        if parseResult.Errors.Length > 0 then
-    //            failwithf "%A" parseResult.Errors
+            if parseResult.Errors.Length > 0 then
+                failwithf "%A" parseResult.Errors
 
-    //        match checkResult with
-    //        | FSharpCheckFileAnswer.Aborted -> failwith "aborted"
-    //        | FSharpCheckFileAnswer.Succeeded checkFileResult ->
+            match checkResult with
+            | FSharpCheckFileAnswer.Aborted -> failwith "aborted"
+            | FSharpCheckFileAnswer.Succeeded checkFileResult ->
 
-    //            if checkFileResult.Errors.Length > 0 then
-    //                failwithf "%A" checkFileResult.Errors
+                if checkFileResult.Errors.Length > 0 then
+                    failwithf "%A" checkFileResult.Errors
 
-    //[<IterationSetup(Target = "TypeCheckFileWith100ReferencedProjects")>]
-    //member this.TypeCheckFileWith100ReferencedProjectsSetup() =
-    //    this.TypeCheckFileWith100ReferencedProjectsOptions.SourceFiles
-    //    |> Seq.iter (fun file ->
-    //        File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
-    //    )
+    [<IterationSetup(Target = "TypeCheckFileWith100ReferencedProjects")>]
+    member this.TypeCheckFileWith100ReferencedProjectsSetup() =
+        this.TypeCheckFileWith100ReferencedProjectsOptions.SourceFiles
+        |> Seq.iter (fun file ->
+            File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
+        )
 
-    //    this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
-    //    |> Seq.iter (fun (_, referencedProjectOptions) ->
-    //        referencedProjectOptions.SourceFiles
-    //        |> Seq.iter (fun file ->
-    //            File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
-    //        )
-    //    )
+        this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
+        |> Seq.iter (fun (_, referencedProjectOptions) ->
+            referencedProjectOptions.SourceFiles
+            |> Seq.iter (fun file ->
+                File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
+            )
+        )
 
-    //    this.TypeCheckFileWith100ReferencedProjectsRun()
+        this.TypeCheckFileWith100ReferencedProjectsRun()
 
-    //[<Benchmark>]
-    //member this.TypeCheckFileWith100ReferencedProjects() =
-    //    // Because the checker's projectcachesize is set to 200, this should be fast.
-    //    // If set to 3, it will be almost as slow as re-evaluating all project and it's projects references on setup; this could be a bug or not what we want.
-    //    this.TypeCheckFileWith100ReferencedProjectsRun()
+    [<Benchmark>]
+    member this.TypeCheckFileWith100ReferencedProjects() =
+        // Because the checker's projectcachesize is set to 200, this should be fast.
+        // If set to 3, it will be almost as slow as re-evaluating all project and it's projects references on setup; this could be a bug or not what we want.
+        this.TypeCheckFileWith100ReferencedProjectsRun()
 
-    //member val TypeCheckFileWithNoReferencesOptions = createProject "MainProject" []
+    member val TypeCheckFileWithNoReferencesOptions = createProject "MainProject" []
+
+    [<IterationCleanup(Target = "TypeCheckFileWith100ReferencedProjects")>]
+    member this.TypeCheckFileWith100ReferencedProjectsCleanup() =
+        this.TypeCheckFileWith100ReferencedProjectsOptions.SourceFiles
+        |> Seq.iter (fun file ->
+            try File.Delete(file) with | _ -> ()
+        )
+
+        this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
+        |> Seq.iter (fun (_, referencedProjectOptions) ->
+            referencedProjectOptions.SourceFiles
+            |> Seq.iter (fun file ->
+                try File.Delete(file) with | _ -> ()
+            )
+        )
+
+        match checkerOpt with
+        | None -> failwith "no checker"
+        | Some(checker) ->
+            checker.InvalidateAll()
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            ClearAllILModuleReaderCache()
 
     [<Benchmark>]
     member this.SimplifyNames() =
@@ -344,28 +366,6 @@ type CompilerService() =
                 ignore decls // should be 16                
             ()
         | _ -> failwith "oopsie"
-
-    //[<IterationCleanup(Target = "TypeCheckFileWith100ReferencedProjects")>]
-    //member this.TypeCheckFileWith100ReferencedProjectsCleanup() =
-    //    this.TypeCheckFileWith100ReferencedProjectsOptions.SourceFiles
-    //    |> Seq.iter (fun file ->
-    //        try File.Delete(file) with | _ -> ()
-    //    )
-
-    //    this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
-    //    |> Seq.iter (fun (_, referencedProjectOptions) ->
-    //        referencedProjectOptions.SourceFiles
-    //        |> Seq.iter (fun file ->
-    //            try File.Delete(file) with | _ -> ()
-    //        )
-    //    )
-
-    //    match checkerOpt with
-    //    | None -> failwith "no checker"
-    //    | Some(checker) ->
-    //        checker.InvalidateAll()
-    //        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    //        ClearAllILModuleReaderCache()
 
 [<EntryPoint>]
 let main _ =

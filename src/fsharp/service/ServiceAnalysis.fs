@@ -2,6 +2,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open System.Threading
+
 open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.PrettyNaming
@@ -78,56 +80,59 @@ module UnusedOpens =
     /// Gets the open statements, their scopes and their resolutions
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration[]) : OpenStatement[] = 
         openDeclarations
-        |> Array.filter (fun x -> not x.IsOwnNamespace)
         |> Array.choose (fun openDecl ->
-             match openDecl.LongId, openDecl.Range with
-             | firstId :: _, Some range ->
-                 if firstId.idText = MangledGlobalName then 
-                     None
-                 else
-                     Some { OpenedGroups = openDecl.Modules |> List.map OpenedModuleGroup.Create
-                            Range = range
-                            AppliedScope = openDecl.AppliedScope }
-             | _ -> None)
+            if not openDecl.IsOwnNamespace then
+                None
+            else
+                match openDecl.LongId, openDecl.Range with
+                | firstId :: _, Some range ->
+                    if firstId.idText = MangledGlobalName then 
+                        None
+                    else
+                        Some { OpenedGroups = openDecl.Modules |> List.map OpenedModuleGroup.Create
+                               Range = range
+                               AppliedScope = openDecl.AppliedScope }
+                | _ -> None)
 
     /// Only consider symbol uses which are the first part of a long ident, i.e. with no qualifying identifiers
-    let filterSymbolUses (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : FSharpSymbolUse[] =
-        symbolUses
-        |> Array.filter (fun su ->
-             match su.Symbol with
-             | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> 
-                // Extension members should be taken into account even though they have a prefix (as they do most of the time)
-                true
+    let filterSymbolUses (getSourceLineStr: int -> string) (checkFileResults: FSharpCheckFileResults) (ct: CancellationToken) : FSharpSymbolUse[] =
+        let filter =
+            fun (su: FSharpSymbolUse) ->
+                match su.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> 
+                    // Extension members should be taken into account even though they have a prefix (as they do most of the time)
+                    true
 
-             | :? FSharpMemberOrFunctionOrValue as fv when not fv.IsModuleValueOrMember -> 
-                // Local values can be ignored
-                false
+                | :? FSharpMemberOrFunctionOrValue as fv when not fv.IsModuleValueOrMember -> 
+                    // Local values can be ignored
+                    false
 
-             | :? FSharpMemberOrFunctionOrValue when su.IsFromDefinition -> 
-                // Value definitions should be ignored
-                false
+                | :? FSharpMemberOrFunctionOrValue when su.IsFromDefinition -> 
+                    // Value definitions should be ignored
+                    false
 
-             | :? FSharpGenericParameter -> 
-                // Generic parameters can be ignored, they never come into scope via 'open'
-                false
+                | :? FSharpGenericParameter -> 
+                    // Generic parameters can be ignored, they never come into scope via 'open'
+                    false
 
-             | :? FSharpUnionCase when su.IsFromDefinition -> 
-                false
+                | :? FSharpUnionCase when su.IsFromDefinition -> 
+                    false
 
-             | :? FSharpField as field when
-                     field.DeclaringEntity.IsSome && field.DeclaringEntity.Value.IsFSharpRecord ->
-                // Record fields are used in name resolution
-                true
+                | :? FSharpField as field when
+                        field.DeclaringEntity.IsSome && field.DeclaringEntity.Value.IsFSharpRecord ->
+                    // Record fields are used in name resolution
+                    true
 
-             | :? FSharpField as field when field.IsUnionCaseField ->
-                 false
+                | :? FSharpField as field when field.IsUnionCaseField ->
+                    false
 
-             | _ ->
-                // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
-                // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
-                // it's `open System` which really brings it into scope.
-                let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.RangeAlternate.StartLine, su.RangeAlternate.EndColumn - 1)
-                List.isEmpty partialName.QualifyingIdents)
+                | _ ->
+                    // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
+                    // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
+                    // it's `open System` which really brings it into scope.
+                    let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.RangeAlternate.StartLine, su.RangeAlternate.EndColumn - 1)
+                    List.isEmpty partialName.QualifyingIdents
+        checkFileResults.GetAllUsesOfAllSymbolsInFileByPredicate(filter, ct)
 
     /// Split symbol uses into cases that are easy to handle (via DeclaringEntity) and those that don't have a good DeclaringEntity
     let splitSymbolUses (symbolUses: FSharpSymbolUse[]) : FSharpSymbolUse[] * FSharpSymbolUse[] =
@@ -225,8 +230,7 @@ module UnusedOpens =
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
             let! ct = Async.CancellationToken
-            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-            let symbolUses = filterSymbolUses getSourceLineStr symbolUses
+            let symbolUses = filterSymbolUses getSourceLineStr checkFileResults ct
             let symbolUses = splitSymbolUses symbolUses
             let openStatements = getOpenStatements checkFileResults.OpenDeclarations
             return! filterOpenStatements symbolUses openStatements
@@ -241,58 +245,58 @@ module SimplifyNames =
 
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length    
 
-    let getSimplifiableNames (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<SimplifiableRange list> =
+    let getSimplifiableNames (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) =
         async {
             let result = ResizeArray()
             let! ct = Async.CancellationToken
-            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+            let filter = fun (symbolUse: FSharpSymbolUse) -> not symbolUse.IsFromOpenStatement && not symbolUse.IsFromDefinition
             let symbolUses =
-                symbolUses
-                |> Array.filter (fun symbolUse -> not symbolUse.IsFromOpenStatement)
-                |> Array.Parallel.map (fun symbolUse ->
+                checkFileResults.GetAllUsesOfAllSymbolsInFileByPredicate(filter, ct)
+                |> Array.Parallel.choose (fun symbolUse ->
                     let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
                     // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
                     let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
                     // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
                     // so we have to calculate plid's start ourselves.
                     let plidStartCol = symbolUse.RangeAlternate.EndColumn - partialName.PartialIdent.Length - (getPlidLength partialName.QualifyingIdents)
-                    symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent)
-                |> Array.filter (fun (_, plid, _, name) -> name <> "" && not (List.isEmpty plid))
+                    if partialName.PartialIdent = "" || List.isEmpty partialName.QualifyingIdents then
+                        None
+                    else
+                        Some (symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent))
                 |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
                 |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
 
             for symbolUse, plid, plidStartCol, name in symbolUses do
-                if not symbolUse.IsFromDefinition then
-                    let posAtStartOfName =
-                        let r = symbolUse.RangeAlternate
-                        if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
-                        else r.Start   
+                let posAtStartOfName =
+                    let r = symbolUse.RangeAlternate
+                    if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
+                    else r.Start   
 
-                    let getNecessaryPlid (plid: string list) : string list =
-                        let rec loop (rest: string list) (current: string list) =
-                            match rest with
-                            | [] -> current
-                            | headIdent :: restPlid ->
-                                let res = checkFileResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol)
-                                if res then current
-                                else loop restPlid (headIdent :: current)
-                        loop (List.rev plid) []
+                let getNecessaryPlid (plid: string list) : string list =
+                    let rec loop (rest: string list) (current: string list) =
+                        match rest with
+                        | [] -> current
+                        | headIdent :: restPlid ->
+                            let res = checkFileResults.IsRelativeNameResolvableFromSymbol(posAtStartOfName, current, symbolUse.Symbol)
+                            if res then current
+                            else loop restPlid (headIdent :: current)
+                    loop (List.rev plid) []
                     
-                    let necessaryPlid = getNecessaryPlid plid 
+                let necessaryPlid = getNecessaryPlid plid 
                     
-                    match necessaryPlid with
-                    | necessaryPlid when necessaryPlid = plid -> ()
-                    | necessaryPlid ->
-                        let r = symbolUse.RangeAlternate
-                        let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
+                match necessaryPlid with
+                | necessaryPlid when necessaryPlid = plid -> ()
+                | necessaryPlid ->
+                    let r = symbolUse.RangeAlternate
+                    let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
                     
-                        let unnecessaryRange = 
-                            Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
+                    let unnecessaryRange = 
+                        Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
                     
-                        let relativeName = (String.concat "." plid) + "." + name
-                        result.Add({Range = unnecessaryRange; RelativeName = relativeName})
+                    let relativeName = (String.concat "." plid) + "." + name
+                    result.Add({Range = unnecessaryRange; RelativeName = relativeName})
 
-            return List.ofSeq result
+            return result.ToArray()
         }
 
 module UnusedDeclarations = 
@@ -315,32 +319,30 @@ module UnusedDeclarations =
         | _ -> true
 
     let getUnusedDeclarationRanges (symbolsUses: FSharpSymbolUse[]) (isScript: bool) =
-        let definitions =
-            symbolsUses
-            |> Array.filter (fun su -> 
-                su.IsFromDefinition && 
-                su.Symbol.DeclarationLocation.IsSome && 
-                (isScript || su.IsPrivateToFile) && 
-                not (su.Symbol.DisplayName.StartsWith "_") &&
-                isPotentiallyUnusedDeclaration su.Symbol)
-
         let usages =
             let usages = 
                 symbolsUses
-                |> Array.filter (fun su -> not su.IsFromDefinition)
-                |> Array.choose (fun su -> su.Symbol.DeclarationLocation)
+                |> Array.choose (fun su -> if not su.IsFromDefinition then su.Symbol.DeclarationLocation else None)
             HashSet(usages)
 
-        let unusedRanges =
-            definitions
-            |> Array.map (fun defSu -> defSu, usages.Contains defSu.Symbol.DeclarationLocation.Value)
-            |> Array.groupBy (fun (defSu, _) -> defSu.RangeAlternate)
-            |> Array.filter (fun (_, defSus) -> defSus |> Array.forall (fun (_, isUsed) -> not isUsed))
-            |> Array.map (fun (m, _) -> m)
-
-        Array.toList unusedRanges
+        let chooser =
+            fun (su: FSharpSymbolUse) ->
+                if su.IsFromDefinition && 
+                    su.Symbol.DeclarationLocation.IsSome && 
+                    (isScript || su.IsPrivateToFile) && 
+                    not (su.Symbol.DisplayName.StartsWith "_") &&
+                    isPotentiallyUnusedDeclaration su.Symbol
+                then
+                    Some (su, usages.Contains su.Symbol.DeclarationLocation.Value)
+                else
+                    None
+        symbolsUses
+        |> Array.choose chooser
+        |> Array.groupBy (fun (defSu, _) -> defSu.RangeAlternate)
+        |> Array.filter (fun (_, defSus) -> defSus |> Array.forall (fun (_, isUsed) -> not isUsed))
+        |> Array.map (fun (m, _) -> m)
     
-    let getUnusedDeclarations(checkFileResults: FSharpCheckFileResults, isScriptFile: bool) : Async<range list> = 
+    let getUnusedDeclarations(checkFileResults: FSharpCheckFileResults, isScriptFile: bool) = 
         async {
             let! ct = Async.CancellationToken
             let allSymbolUsesInFile = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)

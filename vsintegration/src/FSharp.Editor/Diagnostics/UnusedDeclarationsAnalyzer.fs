@@ -25,7 +25,7 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
 
     interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
-        member __.AnalyzeSemanticsAsync(descriptor, document, cancellationToken) =
+        member _.AnalyzeSemanticsAsync(descriptor, document, cancellationToken) =
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
 
@@ -39,8 +39,8 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
                     let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
                     return
                         unusedRanges
-                        |> Seq.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
-                        |> Seq.toImmutableArray
+                        |> Array.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                        |> Array.toImmutableArray
             }
             |> Async.map (Option.defaultValue ImmutableArray.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

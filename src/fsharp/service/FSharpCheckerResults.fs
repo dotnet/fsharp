@@ -1883,6 +1883,21 @@ type FSharpCheckFileResults
                             let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
                             yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
 
+    member __.GetAllUsesOfAllSymbolsInFileByPredicate(predicate: (FSharpSymbolUse -> bool), ?cancellationToken: CancellationToken ) = 
+        threadSafeOp 
+            (fun () -> [| |])
+            (fun scope ->
+                let cenv = scope.SymbolEnv
+                [| for symbolUseChunk in scope.ScopeSymbolUses.AllUsesOfSymbols do
+                     for symbolUse in symbolUseChunk do
+                        cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
+                        if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                            let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
+                            let symbolUse = FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)
+                            if predicate symbolUse then
+                                symbolUse
+                |])
+
     member __.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
         threadSafeOp 
             (fun () -> [| |]) 
