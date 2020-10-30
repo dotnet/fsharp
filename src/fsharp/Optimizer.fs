@@ -1867,7 +1867,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | LinearMatchExpr _
     | Expr.Sequential _ 
     | Expr.Let _ ->  
-        OptimizeLinearExpr cenv env expr (fun x -> x)
+        OptimizeLinearExpr cenv env expr id
 
     | Expr.Const (c, m, ty) -> 
         OptimizeConst cenv env expr (c, m, ty)

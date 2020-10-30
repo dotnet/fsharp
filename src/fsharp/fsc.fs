@@ -1191,7 +1191,7 @@ module StaticLinker =
 
     let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) = 
         if isNil dependentILModules then 
-            ilxMainModule, (fun x -> x) 
+            ilxMainModule, id
         else
             let typeForwarding = new TypeForwarding(tcImports)
 

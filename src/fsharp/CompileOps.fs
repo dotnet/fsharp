@@ -4390,7 +4390,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             for provider in providers do 
                 tcImportsStrong.AttachDisposeTypeProviderAction(fun () -> 
                     try 
-                        provider.PUntaintNoFailure(fun x -> x).Dispose() 
+                        provider.PUntaintNoFailure(id).Dispose() 
                     with e -> 
                         ())
             

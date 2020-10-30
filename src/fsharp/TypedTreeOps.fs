@@ -4499,7 +4499,7 @@ and accFreeInInterfaceImpl opts (ty, overrides) acc =
 
 and accFreeInExpr (opts: FreeVarOptions) x acc = 
     match x with
-    | Expr.Let _ -> accFreeInExprLinear opts x acc (fun e -> e)
+    | Expr.Let _ -> accFreeInExprLinear opts x acc id
     | _ -> accFreeInExprNonLinear opts x acc
       
 and accFreeInExprLinear (opts: FreeVarOptions) x acc contf =   
@@ -5041,7 +5041,7 @@ and remapExpr (g: TcGlobals) (compgen: ValCopyFlag) (tmenv: Remap) expr =
     | LinearMatchExpr _ 
     | Expr.Sequential _  
     | Expr.Let _ -> 
-        remapLinearExpr g compgen tmenv expr (fun x -> x)
+        remapLinearExpr g compgen tmenv expr id
 
     // Binding constructs - see also dtrees below 
     | Expr.Lambda (_, ctorThisValOpt, baseValOpt, vs, b, m, rty) -> 
@@ -6233,7 +6233,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
 let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
     let optBind, addre, readonly, writeonly = mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m
     match optBind with 
-    | None -> (fun x -> x), addre, readonly, writeonly
+    | None -> id, addre, readonly, writeonly
     | Some (tmp, rval) -> (fun x -> mkCompGenLet m tmp rval x), addre, readonly, writeonly
 
 let mkTupleFieldGet g (tupInfo, e, tinst, i, m) = 
@@ -8300,7 +8300,7 @@ and RewriteExpr env expr =
   | LinearMatchExpr _ 
   | Expr.Let _ 
   | Expr.Sequential _ ->
-      rewriteLinearExpr env expr (fun e -> e)
+      rewriteLinearExpr env expr id
   | _ -> 
       let expr = 
          match preRewriteExpr env expr with 

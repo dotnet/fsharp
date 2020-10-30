@@ -6150,7 +6150,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             expr, tpenv
 
     | SynExpr.LetOrUse _ ->
-        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x) 
+        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr id
 
     | SynExpr.TryWith (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
         let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
@@ -6189,7 +6189,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     | SynExpr.Sequential (sp, dir, synExpr1, synExpr2, m) ->
         if dir then 
-            TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x) 
+            TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr id
         else 
             // Constructors using "new (...) = <ctor-expr> then <expr>" 
             let expr1, tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv synExpr1
@@ -6216,7 +6216,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         TcStmtThatCantBeCtorBody cenv env tpenv synInnerExpr
 
     | SynExpr.IfThenElse _ -> 
-        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x) 
+        TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr id
 
     // This is for internal use in the libraries only 
     | SynExpr.LibraryOnlyStaticOptimization (constraints, e2, e3, m) ->
@@ -9033,7 +9033,8 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 tpenv 
                 true
                 comp 
-                (fun x -> x) |> Some
+                id
+            |> Some
 
         // 'use x = expr in expr'
         | SynExpr.LetOrUse (_isRec, true, [Binding (_vis, NormalBinding, _, _, _, _, _, pat, _, rhsExpr, _, _spBind)], innerComp, wholeExprMark) ->
@@ -13552,7 +13553,7 @@ module IncrClassChecking =
                 // Replace the type parameters that used to be on the rhs with 
                 // the full set of type parameters including the type parameters of the enclosing class
                 let rhsExpr = mkTypeLambda m methodVal.Typars (mkTypeChoose m chooseTps tauExpr, tauTy)
-                (isPriorToSuperInit, (fun e -> e)), [TBind (methodVal, rhsExpr, spBind)]
+                (isPriorToSuperInit, id), [TBind (methodVal, rhsExpr, spBind)]
             
             // If it's represented as a non-escaping local variable then just bind it to its value
             // If it's represented as a non-escaping local arg then no binding necessary (ctor args are already bound)
@@ -17527,7 +17528,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.ModuleAbbrev (id, p, m) -> 
           let env = MutRecBindingChecking.TcModuleAbbrevDecl cenv scopem env (id, p, m)
-          return ((fun e -> e), []), env, env
+          return (id, []), env, env
 
       | SynModuleDecl.Exception (edef, m) -> 
           let binds, decl, env = TcExceptionDeclarations.TcExnDefn cenv env parent (edef, scopem)
@@ -17547,7 +17548,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
       | SynModuleDecl.Open (LongIdentWithDots(mp, _), m) -> 
           let scopem = unionRanges m.EndRange scopem
           let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp
-          return ((fun e -> e), []), env, env
+          return (id, []), env, env
 
       | SynModuleDecl.Let (letrec, binds, m) -> 
 
@@ -17571,10 +17572,10 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.Attributes (Attributes synAttrs, _) -> 
           let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
-          return ((fun e -> e), attrs), env, env
+          return (id, attrs), env, env
 
       | SynModuleDecl.HashDirective _ -> 
-          return ((fun e -> e), []), env, env
+          return (id, []), env, env
 
       | SynModuleDecl.NestedModule(compInfo, isRec, mdefs, isContinuingModule, m) ->
 
@@ -17692,7 +17693,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
     with exn -> 
         errorRecovery exn synDecl.Range 
-        return ((fun e -> e), []), env, env
+        return (id, []), env, env
  }
  
 /// The non-mutually recursive case for a sequence of declarations
