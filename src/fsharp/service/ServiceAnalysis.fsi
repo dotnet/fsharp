@@ -29,4 +29,4 @@ module public SimplifyNames =
 module public UnusedDeclarations = 
 
     /// Get all unused declarations in a file
-    val getUnusedDeclarations : checkFileResults: FSharpCheckFileResults * isScriptFile: bool -> Async<range []>
+    val getUnusedDeclarations : checkFileResults: FSharpCheckFileResults * isScriptFile: bool -> Async<range seq>

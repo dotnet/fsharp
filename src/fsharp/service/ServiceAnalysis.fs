@@ -56,14 +56,15 @@ module UnusedOpens =
         member __.RevealedSymbolsContains(symbol) = revealedSymbols.Force().Contains symbol
 
     type OpenedModuleGroup = 
-        { OpenedModules: OpenedModule list }
+        { OpenedModules: OpenedModule [] }
         
         static member Create (modul: FSharpEntity) =
             let rec getModuleAndItsAutoOpens (isNestedAutoOpen: bool) (modul: FSharpEntity) =
-                [ yield OpenedModule (modul, isNestedAutoOpen)
-                  for ent in modul.NestedEntities do
-                    if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
-                      yield! getModuleAndItsAutoOpens true ent ]
+                [|
+                    yield OpenedModule (modul, isNestedAutoOpen)
+                    for ent in modul.NestedEntities do
+                        if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
+                            yield! getModuleAndItsAutoOpens true ent |]
             { OpenedModules = getModuleAndItsAutoOpens false modul }
 
     /// Represents single open statement.
@@ -95,55 +96,59 @@ module UnusedOpens =
                 | _ -> None)
 
     /// Only consider symbol uses which are the first part of a long ident, i.e. with no qualifying identifiers
-    let filterSymbolUses (getSourceLineStr: int -> string) (checkFileResults: FSharpCheckFileResults) (ct: CancellationToken) : FSharpSymbolUse[] =
-        let filter =
-            fun (su: FSharpSymbolUse) ->
-                match su.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> 
-                    // Extension members should be taken into account even though they have a prefix (as they do most of the time)
-                    true
+    let filterSymbolUses (getSourceLineStr: int -> string) (checkFileResults: FSharpCheckFileResults) (ct: CancellationToken) =
+        let filter (su: FSharpSymbolUse) =
+            match su.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> 
+                // Extension members should be taken into account even though they have a prefix (as they do most of the time)
+                true
 
-                | :? FSharpMemberOrFunctionOrValue as fv when not fv.IsModuleValueOrMember -> 
-                    // Local values can be ignored
-                    false
+            | :? FSharpMemberOrFunctionOrValue as fv when not fv.IsModuleValueOrMember -> 
+                // Local values can be ignored
+                false
 
-                | :? FSharpMemberOrFunctionOrValue when su.IsFromDefinition -> 
-                    // Value definitions should be ignored
-                    false
+            | :? FSharpMemberOrFunctionOrValue when su.IsFromDefinition -> 
+                // Value definitions should be ignored
+                false
 
-                | :? FSharpGenericParameter -> 
-                    // Generic parameters can be ignored, they never come into scope via 'open'
-                    false
+            | :? FSharpGenericParameter -> 
+                // Generic parameters can be ignored, they never come into scope via 'open'
+                false
 
-                | :? FSharpUnionCase when su.IsFromDefinition -> 
-                    false
+            | :? FSharpUnionCase when su.IsFromDefinition -> 
+                false
 
-                | :? FSharpField as field when
-                        field.DeclaringEntity.IsSome && field.DeclaringEntity.Value.IsFSharpRecord ->
-                    // Record fields are used in name resolution
-                    true
+            | :? FSharpField as field when
+                    field.DeclaringEntity.IsSome && field.DeclaringEntity.Value.IsFSharpRecord ->
+                // Record fields are used in name resolution
+                true
 
-                | :? FSharpField as field when field.IsUnionCaseField ->
-                    false
+            | :? FSharpField as field when field.IsUnionCaseField ->
+                false
 
-                | _ ->
-                    // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
-                    // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
-                    // it's `open System` which really brings it into scope.
-                    let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.RangeAlternate.StartLine, su.RangeAlternate.EndColumn - 1)
-                    List.isEmpty partialName.QualifyingIdents
-        checkFileResults.GetAllUsesOfAllSymbolsInFileByPredicate(filter, ct)
+            | _ ->
+                // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
+                // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
+                // it's `open System` which really brings it into scope.
+                let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.RangeAlternate.StartLine, su.RangeAlternate.EndColumn - 1)
+                List.isEmpty partialName.QualifyingIdents
+        checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+        |> Seq.filter filter
+        |> Array.ofSeq
 
-    /// Split symbol uses into cases that are easy to handle (via DeclaringEntity) and those that don't have a good DeclaringEntity
-    let splitSymbolUses (symbolUses: FSharpSymbolUse[]) : FSharpSymbolUse[] * FSharpSymbolUse[] =
-        symbolUses |> Array.partition (fun symbolUse ->
-            let symbol = symbolUse.Symbol
-            match symbol with
-            | :? FSharpMemberOrFunctionOrValue as f ->
-                match f.DeclaringEntity with
-                | Some ent when ent.IsNamespace || ent.IsFSharpModule -> true
-                | _ -> false
-            | _ -> false)
+    /// Split symbol uses into cases that are easy to handle (via DeclaringEntity)
+    /// and those that don't have a good DeclaringEntity
+    let splitSymbolUses (symbolUses: FSharpSymbolUse[])  =
+        symbolUses
+        |> Array.partition (
+            fun symbolUse ->
+                let symbol = symbolUse.Symbol
+                match symbol with
+                | :? FSharpMemberOrFunctionOrValue as f ->
+                    match f.DeclaringEntity with
+                    | Some ent when ent.IsNamespace || ent.IsFSharpModule -> true
+                    | _ -> false
+                | _ -> false)
 
     /// Given an 'open' statement, find fresh modules/namespaces referred to by that statement where there is some use of a revealed symbol
     /// in the scope of the 'open' is from that module.
@@ -157,18 +162,18 @@ module UnusedOpens =
             openStatement.OpenedGroups |> List.choose (fun openedGroup ->
                 let openedEntitiesToExamine =
                     openedGroup.OpenedModules 
-                    |> List.filter (fun openedEntity ->
+                    |> Array.filter (fun openedEntity ->
                         not (usedModules.BagExistsValueForKey(openedEntity.Entity, fun scope -> rangeContainsRange scope openStatement.AppliedScope)))
                              
                 match openedEntitiesToExamine with
-                | [] -> None
-                | _ when openedEntitiesToExamine |> List.exists (fun x -> not x.IsNestedAutoOpen) -> Some { OpenedModules = openedEntitiesToExamine }
+                | [||] -> None
+                | _ when openedEntitiesToExamine |> Array.exists (fun x -> not x.IsNestedAutoOpen) -> Some { OpenedModules = openedEntitiesToExamine }
                 | _ -> None)
 
         // Find the opened groups that are used by some symbol use
         let newlyUsedOpenedGroups = 
             openedGroupsToExamine |> List.filter (fun openedGroup ->
-                openedGroup.OpenedModules |> List.exists (fun openedEntity ->
+                openedGroup.OpenedModules |> Array.exists (fun openedEntity ->
                     symbolUsesRangesByDeclaringEntity.BagExistsValueForKey(openedEntity.Entity, fun symbolUseRange ->
                         rangeContainsRange openStatement.AppliedScope symbolUseRange &&
                         Range.posGt symbolUseRange.Start openStatement.Range.End) || 
@@ -179,14 +184,14 @@ module UnusedOpens =
                         openedEntity.RevealedSymbolsContains symbolUse.Symbol)))
 
         // Return them as interim used entities
-        let newlyOpenedModules = newlyUsedOpenedGroups |> List.collect (fun openedGroup -> openedGroup.OpenedModules)
+        let newlyOpenedModules = newlyUsedOpenedGroups |> List.collect (fun openedGroup -> openedGroup.OpenedModules |> List.ofArray)
         for openedModule in newlyOpenedModules do
             let scopes =
                 match usedModules.TryGetValue openedModule.Entity with
                 | true, scopes -> openStatement.AppliedScope :: scopes
                 | _ -> [openStatement.AppliedScope]
             usedModules.[openedModule.Entity] <- scopes
-        not (isNil newlyOpenedModules)
+        not (newlyOpenedModules.IsEmpty)
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
@@ -249,10 +254,10 @@ module SimplifyNames =
         async {
             let result = ResizeArray()
             let! ct = Async.CancellationToken
-            let filter = fun (symbolUse: FSharpSymbolUse) -> not symbolUse.IsFromOpenStatement && not symbolUse.IsFromDefinition
             let symbolUses =
-                checkFileResults.GetAllUsesOfAllSymbolsInFileByPredicate(filter, ct)
-                |> Array.Parallel.choose (fun symbolUse ->
+                checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+                |> Seq.filter (fun (symbolUse: FSharpSymbolUse) -> not symbolUse.IsFromOpenStatement && not symbolUse.IsFromDefinition)
+                |> Seq.choose (fun symbolUse ->
                     let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
                     // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
                     let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
@@ -263,8 +268,8 @@ module SimplifyNames =
                         None
                     else
                         Some (symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent))
-                |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
-                |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
+                |> Seq.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
+                |> Seq.map (fun (_, xs) -> xs |> Seq.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
 
             for symbolUse, plid, plidStartCol, name in symbolUses do
                 let posAtStartOfName =
@@ -301,7 +306,6 @@ module SimplifyNames =
 
 module UnusedDeclarations = 
     let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
-
         match symbol with
 
         // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
@@ -318,14 +322,15 @@ module UnusedDeclarations =
         | :? FSharpParameter -> false
         | _ -> true
 
-    let getUnusedDeclarationRanges (symbolsUses: FSharpSymbolUse[]) (isScript: bool) =
+    let getUnusedDeclarationRanges (symbolsUses: seq<FSharpSymbolUse>) (isScript: bool) =
         let usages =
             let usages = 
                 symbolsUses
-                |> Array.choose (fun su -> if not su.IsFromDefinition then su.Symbol.DeclarationLocation else None)
+                |> Seq.choose (fun su -> if not su.IsFromDefinition then su.Symbol.DeclarationLocation else None)
             HashSet(usages)
 
-        let chooser =
+        symbolsUses
+        |> Seq.choose(
             fun (su: FSharpSymbolUse) ->
                 if su.IsFromDefinition && 
                     su.Symbol.DeclarationLocation.IsSome && 
@@ -335,12 +340,10 @@ module UnusedDeclarations =
                 then
                     Some (su, usages.Contains su.Symbol.DeclarationLocation.Value)
                 else
-                    None
-        symbolsUses
-        |> Array.choose chooser
-        |> Array.groupBy (fun (defSu, _) -> defSu.RangeAlternate)
-        |> Array.filter (fun (_, defSus) -> defSus |> Array.forall (fun (_, isUsed) -> not isUsed))
-        |> Array.map (fun (m, _) -> m)
+                    None)
+        |> Seq.groupBy (fun (defSu, _) -> defSu.RangeAlternate)
+        |> Seq.filter (fun (_, defSus) -> defSus |> Seq.forall (fun (_, isUsed) -> not isUsed))
+        |> Seq.map (fun (m, _) -> m)
     
     let getUnusedDeclarations(checkFileResults: FSharpCheckFileResults, isScriptFile: bool) = 
         async {
