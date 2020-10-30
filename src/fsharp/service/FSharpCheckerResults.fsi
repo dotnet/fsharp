@@ -212,6 +212,7 @@ type public FSharpCheckFileResults =
     /// Get all textual usages of all symbols throughout the file
     member GetAllUsesOfAllSymbolsInFile : ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
+    /// Get all textual usages of all symbols throughout the file that match the given predicate
     member GetAllUsesOfAllSymbolsInFileByPredicate : predicate: (FSharpSymbolUse -> bool) * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
     /// Get the textual usages that resolved to the given symbol throughout the file
