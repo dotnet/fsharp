@@ -2375,9 +2375,9 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                   if not (tcref.HasInterface g ity') then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(), ity.Range))
                    
-                  let generatedCompareToValues = Option.isSome tcref.GeneratedCompareToValues
-                  let generatedHashAndEqualsWithComparerValues = Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues
-                  let generatedCompareToWithComparerValues = Option.isSome tcref.GeneratedCompareToWithComparerValues
+                  let generatedCompareToValues = tcref.GeneratedCompareToValues.IsSome
+                  let generatedHashAndEqualsWithComparerValues = tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
+                  let generatedCompareToWithComparerValues = tcref.GeneratedCompareToWithComparerValues.IsSome
                   
                   if (generatedCompareToValues && typeEquiv g ity' g.mk_IComparable_ty) || 
                       (generatedCompareToWithComparerValues && typeEquiv g ity' g.mk_IStructuralComparable_ty) ||
