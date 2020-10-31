@@ -301,7 +301,7 @@ module SimplifyNames =
                     let relativeName = (String.concat "." plid) + "." + name
                     result.Add({Range = unnecessaryRange; RelativeName = relativeName})
 
-            return result.ToArray()
+            return (result :> seq<_>)
         }
 
 module UnusedDeclarations = 
