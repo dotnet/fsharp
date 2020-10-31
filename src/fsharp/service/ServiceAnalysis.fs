@@ -82,7 +82,7 @@ module UnusedOpens =
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration[]) : OpenStatement[] = 
         openDeclarations
         |> Array.choose (fun openDecl ->
-            if not openDecl.IsOwnNamespace then
+            if openDecl.IsOwnNamespace then
                 None
             else
                 match openDecl.LongId, openDecl.Range with
@@ -135,8 +135,7 @@ module UnusedOpens =
                 List.isEmpty partialName.QualifyingIdents)
         |> Array.ofSeq
 
-    /// Split symbol uses into cases that are easy to handle (via DeclaringEntity)
-    /// and those that don't have a good DeclaringEntity
+    /// Split symbol uses into cases that are easy to handle (via DeclaringEntity) and those that don't have a good DeclaringEntity
     let splitSymbolUses (symbolUses: FSharpSymbolUse[])  =
         symbolUses |> Array.partition (fun symbolUse ->
             let symbol = symbolUse.Symbol
