@@ -96,8 +96,8 @@ module UnusedOpens =
                 | _ -> None)
 
     /// Only consider symbol uses which are the first part of a long ident, i.e. with no qualifying identifiers
-    let filterSymbolUses (getSourceLineStr: int -> string) (checkFileResults: FSharpCheckFileResults) (ct: CancellationToken) =
-        checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+    let filterSymbolUses (getSourceLineStr: int -> string) (symbolUses: seq<FSharpSymbolUse>) =
+        symbolUses
         |> Seq.filter(fun (su: FSharpSymbolUse) ->
             match su.Symbol with
             | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> 
@@ -138,16 +138,14 @@ module UnusedOpens =
     /// Split symbol uses into cases that are easy to handle (via DeclaringEntity)
     /// and those that don't have a good DeclaringEntity
     let splitSymbolUses (symbolUses: FSharpSymbolUse[])  =
-        symbolUses
-        |> Array.partition (
-            fun symbolUse ->
-                let symbol = symbolUse.Symbol
-                match symbol with
-                | :? FSharpMemberOrFunctionOrValue as f ->
-                    match f.DeclaringEntity with
-                    | Some ent when ent.IsNamespace || ent.IsFSharpModule -> true
-                    | _ -> false
-                | _ -> false)
+        symbolUses |> Array.partition (fun symbolUse ->
+            let symbol = symbolUse.Symbol
+            match symbol with
+            | :? FSharpMemberOrFunctionOrValue as f ->
+                match f.DeclaringEntity with
+                | Some ent when ent.IsNamespace || ent.IsFSharpModule -> true
+                | _ -> false
+            | _ -> false)
 
     /// Given an 'open' statement, find fresh modules/namespaces referred to by that statement where there is some use of a revealed symbol
     /// in the scope of the 'open' is from that module.
@@ -234,7 +232,8 @@ module UnusedOpens =
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
             let! ct = Async.CancellationToken
-            let symbolUses = filterSymbolUses getSourceLineStr checkFileResults ct
+            let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+            let symbolUses = filterSymbolUses getSourceLineStr symbolUses
             let symbolUses = splitSymbolUses symbolUses
             let openStatements = getOpenStatements checkFileResults.OpenDeclarations
             return! filterOpenStatements symbolUses openStatements
