@@ -74,9 +74,13 @@ module internal ProjectFile =
             resolutions
             |> Array.filter(fun r ->
                 not(String.IsNullOrEmpty(r.NugetPackageId) ||
-                    String.IsNullOrEmpty(r.NativePath)) &&
-                Directory.Exists(r.NativePath))
-            |> Array.map(fun r -> r.NativePath)
+                    String.IsNullOrEmpty(r.NativePath)))
+            |> Array.map(fun r ->
+                            if Directory.Exists(r.NativePath) then Some (r.NativePath)
+                            elif File.Exists(r.NativePath) then Some (Path.GetDirectoryName(r.NativePath).Replace('\\', '/'))
+                            else None)
+            |> Array.filter(fun r -> r.IsSome)
+            |> Array.map(fun r -> r.Value)
 
         Array.concat [|managedRoots; nativeRoots|] |> Array.distinct
 

@@ -131,7 +131,6 @@ type ReflectionDependencyManagerProvider(theType: Type,
         resolveDeps: MethodInfo option,
         resolveDepsEx: MethodInfo option,
         outputDir: string option) =
-
     let instance = Activator.CreateInstance(theType, [| outputDir :> obj |])
     let nameProperty = nameProperty.GetValue >> string
     let keyProperty = keyProperty.GetValue >> string
@@ -233,7 +232,6 @@ type ReflectionDependencyManagerProvider(theType: Type,
 
         /// Resolve the dependencies for the given arguments
         member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid): IResolveDependenciesResult =
-
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resolveDepsEx
             // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)
@@ -282,7 +280,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
 type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe option, nativeProbingRoots: NativeResolutionProbe option) =
 
     // Note: creating a NativeDllResolveHandler currently installs process-wide handlers
-    let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots) :> IDisposable
+    let dllResolveHandler = new NativeDllResolveHandler(nativeProbingRoots)
 
     // Note: creating a AssemblyResolveHandler currently installs process-wide handlers
     let assemblyResolveHandler = new AssemblyResolveHandler(assemblyProbingPaths) :> IDisposable
@@ -423,7 +421,7 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
                        [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
-        
+
         let key = (packageManager.Key, scriptExt, Seq.toArray packageManagerTextLines, executionTfm, executionRid, implicitIncludeDir, mainScriptName, fileName)
 
         let result = 
@@ -439,8 +437,10 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
                     let e = stripTieWrapper e
                     Error (DependencyManager.SR.packageManagerError(e.Message))
             ))
-        match result with 
-        | Ok res -> res
+        match result with
+        | Ok res ->
+            dllResolveHandler.RefreshPathsInEnvironment(res.Roots)
+            res
         | Error (errorNumber, errorData) ->
             reportError.Invoke(ErrorReportType.Error, errorNumber, errorData)
             ReflectionDependencyManagerProvider.MakeResultFromFields(false, arrEmpty, arrEmpty, seqEmpty, seqEmpty, seqEmpty)
@@ -451,5 +451,5 @@ type DependencyProvider internal (assemblyProbingPaths: AssemblyResolutionProbe 
 
             // Unregister everything
             registeredDependencyManagers <- None
-            dllResolveHandler.Dispose()
+            (dllResolveHandler :> IDisposable).Dispose()
             assemblyResolveHandler.Dispose()
