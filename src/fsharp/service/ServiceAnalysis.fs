@@ -97,7 +97,8 @@ module UnusedOpens =
 
     /// Only consider symbol uses which are the first part of a long ident, i.e. with no qualifying identifiers
     let filterSymbolUses (getSourceLineStr: int -> string) (checkFileResults: FSharpCheckFileResults) (ct: CancellationToken) =
-        let filter (su: FSharpSymbolUse) =
+        checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
+        |> Seq.filter(fun (su: FSharpSymbolUse) ->
             match su.Symbol with
             | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> 
                 // Extension members should be taken into account even though they have a prefix (as they do most of the time)
@@ -131,9 +132,7 @@ module UnusedOpens =
                 // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
                 // it's `open System` which really brings it into scope.
                 let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.RangeAlternate.StartLine, su.RangeAlternate.EndColumn - 1)
-                List.isEmpty partialName.QualifyingIdents
-        checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-        |> Seq.filter filter
+                List.isEmpty partialName.QualifyingIdents)
         |> Array.ofSeq
 
     /// Split symbol uses into cases that are easy to handle (via DeclaringEntity)
@@ -256,18 +255,20 @@ module SimplifyNames =
             let! ct = Async.CancellationToken
             let symbolUses =
                 checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
-                |> Seq.filter (fun (symbolUse: FSharpSymbolUse) -> not symbolUse.IsFromOpenStatement && not symbolUse.IsFromDefinition)
                 |> Seq.choose (fun symbolUse ->
-                    let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
-                    // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
-                    let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
-                    // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
-                    // so we have to calculate plid's start ourselves.
-                    let plidStartCol = symbolUse.RangeAlternate.EndColumn - partialName.PartialIdent.Length - (getPlidLength partialName.QualifyingIdents)
-                    if partialName.PartialIdent = "" || List.isEmpty partialName.QualifyingIdents then
+                    if symbolUse.IsFromOpenStatement || symbolUse.IsFromDefinition then
                         None
                     else
-                        Some (symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent))
+                        let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
+                        // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
+                        let partialName = QuickParse.GetPartialLongNameEx(lineStr, symbolUse.RangeAlternate.EndColumn - 1)
+                        // `symbolUse.RangeAlternate.Start` does not point to the start of plid, it points to start of `name`,
+                        // so we have to calculate plid's start ourselves.
+                        let plidStartCol = symbolUse.RangeAlternate.EndColumn - partialName.PartialIdent.Length - (getPlidLength partialName.QualifyingIdents)
+                        if partialName.PartialIdent = "" || List.isEmpty partialName.QualifyingIdents then
+                            None
+                        else
+                            Some (symbolUse, partialName.QualifyingIdents, plidStartCol, partialName.PartialIdent))
                 |> Seq.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
                 |> Seq.map (fun (_, xs) -> xs |> Seq.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
 
@@ -330,17 +331,16 @@ module UnusedDeclarations =
             HashSet(usages)
 
         symbolsUses
-        |> Seq.choose(
-            fun (su: FSharpSymbolUse) ->
-                if su.IsFromDefinition && 
-                    su.Symbol.DeclarationLocation.IsSome && 
-                    (isScript || su.IsPrivateToFile) && 
-                    not (su.Symbol.DisplayName.StartsWith "_") &&
-                    isPotentiallyUnusedDeclaration su.Symbol
-                then
-                    Some (su, usages.Contains su.Symbol.DeclarationLocation.Value)
-                else
-                    None)
+        |> Seq.choose(fun (su: FSharpSymbolUse) ->
+            if su.IsFromDefinition && 
+                su.Symbol.DeclarationLocation.IsSome && 
+                (isScript || su.IsPrivateToFile) && 
+                not (su.Symbol.DisplayName.StartsWith "_") &&
+                isPotentiallyUnusedDeclaration su.Symbol
+            then
+                Some (su, usages.Contains su.Symbol.DeclarationLocation.Value)
+            else
+                None)
         |> Seq.groupBy (fun (defSu, _) -> defSu.RangeAlternate)
         |> Seq.filter (fun (_, defSus) -> defSus |> Seq.forall (fun (_, isUsed) -> not isUsed))
         |> Seq.map (fun (m, _) -> m)
