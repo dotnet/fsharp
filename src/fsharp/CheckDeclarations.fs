@@ -2360,7 +2360,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
     let interfacesFromTypeDefn envForTycon tyconMembersData = 
         let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, declaredTyconTypars, members, _, _, _)) = tyconMembersData
         let overridesOK = DeclKind.CanOverrideOrImplement declKind
-        members |> List.collect (function 
+        members |> List.collect (function
             | SynMemberDefn.Interface(ity, defnOpt, _) -> 
                   let _, ty = if tcref.Deref.IsExceptionDecl then [], g.exn_ty else generalizeTyconRef tcref
                   let m = ity.Range
@@ -2374,12 +2374,18 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                   
                   if not (tcref.HasInterface g ity') then 
                       error(Error(FSComp.SR.tcAllImplementedInterfacesShouldBeDeclared(), ity.Range))
-                  if (typeEquiv g ity' g.mk_IComparable_ty && Option.isSome tcref.GeneratedCompareToValues) || 
-                      (typeEquiv g ity' g.mk_IStructuralComparable_ty && Option.isSome tcref.GeneratedCompareToWithComparerValues) ||
-                      (typeEquiv g ity' ((mkAppTy g.system_GenericIComparable_tcref [ty])) && Option.isSome tcref.GeneratedCompareToValues) ||
-                      (typeEquiv g ity' ((mkAppTy g.system_GenericIEquatable_tcref [ty])) && Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues) ||
-                      (typeEquiv g ity' g.mk_IStructuralEquatable_ty && Option.isSome tcref.GeneratedHashAndEqualsWithComparerValues) then
+                   
+                  let generatedCompareToValues = tcref.GeneratedCompareToValues.IsSome
+                  let generatedHashAndEqualsWithComparerValues = tcref.GeneratedHashAndEqualsWithComparerValues.IsSome
+                  let generatedCompareToWithComparerValues = tcref.GeneratedCompareToWithComparerValues.IsSome
+                  
+                  if (generatedCompareToValues && typeEquiv g ity' g.mk_IComparable_ty) || 
+                      (generatedCompareToWithComparerValues && typeEquiv g ity' g.mk_IStructuralComparable_ty) ||
+                      (generatedCompareToValues && typeEquiv g ity' ((mkAppTy g.system_GenericIComparable_tcref [ty]))) ||
+                      (generatedHashAndEqualsWithComparerValues && typeEquiv g ity' ((mkAppTy g.system_GenericIEquatable_tcref [ty]))) ||
+                      (generatedHashAndEqualsWithComparerValues && typeEquiv g ity' g.mk_IStructuralEquatable_ty) then
                       errorR(Error(FSComp.SR.tcDefaultImplementationForInterfaceHasAlreadyBeenAdded(), ity.Range))
+
                   if overridesOK = WarnOnOverrides then  
                       warning(IntfImplInIntrinsicAugmentation(ity.Range))
                   if overridesOK = ErrorOnOverrides then  
