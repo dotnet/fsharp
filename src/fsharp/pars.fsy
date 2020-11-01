@@ -3361,10 +3361,10 @@ declExpr:
        //reportParseErrorAt (match hwlb with (BindingSetPreAttrs(m, _, _, _, _))  -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        mkLocalBindings (unionRanges m (rhs parseState 3), hwlb, arbExpr("declExpr3", (rhs parseState 3))) }
 
-  | hardwhiteDoBinding  %prec expr_let
+  | hardwhiteDoBinding %prec expr_let
      { let e = snd $1
-       SynExpr.Do (e, e.Range) }
-  
+       SynExpr.Do (e, unionRanges (rhs parseState 1).StartRange e.Range) }
+
   | anonMatchingExpr %prec expr_function
       { $1 }
 
