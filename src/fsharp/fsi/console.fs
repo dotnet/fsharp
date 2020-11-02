@@ -336,6 +336,27 @@ type internal ReadLineConsole() =
             if (input.Length > 0 && current < input.Length) then
                 input.Remove(current, 1) |> ignore
                 render()
+                
+        let deleteFromStartOfLineToCursor() =
+            if (input.Length > 0 && current > 0) then
+                input.Remove (0, current) |> ignore
+                current <- 0
+                render()
+            
+        let deleteWordLeadingToCursor() =
+            if (input.Length > 0 && current > 0) then
+                let line = input.ToString()
+                let rec prevWord (idx, isInWord) =
+                    if idx < 0 then 0 else
+                    match line.Chars(idx), isInWord with
+                    | ' ', true -> idx + 1
+                    | ' ', false -> prevWord (idx - 1, false)
+                    |   _, _ -> prevWord (idx - 1, true)
+                    
+                let idx = prevWord (current - 1, false)
+                input.Remove(idx, current - idx) |> ignore
+                current <- idx
+                render()
 
         let deleteToEndOfLine() =
             if (current < input.Length) then
@@ -451,6 +472,12 @@ type internal ReadLineConsole() =
                     change()
             | (ConsoleModifiers.Control, ConsoleKey.L) ->
                 clear()
+                change()
+            | (ConsoleModifiers.Control, ConsoleKey.U) ->
+                deleteFromStartOfLineToCursor()
+                change()
+            | (ConsoleModifiers.Control, ConsoleKey.W) ->
+                deleteWordLeadingToCursor()
                 change()
             | _ ->
                 // Note: If KeyChar=0, the not a proper char, e.g. it could be part of a multi key-press character,
