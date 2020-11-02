@@ -724,14 +724,14 @@ module rec Compiler =
 
         let private compilerOutputMatches (pattern: string) (output: RunOutput option) : bool =
             match output with
-            | Some(CompilationOutput o) -> Regex.IsMatch(o.StdOut + o.StdErr, pattern)
+            | Some(CompilationOutput o) -> Regex.IsMatch(o.StdOut + o.StdErr, pattern, RegexOptions.Singleline)
             | _ -> failwith "Only compiler output is supported."
 
         let withCompilerOutputMatches (pattern: string) (result: TestResult) : TestResult =
             match result with
             | Success r | Failure r ->
                 if not <| compilerOutputMatches pattern r.Output then
-                    failwith (sprintf "Expected output pattern hasn't been found in the compiler output:\n\t%s" pattern)
+                    failwith (sprintf "Expected output pattern hasn't been found in the compiler output:\n%s\nResult: %A" pattern result)
             result
 
 
