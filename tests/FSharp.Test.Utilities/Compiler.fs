@@ -13,6 +13,9 @@ open NUnit.Framework
 open System
 open System.Collections.Immutable
 open System.IO
+open System.Text.RegularExpressions
+open System.Text
+
 
 module rec Compiler =
 
@@ -76,9 +79,14 @@ module rec Compiler =
           StdOut:   string
           StdErr:   string }
 
+    type CompilationOutput =
+        { StdOut: string
+          StdErr: string }
+
     type RunOutput =
         | EvalOutput of EvalOutput
         | ExecutionOutput of ExecutionOutput
+        | CompilationOutput of CompilationOutput
 
     type Output =
         { OutputPath:   string option
@@ -260,16 +268,44 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
 
-        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        // Pretty much a hack to support some FSharpQA tests.
+        // Some of them asserting compiler output itself, so we need to capture stdout and stderr of the compiler, this is the most sane way of doing it without rewriting a bunch of stuff.
+        // TODO: Might require some rewriting once we gonna be touching FCS APIs.
+        
+        let out = Console.Out
+        let err = Console.Error
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let stdout = StringBuilder ()
+        let stderr = StringBuilder ()
+
+        let outWriter = new StringWriter (stdout)
+        let errWriter = new StringWriter (stderr)
+        
+        Console.SetOut(outWriter)
+        Console.SetError(errWriter)
+
+        let ((errinfo: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+
+        Console.SetOut(out)
+        Console.SetError(err)
+        outWriter.Close()
+        errWriter.Close()
+
+        let outStr = stdout.ToString()
+        let errStr = stderr.ToString()
+
+        // Write whatever we captured back to original writers;
+        Console.Out.Write(stdout)
+        Console.Error.Write(stderr)
+
+        let diagnostics = errinfo |> fromFSharpErrorInfo
 
         let result =
             { OutputPath   = None
               Dependencies = deps
               Adjust       = 0
               Diagnostics  = diagnostics
-              Output       = None }
+              Output       = Some (CompilationOutput { StdOut = outStr; StdErr = errStr }) }
 
         let (errors, warnings) = partitionErrors diagnostics
 
@@ -684,6 +720,43 @@ module rec Compiler =
         let private checkErrorMessages (messages: string list) (selector: Output -> ErrorInfo list) (result: TestResult) : TestResult =
             match result with
             | Success r | Failure r -> assertErrorMessages (selector r) messages
+            result
+
+        let private compilerOutputMatches (pattern: string) (output: RunOutput option) : bool =
+            match output with
+            | Some(CompilationOutput o) -> Regex.IsMatch(o.StdOut + o.StdErr, pattern)
+            | _ -> failwith "Only compiler output is supported."
+
+        let withCompilerOutputMatches (pattern: string) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                if not <| compilerOutputMatches pattern r.Output then
+                    failwith (sprintf "Expected output pattern hasn't been found in the compiler output:\n\t%s" pattern)
+            result
+
+
+        let withCompilerOutputDoesntMatche (pattern: string) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                if compilerOutputMatches pattern r.Output then
+                    failwith (sprintf "Output pattern was not expected, but has been found in the compiler output:\n\t%s" pattern)
+            result
+
+        let private diagnosticMatches (pattern: string) (diagnostics: ErrorInfo list) : bool =
+            diagnostics |> List.exists (fun d -> Regex.IsMatch(d.Message, pattern))
+            
+        let withDiagnosticMessageMatches (pattern: string) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                if not <| diagnosticMatches pattern r.Diagnostics then
+                    failwith "Expected diagnostic message pattern was not found in compilation diagnostics."
+            result
+
+        let withDiagnosticMessageDoesntMatch (pattern: string) (result: TestResult) : TestResult =
+            match result with
+            | Success r | Failure r ->
+                if diagnosticMatches pattern r.Diagnostics then
+                    failwith "Diagnostic message pattern was not expected, but was present."
             result
 
         let withMessages (messages: string list) (result: TestResult) : TestResult =
