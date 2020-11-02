@@ -5,7 +5,6 @@ open System
 open System.Collections.Immutable
 open System.Threading
 open System.ComponentModel.Composition
-open System.Linq
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -49,10 +48,10 @@ type internal FSharpInlineHintsService
                 let isValidForTypeHint (funcOrValue: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
                     let isLambdaIfFunction =
                         funcOrValue.IsFunction &&
-                        parseFileResults.IsBindingALambda symbolUse.RangeAlternate.Start
+                        parseFileResults.IsBindingALambdaAtPosition symbolUse.RangeAlternate.Start
 
                     (funcOrValue.IsValue || isLambdaIfFunction) &&
-                    not (parseFileResults.IsTypeAnnotationGiven symbolUse.RangeAlternate.Start) &&
+                    not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.RangeAlternate.Start) &&
                     symbolUse.IsFromDefinition &&
                     not funcOrValue.IsMember &&
                     not funcOrValue.IsMemberThisValue &&
@@ -112,11 +111,11 @@ type internal FSharpInlineHintsService
                         | None, None -> ()
 
                         // Prefer looking at the "tupled" view if it exists, even if the other ranges exist.
-                        // M(1, 2) can give results for both, but in that case we want to "tupled" view.
+                        // M(1, 2) can give results for both, but in that case we want the "tupled" view.
                         | Some tupledParamInfos, _ ->
                             let parameters = methodOrConstructor.CurriedParameterGroups |> Seq.concat |> Array.ofSeq
                             for idx = 0 to parameters.Length - 1 do
-                                let paramLocationInfo = tupledParamInfos.ArgLocations.[idx]
+                                let paramLocationInfo = tupledParamInfos.ArgumentLocations.[idx]
                                 let paramName = parameters.[idx].DisplayName
                                 if not paramLocationInfo.IsNamedArgument && not (String.IsNullOrWhiteSpace(paramName)) then
                                     let appliedArgSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, paramLocationInfo.ArgumentRange)

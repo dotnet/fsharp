@@ -309,7 +309,7 @@ type T =
 module FunctionApplicationArguments =
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - Single arg``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Single arg``() =
         let source = """
 let f x = ()
 f 12
@@ -325,7 +325,7 @@ f 12
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - Multi arg``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg``() =
         let source = """
 let f x y z = ()
 f 1 2 3
@@ -341,7 +341,7 @@ f 1 2 3
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - Multi arg parentheses``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg parentheses``() =
         let source = """
 let f x y z = ()
 f (1) (2) (3)
@@ -357,7 +357,7 @@ f (1) (2) (3)
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - Multi arg nested parentheses``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg nested parentheses``() =
         let source = """
 let f x y z = ()
 f ((1)) (((2))) ((((3))))
@@ -373,7 +373,7 @@ f ((1)) (((2))) ((((3))))
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - unit``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - unit``() =
         let source = """
 let f () = ()
 f ()
@@ -383,7 +383,7 @@ f ()
         Assert.IsTrue(res.IsNone, "Found argument for unit-accepting function, which shouldn't be the case.")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - curried function``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - curried function``() =
         let source = """
 let f x y = x + y
 f 12
@@ -399,7 +399,7 @@ f 12
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - tuple value``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple value``() =
         let source = """
 let f (t: int * int) = ()
 let t = (1, 2)
@@ -416,7 +416,7 @@ f t
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - tuple literal``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple literal``() =
         let source = """
 let f (t: int * int) = ()
 f (1, 2)
@@ -432,7 +432,7 @@ f (1, 2)
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - tuple value with definition that has explicit names``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple value with definition that has explicit names``() =
         let source = """
 let f ((x, y): int * int) = ()
 let t = (1, 2)
@@ -449,7 +449,7 @@ f t
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - tuple literal inside parens``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple literal inside parens``() =
         let source = """
 let f (x, y) = ()
 f ((1, 2))
@@ -465,7 +465,7 @@ f ((1, 2))
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - tuples with elements as arguments``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuples with elements as arguments``() =
         let source = """
 let f (a, b) = ()
 f (1, 2)
@@ -481,7 +481,7 @@ f (1, 2)
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - top-level arguments with nested function call``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - top-level arguments with nested function call``() =
         let source = """
 let f x y = x + y
 f (f 1 2) 3
@@ -497,7 +497,7 @@ f (f 1 2) 3
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - nested function argument positions``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function argument positions``() =
         let source = """
 let f x y = x + y
 f (f 1 2) 3
@@ -513,7 +513,7 @@ f (f 1 2) 3
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - nested function application in infix expression``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function application in infix expression``() =
         let source = """
 let addStr x y = string x + y
 """
@@ -528,7 +528,7 @@ let addStr x y = string x + y
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - nested function application outside of infix expression``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function application outside of infix expression``() =
         let source = """
 let addStr x y = x + string y
 """
@@ -543,7 +543,7 @@ let addStr x y = x + string y
             Assert.Fail("No arguments found in source code")
 
     [<Test>]
-    let ``GetAllArgumentsForFunctionApplication - nested function applications both inside and outside of infix expression``() =
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function applications both inside and outside of infix expression``() =
         let source = """
 let addStr x y = string x + string y
 """
@@ -569,219 +569,219 @@ let addStr x y = string x + string y
 
 module TypeAnnotations =
     [<Test>]
-    let ``IsTypeAnnotationGiven - function - no annotation``() =
+    let ``IsTypeAnnotationGivenAtPosition - function - no annotation``() =
         let source = """
 let f x = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 6), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 6), "Expected no annotation for argument 'x'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - function - single arg annotation``() =
+    let ``IsTypeAnnotationGivenAtPosition - function - single arg annotation``() =
         let source = """
 let f (x: int) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - function - first arg annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - function - first arg annotated``() =
         let source = """
 let f (x: int) y = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 15), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'x'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - function - second arg annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - function - second arg annotated``() =
         let source = """
 let f x (y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.False(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected no annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 9), "Expected annotation for argument 'y'")
+        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 9), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - function - all args annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - function - all args annotated``() =
         let source = """
 let f (x: int) (y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 16), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 16), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - lambda function - all args annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - lambda function - all args annotated``() =
         let source = """
 let f = fun (x: int) (y: string) -> ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 13), "Expected a annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 22), "Expected a annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected a annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 22), "Expected a annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - constuctor - arg no annotations``() =
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - arg no annotations``() =
         let source = """
 type C(x) = class end
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - constuctor - first arg unannotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - first arg unannotated``() =
         let source = """
 type C(x, y: string) = class end
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected no annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 10), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 10), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - constuctor - second arg unannotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - second arg unannotated``() =
         let source = """
 type C(x: int, y) = class end
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 15), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - constuctor - both args annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - both args annotated``() =
         let source = """
 type C(x: int, y: int) = class end
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 7), "Expected annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 15), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method - args no unannotions``() =
+    let ``IsTypeAnnotationGivenAtPosition - method - args no unannotions``() =
         let source = """
 type C() =
     member _.M(x, y) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 18), "Expected no annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected no annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method - first arg annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - method - first arg annotated``() =
         let source = """
 type C() =
     member _.M(x: int, y) = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected annotation for argument 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 23), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected no annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method - second arg annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - method - second arg annotated``() =
         let source = """
 type C() =
     member _.M(x, y: int) = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 18), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method - both args annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - method - both args annotated``() =
         let source = """
 type C() =
     member _.M(x: int, y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 23), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method currying - args no unannotions``() =
+    let ``IsTypeAnnotationGivenAtPosition - method currying - args no unannotions``() =
         let source = """
 type C() =
     member _.M x y = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 17), "Expected no annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 17), "Expected no annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method currying - first arg annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - method currying - first arg annotated``() =
         let source = """
 type C() =
     member _.M (x: int) y = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 16), "Expected annotation for argument 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 24), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 24), "Expected no annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method currying - second arg annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - method currying - second arg annotated``() =
         let source = """
 type C() =
     member _.M x (y: int) = ()
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 16), "Expected no annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 18), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method currying - both args annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - method currying - both args annotated``() =
         let source = """
 type C() =
     member _.M (x: int) (y: string) = ()
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 16), "Expected annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 3 25), "Expected annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 25), "Expected annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - method - only return type annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - method - only return type annotated``() =
         let source = """
 type C() =
     member _.M(x): string = "hello" + x
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - tuple - no annotations``() =
+    let ``IsTypeAnnotationGivenAtPosition - tuple - no annotations``() =
         let source = """
 let (x, y) = (12, "hello")
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 5), "Expected no annotation for value 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 8), "Expected no annotation for value 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for value 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected no annotation for value 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - tuple - first value annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - tuple - first value annotated``() =
         let source = """
 let (x: int, y) = (12, "hello")
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 5), "Expected annotation for argument 'x'")
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 13), "Expected no annotation for argument 'y'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected no annotation for argument 'y'")
 
     [<Test>]
-    let ``IsTypeAnnotationGiven - tuple - second value annotated``() =
+    let ``IsTypeAnnotationGivenAtPosition - tuple - second value annotated``() =
         let source = """
 let (x, y: string) = (12, "hello")
 """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsTypeAnnotationGiven (mkPos 2 5), "Expected no annotation for argument 'x'")
-        Assert.IsTrue(parseFileResults.IsTypeAnnotationGiven (mkPos 2 8), "Expected annotation for argument 'y'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected annotation for argument 'y'")
 
 module LambdaRecognition =
     [<Test>]
-    let ``IsBindingALambda - recognize a lambda``() =
+    let ``IsBindingALambdaAtPosition - recognize a lambda``() =
         let source = """
 let f = fun x y -> x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsBindingALambda (mkPos 2 4), "Expected 'f' to be a lambda expression")
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
 
     [<Test>]
-    let ``IsBindingALambda - recognize a nested lambda``() =
+    let ``IsBindingALambdaAtPosition - recognize a nested lambda``() =
         let source = """
 let f =
     fun x ->
@@ -789,22 +789,22 @@ let f =
             x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsBindingALambda (mkPos 2 4), "Expected 'f' to be a lambda expression")
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
 
     [<Test>]
-    let ``IsBindingALambda - recognize a "partial" lambda``() =
+    let ``IsBindingALambdaAtPosition - recognize a "partial" lambda``() =
         let source = """
 let f x =
     fun y ->
         x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsTrue(parseFileResults.IsBindingALambda (mkPos 2 4), "Expected 'f' to be a lambda expression")
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
 
     [<Test>]
-    let ``IsBindingALambda - not a lambda``() =
+    let ``IsBindingALambdaAtPosition - not a lambda``() =
         let source = """
 let f x y = x + y
     """
         let parseFileResults, _ = getParseAndCheckResults source
-        Assert.IsFalse(parseFileResults.IsBindingALambda (mkPos 2 4), "'f' is not a lambda expression'")
+        Assert.IsFalse(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "'f' is not a lambda expression'")

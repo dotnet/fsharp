@@ -39,7 +39,7 @@ type FSharpNoteworthyParamInfoLocations
     member this.TupleEndLocations = tupleEndLocations
     member this.IsThereACloseParen = isThereACloseParen
     member this.NamedParamNames = namedParamNames
-    member this.ArgLocations = argRanges |> Array.ofList
+    member this.ArgumentLocations = argRanges |> Array.ofList
 
 [<AutoOpen>]
 module internal NoteworthyParamInfoLocationsImpl =
@@ -290,7 +290,7 @@ type FSharpNoteworthyParamInfoLocations with
             r
         | _ -> None
 
-module internal FunctionApplicationArgumentLocationsImpl =
+module internal SynExprAppLocationsImpl =
     let rec private searchSynArgExpr traverseSynExpr expr ranges =
         match expr with
         | SynExpr.Const(SynConst.Unit, _) ->
@@ -320,7 +320,7 @@ module internal FunctionApplicationArgumentLocationsImpl =
                 Some (e.Range :: ranges), Some inner
             | _ -> None, Some inner
 
-    let findFSharpFunctionArgInfos pos parseTree =
+    let getAllCurriedArgsAtPosition pos parseTree =
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
             member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 match expr with

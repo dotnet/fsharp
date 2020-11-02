@@ -39,10 +39,10 @@ type public FSharpNoteworthyParamInfoLocations =
     member NamedParamNames : string option []
 
     /// Array of locations for each argument, and a flag if that argument is named
-    member ArgLocations: TupledArgumentLocation []
+    member ArgumentLocations: TupledArgumentLocation []
 
     /// Find the information about parameter info locations at a particular source location
     static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option
 
-module internal FunctionApplicationArgumentLocationsImpl =
-    val findFSharpFunctionArgInfos: pos: pos -> parseTree: ParsedInput -> range list option
+module internal SynExprAppLocationsImpl =
+    val getAllCurriedArgsAtPosition: pos: pos -> parseTree: ParsedInput -> range list option

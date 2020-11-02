@@ -1200,7 +1200,7 @@ module private PrintTypes =
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
         layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
 
-    let prettyLayoutOfValReturnType denv (v: ValRef) =
+    let layoutOfValReturnType denv (v: ValRef) =
         match v.ValReprInfo with 
         | None ->
             let _, tau = v.TypeScheme
@@ -2236,7 +2236,7 @@ let prettyLayoutOfValOrMemberNoInst denv v = PrintTastMemberOrVals.prettyLayoutO
 
 let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v
 
-let prettyLayoutOfValReturnType denv x = x |> PrintTypes.prettyLayoutOfValReturnType denv
+let layoutOfValReturnType denv x = x |> PrintTypes.layoutOfValReturnType denv
 
 let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 

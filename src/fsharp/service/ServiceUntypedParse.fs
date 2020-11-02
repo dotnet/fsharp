@@ -107,10 +107,10 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
 
     member scope.GetAllArgumentsForFunctionApplicationAtPostion pos =
         match input with
-        | Some input -> FunctionApplicationArgumentLocationsImpl.findFSharpFunctionArgInfos pos input
+        | Some input -> SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
         | None -> None
 
-    member scope.IsTypeAnnotationGiven pos =
+    member scope.IsTypeAnnotationGivenAtPosition pos =
         match input with
         | Some parseTree ->
             let res =
@@ -142,7 +142,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
             res.IsSome
         | None -> false
 
-    member scope.IsBindingALambda(pos) =
+    member scope.IsBindingALambdaAtPosition pos =
         match input with
         | Some parseTree ->
             let res =

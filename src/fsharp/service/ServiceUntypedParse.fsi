@@ -26,10 +26,10 @@ type public FSharpParseFileResults =
     member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
 
     /// Determines if the expression or pattern at the given position has a type annotation
-    member IsTypeAnnotationGiven: pos -> bool
+    member IsTypeAnnotationGivenAtPosition: pos -> bool
 
-    /// Determines if the binding at a given position is a lambda expression
-    member IsBindingALambda: pos -> bool
+    /// Determines if the binding at the given position is bound to a lambda expression
+    member IsBindingALambdaAtPosition: pos -> bool
 
     /// Name of the file for which this information were created
     member FileName: string

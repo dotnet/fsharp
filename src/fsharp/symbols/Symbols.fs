@@ -2109,7 +2109,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (displayContext.Contents cenv.g) ty
 
-    // TODO - consider the other types
     member x.GetReturnTypeLayout (displayContext: FSharpDisplayContext) =
         match x.IsMember, d with
         | true, _ ->
@@ -2117,12 +2116,15 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | false, _ ->
             checkIsResolved()
             match d with 
-            | E _e -> None
-            | P _p -> None
-            | M _m | C _m -> 
-                None
+            | E _
+            | P _
+            | C _ -> None
+            | M m ->
+                let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                NicePrint.layoutType (displayContext.Contents cenv.g) rty
+                |> Some
             | V v ->
-                NicePrint.prettyLayoutOfReturnType (denv.Contents cenv.g) v.Deref
+                NicePrint.layoutOfValReturnType (displayContext.Contents cenv.g) v
                 |> Some        
     
     member x.GetWitnessPassingInfo() = 

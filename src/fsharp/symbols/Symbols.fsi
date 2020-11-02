@@ -861,14 +861,13 @@ type FSharpMemberOrFunctionOrValue =
     /// Get the name as presented in F# error messages and documentation
     member DisplayName: string
 
-<<<<<<< HEAD
-    member CurriedParameterGroups: IList<IList<FSharpParameter>>
-=======
-    /// List of list of parameters. Typically, there is only one nested list.
+    /// <summary>List of list of parameters, where each nested item represents a defined parameter</summary>
+    /// <remarks>
+    /// Typically, there is only one nested list.
     /// However, code such as 'f (a, b) (c, d)' contains two groups, each with two parameters.
     /// In that example, there is a list made up of two lists, each with a parameter.
+    /// </remarks>
     member CurriedParameterGroups : IList<IList<FSharpParameter>>
->>>>>>> 8dc6b59f9... Cleanup, handle method params properly, constructors
 
     /// Gets the overloads for the current method
     /// matchParameterNumber indicates whether to filter the overloads to match the number of parameters in the current symbol
