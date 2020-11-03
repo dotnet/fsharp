@@ -960,7 +960,8 @@ module PrettyTypes =
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames : bool
-      openTopPaths: string list list
+      openTopPathsSorted: Lazy<string list list> 
+      openTopPathsRaw: string list list
       shortTypeNames: bool
       suppressNestedTypes: bool
       maxMembers : int option
