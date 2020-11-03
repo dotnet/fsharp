@@ -2726,8 +2726,7 @@ module SimplifyTypes =
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames: bool
-      openTopPathsSorted: Lazy<string list list>
-      openTopPathsRaw: string list list
+      openTopPaths: string list list
       shortTypeNames: bool
       suppressNestedTypes: bool
       maxMembers: int option
@@ -2750,15 +2749,11 @@ type DisplayEnv =
       generatedValueLayout : (Val -> layout option) }
 
     member x.SetOpenPaths paths = 
-        { x with 
-             openTopPathsSorted = (lazy (paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
-             openTopPathsRaw = paths 
-        }
+        { x with openTopPaths = paths }
 
     static member Empty tcGlobals = 
       { includeStaticParametersInTypeNames = false
-        openTopPathsRaw = []
-        openTopPathsSorted = notlazy []
+        openTopPaths = []
         shortTypeNames = false
         suppressNestedTypes = false
         maxMembers = None
@@ -2782,7 +2777,7 @@ type DisplayEnv =
 
 
     member denv.AddOpenPath path = 
-        denv.SetOpenPaths (path :: denv.openTopPathsRaw)
+        denv.SetOpenPaths (path :: denv.openTopPaths)
 
     member denv.AddOpenModuleOrNamespace (modref: ModuleOrNamespaceRef) = 
         denv.AddOpenPath (fullCompPathOfModuleOrNamespace modref.Deref).DemangledPath
@@ -2972,7 +2967,7 @@ let trimPathByDisplayEnv denv path =
             else Some("")
         else None
 
-    match List.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
+    match List.tryPick findOpenedNamespace denv.openTopPaths with
     | Some s -> s
     | None -> if isNil path then "" else textOfPath path + "."
 
