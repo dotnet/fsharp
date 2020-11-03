@@ -1864,6 +1864,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             let argTypes =
                 minfo.GetParamTypes(amap, m, methArgTys) 
                 |> List.concat 
+
             // do not apply coercion to the 'receiver' argument
             let receiverArgOpt, argExprs = 
                 if minfo.IsInstance then
@@ -1871,6 +1872,13 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     | h :: t -> Some h, t
                     | argExprs -> None, argExprs
                 else None, argExprs
+
+            // For methods taking no arguments, 'argExprs' will be a single unit expression here
+            let argExprs = 
+                 match argTypes, argExprs with
+                 | [], [_] -> []
+                 | _ -> argExprs
+
             let convertedArgs = (argExprs, argTypes) ||> List.map2 (fun expr expectedTy -> mkCoerceIfNeeded g expectedTy (tyOfExpr g expr) expr)
             match receiverArgOpt with
             | Some r -> r :: convertedArgs

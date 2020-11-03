@@ -4237,9 +4237,12 @@ let ComputeRemappingFromInferredSignatureToExplicitSignature g mty msigty =
 /// At TMDefRec nodes abstract (virtual) vslots are effectively binders, even 
 /// though they are tucked away inside the tycon. This helper function extracts the
 /// virtual slots to aid with finding this babies.
-let abstractSlotValsOfTycons (tycons: Tycon list) =  
+let abstractSlotValRefsOfTycons (tycons: Tycon list) =  
     tycons 
     |> List.collect (fun tycon -> if tycon.IsFSharpObjectModelTycon then tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots else []) 
+
+let abstractSlotValsOfTycons (tycons: Tycon list) =  
+    abstractSlotValRefsOfTycons tycons 
     |> List.map (fun v -> v.Deref)
 
 let rec accEntityRemapFromModuleOrNamespace msigty x acc = 
