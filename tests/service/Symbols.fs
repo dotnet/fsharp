@@ -141,11 +141,15 @@ type C = Ns1.Ns2.T
 namespace Ns1.Ns5
 open Ns1
 type D = Ns1.Ns2.T
+
+namespace Ns1.Ns2.Ns6
+type E = Ns1.Ns2.T
 """
         [| "A", "T"
            "B", "Ns1.Ns2.T"
            "C", "T"
-           "D", "Ns2.T" |]
+           "D", "Ns2.T"
+           "E", "Ns1.Ns2.T" |]
         |> Array.iter (fun (symbolName, expectedPrintedType) ->
             let symbolUse = findSymbolUseByName symbolName checkResults
             match symbolUse.Symbol with
