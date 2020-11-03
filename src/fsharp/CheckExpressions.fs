@@ -449,7 +449,7 @@ let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy =
     ConstraintSolver.AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
 
 /// Make an environment suitable for a module or namespace. Does not create a new accumulator but uses one we already have/
-let MakeInnerEnvWithAcc addOpenToEnv env nm mtypeAcc modKind = 
+let MakeInnerEnvWithAcc addOpenToNameEnv env nm mtypeAcc modKind = 
     let path = env.ePath @ [nm]
     let cpath = env.eCompPath.NestedCompPath nm.idText modKind
     { env with 
@@ -458,17 +458,17 @@ let MakeInnerEnvWithAcc addOpenToEnv env nm mtypeAcc modKind =
         eAccessPath = cpath
         eAccessRights = ComputeAccessRights cpath env.eInternalsVisibleCompPaths env.eFamilyType // update this computed field
         eNameResEnv =
-            if addOpenToEnv then
+            if addOpenToNameEnv then
                 { env.NameEnv with eDisplayEnv = env.DisplayEnv.AddOpenPath (pathOfLid path) }
             else
                 env.NameEnv
         eModuleOrNamespaceTypeAccumulator = mtypeAcc }
 
 /// Make an environment suitable for a module or namespace, creating a new accumulator.
-let MakeInnerEnv addOpenToEnv env nm modKind = 
+let MakeInnerEnv addOpenToNameEnv env nm modKind = 
     // Note: here we allocate a new module type accumulator 
     let mtypeAcc = ref (Construct.NewEmptyModuleOrNamespaceType modKind)
-    MakeInnerEnvWithAcc addOpenToEnv env nm mtypeAcc modKind, mtypeAcc
+    MakeInnerEnvWithAcc addOpenToNameEnv env nm mtypeAcc modKind, mtypeAcc
 
 /// Make an environment suitable for processing inside a type definition
 let MakeInnerEnvForTyconRef env tcref isExtrinsicExtension = 
