@@ -1630,19 +1630,19 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M _ | C _ | P _ | E _ -> true
         | V v -> v.IsMember 
 
-    member __.IsParameter =
+    member __.IsFunctionParameter =
         match d with
-        | V v -> v.IsParam
+        | V v -> v.IsFunctionParameter
         | _ -> false
 
-    member __.IsTopLevelParameter =
+    member __.IsTopLevelFunctionParameter =
         match d with
-        | V v -> v.IsTopLevelParam
+        | V v -> v.IsTopLevelFunctionParameter
         | _ -> false
 
-    member __.IsNestedScopeParameter =
+    member __.IsNestedScopeFunctionParameter =
         match d with
-        | V v -> v.IsNestedScopeParam
+        | V v -> v.IsNestedScopeFunctionParameter
         | _ -> false
 
     member __.IsDispatchSlot = 

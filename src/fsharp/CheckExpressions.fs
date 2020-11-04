@@ -1421,7 +1421,7 @@ let MakeAndPublishBaseVal cenv env baseIdOpt ty =
     baseIdOpt
     |> Option.map (fun (id: Ident) ->
        let valscheme = ValScheme(id, NonGenericTypeScheme ty, None, None, false, ValInline.Never, BaseVal, None, false, false, false, false)
-       MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valscheme, [], XmlDoc.Empty, None, false, NonParam))
+       MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valscheme, [], XmlDoc.Empty, None, false, NotAFunctionParameter))
 
 // Make the "delayed reference" value where the this pointer will reside after calling the base class constructor
 // Make the value for the 'this' pointer for use within a constructor
@@ -1433,7 +1433,7 @@ let MakeAndPublishSafeThisVal cenv env (thisIdOpt: Ident option) thisTy =
             errorR(Error(FSComp.SR.tcStructsCanOnlyBindThisAtMemberDeclaration(), thisId.idRange))
 
         let valScheme = ValScheme(thisId, NonGenericTypeScheme(mkRefCellTy cenv.g thisTy), None, None, false, ValInline.Never, CtorThisVal, None, false, false, false, false)
-        Some(MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valScheme, [], XmlDoc.Empty, None, false, NonParam))
+        Some(MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valScheme, [], XmlDoc.Empty, None, false, NotAFunctionParameter))
 
     | None -> 
         None 
@@ -5802,7 +5802,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, _, m) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy
         let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
-        let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names TopLevelParam
+        let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names TopLevelFunctionParameter
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy cenv.g v.Type, v)
         let envinner = if isMember then envinner else ExitFamilyRegion envinner
         let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner resultTy takenNames tpenv bodyExpr
@@ -9124,7 +9124,7 @@ and TcAndPatternCompileMatchClauses mExpr matchm actionOnFailure cenv inputExprO
 and TcMatchPattern cenv inputTy env tpenv (pat: SynPat, optWhenExpr: SynExpr option) =
     let m = pat.Range
     let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, Map.empty, Set.empty) inputTy pat
-    let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names NestedScopeParam
+    let envinner, values, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names NestedScopeFunctionParameter
     let optWhenExpr', tpenv = 
         match optWhenExpr with
         | Some whenExpr ->
@@ -9707,7 +9707,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // on all other paths. 
         let tpenv = HideUnscopedTypars generalizedTypars tpenv
         let valSchemes = NameMap.map (UseCombinedArity cenv.g declKind rhsExpr) prelimValSchemes2
-        let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, doc, literalValue, NonParam)
+        let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, doc, literalValue, NotAFunctionParameter)
         let checkedPat = tcPatPhase2 (TcPatPhase2Input (values, true))
         let prelimRecValues = NameMap.map fst values
         
@@ -10318,7 +10318,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
        List.concat extraBindings, List.concat extraValues, tpenv, recBindIdx
     
     // Create the value 
-    let vspec = MakeAndPublishVal cenv envinner (altActualParent, false, declKind, ValInRecScope isComplete, prelimValScheme, bindingAttribs, bindingXmlDoc, literalValue, isGeneratedEventVal, NonParam)
+    let vspec = MakeAndPublishVal cenv envinner (altActualParent, false, declKind, ValInRecScope isComplete, prelimValScheme, bindingAttribs, bindingXmlDoc, literalValue, isGeneratedEventVal, NotAFunctionParameter)
 
     // Suppress hover tip for "get" and "set" at property definitions, where toolId <> bindingId
     match toolIdOpt with 
@@ -10916,7 +10916,7 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
                 | Some topValInfo -> topValInfo.ArgNames
 
             let doc = doc.ToXmlDoc(true, paramNames)
-            let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, doc, literalValue, false, NonParam)
+            let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, doc, literalValue, false, NotAFunctionParameter)
             assert(vspec.InlineInfo = inlineFlag)
 
             vspec, tpenv)

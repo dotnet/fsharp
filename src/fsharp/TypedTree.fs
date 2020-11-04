@@ -245,9 +245,9 @@ type ValFlags(flags: int64) =
                                                       (flags       &&&    ~~~0b10011001100000000000L)
 
 type ValParamInfo =
-     | NonParam
-     | TopLevelParam
-     | NestedScopeParam
+     | NotAFunctionParameter
+     | TopLevelFunctionParameter
+     | NestedScopeFunctionParameter
 
 [<Struct>]
 type ValFlags2 (flags : int64) =
@@ -255,19 +255,19 @@ type ValFlags2 (flags : int64) =
         let flags =
             0L |||
             (match valParamInfo with
-             | NonParam -> 0L
-             | TopLevelParam -> 0b00000000000000000001L
-             | NestedScopeParam -> 0b00000000000000000010L)
+             | NotAFunctionParameter -> 0L
+             | TopLevelFunctionParameter -> 0b00000000000000000001L
+             | NestedScopeFunctionParameter -> 0b00000000000000000010L)
         ValFlags2 flags
 
     /// Used for indication that Val is a top level function parameter (like x in let f x = ... or x in fun x -> ...)
-    member _.IsTopLevelParam = flags &&& 0b00000000000000000001L <> 0L
+    member _.IsTopLevelFunctionParameter = flags &&& 0b00000000000000000001L <> 0L
 
     /// Used for indication that Val is a nested scope function parameter (like x in match value with | Some x ... or x in for x in 0..9 or x in let! x = ... in CE's)
-    member _.IsNestedScopeParam = flags &&& 0b00000000000000000010L <> 0L
+    member _.IsNestedScopeFunctionParameter = flags &&& 0b00000000000000000010L <> 0L
 
     /// Used for indication that Val is a top level or nested scope function parameter
-    member x.IsParam = x.IsTopLevelParam || x.IsNestedScopeParam
+    member x.IsFunctionParameter = x.IsTopLevelFunctionParameter || x.IsNestedScopeFunctionParameter
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2740,13 +2740,13 @@ type Val =
     member x.IsCompilerGenerated = x.val_flags.IsCompilerGenerated
 
     /// Indicates if this is a top level function parameter (like x in let f x = ... or x in fun x -> ...)
-    member x.IsParam = x.val_flags_2.IsParam
+    member x.IsFunctionParameter = x.val_flags_2.IsFunctionParameter
 
     /// Indicates if this is a nested scope function parameter (like x in match value with | Some x ... or x in for x in 0..9 or x in let! x = ... in CE's)
-    member x.IsTopLevelParam = x.val_flags_2.IsTopLevelParam
+    member x.IsTopLevelFunctionParameter = x.val_flags_2.IsTopLevelFunctionParameter
 
     /// Indicates if this is a top level or nested scope function parameter
-    member x.IsNestedScopeParam = x.val_flags_2.IsNestedScopeParam
+    member x.IsNestedScopeFunctionParameter = x.val_flags_2.IsNestedScopeFunctionParameter
 
     /// Get the declared attributes for the value
     member x.Attribs = 
@@ -3709,13 +3709,13 @@ type ValRef =
     member x.Id = x.Deref.Id
 
     /// Indicates if this is a top level or nested scope function parameter
-    member x.IsParam = x.Deref.IsParam
+    member x.IsFunctionParameter = x.Deref.IsFunctionParameter
 
     /// Indicates if this is a top level function parameter (like x in let f x = ... or x in fun x -> ...)
-    member x.IsTopLevelParam = x.Deref.IsTopLevelParam
+    member x.IsTopLevelFunctionParameter = x.Deref.IsTopLevelFunctionParameter
 
     /// Indicates if this is a nested scope function parameter (like x in match value with | Some x ... or x in for x in 0..9 or x in let! x = ... in CE's)
-    member x.IsNestedScopeParam = x.Deref.IsNestedScopeParam
+    member x.IsNestedScopeFunctionParameter = x.Deref.IsNestedScopeFunctionParameter
 
     /// Get the name of the value, assuming it is compiled as a property.
     ///   - If this is a property then this is 'Foo' 
