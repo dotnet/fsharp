@@ -917,10 +917,10 @@ type FSharpMemberOrFunctionOrValue =
     member IsConstructor: bool
     
     /// Format the type using the rules of the given display context
-    member FormatLayout: context: FSharpDisplayContext -> Layout
+    member FormatLayout: displayContext: FSharpDisplayContext -> Layout
     
     /// Format the type using the rules of the given display context
-    member GetReturnTypeLayout: context: FSharpDisplayContext -> Layout option
+    member GetReturnTypeLayout: displayContext: FSharpDisplayContext -> Layout option
     
     /// Check if this method has an entrpoint that accepts witness arguments and if so return
     /// the name of that entrypoint and information about the additional witness arguments
