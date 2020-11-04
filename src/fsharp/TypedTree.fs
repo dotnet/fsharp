@@ -244,17 +244,17 @@ type ValFlags(flags: int64) =
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
                                                       (flags       &&&    ~~~0b10011001100000000000L)
 
-type ValParamInfo =
+type ValFunctionParameterInfo =
      | NotAFunctionParameter
      | TopLevelFunctionParameter
      | NestedScopeFunctionParameter
 
 [<Struct>]
-type ValFlags2 (flags : int64) =
-    new (valParamInfo) =
+type ValFlags2 (flags: int64) =
+    new (valFunctionParameterInfo) =
         let flags =
             0L |||
-            (match valParamInfo with
+            (match valFunctionParameterInfo with
              | NotAFunctionParameter -> 0L
              | TopLevelFunctionParameter -> 0b00000000000000000001L
              | NestedScopeFunctionParameter -> 0b00000000000000000010L)
@@ -5620,7 +5620,7 @@ type Construct() =
            (logicalName: string, m: range, compiledName, ty, isMutable, isCompGen, arity, access,
             recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc: XmlDoc, isModuleOrMemberBinding,
             isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal,
-            konst, actualParent, valParamInfo : ValParamInfo) : Val =
+            konst, actualParent, valFunctionParameterInfo: ValFunctionParameterInfo) : Val =
 
         let stamp = newStamp()
         Val.New {
@@ -5628,7 +5628,7 @@ type Construct() =
             val_logical_name = logicalName
             val_range = m
             val_flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)
-            val_flags_2 = ValFlags2(valParamInfo)
+            val_flags_2 = ValFlags2(valFunctionParameterInfo)
             val_type = ty
             val_opt_data =
                 match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with

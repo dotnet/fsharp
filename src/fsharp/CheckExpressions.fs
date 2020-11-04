@@ -1273,7 +1273,7 @@ let CheckForAbnormalOperatorNames cenv (idRange: range) coreDisplayName (memberI
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
         | PrettyNaming.Other -> ()
 
-let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme, attrs, doc, literalValue, isGeneratedEventVal, valParamInfo) =
+let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme, attrs, doc, literalValue, isGeneratedEventVal, valFunctionParameterInfo) =
 
     let (ValScheme(id, typeScheme, topValData, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, compgen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
 
@@ -1381,7 +1381,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
             (logicalName, id.idRange, compiledName, ty, mut,
              compgen, topValData, vis, vrec, memberInfoOpt, baseOrThis, attrs, inlineFlag,
              doc, isTopBinding, isExtrinsic, isIncrClass, isTyFunc, 
-             (hasDeclaredTypars || inSig), isGeneratedEventVal, literalValue, actualParent, valParamInfo)
+             (hasDeclaredTypars || inSig), isGeneratedEventVal, literalValue, actualParent, valFunctionParameterInfo)
 
     
     CheckForAbnormalOperatorNames cenv id.idRange vspec.CoreDisplayName memberInfoOpt
@@ -1410,10 +1410,10 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, vscheme,
 
     vspec
 
-let MakeAndPublishVals cenv env (altActualParent, inSig, declKind, vrec, valSchemes, attrs, doc, literalValue, valParamInfo) =
+let MakeAndPublishVals cenv env (altActualParent, inSig, declKind, vrec, valSchemes, attrs, doc, literalValue, valFunctionParameterInfo) =
     Map.foldBack
         (fun name (valscheme: ValScheme) values -> 
-          Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, valscheme, attrs, doc, literalValue, false, valParamInfo), valscheme.TypeScheme) values)
+          Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, valscheme, attrs, doc, literalValue, false, valFunctionParameterInfo), valscheme.TypeScheme) values)
         valSchemes
         Map.empty
 
@@ -1686,10 +1686,10 @@ let UseNoArity prelimScheme =
     BuildValScheme ExpressionBinding None prelimScheme
 
 /// Make and publish the Val nodes for a collection of simple (non-generic) value specifications 
-let MakeAndPublishSimpleVals cenv env names valParamInfo =
+let MakeAndPublishSimpleVals cenv env names valFunctionParameterInfo =
     let tyschemes = DontGeneralizeVals names
     let valSchemes = NameMap.map UseNoArity tyschemes
-    let values = MakeAndPublishVals cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valSchemes, [], XmlDoc.Empty, None, valParamInfo)
+    let values = MakeAndPublishVals cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valSchemes, [], XmlDoc.Empty, None, valFunctionParameterInfo)
     let vspecMap = NameMap.map fst values
     values, vspecMap
     
@@ -1699,10 +1699,10 @@ let MakeAndPublishSimpleVals cenv env names valParamInfo =
 /// into scope simultaneously. The technique used to do this is a disturbing and unfortunate hack that
 /// intercepts `NotifyNameResolution` calls being emitted by `MakeAndPublishSimpleVals`
 
-let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) valParamInfo =
+let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) valFunctionParameterInfo =
     let values, vspecMap = 
         if names.Count <= 1 then 
-            MakeAndPublishSimpleVals cenv env names valParamInfo
+            MakeAndPublishSimpleVals cenv env names valFunctionParameterInfo
         else
             let nameResolutions = ResizeArray()
 
@@ -1728,7 +1728,7 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) valPar
                         member this.FormatStringCheckContext = None } 
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
-                MakeAndPublishSimpleVals cenv env names valParamInfo
+                MakeAndPublishSimpleVals cenv env names valFunctionParameterInfo
     
             if nameResolutions.Count <> 0 then 
                 let (_, _, _, _, _, _, ad, m1, _replacing) = nameResolutions.[0]
