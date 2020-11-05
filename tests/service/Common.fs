@@ -398,7 +398,7 @@ let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults)
 
 let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
     getSymbolUses results
-    |> Array.find (fun symbolUse ->
+    |> Seq.find (fun symbolUse ->
         match getSymbolName symbolUse.Symbol with
         | Some symbolName -> symbolName = name
         | _ -> false)
