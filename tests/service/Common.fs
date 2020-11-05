@@ -109,6 +109,7 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--define:DEBUG" 
 #if NETCOREAPP
         yield "--targetprofile:netcore" 
+        yield "--langversion:preview" 
 #endif
         yield "--optimize-" 
         yield "--out:" + dllName
@@ -393,6 +394,19 @@ let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults)
 
     for name in names do
         Assert.That(Set.contains name symbolNames, name)
+
+
+let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
+    getSymbolUses results
+    |> Array.find (fun symbolUse ->
+        match getSymbolName symbolUse.Symbol with
+        | Some symbolName -> symbolName = name
+        | _ -> false)
+
+let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
+    let symbolUse = findSymbolUseByName name results
+    symbolUse.Symbol
+
 
 let getRangeCoords (r: range) =
     (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)

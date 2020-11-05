@@ -20618,6 +20618,8 @@ FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOp
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.SourceCodeServices.FSharpExpr,FSharp.Compiler.SourceCodeServices.FSharpType,FSharp.Compiler.SourceCodeServices.FSharpUnionCase,FSharp.Compiler.SourceCodeServices.FSharpField,FSharp.Compiler.SourceCodeServices.FSharpExpr]] |UnionCaseSet|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |Call|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],System.String,FSharp.Compiler.SyntaxTree+MemberFlags,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |TraitCall|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
+FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] |WitnessArg|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
+FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |CallWithWitnesses|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.CompilerEnvironment: Microsoft.FSharp.Core.FSharpOption`1[System.String] BinFolderOfDefaultFSharpCompiler(Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.CompilerEnvironmentModule: Boolean IsCheckerSupportedSubcategory(System.String)
 FSharp.Compiler.SourceCodeServices.CompilerEnvironmentModule: Microsoft.FSharp.Collections.FSharpList`1[System.String] DefaultReferencesForOrphanSources(Boolean)
@@ -21400,6 +21402,8 @@ FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.Collections.Generic.I
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`4[FSharp.Compiler.SourceCodeServices.FSharpType,System.String,System.Boolean,System.Object]] get_NamedArguments()
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.String Format(FSharp.Compiler.SourceCodeServices.FSharpDisplayContext)
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.String ToString()
+FSharp.Compiler.SourceCodeServices.FSharpAttribute: range Range
+FSharp.Compiler.SourceCodeServices.FSharpAttribute: range get_Range()
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer)
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -21767,6 +21771,8 @@ FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String get_QualifiedName
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String get_XmlDocSig()
 FSharp.Compiler.SourceCodeServices.FSharpEntity: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpEntity: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpEntity: Boolean IsAbstractClass
+FSharp.Compiler.SourceCodeServices.FSharpEntity: Boolean get_IsAbstractClass()
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity Severity
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity get_Severity()
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: Int32 EndColumn
@@ -22532,6 +22538,7 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String 
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String get_XmlDocSig()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.String,System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]]] GetWitnessPassingInfo()
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: FSharp.Compiler.SourceCodeServices.FSharpMethodGroupItem[] Methods
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: FSharp.Compiler.SourceCodeServices.FSharpMethodGroupItem[] get_Methods()
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: System.String MethodName
@@ -22831,6 +22838,8 @@ FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: System.String get_Full
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: System.String get_Name()
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range Range
+FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range get_Range()
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean IsAccessible(FSharp.Compiler.SourceCodeServices.FSharpAccessibilityRights)
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean IsEffectivelySameAs(FSharp.Compiler.SourceCodeServices.FSharpSymbol)
