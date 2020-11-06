@@ -8,9 +8,10 @@ module Tests.Service.Symbols
 #endif
 
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
 open FsUnit
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
 
 module ActivePatterns =
 
@@ -55,6 +56,24 @@ match "foo" with
 
         getCaseUsages completePatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|True|False|"
         getCaseUsages partialPatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|String|_|"
+
+
+module ExternDeclarations =
+    [<Test>]
+    let ``Access modifier`` () =
+        let parseResults, checkResults = getParseAndCheckResults "extern int private f()"
+
+        match parseResults.ParseTree with
+        | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [SynModuleOrNamespace (decls = [decl])]))) ->
+            match decl with
+            | SynModuleDecl.Let (_, [Binding (accessibility = accessibility)], _) ->
+                accessibility |> should equal (Some SynAccess.Private)
+            | _ -> failwith "Couldn't get f"
+        | _ -> failwith "Couldn't get bindings"
+
+        match findSymbolByName "f" checkResults with
+        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.Accessibility.IsPrivate |> should equal true
+        | _ -> failwith "Couldn't get f"
 
 
 module XmlDocSig =
