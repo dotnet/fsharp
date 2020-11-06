@@ -12,6 +12,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     open System.Runtime.InteropServices
     open Internal.Utilities
     open Internal.Utilities.FSharpEnvironment
+    open FSharp.Compiler.AbstractIL.Internal.Library
 
     type private TypeInThisAssembly = class end
 
@@ -80,8 +81,8 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             try
                 let asm = Assembly.GetEntryAssembly()
                 match asm with
-                | null -> ""
-                | asm ->
+                | Null -> ""
+                | NonNull asm ->
                     let depsJsonPath = Path.ChangeExtension(asm.Location, "deps.json")
                     if File.Exists(depsJsonPath) then
                         File.ReadAllText(depsJsonPath)

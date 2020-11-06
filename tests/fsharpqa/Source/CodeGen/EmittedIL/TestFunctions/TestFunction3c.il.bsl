@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction3c
 {
-  // Offset: 0x00000000 Length: 0x000001FA
+  // Offset: 0x00000000 Length: 0x000001FC
 }
 .mresource public FSharpOptimizationData.TestFunction3c
 {
   // Offset: 0x00000200 Length: 0x0000008A
 }
 .module TestFunction3c.exe
-// MVID: {5F1FA088-A662-4FAC-A745-038388A01F5F}
+// MVID: {5F972A6E-A662-4FAC-A745-03836E2A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AD0000
+// Image base: 0x09300000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,7 +61,7 @@
     // Code size       36 (0x24)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 5,20 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction3c.fs'
+    .line 5,5 : 5,20 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction3c.fs'
     IL_0000:  ldstr      "Hello"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)

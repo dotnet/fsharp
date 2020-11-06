@@ -2761,38 +2761,44 @@ let ``Test Operator Declarations for String`` () =
         [], "let testStringToStringOperator(e1) = Operators.ToString<Microsoft.FSharp.Core.string> (e1) @ (56,47--56,56)"
       ]
     let expectedOptimized = [
-        [], "type OperatorTestsString"
-        [], "let testStringEqualsOperator(e1) (e2) = String.Equals (e1,e2) @ (4,69--4,78)"
-        [], "let testStringNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (String.Equals (e1,e2),False) @ (5,69--5,79)"
-        [], "let testStringLessThanOperator(e1) (e2) = HashCompare.GenericLessThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (6,69--6,78)"
-        [], "let testStringLessThanOrEqualsOperator(e1) (e2) = HashCompare.GenericLessOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (7,69--7,79)"
-        [], "let testStringGreaterThanOperator(e1) (e2) = HashCompare.GenericGreaterThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (8,69--8,78)"
-        [], "let testStringGreaterThanOrEqualsOperator(e1) (e2) = HashCompare.GenericGreaterOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (9,69--9,79)"
-        [], "let testStringAdditionOperator(e1) (e2) = String.Concat (e1,e2) @ (11,61--11,70)"
-        [], "let testStringAdditionChecked(e1) (e2) = String.Concat (e1,e2) @ (24,59--24,76)"
-        [], "let testStringToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.byte> (arg0_0),LanguagePrimitives.ParseUInt32 (e1)) @ (29,47--29,62)"
-        [], "let testStringToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.sbyte> (arg0_0),LanguagePrimitives.ParseInt32 (e1)) @ (30,47--30,63)"
-        [], "let testStringToInt16Checked(e1) = Checked.ToInt16<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int16> (arg0_0),LanguagePrimitives.ParseInt32 (e1)) @ (31,47--31,63)"
-        [], "let testStringToUInt16Checked(e1) = Checked.ToUInt16<Microsoft.FSharp.Core.uint32> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint16> (arg0_0),LanguagePrimitives.ParseUInt32 (e1)) @ (32,47--32,64)"
-        [], "let testStringToIntChecked(e1) = LanguagePrimitives.ParseInt32 (e1) @ (33,47--33,61)"
-        [], "let testStringToInt32Checked(e1) = LanguagePrimitives.ParseInt32 (e1) @ (34,47--34,63)"
-        [], "let testStringToUInt32Checked(e1) = LanguagePrimitives.ParseUInt32 (e1) @ (35,47--35,64)"
-        [], "let testStringToInt64Checked(e1) = LanguagePrimitives.ParseInt64 (e1) @ (36,47--36,63)"
-        [], "let testStringToUInt64Checked(e1) = LanguagePrimitives.ParseUInt64 (e1) @ (37,47--37,64)"
-        [], "let testStringToByteOperator(e1) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.byte> (arg0_0),LanguagePrimitives.ParseUInt32 (e1)) @ (41,47--41,54)"
-        [], "let testStringToSByteOperator(e1) = Checked.ToSByte<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.sbyte> (arg0_0),LanguagePrimitives.ParseInt32 (e1)) @ (42,47--42,55)"
-        [], "let testStringToInt16Operator(e1) = Checked.ToInt16<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int16> (arg0_0),LanguagePrimitives.ParseInt32 (e1)) @ (43,47--43,55)"
-        [], "let testStringToUInt16Operator(e1) = Checked.ToUInt16<Microsoft.FSharp.Core.uint32> (fun arg0_0 -> LanguagePrimitives.ExplicitDynamic<Microsoft.FSharp.Core.uint32,Microsoft.FSharp.Core.uint16> (arg0_0),LanguagePrimitives.ParseUInt32 (e1)) @ (44,47--44,56)"
-        [], "let testStringToIntOperator(e1) = LanguagePrimitives.ParseInt32 (e1) @ (45,47--45,53)"
-        [], "let testStringToInt32Operator(e1) = LanguagePrimitives.ParseInt32 (e1) @ (46,47--46,55)"
-        [], "let testStringToUInt32Operator(e1) = LanguagePrimitives.ParseUInt32 (e1) @ (47,47--47,56)"
-        [], "let testStringToInt64Operator(e1) = LanguagePrimitives.ParseInt64 (e1) @ (48,47--48,55)"
-        [], "let testStringToUInt64Operator(e1) = LanguagePrimitives.ParseUInt64 (e1) @ (49,47--49,56)"
-        [], "let testStringToSingleOperator(e1) = Single.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (52,47--52,57)"
-        [], "let testStringToDoubleOperator(e1) = Double.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (53,47--53,55)"
-        [], "let testStringToDecimalOperator(e1) = Decimal.Parse (e1,167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (54,47--54,57)"
-        [], "let testStringToCharOperator(e1) = Char.Parse (e1) @ (55,47--55,54)"
-        [FC47; FC50], "let testStringToStringOperator(e1) = e1 @ (56,54--56,56)"
+        [], "type OperatorTestsString";
+        [], "let testStringEqualsOperator(e1) (e2) = String.Equals (e1,e2) @ (4,69--4,78)";
+        [], "let testStringNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (String.Equals (e1,e2),False) @ (5,69--5,79)";
+        [], "let testStringLessThanOperator(e1) (e2) = HashCompare.GenericLessThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (6,69--6,78)";
+        [], "let testStringLessThanOrEqualsOperator(e1) (e2) = HashCompare.GenericLessOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (7,69--7,79)";
+        [], "let testStringGreaterThanOperator(e1) (e2) = HashCompare.GenericGreaterThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (8,69--8,78)";
+        [], "let testStringGreaterThanOrEqualsOperator(e1) (e2) = HashCompare.GenericGreaterOrEqualIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (9,69--9,79)";
+        [], "let testStringAdditionOperator(e1) (e2) = String.Concat (e1,e2) @ (11,61--11,70)";
+        [], "let testStringAdditionChecked(e1) (e2) = String.Concat (e1,e2) @ (24,59--24,76)";
+        [], "let testStringToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (LanguagePrimitives.ParseUInt32 (e1)) @ (29,47--29,62)";
+        [], "let testStringToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.int> (LanguagePrimitives.ParseInt32 (e1)) @ (30,47--30,63)";
+        [], "let testStringToInt16Checked(e1) = Checked.ToInt16<Microsoft.FSharp.Core.int> (LanguagePrimitives.ParseInt32 (e1)) @ (31,47--31,63)";
+        [], "let testStringToUInt16Checked(e1) = Checked.ToUInt16<Microsoft.FSharp.Core.uint32> (LanguagePrimitives.ParseUInt32 (e1)) @ (32,47--32,64)";
+        [], "let testStringToIntChecked(e1) = LanguagePrimitives.ParseInt32 (e1) @ (33,47--33,61)";
+        [], "let testStringToInt32Checked(e1) = LanguagePrimitives.ParseInt32 (e1) @ (34,47--34,63)";
+        [], "let testStringToUInt32Checked(e1) = LanguagePrimitives.ParseUInt32 (e1) @ (35,47--35,64)";
+        [], "let testStringToInt64Checked(e1) = LanguagePrimitives.ParseInt64 (e1) @ (36,47--36,63)";
+        [], "let testStringToUInt64Checked(e1) = LanguagePrimitives.ParseUInt64 (e1) @ (37,47--37,64)";
+        [], "let testStringToByteOperator(e1) = Checked.ToByte<Microsoft.FSharp.Core.uint32> (LanguagePrimitives.ParseUInt32 (e1)) @ (41,47--41,54)";
+        [], "let testStringToSByteOperator(e1) = Checked.ToSByte<Microsoft.FSharp.Core.int> (LanguagePrimitives.ParseInt32 (e1)) @ (42,47--42,55)";
+        [], "let testStringToInt16Operator(e1) = Checked.ToInt16<Microsoft.FSharp.Core.int> (LanguagePrimitives.ParseInt32 (e1)) @ (43,47--43,55)";
+        [], "let testStringToUInt16Operator(e1) = Checked.ToUInt16<Microsoft.FSharp.Core.uint32> (LanguagePrimitives.ParseUInt32 (e1)) @ (44,47--44,56)";
+        [], "let testStringToIntOperator(e1) = LanguagePrimitives.ParseInt32 (e1) @ (45,47--45,53)";
+        [], "let testStringToInt32Operator(e1) = LanguagePrimitives.ParseInt32 (e1) @ (46,47--46,55)";
+        [], "let testStringToUInt32Operator(e1) = LanguagePrimitives.ParseUInt32 (e1) @ (47,47--47,56)";
+        [], "let testStringToInt64Operator(e1) = LanguagePrimitives.ParseInt64 (e1) @ (48,47--48,55)";
+        [], "let testStringToUInt64Operator(e1) = LanguagePrimitives.ParseUInt64 (e1) @ (49,47--49,56)";
+#if USES_FSHARP_CORE_45_PACKAGE
+        // the definition of these operators has changed slightly in latest FSharp.Core
+        [], "let testStringToSingleOperator(e1) = Single.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (52,47--52,57)";
+        [], "let testStringToDoubleOperator(e1) = Double.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (53,47--53,55)";
+#else
+        [FC47], "let testStringToSingleOperator(e1) = ((if Object.ReferenceEquals (e1 :> Microsoft.FSharp.Core.obj,dflt) then Operators.Raise<Microsoft.FSharp.Core.unit> (new ArgumentNullException(\"s\") :> Microsoft.FSharp.Core.exn) else ()); Single.Parse (e1.Replace(\"_\",\"\"),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider)) @ (52,47--52,57)";
+        [FC47], "let testStringToDoubleOperator(e1) = ((if Object.ReferenceEquals (e1 :> Microsoft.FSharp.Core.obj,dflt) then Operators.Raise<Microsoft.FSharp.Core.unit> (new ArgumentNullException(\"s\") :> Microsoft.FSharp.Core.exn) else ()); Double.Parse (e1.Replace(\"_\",\"\"),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider)) @ (53,47--53,55)";
+#endif
+        [], "let testStringToDecimalOperator(e1) = Decimal.Parse (e1,167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (54,47--54,57)";
+        [], "let testStringToCharOperator(e1) = Char.Parse (e1) @ (55,47--55,54)";
+        [FC47], "let testStringToStringOperator(e1) = e1 @ (56,54--56,56)"
       ]
 
     testOperators "String" "string" excludedTests expectedUnoptimized expectedOptimized

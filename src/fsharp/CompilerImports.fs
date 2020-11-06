@@ -56,13 +56,21 @@ let IsSignatureDataResource (r: ILResource) =
     r.Name.StartsWithOrdinal FSharpSignatureDataResourceName ||
     r.Name.StartsWithOrdinal FSharpSignatureDataResourceName2
 
+let IsSignatureDataResourceB (r: ILResource) = 
+    r.Name.StartsWithOrdinal FSharpSignatureDataResourceNameB
+
 let IsOptimizationDataResource (r: ILResource) = 
     r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName|| 
     r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName2
 
+let IsOptimizationDataResourceB (r: ILResource) = 
+    r.Name.StartsWithOrdinal FSharpOptimizationDataResourceNameB
+
 let GetSignatureDataResourceName (r: ILResource) = 
     if r.Name.StartsWithOrdinal FSharpSignatureDataResourceName then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName
+    elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceNameB then 
+        String.dropPrefix r.Name FSharpSignatureDataResourceNameB
     elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceName2 then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName2
     else failwith "GetSignatureDataResourceName"
@@ -70,6 +78,8 @@ let GetSignatureDataResourceName (r: ILResource) =
 let GetOptimizationDataResourceName (r: ILResource) = 
     if r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName
+    elif r.Name.StartsWithOrdinal FSharpOptimizationDataResourceNameB then 
+        String.dropPrefix r.Name FSharpOptimizationDataResourceNameB
     elif r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName2 then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName2
     else failwith "GetOptimizationDataResourceName"
@@ -84,31 +94,54 @@ let MakeILResource rName bytes =
       CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
       MetadataIndex = NoMetadataIdx }
 
-let PickleToResource inMem file (g: TcGlobals) scope rName p x =
+let PickleToResource inMem file (g: TcGlobals) scope rName rNameB p x = 
     let file = PathMap.apply g.pathMap file
 
-    let bytes = pickleObjWithDanglingCcus inMem file g scope p x
+    let bytes, bytesB = pickleObjWithDanglingCcus inMem file g scope p x 
     let byteStorage =
         if inMem then
             ByteStorage.FromByteArrayAndCopy(bytes, useBackingMemoryMappedFile = true)
         else
             ByteStorage.FromByteArray(bytes)
 
-    { Name = rName
-      Location = ILResourceLocation.Local(byteStorage)
-      Access = ILResourceAccess.Public
-      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-      MetadataIndex = NoMetadataIdx }
+    let byteStorageB =
+        if inMem then
+            ByteStorage.FromByteArrayAndCopy(bytesB, useBackingMemoryMappedFile = true)
+        else
+            ByteStorage.FromByteArray(bytesB)
 
-let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
+    let resource =
+        { Name = rName
+          Location = ILResourceLocation.Local(byteStorage)
+          Access = ILResourceAccess.Public
+          CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+          MetadataIndex = NoMetadataIdx }
+    let resourceB = 
+        if bytesB.Length > 0 then 
+            Some 
+              { Name = rNameB
+                Location = ILResourceLocation.Local(byteStorageB)
+                Access = ILResourceAccess.Public
+                CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+                MetadataIndex = NoMetadataIdx 
+              }
+        else
+            None
+    resource, resourceB
+          
 
-let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, filename, inMem) : ILResource =
+let GetSignatureData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) : PickledDataWithReferences<PickledCcuInfo> = 
+    let memA = byteReaderA()
+    let memB = (match byteReaderB with None -> ByteMemory.Empty.AsReadOnly() | Some br -> br())
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo memA memB
+
+let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, filename, inMem) =
     let mspec = ccu.Contents
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
-    let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName
+    let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpSignatureDataResourceName2 else FSharpSignatureDataResourceName 
+    let rNameB = FSharpSignatureDataResourceNameB
 
     let includeDir =
         if String.IsNullOrEmpty tcConfig.implicitIncludeDir then ""
@@ -117,19 +150,22 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
             |> System.IO.Path.GetFullPath
             |> PathMap.applyDir tcGlobals.pathMap
  
-    PickleToResource inMem filename tcGlobals ccu (rName+ccu.AssemblyName) pickleCcuInfo 
+    PickleToResource inMem filename tcGlobals ccu (rName+ccu.AssemblyName) (rNameB+ccu.AssemblyName) pickleCcuInfo 
         { mspec=mspec 
           compileTimeWorkingDir=includeDir
           usesQuotations = ccu.UsesFSharp20PlusQuotations }
 
-let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo (byteReader())
+let GetOptimizationData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) = 
+    let memA = byteReaderA()
+    let memB = (match byteReaderB with None -> ByteMemory.Empty.AsReadOnly() | Some br -> br())
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo memA memB
 
 let WriteOptimizationData (tcGlobals, filename, inMem, ccu: CcuThunk, modulInfo) = 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
     // don't complain when they see the resource.
     let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
-    PickleToResource inMem filename tcGlobals ccu (rName+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
+    let rNameB = FSharpOptimizationDataResourceNameB 
+    PickleToResource inMem filename tcGlobals ccu (rName+ccu.AssemblyName) (rNameB+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
 exception AssemblyNotResolved of (*originalName*) string * range
 exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
@@ -640,22 +676,47 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then 
                         let ccuName = GetSignatureDataResourceName iresource
-                        yield (ccuName, fun () -> iresource.GetBytes()) ]
+                        let readerA = fun () -> iresource.GetBytes()
+                        let readerB = 
+                            resources |> List.tryPick (fun iresourceB -> 
+                                if IsSignatureDataResourceB iresourceB then 
+                                    let ccuNameB = GetSignatureDataResourceName iresourceB
+                                    if ccuName = ccuNameB then
+                                        Some (fun () -> iresourceB.GetBytes() )
+                                    else None
+                                else None)
+                        yield (ccuName, (readerA, readerB)) ]
                         
             let sigDataReaders = 
                 if sigDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then 
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not (FileSystem.SafeExists sigFileName) then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
-                    [ (ilShortAssemName, fun () -> ByteMemory.FromFile(sigFileName, FileAccess.Read, canShadowCopy=true).AsReadOnly())]
+                    let readerA () = ByteMemory.FromFile(sigFileName, FileAccess.Read, canShadowCopy=true).AsReadOnly()
+                    [ (ilShortAssemName, (readerA, None)) ]
                 else
                     sigDataReaders
             sigDataReaders
 
          member __.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
+            let resources = ilModule.Resources.AsList
             let optDataReaders = 
-                ilModule.Resources.AsList
-                |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
+                resources
+                |> List.choose (fun r -> 
+                    if IsOptimizationDataResource r then 
+                        let ccuName = GetOptimizationDataResourceName r
+                        let readerA = (fun () -> r.GetBytes())
+                        let readerB = 
+                            resources |> List.tryPick (fun iresourceB -> 
+                                if IsOptimizationDataResourceB iresourceB then 
+                                    let ccuNameB = GetOptimizationDataResourceName iresourceB
+                                    if ccuName = ccuNameB then
+                                        Some (fun () -> iresourceB.GetBytes() )
+                                    else None
+                                else None)
+                        Some(ccuName, (readerA, readerB)) 
+                    else 
+                        None)
 
             // Look for optimization data in a file 
             let optDataReaders = 
@@ -663,7 +724,8 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     let optDataFile = Path.ChangeExtension(filename, "optdata")
                     if not (FileSystem.SafeExists optDataFile) then 
                         error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile, FileSystem.GetFullPathShim optDataFile), m))
-                    [ (ilShortAssemName, (fun () -> ByteMemory.FromFile(optDataFile, FileAccess.Read, canShadowCopy=true).AsReadOnly()))]
+                    let readerA () = ByteMemory.FromFile(optDataFile, FileAccess.Read, canShadowCopy=true).AsReadOnly()
+                    [ (ilShortAssemName, (readerA, None))]
                 else
                     optDataReaders
             optDataReaders
@@ -941,11 +1003,19 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
 
 #if !NO_EXTENSIONTYPING
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) = 
-        let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
-        match anameOpt with 
-        | None -> false, None
-        | Some aname -> 
+#else
+    member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly?>) = 
+#endif
+        match assembly with 
+        | Tainted.Null -> false,None
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        | assembly -> 
+#else
+        | Tainted.NonNull assembly -> 
+#endif
+        let aname = assembly.PUntaint((fun a -> a.GetName()), m)
         let ilShortAssemName = aname.Name
         match tcImports.FindCcu (ctok, m, ilShortAssemName, lookupOnly=true) with 
         | ResolvedCcu ccu -> 
@@ -1098,7 +1168,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         match dependencyProviderOpt with 
         | None ->
             Debug.Assert(false, "this should never be called on FrameworkTcImports")
-            new DependencyProvider(null, null)
+            new DependencyProvider()
         | Some dependencyProvider -> dependencyProvider
 
     member tcImports.GetImportMap() = 
@@ -1191,7 +1261,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
     member tcImportsStrong.ImportTypeProviderExtensions 
                (ctok, tcConfig: TcConfig, 
-                fileNameOfRuntimeAssembly, 
+                fileNameOfRuntimeAssembly: string, 
                 ilScopeRefOfRuntimeAssembly, 
                 runtimeAssemblyAttributes: ILAttribute list, 
                 entityToInjectInto, invalidateCcu: Event<_>, m) = 
@@ -1204,7 +1274,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             runtimeAssemblyAttributes 
             |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals))
             // If no design-time assembly is specified, use the runtime assembly
-            |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
+            |> List.map (function Null -> fileNameOfRuntimeAssembly | NonNull s -> s)
             // For each simple name of a design-time assembly, we take the first matching one in the order they are 
             // specified in the attributes
             |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension s with _ -> s)
@@ -1394,8 +1464,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
 
         let ccuRawDataAndInfos = 
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, filename)
-            |> List.map (fun (ccuName, sigDataReader) -> 
-                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader)
+            |> List.map (fun (ccuName, (sigDataReader, sigDataReaderB)) -> 
+                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader, sigDataReaderB)
 
                 let optDatas = Map.ofList optDataReaders
 
@@ -1433,8 +1503,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                          | None -> 
                             if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
                             None
-                         | Some info ->
-                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
+                         | Some (readerA, readerB) -> 
+                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), readerA, readerB)
                             let fixupThunk () = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false)))
 
                             // Make a note of all ccuThunks that may still need to be fixed up when other dlls are loaded
@@ -1771,7 +1841,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib, ilGlobals, fslibCcu,
                                   tcConfig.implicitIncludeDir, tcConfig.mlCompatibility,
-                                  tcConfig.isInteractive, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
+                                  tcConfig.isInteractive, tcConfig.checkNullness, tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations,
                                   tcConfig.noDebugData, tcConfig.pathMap, tcConfig.langVersion)
 
 #if DEBUG

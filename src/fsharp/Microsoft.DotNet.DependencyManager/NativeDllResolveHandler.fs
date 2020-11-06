@@ -30,7 +30,7 @@ type NativeAssemblyLoadContext () =
     static member NativeLoadContext = new NativeAssemblyLoadContext()
 
 /// Type that encapsulates Native library probing for managed packages
-type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) =
+type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe option) =
     let probingFileNames (name: string) =
         // coreclr native library probing algorithm: https://github.com/dotnet/coreclr/blob/9773db1e7b1acb3ec75c9cc0e36bd62dcbacd6d5/src/System.Private.CoreLib/shared/System/Runtime/Loader/LibraryNameVariation.Unix.cs
         let isRooted = Path.IsPathRooted name
@@ -77,8 +77,8 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
         let probe =
             match nativeProbingRoots with
-            | null -> None
-            | _ ->
+            | None -> None
+            | Some nativeProbingRoots ->  
                 nativeProbingRoots.Invoke()
                 |> Seq.tryPick(fun root ->
                     probingFileNames name |> Seq.tryPick(fun name ->
@@ -108,13 +108,12 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
             ()
 #endif
 
-type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
-    let handler: IDisposable option =
-#if NETSTANDARD
+type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) =
+
+    let handler:IDisposable option =
         if isRunningOnCoreClr then
-            Some (new NativeDllResolveHandlerCoreClr(_nativeProbingRoots) :> IDisposable)
+            Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
         else
-#endif
             None
 
     let appendSemiColon (p:string) =
@@ -148,6 +147,6 @@ type NativeDllResolveHandler (_nativeProbingRoots: NativeResolutionProbe) =
             | None -> ()
             | Some handler -> handler.Dispose()
 
-            let mutable probe:string = null
+            let mutable probe:string = Unchecked.defaultof<string>
             while (addedPaths.TryTake(&probe)) do
                 removeProbeFromProcessPath probe

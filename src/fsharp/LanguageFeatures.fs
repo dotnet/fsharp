@@ -35,6 +35,7 @@ type LanguageFeature =
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
+    | NullnessChecking
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -75,6 +76,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.NameOf, previewVersion
             LanguageFeature.StringInterpolation, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
+            LanguageFeature.NullnessChecking, previewVersion
         ]
 
     let specified =
@@ -141,6 +143,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing()
         | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d()
         | LanguageFeature.AndBang -> FSComp.SR.featureAndBang()
+        | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking()
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()

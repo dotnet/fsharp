@@ -38,20 +38,20 @@
 }
 .mresource public FSharpSignatureData.Linq101ElementOperators01
 {
-  // Offset: 0x00000000 Length: 0x0000037C
+  // Offset: 0x00000000 Length: 0x0000037E
 }
 .mresource public FSharpOptimizationData.Linq101ElementOperators01
 {
-  // Offset: 0x00000380 Length: 0x00000127
+  // Offset: 0x00000388 Length: 0x00000127
 }
 .module Linq101ElementOperators01.exe
-// MVID: {5F1FA088-19D7-C20D-A745-038388A01F5F}
+// MVID: {5F972A56-19D7-C20D-A745-0383562A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05260000
+// Image base: 0x06C00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -105,7 +105,7 @@
       .locals init ([0] class [Utils]Utils/Product V_0,
                [1] class [Utils]Utils/Product p)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101ElementOperators01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101ElementOperators01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101ElementOperators01/products12@12::pc
       IL_0006:  ldc.i4.1

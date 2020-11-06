@@ -132,7 +132,7 @@ module TcResolutionsExtensions =
                     protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
                 let isStructTyconRef (tyconRef: TyconRef) = 
-                    let ty = generalizedTyconRef tyconRef
+                    let ty = generalizedTyconRef g tyconRef
                     let underlyingTy = stripTyEqnsAndMeasureEqns g ty
                     isStructTy g underlyingTy
 
@@ -245,7 +245,7 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.Method
 
                     // Special case measures for struct types
-                    | Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
+                    | Item.Types(_, TType_app(tyconRef, (TType_measure _ :: _), _) :: _), LegitTypeOccurence, _, _, _, m when isStructTyconRef tyconRef ->
                         add m SemanticClassificationType.ValueType
 
                     | Item.Types (_, ty :: _), LegitTypeOccurence, _, _, _, m ->

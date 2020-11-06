@@ -11,6 +11,13 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+// Shim to match nullness checking library support in preview
+[<AutoOpen>]
+module Utils = 
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
+
 //There are a lot of flags on fsc.exe.
 //For now, not all of them are represented in the "Fsc class" object model.
 //The goal is to have the most common/important flags available via the Fsc class, and the
@@ -21,48 +28,27 @@ type public Fsc () as this =
 
     inherit ToolTask ()
 
-    let mutable baseAddress : string = null
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
-    let mutable checksumAlgorithm: string = null
-    let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
     let mutable compilerTools: ITaskItem [] = [||]
     let mutable debugSymbols = false
-    let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
     let mutable delaySign : bool = false
     let mutable deterministic : bool = false
-    let mutable disabledWarnings : string = null
-    let mutable documentationFile : string = null
-    let mutable dotnetFscCompilerPath : string = null
     let mutable embedAllSources = false
     let mutable embeddedFiles : ITaskItem[] = [||]
-    let mutable generateInterfaceFile : string = null
     let mutable highEntropyVA : bool = false
-    let mutable keyFile : string = null
-    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize  : bool = true
-    let mutable otherFlags : string = null
-    let mutable outputAssembly : string = null
-    let mutable pathMap : string = null
-    let mutable pdbFile : string = null
-    let mutable platform : string = null
     let mutable prefer32bit : bool = false
-    let mutable preferredUILang : string = null
     let mutable publicSign : bool = false
     let mutable provideCommandLineArgs : bool = false
     let mutable references : ITaskItem[] = [||]
-    let mutable referencePath : string = null
     let mutable resources : ITaskItem[] = [||]
     let mutable skipCompilerExecution : bool  = false
     let mutable sources : ITaskItem[] = [||]
-    let mutable sourceLink : string = null
-    let mutable subsystemVersion : string = null
     let mutable tailcalls : bool = true
-    let mutable targetProfile : string = null
-    let mutable targetType : string = null
     let mutable toolExe : string = "fsc.exe"
     let defaultToolPath =
         let locationOfThisDll =
@@ -73,16 +59,78 @@ type public Fsc () as this =
         | None -> ""
     let mutable treatWarningsAsErrors : bool = false
     let mutable useStandardResourceNames : bool = false
+    let mutable vserrors : bool = false
+    let mutable utf8output : bool = false
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let mutable baseAddress : string = null
+    let mutable codePage : string = null
+    let mutable debugType : string = null
+    let mutable disabledWarnings : string = null
+    let mutable documentationFile : string = null
+    let mutable dotnetFscCompilerPath : string = null
+    let mutable generateInterfaceFile : string = null
+    let mutable keyFile : string = null
+    let mutable langVersion : string = null
+    let mutable otherFlags : string = null
+    let mutable outputAssembly : string = null 
+    let mutable pathMap : string = null
+    let mutable pdbFile : string = null
+    let mutable platform : string = null
+    let mutable preferredUILang : string = null
+    let mutable referencePath : string = null
+    let mutable sourceLink : string = null
+    let mutable subsystemVersion : string = null
+    let mutable targetProfile : string = null
+    let mutable targetType : string = null
     let mutable warningsAsErrors : string = null
     let mutable warningsNotAsErrors : string = null
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
     let mutable win32res : string = null
     let mutable win32manifest : string = null
-    let mutable vserrors : bool = false
     let mutable vslcid : string = null
-    let mutable utf8output : bool = false
+    let mutable checksumAlgorithm: string = null
+    let mutable codePage : string = null
+#else
+    let mutable baseAddress : string? = null
+    let mutable codePage : string? = null
+    let mutable debugType : string? = null
+    let mutable disabledWarnings : string? = null
+    let mutable documentationFile : string? = null
+    let mutable dotnetFscCompilerPath : string? = null
+    let mutable generateInterfaceFile : string? = null
+    let mutable keyFile : string? = null
+    let mutable langVersion : string? = null
+    let mutable otherFlags : string? = null
+    let mutable outputAssembly : string? = null 
+    let mutable pathMap : string? = null
+    let mutable pdbFile : string? = null
+    let mutable platform : string? = null
+    let mutable preferredUILang : string? = null
+    let mutable referencePath : string? = null
+    let mutable sourceLink : string? = null
+    let mutable subsystemVersion : string? = null
+    let mutable targetProfile : string? = null
+    let mutable targetType : string? = null
+    let mutable warningsAsErrors : string? = null
+    let mutable warningsNotAsErrors : string? = null
+    let mutable versionFile : string? = null
+    let mutable warningLevel : string? = null
+    let mutable win32res : string? = null
+    let mutable win32manifest : string? = null
+    let mutable vslcid : string? = null
+    let mutable checksumAlgorithm: string? = null
+    let mutable codePage : string? = null
+#endif
 
+    let mutable toolPath : string =
+        let locationOfThisDll =
+            try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
+            with _ -> None
+        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
+        | Some s -> s
+        | None -> ""
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true
 
@@ -97,7 +145,9 @@ type public Fsc () as this =
             builder.AppendSwitch("-g")
         // DebugType
         builder.AppendSwitchIfNotNull("--debug:",
-            if debugType = null then null else
+            match debugType with 
+            | Null -> null
+            | NonNull debugType -> 
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
                 | "PORTABLE" -> "portable"
@@ -105,10 +155,10 @@ type public Fsc () as this =
                 | "EMBEDDED" -> "embedded"
                 | "FULL"     -> "full"
                 | _          -> null)
-        if embedAllSources then builder.AppendSwitch("--embed+")
-        if embeddedFiles <> null then 
-            for item in embeddedFiles do
-                builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
+        if embedAllSources then
+            builder.AppendSwitch("--embed+")
+        for item in embeddedFiles do
+            builder.AppendSwitchIfNotNull("--embed:", item.ItemSpec)
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         // NoFramework
@@ -117,9 +167,8 @@ type public Fsc () as this =
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
-        if defineConstants <> null then 
-            for item in defineConstants do
-                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
+        for item in defineConstants do
+            builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
         // GenerateInterfaceFile
@@ -139,7 +188,12 @@ type public Fsc () as this =
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
 // Platform
         builder.AppendSwitchIfNotNull("--platform:",
-            let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+            let ToUpperInvariant (s:string) =
+#else
+            let ToUpperInvariant (s:string?) =
+#endif
+                match s with Null -> null | NonNull s -> s.ToUpperInvariant()
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
                 | "ANYCPU", true, "WINEXE" -> "anycpu32bitpreferred"
@@ -149,40 +203,45 @@ type public Fsc () as this =
                 | _ -> null)
         // checksumAlgorithm
         builder.AppendSwitchIfNotNull("--checksumalgorithm:",
-            let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
-            match ToUpperInvariant(checksumAlgorithm) with
+            match checksumAlgorithm with
+            | Null -> null
+            | NonNull checksumAlgorithm ->
+                match checksumAlgorithm.ToUpperInvariant() with
                 | "SHA1" -> "Sha1"
                 | "SHA256" -> "Sha256"
                 | _ -> null)
+
         // Resources
-        if resources <> null then 
-            for item in resources do
-                match useStandardResourceNames with
-                | true -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec, [|item.GetMetadata("LogicalName"); item.GetMetadata("Access")|])
-                | false -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
+        for item in resources do
+            match useStandardResourceNames with
+            | true -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec, [|item.GetMetadata("LogicalName"); item.GetMetadata("Access")|])
+            | false -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
 
         // CompilerTools
-        if compilerTools <> null then 
-            for item in compilerTools do
-                builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
+        for item in compilerTools do
+            builder.AppendSwitchIfNotNull("--compilertool:", item.ItemSpec)
 
         // References
-        if references <> null then 
-            for item in references do
-                builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
+        for item in references do
+            builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
+
         // ReferencePath
         let referencePathArray = // create a array of strings
             match referencePath with
-            | null -> null
-            | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | Null -> null
+            | NonNull referencePath ->
+                 referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--lib:", referencePathArray, ",")   
+        builder.AppendSwitchesIfNotNull("--lib:", referencePathArray, ",")   
+
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
-            if targetType = null then null else
+            match targetType with 
+            | Null -> null
+            | NonNull targetType -> 
                 match targetType.ToUpperInvariant() with
                 | "LIBRARY" -> "library"
                 | "EXE" -> "exe"
@@ -192,8 +251,9 @@ type public Fsc () as this =
 
         // NoWarn
         match disabledWarnings with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | Null -> ()
+        | NonNull disabledWarnings ->
+            builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
         
         // WarningLevel
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
@@ -207,15 +267,16 @@ type public Fsc () as this =
         // REVIEW: why is this logic here? In any case these are errors already by default!
         let warningsAsErrorsArray =
             match warningsAsErrors with
-            | null -> [|"76"|]
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | Null -> [|"76"|]
+            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         // WarningsNotAsErrors
         match warningsNotAsErrors with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | Null -> ()
+        | NonNull warningsNotAsErrors ->
+            builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -251,9 +312,13 @@ type public Fsc () as this =
 
         builder.AppendSwitch("--nocopyfsharpcore")
         
-        match pathMap with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--pathmap:", pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        let pathMapArray = // create a array of strings
+            match pathMap with
+            | Null -> null
+            | NonNull pathMap ->
+                 pathMap.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+
+        builder.AppendSwitchesIfNotNull("--pathmap:", pathMapArray, ",")   
 
         if deterministic then
             builder.AppendSwitch("--deterministic+")
@@ -580,7 +645,10 @@ type public Fsc () as this =
 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
-        if not (String.IsNullOrEmpty(dotnetFscCompilerPath)) then builder.AppendSwitch(dotnetFscCompilerPath)
+        match dotnetFscCompilerPath with
+        | Null | "" -> ()
+        | NonNull dotnetFscCompilerPath ->
+            builder.AppendSwitch(dotnetFscCompilerPath)
         builder.ToString()
 
     override fsc.GenerateResponseFileCommands() =

@@ -1314,7 +1314,7 @@ type FSharpChecker(legacyReferenceResolver,
     member __.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive) =
         let isInteractive = defaultArg isInteractive false
         use errorScope = new ErrorScope()
-        let tcConfigBuilder = TcConfigBuilder.Initial
+        let tcConfigBuilder = TcConfigBuilder.Initial(legacyReferenceResolver)
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, sourceFiles, argv)

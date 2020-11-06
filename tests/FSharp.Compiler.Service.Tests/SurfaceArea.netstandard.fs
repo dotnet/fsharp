@@ -18355,7 +18355,6 @@ FSharp.Compiler.AbstractIL.Internal.Library+String: System.String lowerCaseFirst
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String lowercase(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String make(Int32, Char)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String sub(System.String, Int32, Int32)
-FSharp.Compiler.AbstractIL.Internal.Library+String: System.String trim(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String uncapitalize(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String uppercase(System.String)
 FSharp.Compiler.AbstractIL.Internal.Library+String: System.String[] getLines(System.String)
@@ -18489,7 +18488,6 @@ FSharp.Compiler.AbstractIL.Internal.Library: System.Lazy`1[a] notlazy[a](a)
 FSharp.Compiler.AbstractIL.Internal.Library: Void DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent(CompilationThreadToken)
 FSharp.Compiler.AbstractIL.Internal.Library: Void RequireCompilationThread(CompilationThreadToken)
 FSharp.Compiler.AbstractIL.Internal.Library: a getHole[a](Microsoft.FSharp.Core.FSharpRef`1[Microsoft.FSharp.Core.FSharpOption`1[a]])
-FSharp.Compiler.AbstractIL.Internal.Library: a nonNull[a](System.String, a)
 FSharp.Compiler.AbstractIL.Internal.Library: a notFound[a]()
 FSharp.Compiler.AbstractIL.Internal.Library: d foldOn[a,b,c,d](Microsoft.FSharp.Core.FSharpFunc`2[a,b], Microsoft.FSharp.Core.FSharpFunc`2[c,Microsoft.FSharp.Core.FSharpFunc`2[b,d]], c, a)
 FSharp.Compiler.AbstractIL.Internal.Utils: Boolean get_runningOnMono()
@@ -20179,6 +20177,10 @@ FSharp.Compiler.PrettyNaming: System.String qmark
 FSharp.Compiler.PrettyNaming: System.String qmarkSet
 FSharp.Compiler.PrettyNaming: System.String unassignedTyparName
 FSharp.Compiler.PrettyNaming: System.Tuple`2[System.String,System.Tuple`2[System.String,System.String][]] demangleProvidedTypeName(System.String)
+FSharp.Compiler.PrettyNaming: System.String FSharpOptimizationDataResourceNameB
+FSharp.Compiler.PrettyNaming: System.String FSharpSignatureDataResourceNameB
+FSharp.Compiler.PrettyNaming: System.String get_FSharpOptimizationDataResourceNameB()
+FSharp.Compiler.PrettyNaming: System.String get_FSharpSignatureDataResourceNameB()
 FSharp.Compiler.QuickParse: Boolean TestMemberOrOverrideDeclaration(FSharp.Compiler.SourceCodeServices.FSharpTokenInfo[])
 FSharp.Compiler.QuickParse: FSharp.Compiler.PartialLongName GetPartialLongNameEx(System.String, Int32)
 FSharp.Compiler.QuickParse: Int32 CorrectIdentifierToken(System.String, Int32)
@@ -23246,6 +23248,10 @@ FSharp.Compiler.SourceCodeServices.FSharpType: System.Collections.Generic.IList`
 FSharp.Compiler.SourceCodeServices.FSharpType: System.String Format(FSharp.Compiler.SourceCodeServices.FSharpDisplayContext)
 FSharp.Compiler.SourceCodeServices.FSharpType: System.String ToString()
 FSharp.Compiler.SourceCodeServices.FSharpType: System.Tuple`2[System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]],FSharp.Compiler.SourceCodeServices.FSharpParameter] Prettify(System.Collections.Generic.IList`1[System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]], FSharp.Compiler.SourceCodeServices.FSharpParameter)
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean HasNullAnnotation
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean IsNullAmbivalent
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean get_HasNullAnnotation()
+FSharp.Compiler.SourceCodeServices.FSharpType: Boolean get_IsNullAmbivalent()
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: Boolean HasFields
 FSharp.Compiler.SourceCodeServices.FSharpUnionCase: Boolean IsAccessible(FSharp.Compiler.SourceCodeServices.FSharpAccessibilityRights)
@@ -41711,6 +41717,27 @@ FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynValInfo
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynValSig
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+SynValTyparDecls
 FSharp.Compiler.SyntaxTree: FSharp.Compiler.SyntaxTree+TyparStaticReq
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparSubtypeOfType()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparSupportsMember()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Int32 Tag
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Int32 get_Tag()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: SynTypar genericName
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: SynTypar get_genericName()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: System.String ToString()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: range get_range()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: range range
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSubtypeOfType: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSubtypeOfType: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsMember: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsMember: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsNull: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparSupportsNull: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint: SynTypeConstraint NewWhereTyparNotSupportsNull(SynTypar, range)
 FSharp.Compiler.SyntaxTreeOps+SynArgNameGenerator: System.String New()
 FSharp.Compiler.SyntaxTreeOps+SynArgNameGenerator: Void .ctor()
 FSharp.Compiler.SyntaxTreeOps+SynArgNameGenerator: Void Reset()
@@ -41934,6 +41961,215 @@ FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+PreXmlDoc
 FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+XmlDoc
 FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+XmlDocCollector
 FSharp.Compiler.XmlDoc: FSharp.Compiler.XmlDoc+XmlDocStatics
+FSharp.Compiler.SyntaxTree+SynType+Anon: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+Anon: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+Anon: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+Anon: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+AnonRecd: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+AnonRecd: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+AnonRecd: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+AnonRecd: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+App: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+App: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+App: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+App: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+Array: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+Array: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+Array: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+Array: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+Fun: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+Fun: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+Fun: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+Fun: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+HashConstraint: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+HashConstraint: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+HashConstraint: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+HashConstraint: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+LongIdent: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+LongIdent: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+LongIdent: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+LongIdent: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+LongIdentApp: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+LongIdentApp: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+LongIdentApp: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+LongIdentApp: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+MeasureDivide: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+MeasureDivide: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+MeasureDivide: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+MeasureDivide: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+MeasurePower: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+MeasurePower: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+MeasurePower: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+MeasurePower: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+Paren: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+Paren: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+Paren: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+Paren: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstant: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstant: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstant: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstant: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantExpr: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantExpr: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantExpr: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantExpr: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNamed: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNamed: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNamed: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNamed: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsAnon
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsAnonRecd
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsApp
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsArray
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsFun
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsHashConstraint
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsLongIdent
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsLongIdentApp
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsMeasureDivide
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsMeasurePower
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsParen
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsStaticConstant
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsStaticConstantExpr
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsStaticConstantNamed
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsTuple
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsVar
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsWithGlobalConstraints
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsAnon()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsAnonRecd()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsApp()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsArray()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsFun()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsHashConstraint()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsLongIdent()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsLongIdentApp()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsMeasureDivide()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsMeasurePower()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsParen()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsStaticConstant()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsStaticConstantExpr()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsStaticConstantNamed()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsTuple()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsVar()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsWithGlobalConstraints()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Int32 Tag
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: Int32 get_Tag()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: System.String ToString()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: range Range
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: range get_Range()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: range get_range()
+FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull: range range
+FSharp.Compiler.SyntaxTree+SynType+Tags: Int32 StaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+Tags: Int32 WithNull
+FSharp.Compiler.SyntaxTree+SynType+Tuple: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+Tuple: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+Tuple: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+Tuple: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+Var: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+Var: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+Var: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+Var: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+WithGlobalConstraints: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsAnon
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsAnonRecd
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsApp
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsArray
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsFun
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsHashConstraint
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsLongIdent
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsLongIdentApp
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsMeasureDivide
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsMeasurePower
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsParen
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsStaticConstant
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsStaticConstantExpr
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsStaticConstantNamed
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsTuple
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsVar
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsWithGlobalConstraints
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean ambivalent
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsAnon()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsAnonRecd()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsApp()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsArray()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsFun()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsHashConstraint()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsLongIdent()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsLongIdentApp()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsMeasureDivide()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsMeasurePower()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsParen()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsStaticConstant()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsStaticConstantExpr()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsStaticConstantNamed()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsTuple()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsVar()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsWithGlobalConstraints()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Boolean get_ambivalent()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Int32 Tag
+FSharp.Compiler.SyntaxTree+SynType+WithNull: Int32 get_Tag()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: SynType get_innerType()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: SynType innerType
+FSharp.Compiler.SyntaxTree+SynType+WithNull: System.String ToString()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: range Range
+FSharp.Compiler.SyntaxTree+SynType+WithNull: range get_Range()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: range get_range()
+FSharp.Compiler.SyntaxTree+SynType+WithNull: range range
+FSharp.Compiler.SyntaxTree+SynType: Boolean IsStaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType: Boolean IsWithNull
+FSharp.Compiler.SyntaxTree+SynType: Boolean get_IsStaticConstantNull()
+FSharp.Compiler.SyntaxTree+SynType: Boolean get_IsWithNull()
+FSharp.Compiler.SyntaxTree+SynType: FSharp.Compiler.SyntaxTree+SynType+StaticConstantNull
+FSharp.Compiler.SyntaxTree+SynType: FSharp.Compiler.SyntaxTree+SynType+WithNull
+FSharp.Compiler.SyntaxTree+SynType: SynType NewStaticConstantNull(range)
+FSharp.Compiler.SyntaxTree+SynType: SynType NewWithNull(SynType, Boolean, range)
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+Tags: Int32 WhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparDefaultsToType: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparDefaultsToType: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsComparable: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsComparable: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsDelegate: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsDelegate: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsEnum: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsEnum: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsEquatable: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsEquatable: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsReferenceType: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsReferenceType: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsUnmanaged: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsUnmanaged: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsValueType: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparIsValueType: Boolean get_IsWhereTyparNotSupportsNull()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparDefaultsToType
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparIsComparable
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparIsDelegate
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparIsEnum
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparIsEquatable
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparIsReferenceType
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparIsUnmanaged
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparIsValueType
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparNotSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparSubtypeOfType
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparSupportsMember
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean IsWhereTyparSupportsNull
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparDefaultsToType()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparIsComparable()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparIsDelegate()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparIsEnum()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparIsEquatable()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparIsReferenceType()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparIsUnmanaged()
+FSharp.Compiler.SyntaxTree+SynTypeConstraint+WhereTyparNotSupportsNull: Boolean get_IsWhereTyparIsValueType()
 Internal.Utilities.PathMap: Boolean Equals(Internal.Utilities.PathMap)
 Internal.Utilities.PathMap: Boolean Equals(System.Object)
 Internal.Utilities.PathMap: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -42408,7 +42644,7 @@ Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.Collections.G
 Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
 Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
 Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe: Void .ctor(System.Object, IntPtr)
-Microsoft.DotNet.DependencyManager.AssemblyResolveHandler: Void .ctor(Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe)
+Microsoft.DotNet.DependencyManager.AssemblyResolveHandler: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.DotNet.DependencyManager.AssemblyResolutionProbe])
 Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IDependencyManagerProvider TryFindDependencyManagerByKey(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String)
 Microsoft.DotNet.DependencyManager.DependencyProvider: Microsoft.DotNet.DependencyManager.IResolveDependenciesResult Resolve(Microsoft.DotNet.DependencyManager.IDependencyManagerProvider, System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,System.String]], Microsoft.DotNet.DependencyManager.ResolvingErrorReport, System.String, System.String, System.String, System.String, System.String)
 Microsoft.DotNet.DependencyManager.DependencyProvider: System.String[] GetRegisteredDependencyManagerHelpText(System.Collections.Generic.IEnumerable`1[System.String], System.String, Microsoft.DotNet.DependencyManager.ResolvingErrorReport)
@@ -42458,7 +42694,7 @@ Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] S
 Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] StdOut
 Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] get_StdError()
 Microsoft.DotNet.DependencyManager.IResolveDependenciesResult: System.String[] get_StdOut()
-Microsoft.DotNet.DependencyManager.NativeDllResolveHandler: Void .ctor(Microsoft.DotNet.DependencyManager.NativeResolutionProbe)
+Microsoft.DotNet.DependencyManager.NativeDllResolveHandler: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[Microsoft.DotNet.DependencyManager.NativeResolutionProbe])
 Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] EndInvoke(System.IAsyncResult)
 Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.Collections.Generic.IEnumerable`1[System.String] Invoke()
 Microsoft.DotNet.DependencyManager.NativeResolutionProbe: System.IAsyncResult BeginInvoke(System.AsyncCallback, System.Object)
