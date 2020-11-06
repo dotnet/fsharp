@@ -525,9 +525,18 @@ type ValRemap = ValMap<ValRef>
 [<NoEquality; NoComparison>]
 type Remap =
     { tpinst : TyparInst
+
+      /// Values to remap
       valRemap: ValRemap
+
+      /// TyconRefs to remap
       tyconRefRemap : TyconRefRemap
-      removeTraitSolutions: bool }
+
+      /// Remove existing trait solutions?
+      removeTraitSolutions: bool 
+
+      /// A map indicating how to fill in trait contexts for traits as we copy an expression. Indexed by the member name of the trait
+      traitCtxtsMap: Map<string, ITraitContext> }
 
     static member Empty : Remap
 
@@ -1302,6 +1311,9 @@ module DebugPrint =
     /// A global flag indicating whether debug output should include ranges
     val layoutRanges : bool ref
 
+    /// A global flag indicating whether debug output should include stamps
+    val layoutStamps : bool ref
+
     /// Convert a type to a string for debugging purposes
     val showType : TType -> string
 
@@ -1466,6 +1478,10 @@ type TypeDefMetadata =
 
 /// Extract metadata from a type definition
 val metadataOfTycon : Tycon -> TypeDefMetadata
+
+#if EXTENSIONTYPING
+val extensionInfoOfTy : TcGlobals -> TType -> TyconRepresentation
+#endif
 
 /// Extract metadata from a type
 val metadataOfTy : TcGlobals -> TType -> TypeDefMetadata

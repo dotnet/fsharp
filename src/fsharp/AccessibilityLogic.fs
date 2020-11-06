@@ -38,6 +38,8 @@ type AccessorDomain =
     /// An AccessorDomain which returns all items
     | AccessibleFromSomewhere 
 
+    interface ITraitAccessorDomain
+
     // Hashing and comparison is used for the memoization tables keyed by an accessor domain.
     // It is dependent on a TcGlobals because of the TyconRef in the data structure
     static member CustomGetHashCode(ad:AccessorDomain) = 
@@ -46,6 +48,7 @@ type AccessorDomain =
         | AccessibleFromEverywhere -> 2
         | AccessibleFromSomeFSharpCode  -> 3
         | AccessibleFromSomewhere  -> 4
+
     static member CustomEquals(g:TcGlobals, ad1:AccessorDomain, ad2:AccessorDomain) = 
         match ad1, ad2 with 
         | AccessibleFrom(cs1, tc1), AccessibleFrom(cs2, tc2) -> (cs1 = cs2) && (match tc1, tc2 with None, None -> true | Some tc1, Some tc2 -> tyconRefEq g tc1 tc2 | _ -> false)
