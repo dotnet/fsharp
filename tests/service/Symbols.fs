@@ -63,13 +63,10 @@ module ExternDeclarations =
     let ``Access modifier`` () =
         let parseResults, checkResults = getParseAndCheckResults "extern int private f()"
 
-        match parseResults.ParseTree with
-        | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [SynModuleOrNamespace (decls = [decl])]))) ->
-            match decl with
-            | SynModuleDecl.Let (_, [Binding (accessibility = accessibility)], _) ->
-                accessibility |> should equal (Some SynAccess.Private)
-            | _ -> failwith "Couldn't get f"
-        | _ -> failwith "Couldn't get bindings"
+        match getSingleModuleLikeDecl parseResults.ParseTree with
+        | SynModuleOrNamespace (decls = [SynModuleDecl.Let (_, [Binding (accessibility = accessibility)], _)]) ->
+            accessibility |> should equal (Some SynAccess.Private)
+        | _ -> failwith "Couldn't get f"
 
         match findSymbolByName "f" checkResults with
         | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.Accessibility.IsPrivate |> should equal true
