@@ -1885,19 +1885,6 @@ type FSharpCheckFileResults
                                 FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)
                 })
 
-    member __.GetAllUsesOfAllSymbolsInFileWithinRange(outerRange: range, ?cancellationToken: CancellationToken) = 
-        threadSafeOp 
-            (fun () -> [| |])
-            (fun scope ->
-                let cenv = scope.SymbolEnv
-                [| 
-                    for symbolUseChunk in scope.ScopeSymbolUses.AllUsesOfSymbols do
-                        for symbolUse in symbolUseChunk do
-                            cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
-                            if rangeContainsRange outerRange symbolUse.Range && symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                                let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
-                                FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
-
     member __.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
         threadSafeOp 
             (fun () -> [| |]) 

@@ -40,7 +40,9 @@ type internal FSharpInlineHintsService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parseFileResults, _, checkFileResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, userOpName)
                 let range = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
-                let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFileWithinRange(range, cancellationToken)
+                let symbolUses =
+                    checkFileResults.GetAllUsesOfAllSymbolsInFile(cancellationToken)
+                    |> Seq.filter (fun su -> rangeContainsRange range su.RangeAlternate)
 
                 let typeHints = ImmutableArray.CreateBuilder()
                 let parameterHints = ImmutableArray.CreateBuilder()
@@ -58,7 +60,7 @@ type internal FSharpInlineHintsService
                     not funcOrValue.IsConstructorThisValue &&
                     not (PrettyNaming.IsOperatorName funcOrValue.DisplayName)
 
-                for symbolUse in symbolUses |> Array.distinctBy (fun su -> su.RangeAlternate) do
+                for symbolUse in symbolUses do
                     match symbolUse.Symbol with
                     | :? FSharpMemberOrFunctionOrValue as funcOrValue when isValidForTypeHint funcOrValue symbolUse ->
                         let typeInfo = ResizeArray()
