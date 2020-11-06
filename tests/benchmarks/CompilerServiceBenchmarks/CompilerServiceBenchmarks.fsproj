@@ -17,8 +17,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="decentlySizedStandAloneFile.fsx" />
     <Compile Include="Program.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
@@ -26,8 +29,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
 </Project>
