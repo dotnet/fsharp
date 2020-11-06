@@ -122,3 +122,39 @@ let x = 123
          |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
          |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
          |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
+
+module Types =
+    [<Test>]
+    let ``FSharpType.Print parent namespace qualifiers`` () =
+        let _, checkResults = getParseAndCheckResults """
+namespace Ns1.Ns2
+type T() = class end
+type A = T
+
+namespace Ns1.Ns3
+type B = Ns1.Ns2.T
+
+namespace Ns1.Ns4
+open Ns1.Ns2
+type C = Ns1.Ns2.T
+
+namespace Ns1.Ns5
+open Ns1
+type D = Ns1.Ns2.T
+
+namespace Ns1.Ns2.Ns6
+type E = Ns1.Ns2.T
+"""
+        [| "A", "T"
+           "B", "Ns1.Ns2.T"
+           "C", "T"
+           "D", "Ns2.T"
+           "E", "Ns1.Ns2.T" |]
+        |> Array.iter (fun (symbolName, expectedPrintedType) ->
+            let symbolUse = findSymbolUseByName symbolName checkResults
+            match symbolUse.Symbol with
+            | :? FSharpEntity as entity ->
+                entity.AbbreviatedType.Format(symbolUse.DisplayContext)
+                |> should equal expectedPrintedType
+
+            | _ -> failwithf "Couldn't get entity: %s" symbolName)

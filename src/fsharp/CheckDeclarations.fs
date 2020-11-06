@@ -2175,7 +2175,7 @@ module MutRecBindingChecking =
     /// Compute the active environments within each nested module.
     let TcMutRecDefns_ComputeEnvs getTyconOpt getVals (cenv: cenv) report scopem m envInitial mutRecShape =
         (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs 
-            (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec)) -> MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
+            (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec)) -> MakeInnerEnvWithAcc true envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
             (fun envAbove decls -> 
 
                 // Collect the type definitions, exception definitions, modules and "open" declarations
@@ -3202,7 +3202,7 @@ module EstablishTypeDefinitionCores =
         CheckForDuplicateConcreteType envInitial id.idText im
         CheckNamespaceModuleOrTypeName cenv.g id
 
-        let envForDecls, mtypeAcc = MakeInnerEnv envInitial id modKind    
+        let envForDecls, mtypeAcc = MakeInnerEnv true envInitial id modKind    
         let mty = Construct.NewEmptyModuleOrNamespaceType modKind
         let doc = xml.ToXmlDoc(true, Some [])
         let mspec = Construct.NewModuleOrNamespace (Some envInitial.eCompPath) vis id doc modAttrs (MaybeLazy.Strict mty)
@@ -4341,7 +4341,7 @@ module EstablishTypeDefinitionCores =
             (envInitial, withEntities) ||> MutRecShapes.computeEnvs 
               (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec)) ->  
                   PublishModuleDefn cenv envAbove mspec 
-                  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
+                  MakeInnerEnvWithAcc true envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
               (fun envAbove _ -> envAbove)
 
         // Updates the types of the modules to contain the contents so far, which now includes the nested modules and types
@@ -5212,7 +5212,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
     let endm = m.EndRange // use end of range for errors 
 
     // Create the module type that will hold the results of type checking.... 
-    let envForModule, mtypeAcc = MakeInnerEnv env id modKind
+    let envForModule, mtypeAcc = MakeInnerEnv true env id modKind
 
     // Now typecheck the signature, using mutation to fill in the submodule description. 
     let! envAtEnd = TcSignatureElements cenv parent endm envForModule xml None defs
@@ -5350,7 +5350,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
               CheckNamespaceModuleOrTypeName cenv.g id
 
-              let envForModule, mtypeAcc = MakeInnerEnv env id modKind
+              let envForModule, mtypeAcc = MakeInnerEnv true env id modKind
     
               // Create the new module specification to hold the accumulated results of the type of the module 
               // Also record this in the environment as the accumulator 
