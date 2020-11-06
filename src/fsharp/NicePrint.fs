@@ -1301,7 +1301,7 @@ module private PrintTastMemberOrVals =
     let prettyLayoutOfMemberNoInstShort denv v = 
         prettyLayoutOfMemberShortOption denv emptyTyparInst v true |> snd
 
-    let prettyLayoutOfLiteralValue literalValue =
+    let layoutOfLiteralValue literalValue =
         let literalValue =
             match literalValue with
             | Const.Bool value -> if value then WordL.keywordTrue else WordL.keywordFalse
@@ -1320,9 +1320,9 @@ module private PrintTastMemberOrVals =
             | Const.Decimal _ -> literalValue.ToString() |> tagNumericLiteral |> wordL
             | Const.Char _
             | Const.String _ -> literalValue.ToString() |> tagStringLiteral |> wordL
-            | Const.Unit  -> literalValue.ToString() |> tagText |> wordL
+            | Const.Unit
             | Const.Zero -> literalValue.ToString() |> tagText |> wordL
-        LeftL.leftParen ++ literalValue ++ RightL.rightParen
+        WordL.equals ++ literalValue
 
     let private layoutNonMemberVal denv (tps, v: Val, tau, cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
@@ -1356,7 +1356,7 @@ module private PrintTastMemberOrVals =
             | None -> valAndTypeL
             | Some rhsL -> (valAndTypeL ++ wordL (tagPunctuation"=")) --- rhsL
         match v.LiteralValue with
-        | Some literalValue -> valAndTypeL ++ prettyLayoutOfLiteralValue literalValue
+        | Some literalValue -> valAndTypeL ++ layoutOfLiteralValue literalValue
         | None -> valAndTypeL
 
     let prettyLayoutOfValOrMember denv typarInst (v: Val) =
