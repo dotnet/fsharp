@@ -72,7 +72,7 @@ extern int private c()
           Some SynAccess.Public
           Some SynAccess.Private ]
         |> List.zip decls
-        |> List.iter (fun (actual, (expected)) ->
+        |> List.iter (fun (actual, expected) ->
             match actual with
             | SynModuleDecl.Let (_, [Binding (accessibility = access)], _) -> access |> should equal expected
             | decl -> failwithf "unexpected decl: %O" decl)
@@ -80,13 +80,13 @@ extern int private c()
         [ "a", (true, false, false, false)
           "b", (true, false, false, false)
           "c", (false, false, false, true) ]
-        |> List.iter (fun (name, expectedAccess) ->
+        |> List.iter (fun (name, expected) ->
             match findSymbolByName name checkResults with
             | :? FSharpMemberOrFunctionOrValue as mfv ->
                 let access = mfv.Accessibility
                 (access.IsPublic, access.IsProtected, access.IsInternal, access.IsPrivate)
-                |> should equal expectedAccess
-            | _ -> failwith "Couldn't get f")
+                |> should equal expected
+            | _ -> failwithf "Couldn't get mfv: %s" name)
 
 
 module XmlDocSig =
