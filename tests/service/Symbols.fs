@@ -61,16 +61,32 @@ match "foo" with
 module ExternDeclarations =
     [<Test>]
     let ``Access modifier`` () =
-        let parseResults, checkResults = getParseAndCheckResults "extern int private f()"
+        let parseResults, checkResults = getParseAndCheckResults """
+extern int a()
+extern int public b()
+extern int private c()
+"""
+        let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults.ParseTree
 
-        match getSingleModuleLikeDecl parseResults.ParseTree with
-        | SynModuleOrNamespace (decls = [SynModuleDecl.Let (_, [Binding (accessibility = accessibility)], _)]) ->
-            accessibility |> should equal (Some SynAccess.Private)
-        | _ -> failwith "Couldn't get f"
+        [ None
+          Some SynAccess.Public
+          Some SynAccess.Private ]
+        |> List.zip decls
+        |> List.iter (fun (actual, (expected)) ->
+            match actual with
+            | SynModuleDecl.Let (_, [Binding (accessibility = access)], _) -> access |> should equal expected
+            | decl -> failwithf "unexpected decl: %O" decl)
 
-        match findSymbolByName "f" checkResults with
-        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.Accessibility.IsPrivate |> should equal true
-        | _ -> failwith "Couldn't get f"
+        [ "a", (true, false, false, false)
+          "b", (true, false, false, false)
+          "c", (false, false, false, true) ]
+        |> List.iter (fun (name, expectedAccess) ->
+            match findSymbolByName name checkResults with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                let access = mfv.Accessibility
+                (access.IsPublic, access.IsProtected, access.IsInternal, access.IsPrivate)
+                |> should equal expectedAccess
+            | _ -> failwith "Couldn't get f")
 
 
 module XmlDocSig =
