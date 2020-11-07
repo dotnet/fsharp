@@ -8,9 +8,10 @@ module Tests.Service.Symbols
 #endif
 
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SyntaxTree
 open FsUnit
 open NUnit.Framework
-open FSharp.Compiler.SourceCodeServices
 
 module ActivePatterns =
 
@@ -55,6 +56,37 @@ match "foo" with
 
         getCaseUsages completePatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|True|False|"
         getCaseUsages partialPatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|String|_|"
+
+
+module ExternDeclarations =
+    [<Test>]
+    let ``Access modifier`` () =
+        let parseResults, checkResults = getParseAndCheckResults """
+extern int a()
+extern int public b()
+extern int private c()
+"""
+        let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults.ParseTree
+
+        [ None
+          Some SynAccess.Public
+          Some SynAccess.Private ]
+        |> List.zip decls
+        |> List.iter (fun (actual, expected) ->
+            match actual with
+            | SynModuleDecl.Let (_, [Binding (accessibility = access)], _) -> access |> should equal expected
+            | decl -> failwithf "unexpected decl: %O" decl)
+
+        [ "a", (true, false, false, false)
+          "b", (true, false, false, false)
+          "c", (false, false, false, true) ]
+        |> List.iter (fun (name, expected) ->
+            match findSymbolByName name checkResults with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                let access = mfv.Accessibility
+                (access.IsPublic, access.IsProtected, access.IsInternal, access.IsPrivate)
+                |> should equal expected
+            | _ -> failwithf "Couldn't get mfv: %s" name)
 
 
 module XmlDocSig =
