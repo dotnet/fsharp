@@ -92,6 +92,11 @@
         <target state="translated">noktasız float32 sabit değeri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>extension constraint solutions</source>
+        <target state="new">extension constraint solutions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">sabit dizinli dilim 3d/4d</target>
@@ -1908,8 +1913,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">{0}' türlerinin hiçbiri '{1}' işlecini desteklemez</target>
+        <source>The types '{0}' do not support the operator '{1}'</source>
+        <target state="needs-review-translation">{0}' türlerinin hiçbiri '{1}' işlecini desteklemez</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
@@ -1918,8 +1923,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">{0}' türlerinin hiçbiri '{1}' işlecini desteklemez. 'Microsoft.FSharp.Linq.NullableOperators' modülünü açmayı düşünün.</target>
+        <source>The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
+        <target state="needs-review-translation">{0}' türlerinin hiçbiri '{1}' işlecini desteklemez. 'Microsoft.FSharp.Linq.NullableOperators' modülünü açmayı düşünün.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">
