@@ -625,6 +625,7 @@ type DU = Case1
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Array.ofSeq
     |> Array.map (fun su -> 
         let r = su.RangeAlternate 
         r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
@@ -643,6 +644,7 @@ let _ = arr.[..number2]
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Array.ofSeq
     |> Array.map (fun su -> 
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
@@ -679,6 +681,7 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
     let allSymbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() 
     let enums =
         allSymbols
+        |> Array.ofSeq
         |> Array.choose(fun s -> match s.Symbol with :? FSharpEntity as e when e.IsEnum -> Some e | _ -> None)
         |> Array.distinct
         |> Array.map(fun e -> (e.DisplayName, e.FSharpFields
@@ -729,6 +732,7 @@ let _ =
     let file = "/home/user/Test.fsx"
     let _, typeCheckResults = parseAndCheckScript(file, input) 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Array.ofSeq
     |> Array.map (fun su -> 
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
@@ -775,6 +779,7 @@ type Class1() =
     let file = "/home/user/Test.fsx"
     let _, typeCheckResults = parseAndCheckScript(file, input) 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Array.ofSeq
     |> Array.map (fun su -> 
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
@@ -824,6 +829,7 @@ let x: T()
     let file = "/home/user/Test.fsx"
     let _, typeCheckResults = parseAndCheckScript(file, input) 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Array.ofSeq
     |> Array.map (fun su -> 
         let r = su.RangeAlternate
         let isConstructor =
@@ -1137,6 +1143,7 @@ let _ = Threading.Buzz = null
     let file = "/home/user/Test.fsx"
     let _, typeCheckResults = parseAndCheckScript(file, input) 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Array.ofSeq
     |> Array.map (fun su -> 
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
@@ -1352,6 +1359,7 @@ let ``FSharpField.IsNameGenerated`` () =
         let symbols =
             typeCheckResults.GetAllUsesOfAllSymbolsInFile()
         symbols
+        |> Array.ofSeq
         |> Array.choose (fun su ->
             match su.Symbol with
             | :? FSharpEntity as entity -> Some entity.FSharpFields

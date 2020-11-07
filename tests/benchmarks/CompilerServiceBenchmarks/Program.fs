@@ -4,6 +4,7 @@ open System.Text
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -123,12 +124,14 @@ let function%s (x: %s) =
     let z = x + y
     z""" moduleName moduleName moduleName moduleName
 
+    let decentlySizedStandAloneFile = File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "decentlySizedStandAloneFile.fsx"))
+
 [<MemoryDiagnoser>]
 type CompilerService() =
-
     let mutable checkerOpt = None
-
     let mutable sourceOpt = None
+    let mutable assembliesOpt = None
+    let mutable decentlySizedStandAloneFileCheckResultOpt = None
 
     let parsingOptions =
         {
@@ -140,8 +143,6 @@ type CompilerService() =
             CompilingFsLib = false
             IsExe = false
         }
-
-    let mutable assembliesOpt = None
 
     let readerOptions =
         {
@@ -168,6 +169,18 @@ type CompilerService() =
                 System.AppDomain.CurrentDomain.GetAssemblies()
                 |> Array.map (fun x -> (x.Location))
                 |> Some
+        
+        | _ -> ()
+
+        match decentlySizedStandAloneFileCheckResultOpt with
+        | None ->
+            let options, _ =
+                checkerOpt.Value.GetProjectOptionsFromScript("decentlySizedStandAloneFile.fsx", SourceText.ofString decentlySizedStandAloneFile)
+                |> Async.RunSynchronously
+            let _, checkResult =                                                                
+                checkerOpt.Value.ParseAndCheckFileInProject("decentlySizedStandAloneFile.fsx", 0, SourceText.ofString decentlySizedStandAloneFile, options)
+                |> Async.RunSynchronously
+            decentlySizedStandAloneFileCheckResultOpt <- Some checkResult
         | _ -> ()
 
     [<Benchmark>]
@@ -292,6 +305,8 @@ type CompilerService() =
         // If set to 3, it will be almost as slow as re-evaluating all project and it's projects references on setup; this could be a bug or not what we want.
         this.TypeCheckFileWith100ReferencedProjectsRun()
 
+    member val TypeCheckFileWithNoReferencesOptions = createProject "MainProject" []
+
     [<IterationCleanup(Target = "TypeCheckFileWith100ReferencedProjects")>]
     member this.TypeCheckFileWith100ReferencedProjectsCleanup() =
         this.TypeCheckFileWith100ReferencedProjectsOptions.SourceFiles
@@ -314,7 +329,45 @@ type CompilerService() =
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             ClearAllILModuleReaderCache()
 
+    [<Benchmark>]
+    member this.SimplifyNames() =
+        match decentlySizedStandAloneFileCheckResultOpt with
+        | Some checkResult ->
+            match checkResult with
+            | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
+            | FSharpCheckFileAnswer.Succeeded results ->
+                let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
+                let ranges = SimplifyNames.getSimplifiableNames(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+                ignore ranges                
+            ()
+        | _ -> failwith "oopsie"
+
+    [<Benchmark>]
+    member this.UnusedOpens() =
+        match decentlySizedStandAloneFileCheckResultOpt with
+        | Some checkResult ->
+            match checkResult with
+            | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
+            | FSharpCheckFileAnswer.Succeeded results ->
+                let sourceLines = decentlySizedStandAloneFile.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
+                let decls = UnusedOpens.getUnusedOpens(results, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+                ignore decls              
+            ()
+        | _ -> failwith "oopsie"
+
+    [<Benchmark>]
+    member this.UnusedDeclarations() =
+        match decentlySizedStandAloneFileCheckResultOpt with
+        | Some checkResult ->
+            match checkResult with
+            | FSharpCheckFileAnswer.Aborted -> failwith "checker aborted"
+            | FSharpCheckFileAnswer.Succeeded results ->
+                let decls = UnusedDeclarations.getUnusedDeclarations(results, true) |> Async.RunSynchronously
+                ignore decls // should be 16                
+            ()
+        | _ -> failwith "oopsie"
+
 [<EntryPoint>]
-let main argv =
-    let _ = BenchmarkRunner.Run<CompilerService>()
+let main _ =
+    BenchmarkRunner.Run<CompilerService>() |> ignore
     0

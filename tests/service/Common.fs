@@ -353,8 +353,8 @@ let getSymbolUsesFromSource (source: string) =
     let _, typeCheckResults = getParseAndCheckResults source 
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
 
-let getSymbols (symbolUses: FSharpSymbolUse[]) =
-    symbolUses |> Array.map (fun symbolUse -> symbolUse.Symbol)
+let getSymbols (symbolUses: seq<FSharpSymbolUse>) =
+    symbolUses |> Seq.map (fun symbolUse -> symbolUse.Symbol)
 
 
 let getSymbolName (symbol: FSharpSymbol) =
@@ -371,25 +371,25 @@ let getSymbolName (symbol: FSharpSymbol) =
 
 let assertContainsSymbolWithName name source =
     getSymbols source
-    |> Array.choose getSymbolName
-    |> Array.contains name
+    |> Seq.choose getSymbolName
+    |> Seq.contains name
     |> shouldEqual true
 
 let assertContainsSymbolsWithNames (names: string list) source =
     let symbolNames =
         getSymbols source
-        |> Array.choose getSymbolName
+        |> Seq.choose getSymbolName
 
     for name in names do
         symbolNames
-        |> Array.contains name
+        |> Seq.contains name
         |> shouldEqual true
 
 let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults) =
     let symbolNames =
         getSymbolUses results
         |> getSymbols
-        |> Array.choose getSymbolName
+        |> Seq.choose getSymbolName
         |> set
 
     for name in names do
@@ -398,7 +398,7 @@ let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults)
 
 let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
     getSymbolUses results
-    |> Array.find (fun symbolUse ->
+    |> Seq.find (fun symbolUse ->
         match getSymbolName symbolUse.Symbol with
         | Some symbolName -> symbolName = name
         | _ -> false)
