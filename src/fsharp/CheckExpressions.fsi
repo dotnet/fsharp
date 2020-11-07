@@ -610,11 +610,11 @@ val MakeInnerEnvForTyconRef: env: TcEnv -> tcref: TyconRef -> isExtrinsicExtensi
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
 /// including creating an accumulator for the module type.
-val MakeInnerEnv: env: TcEnv -> nm: Ident -> modKind: ModuleOrNamespaceKind -> TcEnv * ModuleOrNamespaceType ref
+val MakeInnerEnv: addOpenToNameEnv: bool -> env: TcEnv -> nm: Ident -> modKind: ModuleOrNamespaceKind -> TcEnv * ModuleOrNamespaceType ref
 
 /// Return a new environment suitable for processing declarations in the interior of a module definition
 /// given that the accumulator for the module type already exisits.
-val MakeInnerEnvWithAcc: env: TcEnv -> nm: Ident -> mtypeAcc: ModuleOrNamespaceType ref -> modKind: ModuleOrNamespaceKind -> TcEnv
+val MakeInnerEnvWithAcc: addOpenToNameEnv: bool -> env: TcEnv -> nm: Ident -> mtypeAcc: ModuleOrNamespaceType ref -> modKind: ModuleOrNamespaceKind -> TcEnv
 
 /// Produce a post-generalization type scheme for a simple type where no type inference generalization
 /// is appplied.

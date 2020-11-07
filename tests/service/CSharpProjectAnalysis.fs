@@ -108,7 +108,6 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
 
     let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
     results.GetAllUsesOfAllSymbols()
-    |> Async.RunSynchronously
     |> Array.map (fun su -> su.Symbol.ToString())
     |> shouldEqual 
           [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "InnerEnum";
@@ -130,7 +129,6 @@ let _ = CSharpClass(0)
     let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
     let ctor =
             results.GetAllUsesOfAllSymbols()
-            |> Async.RunSynchronously
             |> Seq.map (fun su -> su.Symbol)
             |> Seq.find (function :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsConstructor | _ -> false)
     match (ctor :?> FSharpMemberOrFunctionOrValue).DeclaringEntity with 
@@ -144,7 +142,6 @@ let getEntitiesUses source =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let results, _ = getProjectReferences(source, [csharpAssembly], None, None)
     results.GetAllUsesOfAllSymbols()
-    |> Async.RunSynchronously
     |> Seq.choose (fun su ->
         match su.Symbol with
         | :? FSharpEntity as entity -> Some entity

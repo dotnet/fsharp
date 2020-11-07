@@ -1269,31 +1269,31 @@ module Display =
                     "<ToString exception: " + e.Message + ">" 
             tagText t
 
-    let any_to_layout opts (x, xty) =
-        let formatter = ObjectGraphFormatter(opts, BindingFlags.Public) 
-        formatter.Format(ShowAll, x, xty)
+    let any_to_layout options (value, typValue) =
+        let formatter = ObjectGraphFormatter(options, BindingFlags.Public) 
+        formatter.Format(ShowAll, value, typValue)
 
-    let squashTo maxWidth layout = 
-       layout |> squashToAux (maxWidth, leafFormatter FormatOptions.Default)
+    let squashTo width layout = 
+       layout |> squashToAux (width, leafFormatter FormatOptions.Default)
 
-    let squash_layout opts l = 
+    let squash_layout options layout = 
         // Print width = 0 implies 1D layout, no squash
-        if opts.PrintWidth = 0 then 
-            l 
+        if options.PrintWidth = 0 then 
+            layout 
         else 
-            l |> squashToAux (opts.PrintWidth,leafFormatter opts)
+            layout |> squashToAux (options.PrintWidth,leafFormatter options)
 
-    let asTaggedTextWriter (tw: TextWriter) =
+    let asTaggedTextWriter (writer: TextWriter) =
         { new TaggedTextWriter with
-            member __.Write(t) = tw.Write t.Text
-            member __.WriteLine() = tw.WriteLine() }
+            member __.Write(t) = writer.Write t.Text
+            member __.WriteLine() = writer.WriteLine() }
 
-    let output_layout_tagged opts oc l = 
-        l |> squash_layout opts 
-            |> outL opts.AttributeProcessor (leafFormatter opts) oc
+    let output_layout_tagged options writer layout = 
+        layout |> squash_layout options 
+            |> outL options.AttributeProcessor (leafFormatter options) writer
 
-    let output_layout opts oc l = 
-        output_layout_tagged opts (asTaggedTextWriter oc) l
+    let output_layout options writer layout = 
+        output_layout_tagged options (asTaggedTextWriter writer) layout
 
     let layout_to_string options layout = 
         layout |> squash_layout options 
@@ -1303,17 +1303,17 @@ module Display =
 
     let output_any writer x = output_any_ex FormatOptions.Default writer x
 
-    let layout_as_string opts x = x |> any_to_layout opts |> layout_to_string opts
+    let layout_as_string options x = x |> any_to_layout options |> layout_to_string options
 
     let any_to_string x = layout_as_string FormatOptions.Default x
 
 #if COMPILER
-    let fsi_any_to_layout opts (x, xty) =
-        let formatter = ObjectGraphFormatter(opts, BindingFlags.Public) 
-        formatter.Format (ShowTopLevelBinding, x, xty)
+    let fsi_any_to_layout options (value, typValue) =
+        let formatter = ObjectGraphFormatter(options, BindingFlags.Public) 
+        formatter.Format (ShowTopLevelBinding, value, typValue)
 #else
-    let internal anyToStringForPrintf options (bindingFlags:BindingFlags) (x, xty) = 
+    let internal anyToStringForPrintf options (bindingFlags:BindingFlags) (value, typValue) = 
         let formatter = ObjectGraphFormatter(options, bindingFlags) 
-        formatter.Format (ShowAll, x, xty) |> layout_to_string options
+        formatter.Format (ShowAll, value, typValue) |> layout_to_string options
 #endif
 

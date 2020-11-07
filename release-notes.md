@@ -6,9 +6,9 @@ See License.txt in the project root for license information.
 This document contains current and historical release notes information. They are preserved in their original form.
 
 * [Current Release notes](#Current-release-notes)
-* [Visual Studio 2017-2019 release notes](#Visual-Studio-2017-2019-Update-16.7-release-notes)
+* [Visual Studio 2017-2019 release notes](#visual-studio-2017-2019-update-167-release-notes)
 * [FSharp.Compiler.Service release notes (version 37 and lower)](#FSharp-Compiler-Service-Versions-Release-notes)
-* [Older release notes (pre-F# 4.0)](#Older-Visual-F#-releases)
+* [Older release notes (pre-F# 4.0)](#older-visual-f-releases)
 
 ## Current release notes
 
@@ -74,6 +74,13 @@ The most notable change for FSharp.Compiler.Service is that it is now built and 
 * Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 * Support for `ToString` in `FSharp.Compiler.Text.StringText` by [Asti](https://github.com/deviousasti)
 * Fix an issue with equality comparisons for `StringText` by [Asti](https://github.com/deviousasti)
+* Several APIs no longer require the Reactor thread
+* `GetAllUsesOfAllSymbolsInFile` now returns `seq<FSharpSymbol>` instead of `FSharpSymbol[]`
+* All four `Get*UsesOfAllSymbolsIn*` APIs are no longer asynchronous
+* `StructuredDescriptionTextAsync` and `DescriptionTextAsync` are now deprecated, please use `StructuredDescriptionText` and `DescriptionText` instead
+* The `hasTextChangedSinceLastTypecheck` optional argument has been removed (it has been unused in Visual Studio since VS 2017)
+* The `textSnapshotInfo` optional argument is removed as it only made sense in tandem with `hasTextChangedSinceLastTypecheck`
+* `userOpName` is removed from all APIs that are no longer asynchronous
 
 ## Visual Studio 2017-2019 Update 16.7 release notes
 

@@ -18,8 +18,11 @@ There are several artifacts involved in the development of F#:
 
 The `FSharp.Compiler.Private` is by far the largest of these components and contains nearly all logic that `fsc` and `fsi` use. It is the primary subject of this guide.
 
-The F# compiler repositories are used to produce a range of different artifacts. For the purposes of this
-guide, the important ones are:
+## Resources for learning
+
+* Video: [Learn me some F# Compiler, an online chat with Vlad and Don](https://www.youtube.com/watch?v=-dKf15xSWPY)
+
+* Video: [Understanding the F# Optimizer, and online chat with Vlad and Don](https://www.youtube.com/watch?v=sfAe5lDue7k)
 
 ## Key data formats and representations
 
@@ -110,7 +113,9 @@ These and transformations used to build the following:
 ## Tools to help work with the compiler
 
 * [sharplab.io](https://sharplab.io/) can be used to decompile code.
+
 * [fantomas-tools](https://fsprojects.github.io/fantomas-tools/#/ast) can be used to view the Untyped & Typed Abstract Syntax Tree.
+
 
 ## Coding standards and idioms
 

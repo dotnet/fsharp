@@ -526,20 +526,20 @@ namespace Internal.Utilities.Collections.Tagged
 #endif
         member s.IsEmpty  = SetTree.isEmpty tree
 
-        member s.Partition f  : Set<'T,'ComparerTag> *  Set<'T,'ComparerTag> = 
+        member s.Partition predicate  : Set<'T,'ComparerTag> *  Set<'T,'ComparerTag> = 
             if SetTree.isEmpty s.Tree then s,s
             else
-                let t1, t2 = SetTree.partition s.Comparer f s.Tree
+                let t1, t2 = SetTree.partition s.Comparer predicate s.Tree
                 refresh s t1, refresh s t2
 
-        member s.Filter f  : Set<'T,'ComparerTag> = 
+        member s.Filter predicate  : Set<'T,'ComparerTag> = 
           if SetTree.isEmpty s.Tree then s
           else
-              SetTree.filter comparer f tree |> refresh s
+              SetTree.filter comparer predicate tree |> refresh s
 
-        member s.Exists f = SetTree.exists f tree
+        member s.Exists predicate = SetTree.exists predicate tree
 
-        member s.ForAll f = SetTree.forall f tree
+        member s.ForAll predicate = SetTree.forall predicate tree
 
         static member (-) ((a: Set<'T,'ComparerTag>),(b: Set<'T,'ComparerTag>)) = Set<_,_>.Difference(a,b)
 
@@ -1037,14 +1037,14 @@ namespace Internal.Utilities.Collections.Tagged
         member m.Exists(f) = MapTree.exists f tree 
         member m.Filter(f) = MapTree.filter comparer f tree |> refresh m 
         member m.ForAll(f) = MapTree.forall f tree 
-        member m.Fold f acc = MapTree.foldBack f tree acc
+        member m.Fold folder acc = MapTree.foldBack folder tree acc
         member m.FoldSection lo hi f acc = MapTree.foldSection comparer lo hi f tree acc 
         member m.FoldAndMap f z  = 
             let tree,z = MapTree.foldMap comparer f tree z MapTree.empty 
             refresh m tree, z
-        member m.Iterate f = MapTree.iter f tree
-        member m.MapRange f  = refresh m (MapTree.map f tree)
-        member m.Map f  = refresh m (MapTree.mapi f tree)
+        member m.Iterate action = MapTree.iter action tree
+        member m.MapRange mapping  = refresh m (MapTree.map mapping tree)
+        member m.Map mapping  = refresh m (MapTree.mapi mapping tree)
         member m.Partition(f)  =
             let r1,r2 = MapTree.partition comparer f tree  
             refresh m r1, refresh m r2
