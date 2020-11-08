@@ -405,7 +405,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo hasUnammedCallerArgs =
                         if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
                             ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
                         elif Option.isSome hasUnammedCallerArgs && hasUnammedCallerArgs.Value && HasFSharpAttribute g g.attrib_RequireNamedParametersAttribute fsAttribs then
-                            ErrorD(Error((11111, "Nice error message here"), m))
+                            ErrorD(Error(FSComp.SR.tcMethodRequireNamedParametersAttribute(minfo.LogicalName), m))
                         else
                             CompleteD)
                 Some res) 
