@@ -7,18 +7,13 @@ open System.Composition
 open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
-open FSharp.Compiler
 open FSharp.Compiler.Range
 open System.Runtime.Caching
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open FSharp.Compiler.SourceCodeServices
 
-type private TextVersionHash = int
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
 
 [<Export(typeof<IFSharpSimplifyNameDiagnosticAnalyzer>)>]
@@ -36,7 +31,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     interface IFSharpSimplifyNameDiagnosticAnalyzer with
 
-        member this.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
+        member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)

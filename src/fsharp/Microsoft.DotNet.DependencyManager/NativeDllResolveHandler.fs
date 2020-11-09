@@ -14,6 +14,7 @@ open Internal.Utilities.FSharpEnvironment
 /// host implements this, it's job is to return a list of package roots to probe.
 type NativeResolutionProbe = delegate of Unit -> seq<string>
 
+#if NETSTANDARD
 open System.Runtime.Loader
 
 // Cut down AssemblyLoadContext, for loading native libraries
@@ -105,13 +106,17 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe o
             if not (isNull eventInfo) then
                 eventInfo.RemoveEventHandler(AssemblyLoadContext.Default, handler)
             ()
+#endif
 
-type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) =
-
-    let handler:IDisposable option =
+type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
+    let handler: IDisposable option =
+#if NETSTANDARD
         if isRunningOnCoreClr then
             Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
         else
+#else
+            ignore nativeProbingRoots
+#endif
             None
 
     let appendSemiColon (p:string) =

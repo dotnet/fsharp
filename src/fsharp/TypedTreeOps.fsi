@@ -1051,6 +1051,8 @@ module SimplifyTypes =
 
 val superOfTycon : TcGlobals -> Tycon -> TType
 
+val abstractSlotValRefsOfTycons : Tycon list -> ValRef list
+
 val abstractSlotValsOfTycons : Tycon list -> Val list
 
 //-------------------------------------------------------------------------

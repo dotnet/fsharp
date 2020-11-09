@@ -7,19 +7,12 @@ open System.Composition
 open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Diagnostics
 
-open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
 
-open Microsoft.VisualStudio.FSharp.Editor.Symbols
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
