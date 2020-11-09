@@ -228,10 +228,15 @@ let matchBraces (name: string, code: string) =
     let braces = checker.MatchBraces(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     braces
 
-let parseSourceCodeAndGetModule (source: string) =
-    match parseSourceCode ("test", source) with
-    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, [ moduleOrNamespace ], _))) -> moduleOrNamespace
+
+let getSingleModuleLikeDecl (input: ParsedInput option) =
+    match input with
+    | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ]))) -> decl
     | _ -> failwith "Could not get module decls"
+    
+let parseSourceCodeAndGetModule (source: string) =
+    parseSourceCode ("test", source) |> getSingleModuleLikeDecl
+
 
 /// Extract range info 
 let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)

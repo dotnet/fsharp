@@ -2643,7 +2643,7 @@ cPrototype:
                                   SynExpr.Ident (ident("failwith", rhs parseState 6)),
                                   SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", rhs parseState 8), rhs parseState 8),
                                   mRhs)
-        (fun attrs vis -> 
+        (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
