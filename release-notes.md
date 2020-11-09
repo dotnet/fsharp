@@ -68,12 +68,16 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 
 The most notable change for FSharp.Compiler.Service is that it is now built and deployed as a part of the dotnet/fsharp codebase. Builds are produced nightly, matching exactly the nightly builds of the F# compiler, FSharp.Core, and F# tools.
 
+* Support for Witness information [#9510](https://github.com/dotnet/fsharp/pull/95100) in `FSharpExpr` and `FSharpMemberOrFunctionOrValue`
 * Support for Jupyter Notebooks and VSCode notebooks via `FSharp.Compiler.Private.Scripting` and .NET Interactive
 * Improvements to the F# syntax tree represtation by [Eugene Auduchinok](https://github.com/auduchinok)
 * Support for `const` in keyword completion info by [Alex Berezhnykh](https://github.com/DedSec256)
 * Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 * Support for `ToString` in `FSharp.Compiler.Text.StringText` by [Asti](https://github.com/deviousasti)
 * Fix an issue with equality comparisons for `StringText` by [Asti](https://github.com/deviousasti)
+
+Significant changes for consumers:
+
 * Several APIs no longer require the Reactor thread
 * `GetAllUsesOfAllSymbolsInFile` now returns `seq<FSharpSymbol>` instead of `FSharpSymbol[]`
 * All four `Get*UsesOfAllSymbolsIn*` APIs are no longer asynchronous
