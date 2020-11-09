@@ -6,9 +6,9 @@ See License.txt in the project root for license information.
 This document contains current and historical release notes information. They are preserved in their original form.
 
 * [Current Release notes](#Current-release-notes)
-* [Visual Studio 2017-2019 release notes](#Visual-Studio-2017-2019-Update-16.7-release-notes)
+* [Visual Studio 2017-2019 release notes](#visual-studio-2017-2019-update-167-release-notes)
 * [FSharp.Compiler.Service release notes (version 37 and lower)](#FSharp-Compiler-Service-Versions-Release-notes)
-* [Older release notes (pre-F# 4.0)](#Older-Visual-F#-releases)
+* [Older release notes (pre-F# 4.0)](#older-visual-f-releases)
 
 ## Current release notes
 
