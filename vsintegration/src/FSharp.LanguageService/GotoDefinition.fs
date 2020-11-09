@@ -72,7 +72,7 @@ module internal GotoDefinition =
                         Strings.GotoDefinitionFailed_NotIdentifier()
                         |> GotoDefinitionResult_DEPRECATED.MakeError
                     else
-                      match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) |> Async.RunSynchronously with
+                      match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) with
                       | FSharpFindDeclResult.DeclNotFound(reason) ->
                           if makeAnotherAttempt then gotoDefinition true
                           else

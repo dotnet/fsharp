@@ -1069,8 +1069,8 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
             CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f)
 
     // Allow base calls to IL methods
-    | Expr.Op (TOp.ILCall (virt, _, _, _, _, _, _, mref, enclTypeArgs, methTypeArgs, tys), tyargs, (Expr.Val (baseVal, _, _) :: rest), m) 
-          when not virt && baseVal.BaseOrThisInfo = BaseVal ->
+    | Expr.Op (TOp.ILCall (isVirtual, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), tyargs, (Expr.Val (baseVal, _, _) :: rest), m) 
+          when not isVirtual && baseVal.BaseOrThisInfo = BaseVal ->
         
         // Disallow calls to abstract base methods on IL types. 
         match tryTcrefOfAppTy g baseVal.Type with
@@ -1080,16 +1080,16 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
                 // We believe this may be fragile in some situations, since we are using the Abstract IL code to compare
                 // type equality, and it would be much better to remove any F# dependency on that implementation of IL type
                 // equality. It would be better to make this check in tc.fs when we have the Abstract IL metadata for the method to hand.
-                let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
+                let mdef = resolveILMethodRef tcref.ILTyconRawMetadata ilMethRef
                 if mdef.IsAbstract then
                     errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(mdef.Name), m))
             with _ -> () // defensive coding
         | _ -> ()
 
         CheckTypeInstNoByrefs cenv env m tyargs
-        CheckTypeInstNoByrefs cenv env m enclTypeArgs
-        CheckTypeInstNoByrefs cenv env m methTypeArgs
-        CheckTypeInstNoByrefs cenv env m tys
+        CheckTypeInstNoByrefs cenv env m enclTypeInst
+        CheckTypeInstNoByrefs cenv env m methInst
+        CheckTypeInstNoByrefs cenv env m retTypes
         CheckValRef cenv env baseVal m PermitByRefExpr.No
         CheckExprsPermitByRefLike cenv env rest
 
@@ -1225,7 +1225,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env [e1;e2;e3]
 
-    | TOp.TryCatch _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
         ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
@@ -1233,21 +1233,21 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         let limit2 = CheckExpr cenv env e3 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         CombineTwoLimits limit1 limit2
         
-    | TOp.ILCall (_, _, _, _, _, _, _, methRef, enclTypeArgs, methTypeArgs, tys), _, _ ->
+    | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, enclTypeInst, methInst, retTypes), _, _ ->
         CheckTypeInstNoByrefs cenv env m tyargs
-        CheckTypeInstNoByrefs cenv env m enclTypeArgs
-        CheckTypeInstNoByrefs cenv env m methTypeArgs
-        CheckTypeInstNoInnerByrefs cenv env m tys // permit byref returns
+        CheckTypeInstNoByrefs cenv env m enclTypeInst
+        CheckTypeInstNoByrefs cenv env m methInst
+        CheckTypeInstNoInnerByrefs cenv env m retTypes // permit byref returns
 
         let hasReceiver = 
-            (methRef.CallingConv.IsInstance || methRef.CallingConv.IsInstanceExplicit) &&
+            (ilMethRef.CallingConv.IsInstance || ilMethRef.CallingConv.IsInstanceExplicit) &&
             not args.IsEmpty
 
         let returnTy = tyOfExpr g expr
 
         let argContexts = List.init args.Length (fun _ -> PermitByRefExpr.Yes)
 
-        match tys with
+        match retTypes with
         | [ty] when context.PermitOnlyReturnable && isByrefLikeTy g m ty -> 
             if hasReceiver then
                 CheckCallWithReceiver cenv env m returnTy args argContexts context
@@ -1413,8 +1413,8 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         // Recursively check in same context, e.g. if at PermitOnlyReturnable the obj arg must also be returnable
         CheckExpr cenv env obj context
 
-    | TOp.ILAsm (instrs, tys), _, _  ->
-        CheckTypeInstNoInnerByrefs cenv env m tys
+    | TOp.ILAsm (instrs, retTypes), _, _  ->
+        CheckTypeInstNoInnerByrefs cenv env m retTypes
         CheckTypeInstNoByrefs cenv env m tyargs
         match instrs, args with
         // Write a .NET instance field
@@ -2344,7 +2344,7 @@ and CheckModuleSpec cenv env x =
         let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute mspec.Attribs }
         CheckDefnInModule cenv env rhs 
 
-let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcVal, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
+let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, viewCcu, tcValF, denv, mexpr, extraAttribs, (isLastCompiland: bool*bool), isInternalTestSpanStackReferring) =
     let cenv = 
         { g =g  
           reportErrors=reportErrors 
@@ -2360,7 +2360,7 @@ let CheckTopImpl (g, amap, reportErrors, infoReader, internalsVisibleToPaths, vi
           viewCcu= viewCcu
           isLastCompiland=isLastCompiland
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
-          tcVal = tcVal
+          tcVal = tcValF
           entryPointGiven=false}
     
     // Certain type equality checks go faster if these TyconRefs are pre-resolved.

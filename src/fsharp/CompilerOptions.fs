@@ -1422,8 +1422,13 @@ let displayHelpFsc tcConfigB (blocks:CompilerOptionBlock list) =
     PrintCompilerOptionBlocks blocks
     exit 0
       
+let displayVersion tcConfigB =
+    printfn "%s" tcConfigB.productNameForBannerText
+    exit 0
+
 let miscFlagsBoth tcConfigB = 
     [   CompilerOption("nologo", tagNone, OptionUnit (fun () -> tcConfigB.showBanner <- false), None, Some (FSComp.SR.optsNologo()))
+        CompilerOption("version", tagNone, OptionUnit (fun () -> displayVersion tcConfigB), None, Some (FSComp.SR.optsVersion()))
     ]
       
 let miscFlagsFsc tcConfigB =
@@ -1591,11 +1596,11 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
                                               testingAndQAFlags       tcConfigB])
   ]
 
-let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, commandLineArgs) =
+let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, argv) =
     try
         let sourceFilesAcc = ResizeArray sourceFiles
         let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add name
-        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
+        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, argv)
         ResizeArray.toList sourceFilesAcc
     with e ->
         errorRecovery e range0

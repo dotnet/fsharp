@@ -55,4 +55,4 @@ stages:
         # only auto-complete if the target branch is not `rel/*`
         AutoCompletePR: ${{ not(contains(parameters.insertTargetBranch, 'rel/')) }}
         LinkWorkItemsToPR: false
-      condition: and(succeeded(), eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'))
+      condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'), eq(variables['Build.SourceBranch'], 'refs/heads/${{ parameters.componentBranchName }}')))

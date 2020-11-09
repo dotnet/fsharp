@@ -29,6 +29,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -52,7 +54,6 @@ open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -1649,8 +1650,8 @@ type internal FsiDynamicCompiler
             // Build a simple module with a single 'let' decl with a default value.
             let moduleOrNamespace, v, impl = mkBoundValueTypedImpl istate.tcGlobals range0 qualifiedName.Text name ty
             let tcEnvAtEndOfLastInput = 
-                TypeChecker.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
-                |> TypeChecker.AddLocalVal TcResultsSink.NoSink range0 v
+                CheckDeclarations.AddLocalSubModule tcGlobals amap range0 istate.tcState.TcEnvFromImpls moduleOrNamespace
+                |> CheckExpressions.AddLocalVal TcResultsSink.NoSink range0 v
 
             // Generate IL for the given typled impl and create new interactive state.
             let ilxGenerator = istate.ilxGenerator
@@ -3001,20 +3002,20 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member x.PartialAssemblySignatureUpdated = fsiInteractionProcessor.PartialAssemblySignatureUpdated
 
 
-    member x.FormatValue(obj:obj, objTy) = 
-        fsiDynamicCompiler.FormatValue(obj, objTy)
+    member x.FormatValue(reflectionValue:obj, reflectionType) = 
+        fsiDynamicCompiler.FormatValue(reflectionValue, reflectionType)
 
-    member x.EvalExpression(sourceText) =
+    member x.EvalExpression(code) =
 
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        fsiInteractionProcessor.EvalExpression(ctok, sourceText, dummyScriptFileName, errorLogger)
+        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, errorLogger)
         |> commitResult
 
-    member x.EvalExpressionNonThrowing(sourceText) =
+    member x.EvalExpressionNonThrowing(code) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -3022,20 +3023,20 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalExpression(ctok, sourceText, dummyScriptFileName, errorLogger)
+        fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, errorLogger)
         |> commitResultNonThrowing errorOptions dummyScriptFileName errorLogger
 
-    member x.EvalInteraction(sourceText, ?cancellationToken) : unit =
+    member x.EvalInteraction(code, ?cancellationToken) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger, cancellationToken)
+        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, errorLogger, cancellationToken)
         |> commitResult
         |> ignore
 
-    member x.EvalInteractionNonThrowing(sourceText, ?cancellationToken) =
+    member x.EvalInteractionNonThrowing(code, ?cancellationToken) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -3044,20 +3045,20 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger, cancellationToken)
+        fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, errorLogger, cancellationToken)
         |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
 
-    member x.EvalScript(scriptPath) : unit =
+    member x.EvalScript(filePath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        fsiInteractionProcessor.EvalScript(ctok, scriptPath, errorLogger)
+        fsiInteractionProcessor.EvalScript(ctok, filePath, errorLogger)
         |> commitResult
         |> ignore
 
-    member x.EvalScriptNonThrowing(scriptPath) =
+    member x.EvalScriptNonThrowing(filePath) =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
         // code is parsed, checked and evaluated on the calling thread. This means EvalExpression
         // is not safe to call concurrently.
@@ -3065,8 +3066,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
         let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
         let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
-        fsiInteractionProcessor.EvalScript(ctok, scriptPath, errorLogger)
-        |> commitResultNonThrowing errorOptions scriptPath errorLogger
+        fsiInteractionProcessor.EvalScript(ctok, filePath, errorLogger)
+        |> commitResultNonThrowing errorOptions filePath errorLogger
         |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
     /// Event fires when a root-level value is bound to an identifier, e.g., via `let x = ...`.

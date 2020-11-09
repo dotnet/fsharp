@@ -247,6 +247,11 @@
         <target state="translated">Valor não reconhecido '{0}' para --langversion use --langversion:? para a lista completa</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">O recurso de gerenciamento de pacotes requer a versão de idioma 5.0. Use /langversion:preview</target>
@@ -275,6 +280,11 @@
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
         <target state="new">Incomplete interpolated verbatim string begun at or before here</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">

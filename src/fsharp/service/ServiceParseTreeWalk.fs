@@ -659,7 +659,7 @@ module public AstTraversal =
             [
                 match synTypeDefnRepr with
                 | SynTypeDefnRepr.Exception _ -> 
-                    // This node is generated in TypeChecker.fs, not in the AST.  
+                    // This node is generated in CheckExpressions.fs, not in the AST.  
                     // But note exception declarations are missing from this tree walk.
                     () 
                 | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->

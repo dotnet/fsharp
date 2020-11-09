@@ -14,6 +14,8 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -28,7 +30,6 @@ open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
-open FSharp.Compiler.TypeChecker
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -494,7 +495,7 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     TcConfig.Create(tcConfigB, validate=false)
 
 /// Build the initial type checking environment
-let GetInitialTcEnv (thisAssemblyName: string, initm: range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =    
+let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =    
     let initm = initm.StartRange
 
     let ccus = 
@@ -503,7 +504,7 @@ let GetInitialTcEnv (thisAssemblyName: string, initm: range, tcConfig: TcConfig,
 
     let amap = tcImports.GetImportMap()
 
-    let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, thisAssemblyName, ccus)
+    let tcEnv = CreateInitialTcEnv(tcGlobals, amap, initm, assemblyName, ccus)
 
     if tcConfig.checkOverflow then
         try TcOpenModuleOrNamespaceDecl TcResultsSink.NoSink tcGlobals amap initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName), initm)
@@ -576,7 +577,7 @@ type TcState =
  
     member x.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput = 
         { x with tcsTcSigEnv = tcEnvAtEndOfLastInput
-                 tcsTcImplEnv = tcEnvAtEndOfLastInput } 
+                 tcsTcImplEnv = tcEnvAtEndOfLastInput }
 
  
 /// Create the initial type checking state for compiling an assembly
@@ -621,7 +622,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
+let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
 
     eventually {
         try 
@@ -686,11 +687,21 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               let conditionalDefines =
                   if tcConfig.noConditionalErasure then None else Some (tcConfig.conditionalCompilationDefines)
 
-              // Typecheck the implementation file 
-              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                  TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
-
               let hadSig = rootSigOpt.IsSome
+
+              // Typecheck the implementation file 
+              let typeCheckOne = 
+                  if skipImplIfSigExists && hadSig then
+                    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSigOpt.Value, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
+                    let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [])
+
+                    (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)
+                    |> Eventually.Done
+                  else
+                    TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
+
+              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
+
               let implFileSigType = SigTypeOfImplFile implFile
 
               let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
@@ -741,7 +752,7 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
-    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp) 
+    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false) 
         |> Eventually.force ctok
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
@@ -756,7 +767,7 @@ let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
 let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     eventually {
         Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
-        let! results, tcState = TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
+        let! results, tcState = TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
         let result = TypeCheckMultipleInputsFinish([results], tcState)
         Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return result
@@ -779,4 +790,3 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
-
