@@ -2066,6 +2066,11 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     let offsidePos = tokenStartPos
                     pushCtxt tokenTup (CtxtWithAsLet offsidePos)
                     returnToken tokenLexbufState OWITH 
+
+                // Recovery for `interface ... with` member without further indented member implementations
+                elif lookaheadTokenStartPos.Column <= limCtxt.StartCol && (match limCtxt with CtxtInterfaceHead _ -> true | _ -> false) then
+                    returnToken tokenLexbufState token
+
                 else
                     // In these situations
                     //    interface I with 
