@@ -619,7 +619,6 @@ module rec Compiler =
             for exp in expected do
                 if not (List.exists (fun (el: ErrorInfo) -> (getErrorNumber el.Error) = exp) source) then
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
-            assertErrorsLength source expected
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
             let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
