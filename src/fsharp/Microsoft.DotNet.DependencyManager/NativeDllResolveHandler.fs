@@ -108,7 +108,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe o
             ()
 #endif
 
-type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
+type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) =
     let handler: IDisposable option =
 #if NETSTANDARD
         if isRunningOnCoreClr then
