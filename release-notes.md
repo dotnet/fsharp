@@ -26,7 +26,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * `open type` declarations
 * Applicative computation expressions via `let! ... and!`
 * Overloads for custom operations in computation expressions (in preview), by [Ryan Riley](https://github.com/panesofglass) and [Diego Esmerio](https://github.com/Nhowka)
-* Interfaces can now be implemeneted at different generic instantiations
+* Interfaces can now be implemented at different generic instantiations
 * Default interface member consumption
 * Better interop with nullable value types
 
