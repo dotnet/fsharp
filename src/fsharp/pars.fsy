@@ -1649,9 +1649,13 @@ classDefnMembers:
   
 
 /* The members of an object type definition or type augmentation */
-classDefnMembersAtLeastOne:  
-  | classDefnMember opt_seps classDefnMembers 
-     { $1 @  $3 }
+classDefnMembersAtLeastOne:
+  | classDefnMember opt_seps classDefnMembers
+     { match $1, $3 with
+       | [ SynMemberDefn.Interface (_, Some [], m) ], nextMember :: _ ->
+           warning(IndentationProblem(FSComp.SR.lexfltTokenIsOffsideOfContextStartedEarlier(warningStringOfPos m.Start), nextMember.Range))
+       | _ -> ()
+       $1 @ $3 }
 
 
 /* The "with get, set" part of a member definition */
