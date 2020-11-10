@@ -36,6 +36,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | StructActivePattern
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -77,6 +78,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
+            LanguageFeature.StructActivePattern, previewVersion
         ]
 
     let specified =
@@ -150,6 +152,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
+        | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

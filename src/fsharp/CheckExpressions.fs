@@ -9414,6 +9414,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         // Assert the return type of an active pattern. A Struct attribute may be used on a partial active pattern.
         let isStructRetTy = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
+        if isStructRetTy then
+            checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StructActivePattern mBinding
+
         match apinfoOpt with 
         | Some (apinfo, apOverallTy, _) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
