@@ -56,6 +56,8 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - name: DotNetSdkVersion
+    value: '5.0.100'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -407,6 +409,12 @@ stages:
         #     displayName: Initial build
         #   - script: dotnet --list-sdks
         #     displayName: Report dotnet SDK versions
+        #   - task: UseDotNet@2
+        #       displayName: install SDK
+        #       inputs:
+        #         packageType: sdk
+        #         version: $(DotNetSdkVersion)
+        #         installationPath: $(Agent.ToolsDirectory)/dotnet
         #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
         #     displayName: Regular rebuild
 
@@ -424,6 +432,12 @@ stages:
             displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              version: $(DotNetSdkVersion)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
 
@@ -441,6 +455,12 @@ stages:
             displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              version: $(DotNetSdkVersion)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
 

@@ -453,7 +453,7 @@ let main argv = 0"""
         "tfm": "netcoreapp3.1",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "3.1.0"
+            "version": "5.0.0"
         }
     }
 }"""
