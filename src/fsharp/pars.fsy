@@ -2644,7 +2644,7 @@ cPrototype:
                                   SynExpr.Ident (ident("failwith", rhs parseState 6)),
                                   SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", rhs parseState 8), rhs parseState 8),
                                   mRhs)
-        (fun attrs vis -> 
+        (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
@@ -3362,10 +3362,10 @@ declExpr:
        //reportParseErrorAt (match hwlb with (BindingSetPreAttrs(m, _, _, _, _))  -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        mkLocalBindings (unionRanges m (rhs parseState 3), hwlb, arbExpr("declExpr3", (rhs parseState 3))) }
 
-  | hardwhiteDoBinding  %prec expr_let
+  | hardwhiteDoBinding %prec expr_let
      { let e = snd $1
-       SynExpr.Do (e, e.Range) }
-  
+       SynExpr.Do (e, unionRanges (rhs parseState 1).StartRange e.Range) }
+
   | anonMatchingExpr %prec expr_function
       { $1 }
 

@@ -1872,16 +1872,18 @@ type FSharpCheckFileResults
     member __.DependencyFiles = dependencyFiles
 
     member __.GetAllUsesOfAllSymbolsInFile(?cancellationToken: CancellationToken ) = 
-        threadSafeOp 
-            (fun () -> [| |])
+        threadSafeOp
+            (fun () -> Seq.empty)
             (fun scope ->
                 let cenv = scope.SymbolEnv
-                [| for symbolUseChunk in scope.ScopeSymbolUses.AllUsesOfSymbols do
-                     for symbolUse in symbolUseChunk do
-                        cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
-                        if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                            let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
-                            yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
+                seq {
+                    for symbolUseChunk in scope.ScopeSymbolUses.AllUsesOfSymbols do
+                        for symbolUse in symbolUseChunk do
+                            cancellationToken |> Option.iter (fun ct -> ct.ThrowIfCancellationRequested())
+                            if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                                let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
+                                FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)
+                })
 
     member __.GetUsesOfSymbolInFile(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) = 
         threadSafeOp 

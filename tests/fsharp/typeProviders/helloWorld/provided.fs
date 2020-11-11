@@ -196,5 +196,5 @@ module TheOuterType =
 
 module DllImportSmokeTest = 
     [<System.Runtime.InteropServices.DllImport("kernel32.dll")>]
-    extern System.UInt32 private GetLastError()
+    extern System.UInt32 GetLastError()
 

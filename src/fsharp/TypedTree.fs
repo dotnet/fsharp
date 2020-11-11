@@ -4115,6 +4115,8 @@ type Attrib =
 
     member x.TyconRef = (let (Attrib(tcref, _, _, _, _, _, _)) = x in tcref)
 
+    member x.Range = (let (Attrib(_, _, _, _, _, _, m)) = x in m)
+
     override x.ToString() = "attrib" + x.TyconRef.ToString()
 
 /// We keep both source expression and evaluated expression around to help intellisense and signature printing
