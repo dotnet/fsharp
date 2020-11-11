@@ -9288,14 +9288,17 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             | e -> false, e, overallTy, overallTy
 
         // Check the attributes of the binding, parameters or return value
-        let TcAttrs tgt attrs = 
-            let attrs = TcAttributes cenv envinner tgt attrs 
+        let TcAttrs tgt isRet attrs = 
+            // For all but attributes positioned at the return value, disallow implicitly
+            // targeting the return value.
+            let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
+            let attrs = TcAttributesEx cenv envinner tgt tgtEx attrs 
             if attrTgt = enum 0 && not (isNil attrs) then 
                 errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), mBinding))
             attrs
 
         let rotRetAttribs, valAttribs = 
-            TcAttrs attrTgt attrs
+            TcAttrs attrTgt false attrs
             |> List.partition(function | Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
 
         let isVolatile = HasFSharpAttribute cenv.g cenv.g.attrib_VolatileFieldAttribute valAttribs
@@ -9303,13 +9306,13 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
 
         let argAttribs = 
-            spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter))
+            spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
 
         // Rotate [<return:...>] from binding to return value
         let retAttribs = 
             match rtyOpt with 
             | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> 
-                rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue retAttrs  
+                rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs  
             | None -> rotRetAttribs
 
         // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
@@ -9496,9 +9499,10 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty b =
 
 //-------------------------------------------------------------------------
 // TcAttribute*
+// *Ex means the function accepts attribute targets that must be explicit
 //------------------------------------------------------------------------
 
-and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
+and TcAttributeWithEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribute) =
     let (LongIdentWithDots(tycon, _)) = synAttr.TypeName
     let arg = synAttr.ArgExpr
     let targetIndicator = synAttr.Target
@@ -9580,8 +9584,8 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
             | Some id -> 
                 errorR(Error(FSComp.SR.tcUnrecognizedAttributeTarget(), id.idRange)) 
                 possibleTgts
-            // don't allow implicit return target
-            | _ -> possibleTgts &&& ~~~ AttributeTargets.ReturnValue
+            // mask explicit targets
+            | _ -> possibleTgts &&& ~~~ attrEx
         let constrainedTgts = possibleTgts &&& directedTgts
         if constrainedTgts = enum 0 then 
             if (directedTgts = AttributeTargets.Assembly || directedTgts = AttributeTargets.Module) then 
@@ -9657,11 +9661,11 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
 
         [ (constrainedTgts, attrib) ], false
 
-and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs = 
+and TcAttributesWithPossibleTargetsAndEx canFail cenv env attrTgt attrEx synAttribs = 
 
     (false, synAttribs) ||> List.collectFold (fun didFail synAttrib -> 
         try 
-            let attribsAndTargets, didFail2 = TcAttribute canFail cenv env attrTgt synAttrib
+            let attribsAndTargets, didFail2 = TcAttributeWithEx canFail cenv env attrTgt attrEx synAttrib
             
             // This is where we place any checks that completely exclude the use of some particular 
             // attributes from F#.
@@ -9677,13 +9681,28 @@ and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs =
             errorRecovery e synAttrib.Range 
             [], false) 
 
-and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs = 
-    let attribsAndTargets, didFail = TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs 
+and TcAttributesMaybeFailEx canFail cenv env attrTgt attrEx synAttribs = 
+    let attribsAndTargets, didFail = TcAttributesWithPossibleTargetsAndEx canFail cenv env attrTgt attrEx synAttribs 
     attribsAndTargets |> List.map snd, didFail
 
+and TcAttributesCanFailEx cenv env attrTgt attrEx synAttribs = 
+    let attrs, didFail = TcAttributesMaybeFailEx true cenv env attrTgt attrEx synAttribs
+    attrs, (fun () -> if didFail then TcAttributesEx cenv env attrTgt attrEx synAttribs else attrs)
+
+and TcAttributesEx cenv env attrTgt attrEx synAttribs = 
+    TcAttributesMaybeFailEx false cenv env attrTgt attrEx synAttribs |> fst
+
+and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs = 
+    TcAttributesWithPossibleTargetsAndEx canFail cenv env attrTgt (enum 0) synAttribs
+
+and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
+    TcAttributeWithEx canFail cenv env attrTgt (enum 0) synAttr
+
+and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs = 
+    TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs
+
 and TcAttributesCanFail cenv env attrTgt synAttribs = 
-    let attrs, didFail = TcAttributesMaybeFail true cenv env attrTgt synAttribs
-    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
+    TcAttributesCanFailEx cenv env attrTgt (enum 0) synAttribs
 
 and TcAttributes cenv env attrTgt synAttribs = 
     TcAttributesMaybeFail false cenv env attrTgt synAttribs |> fst
