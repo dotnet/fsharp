@@ -3414,7 +3414,7 @@ let ``Test Project24 all symbols`` () =
 
     let allUses  = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
-        
+        |> Array.ofSeq
         |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbolUse s, attribsOfSymbol s.Symbol))
 
     allUses |> shouldEqual 
@@ -3521,7 +3521,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 
     let getAllSymbolUses = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
-        
+        |> Array.ofSeq
         |> Array.map (fun s -> (s.Symbol.DisplayName, Project24.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbol s.Symbol))
 
     getAllSymbolUses |> shouldEqual
@@ -3669,7 +3669,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
 
     let allUses  = 
         backgroundTypedParse1.GetAllUsesOfAllSymbolsInFile() 
-        
+        |> Array.ofSeq
         |> Array.map (fun s -> (s.Symbol.FullName, Project25.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbol s.Symbol))
 
     allUses |> shouldEqual 
