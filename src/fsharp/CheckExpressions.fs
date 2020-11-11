@@ -9580,7 +9580,8 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
             | Some id -> 
                 errorR(Error(FSComp.SR.tcUnrecognizedAttributeTarget(), id.idRange)) 
                 possibleTgts
-            | _ -> possibleTgts
+            // don't allow implicit return target
+            | _ -> possibleTgts &&& ~~~ AttributeTargets.ReturnValue
         let constrainedTgts = possibleTgts &&& directedTgts
         if constrainedTgts = enum 0 then 
             if (directedTgts = AttributeTargets.Assembly || directedTgts = AttributeTargets.Module) then 
