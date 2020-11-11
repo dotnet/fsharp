@@ -9427,8 +9427,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             let _, apReturnTy = stripFunTy cenv.g apOverallTy
             if isStructRetTy && apinfo.IsTotal then
                 errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
-            //if isStructRetTy then
-            //    checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StructActivePattern mBinding
+            if isStructRetTy then
+                checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StructActivePattern mBinding
             UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys isStructRetTy) apReturnTy
         | None -> 
             if isStructRetTy then
