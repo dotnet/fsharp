@@ -2,9 +2,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
 
 module public UnusedOpens =
 
@@ -24,9 +22,9 @@ module public SimplifyNames =
        }
 
     /// Get all ranges that can be simplified in a file
-    val getSimplifiableNames : checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) -> Async<SimplifiableRange list>
+    val getSimplifiableNames : checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) -> Async<seq<SimplifiableRange>>
 
 module public UnusedDeclarations = 
 
     /// Get all unused declarations in a file
-    val getUnusedDeclarations : checkFileResults: FSharpCheckFileResults * isScriptFile: bool -> Async<range list>
+    val getUnusedDeclarations : checkFileResults: FSharpCheckFileResults * isScriptFile: bool -> Async<seq<range>>

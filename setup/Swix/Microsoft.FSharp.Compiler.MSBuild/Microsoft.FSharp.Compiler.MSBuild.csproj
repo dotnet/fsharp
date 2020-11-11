@@ -101,7 +101,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.xml"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\FSharp.Build.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\Microsoft.DotNet.DependencyManager\$(Configuration)\netstandard2.0\Microsoft.DotNet.DependencyManager.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\Microsoft.DotNet.DependencyManager\$(Configuration)\net472\Microsoft.DotNet.DependencyManager.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Framework.dll"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Tasks.Core.dll"
   file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\$(TargetFramework)\Microsoft.Build.Utilities.Core.dll"
