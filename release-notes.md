@@ -62,7 +62,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Fix duplicate symbol output when renaming constructs in a project with multiple TFMs
 * Support for `Int64.MinValue` as a `nativeint` literal, by [Abel Braaksma](https://github.com/abelbraaksma)
 * Prevent assignment to `const` fields, by [Chet Husk](https://github.com/baronfel)
-* Compiler message enhancements by Microsoft and [Vladimir Shchur](https://github.com/Lanayx)
+* Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
 ### FSharp Compiler Service 38.0.0
 
