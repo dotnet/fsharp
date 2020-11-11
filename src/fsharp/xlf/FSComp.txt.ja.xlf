@@ -242,6 +242,11 @@
         <target state="translated">サポートされる言語バージョン:</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsUnrecognizedLanguageVersion">
+        <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
+        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
         <target state="new">Display compiler version banner and exit</target>
@@ -255,11 +260,6 @@
       <trans-unit id="FieldNotContainedTypesDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
         <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -285,6 +285,11 @@
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
         <target state="translated">この位置以前に始まった補間された逐語的文字列が不完全です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -337,6 +342,16 @@
         <target state="translated">属性を型拡張に適用することはできません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcConstructorsIllegalForThisType">
+        <source>Constructors cannot be defined for this type</source>
+        <target state="new">Constructors cannot be defined for this type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDefaultImplementationForInterfaceHasAlreadyBeenAdded">
+        <source>A default implementation of this interface has already been added because the explicit implementation of the interface was not specified at the definition of the type</source>
+        <target state="new">A default implementation of this interface has already been added because the explicit implementation of the interface was not specified at the definition of the type</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Byref 型は、オープン型宣言では使用できません。</target>
@@ -365,6 +380,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">リテラルとしてマークされた値に '{0}' を割り当てることはできません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecursiveBindingsWithMembersMustBeDirectAugmentation">
+        <source>Recursive bindings that include member specifications can only occur as a direct augmentation of a type</source>
+        <target state="new">Recursive bindings that include member specifications can only occur as a direct augmentation of a type</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -1200,11 +1220,6 @@
       <trans-unit id="FieldNotContainedLiteralsDiffer">
         <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe 'literal' modifiers differ</source>
         <target state="translated">モジュールにはフィールド\n    {0}    \nが含まれますが、シグネチャでは\n    {1}    \nを指定しています。'literal' 修飾子が異なります。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FieldNotContainedTypesDiffer">
-        <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
-        <target state="translated">モジュールにはフィールド\n    {0}    \nが含まれますが、シグネチャでは\n    {1}    \nを指定しています。型が異なります。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
@@ -3882,11 +3897,6 @@
         <target state="translated">構造体には、引数なしのオブジェクト コンストラクターを使用できません。構造体は既定のコンストラクターを自動的にサポートするため、これはすべての CLI 言語に課せられた制限です。</target>
         <note />
       </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="new">The package management feature requires language version 5.0 use /langversion:preview</target>
-        <note />
-      </trans-unit>
       <trans-unit id="packageManagerError">
         <source>{0}</source>
         <target state="new">{0}</target>
@@ -4060,11 +4070,6 @@
       <trans-unit id="tcAllImplementedInterfacesShouldBeDeclared">
         <source>All implemented interfaces should be declared on the initial declaration of the type</source>
         <target state="translated">実装したすべてのインターフェイスは、型の最初の宣言で宣言する必要があります</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsErrorInReturnForLetIncorrectIndentation">
-        <source>Error in the return expression for this 'let'. Possible incorrect indentation.</source>
-        <target state="new">Error in the return expression for this 'let'. Possible incorrect indentation.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberNotPermittedInInterfaceImplementation">
@@ -7595,11 +7600,6 @@
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
         <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagerError">
-        <source>{0}</source>
-        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">
