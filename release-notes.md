@@ -26,7 +26,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * `open type` declarations
 * Applicative computation expressions via `let! ... and!`
 * Overloads for custom operations in computation expressions (in preview), by [Ryan Riley](https://github.com/panesofglass) and [Diego Esmerio](https://github.com/Nhowka)
-* Interfaces can now be implemeneted at different generic instantiations
+* Interfaces can now be implemented at different generic instantiations
 * Default interface member consumption
 * Better interop with nullable value types
 
@@ -62,7 +62,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Fix duplicate symbol output when renaming constructs in a project with multiple TFMs
 * Support for `Int64.MinValue` as a `nativeint` literal, by [Abel Braaksma](https://github.com/abelbraaksma)
 * Prevent assignment to `const` fields, by [Chet Husk](https://github.com/baronfel)
-* Compiler message enhancements by Microsoft and [Vladimir Shchur](https://github.com/Lanayx)
+* Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
 ### FSharp Compiler Service 38.0.0
 
