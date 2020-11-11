@@ -177,9 +177,7 @@ namespace Microsoft.FSharp.Core
         inherit System.Attribute()
         member x.CompiledName = compiledName
 
-    // TODO how to constraint method application to AP only?
-    // for now it's just ignored
-    [<AttributeUsage (AttributeTargets.Struct ||| AttributeTargets.Method, AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Struct ||| AttributeTargets.ReturnValue, AllowMultiple=false)>]  
     [<Sealed>]
     type StructAttribute() =
         inherit System.Attribute()

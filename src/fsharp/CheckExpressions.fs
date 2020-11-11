@@ -1023,13 +1023,13 @@ type DeclKind =
             match memberFlagsOpt with
             | Some flags when flags.MemberKind = MemberKind.Constructor -> AttributeTargets.Constructor
             | Some flags when flags.MemberKind = MemberKind.PropertyGetSet -> AttributeTargets.Event ||| AttributeTargets.Property
-            | Some flags when flags.MemberKind = MemberKind.PropertyGet -> AttributeTargets.Event ||| AttributeTargets.Property
+            | Some flags when flags.MemberKind = MemberKind.PropertyGet -> AttributeTargets.Event ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
             | Some flags when flags.MemberKind = MemberKind.PropertySet -> AttributeTargets.Property
-            | Some _ -> AttributeTargets.Method
-            | None -> AttributeTargets.Field ||| AttributeTargets.Method ||| AttributeTargets.Property
-        | IntrinsicExtensionBinding -> AttributeTargets.Method ||| AttributeTargets.Property
-        | ExtrinsicExtensionBinding -> AttributeTargets.Method ||| AttributeTargets.Property
-        | ClassLetBinding _ -> AttributeTargets.Field ||| AttributeTargets.Method
+            | Some _ -> AttributeTargets.Method ||| AttributeTargets.ReturnValue
+            | None -> AttributeTargets.Field ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+        | IntrinsicExtensionBinding -> AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+        | ExtrinsicExtensionBinding -> AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.ReturnValue
+        | ClassLetBinding _ -> AttributeTargets.Field ||| AttributeTargets.Method ||| AttributeTargets.ReturnValue
         | ExpressionBinding -> enum 0 // indicates attributes not allowed on expression 'let' bindings
 
     // Note: now always true
@@ -9293,18 +9293,27 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if attrTgt = enum 0 && not (isNil attrs) then 
                 errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), mBinding))
             attrs
-            
-        let valAttribs = TcAttrs attrTgt attrs
+
+        let rotRetAttribs, valAttribs = 
+            TcAttrs attrTgt attrs
+            |> List.partition(function | Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
+
         let isVolatile = HasFSharpAttribute cenv.g cenv.g.attrib_VolatileFieldAttribute valAttribs
         
         let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
 
         let argAttribs = 
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter))
+
+        // Rotate [<return:...>] from binding to return value
         let retAttribs = 
             match rtyOpt with 
-            | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> TcAttrs AttributeTargets.ReturnValue retAttrs 
-            | None -> [] 
+            | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> 
+                rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue retAttrs  
+            | None -> rotRetAttribs
+
+        // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
+        let isStructRetTy = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute retAttribs
 
         let argAndRetAttribs = ArgAndRetAttribs(argAttribs, retAttribs)
 
@@ -9412,17 +9421,14 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
             else rhsExprChecked
 
-        // Assert the return type of an active pattern. A Struct attribute may be used on a partial active pattern.
-        let isStructRetTy = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute valAttribs
-        if isStructRetTy then
-            checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StructActivePattern mBinding
-
         match apinfoOpt with 
         | Some (apinfo, apOverallTy, _) ->
             let activePatResTys = NewInferenceTypes apinfo.ActiveTags
             let _, apReturnTy = stripFunTy cenv.g apOverallTy
             if isStructRetTy && apinfo.IsTotal then
                 errorR(Error(FSComp.SR.tcInvalidStructReturn(), mBinding))
+            //if isStructRetTy then
+            //    checkLanguageFeatureError cenv.g.langVersion LanguageFeature.StructActivePattern mBinding
             UnifyTypes cenv env mBinding (apinfo.ResultType cenv.g rhsExpr.Range activePatResTys isStructRetTy) apReturnTy
         | None -> 
             if isStructRetTy then
