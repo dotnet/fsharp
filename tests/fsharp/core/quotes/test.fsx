@@ -3864,6 +3864,54 @@ module TestInlineQuotationOfAbsOperator  =
          | _ -> false)
 
     
+module TestQuotationOfListSum =
+    type Point =
+        { x: int; y: int }
+        static member Zero = { x=0; y=0 }
+        static member (+) (p1, p2) = { x= p1.x + p2.x; y = p1.y + p2.y }
+    let points = [{x=1; y=10}]
+
+    let q = <@ List.sum points @>
+
+    match q with 
+     | CallWithWitnesses(None, minfo1, minfo2, [w1; w2], [_]) ->
+         test "check List.sum 111" (minfo1.Name = "Sum")
+         test "check List.sum 112" (minfo2.Name = "Sum$W")
+         printfn "w1 = %A" w1
+         match w1 with 
+         | Lambda(v, PropertyGet(None, miFoo, [])) -> 
+           test  "check List.sum 113" (miFoo.Name = "Zero")
+         | _ -> 
+           test  "check List.sum 114" false
+         match w2 with 
+         | Lambda(v, Lambda(v2, Call(None, miFoo, [_;_]))) -> 
+           test  "check List.sum 115" (miFoo.Name = "op_Addition")
+         | _ -> 
+           test  "check List.sum 116" false
+     | _ -> 
+         test "check List.sum 117" false
+
+
+module TestQuotationOfListSum2 =
+    type Point =
+        { x: int; y: int }
+        static member Zero = { x=0; y=0 }
+        static member (+) (p1, p2) = { x= p1.x + p2.x; y = p1.y + p2.y }
+    let points = [{x=1; y=10}]
+
+    let inline quoteListSum points = <@ List.sum points @>
+
+    match quoteListSum points with 
+     | CallWithWitnesses(None, minfo1, minfo2, [Value (f1, _); Value (f2, _)], [Value (v,_)]) ->
+         test "check List.sum 211" (minfo1.Name = "Sum")
+         test "check List.sum 212" (minfo2.Name = "Sum$W")
+         test "check List.sum 213" (((v :?> Point list) = points))
+         test "check List.sum 214" ((((f1 :?> (unit -> Point)) ()) = Point.Zero))
+         test "check List.sum 215" ((((f2 :?> (Point -> Point -> Point)) {x=1;y=1} {x=1;y=2}) = {x=2;y=3}))
+     | _ -> 
+         test "check List.sum 216" false
+
+
 
 #endif
 
