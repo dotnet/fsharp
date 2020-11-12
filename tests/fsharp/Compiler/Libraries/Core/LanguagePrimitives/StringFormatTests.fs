@@ -143,7 +143,7 @@ module ``String Format Tests`` =
     let ``string constructor in FSI``() =
         // Regression test for FSHARP1.0:5894
 
-        CompilerAssert.RunScriptWithOptions [| "--langversion:preview" |]
+        CompilerAssert.RunScriptWithOptions [| "--langversion:5.0" |]
             """
 let assertEqual a b =
     if a <> b then failwithf "Expected '%s', but got '%s'" a b
