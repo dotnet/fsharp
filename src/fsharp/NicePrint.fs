@@ -1034,7 +1034,7 @@ module private PrintTastMemberOrVals =
             | Const.Zero -> literalValue.ToString() |> tagText |> wordL
         WordL.equals ++ literalValue
 
-    let private layoutNonMemberVal isFunction denv (tps, v: Val, tau, cxs) =
+    let private layoutNonMemberVal denv (tps, v: Val, tau, cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
         let cxs = env.postfixConstraints
         let argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
