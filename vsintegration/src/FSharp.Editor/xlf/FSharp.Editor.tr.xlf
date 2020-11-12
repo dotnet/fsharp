@@ -9,22 +9,22 @@
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
-        <target state="new">F# Disposable Values (locals)</target>
+        <target state="translated">F# Atılabilir Değerleri (yereller)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
         <source>F# Dispostable Values (top-level)</source>
-        <target state="new">F# Dispostable Values (top-level)</target>
+        <target state="translated">F# Atılabilir Değerleri (üst düzey)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
         <source>F# Disposable Types</source>
-        <target state="new">F# Disposable Types</target>
+        <target state="translated">F# Atılabilir Türleri</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFunctionsClassificationType">
         <source>F# Functions</source>
-        <target state="new">F# Functions</target>
+        <target state="translated">F# İşlevleri</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
