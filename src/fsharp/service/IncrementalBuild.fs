@@ -1516,6 +1516,14 @@ type PartialCheckResults private (semanticModel: SemanticModel, timeStamp: DateT
 
     member _.TcInfoWithOptional ctok = semanticModel.TcInfoWithOptional |> eval ctok
 
+    member _.TryGetItemKeyStore ctok =
+        let _, info = semanticModel.TcInfoWithOptional |> eval ctok
+        info.itemKeyStore
+
+    member _.GetSemanticClassification ctok =
+        let _, info = semanticModel.TcInfoWithOptional |> eval ctok
+        info.semanticClassification
+
     static member Create (semanticModel: SemanticModel, timestamp) = 
         PartialCheckResults(semanticModel, timestamp)
 
@@ -1578,6 +1586,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let importsInvalidatedByTypeProvider = new Event<string>()
 #endif
     let mutable currentTcImportsOpt = None
+    let defaultPartialTypeChecking = enablePartialTypeChecking
+    let mutable enablePartialTypeChecking = enablePartialTypeChecking
 
     // Check for the existence of loaded sources and prepend them to the sources list if present.
     let sourceFiles = tcConfig.GetAvailableLoadedSources() @ (sourceFiles |>List.map (fun s -> rangeStartup, s))
@@ -1718,7 +1728,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 maxTimeShareMilliseconds, 
                 keepAllBackgroundSymbolUses, 
                 enableBackgroundItemKeyStoreAndSemanticClassification,
-                enablePartialTypeChecking,
+                defaultPartialTypeChecking,
                 beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
                 
     /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
@@ -1944,6 +1954,17 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let slotOfFile = builder.GetSlotOfFileName filename + 1
         builder.GetCheckResultsBeforeSlotInProject (ctok, slotOfFile)
 
+    member builder.GetFullCheckResultsAfterFileInProject (ctok: CompilationThreadToken, filename) = 
+        enablePartialTypeChecking <- false
+        cancellable {
+            try
+                let! result = builder.GetCheckResultsAfterFileInProject(ctok, filename)
+                result.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
+                return result
+            finally               
+                enablePartialTypeChecking <- defaultPartialTypeChecking
+        }
+
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
 
@@ -1965,6 +1986,18 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             let msg = sprintf "Build was not evaluated, expected the results to be ready after 'Eval' (GetCheckResultsAndImplementationsForProject, data = %A)." data
             return! failwith  msg
       }
+
+    member this.GetFullCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
+        enablePartialTypeChecking <- false
+        cancellable {
+            try
+                let! result = this.GetCheckResultsAndImplementationsForProject(ctok)
+                let results, _, _, _ = result
+                results.TcInfoWithOptional ctok |> ignore // Make sure we forcefully evaluate the info
+                return result
+            finally
+                enablePartialTypeChecking <- defaultPartialTypeChecking
+        }
         
     member __.GetLogicalTimeStampForProject(cache, ctok: CompilationThreadToken) = 
         let t1 = MaxTimeStampInDependencies cache ctok stampedFileNamesNode 
