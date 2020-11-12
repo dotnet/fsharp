@@ -289,7 +289,7 @@ tInput.Length
     [<Fact>]
     member __.``System.Device.Gpio - Ensure we reference the runtime version of the assembly``() =
         let code = """
-#r "nuget:System.Device.Gpio"
+#r "nuget:System.Device.Gpio, 1.0.0"
 typeof<System.Device.Gpio.GpioController>.Assembly.Location
 """
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
