@@ -115,6 +115,8 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe option) 
         if isRunningOnCoreClr then
             Some (new NativeDllResolveHandlerCoreClr(nativeProbingRoots) :> IDisposable)
         else
+#else
+            ignore nativeProbingRoots
 #endif
             None
 
