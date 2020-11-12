@@ -20020,6 +20020,20 @@ FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+LexerStringStyle
 FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+SyntaxError
 FSharp.Compiler.ParseHelpers: ILInstr[] ParseAssemblyCodeInstructions(System.String, range)
 FSharp.Compiler.ParseHelpers: ILType ParseAssemblyCodeType(System.String, range)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Exception)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Object)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Int32 GetHashCode()
+FSharp.Compiler.ParseHelpers+IndentationProblem: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.ParseHelpers+IndentationProblem: System.String Data0
+FSharp.Compiler.ParseHelpers+IndentationProblem: System.String get_Data0()
+FSharp.Compiler.ParseHelpers+IndentationProblem: Void .ctor()
+FSharp.Compiler.ParseHelpers+IndentationProblem: Void .ctor(System.String, range)
+FSharp.Compiler.ParseHelpers+IndentationProblem: range Data1
+FSharp.Compiler.ParseHelpers+IndentationProblem: range get_Data1()
+FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+IndentationProblem
+FSharp.Compiler.ParseHelpers: System.String warningStringOfCoords(Int32, Int32)
+FSharp.Compiler.ParseHelpers: System.String warningStringOfPos(pos)
 FSharp.Compiler.PartialLongName: Boolean Equals(FSharp.Compiler.PartialLongName)
 FSharp.Compiler.PartialLongName: Boolean Equals(System.Object)
 FSharp.Compiler.PartialLongName: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
