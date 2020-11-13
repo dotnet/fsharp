@@ -4066,7 +4066,6 @@ end
 
   F# Interactive command line options:
 
-      See 'fsi --help' for options
 
 
 > val it : string = "Check #time on and then off"
@@ -5039,8 +5038,8 @@ module Test4343e = begin
   val cA : C
   val cB : C
   val cAB : C * C * C list =
-    (FSI_0088+Test4343e+C, FSI_0088+Test4343e+C,
-     [FSI_0088+Test4343e+C; FSI_0088+Test4343e+C])
+    (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
+     [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
   type D =
     new : x:int -> D
     override ToString : unit -> string
@@ -5053,8 +5052,8 @@ module Test4343e = begin
     val cA : C
     val cB : C
     val cAB : C * C * C list =
-      (FSI_0088+Test4343e+C, FSI_0088+Test4343e+C,
-       [FSI_0088+Test4343e+C; FSI_0088+Test4343e+C])
+      (FSI_0090+Test4343e+C, FSI_0090+Test4343e+C,
+       [FSI_0090+Test4343e+C; FSI_0090+Test4343e+C])
     type D<'a> =
       new : x:'a -> D<'a>
       override ToString : unit -> string
@@ -5236,7 +5235,7 @@ end
 type Regression4469 =
   new : unit -> Regression4469
   member ToString : unit -> string
-val r4469 : Regression4469 = FSI_0104+Regression4469
+val r4469 : Regression4469 = FSI_0106+Regression4469
 val it : unit = ()
 
 > Expect ABC = ABC
