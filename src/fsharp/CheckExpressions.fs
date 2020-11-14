@@ -1659,8 +1659,8 @@ let CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme =
                     | [], _ -> []
                     // Dont infer eliminated unit args from the expression if they don't occur syntactically.
                     | ai, [] -> ai
-                    // If we infer a tupled argument from the expression and/or type then use that
-                    | _ when ai1.Length < ai2.Length -> ai2
+                    // If we infer a tupled argument from the expression and/or type and at least one arg has a name then use that
+                    | _ when ai1.Length < ai2.Length && ai2 |> List.exists (fun (valInfo: ArgReprInfo) -> valInfo.Name.IsSome) -> ai2
                     | _ -> ai1
                 let rec loop ais1 ais2 =
                     match ais1, ais2 with 
