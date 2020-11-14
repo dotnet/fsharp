@@ -172,6 +172,16 @@
         <target state="translated">Formattazione</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseUpcastKeyword">
+        <source>Use 'upcast'</source>
+        <target state="new">Use 'upcast'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastOperator">
+        <source>Use ':&gt;' operator</source>
+        <target state="new">Use ':&gt;' operator</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
