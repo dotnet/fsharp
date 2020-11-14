@@ -219,4 +219,10 @@
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
     <value>F# Dispostable Values (top-level)</value>
   </data>
+  <data name="AddLetBindingToExpression" xml:space="preserve">
+    <value>Add 'let' binding</value>
+  </data>
+  <data name="IgnoreExpression" xml:space="preserve">
+    <value>Add 'ignore'</value>
+  </data>
 </root>

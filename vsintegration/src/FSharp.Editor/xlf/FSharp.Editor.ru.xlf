@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSharp.Editor.resx">
     <body>
+      <trans-unit id="AddLetBindingToExpression">
+        <source>Add 'let' binding</source>
+        <target state="new">Add 'let' binding</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Добавить ключевое слово "new"</target>
@@ -25,6 +30,11 @@
       <trans-unit id="FSharpFunctionsClassificationType">
         <source>F# Functions</source>
         <target state="new">F# Functions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IgnoreExpression">
+        <source>Add 'ignore'</source>
+        <target state="new">Add 'ignore'</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
