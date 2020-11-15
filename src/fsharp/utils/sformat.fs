@@ -1303,7 +1303,7 @@ module Display =
 
     let output_any writer x = output_any_ex FormatOptions.Default writer x
 
-    let layout_as_string options x = x |> any_to_layout options |> layout_to_string options
+    let layout_as_string options (value, typValue) = (value, typValue) |> any_to_layout options |> layout_to_string options
 
     let any_to_string x = layout_as_string FormatOptions.Default x
 
