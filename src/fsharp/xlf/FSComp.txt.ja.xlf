@@ -87,14 +87,24 @@
         <target state="translated">既定のインターフェイス メンバーの消費</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDotlessFloat32Literal">
-        <source>dotless float32 literal</source>
-        <target state="translated">ドットなしの float32 リテラル</target>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="new">more types support units of measure</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">固定インデックス スライス 3d/4d</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
+        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureDotlessFloat32Literal">
+        <source>dotless float32 literal</source>
+        <target state="translated">ドットなしの float32 リテラル</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
@@ -1060,11 +1070,6 @@
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
         <target state="translated">シグネチャと実装の型 '{1}' の {0} 定義に互換性がありません。実装の種類はシールドですが、シグネチャではシールドが暗黙的に示されていません。シグネチャに [&lt;Sealed&gt;] 属性を追加してください。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">シグネチャと実装の種類 '{1}' の {0} 定義に互換性がありません。実装の種類はシールド型ではありませんが、シグネチャは暗黙的にシールド型に設定されています。実装に [&lt;Sealed&gt;] 属性を追加することを検討してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -2712,6 +2717,16 @@
         <target state="translated">/ に続く暗黙的な単位の積</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="translated">float 型、float32 型、decimal 型、および符号付き整数型でのみサポートされる単位です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionIn">
+        <source>Used for sequence expressions and, in verbose syntax, to separate expressions from bindings.</source>
+        <target state="new">Used for sequence expressions and, in verbose syntax, to separate expressions from bindings.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUnexpectedMeasureAnon">
         <source>Unexpected SynMeasure.Anon</source>
         <target state="translated">予期しない SynMeasure.Anon です:</target>
@@ -2730,11 +2745,6 @@
       <trans-unit id="tcUnexpectedBigRationalConstant">
         <source>Unexpected big rational constant</source>
         <target state="translated">有理定数が大きすぎます:</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
-        <target state="translated">float 型、float32 型、decimal 型、および符号付き整数型でのみサポートされる単位です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -7080,11 +7090,6 @@
       <trans-unit id="keywordDescriptionIf">
         <source>Used in conditional branching constructs.</source>
         <target state="translated">条件分岐のコンストラクトで使用します。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="keywordDescriptionIn">
-        <source>Used for sequence expressions and, in verbose syntax, to separate expressions from bindings.</source>
-        <target state="translated">冗語構文で、式のバインディングを分離するためにシーケンス式に使用します。</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionInherit">

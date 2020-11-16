@@ -92,6 +92,11 @@
         <target state="translated">literal float32 sem ponto</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="new">more types support units of measure</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">fatia de índice fixo 3d/4d</target>
@@ -2718,7 +2723,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
         <target state="translated">Unidades de medida só são suportadas em tipos float, float32, decimal e inteiro com sinal</target>
         <note />
       </trans-unit>
