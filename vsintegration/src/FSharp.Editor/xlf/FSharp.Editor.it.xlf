@@ -172,6 +172,11 @@
         <target state="translated">Formattazione</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseNotForNegation">
+        <source>Use 'not' to negate expression</source>
+        <target state="new">Use 'not' to negate expression</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
