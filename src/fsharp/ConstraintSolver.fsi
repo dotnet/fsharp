@@ -144,7 +144,7 @@ val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparC
 
 val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: TType option -> CalledMeth<Expr> option * OperationResult<unit>
 
-val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
+val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> callerArgCounts: (int * int) -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool>
 
 /// Remove the global constraints where these type variables appear in the support of the constraint 
 val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typars -> unit 
