@@ -549,7 +549,7 @@ module InterfaceStubGenerator =
     ///  (1) Crack ASTs to get member names and their associated ranges
     ///  (2) Check symbols of those members based on ranges
     ///  (3) If any symbol found, capture its member signature 
-    let getImplementedMemberSignatures (getMemberByLocation: string * range -> Async<FSharpSymbolUse option>) displayContext interfaceData = 
+    let getImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
         let formatMemberSignature (symbolUse: FSharpSymbolUse) =            
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->
@@ -567,10 +567,10 @@ module InterfaceStubGenerator =
                 //fail "Should only accept symbol uses of members."
                 None
         async {
-            let! symbolUses = 
+            let symbolUses = 
                 getMemberNameAndRanges interfaceData
                 |> List.toArray
-                |> Array.mapAsync getMemberByLocation
+                |> Array.map getMemberByLocation
             return symbolUses |> Array.choose (Option.bind formatMemberSignature >> Option.map String.Concat)
                               |> Set.ofArray
         }

@@ -14,7 +14,7 @@
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <FSMajorVersion>5</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>0</FSBuildVersion>
+    <FSBuildVersion>1</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
     <FSLanguageReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)</FSLanguageReleaseNotesVersion>
@@ -43,7 +43,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>7</VSMinorVersion>
+    <VSMinorVersion>8</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>

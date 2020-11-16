@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CompilerConfig
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Text
@@ -177,8 +178,8 @@ type IRawFSharpAssemblyData =
 
 /// Cache of time stamps as we traverse a project description
 type TimeStampCache(defaultTimeStamp: DateTime) = 
-    let files = Dictionary<string, DateTime>()
-    let projects = Dictionary<IProjectReference, DateTime>(HashIdentity.Reference)
+    let files = ConcurrentDictionary<string, DateTime>()
+    let projects = ConcurrentDictionary<IProjectReference, DateTime>(HashIdentity.Reference)
     member cache.GetFileTimeStamp fileName = 
         let ok, v = files.TryGetValue fileName
         if ok then v else
@@ -237,14 +238,6 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 #if !NO_EXTENSIONTYPING
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
-
-/// The thread in which compilation calls will be enqueued and done work on.
-/// Note: This is currently only used when disposing of type providers and will be extended to all the other type provider calls when compilations can be done in parallel.
-///       Right now all calls in FCS to type providers are single-threaded through use of the reactor thread. 
-type ICompilationThread =
-
-    /// Enqueue work to be done on a compilation thread.
-    abstract EnqueueWork: (CompilationThreadToken -> unit) -> unit
 
 type ImportedAssembly =
     { ILScopeRef: ILScopeRef 
@@ -442,7 +435,6 @@ type TcConfigBuilder =
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
 #endif
-      mutable compilationThread: ICompilationThread
 
       /// pause between passes? 
       mutable pause: bool
@@ -603,9 +595,6 @@ type TcConfigBuilder =
 #if !NO_EXTENSIONTYPING
           showExtensionTypeMessages = false
 #endif
-          compilationThread = 
-                let ctok = CompilationThreadToken ()
-                { new ICompilationThread with member __.EnqueueWork work = work ctok }
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
@@ -1000,7 +989,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #if !NO_EXTENSIONTYPING
     member x.showExtensionTypeMessages = data.showExtensionTypeMessages
 #endif
-    member x.compilationThread = data.compilationThread
     member x.pause = data.pause
     member x.alwaysCallVirt = data.alwaysCallVirt
     member x.noDebugData = data.noDebugData
@@ -1146,8 +1134,8 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         let result = ComputeMakePathAbsolute tcConfig.implicitIncludeDir path
         result
 
-    member _.ResolveSourceFile(m, nm, pathLoadedFrom) = 
-        data.ResolveSourceFile(m, nm, pathLoadedFrom)
+    member _.ResolveSourceFile(m, filename, pathLoadedFrom) = 
+        data.ResolveSourceFile(m, filename, pathLoadedFrom)
 
     member _.PrimaryAssemblyDllReference() = primaryAssemblyReference
 

@@ -9,22 +9,22 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
         <source>interpolated string</source>
-        <target state="new">interpolated string</target>
+        <target state="translated">ciąg interpolowany</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
         <source>interpolated string (first part)</source>
-        <target state="new">interpolated string (first part)</target>
+        <target state="translated">ciąg interpolowany (pierwsza część)</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
         <source>interpolated string (final part)</source>
-        <target state="new">interpolated string (final part)</target>
+        <target state="translated">ciąg interpolowany (końcowa część)</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
         <source>interpolated string (part)</source>
-        <target state="new">interpolated string (part)</target>
+        <target state="translated">ciąg interpolowany (część)</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeAlso">

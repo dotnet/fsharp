@@ -25,7 +25,7 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
 
     interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
-        member __.AnalyzeSemanticsAsync(descriptor, document, cancellationToken) =
+        member _.AnalyzeSemanticsAsync(descriptor, document, cancellationToken) =
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
 

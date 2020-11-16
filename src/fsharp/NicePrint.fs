@@ -1301,6 +1301,29 @@ module private PrintTastMemberOrVals =
     let prettyLayoutOfMemberNoInstShort denv v = 
         prettyLayoutOfMemberShortOption denv emptyTyparInst v true |> snd
 
+    let layoutOfLiteralValue literalValue =
+        let literalValue =
+            match literalValue with
+            | Const.Bool value -> if value then WordL.keywordTrue else WordL.keywordFalse
+            | Const.SByte _
+            | Const.Byte _
+            | Const.Int16 _
+            | Const.UInt16 _
+            | Const.Int32 _
+            | Const.UInt32 _
+            | Const.Int64 _
+            | Const.UInt64 _
+            | Const.IntPtr _
+            | Const.UIntPtr _
+            | Const.Single _
+            | Const.Double _
+            | Const.Decimal _ -> literalValue.ToString() |> tagNumericLiteral |> wordL
+            | Const.Char _
+            | Const.String _ -> literalValue.ToString() |> tagStringLiteral |> wordL
+            | Const.Unit
+            | Const.Zero -> literalValue.ToString() |> tagText |> wordL
+        WordL.equals ++ literalValue
+
     let private layoutNonMemberVal denv (tps, v: Val, tau, cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
         let cxs = env.postfixConstraints
@@ -1328,9 +1351,13 @@ module private PrintTastMemberOrVals =
                 layoutTyparDecls denv nameL true tps 
             else nameL
         let valAndTypeL = (WordL.keywordVal ^^ typarBindingsL --- wordL (tagPunctuation ":")) --- layoutTopType denv env argInfos rty cxs
-        match denv.generatedValueLayout v with
-          | None -> valAndTypeL
-          | Some rhsL -> (valAndTypeL ++ wordL (tagPunctuation"=")) --- rhsL
+        let valAndTypeL =
+            match denv.generatedValueLayout v with
+            | None -> valAndTypeL
+            | Some rhsL -> (valAndTypeL ++ wordL (tagPunctuation"=")) --- rhsL
+        match v.LiteralValue with
+        | Some literalValue -> valAndTypeL ++ layoutOfLiteralValue literalValue
+        | None -> valAndTypeL
 
     let prettyLayoutOfValOrMember denv typarInst (v: Val) =
         let prettyTyparInst, vL = 

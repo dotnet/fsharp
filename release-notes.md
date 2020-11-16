@@ -6,9 +6,9 @@ See License.txt in the project root for license information.
 This document contains current and historical release notes information. They are preserved in their original form.
 
 * [Current Release notes](#Current-release-notes)
-* [Visual Studio 2017-2019 release notes](#Visual-Studio-2017-2019-Update-16.7-release-notes)
+* [Visual Studio 2017-2019 release notes](#visual-studio-2017-2019-update-167-release-notes)
 * [FSharp.Compiler.Service release notes (version 37 and lower)](#FSharp-Compiler-Service-Versions-Release-notes)
-* [Older release notes (pre-F# 4.0)](#Older-Visual-F#-releases)
+* [Older release notes (pre-F# 4.0)](#older-visual-f-releases)
 
 ## Current release notes
 
@@ -26,12 +26,13 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * `open type` declarations
 * Applicative computation expressions via `let! ... and!`
 * Overloads for custom operations in computation expressions (in preview), by [Ryan Riley](https://github.com/panesofglass) and [Diego Esmerio](https://github.com/Nhowka)
-* Interfaces can now be implemeneted at different generic instantiations
+* Interfaces can now be implemented at different generic instantiations
 * Default interface member consumption
 * Better interop with nullable value types
 
 ### FSharp Core 5.0.0
 
+* [Performance improvement](https://github.com/dotnet/fsharp/pull/10188) to core collections Set and Map by [Victor Baybekov](https://github.com/buybackoff) 
 * Consistent behavior for empty/non-existent slices for lists, strings, arrays, 2D arrays, 3D arrays, and 4D arrays
 * Support for fixed-index slices in 3D and 4D arrays
 * Support for negative indexes (in preview)
@@ -62,18 +63,29 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Fix duplicate symbol output when renaming constructs in a project with multiple TFMs
 * Support for `Int64.MinValue` as a `nativeint` literal, by [Abel Braaksma](https://github.com/abelbraaksma)
 * Prevent assignment to `const` fields, by [Chet Husk](https://github.com/baronfel)
-* Compiler message enhancements by Microsoft and [Vladimir Shchur](https://github.com/Lanayx)
+* Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
 ### FSharp Compiler Service 38.0.0
 
 The most notable change for FSharp.Compiler.Service is that it is now built and deployed as a part of the dotnet/fsharp codebase. Builds are produced nightly, matching exactly the nightly builds of the F# compiler, FSharp.Core, and F# tools.
 
+* Support for Witness information [#9510](https://github.com/dotnet/fsharp/pull/95100) in `FSharpExpr` and `FSharpMemberOrFunctionOrValue`
 * Support for Jupyter Notebooks and VSCode notebooks via `FSharp.Compiler.Private.Scripting` and .NET Interactive
 * Improvements to the F# syntax tree represtation by [Eugene Auduchinok](https://github.com/auduchinok)
 * Support for `const` in keyword completion info by [Alex Berezhnykh](https://github.com/DedSec256)
 * Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 * Support for `ToString` in `FSharp.Compiler.Text.StringText` by [Asti](https://github.com/deviousasti)
 * Fix an issue with equality comparisons for `StringText` by [Asti](https://github.com/deviousasti)
+
+Significant changes for consumers:
+
+* Several APIs no longer require the Reactor thread
+* `GetAllUsesOfAllSymbolsInFile` now returns `seq<FSharpSymbol>` instead of `FSharpSymbol[]`
+* All four `Get*UsesOfAllSymbolsIn*` APIs are no longer asynchronous
+* `StructuredDescriptionTextAsync` and `DescriptionTextAsync` are now deprecated, please use `StructuredDescriptionText` and `DescriptionText` instead
+* The `hasTextChangedSinceLastTypecheck` optional argument has been removed (it has been unused in Visual Studio since VS 2017)
+* The `textSnapshotInfo` optional argument is removed as it only made sense in tandem with `hasTextChangedSinceLastTypecheck`
+* `userOpName` is removed from all APIs that are no longer asynchronous
 
 ## Visual Studio 2017-2019 Update 16.7 release notes
 

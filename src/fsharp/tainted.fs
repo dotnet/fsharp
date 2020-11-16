@@ -10,6 +10,13 @@ open Microsoft.FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library 
 
+[<Sealed>]
+type internal TypeProviderToken() = interface LockToken
+
+[<Sealed>]
+type internal TypeProviderLock() =
+    inherit Lock<TypeProviderToken>()
+
 type internal TypeProviderError
     (
         errNum : int,
@@ -69,7 +76,7 @@ type internal TypeProviderError
             for msg in errors do
                 f (new TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
-type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef }
+type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef; Lock: TypeProviderLock }
 
 [<NoEquality>][<NoComparison>] 
 type internal Tainted<'T> (context : TaintedContext, value : 'T) =
@@ -88,7 +95,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
 
     member this.Protect f  (range:range) =
         try 
-            f value
+            context.Lock.AcquireLock(fun _ -> f value)
         with
             |   :? TypeProviderError -> reraise()
             |   :? AggregateException as ae ->
@@ -143,7 +150,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
 
     static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef) list) =
         [for (tp,nm) in providerSpecs do
-             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm },tp) ] 
+             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ] 
 
     member this.OfType<'U> () =
         match box value with
