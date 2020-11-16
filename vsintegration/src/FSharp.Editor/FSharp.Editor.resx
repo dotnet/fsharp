@@ -219,4 +219,7 @@
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
     <value>F# Dispostable Values (top-level)</value>
   </data>
+  <data name="AddMissingEqualsToTypeDefinition" xml:space="preserve">
+    <value>Add missing '=' to type definition</value>
+  </data>
 </root>
