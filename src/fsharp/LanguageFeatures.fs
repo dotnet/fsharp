@@ -35,6 +35,7 @@ type LanguageFeature =
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
+    | ExpandedMeasurables
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -74,6 +75,7 @@ type LanguageVersion (specifiedVersionAsString) =
 
             // F# preview
             LanguageFeature.OverloadsForCustomOperations, previewVersion
+            LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
         ]
 
@@ -147,6 +149,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations()
+        | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
