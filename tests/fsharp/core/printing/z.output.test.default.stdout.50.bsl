@@ -6210,7 +6210,7 @@ end
 > > val it : string =
   "** Expect OK since active pattern result is not too generic, typars depend on match val"
 
-> val ( |A|B| ) : p:bool -> 'a * 'b -> Choice<'a,'b>
+> val ( |A|B| ) : p:bool -> x:('a * 'b) -> Choice<'a,'b>
 
 > val it : string =
   "** Expect OK since active pattern result is not too generic, typars depend on parameters"
