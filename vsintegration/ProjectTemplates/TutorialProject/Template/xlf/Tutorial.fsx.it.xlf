@@ -1464,7 +1464,7 @@
       </trans-unit>
       <trans-unit id="ScaledVector">
         <source>Get a new scaled vector object, without modifying the original object.</source>
-        <target state="translated">Consente di ottenere un nuovo oggetto vettore scalato senza modificare l'oggetto originale.</target>
+        <target state="translated">Consente di ottenere un nuovo oggetto vettore dimensionato senza modificare l'oggetto originale.</target>
         <note />
       </trans-unit>
       <trans-unit id="GenericClasses-Line1">

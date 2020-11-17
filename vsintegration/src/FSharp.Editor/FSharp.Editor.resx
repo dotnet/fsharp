@@ -222,4 +222,7 @@
   <data name="ConvertToSingleEqualsEqualityExpression" xml:space="preserve">
     <value>Use '=' for equality check</value>
   </data>
+  <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
+    <value>Use subtraction instead of negation</value>
+  </data>
 </root>
