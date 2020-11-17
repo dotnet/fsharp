@@ -90,6 +90,7 @@
     <Compile Include="Commands\XmlDocCommandService.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
     <Compile Include="CodeFix\ChangeRefCellDerefToNotExpression.fs" />
+    <Compile Include="CodeFix\ChangePrefixNegationToInfixSubtraction.fs" />
     <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />

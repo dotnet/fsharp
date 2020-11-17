@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
-        <target state="new">Include package source uri when searching for packages</target>
+        <target state="translated">パッケージの検索時にパッケージ ソースの URI を含める</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationCouldNotBeCompleted">
