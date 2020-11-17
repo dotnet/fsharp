@@ -7,6 +7,11 @@
         <target state="translated">'new' 키워드 추가</target>
         <note />
       </trans-unit>
+      <trans-unit id="ChangePrefixNegationToInfixSubtraction">
+        <source>Use subtraction instead of negation</source>
+        <target state="new">Use subtraction instead of negation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">F# 삭제 가능한 값(로컬)</target>
