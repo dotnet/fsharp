@@ -177,6 +177,11 @@
         <target state="translated">Formatierung</target>
         <note />
       </trans-unit>
+      <trans-unit id="WrapExpressionInParentheses">
+        <source>Wrap expression in parentheses</source>
+        <target state="new">Wrap expression in parentheses</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
