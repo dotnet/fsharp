@@ -78,7 +78,7 @@ module internal PrintUtilities =
             elif xref.IsFSharpDelegateTycon then tagDelegate name
             elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
             elif xref.IsStructOrEnumTycon then tagStruct name
-            elif xref.IsFSharpInterfaceTycon || isInterfaceTyconRef xref then tagInterface name
+            elif isInterfaceTyconRef xref then tagInterface name
             elif xref.IsUnionTycon then tagUnion name
             elif xref.IsRecordTycon then tagRecord name
             else tagClass name
@@ -179,7 +179,7 @@ module private PrintIL =
         match ty with
         | ILType.Void -> WordL.structUnit // These are type-theoretically totally different type-theoretically `void` is Fin 0 and `unit` is Fin (S 0) ... but, this looks like as close as we can get.
         | ILType.Array (sh, t) -> layoutILType denv ilTyparSubst t ^^ layoutILArrayShape sh
-        | ILType.Value t -> layoutILTypeRef denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
+        | ILType.Value t
         | ILType.Boxed t -> layoutILTypeRef denv t.TypeRef ^^ (t.GenericArgs |> List.map (layoutILType denv ilTyparSubst) |> paramsL)
         | ILType.Ptr t
         | ILType.Byref t -> layoutILType denv ilTyparSubst t
@@ -1042,7 +1042,7 @@ module private PrintTastMemberOrVals =
             let isDiscard (str: string) = str.StartsWith("_")
 
             let tagF =
-                if isFunctionTy denv.g v.Type && not (isDiscard v.DisplayName) then
+                if isForallFunctionTy denv.g v.Type && not (isDiscard v.DisplayName) then
                     if IsOperatorName v.DisplayName then
                         tagOperator
                     else
@@ -1428,16 +1428,9 @@ module private TastDefinitionPrinting =
                     WordL.keywordMember
         
             let propTag =
-                let tag =
-                    p.PropertyName
-                    |> adjustILName
-                    |> tagProperty
-
-                match p.ArbitraryValRef with
-                | Some vref ->
-                    tag |> mkNav vref.DefinitionRange
-                | None ->
-                    tag
+                p.PropertyName
+                |> adjustILName
+                |> tagProperty
 
             let nameL = propTag |> wordL
             

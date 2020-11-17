@@ -1522,8 +1522,8 @@ module internal SymbolHelpers =
         | Item.NewDef _ 
         | Item.ILField _ -> []
         | Item.Event _ -> []
-        | Item.RecdField rfinfo -> if isFunctionTy g rfinfo.FieldType then [item] else []
-        | Item.Value v -> if isFunctionTy g v.Type then [item] else []
+        | Item.RecdField rfinfo -> if isForallFunctionTy g rfinfo.FieldType then [item] else []
+        | Item.Value v -> if isForallFunctionTy g v.Type then [item] else []
         | Item.UnionCase(ucr, _) -> if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase ecr -> if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
         | Item.Property(_, pinfos) -> 

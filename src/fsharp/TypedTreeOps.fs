@@ -1826,7 +1826,7 @@ let isRefTy g ty =
         (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
     )
 
-let isFunctionTy g ty =
+let isForallFunctionTy g ty =
     let _, tau = tryDestForallTy g ty
     isFunTy g tau
 
@@ -2853,7 +2853,7 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsFSharpDelegateTycon then tagDelegate name
     elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
     elif xref.IsStructOrEnumTycon then tagStruct name
-    elif xref.IsFSharpInterfaceTycon || isInterfaceTyconRef xref then tagInterface name
+    elif isInterfaceTyconRef xref then tagInterface name
     elif xref.IsUnionTycon then tagUnion name
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name

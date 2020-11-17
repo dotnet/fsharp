@@ -1532,8 +1532,8 @@ val isInterfaceTy : TcGlobals -> TType -> bool
 /// Determine if a type is a FSharpRef type
 val isRefTy : TcGlobals -> TType -> bool
 
-/// Determine if a type is a function (including generic)
-val isFunctionTy : TcGlobals -> TType -> bool
+/// Determine if a type is a function (including generic). Not the same as isFunTy.
+val isForallFunctionTy : TcGlobals -> TType -> bool
 
 /// Determine if a type is a sealed type
 val isSealedTy : TcGlobals -> TType -> bool
