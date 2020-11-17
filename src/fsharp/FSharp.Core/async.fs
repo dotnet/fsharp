@@ -941,7 +941,11 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont completedTask.Result) |> unfake
 
-            task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
+            if task.IsCompleted then
+                continuation task |> fake
+            else
+                task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.ExecuteSynchronously)
+                |> ignore |> fake
 
         [<DebuggerHidden>]
         let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) useCcontForTaskCancellation =
@@ -960,7 +964,11 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont ()) |> unfake
 
-            task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
+            if task.IsCompleted then
+                continuation task |> fake
+            else
+                task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.ExecuteSynchronously)
+                |> ignore |> fake
 
         [<Sealed; AutoSerializable(false)>]
         type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state:obj) =
