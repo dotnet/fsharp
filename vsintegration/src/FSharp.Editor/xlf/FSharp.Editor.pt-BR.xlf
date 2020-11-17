@@ -7,6 +7,11 @@
         <target state="translated">Adicionar a palavra-chave 'new'</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToSingleEqualsEqualityExpression">
+        <source>Use '=' for equality check</source>
+        <target state="new">Use '=' for equality check</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
         <target state="new">Use subtraction instead of negation</target>

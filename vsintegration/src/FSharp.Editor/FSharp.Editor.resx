@@ -219,6 +219,9 @@
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
     <value>F# Dispostable Values (top-level)</value>
   </data>
+  <data name="ConvertToSingleEqualsEqualityExpression" xml:space="preserve">
+    <value>Use '=' for equality check</value>
+  </data>
   <data name="UseNotForNegation" xml:space="preserve">
     <value>Use 'not' to negate expression</value>
   </data>
