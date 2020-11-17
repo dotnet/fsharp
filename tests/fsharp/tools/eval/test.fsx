@@ -1750,6 +1750,15 @@ module EvaluationTests =
         checkEval "castingunits5" (<@ 2L |> LanguagePrimitives.Int64WithMeasure<m> |> int64 @>) 2L
         checkEval "castingunits6" (<@ 2s |> LanguagePrimitives.Int16WithMeasure<m> |> int16 @>) 2s
         checkEval "castingunits7" (<@ 2y |> LanguagePrimitives.SByteWithMeasure<m> |> sbyte @>) 2y
+        checkEval "castingunits8" (<@ 2ul |> LanguagePrimitives.UInt32WithMeasure<m> |> uint32 @>) 2ul
+        checkEval "castingunits9" (<@ 2UL |> LanguagePrimitives.UInt64WithMeasure<m> |> uint64 @>) 2UL
+        checkEval "castingunits10" (<@ 2us |> LanguagePrimitives.UInt16WithMeasure<m> |> uint16 @>) 2us
+        checkEval "castingunits11" (<@ 2uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte @>) 2uy
+
+        //NOTE quotations currently *DO NOT* support native integers
+        //TODO revisit when the test scaffolding is changed/migrated!
+        // checkEval "castingunits12" (<@ 2n |> LanguagePrimitives.IntPtrWithMeasure<m> |> nativeint @>) 2n
+        // checkEval "castingunits13" (<@ 2un |> unativeint |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint @>) 2un
 
 module QuotationTests =
     open Microsoft.FSharp.Quotations
@@ -2759,4 +2768,3 @@ let _ =
       stdout.WriteLine "Test Passed"; 
       System.IO.File.WriteAllText("test.ok","ok"); 
       exit 0
-

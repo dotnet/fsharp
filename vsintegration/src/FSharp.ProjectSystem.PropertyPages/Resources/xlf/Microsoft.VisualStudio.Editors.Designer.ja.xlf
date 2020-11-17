@@ -1968,7 +1968,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Type_PNG">
         <source>Portable Network Graphics</source>
-        <target state="translated">ポータブル ネットワーク グラフィックス</target>
+        <target state="translated">移植可能なネットワーク グラフィックス</target>
         <note>Friendly Image types</note>
       </trans-unit>
       <trans-unit id="RSE_Type_TIFF">
@@ -2062,7 +2062,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_FilterSave_PNG">
         <source>Portable Network Graphics</source>
-        <target state="translated">ポータブル ネットワーク グラフィックス</target>
+        <target state="translated">移植可能なネットワーク グラフィックス</target>
         <note># File dialog filters
 #
 # E.g., for icons, the actual filter created would look like "Icons (*.ico)".  These resources

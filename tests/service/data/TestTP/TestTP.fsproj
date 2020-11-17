@@ -5,6 +5,7 @@
     <TargetFramework>net472</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>nunit</UnitTestType>
+    <OtherFlags>--nowarn:3390 --nowarn:3218</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>

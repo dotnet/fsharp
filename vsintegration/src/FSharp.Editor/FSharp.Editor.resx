@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -224,5 +224,14 @@
   </data>
   <data name="UseUpcastOperator" xml:space="preserve">
     <value>Use ':&gt;' operator</value>
+  </data>
+  <data name="UseNotForNegation" xml:space="preserve">
+    <value>Use 'not' to negate expression</value>
+  </data>
+  <data name="WrapExpressionInParentheses" xml:space="preserve">
+    <value>Wrap expression in parentheses</value>
+  </data>
+  <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
+    <value>Use subtraction instead of negation</value>
   </data>
 </root>

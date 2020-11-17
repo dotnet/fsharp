@@ -35,6 +35,7 @@ type LanguageFeature =
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
+    | ExpandedMeasurables
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -44,9 +45,9 @@ type LanguageVersion (specifiedVersionAsString) =
     static let languageVersion47 = 4.7m
     static let languageVersion50 = 5.0m
     static let previewVersion = 9999m                   // Language version when preview specified
-    static let defaultVersion = languageVersion47       // Language version when default specified
+    static let defaultVersion = languageVersion50       // Language version when default specified
     static let latestVersion = defaultVersion           // Language version when latest specified
-    static let latestMajorVersion = languageVersion47   // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion50   // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
     static let languageVersions = set [| languageVersion46; languageVersion47 ; languageVersion50 |]
@@ -65,16 +66,17 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.AndBang, languageVersion50
             LanguageFeature.NullableOptionalInterop, languageVersion50
             LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
+            LanguageFeature.OpenTypeDeclaration, languageVersion50
+            LanguageFeature.PackageManagement, languageVersion50
+            LanguageFeature.WitnessPassing, languageVersion50
+            LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
+            LanguageFeature.NameOf, languageVersion50
+            LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
-            LanguageFeature.FromEndSlicing, previewVersion
-            LanguageFeature.OpenTypeDeclaration, previewVersion
-            LanguageFeature.PackageManagement, previewVersion
-            LanguageFeature.WitnessPassing, previewVersion
-            LanguageFeature.InterfacesWithMultipleGenericInstantiation, previewVersion
-            LanguageFeature.NameOf, previewVersion
-            LanguageFeature.StringInterpolation, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
+            LanguageFeature.ExpandedMeasurables, previewVersion
+            LanguageFeature.FromEndSlicing, previewVersion
         ]
 
     let specified =
@@ -147,6 +149,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations()
+        | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
