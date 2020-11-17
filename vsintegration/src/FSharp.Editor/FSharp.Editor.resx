@@ -222,4 +222,7 @@
   <data name="WrapExpressionInParentheses" xml:space="preserve">
     <value>Wrap expression in parentheses</value>
   </data>
+  <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
+    <value>Use subtraction instead of negation</value>
+  </data>
 </root>
