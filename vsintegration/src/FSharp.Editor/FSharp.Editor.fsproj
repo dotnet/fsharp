@@ -89,6 +89,7 @@
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
+    <Compile Include="CodeFix\UseMutationWhenValueIsMutable.fs" />
     <Compile Include="CodeFix\WrapExpressionInParentheses.fs" />
     <Compile Include="CodeFix\ChangePrefixNegationToInfixSubtraction.fs" />
     <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
