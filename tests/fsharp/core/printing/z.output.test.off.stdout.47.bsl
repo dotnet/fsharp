@@ -77,13 +77,11 @@ val sxs0 : Set<string>
     (string list * string list * string [,]) option
 end
 type T =
-  class
-    new : a:int * b:int -> T
-    member AMethod : x:int -> int
-    member AProperty : int
-    static member StaticMethod : x:int -> int
-    static member StaticProperty : int
-  end
+  new : a:int * b:int -> T
+  member AMethod : x:int -> int
+  static member StaticMethod : x:int -> int
+  member AProperty : int
+  static member StaticProperty : int
 val f_as_method : x:int -> int
 val f_as_thunk : (int -> int)
 val refCell : string ref
@@ -167,10 +165,8 @@ val generate : x:int -> X
 end
 
 > type C =
-  class
-    new : x:string -> C
-    override ToString : unit -> string
-  end
+  new : x:string -> C
+  override ToString : unit -> string
 val c1 : C
 val csA : C []
 val csB : C []
@@ -211,35 +207,25 @@ type 'a T4063 = | AT4063 of 'a
 > val valAT3063_null : System.Object T4063
 
 > type M4063<'a> =
-  class
-    new : x:'a -> M4063<'a>
-  end
+  new : x:'a -> M4063<'a>
 
 > val v4063 : M4063<int>
 
 > type Taaaaa<'a> =
-  class
-    new : unit -> Taaaaa<'a>
-  end
+  new : unit -> Taaaaa<'a>
 
 > type Taaaaa2<'a> =
-  class
-    inherit Taaaaa<'a>
-    new : unit -> Taaaaa2<'a>
-    member M : unit -> Taaaaa2<'a>
-  end
+  inherit Taaaaa<'a>
+  new : unit -> Taaaaa2<'a>
+  member M : unit -> Taaaaa2<'a>
 
 > type Tbbbbb<'a> =
-  class
-    new : x:'a -> Tbbbbb<'a>
-    member M : unit -> 'a
-  end
+  new : x:'a -> Tbbbbb<'a>
+  member M : unit -> 'a
 
 > type Tbbbbb2 =
-  class
-    inherit Tbbbbb<string>
-    new : x:string -> Tbbbbb2
-  end
+  inherit Tbbbbb<string>
+  new : x:string -> Tbbbbb2
 
 > val it : (unit -> string) = <fun:it@198>
 
@@ -294,9 +280,7 @@ end
 > type internal T3
 
 > type internal T4 =
-  class
-    new : unit -> T4
-  end
+  new : unit -> T4
 
 > type T1 =
   internal | A
@@ -329,9 +313,7 @@ end
 > type private T3
 
 > type private T4 =
-  class
-    new : unit -> T4
-  end
+  new : unit -> T4
 
 > exception X1 of int
 
@@ -340,17 +322,11 @@ end
 > exception internal X3 of int
 
 > type T0 =
-  class
-    new : unit -> T0
-  end
+  new : unit -> T0
 type T1Post<'a> =
-  class
-    new : unit -> T1Post<'a>
-  end
+  new : unit -> T1Post<'a>
 type 'a T1Pre =
-  class
-    new : unit -> 'a T1Pre
-  end
+  new : unit -> 'a T1Pre
 
 > type T0 with
   member M : unit -> T0 list
@@ -415,38 +391,23 @@ val x1564_A2 : int
 val x1564_A3 : int
 
 > type internal Foo2 =
-  class
-    new : unit -> Foo2
-    new : x:int -> Foo2
-    new : x:int * y:int -> Foo2
-    private new : x:int * y:int * z:int -> Foo2
-    member Prop1 : int
-    member Prop2 : int
-    member private Prop3 : int
-  end
+  private new : x:int * y:int * z:int -> Foo2 + 3 overloads
+  member Prop1 : int
+  member Prop2 : int
+  member private Prop3 : int
 
 > module internal InternalM = begin
   val x : int
   type Foo2 =
-    class
-      new : unit -> Foo2
-      new : x:int -> Foo2
-      new : x:int * y:int -> Foo2
-      private new : x:int * y:int * z:int -> Foo2
-      member Prop1 : int
-      member Prop2 : int
-      member private Prop3 : int
-    end
+    private new : x:int * y:int * z:int -> Foo2 + 3 overloads
+    member Prop1 : int
+    member Prop2 : int
+    member private Prop3 : int
   type private Foo3 =
-    class
-      new : unit -> Foo3
-      new : x:int -> Foo3
-      new : x:int * y:int -> Foo3
-      new : x:int * y:int * z:int -> Foo3
-      member Prop1 : int
-      member Prop2 : int
-      member Prop3 : int
-    end
+    new : x:int * y:int * z:int -> Foo3 + 3 overloads
+    member Prop1 : int
+    member Prop2 : int
+    member Prop3 : int
   type T1 =
     | A
     | B
@@ -454,9 +415,7 @@ val x1564_A3 : int
     { x: int }
   type T3
   type T4 =
-    class
-      new : unit -> T4
-    end
+    new : unit -> T4
   type T5 =
     | A
     | B
@@ -479,22 +438,15 @@ val x1564_A3 : int
     private { x: int }
   type private T13
   type private T14 =
-    class
-      new : unit -> T14
-    end
+    new : unit -> T14
 end
 module internal PrivateM = begin
   val private x : int
   type private Foo2 =
-    class
-      new : unit -> Foo2
-      new : x:int -> Foo2
-      new : x:int * y:int -> Foo2
-      new : x:int * y:int * z:int -> Foo2
-      member Prop1 : int
-      member Prop2 : int
-      member Prop3 : int
-    end
+    new : x:int * y:int * z:int -> Foo2 + 3 overloads
+    member Prop1 : int
+    member Prop2 : int
+    member Prop3 : int
   type T1 =
     | A
     | B
@@ -502,9 +454,7 @@ module internal PrivateM = begin
     { x: int }
   type T3
   type T4 =
-    class
-      new : unit -> T4
-    end
+    new : unit -> T4
   type T5 =
     | A
     | B
@@ -527,9 +477,7 @@ module internal PrivateM = begin
     private { x: int }
   type private T13
   type private T14 =
-    class
-      new : unit -> T14
-    end
+    new : unit -> T14
 end
 
 > val it : seq<int * string * int> =
@@ -572,33 +520,25 @@ module Test4343d = begin
 end
 module Test4343e = begin
   type C =
-    class
-      new : x:int -> C
-    end
+    new : x:int -> C
   val cA : C
   val cB : C
   val cAB : C * C * C list
   type D =
-    class
-      new : x:int -> D
-      override ToString : unit -> string
-    end
+    new : x:int -> D
+    override ToString : unit -> string
   val dA : D
   val dB : D
   val dAB : D * D * D list
   module Generic = begin
     type CGeneric<'a> =
-      class
-        new : x:'a -> CGeneric<'a>
-      end
+      new : x:'a -> CGeneric<'a>
     val cA : C
     val cB : C
     val cAB : C * C * C list
     type D<'a> =
-      class
-        new : x:'a -> D<'a>
-        override ToString : unit -> string
-      end
+      new : x:'a -> D<'a>
+      override ToString : unit -> string
     val dA : D<int>
     val dB : D<int>
     val dAB : D<int> * D<int> * D<int> list
@@ -607,53 +547,42 @@ module Test4343e = begin
   end
 end
 type F1 =
-  class
-    inherit System.Windows.Forms.Form
-    interface System.IDisposable
-    val x: F1
-    val x2: F1
-    abstract member MMM : bool -> bool
-    abstract member AAA : int
-    abstract member ZZZ : int
-    abstract member BBB : bool with set
-    member B : unit -> int
-    member D : unit -> int
-    member D : x:int -> int
-    member D : x:int * y:int -> int
-    override ToString : unit -> string
-    member D2 : int
-    member E : int
-    member D2 : int with set
-    member E : int with set
-    static val mutable private sx: F1
-    static val mutable private sx2: F1
-    static member A : unit -> int
-    static member C : unit -> int
-  end
+  inherit System.Windows.Forms.Form
+  interface System.IDisposable
+  val x: F1
+  val x2: F1
+  member B : unit -> int
+  member D : x:int -> int + 2 overloads
+  abstract member MMM : bool -> bool
+  override ToString : unit -> string
+  static member A : unit -> int
+  static member C : unit -> int
+  abstract member AAA : int
+  abstract member BBB : bool with set
+  member D2 : int
+  member E : int
+  abstract member ZZZ : int
+  static val mutable private sx: F1
+  static val mutable private sx2: F1
+[<Struct>]
 type IP =
-  struct
-    new : x:int * y:int -> IP
-    static val mutable private AA: IP
-  end
+  new : x:int * y:int -> IP
+  static val mutable private AA: IP
 module Regression4643 = begin
+  [<Struct>]
   type RIP =
-    struct
-      new : x:int -> RIP
-      static val mutable private y: RIP
-    end
+    new : x:int -> RIP
+    static val mutable private y: RIP
+  [<Struct>]
   type arg_unused_is_RIP =
-    struct
-      new : x:RIP -> arg_unused_is_RIP
-    end
+    new : x:RIP -> arg_unused_is_RIP
+  [<Struct>]
   type arg_used_is_RIP =
-    struct
-      new : x:RIP -> arg_used_is_RIP
-      member X : RIP
-    end
+    new : x:RIP -> arg_used_is_RIP
+    member X : RIP
+  [<Struct>]
   type field_is_RIP =
-    struct
-      val x: RIP
-    end
+    val x: RIP
 end
 type Either<'a,'b> =
   | This of 'a
@@ -689,129 +618,91 @@ end
 
 > module Regression3739 = begin
   type IB =
-    interface
-      abstract member AbstractMember : int -> int
-    end
+    abstract member AbstractMember : int -> int
   type C<'a when 'a :> IB> =
-    class
-      new : unit -> C<'a>
-      static member StaticMember : x:'a -> int
-    end
+    new : unit -> C<'a>
+    static member StaticMember : x:'a -> int
 end
 
 > module Regression3739 = begin
   type IB =
-    interface
-      abstract member AbstractMember : int -> int
-    end
+    abstract member AbstractMember : int -> int
   type C<'a when 'a :> IB> =
-    class
-      new : unit -> C<'a>
-      static member StaticMember : x:'a -> int
-    end
+    new : unit -> C<'a>
+    static member StaticMember : x:'a -> int
 end
 
 > module Regression3740 = begin
   type Writer<'a> =
-    interface
-      abstract member get_path : unit -> string
-    end
+    abstract member get_path : unit -> string
   type MyClass =
-    class
-      interface Writer<int>
-      val path: string
-    end
+    interface Writer<int>
+    val path: string
 end
 
 > type Regression4319_T2 =
-  class
-    static member ( +-+-+ ) : x:'a * y:'b -> string
-  end
+  static member ( +-+-+ ) : x:'a * y:'b -> string
 
 > type Regression4319_T0 =
-  class
-    static member ( +-+-+ ) : string
-  end
+  static member ( +-+-+ ) : string
 
 > type Regression4319_T1 =
-  class
-    static member ( +-+-+ ) : x:'a -> string
-  end
+  static member ( +-+-+ ) : x:'a -> string
 
 > type Regression4319_T1b =
-  class
-    static member ( +-+-+ ) : x:'a -> string
-  end
+  static member ( +-+-+ ) : x:'a -> string
 
 > type Regression4319_T1c =
-  class
-    static member ( +-+-+ ) : x:('a * 'b) -> string
-  end
+  static member ( +-+-+ ) : x:('a * 'b) -> string
 
 > type Regression4319_T1d =
-  class
-    static member ( +-+-+ ) : x:(int * int) -> string
-  end
+  static member ( +-+-+ ) : x:(int * int) -> string
 
 > type Regression4319_T3 =
-  class
-    static member ( +-+-+ ) : x:'a * y:'b * z:'c -> string
-  end
+  static member ( +-+-+ ) : x:'a * y:'b * z:'c -> string
 
 > type Regression4319_U1 =
-  class
-    static member ( +-+-+ ) : x:'a -> moreArgs:'b -> string
-  end
+  static member ( +-+-+ ) : x:'a -> moreArgs:'b -> string
 
 > type Regression4319_U1b =
-  class
-    static member ( +-+-+ ) : x:'a -> moreArgs:'b -> string
-  end
+  static member ( +-+-+ ) : x:'a -> moreArgs:'b -> string
 
 > type Regression4319_U2 =
-  class
-    static member ( +-+-+ ) : x:'a * y:'b -> moreArgs:'c -> string
-  end
+  static member ( +-+-+ ) : x:'a * y:'b -> moreArgs:'c -> string
 
 > type Regression4319_U3 =
-  class
-    static member ( +-+-+ ) : x:'a * y:'b * z:'c -> moreArgs:'d -> string
-  end
+  static member ( +-+-+ ) : x:'a * y:'b * z:'c -> moreArgs:'d -> string
 
 > type Regression4319_check =
-  class
-    static member ( & ) : string
-    static member ( &^ ) : string
-    static member ( @ ) : string
-    static member ( != ) : string
-    static member ( := ) : string
-    static member ( ^ ) : string
-    static member ( / ) : string
-    static member ( $ ) : string
-    static member ( ...@ ) : string
-    static member ( ...!= ) : string
-    static member ( .../ ) : string
-    static member ( ...= ) : string
-    static member ( ...> ) : string
-    static member ( ...^ ) : string
-    static member ( ...< ) : string
-    static member ( ...* ) : string
-    static member ( ...% ) : string
-    static member ( = ) : string
-    static member ( ** ) : string
-    static member ( > ) : string
-    static member ( < ) : string
-    static member ( % ) : string
-    static member ( * ) : string
-    static member ( - ) : string
-  end
+  static member ( & ) : string
+  static member ( &^ ) : string
+  static member ( @ ) : string
+  static member ( != ) : string
+  static member ( := ) : string
+  static member ( ^ ) : string
+  static member ( / ) : string
+  static member ( $ ) : string
+  static member ( ...@ ) : string
+  static member ( ...!= ) : string
+  static member ( .../ ) : string
+  static member ( ...= ) : string
+  static member ( ...> ) : string
+  static member ( ...^ ) : string
+  static member ( ...< ) : string
+  static member ( ...* ) : string
+  static member ( ...% ) : string
+  static member ( = ) : string
+  static member ( ** ) : string
+  static member ( > ) : string
+  static member ( < ) : string
+  static member ( % ) : string
+  static member ( * ) : string
+  static member ( - ) : string
 
 > Expect ABC = ABC
 type Regression4469 =
-  class
-    new : unit -> Regression4469
-    member ToString : unit -> string
-  end
+  new : unit -> Regression4469
+  member ToString : unit -> string
 val r4469 : Regression4469
 val it : unit
 
@@ -1573,76 +1464,52 @@ val f : (unit -> int)
 
 > > module Regression5265_PriPri = begin
   type private IAPrivate =
-    interface
-      abstract member P : int
-    end
+    abstract member P : int
   type private IBPrivate =
-    interface
-      inherit IAPrivate
-      abstract member Q : int
-    end
+    inherit IAPrivate
+    abstract member Q : int
 end
 
 > val it : string = "NOTE: Expect IAInternal less accessible IBPublic"
 
 > > module Regression5265_IntInt = begin
   type internal IAInternal =
-    interface
-      abstract member P : int
-    end
+    abstract member P : int
   type internal IBInternal =
-    interface
-      inherit IAInternal
-      abstract member Q : int
-    end
+    inherit IAInternal
+    abstract member Q : int
 end
 
 > module Regression5265_IntPri = begin
   type internal IAInternal =
-    interface
-      abstract member P : int
-    end
+    abstract member P : int
   type private IBPrivate =
-    interface
-      inherit IAInternal
-      abstract member Q : int
-    end
+    inherit IAInternal
+    abstract member Q : int
 end
 
 > module Regression5265_PubPub = begin
   type IAPublic =
-    interface
-      abstract member P : int
-    end
+    abstract member P : int
   type IBPublic =
-    interface
-      inherit IAPublic
-      abstract member Q : int
-    end
+    inherit IAPublic
+    abstract member Q : int
 end
 
 > module Regression5265_PubInt = begin
   type IAPublic =
-    interface
-      abstract member P : int
-    end
+    abstract member P : int
   type internal IBInternal =
-    interface
-      inherit IAPublic
-      abstract member Q : int
-    end
+    inherit IAPublic
+    abstract member Q : int
 end
 
 > module Regression5265_PubPri = begin
   type IAPublic =
-    interface
-      abstract member P : int
-    end
+    abstract member P : int
   type private IBPrivate =
-    interface
-      inherit IAPublic
-      abstract member Q : int
-    end
+    inherit IAPublic
+    abstract member Q : int
 end
 
 > val it : string =
@@ -1652,10 +1519,8 @@ end
   "** Expect AnAxHostSubClass to be accepted. AxHost has a newslot virtual RightToLeft property outscope RightToLeft on Control"
 
 > type AnAxHostSubClass =
-  class
-    inherit System.Windows.Forms.AxHost
-    new : x:string -> AnAxHostSubClass
-  end
+  inherit System.Windows.Forms.AxHost
+  new : x:string -> AnAxHostSubClass
 
 > val it : string =
   "** Expect error because the active pattern result contains free type variables"
@@ -1695,40 +1560,29 @@ end
 
 > > module ReflectionEmit = begin
   type IA =
-    interface
-      abstract member M : #IB -> int
-    end
+    abstract member M : #IB -> int
   and IB =
-    interface
-      abstract member M : #IA -> int
-    end
+    abstract member M : #IA -> int
   type IA2<'a when 'a :> IB2<'a> and 'a :> IA2<'a>> =
-    interface
-      abstract member M : int
-    end
+    abstract member M : int
   and IB2<'b when 'b :> IA2<'b> and 'b :> IB2<'b>> =
-    interface
-      abstract member M : int
-    end
+    abstract member M : int
 end
 
 > val it : string =
   "Regression_139182: Expect the follow code to be accepted without error"
 
-> type S =
-  struct
-    member TheMethod : unit -> int64
-  end
+> [<Struct>]
+type S =
+  member TheMethod : unit -> int64
 val theMethod : s:S -> int64
 type T =
-  class
-    new : unit -> T
-    member Prop5 : int64
-    static member Prop1 : int64
-    static member Prop2 : int64
-    static member Prop3 : int64
-    static member Prop4 : string
-  end
+  new : unit -> T
+  member Prop5 : int64
+  static member Prop1 : int64
+  static member Prop2 : int64
+  static member Prop3 : int64
+  static member Prop4 : string
 
 > val it : System.Threading.ThreadLocal<int> list = [0 {IsValueCreated = false;
                                                       Values = ?;}]

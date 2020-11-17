@@ -19330,6 +19330,7 @@ FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagMethod()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagModule()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagModuleBinding()
+FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagFunction()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagNamespace()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagNumericLiteral()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagOperator()
@@ -19363,6 +19364,7 @@ FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagMethod
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagModule
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagModuleBinding
+FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagFunction
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagNamespace
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagNumericLiteral
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagOperator
@@ -42194,6 +42196,7 @@ Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Member
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Method
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Module
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 ModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Function
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Namespace
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 NumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Operator
@@ -42230,6 +42233,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsMember
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsMethod
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsModule
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsFunction
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsNamespace
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsNumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsOperator
@@ -42263,6 +42267,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsMember()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsMethod()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsModule()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsModuleBinding()
+Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsFunction()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsNamespace()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsNumericLiteral()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsOperator()
@@ -42300,6 +42305,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredForm
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Method
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Module
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag ModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Function
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Namespace
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag NumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Operator
@@ -42333,6 +42339,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredForm
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Method()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Module()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_ModuleBinding()
+Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Function()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Namespace()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_NumericLiteral()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Operator()
@@ -42400,6 +42407,7 @@ Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.Structured
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagMethod(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagModule(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagModuleBinding(System.String)
+Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagFunction(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagNamespace(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagNumericLiteral(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagOperator(System.String)
