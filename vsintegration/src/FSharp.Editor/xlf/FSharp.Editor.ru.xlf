@@ -7,6 +7,11 @@
         <target state="translated">Добавить ключевое слово "new"</target>
         <note />
       </trans-unit>
+      <trans-unit id="ChangePrefixNegationToInfixSubtraction">
+        <source>Use subtraction instead of negation</source>
+        <target state="new">Use subtraction instead of negation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">Освобождаемые значения F# (локальные)</target>

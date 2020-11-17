@@ -239,6 +239,16 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # Mock official build
+        - job: MockOfficial
+          pool:
+            vmImage: windows-2019
+          steps:
+          - checkout: self
+            clean: true
+          - pwsh: .\eng\MockBuild.ps1
+            displayName: Build with OfficialBuildId
+
         # Linux
         - job: Linux
           pool:
@@ -311,7 +321,7 @@ stages:
           - checkout: self
             clean: true
           - script: .\Build.cmd -c Release
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
         # Source Build Windows

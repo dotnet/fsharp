@@ -219,4 +219,7 @@
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
     <value>F# Dispostable Values (top-level)</value>
   </data>
+  <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
+    <value>Use subtraction instead of negation</value>
+  </data>
 </root>
