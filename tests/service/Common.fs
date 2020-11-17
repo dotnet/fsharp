@@ -337,8 +337,13 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
 
+
+let getParseResults (source: string) =
+    parseSourceCode("/home/user/Test.fsx", source)
+
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
+
 
 let inline dumpErrors results =
     (^TResults: (member Errors: FSharpErrorInfo[]) results)
