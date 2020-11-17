@@ -305,3 +305,56 @@ type T =
     new (x:int) = ()
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 20) ]
+
+
+[<Test>]
+let ``TryRangeOfRefCellDereferenceContainingPos - simple``() =
+    let source = """
+let x = false
+let y = !x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRefCellDereferenceContainingPos (mkPos 3 9)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> fst
+        |> shouldEqual (3, 8)
+    | None ->
+        Assert.Fail("No deref operator found in source.")
+
+[<Test>]
+let ``TryRangeOfRefCellDereferenceContainingPos - parens``() =
+    let source = """
+let x = false
+let y = !(x)
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRefCellDereferenceContainingPos (mkPos 3 10)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> fst
+        |> shouldEqual (3, 8)
+    | None ->
+        Assert.Fail("No deref operator found in source.")
+
+
+[<Test>]
+let ``TryRangeOfRefCellDereferenceContainingPos - binary expr``() =
+    let source = """
+let x = false
+let y = !(x = false)
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRefCellDereferenceContainingPos (mkPos 3 10)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> fst
+        |> shouldEqual (3, 8)
+    | None ->
+        Assert.Fail("No deref operator found in source.")

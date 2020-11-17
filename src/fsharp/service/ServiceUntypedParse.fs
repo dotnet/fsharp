@@ -100,6 +100,24 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
 
     member scope.ParseTree = input
 
+    member scope.TryRangeOfRefCellDereferenceContainingPos expressionPos =
+        match input with
+        | Some input ->
+            let res = 
+                AstTraversal.Traverse(expressionPos, input, { new AstTraversal.AstVisitorBase<_>() with 
+                    member _.VisitExpr(_, _, defaultTraverse, expr) =
+                        match expr with
+                        | SynExpr.App(_, false, SynExpr.Ident funcIdent, expr, _) ->
+                            if funcIdent.idText = "op_Dereference" && rangeContainsPos expr.Range expressionPos then
+                                Some funcIdent.idRange
+                            else
+                                None
+                        | _ -> defaultTraverse expr
+                })
+            res
+        | None ->
+            None
+
     member scope.FindNoteworthyParamInfoLocations pos = 
         match input with
         | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)

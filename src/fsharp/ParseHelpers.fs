@@ -23,6 +23,14 @@ open Internal.Utilities.Text.Parsing
 [<NoEquality; NoComparison>]
 exception SyntaxError of obj (* ParseErrorContext<_> *) * range: range
 
+exception IndentationProblem of string * range
+
+let warningStringOfCoords line column =
+    sprintf "(%d:%d)" line (column + 1)
+
+let warningStringOfPos (p: pos) =
+    warningStringOfCoords p.Line p.Column
+
 //------------------------------------------------------------------------
 // Parsing: getting positions from the lexer
 //------------------------------------------------------------------------

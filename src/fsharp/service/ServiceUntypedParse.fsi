@@ -19,6 +19,13 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// <summary>
+    /// Given the position of an expression, attempts to find the range of the
+    /// '!' in a derefence operation of that expression, like:
+    /// '!expr', '!(expr)', etc.
+    /// </summary>
+    member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> Option<range>
+
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
 
