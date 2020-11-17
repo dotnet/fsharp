@@ -12,17 +12,21 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
+    <!-- F# Version components -->
     <FSMajorVersion>5</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>0</FSBuildVersion>
+    <FSBuildVersion>1</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
+    <!-- F# Language version -->
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
     <FSLanguageReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)</FSLanguageReleaseNotesVersion>
+    <!-- FSharp.Core version -->
     <FSCoreProductVersion>$(FSMajorVersion).$(FSMinorVersion)</FSCoreProductVersion>
     <FSCorePackageVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCorePackageVersion>
     <FSCoreReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)-$(FSBuildVersion)</FSCoreReleaseNotesVersion>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
-    <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion).$(FSRevisionVersion)</FSCoreVersion>
+    <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
+    <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>38</FCSMajorVersion>
     <FCSMinorVersion>$(FSMinorVersion)</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
@@ -49,13 +53,16 @@
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
   <!-- version number assignment -->
-  <PropertyGroup>
+  <PropertyGroup Condition="'$(UseFSharpPackageVersion)' == 'true'">
     <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
-    <VersionPrefix Condition="'$(UseFSharpPackageVersion)' == 'true'">$(FSCorePackageVersion)</VersionPrefix>
+    <AssemblyVersion>$(FSCoreVersion)</AssemblyVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UseFSharpPackageVersion)' != 'true'">
+    <VersionPrefix>$(FSCoreVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpProductVersion)' == 'true'">$(FSProductVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(VSAssemblyVersionPrefix)</VersionPrefix>
     <VersionPrefix Condition="'$(UseFSharpCompilerServiceVersion)' == 'true'">$(FSharpCompilerServicePackageVersion)</VersionPrefix>
-    <AssemblyVersion Condition="'$(OfficialBuildId)' == ''">$(VersionPrefix).0</AssemblyVersion>
+    <AssemblyVersion>$(VersionPrefix).0</AssemblyVersion>
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
   <PropertyGroup>

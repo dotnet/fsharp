@@ -15,6 +15,7 @@
 
     <PreRelease>true</PreRelease>
     <PackageId>FSharp.Core</PackageId>
+    <PackageVersionPrefix>$(FSCorePackageVersion)</PackageVersionPrefix>
     <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSCorePackageVersion) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
