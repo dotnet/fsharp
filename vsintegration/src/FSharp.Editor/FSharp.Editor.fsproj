@@ -90,6 +90,7 @@
     <Compile Include="Commands\XmlDocCommandService.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
     <Compile Include="CodeFix\ConvertToAnonymousRecord.fs" />
+    <Compile Include="CodeFix\MakeDeclarationMutable.fs" />
     <Compile Include="CodeFix\ChangeToUpcast.fs" />
     <Compile Include="CodeFix\AddMissingEqualsToTypeDefinition.fs" />
     <Compile Include="CodeFix\ConvertToSingleEqualsEqualityExpression.fs" />
