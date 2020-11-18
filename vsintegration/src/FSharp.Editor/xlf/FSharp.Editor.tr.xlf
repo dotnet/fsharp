@@ -52,6 +52,11 @@
         <target state="translated">Tür ek açıklaması olmadan arabirim uygulama</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="new">Make declaration 'mutable'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">'{0}' öğesinin önüne alt çizgi ekleme</target>

@@ -52,6 +52,11 @@
         <target state="translated">Implementar interfaz sin anotación de tipos</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="new">Make declaration 'mutable'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">Colocar un carácter de subrayado delante de "{0}"</target>

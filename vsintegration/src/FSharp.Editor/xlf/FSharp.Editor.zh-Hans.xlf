@@ -52,6 +52,11 @@
         <target state="translated">无类型批注的实现接口</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="new">Make declaration 'mutable'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">带下划线的前缀“{0}”</target>

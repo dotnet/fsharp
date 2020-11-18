@@ -29,6 +29,9 @@ type public FSharpParseFileResults =
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
 
+    /// Determines if the given position is contained within a curried parameter in a binding.
+    member IsPositionContainedInACurriedParameter: pos: pos -> bool
+
     /// Name of the file for which this information were created
     member FileName                       : string
 

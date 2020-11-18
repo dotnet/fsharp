@@ -22754,6 +22754,7 @@ FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.Sourc
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] TryRangeOfRefCellDereferenceContainingPos(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] ValidateBreakpointLocation(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpNoteworthyParamInfoLocations] FindNoteworthyParamInfoLocations(pos)
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] ParseTree
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] get_ParseTree()
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: System.String FileName
