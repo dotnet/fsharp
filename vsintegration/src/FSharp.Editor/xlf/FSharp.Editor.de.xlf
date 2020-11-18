@@ -12,6 +12,11 @@
         <target state="translated">Schlüsselwort "new" hinzufügen</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToAnonymousRecord">
+        <source>Convert to Anonymous Record</source>
+        <target state="new">Convert to Anonymous Record</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
         <target state="new">Use '=' for equality check</target>
