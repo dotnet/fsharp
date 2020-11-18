@@ -219,6 +219,12 @@
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
     <value>F# Dispostable Values (top-level)</value>
   </data>
+  <data name="UseUpcastKeyword" xml:space="preserve">
+    <value>Use 'upcast'</value>
+  </data>
+  <data name="UseUpcastOperator" xml:space="preserve">
+    <value>Use ':&gt;' operator</value>
+  </data>
   <data name="AddMissingEqualsToTypeDefinition" xml:space="preserve">
     <value>Add missing '=' to type definition</value>
   </data>
