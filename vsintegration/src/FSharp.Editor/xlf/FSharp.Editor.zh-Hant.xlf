@@ -52,6 +52,11 @@
         <target state="translated">實作沒有類型註釋的介面</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="new">Make declaration 'mutable'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">有底線的前置詞 '{0}'</target>

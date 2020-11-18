@@ -122,6 +122,32 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
         match input with
         | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)
         | _ -> None
+
+    member scope.IsPositionContainedInACurriedParameter pos =
+        match input with
+        | Some input ->
+            let result =
+                AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with 
+                    member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                        defaultTraverse(expr)
+
+                    override __.VisitBinding (_, binding) =
+                        match binding with
+                        | Binding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
+                            let info = valData.SynValInfo.CurriedArgInfos
+                            let mutable found = false
+                            for group in info do
+                                for arg in group do
+                                    match arg.Ident with
+                                    | Some ident when rangeContainsPos ident.idRange pos ->
+                                        found <- true
+                                    | _ -> ()
+                            if found then Some range else None
+                        | _ ->
+                            None
+                })
+            result.IsSome
+        | _ -> false
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =
