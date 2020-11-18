@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpAddMissingEqualsToTypeDefinitionCodeFixProvider() =
     inherit CodeFixProvider()
 
-    let fixableDiagnosticIds = set ["FS0010"; "FS3360"]
+    let fixableDiagnosticIds = set ["FS3360"]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -25,12 +25,6 @@ type internal FSharpAddMissingEqualsToTypeDefinitionCodeFixProvider() =
                 context.Diagnostics
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toImmutableArray
-
-            for diagnostic in diagnostics do
-                let message = diagnostic.GetMessage()
-                // Ensure it is the "missing '=' in type definition" error.
-                // This is a funky heuristic but it's probably correct.
-                do! Option.guard (message.Contains("'='"))
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
 
