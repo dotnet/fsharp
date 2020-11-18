@@ -90,6 +90,7 @@
     <Compile Include="Commands\XmlDocCommandService.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
     <Compile Include="CodeFix\ChangeToUpcast.fs" />
+    <Compile Include="CodeFix\AddMissingEqualsToTypeDefinition.fs" />
     <Compile Include="CodeFix\ConvertToSingleEqualsEqualityExpression.fs" />
     <Compile Include="CodeFix\ChangeRefCellDerefToNotExpression.fs" />
     <Compile Include="CodeFix\WrapExpressionInParentheses.fs" />
