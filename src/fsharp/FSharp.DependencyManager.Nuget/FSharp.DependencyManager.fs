@@ -242,14 +242,14 @@ type FSharpDependencyManager (outputDir:string option) =
         sprintf """    #r "nuget:FSharp.Data";;                      // %s 'FSharp.Data' %s""" (SR.loadNugetPackage()) (SR.highestVersion())
         |]
 
-    member this.ResolveDependencies(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFramework: string, runtimeIdentifier: string) : obj =
+    member this.ResolveDependencies(scriptExt: string, packageManagerTextLines: (string * string) seq, targetFrameworkMoniker: string, runtimeIdentifier: string) : obj =
         let poundRprefix  =
             match scriptExt with
             | ".csx" -> "#r \""
             | _ -> "#r @\""
 
         let generateAndBuildProjectArtifacts =
-            let resolutionResult = prepareDependencyResolutionFiles (scriptExt, packageManagerTextLines, targetFramework, runtimeIdentifier)
+            let resolutionResult = prepareDependencyResolutionFiles (scriptExt, packageManagerTextLines, targetFrameworkMoniker, runtimeIdentifier)
             match resolutionResult.resolutionsFile with
             | Some file ->
                 let resolutions = getResolutionsFromFile file
