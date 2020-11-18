@@ -244,7 +244,10 @@ module internal Tokenizer =
                         | Protected -> KnownImageIds.ClassProtected
                         | Private -> KnownImageIds.ClassPrivate
                 | _ -> KnownImageIds.None
-        ImageId(KnownImageIds.ImageCatalogGuid, imageId)
+        if imageId = KnownImageIds.None then
+            None
+        else
+            Some(ImageId(KnownImageIds.ImageCatalogGuid, imageId))
 
     let GetGlyphForSymbol (symbol: FSharpSymbol, kind: LexerSymbolKind) =
         match kind with
