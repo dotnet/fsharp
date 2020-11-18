@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="tr" original="../FSharp.Editor.resx">
     <body>
+      <trans-unit id="AddMissingEqualsToTypeDefinition">
+        <source>Add missing '=' to type definition</source>
+        <target state="new">Add missing '=' to type definition</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' anahtar sözcüğünü ekleme</target>
