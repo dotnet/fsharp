@@ -222,6 +222,18 @@
   <data name="MakeDeclarationMutable" xml:space="preserve">
     <value>Make declaration 'mutable'</value>
   </data>
+  <data name="UseUpcastKeyword" xml:space="preserve">
+    <value>Use 'upcast'</value>
+  </data>
+  <data name="UseUpcastOperator" xml:space="preserve">
+    <value>Use ':&gt;' operator</value>
+  </data>
+  <data name="AddMissingEqualsToTypeDefinition" xml:space="preserve">
+    <value>Add missing '=' to type definition</value>
+  </data>
+  <data name="ConvertToSingleEqualsEqualityExpression" xml:space="preserve">
+    <value>Use '=' for equality check</value>
+  </data>
   <data name="UseNotForNegation" xml:space="preserve">
     <value>Use 'not' to negate expression</value>
   </data>
