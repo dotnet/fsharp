@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -218,6 +218,9 @@
   </data>
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
     <value>F# Dispostable Values (top-level)</value>
+  </data>
+  <data name="UseNotForNegation" xml:space="preserve">
+    <value>Use 'not' to negate expression</value>
   </data>
   <data name="WrapExpressionInParentheses" xml:space="preserve">
     <value>Wrap expression in parentheses</value>
