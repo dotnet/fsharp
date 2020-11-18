@@ -192,6 +192,11 @@
         <target state="translated">Форматирование</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseMutationWhenValueIsMutable">
+        <source>Use '&lt;-' to mutate value</source>
+        <target state="new">Use '&lt;-' to mutate value</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="new">Use 'upcast'</target>
