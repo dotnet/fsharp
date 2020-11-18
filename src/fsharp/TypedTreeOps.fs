@@ -1665,6 +1665,7 @@ let isArrayTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isA
 let isArray1DTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.il_arr_tcr_map.[0] | _ -> false) 
 let isUnitTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.unit_tcr_canon tcref | _ -> false) 
 let isObjTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
+let isValueTypeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Value_tcref tcref | _ -> false) 
 let isVoidTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.system_Void_tcref tcref | _ -> false) 
 let isILAppTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsILTycon | _ -> false) 
 let isNativePtrTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.nativeptr_tcr tcref | _ -> false) 
@@ -1824,6 +1825,10 @@ let isRefTy g ty =
         isUnitTy g ty ||
         (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
     )
+
+let isForallFunctionTy g ty =
+    let _, tau = tryDestForallTy g ty
+    isFunTy g tau
 
 // ECMA C# LANGUAGE SPECIFICATION, 27.2
 // An unmanaged-type is any type that isn't a reference-type, a type-parameter, or a generic struct-type and
@@ -2745,6 +2750,8 @@ type DisplayEnv =
       showConstraintTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      shrinkOverloads: bool
+      printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout : (Val -> layout option) }
@@ -2776,6 +2783,8 @@ type DisplayEnv =
         showTyparDefaultConstraints = false
         shortConstraints = false
         useColonForReturnType = false
+        shrinkOverloads = true
+        printVerboseSignatures = false
         g = tcGlobals
         contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None) }
@@ -2844,7 +2853,7 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsFSharpDelegateTycon then tagDelegate name
     elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
     elif xref.IsStructOrEnumTycon then tagStruct name
-    elif xref.IsFSharpInterfaceTycon then tagInterface name
+    elif isInterfaceTyconRef xref then tagInterface name
     elif xref.IsUnionTycon then tagUnion name
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
