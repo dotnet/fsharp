@@ -70,6 +70,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         | Method
         | Member
         | ModuleBinding
+        | Function
         | Module
         | Namespace
         | NumericLiteral
@@ -125,6 +126,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val tagLineBreak: string -> TaggedText
         val tagMethod: string -> TaggedText
         val tagModuleBinding: string -> TaggedText
+        val tagFunction : string -> TaggedText
         val tagLocal: string -> TaggedText
         val tagRecord: string -> TaggedText
         val tagRecordField: string -> TaggedText
