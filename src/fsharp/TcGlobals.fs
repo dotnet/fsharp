@@ -1099,6 +1099,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     
   member val system_Array_tcref  = findSysTyconRef sys "Array"
   member val system_Object_tcref  = findSysTyconRef sys "Object"
+  member val system_Value_tcref = findSysTyconRef sys "ValueType"
   member val system_Void_tcref    = findSysTyconRef sys "Void"
   member val system_IndexOutOfRangeException_tcref    = findSysTyconRef sys "IndexOutOfRangeException"
   member val system_Nullable_tcref = v_nullable_tcr
