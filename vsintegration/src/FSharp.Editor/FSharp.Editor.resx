@@ -222,4 +222,7 @@
   <data name="AddMissingEqualsToTypeDefinition" xml:space="preserve">
     <value>Add missing '=' to type definition</value>
   </data>
+  <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
+    <value>Use subtraction instead of negation</value>
+  </data>
 </root>
