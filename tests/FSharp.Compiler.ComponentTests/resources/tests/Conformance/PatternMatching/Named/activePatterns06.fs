@@ -1,3 +1,0 @@
-// #Conformance #PatternMatching #ActivePatterns 
-#light
-
