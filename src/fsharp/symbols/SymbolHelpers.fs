@@ -46,23 +46,23 @@ type FSharpErrorSeverity =
 module FSharpErrorInfo =
     let [<Literal>] ObsoleteMessage = "Use FSharpErrorInfo.Range. This API will be removed in a future update."
 
-type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
-    member _.Range = m
+type FSharpErrorInfo(range: range, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) =
+    member _.Range = range
     member _.Severity = severity
     member _.Message = message
     member _.Subcategory = subcategory
     member _.ErrorNumber = errorNum
 
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.Start = m.Start
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.End = m.End
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.Start = range.Start
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.End = range.End
 
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLine = Line.toZ m.Start.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLineAlternate = m.Start.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLineAlternate = range.Start.Line
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLine = Line.toZ m.End.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLineAlternate = m.End.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartColumn = m.Start.Column
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndColumn = m.End.Column
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.FileName = m.FileName
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLineAlternate = range.End.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartColumn = range.Start.Column
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndColumn = range.End.Column
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.FileName = range.FileName
 
     member _.WithStart newStart =
         let m = mkFileIndexRange m.FileIndex newStart m.End
@@ -73,9 +73,9 @@ type FSharpErrorInfo(m: range, severity: FSharpErrorSeverity, message: string, s
         FSharpErrorInfo(m, severity, message, subcategory, errorNum)
 
     override _.ToString() =
-        let fileName = m.FileName
-        let s = m.Start
-        let e = m.End
+        let fileName = range.FileName
+        let s = range.Start
+        let e = range.End
         let severity = if severity=FSharpErrorSeverity.Warning then "warning" else "error"
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
