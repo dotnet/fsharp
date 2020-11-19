@@ -56,20 +56,20 @@ type FSharpErrorInfo(range: range, severity: FSharpErrorSeverity, message: strin
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.Start = range.Start
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.End = range.End
 
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLine = Line.toZ m.Start.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLine = Line.toZ range.Start.Line
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartLineAlternate = range.Start.Line
-    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLine = Line.toZ m.End.Line
+    [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLine = Line.toZ range.End.Line
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndLineAlternate = range.End.Line
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.StartColumn = range.Start.Column
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.EndColumn = range.End.Column
     [<Obsolete(FSharpErrorInfo.ObsoleteMessage)>] member _.FileName = range.FileName
 
     member _.WithStart newStart =
-        let m = mkFileIndexRange m.FileIndex newStart m.End
+        let m = mkFileIndexRange range.FileIndex newStart range.End
         FSharpErrorInfo(m, severity, message, subcategory, errorNum)
 
     member _.WithEnd newEnd =
-        let m = mkFileIndexRange m.FileIndex m.Start newEnd
+        let m = mkFileIndexRange range.FileIndex range.Start newEnd
         FSharpErrorInfo(m, severity, message, subcategory, errorNum)
 
     override _.ToString() =
@@ -81,7 +81,7 @@ type FSharpErrorInfo(range: range, severity: FSharpErrorSeverity, message: strin
 
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
-        let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
+        let m = match GetRangeOfDiagnostic exn with Some range -> range | None -> fallbackRange 
         let severity = if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
         let errorNum = GetDiagnosticNumber exn
