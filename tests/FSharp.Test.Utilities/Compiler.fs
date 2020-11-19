@@ -172,6 +172,9 @@ module rec Compiler =
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CS
 
+    let asFsx (cUnit: CompilationUnit) : CompilationUnit =
+         { cUnit with  SourceKind = SourceKind.Fsx }
+
     let withName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS src -> FS { src with Name = Some name }
