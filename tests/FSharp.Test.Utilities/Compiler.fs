@@ -173,14 +173,7 @@ module rec Compiler =
         csFromString source |> CS
 
     let asFsx (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS src -> FS { src with SourceKind = SourceKind.Fsx }
-        | _ -> failwith "Only F# compilation can be of type Fsx."
-
-    let asFs (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS src -> FS { src with SourceKind = SourceKind.Fs }
-        | _ -> failwith "Only F# compilation can be of type Fs."
+         { cUnit with  SourceKind = SourceKind.Fsx }
 
     let withName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
