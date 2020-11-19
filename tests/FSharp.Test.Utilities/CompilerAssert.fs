@@ -117,6 +117,16 @@ type CompilerAssert private () =
 
 </Project>"""
 
+    static let directoryBuildProps = """
+<Project>
+  <PropertyGroup>
+    <DisableCompilerRedirection>true</DisableCompilerRedirection>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+</Project>
+"""
+
     static let programFs = """
 open System
 
@@ -127,13 +137,15 @@ let main argv = 0"""
         let mutable output = ""
         let mutable errors = ""
         let mutable cleanUp = true
-        let projectDirectory = Path.Combine(Path.GetTempPath(), "CompilerAssert", Path.GetRandomFileName())
+        let pathToTemp = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../../Temp"))
+        let projectDirectory = Path.Combine(pathToTemp, "CompilerAssert", Path.GetRandomFileName())
         let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
         try
             try
                 Directory.CreateDirectory(projectDirectory) |> ignore
                 let projectFileName = Path.Combine(projectDirectory, "ProjectFile.fsproj")
                 let programFsFileName = Path.Combine(projectDirectory, "Program.fs")
+                let directoryBuildPropsFileName = Path.Combine(projectDirectory, "Directory.Build.props")
                 let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
                 File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "netcoreapp3.1").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
@@ -141,6 +153,7 @@ let main argv = 0"""
                 File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
 #endif
                 File.WriteAllText(programFsFileName, programFs)
+                File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
 
                 let pInfo = ProcessStartInfo ()
                 pInfo.FileName <- config.DotNetExe
@@ -166,7 +179,9 @@ let main argv = 0"""
                 cleanUp <- false
                 printfn "Project directory: %s" projectDirectory
                 printfn "STDOUT: %s" output
+                File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
                 printfn "STDERR: %s" errors
+                File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
                 raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
         finally
             if cleanUp then
