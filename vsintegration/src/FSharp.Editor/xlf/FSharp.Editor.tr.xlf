@@ -12,6 +12,11 @@
         <target state="translated">'new' anahtar sözcüğünü ekleme</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToAnonymousRecord">
+        <source>Convert to Anonymous Record</source>
+        <target state="new">Convert to Anonymous Record</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
         <target state="new">Use '=' for equality check</target>
@@ -50,6 +55,11 @@
       <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
         <source>Implement interface without type annotation</source>
         <target state="translated">Tür ek açıklaması olmadan arabirim uygulama</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="new">Make declaration 'mutable'</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -185,6 +195,11 @@
       <trans-unit id="6014">
         <source>Formatting</source>
         <target state="translated">Biçimlendirme</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseMutationWhenValueIsMutable">
+        <source>Use '&lt;-' to mutate value</source>
+        <target state="new">Use '&lt;-' to mutate value</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">

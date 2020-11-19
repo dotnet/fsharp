@@ -219,6 +219,9 @@
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
     <value>F# Dispostable Values (top-level)</value>
   </data>
+  <data name="MakeDeclarationMutable" xml:space="preserve">
+    <value>Make declaration 'mutable'</value>
+  </data>
   <data name="UseUpcastKeyword" xml:space="preserve">
     <value>Use 'upcast'</value>
   </data>
@@ -239,5 +242,11 @@
   </data>
   <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
     <value>Use subtraction instead of negation</value>
+  </data>
+  <data name="ConvertToAnonymousRecord" xml:space="preserve">
+    <value>Convert to Anonymous Record</value>
+  </data>
+  <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
+    <value>Use '&lt;-' to mutate value</value>
   </data>
 </root>
