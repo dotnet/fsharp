@@ -375,7 +375,7 @@ module InterfaceFileWriter =
         for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
-              (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> Layout.showL)
+              (NicePrint.layoutInferredSigOfModuleExpr true { denv with shrinkOverloads = false; printVerboseSignatures = true } infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> Layout.showL)
        
         if tcConfig.printSignatureFile <> "" then os.Dispose()
 

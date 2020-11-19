@@ -921,8 +921,8 @@ namespace Microsoft.FSharp.Core
         member Path: string
 
     [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
-    /// of measure is erased in compiled code and when values of this type
+    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Double"/>.</summary>
     ///
@@ -930,8 +930,8 @@ namespace Microsoft.FSharp.Core
     type float<[<Measure>] 'Measure> = float
 
     [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of floating point numbers, annotated with a unit of measure. The unit
-    /// of measure is erased in compiled code and when values of this type
+    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Single"/>.
     /// </summary>
@@ -956,7 +956,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <category>Basic Types with Units of Measure</category>
     type int<[<Measure>] 'Measure> = int
-
+    
     [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
@@ -983,6 +983,120 @@ namespace Microsoft.FSharp.Core
     ///
     /// <category>Basic Types with Units of Measure</category>
     type int64<[<Measure>] 'Measure> = int64
+
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    [<MeasureAnnotatedAbbreviation>]
+    /// <summary>The type of machine-sized signed integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.IntPtr"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type nativeint<[<Measure>] 'Measure> = nativeint
+
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt32"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint<[<Measure>] 'Measure> = uint
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Byte"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type byte<[<Measure>] 'Measure> = byte
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt16"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint16<[<Measure>] 'Measure> = uint16
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    [<MeasureAnnotatedAbbreviation>] 
+    /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt64"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint64<[<Measure>] 'Measure> = uint64
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    [<MeasureAnnotatedAbbreviation>]
+    /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UIntPtr"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type unativeint<[<Measure>] 'Measure> = unativeint
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Double"/>.</summary>
+    ///
+    /// <category index="6">Basic Types with Units of Measure</category>
+    type double<[<Measure>] 'Measure> = float<'Measure>
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Single"/>.</summary>
+    ///
+    /// <category index="6">Basic Types with Units of Measure</category>
+    type single<[<Measure>] 'Measure> = float32<'Measure>
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.SByte"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type int8<[<Measure>] 'Measure> = sbyte<'Measure>
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Int32"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type int32<[<Measure>] 'Measure> = int<'Measure>
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.Byte"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint8<[<Measure>] 'Measure> = byte<'Measure>
+    
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// The unit of measure is erased in compiled code and when values of this type
+    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// <see cref="T:System.UInt32"/>.</summary>
+    ///
+    /// <category>Basic Types with Units of Measure</category>
+    type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</summary>
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
@@ -1278,6 +1392,54 @@ namespace Microsoft.FSharp.Core
         /// <returns>The sbyte with units-of-measure.</returns>
         val inline SByteWithMeasure : input: sbyte -> sbyte<'Measure>
 
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        /// <summary>Creates a nativeint value with units-of-measure</summary>
+        ///
+        /// <param name="input">The input nativeint.</param>
+        ///
+        /// <returns>The nativeint with units-of-measure.</returns>
+        val inline IntPtrWithMeasure : input: nativeint -> nativeint<'Measure>
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        /// <summary>Creates a uint value with units-of-measure</summary>
+        ///
+        /// <param name="input">The input uint.</param>
+        ///
+        /// <returns>The uint with units-of-measure.</returns>
+        val inline UInt32WithMeasure : input: uint -> uint<'Measure>
+        
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        /// <summary>Creates a uint64 value with units-of-measure</summary>
+        ///
+        /// <param name="input">The input uint64.</param>
+        ///
+        /// <returns>The uint64 with units-of-measure.</returns>
+        val inline UInt64WithMeasure : input: uint64 -> uint64<'Measure>
+        
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        /// <summary>Creates a uint16 value with units-of-measure</summary>
+        ///
+        /// <param name="input">The input uint16.</param>
+        ///
+        /// <returns>The uint16 with units-of-measure.</returns>
+        val inline UInt16WithMeasure : input: uint16 -> uint16<'Measure>
+        
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        /// <summary>Creates a byte value with units-of-measure</summary>
+        ///
+        /// <param name="input">The input byte.</param>
+        ///
+        /// <returns>The byte with units-of-measure.</returns>
+        val inline ByteWithMeasure : input: byte -> byte<'Measure>
+        
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
+        /// <summary>Creates a unativeint value with units-of-measure</summary>
+        ///
+        /// <param name="input">The input unativeint.</param>
+        ///
+        /// <returns>The unativeint with units-of-measure.</returns>
+        val inline UIntPtrWithMeasure : input: unativeint -> unativeint<'Measure>
+
         /// <summary>Parse an int32 according to the rules used by the overloaded 'int32' conversion operator when applied to strings</summary>
         ///
         /// <param name="s">The input string.</param>
@@ -1332,97 +1494,78 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val SubtractionDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '/' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val DivisionDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the unary '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val UnaryNegationDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '%' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val ModulusDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val CheckedSubtractionDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the checked unary '-' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val CheckedUnaryNegationDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&lt;&lt;&lt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LeftShiftDynamic : value:'T1 -> shift:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&gt;&gt;&gt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val RightShiftDynamic : value:'T1 -> shift:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '&amp;&amp;&amp;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val BitwiseAndDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations to the '|||' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val BitwiseOrDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '^^^' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val ExclusiveOrDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '~~~' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LogicalNotDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to conversion operators.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val ExplicitDynamic : value:'T -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LessThanDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val GreaterThanDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val LessThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&gt;=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val GreaterThanOrEqualDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val EqualityDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '=' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val InequalityDynamic : x:'T1 -> y:'T2 -> 'U
 
         /// <summary>A compiler intrinsic that implements dynamic invocations for the DivideByInt primitive.</summary>

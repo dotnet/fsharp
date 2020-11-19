@@ -229,7 +229,6 @@ let escape c =
 //-----------------------------------------------------------------------   
 
 exception ReservedKeyword of string * range
-exception IndentationProblem of string * range
 
 module Keywords = 
     type private compatibilityMode =

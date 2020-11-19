@@ -13,18 +13,12 @@
 //<Expects status="success">  --------------\^\^\^\^\^\^\^\^\^\^\^\^\^\^</Expects>
 //<Expects status="warning" id="FS0025">Incomplete pattern matches on this expression\. For example, the value 'None' may indicate a case not covered by the pattern\(s\)</Expects>
 //<Expects status="success">type Planet =</Expects>
-//<Expects status="success">  class</Expects>
-//<Expects status="success">    new : ipx:float \* ivx:float -> Planet</Expects>
-//<Expects status="success">    member VX : float</Expects>
-//<Expects status="success">    member X : float</Expects>
-//<Expects status="success">    member VX : float with set</Expects>
-//<Expects status="success">    member X : float with set</Expects>
-//<Expects status="success">  end</Expects>
+//<Expects status="success">  new : ipx:float \* ivx:float -> Planet</Expects>
+//<Expects status="success">  member VX : float</Expects>
+//<Expects status="success">  member X : float</Expects>
 //<Expects status="success">val paintObjects : Planet list</Expects>
 //<Expects status="success">type Simulator =</Expects>
-//<Expects status="success">  class</Expects>
-//<Expects status="success">    new : unit -> Simulator</Expects>
-//<Expects status="success">  end</Expects>
+//<Expects status="success">  new : unit -> Simulator</Expects>
 
 
 type Planet(ipx:float,ivx:float) =

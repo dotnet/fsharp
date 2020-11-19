@@ -17,40 +17,41 @@ module internal QuickInfoViewProvider =
         | ActivePatternCase
         | ActivePatternResult
         | UnionCase
-        | Enum -> ClassificationTypeNames.EnumName // Roslyn-style classification name
+        | Enum -> ClassificationTypeNames.EnumName
+        | Struct -> ClassificationTypeNames.StructName
+        | TypeParameter -> ClassificationTypeNames.TypeParameterName
         | Alias
         | Class
-        | Module
         | Record
-        | Struct
-        | TypeParameter
         | Union
-        | UnknownType -> PredefinedClassificationTypeNames.Type
-        | Interface -> ClassificationTypeNames.InterfaceName // Roslyn-style classification name
-        | Keyword -> PredefinedClassificationTypeNames.Keyword
-        | Delegate
-        | Event
-        | Field
-        | Local
+        | UnknownType // Default to class until/unless we use classification data
+        | Module -> ClassificationTypeNames.ClassName
+        | Interface -> ClassificationTypeNames.InterfaceName
+        | Keyword -> ClassificationTypeNames.Keyword
         | Member
-        | Method
-        | ModuleBinding
-        | Namespace
-        | Parameter
+        | Function
+        | Method -> ClassificationTypeNames.MethodName
         | Property
-        | RecordField -> PredefinedClassificationTypeNames.Identifier
+        | RecordField -> ClassificationTypeNames.PropertyName
+        | Parameter
+        | Local -> ClassificationTypeNames.LocalName
+        | ModuleBinding -> ClassificationTypeNames.Identifier
+        | Namespace -> ClassificationTypeNames.NamespaceName
+        | Delegate -> ClassificationTypeNames.DelegateName
+        | Event -> ClassificationTypeNames.EventName
+        | Field -> ClassificationTypeNames.FieldName
         | LineBreak
-        | Space -> PredefinedClassificationTypeNames.WhiteSpace
-        | NumericLiteral -> PredefinedClassificationTypeNames.Number
-        | Operator -> PredefinedClassificationTypeNames.Operator
-        | StringLiteral -> PredefinedClassificationTypeNames.String
-        | Punctuation
-        | Text
-        | UnknownEntity -> PredefinedClassificationTypeNames.Other
+        | Space -> ClassificationTypeNames.WhiteSpace
+        | NumericLiteral -> ClassificationTypeNames.NumericLiteral
+        | Operator -> ClassificationTypeNames.Operator
+        | StringLiteral -> ClassificationTypeNames.StringLiteral
+        | Punctuation -> ClassificationTypeNames.Punctuation
+        | UnknownEntity
+        | Text -> ClassificationTypeNames.Text
 
     let provideContent
         (
-            imageId:ImageId,
+            imageId:ImageId option,
             description:#seq<Layout.TaggedText>,
             documentation:#seq<Layout.TaggedText>,
             navigation:QuickInfoNavigation
@@ -91,9 +92,11 @@ module internal QuickInfoViewProvider =
             flushContainer()
             ContainerElement(ContainerElementStyle.Stacked, finalCollection |> Seq.map box)
 
-        ContainerElement(ContainerElementStyle.Stacked,
-            ContainerElement(ContainerElementStyle.Wrapped, 
-                ImageElement(imageId), 
-                buildContainerElement description),
-            buildContainerElement documentation
-        )
+        let innerElement =
+            match imageId with
+            | Some imageId ->
+                ContainerElement(ContainerElementStyle.Wrapped, ImageElement(imageId), buildContainerElement description)
+            | None ->
+                ContainerElement(ContainerElementStyle.Wrapped, buildContainerElement description)
+
+        ContainerElement(ContainerElementStyle.Stacked, innerElement, buildContainerElement documentation)

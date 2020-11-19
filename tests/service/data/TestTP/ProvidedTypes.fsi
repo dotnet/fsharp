@@ -412,7 +412,8 @@ type ProvidedAssembly =
     /// and adjust the 'Assembly' property of all provided type definitions to return that
     /// assembly.
     /// </summary>
-    /// <param name="enclosingTypeNames">A path of type names to wrap the generated types. The generated types are then generated as nested types.</param>
+    /// <param name="types">A list of nested ProvidedTypeDefinitions to add to the ProvidedAssembly.</param>
+    /// <param name="enclosingGeneratedTypeNames">A path of type names to wrap the generated types. The generated types are then generated as nested types.</param>
     member AddNestedTypes : types : ProvidedTypeDefinition list * enclosingGeneratedTypeNames: string list -> unit
 
 #if FX_NO_LOCAL_FILESYSTEM

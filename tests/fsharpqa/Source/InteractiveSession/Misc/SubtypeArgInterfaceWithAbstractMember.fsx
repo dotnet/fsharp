@@ -2,14 +2,10 @@
 // Regression test for FSHARP1.0:5825
 
 //<Expects status="succesS">type I =</Expects>
-//<Expects status="succesS">  interface</Expects>
-//<Expects status="succesS">    abstract member m : unit</Expects>
-//<Expects status="succesS">  end</Expects>
+//<Expects status="succesS">  abstract member m : unit</Expects>
 //<Expects status="succesS">type C =</Expects>
-//<Expects status="succesS">  class</Expects>
-//<Expects status="succesS">    interface I</Expects>
-//<Expects status="succesS">    new : unit -> C</Expects>
-//<Expects status="succesS">  end</Expects>
+//<Expects status="succesS">  interface I</Expects>
+//<Expects status="succesS">  new : unit -> C</Expects>
 //<Expects status="succesS">val f : c:#C -> unit</Expects>
 
 type I = 

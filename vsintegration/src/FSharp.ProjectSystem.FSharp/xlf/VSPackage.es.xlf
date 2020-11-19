@@ -304,7 +304,7 @@
       </trans-unit>
       <trans-unit id="5034">
         <source>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</source>
-        <target state="translated">Biblioteca portátil (.NET 4.5, Tienda Windows, Silverlight 5, Xamarin)</target>
+        <target state="translated">Biblioteca portable (.NET 4.5, Tienda Windows, Silverlight 5, Xamarin)</target>
         <note />
       </trans-unit>
       <trans-unit id="5035">
@@ -364,7 +364,7 @@
       </trans-unit>
       <trans-unit id="5047">
         <source>Portable Library (.NET 4.5, Windows Store, Xamarin)</source>
-        <target state="translated">Biblioteca portátil (.NET 4.5, Tienda Windows, Xamarin)</target>
+        <target state="translated">Biblioteca portable (.NET 4.5, Tienda Windows, Xamarin)</target>
         <note />
       </trans-unit>
       <trans-unit id="5048">
@@ -374,7 +374,7 @@
       </trans-unit>
       <trans-unit id="5049">
         <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</source>
-        <target state="translated">Biblioteca portátil (.NET 4.5, Tienda Windows, Windows Phone 8 Silverlight, Xamarin)</target>
+        <target state="translated">Biblioteca portable (.NET 4.5, Tienda Windows, Windows Phone 8 Silverlight, Xamarin)</target>
         <note />
       </trans-unit>
       <trans-unit id="5050">
@@ -384,7 +384,7 @@
       </trans-unit>
       <trans-unit id="5051">
         <source>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</source>
-        <target state="translated">Biblioteca portátil (.NET 4.5, Tienda Windows, Windows Phone 8.1, Windows Phone Silverlight 8 y Xamarin)</target>
+        <target state="translated">Biblioteca portable (.NET 4.5, Tienda Windows, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</target>
         <note />
       </trans-unit>
       <trans-unit id="5052">
@@ -454,7 +454,7 @@
       </trans-unit>
       <trans-unit id="9001">
         <source>Visual F# Tools</source>
-        <target state="translated">Herramientas de Visual F#</target>
+        <target state="translated">Herramientas de Visual F#</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">

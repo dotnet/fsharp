@@ -51,6 +51,7 @@ type LayoutTag =
     | Method
     | Member
     | ModuleBinding
+    | Function
     | Module
     | Namespace
     | NumericLiteral
@@ -124,40 +125,38 @@ module TaggedTextOps =
     let toText (tt: TaggedText) = tt.Text
 
     let tagAlias t = mkTag LayoutTag.Alias t
-    let keywordFunctions = Set ["raise"; "reraise"; "typeof"; "typedefof"; "sizeof"; "nameof"]
-    let keywordTypes = 
+    let keywordFunctions =
         [
-        "array"
-        "bigint"
-        "bool"
-        "byref"
-        "byte"
-        "char"
-        "decimal"
-        "double"
-        "float"
-        "float32"
-        "int"
-        "int8"
-        "int16"
-        "int32"
-        "int64"
-        "list"
-        "nativeint"
-        "obj"
-        "sbyte"
-        "seq"
-        "single"
-        "string"
-        "unit"
-        "uint"
-        "uint8"
-        "uint16"
-        "uint32"
-        "uint64"
-        "unativeint"
-        ] |> Set.ofList
-    let tagClass name = if Set.contains name keywordTypes then mkTag LayoutTag.Keyword name else mkTag LayoutTag.Class name
+            "raise"
+            "reraise"
+            "typeof"
+            "typedefof"
+            "sizeof"
+            "nameof"
+            "char"
+            "decimal"
+            "double"
+            "float"
+            "float32"
+            "int"
+            "int8"
+            "int16"
+            "int32"
+            "int64"
+            "sbyte"
+            "seq" // 'seq x' when 'x' is a string works, strangely enough
+            "single"
+            "string"
+            "unit"
+            "uint"
+            "uint8"
+            "uint16"
+            "uint32"
+            "uint64"
+            "unativeint"
+        ]
+        |> Set.ofList
+    let tagClass name = mkTag LayoutTag.Class name
     let tagUnionCase t = mkTag LayoutTag.UnionCase t
     let tagDelegate t = mkTag LayoutTag.Delegate t
     let tagEnum t = mkTag LayoutTag.Enum t
@@ -172,6 +171,7 @@ module TaggedTextOps =
     let tagMethod t = mkTag LayoutTag.Method t
     let tagModule t = mkTag LayoutTag.Module t
     let tagModuleBinding name = if keywordFunctions.Contains name then mkTag LayoutTag.Keyword name else mkTag LayoutTag.ModuleBinding name
+    let tagFunction t = mkTag LayoutTag.Function t
     let tagNamespace t = mkTag LayoutTag.Namespace t
     let tagNumericLiteral t = mkTag LayoutTag.NumericLiteral t
     let tagOperator t = mkTag LayoutTag.Operator t
