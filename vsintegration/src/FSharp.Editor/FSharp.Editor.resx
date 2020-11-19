@@ -243,6 +243,9 @@
   <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
     <value>Use subtraction instead of negation</value>
   </data>
+  <data name="ConvertToAnonymousRecord" xml:space="preserve">
+    <value>Convert to Anonymous Record</value>
+  </data>
   <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
     <value>Use '&lt;-' to mutate value</value>
   </data>
