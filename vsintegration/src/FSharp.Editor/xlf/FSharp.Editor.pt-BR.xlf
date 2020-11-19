@@ -187,6 +187,16 @@
         <target state="translated">Formatação</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseUpcastKeyword">
+        <source>Use 'upcast'</source>
+        <target state="new">Use 'upcast'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastOperator">
+        <source>Use ':&gt;' operator</source>
+        <target state="new">Use ':&gt;' operator</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
         <target state="new">Use 'not' to negate expression</target>
