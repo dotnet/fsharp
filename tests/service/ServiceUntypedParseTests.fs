@@ -305,3 +305,80 @@ type T =
     new (x:int) = ()
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 20) ]
+
+
+[<Test>]
+let ``TryRangeOfRefCellDereferenceContainingPos - simple``() =
+    let source = """
+let x = false
+let y = !x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRefCellDereferenceContainingPos (mkPos 3 9)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> fst
+        |> shouldEqual (3, 8)
+    | None ->
+        Assert.Fail("No deref operator found in source.")
+
+[<Test>]
+let ``TryRangeOfRefCellDereferenceContainingPos - parens``() =
+    let source = """
+let x = false
+let y = !(x)
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRefCellDereferenceContainingPos (mkPos 3 10)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> fst
+        |> shouldEqual (3, 8)
+    | None ->
+        Assert.Fail("No deref operator found in source.")
+
+
+[<Test>]
+let ``TryRangeOfRefCellDereferenceContainingPos - binary expr``() =
+    let source = """
+let x = false
+let y = !(x = false)
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRefCellDereferenceContainingPos (mkPos 3 10)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> fst
+        |> shouldEqual (3, 8)
+    | None ->
+        Assert.Fail("No deref operator found in source.")
+
+[<Test>]
+let ``TryRangeOfRecordExpressionContainingPos - contained``() =
+    let source = """
+let x = { Name = "Hello" }
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRecordExpressionContainingPos (mkPos 2 10)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> shouldEqual ((2, 8), (2, 26))
+    | None ->
+        Assert.Fail("No range of record found in source.")
+
+[<Test>]
+let ``TryRangeOfRecordExpressionContainingPos - not contained``() =
+    let source = """
+let x = { Name = "Hello" }
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRecordExpressionContainingPos (mkPos 2 7)
+    Assert.True(res.IsNone, "Expected not to find a range.")

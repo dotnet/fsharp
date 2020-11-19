@@ -46,7 +46,7 @@ module internal PrintUtilities =
         | x :: xs -> List.fold (^^) x xs 
 
     let suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty = 
-        isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr || ExistsHeadTypeInEntireHierarchy g amap m ty g.tcref_System_Attribute 
+        isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr
 
     let applyMaxMembers maxMembers (allDecls: _ list) = 
         match maxMembers with 
@@ -64,7 +64,25 @@ module internal PrintUtilities =
         | (x :: rest) -> [ resultFunction x (layoutFunction x -- leftL (tagText (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n)))) ] 
         | _ -> []
     
-    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) = 
+    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref: TyconRef) =
+        let tagEntityRefName (xref: EntityRef) name =
+            if xref.IsNamespace then tagNamespace name
+            elif xref.IsModule then tagModule name
+            elif xref.IsTypeAbbrev then
+                let ty = xref.TypeAbbrev.Value
+                match stripTyEqns denv.g ty with
+                | TType_app(tcref, _) when tcref.IsStructOrEnumTycon ->
+                    tagStruct name
+                | _ ->
+                    tagAlias name
+            elif xref.IsFSharpDelegateTycon then tagDelegate name
+            elif xref.IsILEnumTycon || xref.IsFSharpEnumTycon then tagEnum name
+            elif xref.IsStructOrEnumTycon then tagStruct name
+            elif isInterfaceTyconRef xref then tagInterface name
+            elif xref.IsUnionTycon then tagUnion name
+            elif xref.IsRecordTycon then tagRecord name
+            else tagClass name
+
         let demangled = 
             let name =
                 if denv.includeStaticParametersInTypeNames then 
@@ -121,7 +139,7 @@ module private PrintIL =
             | [ "System"; "Int32" ] -> ["int" ]
             | [ "System"; "Int64" ] -> ["int64" ]
             | [ "System"; "UInt16" ] -> ["uint16" ]
-            | [ "System"; "UInt32" ] -> ["uint32" ]
+            | [ "System"; "UInt32" ] -> ["uint" ]
             | [ "System"; "UInt64" ] -> ["uint64" ]
             | [ "System"; "IntPtr" ] -> ["nativeint" ]
             | [ "System"; "UIntPtr" ] -> ["unativeint" ]
@@ -138,24 +156,8 @@ module private PrintIL =
         let path = fullySplitILTypeRef tref
         layoutILTypeRefName denv path
 
-    /// this fixes up a name just like adjustILName but also handles F#
-    /// operators
-    let adjustILMethodName n =
-        let demangleOperatorNameIfNeeded s =
-            if IsMangledOpName s
-            then DemangleOperatorName s
-            else s
-        n |> Lexhelp.Keywords.QuoteIdentifierIfNeeded |> demangleOperatorNameIfNeeded 
-
-    let isStaticILEvent (e: ILEventDef) = 
-        e.AddMethod.CallingSignature.CallingConv.IsStatic || 
-        e.RemoveMethod.CallingSignature.CallingConv.IsStatic
-
     let layoutILArrayShape (ILArrayShape sh) = 
         SepL.leftBracket ^^ wordL (tagPunctuation (sh |> List.tail |> List.map (fun _ -> ",") |> String.concat "")) ^^ RightL.rightBracket // drop off one "," so that a n-dimensional array has n - 1 ","'s
-
-    let layoutILGenericParameterDefs (ps: ILGenericParameterDefs) = 
-        ps |> List.map (fun x -> "'" + x.Name |> (tagTypeParameter >> wordL))
 
     let paramsL (ps: layout list) : layout = 
         match ps with
@@ -206,115 +208,6 @@ module private PrintIL =
         | [x] -> x ^^ WordL.arrow ^^ res
         | _ -> sepListL WordL.star args ^^ WordL.arrow ^^ res
 
-    /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
-    //
-    // Note, this duplicates functionality in formatParamDataToBuffer
-    and layoutILParameter denv ilTyparSubst (p: ILParameter) =
-        let preL = 
-            let isParamArray = TryFindILAttribute denv.g.attrib_ParamArrayAttribute p.CustomAttrs
-            match isParamArray, p.Name, p.IsOptional with 
-            // Layout an optional argument 
-            | _, Some nm, true -> LeftL.questionMark ^^ sepL (tagParameter nm) ^^ SepL.colon
-            // Layout an unnamed argument 
-            | _, None, _ -> LeftL.colon
-            // Layout a named argument 
-            | true, Some nm, _ ->
-                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ wordL (tagParameter nm) ^^ SepL.colon
-            | false, Some nm, _ -> leftL (tagParameter nm) ^^ SepL.colon
-        preL ^^ (layoutILType denv ilTyparSubst p.Type)
- 
-
-    /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
-    and layoutILParameters denv ilTyparSubst cons (parameters: ILParameters, retType: ILType) =
-        // We need a special case for constructors (Their return types are reported as `void`, but this is
-        // incorrect; so if we're dealing with a constructor we require that the
-        // return type be passed along as the `cons` parameter.)
-        let res = 
-            match cons with
-            | Some className -> 
-                let names = SplitNamesForILPath (PrettyNaming.DemangleGenericTypeName className)
-                layoutILTypeRefName denv names ^^ (pruneParams className ilTyparSubst |> paramsL) 
-            | None -> retType |> layoutILType denv ilTyparSubst
-        
-        match parameters with
-        | [] -> WordL.structUnit ^^ WordL.arrow ^^ res
-        | [x] -> layoutILParameter denv ilTyparSubst x ^^ WordL.arrow ^^ res
-        | args -> sepListL WordL.star (List.map (layoutILParameter denv ilTyparSubst) args) ^^ WordL.arrow ^^ res
-
-
-    /// Layout a method's signature using type-only-F#-style. No argument names are printed.
-    /// 
-    /// In the case that we've a constructor, we
-    /// pull off the class name from the `path`; naturally, it's the
-    /// most-deeply-nested element.
-    //
-    // For C# and provided members:
-    //          new: argType1 * ... * argTypeN -> retType
-    //          Method: argType1 * ... * argTypeN -> retType
-    //
-    let layoutILMethodDef denv ilTyparSubst className (m: ILMethodDef) =
-        let myParms = m.GenericParams |> layoutILGenericParameterDefs
-        let ilTyparSubst = ilTyparSubst @ myParms
-        let name = adjustILMethodName m.Name
-        let (nameL, isCons) = 
-            match () with
-            | _ when m.IsConstructor -> (WordL.keywordNew, Some className) // we need the unadjusted name here to be able to grab the number of generic parameters
-            | _ when m.IsStatic -> (WordL.keywordStatic ^^ WordL.keywordMember ^^ wordL (tagMethod name) ^^ (myParms |> paramsL), None)
-            | _ -> (WordL.keywordMember ^^ wordL (tagMethod name) ^^ (myParms |> paramsL), None)
-        let signatureL = (m.Parameters, m.Return.Type) |> layoutILParameters denv ilTyparSubst isCons
-        nameL ^^ WordL.colon ^^ signatureL
-
-    let layoutILFieldDef (denv: DisplayEnv) (ilTyparSubst: layout list) (f: ILFieldDef) =
-        let staticL = if f.IsStatic then WordL.keywordStatic else emptyL
-        let name = adjustILName f.Name
-        let nameL = wordL (tagField name)
-        let typL = layoutILType denv ilTyparSubst f.FieldType
-        staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL
-            
-    let layoutILEventDef denv ilTyparSubst (e: ILEventDef) =
-        let staticL = if isStaticILEvent e then WordL.keywordStatic else emptyL
-        let name = adjustILName e.Name
-        let nameL = wordL (tagEvent name)
-        let typL = 
-            match e.EventType with
-            | Some t -> layoutILType denv ilTyparSubst t
-            | _ -> emptyL
-        staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL
-
-    let layoutILPropertyDef denv ilTyparSubst (p: ILPropertyDef) =
-        let staticL = if p.CallingConv = ILThisConvention.Static then WordL.keywordStatic else emptyL
-        let name = adjustILName p.Name
-        let nameL = wordL (tagProperty name)
-            
-        let layoutGetterType (getterRef: ILMethodRef) =
-            if isNil getterRef.ArgTypes then
-                layoutILType denv ilTyparSubst getterRef.ReturnType
-            else
-                layoutILCallingSignature denv ilTyparSubst None getterRef.CallingSignature
-                
-        let layoutSetterType (setterRef: ILMethodRef) =
-            let argTypes = setterRef.ArgTypes
-            if isNil argTypes then
-                emptyL // shouldn't happen
-            else
-                let frontArgs, lastArg = List.frontAndBack argTypes
-                let argsL = frontArgs |> List.map (layoutILType denv ilTyparSubst) |> sepListL WordL.star 
-                argsL ^^ WordL.arrow ^^ (layoutILType denv ilTyparSubst lastArg)
-            
-        let typL = 
-            match p.GetMethod, p.SetMethod with
-            | None, None -> layoutILType denv ilTyparSubst p.PropertyType // shouldn't happen
-            | Some getterRef, _ -> layoutGetterType getterRef
-            | None, Some setterRef -> layoutSetterType setterRef
-                
-        let specGetSetL =
-            match p.GetMethod, p.SetMethod with
-            | None, None 
-            | Some _, None -> emptyL
-            | None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
-            | Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
-        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
-
     let layoutILFieldInit x =
         let textOpt = 
             match x with
@@ -355,187 +248,6 @@ module private PrintIL =
 
     let layoutILEnumDefParts nm litVal =
         WordL.bar ^^ wordL (tagEnum (adjustILName nm)) ^^ layoutILFieldInit litVal
-
-    let layoutILEnumDef (f: ILFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
-
-    // filtering methods for hiding things we oughtn't show
-    let isStaticILProperty (p: ILPropertyDef) = 
-        match p.GetMethod, p.SetMethod with
-        | Some getter, _ -> getter.CallingSignature.CallingConv.IsStatic
-        | None, Some setter -> setter.CallingSignature.CallingConv.IsStatic
-        | None, None -> true
-
-    let isPublicILMethod (m: ILMethodDef) = 
-        (m.Access = ILMemberAccess.Public)
-
-    let isPublicILEvent typeDef (e: ILEventDef) = 
-        try
-            isPublicILMethod(resolveILMethodRef typeDef e.AddMethod) &&
-            isPublicILMethod(resolveILMethodRef typeDef e.RemoveMethod)
-        with _ ->
-            false
-
-    let isPublicILProperty typeDef (m: ILPropertyDef) = 
-        try
-            match m.GetMethod with 
-            | Some ilMethRef -> isPublicILMethod (resolveILMethodRef typeDef ilMethRef)
-            | None -> 
-                match m.SetMethod with 
-                | None -> false
-                | Some ilMethRef -> isPublicILMethod (resolveILMethodRef typeDef ilMethRef)
-        // resolveILMethodRef is a possible point of failure if Abstract IL type equality checking fails 
-        // to link the method ref to a method def for some reason, e.g. some feature of IL type
-        // equality checking has not been implemented. Since this is just intellisense pretty printing code
-        // it is better to swallow the exception here, though we don't know of any
-        // specific cases where this happens
-        with _ -> 
-            false
-
-    let isPublicILCtor (m: ILMethodDef) = 
-        (m.Access = ILMemberAccess.Public && m.IsConstructor)
-
-    let isNotSpecialName (m: ILMethodDef) = 
-        not m.IsSpecialName
-
-    let isPublicILField (f: ILFieldDef) = 
-        (f.Access = ILMemberAccess.Public)
-
-    let isPublicILTypeDef (c: ILTypeDef) : bool =
-        match c.Access with
-        | ILTypeDefAccess.Public
-        | ILTypeDefAccess.Nested ILMemberAccess.Public -> true
-        | _ -> false
-
-    let isShowEnumField (f: ILFieldDef) : bool = f.Name <> "value__" // this appears to be the hard-coded underlying storage field
-    let noShow = set [ "System.Object" ; "Object"; "System.ValueType" ; "ValueType"; "obj" ] // hide certain 'obvious' base classes
-    let isShowBase (n: layout) : bool = 
-        not (noShow.Contains(showL n))
-
-    let rec layoutILTypeDef (denv: DisplayEnv) (typeDef: ILTypeDef) : layout =
-        let ilTyparSubst = typeDef.GenericParams |> layoutILGenericParameterDefs
-
-        let renderL pre body post = 
-            match pre with
-            | Some pre -> 
-                match body with
-                | [] -> emptyL // empty type
-                | _ -> (pre @@-- aboveListL body) @@ post
-            | None -> 
-                aboveListL body
-
-        if typeDef.IsClass || typeDef.IsStruct || typeDef.IsInterface then
-            let pre = 
-                if typeDef.IsStruct then Some WordL.keywordStruct
-                else None
-
-            let baseTypeL = 
-                [ match typeDef.Extends with
-                  | Some b -> 
-                    let baseName = layoutILType denv ilTyparSubst b
-                    if isShowBase baseName then 
-                        yield WordL.keywordInherit ^^ baseName 
-                  | None -> 
-                    // for interface show inherited interfaces 
-                    if typeDef.IsInterface then 
-                        for b in typeDef.Implements do 
-                            let baseName = layoutILType denv ilTyparSubst b
-                            if isShowBase baseName then
-                                yield WordL.keywordInherit ^^ baseName ]
-
-            let memberBlockLs (fieldDefs: ILFieldDefs, methodDefs: ILMethodDefs, propertyDefs: ILPropertyDefs, eventDefs: ILEventDefs) =
-                let ctors =
-                    methodDefs.AsList
-                    |> List.filter isPublicILCtor 
-                    |> List.sortBy (fun md -> md.Parameters.Length)
-                    |> shrinkOverloads (layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun _ xL -> xL) 
-
-                let fields = 
-                    fieldDefs.AsList
-                    |> List.filter isPublicILField
-                    |> List.map (layoutILFieldDef denv ilTyparSubst)
-
-                let props = 
-                    propertyDefs.AsList 
-                    |> List.filter (isPublicILProperty typeDef)
-                    |> List.map (fun pd -> (pd.Name, pd.Args.Length), layoutILPropertyDef denv ilTyparSubst pd)
-                    
-                let events =
-                    eventDefs.AsList
-                    |> List.filter (isPublicILEvent typeDef)
-                    |> List.map (layoutILEventDef denv ilTyparSubst)
-
-                let meths = 
-                    methodDefs.AsList
-                    |> List.filter isPublicILMethod 
-                    |> List.filter isNotSpecialName 
-                    |> List.map (fun md -> (md.Name, md.Parameters.Length), md)
-                    // collect into overload groups
-                    |> List.groupBy (fst >> fst)
-                    |> List.collect (fun (_, group) -> group |> List.sortBy fst |> shrinkOverloads (snd >> layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun x xL -> (fst x, xL)))
-
-                let members = 
-                    (props @ meths) 
-                    |> List.sortBy fst 
-                    |> List.map snd // (properties and members) are sorted by name/arity 
-
-                ctors @ fields @ members @ events
-
-            let bodyStatic = 
-                memberBlockLs 
-                    (typeDef.Fields.AsList |> List.filter (fun fd -> fd.IsStatic) |> mkILFields,
-                     typeDef.Methods.AsList |> List.filter (fun md -> md.IsStatic) |> mkILMethods,
-                     typeDef.Properties.AsList |> List.filter isStaticILProperty |> mkILProperties,
-                     typeDef.Events.AsList |> List.filter isStaticILEvent |> mkILEvents)
-
-            let bodyInstance = 
-                memberBlockLs 
-                    (typeDef.Fields.AsList |> List.filter (fun fd -> not (fd.IsStatic)) |> mkILFields,
-                     typeDef.Methods.AsList |> List.filter (fun md -> not (md.IsStatic)) |> mkILMethods,
-                     typeDef.Properties.AsList |> List.filter (fun pd -> not (isStaticILProperty pd)) |> mkILProperties,
-                     typeDef.Events.AsList |> List.filter (fun ed -> not (isStaticILEvent ed)) |> mkILEvents )
-  
-            let body = bodyInstance @ bodyStatic // instance "member" before "static member" 
-
-            // Only show at most maxMembers members...
-            let body = applyMaxMembers denv.maxMembers body
-  
-            let types = 
-                typeDef.NestedTypes.AsList
-                |> List.filter isPublicILTypeDef
-                |> List.sortBy(fun t -> adjustILName t.Name) 
-                |> List.map (layoutILNestedClassDef denv)
-  
-            let post = WordL.keywordEnd
-            renderL pre (baseTypeL @ body @ types ) post
-
-        elif typeDef.IsEnum then
-            let fldsL = 
-                typeDef.Fields.AsList 
-                |> List.filter isShowEnumField 
-                |> List.map layoutILEnumDef
-                |> applyMaxMembers denv.maxMembers
-
-            renderL None fldsL emptyL
-
-        else // Delegate
-            let rhs = 
-                match typeDef.Methods.AsList |> List.filter (fun m -> m.Name = "Invoke") with // the delegate delegates to the type of `Invoke`
-                | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature
-                | _ -> comment "`Invoke` method could not be found"
-            WordL.keywordDelegate ^^ WordL.keywordOf ^^ rhs
-          
-    and layoutILNestedClassDef (denv: DisplayEnv) (typeDef: ILTypeDef) =
-        let name = adjustILName typeDef.Name
-        let nameL = wordL (tagClass name)
-        let ilTyparSubst = typeDef.GenericParams |> layoutILGenericParameterDefs
-        let paramsL = pruneParams typeDef.Name ilTyparSubst |> paramsL
-        if denv.suppressNestedTypes then 
-            WordL.keywordNested ^^ WordL.keywordType ^^ nameL ^^ paramsL
-        else 
-            let pre = WordL.keywordNested ^^ WordL.keywordType ^^ nameL ^^ paramsL
-            let body = layoutILTypeDef denv typeDef
-            (pre ^^ WordL.equals) @@-- body
-
 
 module private PrintTypes = 
     // Note: We need nice printing of constants in order to print literals and attributes 
@@ -735,9 +447,7 @@ module private PrintTypes =
             | _ -> 
                 squareAngleL (sepListL (rightL (tagPunctuation ";")) (List.map (layoutAttrib denv) attrs)) @@ 
                 restL
-        elif not isValue &&
-             (isStructRecordOrUnionTyconTy denv.g ty || 
-              ((isUnionTy denv.g ty || isRecdTy denv.g ty) && HasFSharpAttribute denv.g denv.g.attrib_StructAttribute attrs)) then
+        elif not isValue && (isStructTy denv.g ty && not (isEnumTy denv.g ty)) then
             squareAngleL (wordL (tagClass "Struct")) @@ restL
         else
             match kind with 
@@ -1329,7 +1039,23 @@ module private PrintTastMemberOrVals =
         let cxs = env.postfixConstraints
         let argInfos, rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
         let nameL =
-            (if v.IsModuleBinding then tagModuleBinding else tagUnknownEntity) v.DisplayName
+            let isDiscard (str: string) = str.StartsWith("_")
+
+            let tagF =
+                if isForallFunctionTy denv.g v.Type && not (isDiscard v.DisplayName) then
+                    if IsOperatorName v.DisplayName then
+                        tagOperator
+                    else
+                        tagFunction
+                elif not v.IsCompiledAsTopLevel && not(isDiscard v.DisplayName) then
+                    tagLocal
+                elif v.IsModuleBinding then
+                    tagModuleBinding
+                else
+                    tagUnknownEntity
+
+            v.DisplayName
+            |> tagF
             |> mkNav v.DefinitionRange
             |> wordL 
         let nameL = layoutAccessibility denv v.Accessibility nameL
@@ -1439,30 +1165,35 @@ module InfoMemberPrinting =
     //          new: argName1: argType1 * ... * argNameN: argTypeN -> retType
     //          Method: argName1: argType1 * ... * argNameN: argTypeN -> retType
     let private layoutMethInfoFSharpStyleCore amap m denv (minfo: MethInfo) minst =
-        let layout = 
-            if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
-            else emptyL
-        let layout = 
-            layout ^^ 
-            (
-                if minfo.IsConstructor then
-                    wordL (tagKeyword "new")
-                else
-                    WordL.keywordMember ^^
-                    PrintTypes.layoutTyparDecls denv (wordL (tagMethod minfo.LogicalName)) true minfo.FormalMethodTypars
-            ) ^^
-            WordL.colon
-        let paramDatas = minfo.GetParamDatas(amap, m, minst)
-        let layout =
+        match minfo.ArbitraryValRef with
+        | Some vref ->
+            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref
+        | None ->
+            let layout = 
+                if not minfo.IsConstructor && not minfo.IsInstance then WordL.keywordStatic
+                else emptyL
+
+            let layout =
+                layout ^^ 
+                (
+                    if minfo.IsConstructor then
+                        wordL (tagKeyword "new")
+                    else
+                        WordL.keywordMember ^^
+                        PrintTypes.layoutTyparDecls denv (minfo.LogicalName |> tagMethod |> wordL) true minfo.FormalMethodTypars
+                ) ^^
+                WordL.colon
+            let paramDatas = minfo.GetParamDatas(amap, m, minst)
+            let layout =
+                layout ^^
+                    if List.forall isNil paramDatas then
+                        WordL.structUnit
+                    else
+                        sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)
+            let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
             layout ^^
-                if List.forall isNil paramDatas then
-                    WordL.structUnit
-                else
-                    sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)
-        let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
-        layout ^^
-        WordL.arrow ^^
-        PrintTypes.layoutType denv retTy
+            WordL.arrow ^^
+            PrintTypes.layoutType denv retTy
 
     /// Format a method info using "half C# style".
     //
@@ -1658,9 +1389,7 @@ module private TastDefinitionPrinting =
         | TProvidedNamespaceExtensionPoint _
 #endif
         | TNoRepr -> false
-
-
-              
+      
 #if !NO_EXTENSIONTYPING
     let private layoutILFieldInfo denv amap m (e: ILFieldInfo) =
         let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
@@ -1670,44 +1399,83 @@ module private TastDefinitionPrinting =
 
     let private layoutEventInfo denv amap m (e: EventInfo) =
         let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
-        let nameL = wordL (tagEvent (adjustILName e.EventName))
+
+        let eventTag =
+            let tag =
+                e.EventName
+                |> adjustILName
+                |> tagEvent
+
+            match e.ArbitraryValRef with
+            | Some vref ->
+                tag |> mkNav vref.DefinitionRange
+            | None ->
+                tag
+
+        let nameL = eventTag |> wordL
         let typL = layoutType denv (e.GetDelegateType(amap, m))
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL
        
     let private layoutPropInfo denv amap m (p: PropInfo) =
-        let staticL = if p.IsStatic then WordL.keywordStatic else emptyL
-        let nameL = wordL (tagProperty (adjustILName p.PropertyName))
+        match p.ArbitraryValRef with
+        | Some v ->
+            PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv v.Deref
+        | None ->
+            let modifierAndMember =
+                if p.IsStatic then
+                    WordL.keywordStatic ^^ WordL.keywordMember
+                else
+                    WordL.keywordMember
+        
+            let propTag =
+                p.PropertyName
+                |> adjustILName
+                |> tagProperty
+
+            let nameL = propTag |> wordL
             
-        let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
-                
-        let specGetSetL =
-            match p.HasGetter, p.HasSetter with
-            | false, false | true, false -> emptyL
-            | false, true -> WordL.keywordWith ^^ WordL.keywordSet
-            | true, true -> WordL.keywordWith ^^ WordL.keywordGet^^ SepL.comma ^^ WordL.keywordSet
+            let typL = layoutType denv (p.GetPropertyType(amap, m)) // shouldn't happen
 
-        staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
+            modifierAndMember ^^ nameL ^^ WordL.colon ^^ typL
 
-    /// Another re-implementation of type printing, this time based off provided info objects.
-    let layoutProvidedTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m start lhsL ty =
-      let g = denv.g
-      let tcref = tcrefOfAppTy g ty
+    let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
+        let g = denv.g
+        let _, ty = generalizeTyconRef (mkLocalTyconRef tycon) 
+        let start, name =
+            let n = tycon.DisplayName
+            if isStructTy g ty then
+                if denv.printVerboseSignatures then
+                    Some "struct", tagStruct n
+                else
+                    None, tagStruct n
+            elif isInterfaceTy g ty then
+                if denv.printVerboseSignatures then
+                    Some "interface", tagInterface n
+                else
+                    None, tagInterface n
+            elif isClassTy g ty then
+                if denv.printVerboseSignatures then
+                    (if simplified then None else Some "class"), tagClass n
+                else
+                    None, tagClass n
+            else
+                None, tagUnknownType n
+        let name = mkNav tycon.DefinitionRange name
+        let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
+        let denv = denv.AddAccessibility tycon.Accessibility 
+        let lhsL =
+            let tps = tycon.TyparsNoRange
+            let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
+            typewordL ^^ tpsL
 
-      if isEnumTy g ty then 
-        let fieldLs = 
-            infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
-            |> List.filter (fun x -> x.FieldName <> "value__")
-            |> List.map (fun x -> PrintIL.layoutILEnumDefParts x.FieldName x.LiteralValue)
-            |> aboveListL
-        (lhsL ^^ WordL.equals) @@-- fieldLs
-      else
+        let start = Option.map tagKeyword start
         let amap = infoReader.amap
         let sortKey (v: MethInfo) = 
             (not v.IsConstructor,
-              not v.IsInstance, // instance first
-              v.DisplayName, // sort by name 
-              List.sum v.NumArgs, // sort by #curried
-              v.NumArgs.Length)     // sort by arity 
+                not v.IsInstance, // instance first
+                v.DisplayName, // sort by name 
+                List.sum v.NumArgs, // sort by #curried
+                v.NumArgs.Length)     // sort by arity 
 
         let shouldShow (valRef: ValRef option) =
             match valRef with
@@ -1715,272 +1483,265 @@ module private TastDefinitionPrinting =
             | Some(vr) ->
                 (denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g vr.Attribs)) &&
                 (denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g vr.Attribs))
+                
+        let isDiscard (name: string) = name.StartsWith("_")
 
         let ctors =
             GetIntrinsicConstructorInfosOfType infoReader m ty
-            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+            |> List.filter (fun v -> not v.IsClassConstructor && shouldShow v.ArbitraryValRef)
 
-        let meths =
-            GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
-            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
-
-        let iimplsLs = 
+        let iimplsLs =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
+            elif isRecdTy g ty || isUnionTy g ty || tycon.IsStructOrEnumTycon then
+                tycon.ImmediateInterfacesOfFSharpTycon
+                |> List.filter (fun (_, compgen, _) -> not compgen)
+                |> List.map (fun (ty, _, _) -> wordL (tagKeyword "interface") --- layoutType denv ty)
             else 
-                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
+                |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
 
-        let props = 
-            GetIntrinsicPropInfosOfType infoReader None ad AllowMultiIntfInstantiations.Yes PreferOverrides m ty
+        let props =
+            GetImmediateIntrinsicPropInfosOfType (None, ad) g amap m ty
             |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
         let events = 
             infoReader.GetEventInfosOfType(None, ad, m, ty)
-            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef && typeEquiv g ty v.ApparentEnclosingType)
 
         let impliedNames = 
             try 
                 Set.ofList [ for p in props do 
                                 if p.HasGetter then yield p.GetterMethod.DisplayName
                                 if p.HasSetter then yield p.SetterMethod.DisplayName
-                             for e in events do 
+                                for e in events do 
                                 yield e.AddMethod.DisplayName 
                                 yield e.RemoveMethod.DisplayName ]
             with _ -> Set.empty
 
-        let ctorLs    = 
-            ctors 
-            |> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun _ xL -> xL) 
+        let meths =
+            GetImmediateIntrinsicMethInfosOfType (None, ad) g amap m ty
+            |> List.filter (fun m ->
+                not m.IsClassConstructor &&
+                not m.IsConstructor &&
+                shouldShow m.ArbitraryValRef &&
+                not (impliedNames.Contains m.DisplayName) &&
+                not (m.DisplayName.Split('.') |> Array.exists (fun part -> isDiscard part)))
+
+        let ctorLs =
+            if denv.shrinkOverloads then
+                ctors 
+                |> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun _ xL -> xL) 
+            else
+                ctors
+                |> List.map (fun ctor -> InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv ctor)
 
         let methLs = 
-            meths 
-            |> List.filter (fun md -> not (impliedNames.Contains md.DisplayName))
+            meths
             |> List.groupBy (fun md -> md.DisplayName)
-            |> List.collect (fun (_, group) -> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) group)
+            |> List.collect (fun (_, group) ->
+                if denv.shrinkOverloads then
+                    shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) group
+                else
+                    group
+                    |> List.sortBy sortKey
+                    |> List.map (fun methinfo -> ((not methinfo.IsConstructor, methinfo.IsInstance, methinfo.DisplayName, List.sum methinfo.NumArgs, methinfo.NumArgs.Length), InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv methinfo)))
+            |> List.sortBy fst
+            |> List.map snd
 
-        let fieldLs = 
-            infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
+        let fieldLs =
+            infoReader.GetILFieldInfosOfType (None, ad, m, ty)
+            |> List.filter (fun fld -> not (isDiscard fld.FieldName))
             |> List.map (fun x -> (true, x.IsStatic, x.FieldName, 0, 0), layoutILFieldInfo denv amap m x)
+            |> List.sortBy fst
+            |> List.map snd
+
+        let staticValsLs =
+            if isRecdTy g ty then
+                []
+            else
+                tycon.TrueFieldsAsList
+                |> List.filter (fun f -> f.IsStatic && not (isDiscard f.Name))
+                |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv f)
+
+        let instanceValsLs =
+            if isRecdTy g ty then
+                []
+            else
+                tycon.TrueInstanceFieldsAsList
+                |> List.filter (fun f -> not (isDiscard f.Name))
+                |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
     
-        let propLs = 
+        let propLs =
             props
             |> List.map (fun x -> (true, x.IsStatic, x.PropertyName, 0, 0), layoutPropInfo denv amap m x)
+            |> List.sortBy fst
+            |> List.map snd
 
         let eventLs = 
             events
             |> List.map (fun x -> (true, x.IsStatic, x.EventName, 0, 0), layoutEventInfo denv amap m x)
+            |> List.sortBy fst
+            |> List.map snd
 
-        let membLs = (methLs @ fieldLs @ propLs @ eventLs) |> List.sortBy fst |> List.map snd
-
-        let nestedTypeLs = 
-          match tcref.TypeReprInfo with 
-          | TProvidedTypeExtensionPoint info ->
-                [ 
-                    for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do 
-                        yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
-                ] 
-                |> List.sortBy snd
-                |> List.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
-          | _ -> 
-              []
+        let nestedTypeLs =
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref ->
+                match tcref.TypeReprInfo with 
+                | TProvidedTypeExtensionPoint info ->
+                    [ 
+                        for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do 
+                            yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
+                    ] 
+                    |> List.sortBy snd
+                    |> List.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
+                | _ ->
+                    []
+            | ValueNone ->
+                []
 
         let inherits = 
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
             else
                 match GetSuperTypeOfType g amap m ty with 
-                | Some super when not (isObjTy g super) -> [wordL (tagKeyword "inherit") ^^ (layoutType denv super)] 
+                | Some super when not (isObjTy g super) && not (isValueTypeTy g super) ->
+                    [wordL (tagKeyword "inherit") ^^ (layoutType denv super)]
                 | _ -> []
 
         let erasedL = 
 #if SHOW_ERASURE
-            if tcref.IsProvidedErasedTycon then 
-                [ wordL ""; wordL (FSComp.SR.erasedTo()) ^^ PrintIL.layoutILTypeRef { denv with shortTypeNames = false } tcref.CompiledRepresentationForNamedType; wordL "" ] 
-            else 
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref ->
+                if tcref.IsProvidedErasedTycon then 
+                    [ wordL ""; wordL (FSComp.SR.erasedTo()) ^^ PrintIL.layoutILTypeRef { denv with shortTypeNames = false } tcref.CompiledRepresentationForNamedType; wordL "" ] 
+                else
+                    []
+            | None ->
 #endif
                 []
-        let decls = inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL
-        if isNil decls then
-            lhsL
-        else
-            let declsL = (inherits @ iimplsLs @ ctorLs @ membLs @ nestedTypeLs @ erasedL) |> applyMaxMembers denv.maxMembers |> aboveListL 
-            let rhsL = match start with Some s -> (wordL s @@-- declsL) @@ WordL.keywordEnd | None -> declsL
-            (lhsL ^^ WordL.equals) @@-- rhsL
+
+        let decls = inherits @ iimplsLs @ ctorLs @ methLs @ fieldLs @ propLs @ eventLs @ instanceValsLs @ staticValsLs @ nestedTypeLs @ erasedL
+        let declsL =
+            decls
+            |> applyMaxMembers denv.maxMembers
+            |> aboveListL
+            |> fun declsL ->
+                match start with
+                | Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end")
+                | None -> declsL
+
+        let addMembersAsWithEnd reprL =
+            if isNil decls then
+                reprL
+            else
+                let memberLs = applyMaxMembers denv.maxMembers decls
+                if simplified then
+                    reprL @@-- aboveListL memberLs
+                else
+                    reprL @@ (WordL.keywordWith @@-- aboveListL memberLs) @@ WordL.keywordEnd
+
+        let reprL = 
+            let repr = tycon.TypeReprInfo
+            match repr with 
+            | TRecdRepr _ 
+            | TUnionRepr _
+            | TFSharpObjectRepr _ 
+            | TAsmRepr _ 
+            | TMeasureableRepr _
+            | TILObjectRepr _ -> 
+                let brk = not (isNil decls) || breakTypeDefnEqn repr
+                let rhsL = 
+                    let addReprAccessL l = layoutAccessibility denv tycon.TypeReprAccessibility l 
+                    let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
+                    match repr with 
+                    | TRecdRepr _ ->
+                        let recdFieldRefL fld = layoutRecdField false denv fld
+
+                        let recdL =
+                            tycon.TrueFieldsAsList
+                            |> List.map recdFieldRefL
+                            |> applyMaxMembers denv.maxMembers
+                            |> aboveListL
+                            |> braceL
+
+                        Some (addMembersAsWithEnd (addReprAccessL recdL))
+
+                    | TUnionRepr _ -> 
+                        let layoutUnionCases =
+                            tycon.UnionCasesAsList
+                            |> layoutUnionCases denv
+                            |> applyMaxMembers denv.maxMembers
+                            |> aboveListL
+                        Some (addMembersAsWithEnd (addReprAccessL layoutUnionCases))
+                  
+                    | TFSharpObjectRepr r ->
+                        match r.fsobjmodel_kind with
+                        | TTyconDelegate (TSlotSig(_, _, _, _, paraml, rty)) ->
+                            let rty = GetFSharpViewOfReturnType denv.g rty
+                            Some (WordL.keywordDelegate ^^ WordL.keywordOf --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty [])
+                        | _ ->
+                            match r.fsobjmodel_kind with
+                            | TTyconEnum -> 
+                                tycon.TrueFieldsAsList
+                                |> List.map (fun f -> 
+                                    match f.LiteralValue with 
+                                    | None -> emptyL
+                                    | Some c -> WordL.bar ^^
+                                                wordL (tagField f.Name) ^^
+                                                WordL.equals ^^ 
+                                                layoutConst denv.g ty c)
+                                |> aboveListL
+                                |> Some
+                            | _ ->
+                                let allDecls = inherits @ iimplsLs @ ctorLs @ instanceValsLs @ methLs @ propLs @ eventLs @ staticValsLs
+                                if isNil allDecls then
+                                    None
+                                else
+                                    let allDecls = applyMaxMembers denv.maxMembers allDecls
+                                    let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil allDecls | _ -> false
+                                    if emptyMeasure then None else 
+                                    let declsL = aboveListL allDecls
+                                    let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end") | None -> declsL
+                                    Some declsL
+
+                    | TAsmRepr _ -> 
+                        Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
+
+                    | TMeasureableRepr ty ->
+                        Some (layoutType denv ty)
+
+                    | TILObjectRepr _ ->
+                        if tycon.ILTyconRawMetadata.IsEnum then
+                            infoReader.GetILFieldInfosOfType (None, ad, m, ty) 
+                            |> List.filter (fun x -> x.FieldName <> "value__")
+                            |> List.map (fun x -> PrintIL.layoutILEnumDefParts x.FieldName x.LiteralValue)
+                            |> applyMaxMembers denv.maxMembers
+                            |> aboveListL
+                            |> Some
+                        else
+                            Some declsL
+
+                    | _ -> None
+
+                let brk = match tycon.TypeReprInfo with | TILObjectRepr _ -> true | _ -> brk
+                match rhsL with 
+                | None -> lhsL
+                | Some rhsL -> 
+                    if brk then 
+                        (lhsL ^^ WordL.equals) @@-- rhsL 
+                    else 
+                        (lhsL ^^ WordL.equals) --- rhsL
+
+            | _ -> 
+                match tycon.TypeAbbrev with
+                | None   -> 
+                    addMembersAsWithEnd (lhsL ^^ WordL.equals)
+                | Some a -> 
+                    (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
+
+        layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
 #endif
-
-    let layoutTycon (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tycon: Tycon) =
-      let g = denv.g
-      let _, ty = generalizeTyconRef (mkLocalTyconRef tycon) 
-      let start, name = 
-          let n = tycon.DisplayName
-          if isStructTy g ty then Some "struct", tagStruct n
-          elif isInterfaceTy g ty then Some "interface", tagInterface n
-          elif isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
-          else None, tagUnknownType n
-      let name = mkNav tycon.DefinitionRange name
-      let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
-      let denv = denv.AddAccessibility tycon.Accessibility 
-      let lhsL =
-          let tps = tycon.TyparsNoRange
-          let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
-          typewordL ^^ tpsL
-      let start = Option.map tagKeyword start
-#if !NO_EXTENSIONTYPING
-      match tycon.IsProvided with 
-      | true -> 
-          layoutProvidedTycon denv infoReader ad m start lhsL ty 
-      | false -> 
-#else
-      ignore (infoReader, ad, m)
-#endif
-      let memberImplementLs, memberCtorLs, memberInstanceLs, memberStaticLs = 
-          let adhoc = 
-              tycon.MembersOfFSharpTyconSorted
-              |> List.filter (fun v -> not v.IsDispatchSlot) 
-              |> List.filter (fun v -> not v.Deref.IsClassConstructor) 
-              |> List.filter (fun v -> 
-                                  match v.MemberInfo.Value.ImplementedSlotSigs with 
-                                  | TSlotSig(_, oty, _, _, _, _) :: _ -> 
-                                      // Don't print overrides in HTML docs
-                                      denv.showOverrides && 
-                                      // Don't print individual methods forming interface implementations - these are currently never exported 
-                                      not (isInterfaceTy denv.g oty)
-                                  | [] -> true)
-              |> List.filter (fun v -> denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs))
-              |> List.filter (fun v -> denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g v.Attribs))
-          // sort 
-          let sortKey (v: ValRef) = 
-              (not v.IsConstructor, // constructors before others 
-               v.Id.idText, // sort by name 
-               (if v.IsCompiledAsTopLevel then v.ValReprInfo.Value.NumCurriedArgs else 0), // sort by #curried
-               (if v.IsCompiledAsTopLevel then v.ValReprInfo.Value.AritiesOfArgs else []))  // sort by arity
-          let adhoc = adhoc |> List.sortBy sortKey
-          let iimpls = 
-              match tycon.TypeReprInfo with 
-              | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
-              | _ -> tycon.ImmediateInterfacesOfFSharpTycon
-          let iimpls = iimpls |> List.filter (fun (_, compgen, _) -> not compgen)
-          // if TTyconInterface, the iimpls should be printed as inherited interfaces 
-          let iimplsLs = iimpls |> List.map (fun (ty, _, _) -> wordL (tagKeyword "interface") --- layoutType denv ty)
-          let adhocCtorsLs = adhoc |> List.filter (fun v -> v.IsConstructor) |> List.map (fun vref -> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref)
-          let adhocInstanceLs = adhoc |> List.filter (fun v -> not v.IsConstructor && v.IsInstanceMember) |> List.map (fun vref -> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref)
-          let adhocStaticLs = adhoc |> List.filter (fun v -> not v.IsConstructor && not v.IsInstanceMember) |> List.map (fun vref -> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref)
-          iimplsLs, adhocCtorsLs, adhocInstanceLs, adhocStaticLs
-      let memberLs = memberImplementLs @ memberCtorLs @ memberInstanceLs @ memberStaticLs
-      let addMembersAsWithEnd reprL = 
-          if isNil memberLs then reprL
-          else
-          let memberLs = applyMaxMembers denv.maxMembers memberLs
-          if simplified then reprL @@-- aboveListL memberLs
-          else reprL @@ (WordL.keywordWith @@-- aboveListL memberLs) @@ WordL.keywordEnd
-
-      let reprL = 
-          let repr = tycon.TypeReprInfo
-          match repr with 
-          | TRecdRepr _ 
-          | TUnionRepr _
-          | TFSharpObjectRepr _ 
-          | TAsmRepr _ 
-          | TMeasureableRepr _
-          | TILObjectRepr _ -> 
-              let brk = not (isNil memberLs) || breakTypeDefnEqn repr
-              let rhsL = 
-                  let addReprAccessL l = layoutAccessibility denv tycon.TypeReprAccessibility l 
-                  let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
-                  match repr with 
-                  | TRecdRepr _ ->
-                      let recdFieldRefL fld = layoutRecdField false denv fld
-
-                      let recdL =
-                          tycon.TrueFieldsAsList
-                          |> List.map recdFieldRefL
-                          |> applyMaxMembers denv.maxMembers
-                          |> aboveListL
-                          |> braceL
-
-                      Some (addMembersAsWithEnd (addReprAccessL recdL))
-                        
-                  | TFSharpObjectRepr r -> 
-                      match r.fsobjmodel_kind with 
-                      | TTyconDelegate (TSlotSig(_, _, _, _, paraml, rty)) ->
-                          let rty = GetFSharpViewOfReturnType denv.g rty
-                          Some (WordL.keywordDelegate ^^ WordL.keywordOf --- layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) rty [])
-                      | _ ->
-                          match r.fsobjmodel_kind with
-                          | TTyconEnum -> 
-                              tycon.TrueFieldsAsList
-                              |> List.map (fun f -> 
-                                                match f.LiteralValue with 
-                                                | None -> emptyL
-                                                | Some c -> WordL.bar ^^
-                                                            wordL (tagField f.Name) ^^
-                                                            WordL.equals ^^ 
-                                                            layoutConst denv.g ty c)
-                              |> aboveListL
-                              |> Some
-                          | _ -> 
-                              let inherits = 
-                                  match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
-                                  | TTyconClass, Some super -> [wordL (tagKeyword "inherit") ^^ (layoutType denv super)] 
-                                  | TTyconInterface, _ -> 
-                                    tycon.ImmediateInterfacesOfFSharpTycon
-                                      |> List.filter (fun (_, compgen, _) -> not compgen)
-                                      |> List.map (fun (ity, _, _) -> wordL (tagKeyword "inherit") ^^ (layoutType denv ity))
-                                  | _ -> []
-                              let vsprs = 
-                                  tycon.MembersOfFSharpTyconSorted
-                                  |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs && v.IsDispatchSlot) 
-                                  |> List.map (fun vref -> PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv vref.Deref)
-                              let staticValsLs = 
-                                  tycon.TrueFieldsAsList
-                                  |> List.filter (fun f -> f.IsStatic)
-                                  |> List.map (fun f -> WordL.keywordStatic ^^ WordL.keywordVal ^^ layoutRecdField true denv f)
-                              let instanceValsLs = 
-                                  tycon.TrueFieldsAsList
-                                  |> List.filter (fun f -> not f.IsStatic)
-                                  |> List.map (fun f -> WordL.keywordVal ^^ layoutRecdField true denv f)
-                              let allDecls = inherits @ memberImplementLs @ memberCtorLs @ instanceValsLs @ vsprs @ memberInstanceLs @ staticValsLs @ memberStaticLs
-                              if isNil allDecls then
-                                  None
-                              else
-                                  let allDecls = applyMaxMembers denv.maxMembers allDecls
-                                  let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil allDecls | _ -> false
-                                  if emptyMeasure then None else 
-                                  let declsL = aboveListL allDecls
-                                  let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword "end") | None -> declsL
-                                  Some declsL
-                  | TUnionRepr _ -> 
-                      let layoutUnionCases = tycon.UnionCasesAsList |> layoutUnionCases denv |> applyMaxMembers denv.maxMembers |> aboveListL
-                      Some (addMembersAsWithEnd (addReprAccessL layoutUnionCases))
-
-                  | TAsmRepr _ -> 
-                      Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
-
-                  | TMeasureableRepr ty ->
-                      Some (layoutType denv ty)
-
-                  | TILObjectRepr _ -> 
-                      let td = tycon.ILTyconRawMetadata
-                      Some (PrintIL.layoutILTypeDef denv td)
-                  | _ -> None
-
-              let brk = match tycon.TypeReprInfo with | TILObjectRepr _ -> true | _ -> brk
-              match rhsL with 
-              | None -> lhsL
-              | Some rhsL -> 
-                  if brk then 
-                      (lhsL ^^ WordL.equals) @@-- rhsL 
-                  else 
-                      (lhsL ^^ WordL.equals) --- rhsL
-
-          | _ -> 
-              match tycon.TypeAbbrev with
-              | None   -> 
-                  addMembersAsWithEnd (lhsL ^^ WordL.equals)
-              | Some a -> 
-                  (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
-
-      layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
 
     // Layout: exception definition
     let layoutExnDefn denv (exnc: Entity) =
@@ -2010,7 +1771,6 @@ module private TastDefinitionPrinting =
             let x = layoutTycon denv infoReader ad m false WordL.keywordType h
             let xs = List.map (layoutTycon denv infoReader ad m false (wordL (tagKeyword "and"))) t
             aboveListL (x :: xs)
-
 
 //--------------------------------------------------------------------------
 
@@ -2198,10 +1958,6 @@ let stringOfMethInfo amap m denv d = bufs (fun buf -> InfoMemberPrinting.formatM
 let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
 
 let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
-
-let outputILTypeRef denv os x = x |> PrintIL.layoutILTypeRef denv |> bufferL os
-
-let layoutILTypeRef denv x = x |> PrintIL.layoutILTypeRef denv
 
 let outputExnDef denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
 

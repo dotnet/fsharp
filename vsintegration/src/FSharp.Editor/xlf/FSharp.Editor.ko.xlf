@@ -2,29 +2,49 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSharp.Editor.resx">
     <body>
+      <trans-unit id="AddMissingEqualsToTypeDefinition">
+        <source>Add missing '=' to type definition</source>
+        <target state="new">Add missing '=' to type definition</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">'new' 키워드 추가</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToAnonymousRecord">
+        <source>Convert to Anonymous Record</source>
+        <target state="new">Convert to Anonymous Record</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToSingleEqualsEqualityExpression">
+        <source>Use '=' for equality check</source>
+        <target state="new">Use '=' for equality check</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangePrefixNegationToInfixSubtraction">
+        <source>Use subtraction instead of negation</source>
+        <target state="new">Use subtraction instead of negation</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
-        <target state="new">F# Disposable Values (locals)</target>
+        <target state="translated">F# 삭제 가능한 값(로컬)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
         <source>F# Dispostable Values (top-level)</source>
-        <target state="new">F# Dispostable Values (top-level)</target>
+        <target state="translated">F# 삭제 가능한 값(최상위)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
         <source>F# Disposable Types</source>
-        <target state="new">F# Disposable Types</target>
+        <target state="translated">F# 삭제 가능한 형식</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFunctionsClassificationType">
         <source>F# Functions</source>
-        <target state="new">F# Functions</target>
+        <target state="translated">F# 함수</target>
         <note />
       </trans-unit>
       <trans-unit id="ImplementInterface">
@@ -35,6 +55,11 @@
       <trans-unit id="ImplementInterfaceWithoutTypeAnnotation">
         <source>Implement interface without type annotation</source>
         <target state="translated">형식 주석 없이 인터페이스 구현</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="new">Make declaration 'mutable'</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -170,6 +195,31 @@
       <trans-unit id="6014">
         <source>Formatting</source>
         <target state="translated">서식</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseMutationWhenValueIsMutable">
+        <source>Use '&lt;-' to mutate value</source>
+        <target state="new">Use '&lt;-' to mutate value</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastKeyword">
+        <source>Use 'upcast'</source>
+        <target state="new">Use 'upcast'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastOperator">
+        <source>Use ':&gt;' operator</source>
+        <target state="new">Use ':&gt;' operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNotForNegation">
+        <source>Use 'not' to negate expression</source>
+        <target state="new">Use 'not' to negate expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WrapExpressionInParentheses">
+        <source>Wrap expression in parentheses</source>
+        <target state="new">Wrap expression in parentheses</target>
         <note />
       </trans-unit>
     </body>
