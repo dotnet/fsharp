@@ -67,9 +67,9 @@ module UnusedOpens =
                             yield! getModuleAndItsAutoOpens true ent |]
             { OpenedModules = getModuleAndItsAutoOpens false modul }
 
-    /// Represents single open statement.
+    /// Represents a single open statement
     type OpenStatement =
-        { /// All namespaces and modules which this open declaration effectively opens, including the AutoOpen ones
+        { /// All namespaces, modules and types which this open declaration effectively opens, including the AutoOpen ones
           OpenedGroups: OpenedModuleGroup list
 
           /// The range of open statement itself
@@ -90,7 +90,8 @@ module UnusedOpens =
                     if firstId.idText = MangledGlobalName then 
                         None
                     else
-                        Some { OpenedGroups = openDecl.Modules |> List.map OpenedModuleGroup.Create
+                        let openedModulesAndTypes = List.concat [openDecl.Modules; openDecl.Types |> List.map(fun ty -> ty.TypeDefinition)]
+                        Some { OpenedGroups = openedModulesAndTypes |> List.map OpenedModuleGroup.Create
                                Range = range
                                AppliedScope = openDecl.AppliedScope }
                 | _ -> None)
