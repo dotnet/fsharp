@@ -901,6 +901,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicated if this is a value
     member IsValue: bool
 
+    /// Indicated if this is a function
+    member IsFunction : bool
+
     /// Indicates if this is a constructor.
     member IsConstructor: bool
     
