@@ -809,3 +809,48 @@ open Nested
 let _ = f 1
 """
     => []
+
+[<Test>]
+let ``used open C# type``() =
+    """
+open type System.Console
+
+WriteLine("Hello World")
+    """
+    => []
+    
+[<Test>]
+let ``unused open C# type``() =
+    """
+open type System.Console
+    
+printfn "%s" "Hello World"
+    """
+    => [2, (10, 24)]
+    
+[<Test>]
+let ``used open type from module``() =
+    """
+module MyModule =
+    type Thingy =
+        static member Thing = ()
+    
+open type MyModule.Thingy
+
+printfn "%A" Thing
+    """
+    => []
+        
+[<Test>]
+let ``unused open type from module``() =
+    """
+module MyModule =
+    type Thingy =
+        static member Thing = ()
+    
+open type MyModule.Thingy
+
+printfn "%A" MyModule.Thingy.Thing
+    """
+    => [6, (10, 25)]
+
