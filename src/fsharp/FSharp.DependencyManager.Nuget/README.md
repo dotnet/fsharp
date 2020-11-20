@@ -1,4 +1,4 @@
-# dotnet fsi: NuGet Dependency Manager Plugin
+# `dotnet fsi`: NuGet Dependency Manager Plugin
 
 This extensions ship by default since .NET 5. It can be used in fsharp interactive through `dotnet fsi` without further setup through `#r "nuget:"` references.
 
