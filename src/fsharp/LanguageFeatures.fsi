@@ -23,8 +23,8 @@ type LanguageFeature =
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
-    | StructActivePattern
     | ExpandedMeasurables
+    | StructActivePattern
 
 /// LanguageVersion management
 type LanguageVersion =
