@@ -3,6 +3,7 @@
 open System
 open System.IO
 open System.Diagnostics
+open System.Reflection
 open NUnit.Framework
 open TestFramework
 open HandleExpects
@@ -222,12 +223,15 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
             let mutable result = ""
             lock lockObj <| (fun () ->
                 let rec loop () =
-                    let dir = Path.Combine(Path.GetTempPath(), "FSharp.Cambridge", Path.GetRandomFileName())
-                    if Directory.Exists(dir) then
+                    let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
+                    if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "FSharp.Cambridge did not find artifacts directory --- has the location changed????"
+                    let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
+                    let projectDirectory = Path.Combine(pathToTemp, "FSharp.Cambridge", Path.GetRandomFileName())
+                    if Directory.Exists(projectDirectory) then
                         loop ()
                     else
-                        Directory.CreateDirectory(dir) |>ignore
-                        dir
+                        Directory.CreateDirectory(projectDirectory) |>ignore
+                        projectDirectory
                 result <- loop())
             result
 
