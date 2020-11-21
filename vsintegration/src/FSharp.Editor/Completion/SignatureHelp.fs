@@ -13,6 +13,7 @@ open Microsoft.VisualStudio.Shell
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 
+open FSharp.Compiler
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
@@ -370,250 +371,140 @@ type internal FSharpSignatureHelpProvider
                             return adjustedColumnInSource
                     }
 
-                if parseResults.IsPosWithinAFunctionApplication pos then
-                    let! funcRange = parseResults.TryRangeOfFunctionInApplication pos
-                    let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
-                    let! funcSymbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
-                    match funcSymbolUse.Symbol with
-                    | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction ->
-                        let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
-                        match tooltip with
-                        | FSharpToolTipText []
-                        | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
-                        | _ ->
-                            let numDefinedArgs = mfv.CurriedParameterGroups |> Seq.concat |> Seq.length
-                            let! curriedArgsInSource = parseResults.GetAllArgumentsForFunctionApplicationAtPostion funcRange.Start
-
-                            // Don't show past the last one. Also offset by one, because we get sig help when we have none defined.
-                            do! Option.guard (curriedArgsInSource.Length <= (numDefinedArgs - 1))
-
-                            let! argumentIndex =
-                                curriedArgsInSource
-                                |> List.indexed
-                                |> List.tryFind(fun (_, argRanage) -> rangeContainsPos argRanage pos)
-                                |> Option.map (fun (index, _) -> index + 1) // TODO: explain why offsetting here
-
-                            for x in curriedArgsInSource do
-                                logInfof "%A" x
-
-                            logInfof "Index: %d" argumentIndex
-
-                            let mainDescription, documentation, typeParameterMap, usage, exceptions =
-                                ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-
-                            XmlDocumentation.BuildDataTipText(
-                                documentationBuilder,
-                                mainDescription.Add,
-                                documentation.Add,
-                                typeParameterMap.Add,
-                                usage.Add,
-                                exceptions.Add,
-                                tooltip)
-
-                            let fsharpDocs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
-                        
-                            let docs = ResizeArray()
-                            for fsharpDoc in fsharpDocs do
-                                RoslynHelpers.CollectTaggedText docs fsharpDoc
-
-                            let parts = ResizeArray()
-                            for part in mainDescription do
-                                RoslynHelpers.CollectTaggedText parts part
-
-                            let args = ResizeArray()
-                            for group in mfv.CurriedParameterGroups do
-                                for argument in group do
-                                    let ret =
-                                        if argument.Type.HasTypeDefinition then
-                                            argument.Type.TypeDefinition.DisplayName
-                                        elif argument.Type.IsGenericParameter then
-                                            "'" + argument.Type.GenericParameter.DisplayName
-                                        else
-                                            logInfof "uhhh %A" mfv.ReturnParameter
-                                            ""
-
-                                    let display =
-                                        [|
-                                            TaggedText(TextTags.Local, argument.DisplayName)
-                                            TaggedText(TextTags.Punctuation, ":")
-                                            TaggedText(TextTags.Space, " ")
-                                            TaggedText(TextTags.Class, ret)
-                                        |]
-
-                                    let info =
-                                        { ParameterName = argument.DisplayName
-                                          IsOptional = false
-                                          CanonicalTypeTextForSorting = argument.FullName
-                                          Documentation = ResizeArray()
-                                          DisplayParts = ResizeArray(display) }
-
-                                    args.Add(info)
-
-                            let prefixParts =
-                                [|
-                                    TaggedText(TextTags.Keyword, "val")
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Method, mfv.DisplayName)
-                                    TaggedText(TextTags.Punctuation, ":")
-                                    TaggedText(TextTags.Space, " ")
-                                |]
-
-                            let separatorParts =
-                                [|
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Operator, "->")
-                                    TaggedText(TextTags.Space, " ")
-                                |]
-
-                            let ret =
-                                if mfv.ReturnParameter.Type.HasTypeDefinition then
-                                    mfv.ReturnParameter.Type.TypeDefinition.DisplayName
-                                elif mfv.ReturnParameter.Type.IsGenericParameter then
-                                    "'" + mfv.ReturnParameter.Type.GenericParameter.DisplayName
-                                else
-                                    logInfof "uhhh %A" mfv.ReturnParameter
-                                    ""
-
-                            let suffixParts =
-                                [|
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Operator, "->")
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Class, ret)
-                                |]
-
-                            let sigHelpItem =
-                                { HasParamArrayArg = false
-                                  Documentation = docs
-                                  PrefixParts = prefixParts
-                                  SeparatorParts = separatorParts
-                                  SuffixParts = suffixParts
-                                  Parameters = args.ToArray()
-                                  MainDescription = ResizeArray() }
-
-                            let data =
-                                { SignatureHelpItems = [| sigHelpItem |]
-                                  ApplicableSpan = TextSpan(tooltipPosition, 1)
-                                  ArgumentIndex = argumentIndex
-                                  ArgumentCount = args.Count
-                                  ArgumentName = None }
-
-                            return! Some data
+                let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
+                let! funcSymbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+                match funcSymbolUse.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction ->
+                    let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
+                    match tooltip with
+                    | FSharpToolTipText []
+                    | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
                     | _ ->
-                        return! None
-                else
-                    let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
-                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
-                    match symbolUse.Symbol with
-                    | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction ->
-                        let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
-                        match tooltip with
-                        | FSharpToolTipText []
-                        | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
-                        | _ ->
-                            let mainDescription, documentation, typeParameterMap, usage, exceptions =
-                                ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+                        let numDefinedArgs = mfv.CurriedParameterGroups |> Seq.concat |> Seq.length
+                        let curriedArgsInSource =
+                            parseResults.GetAllArgumentsForFunctionApplicationAtPostion funcSymbolUse.RangeAlternate.Start
+                            |> Option.defaultValue []
 
-                            XmlDocumentation.BuildDataTipText(
-                                documentationBuilder,
-                                mainDescription.Add,
-                                documentation.Add,
-                                typeParameterMap.Add,
-                                usage.Add,
-                                exceptions.Add,
-                                tooltip)
+                        // Don't show past the last one. Also offset by one, because we get sig help when we have none defined.
+                        do! Option.guard (curriedArgsInSource.Length <= (numDefinedArgs - 1))
 
-                            let fsharpDocs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
-                        
-                            let docs = ResizeArray()
-                            for fsharpDoc in fsharpDocs do
-                                RoslynHelpers.CollectTaggedText docs fsharpDoc
+                        let argumentIndex =
+                            curriedArgsInSource
+                            |> List.indexed
+                            |> List.tryFind(fun (_, argRanage) -> rangeContainsPos argRanage pos)
+                            |> Option.map (fun (index, _) -> index + 1) // TODO: explain why offsetting here
+                            |> Option.defaultValue 0
 
-                            let parts = ResizeArray()
-                            for part in mainDescription do
-                                RoslynHelpers.CollectTaggedText parts part
+                        for x in curriedArgsInSource do
+                            logInfof "%A" x
 
-                            let args = ResizeArray()
-                            for group in mfv.CurriedParameterGroups do
-                                for argument in group do
-                                    let ret =
-                                        if argument.Type.HasTypeDefinition then
-                                            argument.Type.TypeDefinition.DisplayName
-                                        elif argument.Type.IsGenericParameter then
-                                            "'" + argument.Type.GenericParameter.DisplayName
-                                        else
-                                            logInfof "uhhh %A" mfv.ReturnParameter
-                                            ""
+                        logInfof "Index: %d" argumentIndex
 
-                                    let display =
-                                        [|
-                                            TaggedText(TextTags.Local, argument.DisplayName)
-                                            TaggedText(TextTags.Punctuation, ":")
-                                            TaggedText(TextTags.Space, " ")
-                                            TaggedText(TextTags.Class, ret)
-                                        |]
+                        let mainDescription, documentation, typeParameterMap, usage, exceptions =
+                            ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
 
-                                    let info =
-                                        { ParameterName = argument.DisplayName
-                                          IsOptional = false
-                                          CanonicalTypeTextForSorting = argument.FullName
-                                          Documentation = ResizeArray()
-                                          DisplayParts = ResizeArray(display) }
+                        XmlDocumentation.BuildDataTipText(
+                            documentationBuilder,
+                            mainDescription.Add,
+                            documentation.Add,
+                            typeParameterMap.Add,
+                            usage.Add,
+                            exceptions.Add,
+                            tooltip)
 
-                                    args.Add(info)
+                        let fsharpDocs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                                       
+                        let docs = ResizeArray()
+                        for fsharpDoc in fsharpDocs do
+                            RoslynHelpers.CollectTaggedText docs fsharpDoc
 
-                            let prefixParts =
-                                [|
-                                    TaggedText(TextTags.Keyword, "val")
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Method, mfv.DisplayName)
-                                    TaggedText(TextTags.Punctuation, ":")
-                                    TaggedText(TextTags.Space, " ")
-                                |]
+                        let parts = ResizeArray()
+                        for part in mainDescription do
+                            RoslynHelpers.CollectTaggedText parts part
 
-                            let separatorParts =
-                                [|
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Operator, "->")
-                                    TaggedText(TextTags.Space, " ")
-                                |]
+                        let args = ResizeArray()
+                        for group in mfv.CurriedParameterGroups do
+                            for argument in group do
+                                let taggedText = ResizeArray()
+                                let tt = ResizeArray()
+                                let layout = argument.Type.FormatLayout funcSymbolUse.DisplayContext
+                                Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
+                                for part in taggedText do
+                                    RoslynHelpers.CollectTaggedText tt part
 
-                            let ret =
-                                if mfv.ReturnParameter.Type.HasTypeDefinition then
-                                    mfv.ReturnParameter.Type.TypeDefinition.DisplayName
-                                elif mfv.ReturnParameter.Type.IsGenericParameter then
-                                    "'" + mfv.ReturnParameter.Type.GenericParameter.DisplayName
-                                else
-                                    logInfof "uhhh %A" mfv.ReturnParameter
-                                    ""
+                                let display =
+                                    [|
+                                        TaggedText(TextTags.Local, argument.DisplayName)
+                                        TaggedText(TextTags.Punctuation, ":")
+                                        TaggedText(TextTags.Space, " ")
+                                    |]
+                                    |> ResizeArray
 
-                            let suffixParts =
-                                [|
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Operator, "->")
-                                    TaggedText(TextTags.Space, " ")
-                                    TaggedText(TextTags.Class, ret)
-                                |]
+                                display.AddRange(tt)
 
-                            let sigHelpItem =
-                                { HasParamArrayArg = false
-                                  Documentation = docs
-                                  PrefixParts = prefixParts
-                                  SeparatorParts = separatorParts
-                                  SuffixParts = suffixParts
-                                  Parameters = args.ToArray()
-                                  MainDescription = ResizeArray() }
+                                let info =
+                                    { ParameterName = argument.DisplayName
+                                      IsOptional = false
+                                      CanonicalTypeTextForSorting = argument.FullName
+                                      Documentation = ResizeArray()
+                                      DisplayParts = display }
 
-                            let data =
-                                { SignatureHelpItems = [| sigHelpItem |]
-                                  ApplicableSpan = TextSpan(tooltipPosition, 1)
-                                  ArgumentIndex = 0
-                                  ArgumentCount = args.Count
-                                  ArgumentName = None }
+                                args.Add(info)
 
-                            return! Some data
-                    | _ ->
-                        return! None
+                        let prefixParts =
+                            [|
+                                TaggedText(TextTags.Keyword, "val")
+                                TaggedText(TextTags.Space, " ")
+                                TaggedText(TextTags.Method, mfv.DisplayName)
+                                TaggedText(TextTags.Punctuation, ":")
+                                TaggedText(TextTags.Space, " ")
+                            |]
+
+                        let separatorParts =
+                            [|
+                                TaggedText(TextTags.Space, " ")
+                                TaggedText(TextTags.Operator, "->")
+                                TaggedText(TextTags.Space, " ")
+                            |]
+
+                        let ret =
+                            let taggedText = ResizeArray()
+                            let tt = ResizeArray()
+                            let layout = mfv.ReturnParameter.Type.FormatLayout funcSymbolUse.DisplayContext
+                            Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
+                            for part in taggedText do
+                                RoslynHelpers.CollectTaggedText tt part
+                            tt
+
+                        let suffixParts =
+                            [|
+                                TaggedText(TextTags.Space, " ")
+                                TaggedText(TextTags.Operator, "->")
+                                TaggedText(TextTags.Space, " ")
+                            |]
+                            |> ResizeArray
+
+                        suffixParts.AddRange(ret)
+
+                        let sigHelpItem =
+                            { HasParamArrayArg = false
+                              Documentation = docs
+                              PrefixParts = prefixParts
+                              SeparatorParts = separatorParts
+                              SuffixParts = suffixParts.ToArray()
+                              Parameters = args.ToArray()
+                              MainDescription = ResizeArray() }
+
+                        let data =
+                            { SignatureHelpItems = [| sigHelpItem |]
+                              ApplicableSpan = TextSpan(tooltipPosition, 1)
+                              ArgumentIndex = argumentIndex
+                              ArgumentCount = args.Count
+                              ArgumentName = None }
+
+                        return! Some data
+                | _ ->
+                    return! None
             }
 
     interface IFSharpSignatureHelpProvider with
