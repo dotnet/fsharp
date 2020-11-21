@@ -340,34 +340,40 @@ type internal FSharpSignatureHelpProvider
             textVersionHash: int
         ) =
             asyncMaybe {
-                let mutable posToDoStuffWith = caretPosition
-                let mutable s = sourceText.GetSubText(posToDoStuffWith).ToString()
-
-                while String.IsNullOrWhiteSpace(s) do
-                    posToDoStuffWith <- posToDoStuffWith - 1
-                    s <- sourceText.GetSubText(posToDoStuffWith).ToString()
-
-                // We're tracking from the end, not the start, but GetSubText uses the start. So we offset by one again, whee
-                posToDoStuffWith <- posToDoStuffWith + 1
+                let adjustedColumnInSource =
+                    let rec loop s c =
+                        if String.IsNullOrWhiteSpace(s) then
+                            loop (sourceText.GetSubText(c - 1).ToString()) (c - 1)
+                        else
+                            c
+                    loop (sourceText.GetSubText(caretPosition).ToString()) caretPosition
 
                 // For function applications, we need to offset this by 1 because
-                // otherwise it won't display.
+                // otherwise it won't display. TODO better explanation lmao
                 let tooltipPosition = caretPosition - 1
 
                 let perfOptions = document.FSharpOptions.LanguageServicePerformance
-                let textLine = sourceText.Lines.GetLineFromPosition(posToDoStuffWith)
-                let textLinePos = sourceText.Lines.GetLinePosition(posToDoStuffWith)
+                let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
+                let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
                 let pos = mkPos (Line.fromZ textLinePos.Line) textLinePos.Character
-                let textLinePos = sourceText.Lines.GetLinePosition(posToDoStuffWith)
+                let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line
                 let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
                 
-                if parseResults.IsPosWithinAFunctionApplication pos then
-                    let! funcRange = parseResults.TryRangeOfFunctionInApplication pos 
-                    let! funcSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcRange)
-                    let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, funcSpan.Start, filePath, defines, SymbolLookupKind.Greedy, false, false)
-                    let! funcSymbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+                let! possibleFuncPosition =
+                    maybe {
+                        if parseResults.IsPosWithinAFunctionApplication pos then
+                            let! funcRange = parseResults.TryRangeOfFunctionInApplication pos 
+                            let! funcSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcRange)
+                            return funcSpan.Start
+                        else
+                            return adjustedColumnInSource
+                    }
 
+                if parseResults.IsPosWithinAFunctionApplication pos then
+                    let! funcRange = parseResults.TryRangeOfFunctionInApplication pos
+                    let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
+                    let! funcSymbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
                     match funcSymbolUse.Symbol with
                     | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction ->
                         let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
@@ -381,8 +387,20 @@ type internal FSharpSignatureHelpProvider
                             // Don't show past the last one. Also offset by one, because we get sig help when we have none defined.
                             do! Option.guard (curriedArgsInSource.Length <= (numDefinedArgs - 1))
 
-                            let mainDescription, documentation, typeParameterMap, usage, exceptions, appliedParams =
-                                ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+                            let! argumentIndex =
+                                curriedArgsInSource
+                                |> List.indexed
+                                |> List.tryFind(fun (_, argRanage) -> rangeContainsPos argRanage pos)
+                                |> Option.map (fun (index, _) -> index + 1) // TODO: explain why offsetting here
+
+                            for x in curriedArgsInSource do
+                                logInfof "%A" x
+
+                            logInfof "Index: %d" argumentIndex
+
+                            let mainDescription, documentation, typeParameterMap, usage, exceptions =
+                                ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+
                             XmlDocumentation.BuildDataTipText(
                                 documentationBuilder,
                                 mainDescription.Add,
@@ -391,48 +409,7 @@ type internal FSharpSignatureHelpProvider
                                 usage.Add,
                                 exceptions.Add,
                                 tooltip)
-                            let fsharpDocs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
-                        
-                            let docs = ResizeArray()
-                            for fsharpDoc in fsharpDocs do
-                                RoslynHelpers.CollectTaggedText docs fsharpDoc
 
-                            let parts = ResizeArray()
-                            for part in mainDescription do
-                                RoslynHelpers.CollectTaggedText parts part
-
-                            let sigHelpItem =
-                                { HasParamArrayArg = false
-                                  Documentation = docs
-                                  PrefixParts = [||]
-                                  SeparatorParts = [||]
-                                  SuffixParts = [||]
-                                  Parameters = appliedParams.ToArray()
-                                  MainDescription = parts }
-
-                            let data =
-                                { SignatureHelpItems = [| sigHelpItem |]
-                                  ApplicableSpan = TextSpan(tooltipPosition, 1)
-                                  ArgumentIndex = 0
-                                  ArgumentCount = appliedParams.Count
-                                  ArgumentName = None }
-
-                            return! Some data
-                    | _ ->
-                        return! None
-                else
-                    let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, posToDoStuffWith, filePath, defines, SymbolLookupKind.Greedy, false, false)
-                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
-                    match symbolUse.Symbol with
-                    | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction ->
-                        let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
-                        match tooltip with
-                        | FSharpToolTipText []
-                        | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
-                        | _ ->
-                            let _appliedParams = ResizeArray()
-                            let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                            XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, tooltip)
                             let fsharpDocs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         
                             let docs = ResizeArray()
@@ -452,8 +429,8 @@ type internal FSharpSignatureHelpProvider
                                         elif argument.Type.IsGenericParameter then
                                             "'" + argument.Type.GenericParameter.DisplayName
                                         else
-                                            logInfof "lol fuck %A" argument.Type
-                                            "poopy"
+                                            logInfof "uhhh %A" mfv.ReturnParameter
+                                            ""
 
                                     let display =
                                         [|
@@ -462,12 +439,14 @@ type internal FSharpSignatureHelpProvider
                                             TaggedText(TextTags.Space, " ")
                                             TaggedText(TextTags.Class, ret)
                                         |]
+
                                     let info =
                                         { ParameterName = argument.DisplayName
                                           IsOptional = false
                                           CanonicalTypeTextForSorting = argument.FullName
                                           Documentation = ResizeArray()
                                           DisplayParts = ResizeArray(display) }
+
                                     args.Add(info)
 
                             let prefixParts =
@@ -492,9 +471,121 @@ type internal FSharpSignatureHelpProvider
                                 elif mfv.ReturnParameter.Type.IsGenericParameter then
                                     "'" + mfv.ReturnParameter.Type.GenericParameter.DisplayName
                                 else
-                                    logInfof "lol fuck %A" mfv.ReturnParameter.Type
-                                    "poopy"
-                            logInfof "Return parameter is: %A" ret
+                                    logInfof "uhhh %A" mfv.ReturnParameter
+                                    ""
+
+                            let suffixParts =
+                                [|
+                                    TaggedText(TextTags.Space, " ")
+                                    TaggedText(TextTags.Operator, "->")
+                                    TaggedText(TextTags.Space, " ")
+                                    TaggedText(TextTags.Class, ret)
+                                |]
+
+                            let sigHelpItem =
+                                { HasParamArrayArg = false
+                                  Documentation = docs
+                                  PrefixParts = prefixParts
+                                  SeparatorParts = separatorParts
+                                  SuffixParts = suffixParts
+                                  Parameters = args.ToArray()
+                                  MainDescription = ResizeArray() }
+
+                            let data =
+                                { SignatureHelpItems = [| sigHelpItem |]
+                                  ApplicableSpan = TextSpan(tooltipPosition, 1)
+                                  ArgumentIndex = argumentIndex
+                                  ArgumentCount = args.Count
+                                  ArgumentName = None }
+
+                            return! Some data
+                    | _ ->
+                        return! None
+                else
+                    let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
+                    let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+                    match symbolUse.Symbol with
+                    | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction ->
+                        let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
+                        match tooltip with
+                        | FSharpToolTipText []
+                        | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
+                        | _ ->
+                            let mainDescription, documentation, typeParameterMap, usage, exceptions =
+                                ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+
+                            XmlDocumentation.BuildDataTipText(
+                                documentationBuilder,
+                                mainDescription.Add,
+                                documentation.Add,
+                                typeParameterMap.Add,
+                                usage.Add,
+                                exceptions.Add,
+                                tooltip)
+
+                            let fsharpDocs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                        
+                            let docs = ResizeArray()
+                            for fsharpDoc in fsharpDocs do
+                                RoslynHelpers.CollectTaggedText docs fsharpDoc
+
+                            let parts = ResizeArray()
+                            for part in mainDescription do
+                                RoslynHelpers.CollectTaggedText parts part
+
+                            let args = ResizeArray()
+                            for group in mfv.CurriedParameterGroups do
+                                for argument in group do
+                                    let ret =
+                                        if argument.Type.HasTypeDefinition then
+                                            argument.Type.TypeDefinition.DisplayName
+                                        elif argument.Type.IsGenericParameter then
+                                            "'" + argument.Type.GenericParameter.DisplayName
+                                        else
+                                            logInfof "uhhh %A" mfv.ReturnParameter
+                                            ""
+
+                                    let display =
+                                        [|
+                                            TaggedText(TextTags.Local, argument.DisplayName)
+                                            TaggedText(TextTags.Punctuation, ":")
+                                            TaggedText(TextTags.Space, " ")
+                                            TaggedText(TextTags.Class, ret)
+                                        |]
+
+                                    let info =
+                                        { ParameterName = argument.DisplayName
+                                          IsOptional = false
+                                          CanonicalTypeTextForSorting = argument.FullName
+                                          Documentation = ResizeArray()
+                                          DisplayParts = ResizeArray(display) }
+
+                                    args.Add(info)
+
+                            let prefixParts =
+                                [|
+                                    TaggedText(TextTags.Keyword, "val")
+                                    TaggedText(TextTags.Space, " ")
+                                    TaggedText(TextTags.Method, mfv.DisplayName)
+                                    TaggedText(TextTags.Punctuation, ":")
+                                    TaggedText(TextTags.Space, " ")
+                                |]
+
+                            let separatorParts =
+                                [|
+                                    TaggedText(TextTags.Space, " ")
+                                    TaggedText(TextTags.Operator, "->")
+                                    TaggedText(TextTags.Space, " ")
+                                |]
+
+                            let ret =
+                                if mfv.ReturnParameter.Type.HasTypeDefinition then
+                                    mfv.ReturnParameter.Type.TypeDefinition.DisplayName
+                                elif mfv.ReturnParameter.Type.IsGenericParameter then
+                                    "'" + mfv.ReturnParameter.Type.GenericParameter.DisplayName
+                                else
+                                    logInfof "uhhh %A" mfv.ReturnParameter
+                                    ""
 
                             let suffixParts =
                                 [|
@@ -522,7 +613,6 @@ type internal FSharpSignatureHelpProvider
 
                             return! Some data
                     | _ ->
-                        logInfof "something else: %A" symbolUse.Symbol
                         return! None
             }
 
