@@ -217,7 +217,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Me.TargetFramework.FormattingEnabled = True
             resources.ApplyResources(Me.TargetFramework, "TargetFramework")
             Me.TargetFramework.Name = "TargetFramework"
-            Me.TargetFramework.Sorted = True
+            Me.TargetFramework.Sorted = False
             '
             'TargetFSharpCoreVersion
             '
@@ -577,7 +577,9 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private Function ValidateTargetFrameworkMoniker(ByVal moniker As String) As Boolean
             If String.IsNullOrWhiteSpace(moniker) Then
                 Return False
-            ElseIf moniker.StartsWith(".NETCoreApp", StringComparison.OrdinalIgnoreCase) Then
+            ElseIf moniker.StartsWith(".NETCoreApp", StringComparison.OrdinalIgnoreCase) Or
+                   moniker.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase) Or
+                   moniker.StartsWith(".NET", StringComparison.OrdinalIgnoreCase) Then
                 If Me.OutputType.SelectedIndex <> INDEX_INVALID Then    ' NetCore always include
                     ' .NET Core and .NETStandard don't need redists to be installed.
                     Return True
@@ -684,16 +686,24 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                     Dim supportedTargetFrameworksDescriptor As PropertyDescriptor = GetPropertyDescriptor("SupportedTargetFrameworks")
                     Dim supportedFrameworks As IEnumerable(Of TargetFrameworkMoniker) = TargetFrameworkMoniker.GetSupportedTargetFrameworkMonikers(vsFrameworkMultiTargeting, DTEProject, isSdkProject, supportedTargetFrameworksDescriptor)
 
+                    Dim tfms As List(Of TargetFrameworkMoniker) = New List(Of TargetFrameworkMoniker)()
                     For Each supportedFramework As TargetFrameworkMoniker In supportedFrameworks
-                        If Me.ValidateTargetFrameworkMoniker(supportedFramework.Moniker) Then
+                        If supportedFramework.Moniker.StartsWith(".NETFramework", StringComparison.OrdinalIgnoreCase) Then
                             Dim candidate As FrameworkName = New FrameworkName(supportedFramework.Moniker)
                             ' For portables add profile of current project
                             If Not isPortable OrElse candidate.Profile = currentFrameworkName.Profile Then
-                                Me.TargetFramework.Items.Add(supportedFramework)
+                                tfms.Add(supportedFramework)
                             End If
+                        Else
+                            tfms.Add(supportedFramework)
                         End If
                     Next
 
+                    tfms.Sort()
+
+                    For Each tfm In tfms
+                        Me.TargetFramework.Items.Add(tfm)
+                    Next
                 End If
 
                 ' Put back previous value
@@ -758,7 +768,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Else
                 Dim stringValue As String = DirectCast(value, String)
                 For Each entry As TargetFrameworkMoniker In combobox.Items
-                    If entry.Moniker = stringValue Then
+                    If entry.NormalizedTFM = stringValue Then
                         combobox.SelectedItem = entry
                         Exit For
                     End If
@@ -783,7 +793,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private Function GetTargetFramework(ByVal control As Control, ByVal prop As PropertyDescriptor, ByRef value As Object) As Boolean
             Dim currentTarget As TargetFrameworkMoniker = CType(CType(control, ComboBox).SelectedItem, TargetFrameworkMoniker)
             If currentTarget IsNot Nothing Then
-                value = currentTarget.Moniker
+                value = currentTarget.NormalizedTfm
                 Return True
             End If
 
@@ -799,6 +809,5 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 #End Region
 
     End Class
-
 
 End Namespace
