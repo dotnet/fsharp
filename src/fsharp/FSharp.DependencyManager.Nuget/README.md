@@ -1,6 +1,6 @@
 # `dotnet fsi`: NuGet Dependency Manager Plugin
 
-This extensions ship by default since .NET 5. It can be used in fsharp interactive through `dotnet fsi` without further setup through `#r "nuget:"` references.
+This extension ships by default since .NET 5. It can be used in F# interactive through `dotnet fsi` without further setup through `#r "nuget:"` references.
 
 ```fsharp
 #r "nuget: Newtonsoft.Json"
@@ -15,4 +15,3 @@ printfn "%s" (JsonConvert.SerializeObject o)"
 ```
 
 There are more Dependency Manager extensions, find more about them: [Microsoft.DotNet.DependencyManager](https://github.com/dotnet/fsharp/tree/main/src/fsharp/Microsoft.DotNet.DependencyManager)
-
