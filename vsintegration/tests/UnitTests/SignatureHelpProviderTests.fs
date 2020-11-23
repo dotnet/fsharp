@@ -58,7 +58,7 @@ let private DefaultDocumentationProvider =
 
 let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
-        let triggerChar = None // TODO:
+        let triggerChar = Char.MinValue
         let code = File.ReadAllText(fileName)
         let! triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(code), caretPosition, project.Options, triggerChar, fileName, 0)
         return triggered
@@ -81,10 +81,6 @@ let GetCompletionTypeNamesFromCursorPosition (project:FSharpProject) =
 
 let GetCompletionTypeNamesFromXmlString (xml:string) =
     use project = CreateProject xml
-    GetCompletionTypeNamesFromCursorPosition project
-
-let GetCompletionTypeNamesFromCode (code:string) =
-    use project = SingleFileProject code
     GetCompletionTypeNamesFromCursorPosition project
 
 [<Test>]
@@ -179,7 +175,7 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-            let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
+            let triggerChar = if marker = "," then ',' elif marker = "(" then '(' else '<'
             let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
