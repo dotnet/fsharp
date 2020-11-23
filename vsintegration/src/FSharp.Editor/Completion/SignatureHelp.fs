@@ -156,7 +156,7 @@ type internal FSharpSignatureHelpProvider
         | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
 
     // Unit-testable core routine
-    static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char, filePath: string, textVersionHash: int) =
+    static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) =
         async {
             let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName = userOpName)
             match checkFileAnswer with
@@ -237,7 +237,7 @@ type internal FSharpSignatureHelpProvider
                     // should not result in a prompt, whereas this one will:
                     //    Console.WriteLine( [(1,2)],
                     match triggerIsTypedChar with 
-                    | '<' | '(' | ',' when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn))  -> 
+                    | Some('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn))  -> 
                         return None // comma or paren at wrong location = remove help display
                     | _ -> 
 
@@ -571,7 +571,7 @@ type internal FSharpSignatureHelpProvider
                                 sourceText,
                                 position,
                                 projectOptions,
-                                triggerTypedChar,
+                                Some triggerTypedChar,
                                 document.FilePath,
                                 textVersion.GetHashCode())
                         let items = 
