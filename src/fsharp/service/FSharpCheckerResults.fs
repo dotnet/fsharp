@@ -129,7 +129,8 @@ type ExternalDiagnostics(fileName: string) =
     member __.GetInfoFileStamp() = 
         try 
             if Directory.Exists(infoDir) && File.Exists infoFile then 
-                Some (File.GetLastWriteTime(infoFile)) 
+                // Some file systems don't return accurate information for GetLastWriteTime, so max with GetCreationTime
+                Some (max (File.GetLastWriteTime(infoFile)) (File.GetCreationTime(infoFile)))
             else 
                 None
          with _ -> None
