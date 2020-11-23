@@ -99,6 +99,30 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
     member scope.ParseHadErrors = parseHadErrors
 
     member scope.ParseTree = input
+
+    member scope.TryRangeOfParenEnclosingOpEqualsGreaterUsage opGreaterEqualPos =
+        let (|Ident|_|) ofName =
+            function | SynExpr.Ident ident when ident.idText = ofName -> Some ()
+                     | _ -> None
+        let (|InfixAppOfOpEqualsGreater|_|) =
+          function | SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.App(ExprAtomicFlag.NonAtomic, true, Ident "op_EqualsGreater", actualParamListExpr, _), actualLambdaBodyExpr, _) ->
+                        Some (actualParamListExpr, actualLambdaBodyExpr)
+                   | _ -> None
+
+        match scope.ParseTree with
+        | Some parseTree ->
+            AstTraversal.Traverse(opGreaterEqualPos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+                member _.VisitExpr(_, _, defaultTraverse, expr) =
+                    match expr with
+                    | SynExpr.Paren((InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _, _) ->
+                        Some (app.Range, lambdaArgs.Range, lambdaBody.Range)
+                    | _ -> defaultTraverse expr
+                member _.VisitBinding(defaultTraverse, binding) =
+                    match binding with
+                    | SynBinding.Binding (_, SynBindingKind.NormalBinding, _, _, _, _, _, _, _, (InfixAppOfOpEqualsGreater(lambdaArgs, lambdaBody) as app), _, _) ->
+                        Some(app.Range, lambdaArgs.Range, lambdaBody.Range)
+                    | _ -> defaultTraverse binding })
+        | None -> None
     
     member scope.TryRangeOfExprInYieldOrReturn pos =
         match scope.ParseTree with

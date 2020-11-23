@@ -217,6 +217,11 @@
         <target state="translated">正在格式化</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpLambda">
+        <source>Use F# lambda syntax</source>
+        <target state="new">Use F# lambda syntax</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="new">Use '&lt;-' to mutate value</target>
