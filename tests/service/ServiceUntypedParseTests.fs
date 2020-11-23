@@ -358,3 +358,27 @@ let y = !(x = false)
         |> shouldEqual (3, 8)
     | None ->
         Assert.Fail("No deref operator found in source.")
+
+[<Test>]
+let ``TryRangeOfRecordExpressionContainingPos - contained``() =
+    let source = """
+let x = { Name = "Hello" }
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRecordExpressionContainingPos (mkPos 2 10)
+    match res with
+    | Some res ->
+        res
+        |> tups
+        |> shouldEqual ((2, 8), (2, 26))
+    | None ->
+        Assert.Fail("No range of record found in source.")
+
+[<Test>]
+let ``TryRangeOfRecordExpressionContainingPos - not contained``() =
+    let source = """
+let x = { Name = "Hello" }
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfRecordExpressionContainingPos (mkPos 2 7)
+    Assert.True(res.IsNone, "Expected not to find a range.")

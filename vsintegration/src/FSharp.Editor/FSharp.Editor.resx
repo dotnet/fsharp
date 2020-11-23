@@ -255,4 +255,10 @@
   <data name="RemoveYieldBang" xml:space="preserve">
     <value>Remove yield!'</value>
   </data>
+  <data name="ConvertToAnonymousRecord" xml:space="preserve">
+    <value>Convert to Anonymous Record</value>
+  </data>
+  <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
+    <value>Use '&lt;-' to mutate value</value>
+  </data>
 </root>

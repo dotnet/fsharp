@@ -19,6 +19,9 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of a record expression containing the given position.
+    member TryRangeOfRecordExpressionContainingPos: pos: pos -> Option<range>
+
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
     /// '!' in a derefence operation of that expression, like:
