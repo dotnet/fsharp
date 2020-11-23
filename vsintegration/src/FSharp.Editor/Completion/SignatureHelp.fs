@@ -509,7 +509,7 @@ type internal FSharpSignatureHelpProvider
 
     interface IFSharpSignatureHelpProvider with
         member _.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ',' || c = ' '
-        member _.IsRetriggerCharacter(c) = c = ')' || c = '>' || c = '=' || c = ' '
+        member _.IsRetriggerCharacter(c) = c = ')' || c = '>' || c = '='
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
