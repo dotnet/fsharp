@@ -243,4 +243,16 @@
   <data name="ChangePrefixNegationToInfixSubtraction" xml:space="preserve">
     <value>Use subtraction instead of negation</value>
   </data>
+  <data name="RemoveReturn" xml:space="preserve">
+    <value>Remove 'return'</value>
+  </data>
+  <data name="RemoveReturnBang" xml:space="preserve">
+    <value>Remove 'return!'</value>
+  </data>
+  <data name="RemoveYield" xml:space="preserve">
+    <value>Remove 'yield'</value>
+  </data>
+  <data name="RemoveYieldBang" xml:space="preserve">
+    <value>Remove yield!'</value>
+  </data>
 </root>
