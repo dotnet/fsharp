@@ -519,12 +519,12 @@ type internal FSharpSignatureHelpProvider
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let! textVersion = document.GetTextVersionAsync(cancellationToken)
 
-                    let! triggerTypedChar = 
+                    let triggerTypedChar = 
                         if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = FSharpSignatureHelpTriggerReason.TypeCharCommand then
                             Some triggerInfo.TriggerCharacter.Value
                         else None
                     
-                    if triggerTypedChar = ' ' then
+                    if triggerTypedChar.IsSome && triggerTypedChar.Value = ' ' then
                         let! signatureHelpData =
                             FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                                 document,
@@ -571,7 +571,7 @@ type internal FSharpSignatureHelpProvider
                                 sourceText,
                                 position,
                                 projectOptions,
-                                Some triggerTypedChar,
+                                triggerTypedChar,
                                 document.FilePath,
                                 textVersion.GetHashCode())
                         let items = 
