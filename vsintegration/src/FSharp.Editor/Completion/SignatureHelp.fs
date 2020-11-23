@@ -237,11 +237,7 @@ type internal FSharpSignatureHelpProvider
                     // should not result in a prompt, whereas this one will:
                     //    Console.WriteLine( [(1,2)],
                     match triggerIsTypedChar with 
-<<<<<<< HEAD
                     | Some('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn))  -> 
-=======
-                    | '<' | '(' | ',' when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn))  -> 
->>>>>>> 713ddd6c8310d3fb8796d5179532c12ebbeed263
                         return None // comma or paren at wrong location = remove help display
                     | _ -> 
 
@@ -575,11 +571,7 @@ type internal FSharpSignatureHelpProvider
                                 sourceText,
                                 position,
                                 projectOptions,
-<<<<<<< HEAD
                                 Some triggerTypedChar,
-=======
-                                triggerTypedChar,
->>>>>>> 713ddd6c8310d3fb8796d5179532c12ebbeed263
                                 document.FilePath,
                                 textVersion.GetHashCode())
                         let items = 

@@ -58,11 +58,7 @@ let private DefaultDocumentationProvider =
 
 let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
-<<<<<<< HEAD
         let triggerChar = None
-=======
-        let triggerChar = Char.MinValue
->>>>>>> 713ddd6c8310d3fb8796d5179532c12ebbeed263
         let code = File.ReadAllText(fileName)
         let! triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(code), caretPosition, project.Options, triggerChar, fileName, 0)
         return triggered
@@ -176,14 +172,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
       let actual = 
         [ for (marker, expected) in testCases do
             printfn "Test case: marker = %s" marker 
-
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
-
-<<<<<<< HEAD
             let triggerChar = if marker ="," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-=======
-            let triggerChar = if marker = "," then ',' elif marker = "(" then '(' else '<'
->>>>>>> 713ddd6c8310d3fb8796d5179532c12ebbeed263
             let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
