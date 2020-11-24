@@ -347,15 +347,21 @@ type internal FSharpSignatureHelpProvider
                     if parseResults.IsPosContainedInApplication pos then
                         let! funcRange = parseResults.TryRangeOfFunctionOrMethodBeingApplied pos 
                         let! funcSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcRange)
-                        return funcSpan.Start
+                        return funcSpan.End
                     else
                         return adjustedColumnInSource
                 }
 
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleApplicableSymbolEndColumn, filePath, defines, SymbolLookupKind.Greedy, false, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+
+            let isValid (mfv: FSharpMemberOrFunctionOrValue) =
+                not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
+                not mfv.IsProperty &&
+                mfv.CurriedParameterGroups.Count > 0
+
             match symbolUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as mfv when not mfv.IsProperty && mfv.CurriedParameterGroups.Count > 0 ->
+            | :? FSharpMemberOrFunctionOrValue as mfv when isValid mfv ->
                 let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
                 match tooltip with
                 | FSharpToolTipText []
