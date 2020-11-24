@@ -1027,6 +1027,23 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             | _ ->
                 return false
         }
+
+    let tryGetBeforeSlot slot =
+        match slot with
+        | 0 (* first file *) ->
+            match initialSemanticModel with
+            | Some initial ->
+                (initial, DateTime.MinValue)
+                |> Some
+            | _ ->
+                None
+        | _ ->
+            match semanticModels.[slot - 1] with
+            | Some semanticModel ->
+                (semanticModel, stampedFileNames.[slot - 1])
+                |> Some
+            | _ ->
+                None
                 
     let eval cache ctok targetSlot =
         if targetSlot < 0 then
