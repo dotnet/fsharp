@@ -365,18 +365,51 @@ type internal FSharpSignatureHelpProvider
                     let curriedArgsInSource =
                         parseResults.GetAllArgumentsForApplicationAtPosition symbolUse.RangeAlternate.Start
                         |> Option.defaultValue []
+                        |> Array.ofList
 
-                    do! Option.guard (curriedArgsInSource.Length < numDefinedArgs)
+                    do! Option.guard (numDefinedArgs >= curriedArgsInSource.Length)
 
-                    // TODO - this is not correct. It is okay for a lot though
-                    // We need to work out where the caret is relative to other args.
-                    // We also need to special-case either the 0th or last arg
-                    let argumentIndex =
-                        curriedArgsInSource
-                        |> List.indexed
-                        |> List.tryFind(fun (_, argRange) -> rangeContainsPos argRange pos)
-                        |> Option.map (fun (index, _) -> index)
-                        |> Option.defaultValue 0
+                    // Calculate the argument index for fun and profit! It's a doozy...
+                    //
+                    // Firstly, we need to use the caret position unlike before.
+                    //
+                    // If the caret position is exactly in range of an existing argument, pick its index.
+                    //
+                    // The rest answers the question of, "what is the NEXT index to show?", because
+                    // when you're not cycling through parameters with the caret, you're typing,
+                    // and you want to know what the next argument should be.
+                    //
+                    // A possibility is you've deleted a parameter and want to enter a new one that
+                    // corresponds to the argument you're "at". We need to find the correct next index.
+                    // This could also correspond to an existing argument application. Buuuuuut that's okay.
+                    // If you want the "used to be 3rd arg, but is now 2nd arg" to remain, when you cycle
+                    // past the "now 2nd arg", it will calculate the 3rd arg as the next argument.
+                    //
+                    // If none of that applies, then we apply the magic of arithmetic
+                    // to find the next index if we're not at the max defined args for the application.
+                    // Otherwise, we're outa here!
+                    let! argumentIndex =
+                        let caretTextLinePos = sourceText.Lines.GetLinePosition(caretPosition)
+                        let caretPos = mkPos (Line.fromZ caretTextLinePos.Line) caretTextLinePos.Character
+
+                        let possibleExactIndex =
+                            curriedArgsInSource
+                            |> Array.tryFindIndex(fun argRange -> rangeContainsPos argRange caretPos)
+
+                        match possibleExactIndex with
+                        | Some index -> Some index
+                        | None ->
+                            let possibleNextIndex =
+                                curriedArgsInSource
+                                |> Array.tryFindIndex(fun argRange -> Range.posGeq argRange.Start caretPos)
+
+                            match possibleNextIndex with
+                            | Some index -> Some index
+                            | None ->
+                                if numDefinedArgs > curriedArgsInSource.Length then
+                                    Some (numDefinedArgs - (numDefinedArgs - curriedArgsInSource.Length))
+                                else
+                                    None
 
                     let mainDescription, documentation, typeParameterMap, usage, exceptions =
                         ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
