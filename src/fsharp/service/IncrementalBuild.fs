@@ -981,7 +981,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     match slot with
                     | 0 -> initial
                     | _ ->
-                        match semanticModels.[slot] with
+                        match semanticModels.[slot - 1] with
                         | Some(prevSemanticModel) -> prevSemanticModel
                         | _ -> 
                             // This shouldn't happen, but on the off-chance, just grab the initial semantic model.
@@ -1027,23 +1027,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             | _ ->
                 return false
         }
-
-    let tryGetBeforeSlot slot =
-        match slot with
-        | 0 (* first file *) ->
-            match initialSemanticModel with
-            | Some initial ->
-                (initial, DateTime.MinValue)
-                |> Some
-            | _ ->
-                None
-        | _ ->
-            match semanticModels.[slot - 1] with
-            | Some semanticModel ->
-                (semanticModel, stampedFileNames.[slot - 1])
-                |> Some
-            | _ ->
-                None
                 
     let eval cache ctok targetSlot =
         if targetSlot < 0 then
