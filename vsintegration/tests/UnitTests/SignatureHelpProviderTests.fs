@@ -30,6 +30,7 @@ open VisualFSharp.UnitTests.Roslyn
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
+open FSharp.Compiler.Range
 
 let filePath = "C:\\test.fs"
 
@@ -59,8 +60,32 @@ let private DefaultDocumentationProvider =
 let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
         let triggerChar = None
-        let code = File.ReadAllText(fileName)
-        let! triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(code), caretPosition, project.Options, triggerChar, fileName, 0)
+        let fileContents = File.ReadAllText(fileName)
+        let sourceText = SourceText.From(fileContents)
+        let textLines = sourceText.Lines
+        let caretLinePos = textLines.GetLinePosition(caretPosition)
+        let caretLineColumn = caretLinePos.Character
+        let perfOptions = LanguageServicePerformanceOptions.Default
+        let textVersionHash = 0
+        
+        let parseResults, _, checkFileResults =
+            let x =
+                checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, project.Options, perfOptions, "TestSignatureHelpProvider")
+                |> Async.RunSynchronously
+            x.Value
+
+        let paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn).Value
+        let triggered =
+            FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
+                caretLinePos,
+                caretLineColumn,
+                paramInfoLocations,
+                checkFileResults,
+                DefaultDocumentationProvider,
+                sourceText,
+                caretPosition,
+                triggerChar)
+            |> Async.RunSynchronously
         return triggered
     } |> Async.RunSynchronously
 
@@ -174,12 +199,38 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
             printfn "Test case: marker = %s" marker 
             let caretPosition = fileContents.IndexOf(marker) + marker.Length
             let triggerChar = if marker ="," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, DefaultDocumentationProvider, SourceText.From(fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
-            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            let sourceText = SourceText.From(fileContents)
+            let textLines = sourceText.Lines
+            let caretLinePos = textLines.GetLinePosition(caretPosition)
+            let caretLineColumn = caretLinePos.Character
+            let perfOptions = LanguageServicePerformanceOptions.Default
+            let textVersionHash = 0
+            
+            let parseResults, _, checkFileResults =
+                let x =
+                    checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+                    |> Async.RunSynchronously
+                x.Value
+
             let actual = 
-                match triggered with 
+                let paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
+                match paramInfoLocations with
                 | None -> None
-                | Some data -> Some (data.ApplicableSpan.ToString(),data.ArgumentIndex,data.ArgumentCount,data.ArgumentName)
+                | Some paramInfoLocations ->
+                    let triggered =
+                        FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
+                            caretLinePos,
+                            caretLineColumn,
+                            paramInfoLocations,
+                            checkFileResults,
+                            DefaultDocumentationProvider,
+                            sourceText,
+                            caretPosition,
+                            triggerChar)
+                        |> Async.RunSynchronously
+                    match triggered with 
+                    | None -> None
+                    | Some data -> Some (data.ApplicableSpan.ToString(),data.ArgumentIndex,data.ArgumentCount,data.ArgumentName)
 
             if expected <> actual then 
                 sb.AppendLine(sprintf "FSharpCompletionProvider.ProvideMethodsAsyncAux() gave unexpected results, expected %A, got %A" expected actual) |> ignore

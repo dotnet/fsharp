@@ -133,6 +133,20 @@ module Poop =
 
             | None -> false
 
+        member scope.IsPosWithinATupledCall pos =
+            match scope.ParseTree with
+            | Some input ->
+                let result =
+                    AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
+                        member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                            match expr with
+                            | SynExpr.App (_flag, _isInfix, _funcExpr, _argExpr, range) when rangeContainsPos range pos ->
+                                Some range
+                            | _ -> defaultTraverse expr
+                    })
+                result.IsSome
+            | None -> false
+
 [<Shared>]
 [<Export(typeof<IFSharpSignatureHelpProvider>)>]
 type internal FSharpSignatureHelpProvider 
@@ -155,211 +169,195 @@ type internal FSharpSignatureHelpProvider
         | [] -> Seq.empty
         | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
 
-    // Unit-testable core routine
-    static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) =
-        async {
-            let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName = userOpName)
-            match checkFileAnswer with
-            | FSharpCheckFileAnswer.Aborted ->
-                return None
-            | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
-                let textLines = sourceText.Lines
-                let caretLinePos = textLines.GetLinePosition(caretPosition)
-                let caretLineColumn = caretLinePos.Character
-
-                // Get the parameter locations
-                let paramLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
-                match paramLocations with
-                | None ->
-                    return None // no locations = no help
-                | Some nwpl -> 
-                    let names = nwpl.LongId
-                    let lidEnd = nwpl.LongIdEndLocation
-
-                    // Get the methods
-                    let methodGroup = checkFileResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)
-
-                    let methods = methodGroup.Methods
-
-                    if (methods.Length = 0 || methodGroup.MethodName.EndsWith("> )")) then return None else                    
-
-                    let isStaticArgTip =
-                        let parenLine, parenCol = Pos.toZ nwpl.OpenParenLocation 
-                        assert (parenLine < textLines.Count)
-                        let parenLineText = textLines.[parenLine].ToString()
-                        parenCol < parenLineText.Length && parenLineText.[parenCol] = '<'
-
-                    let filteredMethods =
-                        [| for m in methods do 
-                              if (isStaticArgTip && m.StaticParameters.Length > 0) ||
-                                  (not isStaticArgTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
-                                  yield m |]
-
-                    if filteredMethods.Length = 0 then return None else
-
-                    let posToLinePosition pos = 
-                        let (l,c) = Pos.toZ  pos
-                        // FSROSLYNTODO: FCS gives back line counts that are too large. Really, this shouldn't happen
-                        let result =LinePosition(l,c)
-                        let lastPosInDocument = textLines.GetLinePosition(textLines.[textLines.Count-1].End)
-                        if lastPosInDocument.CompareTo(result) > 0 then result else lastPosInDocument
-
-                    // Compute the start position
-                    let startPos = nwpl.LongIdStartLocation |> posToLinePosition
-
-                    // Compute the end position
-                    let endPos = 
-                        let last = nwpl.TupleEndLocations.[nwpl.TupleEndLocations.Length-1] |> posToLinePosition
-                        (if nwpl.IsThereACloseParen then oneColBefore last else last)  
-
-                    assert (startPos.CompareTo(endPos) <= 0)
-
-                    // Compute the applicable span between the parentheses
-                    let applicableSpan = 
-                        textLines.GetTextSpan(LinePositionSpan(startPos, endPos))
-
-                    let startOfArgs = nwpl.OpenParenLocation |> posToLinePosition |> oneColAfter 
-
-                    let tupleEnds = 
-                        [| yield startOfArgs
-                           for i in 0..nwpl.TupleEndLocations.Length-2 do
-                               yield nwpl.TupleEndLocations.[i] |> posToLinePosition
-                           yield endPos  |]
-
-                    // If we are pressing "(" or "<" or ",", then only pop up the info if this is one of the actual, real detected positions in the detected promptable call
-                    //
-                    // For example the last "(" in 
-                    //    List.map (fun a -> (
-                    // should not result in a prompt.
-                    //
-                    // Likewise the last "," in 
-                    //    Console.WriteLine( [(1, 
-                    // should not result in a prompt, whereas this one will:
-                    //    Console.WriteLine( [(1,2)],
-                    match triggerIsTypedChar with 
-                    | Some('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn))  -> 
-                        return None // comma or paren at wrong location = remove help display
-                    | _ -> 
-
-                        // Compute the argument index by working out where the caret is between the various commas.
-                        let argumentIndex = 
-                            let computedTextSpans =
-                                tupleEnds 
-                                |> Array.pairwise 
-                                |> Array.map (fun (lp1, lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)))
-                
-                            match (computedTextSpans|> Array.tryFindIndex (fun t -> t.Contains(caretPosition))) with 
-                            | None -> 
-                                // Because 'TextSpan.Contains' only succeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
-                                // we need to check if the caret is at the very last position in the TextSpan.
-                                //
-                                // We default to 0, which is the first argument, if the caret position was nowhere to be found.
-                                if computedTextSpans.[computedTextSpans.Length-1].End = caretPosition then
-                                    computedTextSpans.Length-1 
-                                else 0
-                            | Some n -> n
-         
-                        // Compute the overall argument count
-                        let argumentCount = 
-                            match nwpl.TupleEndLocations.Length with 
-                            | 1 when caretLinePos.Character = startOfArgs.Character -> 0  // count "WriteLine(" as zero arguments
-                            | n -> n
-
-                        // Compute the current argument name, if any
-                        let argumentName = 
-                            if argumentIndex < nwpl.NamedParamNames.Length then 
-                                nwpl.NamedParamNames.[argumentIndex] 
-                            else 
-                                None  // not a named argument
-
-                        // Prepare the results
-                        let results =
-                            [|
-                                for method in methods do
-                                    // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
-                                    let mainDescription = ResizeArray()
-                                    let documentation = ResizeArray()
-                                    XmlDocumentation.BuildMethodOverloadTipText(
-                                        documentationBuilder,
-                                        RoslynHelpers.CollectTaggedText mainDescription,
-                                        RoslynHelpers.CollectTaggedText documentation,
-                                        method.StructuredDescription, false)
-
-                                    let parameters = 
-                                        let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
-                                        [|
-                                            for p in parameters do 
-                                                let doc = ResizeArray()
-                                                let parts = ResizeArray()
-
-                                                // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
-                                                XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName)
-                                                renderL (taggedTextListR (RoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
-                                        
-                                                { ParameterName = p.ParameterName
-                                                  IsOptional = p.IsOptional
-                                                  CanonicalTypeTextForSorting = p.CanonicalTypeTextForSorting
-                                                  Documentation = doc
-                                                  DisplayParts = parts }
-                                        |]
-
-                                    let prefixParts = 
-                                        [| TaggedText(TextTags.Method, methodGroup.MethodName);  
-                                           TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
-
-                                    let separatorParts = [| TaggedText(TextTags.Punctuation, ","); TaggedText(TextTags.Space, " ") |]
-                                    let suffixParts = [| TaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
-
-                                    { HasParamArrayArg = method.HasParamArrayArg
-                                      Documentation = documentation
-                                      PrefixParts = prefixParts
-                                      SeparatorParts = separatorParts
-                                      SuffixParts = suffixParts
-                                      Parameters = parameters
-                                      MainDescription = mainDescription }
-                                |]
-
-                        let data =
-                            { SignatureHelpItems = results
-                              ApplicableSpan = applicableSpan
-                              ArgumentIndex = argumentIndex
-                              ArgumentCount = argumentCount
-                              ArgumentName = argumentName }
-                        return Some data
-        }
-
-    static member internal ProvideParametersAsyncAux
+    static member internal ProvideMethodsAsyncAux
         (
-            document: Document,
-            defines: string list,
-            checker: FSharpChecker,
+            caretLinePos: LinePosition,
+            caretLineColumn: int,
+            paramLocations: FSharpNoteworthyParamInfoLocations,
+            checkFileResults: FSharpCheckFileResults,
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
-            options: FSharpProjectOptions,
-            filePath: string,
-            textVersionHash: int
+            triggerIsTypedChar: char option
+        ) =
+        asyncMaybe {
+            let textLines = sourceText.Lines
+            let names = paramLocations.LongId
+            let lidEnd = paramLocations.LongIdEndLocation
+
+            let methodGroup = checkFileResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)
+
+            let methods = methodGroup.Methods
+
+            do! Option.guard (methods.Length > 0 && not(methodGroup.MethodName.EndsWith("> )")))
+
+            let isStaticArgTip =
+                let parenLine, parenCol = Pos.toZ paramLocations.OpenParenLocation 
+                assert (parenLine < textLines.Count)
+                let parenLineText = textLines.[parenLine].ToString()
+                parenCol < parenLineText.Length && parenLineText.[parenCol] = '<'
+
+            let filteredMethods =
+                [|
+                    for m in methods do 
+                        if (isStaticArgTip && m.StaticParameters.Length > 0) ||
+                            (not isStaticArgTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
+                            m
+                |]
+
+            do! Option.guard (filteredMethods.Length > 0)
+
+            let posToLinePosition pos = 
+                let (l,c) = Pos.toZ  pos
+                let result = LinePosition(l,c)
+                let lastPosInDocument = textLines.GetLinePosition(textLines.[textLines.Count-1].End)
+                if lastPosInDocument.CompareTo(result) > 0 then result else lastPosInDocument
+
+            let startPos = paramLocations.LongIdStartLocation |> posToLinePosition
+            let endPos = 
+                let last = paramLocations.TupleEndLocations.[paramLocations.TupleEndLocations.Length-1] |> posToLinePosition
+                (if paramLocations.IsThereACloseParen then oneColBefore last else last)  
+
+            assert (startPos.CompareTo(endPos) <= 0)
+
+            let applicableSpan = 
+                textLines.GetTextSpan(LinePositionSpan(startPos, endPos))
+
+            let startOfArgs = paramLocations.OpenParenLocation |> posToLinePosition |> oneColAfter 
+
+            let tupleEnds = 
+                [|
+                    startOfArgs
+                    for i in 0..paramLocations.TupleEndLocations.Length-2 do
+                        paramLocations.TupleEndLocations.[i] |> posToLinePosition
+                    endPos 
+                |]
+
+            // If we are pressing "(" or "<" or ",", then only pop up the info if this is one of the actual, real detected positions in the detected promptable call
+            //
+            // For example the last "(" in 
+            //    List.map (fun a -> (
+            // should not result in a prompt.
+            //
+            // Likewise the last "," in 
+            //    Console.WriteLine( [(1, 
+            // should not result in a prompt, whereas this one will:
+            //    Console.WriteLine( [(1,2)],
+            match triggerIsTypedChar with 
+            | Some('<' | '(' | ',') when not (tupleEnds |> Array.exists (fun lp -> lp.Character = caretLineColumn))  -> 
+                return! None // comma or paren at wrong location = remove help display
+            | _ -> 
+
+                // Compute the argument index by working out where the caret is between the various commas.
+                let argumentIndex = 
+                    let computedTextSpans =
+                        tupleEnds 
+                        |> Array.pairwise 
+                        |> Array.map (fun (lp1, lp2) -> textLines.GetTextSpan(LinePositionSpan(lp1, lp2)))
+                
+                    match (computedTextSpans|> Array.tryFindIndex (fun t -> t.Contains(caretPosition))) with 
+                    | None -> 
+                        // Because 'TextSpan.Contains' only succeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
+                        // we need to check if the caret is at the very last position in the TextSpan.
+                        //
+                        // We default to 0, which is the first argument, if the caret position was nowhere to be found.
+                        if computedTextSpans.[computedTextSpans.Length-1].End = caretPosition then
+                            computedTextSpans.Length-1 
+                        else 0
+                    | Some n -> n
+         
+                let argumentCount = 
+                    match paramLocations.TupleEndLocations.Length with 
+                    | 1 when caretLinePos.Character = startOfArgs.Character -> 0  // count "WriteLine(" as zero arguments
+                    | n -> n
+
+                // Compute the current argument name if it is named.
+                let argumentName = 
+                    if argumentIndex < paramLocations.NamedParamNames.Length then 
+                        paramLocations.NamedParamNames.[argumentIndex] 
+                    else 
+                        None
+
+                let results =
+                    [|
+                        for method in methods do
+                            let mainDescription = ResizeArray()
+                            let documentation = ResizeArray()
+                            XmlDocumentation.BuildMethodOverloadTipText(
+                                documentationBuilder,
+                                RoslynHelpers.CollectTaggedText mainDescription,
+                                RoslynHelpers.CollectTaggedText documentation,
+                                method.StructuredDescription, false)
+
+                            let parameters = 
+                                let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
+                                [|
+                                    for p in parameters do 
+                                        let doc = ResizeArray()
+                                        let parts = ResizeArray()
+                                        XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName)
+                                        renderL (taggedTextListR (RoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
+                                        { ParameterName = p.ParameterName
+                                          IsOptional = p.IsOptional
+                                          CanonicalTypeTextForSorting = p.CanonicalTypeTextForSorting
+                                          Documentation = doc
+                                          DisplayParts = parts }
+                                |]
+
+                            let prefixParts = 
+                                [| TaggedText(TextTags.Method, methodGroup.MethodName);  
+                                    TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
+
+                            let separatorParts = [| TaggedText(TextTags.Punctuation, ","); TaggedText(TextTags.Space, " ") |]
+                            let suffixParts = [| TaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
+
+                            { HasParamArrayArg = method.HasParamArrayArg
+                              Documentation = documentation
+                              PrefixParts = prefixParts
+                              SeparatorParts = separatorParts
+                              SuffixParts = suffixParts
+                              Parameters = parameters
+                              MainDescription = mainDescription }
+                        |]
+
+                let data =
+                    { SignatureHelpItems = results
+                      ApplicableSpan = applicableSpan
+                      ArgumentIndex = argumentIndex
+                      ArgumentCount = argumentCount
+                      ArgumentName = argumentName }
+
+                return! Some data
+    }
+
+    static member internal ProvideParametersAsyncAux
+        (
+            parseResults: FSharpParseFileResults,
+            checkFileResults: FSharpCheckFileResults,
+            documentId: DocumentId,
+            defines: string list,
+            documentationBuilder: IDocumentationBuilder,
+            sourceText: SourceText,
+            caretPosition: int,
+            filePath: string
         ) =
             asyncMaybe {
                 let adjustedColumnInSource =
                     let rec loop s c =
-                        if String.IsNullOrWhiteSpace(s) then
-                            loop (sourceText.GetSubText(c - 1).ToString()) (c - 1)
+                        if String.IsNullOrWhiteSpace(s.ToString()) then
+                            loop (sourceText.GetSubText(c - 1)) (c - 1)
                         else
                             c
-                    loop (sourceText.GetSubText(caretPosition).ToString()) caretPosition
+                    loop (sourceText.GetSubText(caretPosition)) caretPosition
 
                 // For function applications, we need to offset this by 1 because
                 // otherwise it won't display. TODO better explanation lmao
                 let tooltipPosition = caretPosition - 1
-
-                let perfOptions = document.FSharpOptions.LanguageServicePerformance
                 let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
                 let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
                 let pos = mkPos (Line.fromZ textLinePos.Line) textLinePos.Character
                 let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line
-                let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
                 
                 let! possibleFuncPosition =
                     maybe {
@@ -371,7 +369,7 @@ type internal FSharpSignatureHelpProvider
                             return adjustedColumnInSource
                     }
 
-                let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
+                let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
                 let! funcSymbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
                 match funcSymbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction ->
@@ -394,11 +392,6 @@ type internal FSharpSignatureHelpProvider
                             |> List.tryFind(fun (_, argRanage) -> rangeContainsPos argRanage pos)
                             |> Option.map (fun (index, _) -> index + 1) // TODO: explain why offsetting here
                             |> Option.defaultValue 0
-
-                        for x in curriedArgsInSource do
-                            logInfof "%A" x
-
-                        logInfof "Index: %d" argumentIndex
 
                         let mainDescription, documentation, typeParameterMap, usage, exceptions =
                             ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
@@ -507,103 +500,108 @@ type internal FSharpSignatureHelpProvider
                     return! None
             }
 
+    static member ProvideSignatureHelp
+        (
+            document: Document,
+            defines: string list,
+            checker: FSharpChecker,
+            documentationBuilder: IDocumentationBuilder,
+            sourceText: SourceText,
+            caretPosition: int,
+            options: FSharpProjectOptions,
+            filePath: string,
+            textVersionHash: int,
+            triggerTypedChar: char option
+        ) =
+        asyncMaybe {
+            let textLines = sourceText.Lines
+            let caretLinePos = textLines.GetLinePosition(caretPosition)
+            let caretLineColumn = caretLinePos.Character
+            let perfOptions = document.FSharpOptions.LanguageServicePerformance
+
+            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
+            match parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn) with
+            | Some paramInfoLocations ->
+                return!
+                    FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
+                        caretLinePos,
+                        caretLineColumn,
+                        paramInfoLocations,
+                        checkFileResults,
+                        documentationBuilder,
+                        sourceText,
+                        caretPosition,
+                        triggerTypedChar)
+            | None ->
+                return!
+                    FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+                        parseResults,
+                        checkFileResults,
+                        document.Id,
+                        defines,
+                        documentationBuilder,
+                        sourceText,
+                        caretPosition,
+                        filePath)
+        }
+
     interface IFSharpSignatureHelpProvider with
         member _.IsTriggerCharacter(c) = c ='(' || c = '<' || c = ',' || c = ' '
         member _.IsRetriggerCharacter(c) = c = ')' || c = '>' || c = '='
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
-                try
-                    let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                    let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-                    let! sourceText = document.GetTextAsync(cancellationToken)
-                    let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
+                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                let checker = checkerProvider.Checker
 
-                    let triggerTypedChar = 
-                        if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = FSharpSignatureHelpTriggerReason.TypeCharCommand then
-                            Some triggerInfo.TriggerCharacter.Value
-                        else None
-                    
-                    if triggerTypedChar.IsSome && triggerTypedChar.Value = ' ' then
-                        let! signatureHelpData =
-                            FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
-                                document,
-                                defines,
-                                checkerProvider.Checker,
-                                documentationBuilder,
-                                sourceText,
-                                position,
-                                projectOptions,
-                                document.FilePath,
-                                textVersion.GetHashCode())
-                        let items =
-                            signatureHelpData.SignatureHelpItems
-                            |> Array.map (fun item ->
-                                let parameters =
-                                    item.Parameters
-                                    |> Array.map (fun paramInfo ->
-                                        FSharpSignatureHelpParameter(
-                                            paramInfo.ParameterName,
-                                            paramInfo.IsOptional,
-                                            documentationFactory = (fun _ -> paramInfo.Documentation :> seq<_>),
-                                            displayParts = paramInfo.DisplayParts))
+                let triggerTypedChar = 
+                    if triggerInfo.TriggerCharacter.HasValue && triggerInfo.TriggerReason = FSharpSignatureHelpTriggerReason.TypeCharCommand then
+                        Some triggerInfo.TriggerCharacter.Value
+                    else None
+
+                let! signatureHelpData =
+                    FSharpSignatureHelpProvider.ProvideSignatureHelp(
+                        document,
+                        defines,
+                        checker,
+                        documentationBuilder,
+                        sourceText,
+                        position,
+                        projectOptions,
+                        document.FilePath,
+                        textVersion.GetHashCode(),
+                        triggerTypedChar)
+                let items =
+                    signatureHelpData.SignatureHelpItems
+                    |> Array.map (fun item ->
+                        let parameters =
+                            item.Parameters
+                            |> Array.map (fun paramInfo ->
+                                FSharpSignatureHelpParameter(
+                                    paramInfo.ParameterName,
+                                    paramInfo.IsOptional,
+                                    documentationFactory = (fun _ -> paramInfo.Documentation :> seq<_>),
+                                    displayParts = paramInfo.DisplayParts))
                                             
-                                FSharpSignatureHelpItem(
-                                    isVariadic=item.HasParamArrayArg,
-                                    documentationFactory=(fun _ -> item.Documentation :> seq<_>),
-                                    prefixParts=item.PrefixParts,
-                                    separatorParts=item.SeparatorParts,
-                                    suffixParts=item.SuffixParts,
-                                    parameters=parameters,
-                                    descriptionParts=item.MainDescription))
+                        FSharpSignatureHelpItem(
+                            isVariadic=item.HasParamArrayArg,
+                            documentationFactory=(fun _ -> item.Documentation :> seq<_>),
+                            prefixParts=item.PrefixParts,
+                            separatorParts=item.SeparatorParts,
+                            suffixParts=item.SuffixParts,
+                            parameters=parameters,
+                            descriptionParts=item.MainDescription))
                                     
-                        return FSharpSignatureHelpItems(
-                            items,
-                            signatureHelpData.ApplicableSpan,
-                            signatureHelpData.ArgumentIndex,
-                            signatureHelpData.ArgumentCount,
-                            Option.toObj signatureHelpData.ArgumentName)
-                    else
-                        let! signatureHelpData =
-                            FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
-                                checkerProvider.Checker,
-                                documentationBuilder,
-                                sourceText,
-                                position,
-                                projectOptions,
-                                triggerTypedChar,
-                                document.FilePath,
-                                textVersion.GetHashCode())
-                        let items = 
-                            signatureHelpData.SignatureHelpItems 
-                            |> Array.map (fun item ->
-                                    let parameters =
-                                        item.Parameters 
-                                        |> Array.map (fun paramInfo -> 
-                                            FSharpSignatureHelpParameter(
-                                                paramInfo.ParameterName,
-                                                paramInfo.IsOptional,
-                                                documentationFactory=(fun _ -> paramInfo.Documentation :> seq<_>),
-                                                displayParts=paramInfo.DisplayParts))
-                            
-                                    FSharpSignatureHelpItem(
-                                        isVariadic=item.HasParamArrayArg,
-                                        documentationFactory=(fun _ -> item.Documentation :> seq<_>),
-                                        prefixParts=item.PrefixParts,
-                                        separatorParts=item.SeparatorParts,
-                                        suffixParts=item.SuffixParts,
-                                        parameters=parameters,
-                                        descriptionParts=item.MainDescription))
-
-                        return FSharpSignatureHelpItems(
-                            items,
-                            signatureHelpData.ApplicableSpan,
-                            signatureHelpData.ArgumentIndex,
-                            signatureHelpData.ArgumentCount,
-                            Option.toObj signatureHelpData.ArgumentName)
-                with ex -> 
-                    Assert.Exception(ex)
-                    return! None
+                return
+                    FSharpSignatureHelpItems(
+                        items,
+                        signatureHelpData.ApplicableSpan,
+                        signatureHelpData.ArgumentIndex,
+                        signatureHelpData.ArgumentCount,
+                        Option.toObj signatureHelpData.ArgumentName)
             } 
             |> Async.map Option.toObj
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
