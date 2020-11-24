@@ -228,6 +228,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
                             caretPosition,
                             triggerChar)
                         |> Async.RunSynchronously
+                    
+                    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
                     match triggered with 
                     | None -> None
                     | Some data -> Some (data.ApplicableSpan.ToString(),data.ArgumentIndex,data.ArgumentCount,data.ArgumentName)
