@@ -101,31 +101,31 @@ module internal SynExprAppLocationsImpl =
 [<AutoOpen>]
 module Poop =
     type FSharpParseFileResults with
-        member scope.GetAllArgumentsForFunctionApplicationAtPostion pos =
+        member scope.GetAllArgumentsForApplicationAtPosition pos =
             match scope.ParseTree with
             | Some input -> SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
             | None -> None
         
-        member scope.TryRangeOfFunctionInApplication pos =
+        member scope.TryRangeOfFunctionOrMethodBeingApplied pos =
             match scope.ParseTree with
             | Some input ->
                 AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
-                    member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                    member _.VisitExpr(_, _, defaultTraverse, expr) =
                         match expr with
-                        | SynExpr.App (_flag, false, funcExpr, _argExpr, range) when rangeContainsPos range pos ->
+                        | SynExpr.App (_, false, funcExpr, _, range) when rangeContainsPos range pos ->
                             Some funcExpr.Range
                         | _ -> defaultTraverse expr
                 })
             | None -> None
 
-        member scope.IsPosWithinAFunctionApplication pos =
+        member scope.IsPosContainedInApplication pos =
             match scope.ParseTree with
             | Some input ->
                 let result =
                     AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
-                        member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                        member _.VisitExpr(_, _, defaultTraverse, expr) =
                             match expr with
-                            | SynExpr.App (_flag, _isInfix, _funcExpr, _argExpr, range) when rangeContainsPos range pos ->
+                            | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
                                 Some range
                             | _ -> defaultTraverse expr
                     })
@@ -336,28 +336,25 @@ type internal FSharpSignatureHelpProvider
                         c
                 loop (sourceText.GetSubText(caretPosition)) caretPosition
 
-            // For function applications, we need to offset this by 1 because
-            // otherwise it won't display. TODO better explanation lmao
-            let tooltipPosition = caretPosition - 1
             let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
             let pos = mkPos (Line.fromZ textLinePos.Line) textLinePos.Character
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
                 
-            let! possibleFuncPosition =
+            let! possibleApplicableSymbolEndColumn =
                 maybe {
-                    if parseResults.IsPosWithinAFunctionApplication pos then
-                        let! funcRange = parseResults.TryRangeOfFunctionInApplication pos 
+                    if parseResults.IsPosContainedInApplication pos then
+                        let! funcRange = parseResults.TryRangeOfFunctionOrMethodBeingApplied pos 
                         let! funcSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, funcRange)
                         return funcSpan.Start
                     else
                         return adjustedColumnInSource
                 }
 
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleFuncPosition, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! funcSymbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
-            match funcSymbolUse.Symbol with
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleApplicableSymbolEndColumn, filePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
+            match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as mfv when not mfv.IsProperty && mfv.CurriedParameterGroups.Count > 0 ->
                 let tooltip = checkFileResults.GetStructuredToolTipText(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, FSharpTokenTag.IDENT)
                 match tooltip with
@@ -366,17 +363,19 @@ type internal FSharpSignatureHelpProvider
                 | _ ->
                     let numDefinedArgs = mfv.CurriedParameterGroups |> Seq.concat |> Seq.length
                     let curriedArgsInSource =
-                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion funcSymbolUse.RangeAlternate.Start
+                        parseResults.GetAllArgumentsForApplicationAtPosition symbolUse.RangeAlternate.Start
                         |> Option.defaultValue []
 
-                    // Don't show past the last one. Also offset by one, because we get sig help when we have none defined.
-                    do! Option.guard (curriedArgsInSource.Length <= (numDefinedArgs - 1))
+                    do! Option.guard (curriedArgsInSource.Length < numDefinedArgs)
 
+                    // TODO - this is not correct. It is okay for a lot though
+                    // We need to work out where the caret is relative to other args.
+                    // We also need to special-case either the 0th or last arg
                     let argumentIndex =
                         curriedArgsInSource
                         |> List.indexed
-                        |> List.tryFind(fun (_, argRanage) -> rangeContainsPos argRanage pos)
-                        |> Option.map (fun (index, _) -> index + 1) // TODO: explain why offsetting here
+                        |> List.tryFind(fun (_, argRange) -> rangeContainsPos argRange pos)
+                        |> Option.map (fun (index, _) -> index)
                         |> Option.defaultValue 0
 
                     let mainDescription, documentation, typeParameterMap, usage, exceptions =
@@ -406,7 +405,7 @@ type internal FSharpSignatureHelpProvider
                         for argument in group do
                             let taggedText = ResizeArray()
                             let tt = ResizeArray()
-                            let layout = argument.Type.FormatLayout funcSymbolUse.DisplayContext
+                            let layout = argument.Type.FormatLayout symbolUse.DisplayContext
                             Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
                             for part in taggedText do
                                 RoslynHelpers.CollectTaggedText tt part
@@ -452,7 +451,7 @@ type internal FSharpSignatureHelpProvider
                     let ret =
                         let taggedText = ResizeArray()
                         let tt = ResizeArray()
-                        let layout = mfv.ReturnParameter.Type.FormatLayout funcSymbolUse.DisplayContext
+                        let layout = mfv.ReturnParameter.Type.FormatLayout symbolUse.DisplayContext
                         Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
                         for part in taggedText do
                             RoslynHelpers.CollectTaggedText tt part
@@ -477,9 +476,11 @@ type internal FSharpSignatureHelpProvider
                           Parameters = args.ToArray()
                           MainDescription = ResizeArray() }
 
+                    let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+
                     let data =
                         { SignatureHelpItems = [| sigHelpItem |]
-                          ApplicableSpan = TextSpan(tooltipPosition, 1)
+                          ApplicableSpan = TextSpan(symbolSpan.End, caretPosition - symbolSpan.End)
                           ArgumentIndex = argumentIndex
                           ArgumentCount = args.Count
                           ArgumentName = None }
