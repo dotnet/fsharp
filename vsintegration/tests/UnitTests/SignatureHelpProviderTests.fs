@@ -66,11 +66,11 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         let caretLinePos = textLines.GetLinePosition(caretPosition)
         let caretLineColumn = caretLinePos.Character
         let perfOptions = LanguageServicePerformanceOptions.Default
-        let textVersionHash = 0
+        let textVersionHash = 1
         
         let parseResults, _, checkFileResults =
             let x =
-                checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, project.Options, perfOptions, "TestSignatureHelpProvider")
+                checker.ParseAndCheckDocument(fileName, textVersionHash, sourceText, project.Options, perfOptions, "TestSignatureHelpProvider")
                 |> Async.RunSynchronously
             x.Value
 
@@ -251,7 +251,7 @@ let ``Multi.ReferenceToProjectLibrary``() =
 
   <Project Name=""TestLibrary.fsproj"">
     <Reference>HelperLibrary.fsproj</Reference>
-    <File Name=""Test.fs"">
+    <File Name=""test.fs"">
       <![CDATA[
 open Test
 Foo.Sum(12, $$
