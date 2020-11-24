@@ -1017,13 +1017,14 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let step (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         cancellable {
             computeStampedReferencedAssemblies cache ctok
+            computeStampedFileNames cache ctok
 
             match semanticModels |> Array.tryFindIndex (fun x -> x.IsNone) with
             | Some slot ->
                 do! computeSemanticModel cache ctok slot
                 match semanticModels.[slot] with
                 | Some _ -> return true
-                | _ -> return false
+                | _ -> return true
             | _ ->
                 return false
         }
