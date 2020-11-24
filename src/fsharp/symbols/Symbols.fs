@@ -2062,11 +2062,6 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V valRef -> not (isForallFunctionTy cenv.g valRef.Type)
         | _ -> false
 
-    member x.IsFunction =
-        match d with
-        | V valRef -> isForallFunctionTy cenv.g valRef.Type
-        | _ -> false
-
     override x.Equals(other: obj) =
         box x === other ||
         match other with

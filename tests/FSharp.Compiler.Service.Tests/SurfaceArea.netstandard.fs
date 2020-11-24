@@ -22458,7 +22458,6 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsType
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsUnresolved
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsValCompiledAsMethod
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsValue
-FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean IsFunction
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_EventIsStandard()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_HasGetterMethod()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_HasSetterMethod()
@@ -22492,7 +22491,6 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_Is
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsUnresolved()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsValCompiledAsMethod()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsValue()
-FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Boolean get_IsFunction()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: FSharp.Compiler.SourceCodeServices.FSharpAccessibility Accessibility
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: FSharp.Compiler.SourceCodeServices.FSharpAccessibility get_Accessibility()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: FSharp.Compiler.SourceCodeServices.FSharpAssembly Assembly
