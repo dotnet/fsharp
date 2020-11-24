@@ -98,8 +98,16 @@ module internal SynExprAppLocationsImpl =
                 | _ -> defaultTraverse expr })
         |> Option.map List.rev
 
+    let rec getIdentRangeForFuncExprInApp expr =
+        match expr with
+        | SynExpr.Ident ident -> ident.idRange
+        | SynExpr.LongIdent(_, _, _, range) -> range
+        | SynExpr.App(_, _, funcExpr, _, _) ->
+            getIdentRangeForFuncExprInApp funcExpr
+        | expr -> expr.Range // Exhaustiveness, this shouldn't actually be necessary...right?
+
 [<AutoOpen>]
-module Poop =
+module ParseFileExtensions =
     type FSharpParseFileResults with
         member scope.GetAllArgumentsForApplicationAtPosition pos =
             match scope.ParseTree with
@@ -113,7 +121,7 @@ module Poop =
                     member _.VisitExpr(_, _, defaultTraverse, expr) =
                         match expr with
                         | SynExpr.App (_, false, funcExpr, _, range) when rangeContainsPos range pos ->
-                            Some funcExpr.Range
+                            Some (SynExprAppLocationsImpl.getIdentRangeForFuncExprInApp funcExpr)
                         | _ -> defaultTraverse expr
                 })
             | None -> None
@@ -355,8 +363,9 @@ type internal FSharpSignatureHelpProvider
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentId, sourceText, possibleApplicableSymbolEndColumn, filePath, defines, SymbolLookupKind.Greedy, false, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
+
             let isValid (mfv: FSharpMemberOrFunctionOrValue) =
-                not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
+                //not (PrettyNaming.IsOperatorName mfv.DisplayName) &&
                 not mfv.IsProperty &&
                 mfv.CurriedParameterGroups.Count > 0
 
