@@ -1080,8 +1080,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         }
 
     let MaxTimeStampInDependencies cache (ctok: CompilationThreadToken) getStamps = 
-        getStamps cache ctok
-        |> Array.max
+        let stamps = getStamps cache ctok
+        if Array.isEmpty stamps then
+            DateTime.MinValue
+        else
+            stamps
+            |> Array.max
 
     // END OF BUILD DESCRIPTION
     // ---------------------------------------------------------------------------------------------            
