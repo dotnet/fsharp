@@ -941,6 +941,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         
         if referencesUpdated then
             // Something changed, the finalized view of the project must be invalidated.
+            // This is the only place where the initial semantic model will be invalidated.
             initialSemanticModel <- None
             finalizedSemanticModel <- None
 
@@ -979,7 +980,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             computeStampedFileName cache ctok slot fileInfo (fun slot fileInfo ->
                 let prevSemanticModel =
                     match slot with
-                    | 0 -> initial
+                    | 0 (* first file *) -> initial
                     | _ ->
                         match semanticModels.[slot - 1] with
                         | Some(prevSemanticModel) -> prevSemanticModel
@@ -1022,9 +1023,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             match semanticModels |> Array.tryFindIndex (fun x -> x.IsNone) with
             | Some slot ->
                 do! computeSemanticModel cache ctok slot
-                match semanticModels.[slot] with
-                | Some _ -> return true
-                | _ -> return true
+                return true
             | _ ->
                 return false
         }
