@@ -894,8 +894,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // START OF BUILD DESCRIPTION
 
     // Inputs
-    let fileNames = sourceFiles |> Array.ofList
-    let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList
+    let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
+    let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
     let stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
     let stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
