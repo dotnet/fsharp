@@ -903,9 +903,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let semanticModels = Array.zeroCreate fileNames.Length
     let mutable finalizedSemanticModel = None
 
-    let computeStampedFileName (cache: TimeStampCache) (ctok: CompilationThreadToken) slot x cont =
+    let computeStampedFileName (cache: TimeStampCache) (ctok: CompilationThreadToken) slot fileInfo cont =
         let currentStamp = stampedFileNames.[slot]
-        let stamp = StampFileNameTask cache ctok x
+        let stamp = StampFileNameTask cache ctok fileInfo
 
         if currentStamp <> stamp then
             // Something changed, the finalized view of the project must be invalidated.
@@ -919,20 +919,20 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             )
 
         if semanticModels.[slot].IsNone then
-            cont slot x
+            cont slot fileInfo
 
     let computeStampedFileNames (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         fileNames
-        |> Array.iteri (fun i x ->
-            computeStampedFileName cache ctok i x (fun _ _ -> ())
+        |> Array.iteri (fun i fileInfo ->
+            computeStampedFileName cache ctok i fileInfo (fun _ _ -> ())
         )
 
     let computeStampedReferencedAssemblies (cache: TimeStampCache) (ctok: CompilationThreadToken) =
         let mutable referencesUpdated = false
         referencedAssemblies
-        |> Array.iteri (fun i x ->
+        |> Array.iteri (fun i asmInfo ->
             let currentStamp = stampedReferencedAssemblies.[i]
-            let stamp = StampReferencedAssemblyTask cache ctok x
+            let stamp = StampReferencedAssemblyTask cache ctok asmInfo
 
             if currentStamp <> stamp then
                 referencesUpdated <- true
