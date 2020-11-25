@@ -7129,13 +7129,21 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
     let memberInfo = Option.get vref.MemberInfo
     let attribs = vref.Attribs
     let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attribs = ComputeMethodImplAttribs cenv vref.Deref attribs
-    if memberInfo.MemberFlags.IsDispatchSlot && not memberInfo.IsImplemented then
-        let ilAttrs =
-            [ yield! GenAttrs cenv eenv attribs
-              yield! GenCompilationArgumentCountsAttr cenv vref.Deref ]
-    
+    if memberInfo.MemberFlags.IsDispatchSlot && not memberInfo.IsImplemented then    
         let mspec, _mspecW, ctps, mtps, _curriedArgInfos, argInfos, retInfo, witnessInfos, methArgTys, returnTy =
             GetMethodSpecForMemberVal cenv.amap cenv.g memberInfo vref
+
+        let ilAttrs =
+            [ yield! GenAttrs cenv eenv attribs
+              yield! GenCompilationArgumentCountsAttr cenv vref.Deref
+              
+              match vref.MemberInfo, returnTy with
+              | Some memberInfo, Some returnTy when 
+                memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGet ||
+                memberInfo.MemberFlags.MemberKind = MemberKind.PropertySet ||
+                memberInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet ->
+                   match GenReadOnlyAttributeIfNecessary g returnTy with Some ilAttr -> ilAttr | _ -> ()
+              | _ -> () ]
 
         assert witnessInfos.IsEmpty
 
@@ -7175,6 +7183,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
              else
                  let ilPropDef =
                      let ilPropTy = GenType cenv.amap m eenvForMeth.tyenv vtyp
+                     let ilPropTy = GenReadOnlyModReqIfNecessary g vtyp ilPropTy
                      let ilArgTys = v |> ArgInfosOfPropertyVal g |> List.map fst |> GenTypes cenv.amap m eenvForMeth.tyenv
                      GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrs) None
                  let mdef = mdef.WithSpecialName
