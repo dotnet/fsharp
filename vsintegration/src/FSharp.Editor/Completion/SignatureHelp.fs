@@ -11,8 +11,6 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
 open Microsoft.VisualStudio.Shell
 
-open Microsoft.VisualStudio.FSharp.Editor.Logging
-
 open FSharp.Compiler
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Range
@@ -110,10 +108,13 @@ module ParseFileExtensions =
             let rec getIdentRangeForFuncExprInApp expr pos =
                 match expr with
                 | SynExpr.Ident ident -> ident.idRange
+                
                 | SynExpr.LongIdent(_, _, _, range) -> range
-                | SynExpr.App(_, _, funcExpr, argExpr, _) ->
 
-                    // TODO - handle parens
+                | SynExpr.Paren(expr, _, _, range) when rangeContainsPos range pos ->
+                    getIdentRangeForFuncExprInApp expr pos
+
+                | SynExpr.App(_, _, funcExpr, argExpr, _) ->
                     match argExpr with
                     | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
                         getIdentRangeForFuncExprInApp argExpr pos
@@ -155,6 +156,18 @@ module ParseFileExtensions =
                     })
                 result.IsSome
             | None -> false
+
+        member scope.TryIdentOfOperatorInInfixAppContainainPos pos =
+            match scope.ParseTree with
+            | Some input ->
+                AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
+                    member _.VisitExpr(_, _, defaultTraverse, expr) =
+                        match expr with
+                        | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
+                            Some ident
+                        | _ -> defaultTraverse expr
+                })
+            | None -> None
 
 [<Shared>]
 [<Export(typeof<IFSharpSignatureHelpProvider>)>]
@@ -390,11 +403,48 @@ type internal FSharpSignatureHelpProvider
                 | FSharpToolTipText []
                 | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
                 | _ ->
-                    let numDefinedArgs = mfv.CurriedParameterGroups |> Seq.concat |> Seq.length
+                    
+                    let possibleIdent = parseResults.TryIdentOfOperatorInInfixAppContainainPos symbolUse.RangeAlternate.Start
+                    let numToChopFromEnd =
+                        match possibleIdent with
+                        | None -> 0
+                        | Some ident ->
+                            if ident.idText = "op_PipeRight" then
+                                2
+                            elif ident.idText = "op_PipeRight2" then
+                                3
+                            elif ident.idText = "op_PipeRight3" then
+                                4
+                            else
+                                0 // Just show everything, it's not the end of the world
+
+
+                    let definedArgs = mfv.CurriedParameterGroups |> Seq.concat |> Array.ofSeq
+                        
+                    let numDefinedArgs = definedArgs.Length
+
+                    // TODO - need to:
+                    // 1. Detect if we're in an infix app
+                    // 2. Count the number of args applied via infix app if true
                     let curriedArgsInSource =
-                        parseResults.GetAllArgumentsForApplicationAtPosition symbolUse.RangeAlternate.Start
-                        |> Option.defaultValue []
-                        |> Array.ofList
+                        let args =
+                            parseResults.GetAllArgumentsForApplicationAtPosition symbolUse.RangeAlternate.Start
+                            |> Option.defaultValue []
+                            |> Array.ofList
+                        
+                        // If args are applied via pipelines, chop them off based on the pipeline used
+                        match possibleIdent with
+                        | None -> args
+                        | Some ident ->
+                            if ident.idText = "op_PipeRight" && args.Length > 1 then
+                                args.[.. args.Length - numToChopFromEnd]
+                            elif ident.idText = "op_PipeRight2" && args.Length > 2 then
+                                args.[.. args.Length - numToChopFromEnd]
+                            elif ident.idText = "op_PipeRight3" && args.Length > 3 then
+                                args.[.. args.Length - numToChopFromEnd]
+                            else
+                                args // Just show everything, it's not the end of the world
+                        
 
                     do! Option.guard (numDefinedArgs >= curriedArgsInSource.Length)
 
@@ -463,33 +513,32 @@ type internal FSharpSignatureHelpProvider
                         RoslynHelpers.CollectTaggedText parts part
 
                     let args = ResizeArray()
-                    for group in mfv.CurriedParameterGroups do
-                        for argument in group do
-                            let taggedText = ResizeArray()
-                            let tt = ResizeArray()
-                            let layout = argument.Type.FormatLayout symbolUse.DisplayContext
-                            Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
-                            for part in taggedText do
-                                RoslynHelpers.CollectTaggedText tt part
+                    for argument in definedArgs.[.. definedArgs.Length - numToChopFromEnd] do
+                        let taggedText = ResizeArray()
+                        let tt = ResizeArray()
+                        let layout = argument.Type.FormatLayout symbolUse.DisplayContext
+                        Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
+                        for part in taggedText do
+                            RoslynHelpers.CollectTaggedText tt part
 
-                            let display =
-                                [|
-                                    TaggedText(TextTags.Local, argument.DisplayName)
-                                    TaggedText(TextTags.Punctuation, ":")
-                                    TaggedText(TextTags.Space, " ")
-                                |]
-                                |> ResizeArray
+                        let display =
+                            [|
+                                TaggedText(TextTags.Local, argument.DisplayName)
+                                TaggedText(TextTags.Punctuation, ":")
+                                TaggedText(TextTags.Space, " ")
+                            |]
+                            |> ResizeArray
 
-                            display.AddRange(tt)
+                        display.AddRange(tt)
 
-                            let info =
-                                { ParameterName = argument.DisplayName
-                                  IsOptional = false
-                                  CanonicalTypeTextForSorting = argument.FullName
-                                  Documentation = ResizeArray()
-                                  DisplayParts = display }
+                        let info =
+                            { ParameterName = argument.DisplayName
+                              IsOptional = false
+                              CanonicalTypeTextForSorting = argument.FullName
+                              Documentation = ResizeArray()
+                              DisplayParts = display }
 
-                            args.Add(info)
+                        args.Add(info)
 
                     let prefixParts =
                         [|
