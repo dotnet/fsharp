@@ -9292,29 +9292,34 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             // For all but attributes positioned at the return value, disallow implicitly
             // targeting the return value.
             let tgtEx = if isRet then enum 0 else AttributeTargets.ReturnValue
-            let attrs = TcAttributesEx cenv envinner tgt tgtEx attrs 
+            let attrs, _ = TcAttributesMaybeFailEx false cenv envinner tgt tgtEx attrs
             if attrTgt = enum 0 && not (isNil attrs) then 
                 errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), mBinding))
             attrs
 
         // Rotate [<return:...>] from binding to return value
-        let rotRetSynAttrs, rotRetAttribs, valAttribs = 
-            TcAttrs attrTgt false attrs
-            |> List.zip attrs
-            |> List.partition(function | (_, Attrib(_, _, _, _, _, Some ts, _)) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
-            |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
-        let retAttribs = 
-            match rtyOpt with 
-            | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> 
-                rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs  
-            | None -> rotRetAttribs
         // Also patch the syntactic representation
-        let valSynData = 
-            match rotRetSynAttrs with
-            | [] -> valSynData
-            | {Range=mHead} :: _ ->
-            let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
-            in SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
+        let retAttribs, valAttribs, valSynData = 
+            let attribs = TcAttrs attrTgt false attrs
+            let rotRetSynAttrs, rotRetAttribs, valAttribs =
+                // Do not rotate if some attrs fail to typecheck...
+                if attribs.Length <> attrs.Length then [], [], attribs
+                else attribs
+                     |> List.zip attrs
+                     |> List.partition(function | (_, Attrib(_, _, _, _, _, Some ts, _)) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
+                     |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
+            let retAttribs = 
+                match rtyOpt with 
+                | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> 
+                    rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs  
+                | None -> rotRetAttribs
+            let valSynData = 
+                match rotRetSynAttrs with
+                | [] -> valSynData
+                | {Range=mHead} :: _ ->
+                let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
+                in SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
+            retAttribs, valAttribs, valSynData
 
         let isVolatile = HasFSharpAttribute cenv.g cenv.g.attrib_VolatileFieldAttribute valAttribs
         
@@ -9511,7 +9516,7 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty b =
 // *Ex means the function accepts attribute targets that must be explicit
 //------------------------------------------------------------------------
 
-and TcAttributeWithEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribute) =
+and TcAttributeEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttribute) =
     let (LongIdentWithDots(tycon, _)) = synAttr.TypeName
     let arg = synAttr.ArgExpr
     let targetIndicator = synAttr.Target
@@ -9670,11 +9675,11 @@ and TcAttributeWithEx canFail cenv (env: TcEnv) attrTgt attrEx (synAttr: SynAttr
 
         [ (constrainedTgts, attrib) ], false
 
-and TcAttributesWithPossibleTargetsAndEx canFail cenv env attrTgt attrEx synAttribs = 
+and TcAttributesWithPossibleTargetsEx canFail cenv env attrTgt attrEx synAttribs = 
 
     (false, synAttribs) ||> List.collectFold (fun didFail synAttrib -> 
         try 
-            let attribsAndTargets, didFail2 = TcAttributeWithEx canFail cenv env attrTgt attrEx synAttrib
+            let attribsAndTargets, didFail2 = TcAttributeEx canFail cenv env attrTgt attrEx synAttrib
             
             // This is where we place any checks that completely exclude the use of some particular 
             // attributes from F#.
@@ -9691,27 +9696,21 @@ and TcAttributesWithPossibleTargetsAndEx canFail cenv env attrTgt attrEx synAttr
             [], false) 
 
 and TcAttributesMaybeFailEx canFail cenv env attrTgt attrEx synAttribs = 
-    let attribsAndTargets, didFail = TcAttributesWithPossibleTargetsAndEx canFail cenv env attrTgt attrEx synAttribs 
+    let attribsAndTargets, didFail = TcAttributesWithPossibleTargetsEx canFail cenv env attrTgt attrEx synAttribs 
     attribsAndTargets |> List.map snd, didFail
 
-and TcAttributesCanFailEx cenv env attrTgt attrEx synAttribs = 
-    let attrs, didFail = TcAttributesMaybeFailEx true cenv env attrTgt attrEx synAttribs
-    attrs, (fun () -> if didFail then TcAttributesEx cenv env attrTgt attrEx synAttribs else attrs)
-
-and TcAttributesEx cenv env attrTgt attrEx synAttribs = 
-    TcAttributesMaybeFailEx false cenv env attrTgt attrEx synAttribs |> fst
-
 and TcAttributesWithPossibleTargets canFail cenv env attrTgt synAttribs = 
-    TcAttributesWithPossibleTargetsAndEx canFail cenv env attrTgt (enum 0) synAttribs
+    TcAttributesWithPossibleTargetsEx canFail cenv env attrTgt (enum 0) synAttribs
 
 and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute) =
-    TcAttributeWithEx canFail cenv env attrTgt (enum 0) synAttr
+    TcAttributeEx canFail cenv env attrTgt (enum 0) synAttr
 
 and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs = 
     TcAttributesMaybeFailEx canFail cenv env attrTgt (enum 0) synAttribs
 
 and TcAttributesCanFail cenv env attrTgt synAttribs = 
-    TcAttributesCanFailEx cenv env attrTgt (enum 0) synAttribs
+    let attrs, didFail = TcAttributesMaybeFail true cenv env attrTgt synAttribs
+    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
 
 and TcAttributes cenv env attrTgt synAttribs = 
     TcAttributesMaybeFail false cenv env attrTgt synAttribs |> fst
