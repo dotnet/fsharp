@@ -342,3 +342,32 @@ type C<'T>() =
         |> compile
         |> verifyIL [verifyMethod]
         |> ignore
+
+    [<Test>]
+    let ``Returning an 'inref<_>' from an abstract property should emit System.Runtime.CompilerServices.IsReadOnlyAttribute on the return type of the signature`` () =
+        let src =
+            """
+module Test
+
+type C =
+    abstract X: inref<int> 
+            """
+
+        let verifyProperty = """.property instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute)
+                X()
+        {
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+          .get instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) Test/C::get_X()
+        }"""
+
+        let verifyMethod = """.method public hidebysig specialname abstract virtual
+                instance int32& modreq([runtime]System.Runtime.InteropServices.InAttribute) 
+                get_X() cil managed
+        {
+          .param [0]
+          .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )"""
+
+        FSharp src
+        |> compile
+        |> verifyIL [verifyProperty;verifyMethod]
+        |> ignore
