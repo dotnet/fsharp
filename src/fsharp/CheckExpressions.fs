@@ -9259,7 +9259,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
     match bind with 
 
     | NormalizedBinding(vis, bkind, isInline, isMutable, attrs, doc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), mBinding, spBind) ->
-        let (SynValData(memberFlagsOpt, valSynInfo, _)) = valSynData 
+        let (SynValData(memberFlagsOpt, _, _)) = valSynData 
 
         let callerName = 
             match declKind, bkind, pat with
@@ -9297,9 +9297,24 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 errorR(Error(FSComp.SR.tcAttributesAreNotPermittedOnLetBindings(), mBinding))
             attrs
 
-        let rotRetAttribs, valAttribs = 
+        // Rotate [<return:...>] from binding to return value
+        let rotRetSynAttrs, rotRetAttribs, valAttribs = 
             TcAttrs attrTgt false attrs
-            |> List.partition(function | Attrib(_, _, _, _, _, Some ts, _) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
+            |> List.zip attrs
+            |> List.partition(function | (_, Attrib(_, _, _, _, _, Some ts, _)) -> ts &&& AttributeTargets.ReturnValue <> enum 0 | _ -> false)
+            |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
+        let retAttribs = 
+            match rtyOpt with 
+            | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> 
+                rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs  
+            | None -> rotRetAttribs
+        // Also patch the syntactic representation
+        let valSynData = 
+            match rotRetSynAttrs with
+            | [] -> valSynData
+            | {Range=mHead} :: _ ->
+            let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
+            in SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
 
         let isVolatile = HasFSharpAttribute cenv.g cenv.g.attrib_VolatileFieldAttribute valAttribs
         
@@ -9307,13 +9322,6 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let argAttribs = 
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
-
-        // Rotate [<return:...>] from binding to return value
-        let retAttribs = 
-            match rtyOpt with 
-            | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) -> 
-                rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs  
-            | None -> rotRetAttribs
 
         // Assert the return type of an active pattern. A [<return:Struct>] attribute may be used on a partial active pattern.
         let isStructRetTy = HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute retAttribs
@@ -9369,6 +9377,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let compgen = false
         
         // Use the syntactic arity if we're defining a function 
+        let (SynValData(_, valSynInfo, _)) = valSynData 
         let partialValReprInfo = TranslateTopValSynInfo mBinding (TcAttributes cenv env) valSynInfo
 
         // Check the pattern of the l.h.s. of the binding 
