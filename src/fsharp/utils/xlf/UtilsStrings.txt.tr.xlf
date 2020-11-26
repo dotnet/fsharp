@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../UtilsStrings.resx">
+    <body>
+      <trans-unit id="buildProductName">
+        <source>Microsoft (R) F# Compiler version {0}</source>
+        <target state="translated">Microsoft (R) F# Derleyicisi sürümü {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fSharpBannerVersion">
+        <source>{0} for F# {1}</source>
+        <target state="translated">F# {1} için {0}</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

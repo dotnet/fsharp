@@ -168,7 +168,7 @@ type DependencyManagerInteractiveTests() =
             let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data"|], reportError, "net472")
             Assert.Equal(true, result1.Success)
             Assert.Equal(1, result1.Resolutions |> Seq.length)
-            Assert.True((result1.Resolutions |> Seq.head).Contains("\\net45\\"))
+            Assert.True((result1.Resolutions |> Seq.head).Contains("/net45/"))
             Assert.Equal(1, result1.SourceFiles |> Seq.length)
             Assert.Equal(2, result1.Roots |> Seq.length)
             Assert.True((result1.Roots |> Seq.head).EndsWith("/fsharp.data/3.3.3/"))
@@ -177,11 +177,7 @@ type DependencyManagerInteractiveTests() =
         let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "FSharp.Data, 3.3.3"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result2.Success)
         Assert.Equal(1, result2.Resolutions |> Seq.length)
-        let expected2 =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                "\\netstandard2.0\\"
-            else
-                "/netstandard2.0/"
+        let expected2 = "/netstandard2.0/"
         Assert.True((result2.Resolutions |> Seq.head).Contains(expected2))
         Assert.Equal(1, result2.SourceFiles |> Seq.length)
         Assert.Equal(1, result2.Roots |> Seq.length)
@@ -194,7 +190,7 @@ type DependencyManagerInteractiveTests() =
             let result3 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "net472")
             Assert.Equal(true, result3.Success)
             Assert.Equal(1, result3.Resolutions |> Seq.length)
-            Assert.True((result3.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
+            Assert.True((result3.Resolutions |> Seq.head).Contains("/netstandard2.0/"))
             Assert.Equal(1, result3.SourceFiles |> Seq.length)
             Assert.Equal(1, result3.SourceFiles |> Seq.length)
             Assert.True((result3.Roots |> Seq.head).EndsWith("/system.json/4.6.0/"))
@@ -202,11 +198,7 @@ type DependencyManagerInteractiveTests() =
         let result4 = dp2.Resolve(idm2, ".fsx", [|"r", "System.Json, Version=4.6.0"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result4.Success)
         Assert.Equal(1, result4.Resolutions |> Seq.length)
-        let expected4 =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                "\\netstandard2.0\\"
-            else
-                "/netstandard2.0/"
+        let expected4 = "/netstandard2.0/"
         Assert.True((result4.Resolutions |> Seq.head).Contains(expected4))
         Assert.Equal(1, result4.SourceFiles |> Seq.length)
         Assert.Equal(1, result4.Roots |> Seq.length)
@@ -232,7 +224,7 @@ type DependencyManagerInteractiveTests() =
             let result1 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "net472")
             Assert.Equal(true, result1.Success)
             Assert.Equal(6, result1.Resolutions |> Seq.length)
-            Assert.True((result1.Resolutions |> Seq.head).Contains("\\netstandard2.0\\"))
+            Assert.True((result1.Resolutions |> Seq.head).Contains("/netstandard2.0/"))
             Assert.Equal(1, result1.SourceFiles |> Seq.length)
             Assert.Equal(7, result1.Roots |> Seq.length)
             Assert.True((result1.Roots |> Seq.head).EndsWith("/microsoft.extensions.configuration.abstractions/3.1.1/"))
@@ -242,11 +234,7 @@ type DependencyManagerInteractiveTests() =
         let result2 = dp1.Resolve(idm1, ".fsx", [|"r", "Microsoft.Extensions.Configuration.Abstractions, 3.1.1"|], reportError, "netcoreapp3.1")
         Assert.Equal(true, result2.Success)
         Assert.Equal(2, result2.Resolutions |> Seq.length)
-        let expected =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                "\\netcoreapp3.1\\"
-            else
-                "/netcoreapp3.1/"
+        let expected = "/netcoreapp3.1/"
         Assert.True((result2.Resolutions |> Seq.head).Contains(expected))
         Assert.Equal(1, result2.SourceFiles |> Seq.length)
         Assert.Equal(2, result2.Roots |> Seq.length)
@@ -669,6 +657,55 @@ x |> Seq.iter(fun r ->
         try Assembly.Load("NoneSuchAssembly") |> ignore with _ -> ()
         Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 
+    [<Fact>]
+    member __.``Verify that Dispose cleans up the native paths added``() =
+        let nativeProbingRoots () = Seq.empty<string>
+
+        let appendSemiColon (p:string) =
+            if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
+                p + ";"
+            else
+                p
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable initialPath:string = null
+        let mutable currentPath:string = null
+        let mutable finalPath:string =  null
+        do
+            initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let mutable currentPath:string = null
+            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+                let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "netstandard2.0")
+                Assert.Equal(true, result.Success)
+                currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        Assert.True(currentPath <> initialPath)     // The path was modified by #r "nuget: ..."
+        Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
+
+        initialPath <- null
+        currentPath <- null
+        finalPath <-  null
+        do
+            initialPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            let mutable currentPath:string = null
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let result = dp.Resolve(idm, ".fsx", [|"r", "Microsoft.Data.Sqlite,3.1.7"|], reportError, "netcoreapp3.1")
+            Assert.Equal(true, result.Success)
+            currentPath <-  appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        finalPath <- appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        Assert.True(currentPath <> initialPath)      // The path was modified by #r "nuget: ..."
+        Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
+
+        ()
 
     [<Fact>]
     member __.``Verify that #help produces help text for fsi + dependency manager``() =

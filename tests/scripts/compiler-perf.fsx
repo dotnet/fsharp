@@ -27,11 +27,13 @@ let repoHeadSha = commits.[0].Sha
 let buildSpecs = 
     [ //for pr in pulls do
       //   if pr.Title.Contains("[CompilerPerf]") then
-      //       yield (pr.Head.Repo.CloneUrl, pr.Head.Sha, repoHeadSha, pr.Head.Ref, pr.Number) 
+      //       yield (pr.Head.Repo.CloneUrl, repoHeadSha, pr.Head.Ref, pr.Number) 
       //    ("https://github.com/dsyme/fsharp.git","53d633d6dba0d8f5fcd80f47f588d21cd7a2cff9", repoHeadSha, "no-casts", 1308);
       //yield ("https://github.com/forki/fsharp.git", "d0ab5fec77482e1280578f47e3257cf660d7f1b2", repoHeadSha, "foreach_optimization", 1303);
-      yield (repo, repoHeadSha, repoHeadSha, "main", 0);
-      yield (repo, repoHeadSha, repoHeadSha, "af6ff33b5bc15951a6854bdf3b226db8f0e28b56", 0);
+      yield (repo, "81d1d918740e9ba3cb2eb063b6f28c3139ca9cfa", "81d1d918740e9ba3cb2eb063b6f28c3139ca9cfa", 0);
+      yield (repo, "81d1d918740e9ba3cb2eb063b6f28c3139ca9cfa", "1d36c75225436f8a7d30c4691f20d6118b657fec", 0);
+      yield (repo, "81d1d918740e9ba3cb2eb063b6f28c3139ca9cfa", "2e4096153972abedae142da85cac2ffbcf57fe0a", 0);
+      yield (repo, "81d1d918740e9ba3cb2eb063b6f28c3139ca9cfa", "af6ff33b5bc15951a6854bdf3b226db8f0e28b56", 0);
     ]
 
 
@@ -72,8 +74,8 @@ let exec cmd args dir =
     if result <> 0 then failwith (sprintf "FAILED: %s> %s %s" dir cmd args)
 
 /// Build a specific version of the repo, run compiler perf tests and record the result
-let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
-    let branch = "build-" + string prNumber + "-" + ref + "-" + sha.[0..7]
+let build(cloneUrl, baseSha, ref, prNumber) =
+    let branch = "build-" + string prNumber + "-" + baseSha + "-" + ref 
     let dirBase = __SOURCE_DIRECTORY__ 
     let dirBuild = "current"
     let dir = Path.Combine(dirBase, dirBuild) // "build-" + ref + "-" + sha.[0..7]
@@ -82,8 +84,8 @@ let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
        exec "git" ("clone " + repo + " " + dirBuild) dirBase  |> ignore
     let result = exec "git"  "reset --merge" dir
     let result = exec "git" "checkout main" dir
-    let result = exec "git" "clean -f -x artifacts src" dir
-    let result = exec "git" ("checkout -B " + branch + " main") dir
+    let result = exec "git" "clean -xfd artifacts src vsintegration tests" dir
+    let result = exec "git" ("checkout -B " + branch + " " + baseSha) dir
     let result = exec "git" ("pull  " + cloneUrl + " " + ref) dir
     let result, buildTime = time (fun () -> exec "cmd" "/C build.cmd -c Release" dir )
     let result, ngenTime = time (fun () -> exec "ngen" @"install artifacts\bin\fsc\Release\net472\fsc.exe" dir )
@@ -118,9 +120,9 @@ let build(cloneUrl,sha:string,baseSha,ref,prNumber) =
     let timesHeaderText, timesText = runScenario "bigfiles"
 
     let logFile = "compiler-perf-results.txt"
-    let logHeader = sprintf "url ref  sha base computer build %s" timesHeaderText
+    let logHeader = sprintf "url ref  base computer build %s" timesHeaderText
     let computer = System.Environment.GetEnvironmentVariable("COMPUTERNAME")
-    let logLine = sprintf "%s %-28s %s %s %s %0.2f %s" cloneUrl ref sha baseSha computer buildTime.TotalSeconds timesText
+    let logLine = sprintf "%s %-28s %s %s %0.2f %s" cloneUrl ref baseSha computer buildTime.TotalSeconds timesText
     let existing = if File.Exists logFile then File.ReadAllLines(logFile) else [| logHeader |]
     printfn "writing results %s"  logLine
 

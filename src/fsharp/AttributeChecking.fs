@@ -79,6 +79,11 @@ type AttribInfo =
     | FSAttribInfo of TcGlobals * Attrib
     | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
 
+    member x.Range = 
+         match x with 
+         | FSAttribInfo(_, attrib) -> attrib.Range
+         | ILAttribInfo (_, _, _, _, m) -> m
+
     member x.TyconRef = 
          match x with 
          | FSAttribInfo(_g, Attrib(tcref, _, _, _, _, _, _)) -> tcref

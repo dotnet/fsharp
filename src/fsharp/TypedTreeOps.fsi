@@ -979,6 +979,8 @@ type DisplayEnv =
       showConstraintTyparAnnotations:bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
+      shrinkOverloads: bool
+      printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout:(Val -> layout option) }
@@ -1042,6 +1044,8 @@ module SimplifyTypes =
     val CollectInfo : bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo
 
 val superOfTycon : TcGlobals -> Tycon -> TType
+
+val abstractSlotValRefsOfTycons : Tycon list -> ValRef list
 
 val abstractSlotValsOfTycons : Tycon list -> Val list
 
@@ -1504,6 +1508,9 @@ val isUnitTy : TcGlobals -> TType -> bool
 /// Determine if a type is the System.Object type
 val isObjTy : TcGlobals -> TType -> bool
 
+/// Determine if a type is the System.ValueType type
+val isValueTypeTy : TcGlobals -> TType -> bool
+
 /// Determine if a type is the System.Void type
 val isVoidTy : TcGlobals -> TType -> bool
 
@@ -1524,6 +1531,9 @@ val isInterfaceTy : TcGlobals -> TType -> bool
 
 /// Determine if a type is a FSharpRef type
 val isRefTy : TcGlobals -> TType -> bool
+
+/// Determine if a type is a function (including generic). Not the same as isFunTy.
+val isForallFunctionTy : TcGlobals -> TType -> bool
 
 /// Determine if a type is a sealed type
 val isSealedTy : TcGlobals -> TType -> bool

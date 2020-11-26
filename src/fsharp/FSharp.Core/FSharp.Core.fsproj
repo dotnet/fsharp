@@ -9,12 +9,13 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --warnon:3390 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:3218 --warnon:1182 --warnon:3390 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <NGenBinary>true</NGenBinary>
 
     <PreRelease>true</PreRelease>
     <PackageId>FSharp.Core</PackageId>
+    <PackageVersionPrefix>$(FSCorePackageVersion)</PackageVersionPrefix>
     <NuspecFile>FSharp.Core.nuspec</NuspecFile>
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSCorePackageVersion) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
@@ -131,10 +132,10 @@
     <Compile Include="math\z.fs">
       <Link>Numerics/z.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fsi">
+    <Compile Include="..\utils\sformat.fsi">
       <Link>Printf/sformat.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\sformat.fs">
+    <Compile Include="..\utils\sformat.fs">
       <Link>Printf/sformat.fs</Link>
     </Compile>
     <Compile Include="printf.fsi">
@@ -225,18 +226,5 @@
     <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
   </ItemGroup>
-
-  <!-- Hook compilation phase to do custom work -->
-  <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
-  <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
-  <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
-  <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
-    <ItemGroup>
-      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.optdata" />
-    </ItemGroup>
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-  </Target>
 
 </Project>

@@ -9,6 +9,7 @@
 module internal FSharp.Compiler.TcGlobals
 
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Diagnostics
 
 open FSharp.Compiler.AbstractIL 
@@ -216,12 +217,18 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_char_tcr       = mk_MFCore_tcref fslibCcu "char"
   let v_float_tcr      = mk_MFCore_tcref fslibCcu "float"  
   let v_float32_tcr    = mk_MFCore_tcref fslibCcu "float32"
-  let v_pfloat_tcr     = mk_MFCore_tcref fslibCcu "float`1"  
-  let v_pfloat32_tcr   = mk_MFCore_tcref fslibCcu "float32`1"  
-  let v_pint_tcr       = mk_MFCore_tcref fslibCcu "int`1"  
-  let v_pint8_tcr      = mk_MFCore_tcref fslibCcu "sbyte`1"  
-  let v_pint16_tcr     = mk_MFCore_tcref fslibCcu "int16`1"  
-  let v_pint64_tcr     = mk_MFCore_tcref fslibCcu "int64`1"  
+  let v_pfloat_tcr      = mk_MFCore_tcref fslibCcu "float`1"  
+  let v_pfloat32_tcr    = mk_MFCore_tcref fslibCcu "float32`1"  
+  let v_pint_tcr        = mk_MFCore_tcref fslibCcu "int`1"  
+  let v_pint8_tcr       = mk_MFCore_tcref fslibCcu "sbyte`1"  
+  let v_pint16_tcr      = mk_MFCore_tcref fslibCcu "int16`1"  
+  let v_pint64_tcr      = mk_MFCore_tcref fslibCcu "int64`1"  
+  let v_pnativeint_tcr  = mk_MFCore_tcref fslibCcu "nativeint`1"  
+  let v_puint_tcr       = mk_MFCore_tcref fslibCcu "uint`1"  
+  let v_puint8_tcr      = mk_MFCore_tcref fslibCcu "byte`1"  
+  let v_puint16_tcr     = mk_MFCore_tcref fslibCcu "uint16`1"  
+  let v_puint64_tcr     = mk_MFCore_tcref fslibCcu "uint64`1"  
+  let v_punativeint_tcr = mk_MFCore_tcref fslibCcu "unativeint`1"  
   let v_byref_tcr      = mk_MFCore_tcref fslibCcu "byref`1"
   let v_byref2_tcr      = mk_MFCore_tcref fslibCcu "byref`2"
   let v_outref_tcr      = mk_MFCore_tcref fslibCcu "outref`1"
@@ -360,7 +367,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkForallTyIfNeeded d r = match d with [] -> r | tps -> TType_forall(tps, r)
 
       // A table of all intrinsics that the compiler cares about
-  let v_knownIntrinsics = Dictionary<(string * string option * string * int), ValRef>(HashIdentity.Structural)
+  let v_knownIntrinsics = ConcurrentDictionary<(string * string option * string * int), ValRef>(HashIdentity.Structural)
 
   let makeIntrinsicValRefGeneral isKnown (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
       let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
@@ -374,7 +381,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       let key = (enclosingEntity.LastItemMangledName, memberParentName, compiledName, argCount)
       assert not (v_knownIntrinsics.ContainsKey(key))
       if isKnown && not (v_knownIntrinsics.ContainsKey(key)) then
-          v_knownIntrinsics.Add(key, ValRefForIntrinsic vref)
+          v_knownIntrinsics.[key] <- ValRefForIntrinsic vref
       vref
 
   let makeIntrinsicValRef info = makeIntrinsicValRefGeneral true info
@@ -962,18 +969,24 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.char_tcr       = v_char_tcr
   member __.float_tcr      = v_float_tcr
   member __.float32_tcr    = v_float32_tcr
-  member __.pfloat_tcr     = v_pfloat_tcr
-  member __.pfloat32_tcr   = v_pfloat32_tcr
-  member __.pint_tcr       = v_pint_tcr
-  member __.pint8_tcr      = v_pint8_tcr
-  member __.pint16_tcr     = v_pint16_tcr
-  member __.pint64_tcr     = v_pint64_tcr
+  member __.pfloat_tcr      = v_pfloat_tcr
+  member __.pfloat32_tcr    = v_pfloat32_tcr
+  member __.pint_tcr        = v_pint_tcr
+  member __.pint8_tcr       = v_pint8_tcr
+  member __.pint16_tcr      = v_pint16_tcr
+  member __.pint64_tcr      = v_pint64_tcr
+  member __.pnativeint_tcr  = v_pnativeint_tcr
+  member __.puint_tcr       = v_puint_tcr
+  member __.puint8_tcr      = v_puint8_tcr
+  member __.puint16_tcr     = v_puint16_tcr
+  member __.puint64_tcr     = v_puint64_tcr
+  member __.punativeint_tcr = v_punativeint_tcr
   member __.byref_tcr      = v_byref_tcr
-  member __.byref2_tcr      = v_byref2_tcr
-  member __.outref_tcr      = v_outref_tcr
+  member __.byref2_tcr     = v_byref2_tcr
+  member __.outref_tcr     = v_outref_tcr
   member __.inref_tcr      = v_inref_tcr
   member __.nativeptr_tcr  = v_nativeptr_tcr
-  member __.voidptr_tcr  = v_voidptr_tcr
+  member __.voidptr_tcr    = v_voidptr_tcr
   member __.ilsigptr_tcr   = v_ilsigptr_tcr
   member __.fastFunc_tcr = v_fastFunc_tcr
   member __.tcref_IQueryable = v_tcref_IQueryable
@@ -1086,6 +1099,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     
   member val system_Array_tcref  = findSysTyconRef sys "Array"
   member val system_Object_tcref  = findSysTyconRef sys "Object"
+  member val system_Value_tcref = findSysTyconRef sys "ValueType"
   member val system_Void_tcref    = findSysTyconRef sys "Void"
   member val system_IndexOutOfRangeException_tcref    = findSysTyconRef sys "IndexOutOfRangeException"
   member val system_Nullable_tcref = v_nullable_tcr

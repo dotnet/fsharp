@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net461"
+#I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 Compiler Services: Project Analysis
 ==================================
@@ -175,7 +175,6 @@ You can now resolve symbols in each file:
 
 let xSymbolUseOpt = 
     backgroundTypedParse1.GetSymbolUseAtLocation(9,9,"",["xxx"])
-    |> Async.RunSynchronously
 
 let xSymbolUse = xSymbolUseOpt.Value
 
@@ -196,14 +195,13 @@ For each symbol, you can look up the references to that symbol:
 *)
 let usesOfXSymbol = 
     wholeProjectResults.GetUsesOfSymbol(xSymbol) 
-    |> Async.RunSynchronously
 
 (**
 You can iterate all the defined symbols in the inferred signature and find where they are used:
 *)
 let allUsesOfAllSignatureSymbols = 
     [ for s in allSymbols do 
-         let uses = wholeProjectResults.GetUsesOfSymbol(s) |> Async.RunSynchronously 
+         let uses = wholeProjectResults.GetUsesOfSymbol(s)
          yield s.ToString(), uses ]
 
 (**
@@ -211,7 +209,6 @@ You can also look at all the symbols uses in the whole project (including uses o
 *)
 let allUsesOfAllSymbols =  
     wholeProjectResults.GetAllUsesOfAllSymbols()
-    |> Async.RunSynchronously
 
 (**
 You can also request checks of updated versions of files within the project (note that the other files 
@@ -243,7 +240,6 @@ Again, you can resolve symbols and ask for references:
 
 let xSymbolUse2Opt = 
     checkResults1.GetSymbolUseAtLocation(9,9,"",["xxx"])
-    |> Async.RunSynchronously
 
 let xSymbolUse2 = xSymbolUse2Opt.Value
 
@@ -251,26 +247,21 @@ let xSymbol2 = xSymbolUse2.Symbol
 
 let usesOfXSymbol2 = 
     wholeProjectResults.GetUsesOfSymbol(xSymbol2) 
-    |> Async.RunSynchronously
-
 
 (**
 Or ask for all the symbols uses in the file (including uses of symbols with local scope)
 *)
 let allUsesOfAllSymbolsInFile1 = 
     checkResults1.GetAllUsesOfAllSymbolsInFile()
-    |> Async.RunSynchronously
 
 (**
 Or ask for all the uses of one symbol in one file:
 *)
 let allUsesOfXSymbolInFile1 = 
     checkResults1.GetUsesOfSymbolInFile(xSymbol2)
-    |> Async.RunSynchronously
 
 let allUsesOfXSymbolInFile2 = 
     checkResults2.GetUsesOfSymbolInFile(xSymbol2)
-    |> Async.RunSynchronously
 
 (**
 

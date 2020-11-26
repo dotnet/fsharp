@@ -39,7 +39,7 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(defaultArg capacity 1024)
+    let strings = new System.Collections.Concurrent.ConcurrentDictionary<string, Parser.token>(Environment.ProcessorCount, defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -124,9 +124,9 @@ let stringBufferAsBytes (buf: ByteBuffer) =
 type LexerStringFinisher =
     | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
 
-    member fin.Finish (buf: ByteBuffer) kind isPart cont =
+    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isPart cont
+        f buf kind isInterpolatedStringPart cont
 
     static member Default =
         LexerStringFinisher (fun buf kind isPart cont ->
@@ -230,7 +230,6 @@ let escape c =
 //-----------------------------------------------------------------------   
 
 exception ReservedKeyword of string * range
-exception IndentationProblem of string * range
 
 module Keywords = 
     type private compatibilityMode =

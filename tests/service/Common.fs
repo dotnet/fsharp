@@ -109,6 +109,7 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--define:DEBUG" 
 #if NETCOREAPP
         yield "--targetprofile:netcore" 
+        yield "--langversion:preview" 
 #endif
         yield "--optimize-" 
         yield "--out:" + dllName
@@ -227,10 +228,15 @@ let matchBraces (name: string, code: string) =
     let braces = checker.MatchBraces(filePath, FSharp.Compiler.Text.SourceText.ofString code, options) |> Async.RunSynchronously
     braces
 
-let parseSourceCodeAndGetModule (source: string) =
-    match parseSourceCode ("test", source) with
-    | Some (ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, [ moduleOrNamespace ], _))) -> moduleOrNamespace
+
+let getSingleModuleLikeDecl (input: ParsedInput option) =
+    match input with
+    | Some (ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ]))) -> decl
     | _ -> failwith "Could not get module decls"
+    
+let parseSourceCodeAndGetModule (source: string) =
+    parseSourceCode ("test", source) |> getSingleModuleLikeDecl
+
 
 /// Extract range info 
 let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
@@ -331,8 +337,13 @@ let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
                  yield (x :> FSharpSymbol)
           yield! allSymbolsInEntities compGen e.NestedEntities ]
 
+
+let getParseResults (source: string) =
+    parseSourceCode("/home/user/Test.fsx", source)
+
 let getParseAndCheckResults (source: string) =
     parseAndCheckScript("/home/user/Test.fsx", source)
+
 
 let inline dumpErrors results =
     (^TResults: (member Errors: FSharpErrorInfo[]) results)
@@ -346,14 +357,14 @@ let inline dumpErrors results =
 
 
 let getSymbolUses (results: FSharpCheckFileResults) =
-    results.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+    results.GetAllUsesOfAllSymbolsInFile()
 
 let getSymbolUsesFromSource (source: string) =
     let _, typeCheckResults = getParseAndCheckResults source 
-    typeCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
 
-let getSymbols (symbolUses: FSharpSymbolUse[]) =
-    symbolUses |> Array.map (fun symbolUse -> symbolUse.Symbol)
+let getSymbols (symbolUses: seq<FSharpSymbolUse>) =
+    symbolUses |> Seq.map (fun symbolUse -> symbolUse.Symbol)
 
 
 let getSymbolName (symbol: FSharpSymbol) =
@@ -370,29 +381,42 @@ let getSymbolName (symbol: FSharpSymbol) =
 
 let assertContainsSymbolWithName name source =
     getSymbols source
-    |> Array.choose getSymbolName
-    |> Array.contains name
+    |> Seq.choose getSymbolName
+    |> Seq.contains name
     |> shouldEqual true
 
 let assertContainsSymbolsWithNames (names: string list) source =
     let symbolNames =
         getSymbols source
-        |> Array.choose getSymbolName
+        |> Seq.choose getSymbolName
 
     for name in names do
         symbolNames
-        |> Array.contains name
+        |> Seq.contains name
         |> shouldEqual true
 
 let assertHasSymbolUsages (names: string list) (results: FSharpCheckFileResults) =
     let symbolNames =
         getSymbolUses results
         |> getSymbols
-        |> Array.choose getSymbolName
+        |> Seq.choose getSymbolName
         |> set
 
     for name in names do
         Assert.That(Set.contains name symbolNames, name)
+
+
+let findSymbolUseByName (name: string) (results: FSharpCheckFileResults) =
+    getSymbolUses results
+    |> Seq.find (fun symbolUse ->
+        match getSymbolName symbolUse.Symbol with
+        | Some symbolName -> symbolName = name
+        | _ -> false)
+
+let findSymbolByName (name: string) (results: FSharpCheckFileResults) =
+    let symbolUse = findSymbolUseByName name results
+    symbolUse.Symbol
+
 
 let getRangeCoords (r: range) =
     (r.StartLine, r.StartColumn), (r.EndLine, r.EndColumn)
