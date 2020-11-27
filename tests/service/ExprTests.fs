@@ -2792,7 +2792,7 @@ let ``Test Operator Declarations for String`` () =
         [], "let testStringToDoubleOperator(e1) = Double.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (53,47--53,55)"
         [], "let testStringToDecimalOperator(e1) = Decimal.Parse (e1,167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (54,47--54,57)"
         [], "let testStringToCharOperator(e1) = Char.Parse (e1) @ (55,47--55,54)"
-        [FC47; FC50], "let testStringToStringOperator(e1) = e1 @ (56,54--56,56)"
+        [FC47; FC50], "let testStringToStringOperator(e1) = (if String.Equals (e1,dflt) then "" else e1) @ (56,47--56,56)"
       ]
 
     testOperators "String" "string" excludedTests expectedUnoptimized expectedOptimized
