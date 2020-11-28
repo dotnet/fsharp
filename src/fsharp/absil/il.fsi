@@ -583,7 +583,7 @@ type ILInstr =
 type ILExceptionClause = 
     | Finally of (ILCodeLabel * ILCodeLabel)
     | Fault  of (ILCodeLabel * ILCodeLabel)
-    | FilterCatch of (ILCodeLabel * ILCodeLabel) * (ILCodeLabel * ILCodeLabel)
+    | FilterCatch of filterRange: (ILCodeLabel * ILCodeLabel) * handlerRange: (ILCodeLabel * ILCodeLabel)
     | TypeCatch of ILType * (ILCodeLabel * ILCodeLabel)
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
