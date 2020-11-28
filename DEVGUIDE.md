@@ -10,6 +10,11 @@ We recommend the following overall workflow when developing for this repository:
 * Always work in your fork
 * Always keep your fork up to date
 
+Before updating your fork, run this command:
+```
+git remote add upstream https://github.com/dotnet/fsharp.git
+```
+
 This will make management of multiple forks and your own work easier over time.
 
 ## Updating your fork
