@@ -700,6 +700,9 @@ module private PrintTypes =
             layoutTyparRefWithInfo denv env r
 
         | TType_measure unt -> layoutMeasure denv unt
+        
+        | TType_erased_union (_, t) -> 
+            bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "|")) t)
 
     /// Layout a list of types, separated with the given separator, either '*' or ','
     and private layoutTypesWithInfoAndPrec denv env prec sep typl = 

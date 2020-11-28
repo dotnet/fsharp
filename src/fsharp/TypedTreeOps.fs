@@ -193,6 +193,10 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       match tyenv.tyconRefRemap.TryFind tcref with 
       | Some tcref' -> TType_ucase (UnionCaseRef(tcref', n), remapTypesAux tyenv tinst)
       | None -> TType_ucase (UnionCaseRef(tcref, n), remapTypesAux tyenv tinst)
+  
+  // SWOORUP TODO: idk whats this
+  | TType_erased_union _ as ty ->
+      ty
 
   | TType_anon (anonInfo, l) as ty -> 
       let tupInfo' = remapTupInfoAux tyenv anonInfo.TupInfo
@@ -809,6 +813,7 @@ let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupIn
 let destTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> v | _ -> failwith "destTyparTy: not a typar type")
 let destAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var v -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
 let destMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
+let getErasedUnionCasesTy g ty = ty |> stripTyEqns g |> (function TType_erased_union (_, l) -> l | _ -> failwith "getErasedUnionCasesTy: not an erased union type")
 let isFunTy g ty = ty |> stripTyEqns g |> (function TType_fun _ -> true | _ -> false)
 let isForallTy g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | _ -> false)
 let isAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
@@ -817,6 +822,7 @@ let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo
 let isAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
 let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
 let isUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsUnionTycon | _ -> false)
+let isErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union _ -> true | _ -> false)
 let isReprHiddenTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsHiddenReprTycon | _ -> false)
 let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpObjectModelTycon | _ -> false)
 let isRecdTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsRecordTycon | _ -> false)
@@ -1020,6 +1026,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | EraseNone -> measureAEquiv g aenv m1 m2 
         | _ -> true 
     | _ -> false
+    // SWOORUP TODO: Erased union here
 
 
 and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
@@ -1083,7 +1090,7 @@ let rec getErasedTypes g ty =
         getErasedTypes g rty
     | TType_var tp -> 
         if tp.IsErased then [ty] else []
-    | TType_app (_, b) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) ->
+    | TType_app (_, b) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) -> 
         List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
     | TType_fun (dty, rty) -> 
         getErasedTypes g dty @ getErasedTypes g rty
@@ -2140,6 +2147,8 @@ and accFreeInType opts ty acc =
     match stripTyparEqns ty with 
     | TType_tuple (tupInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
     | TType_anon (anonInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
+    // SWOOORUP TODO: No idea whatsoever
+    | TType_erased_union (_, l) -> accFreeInTypes opts l acc
     | TType_app (tc, tinst) -> 
         let acc = accFreeTycon opts tc acc
         match tinst with 
@@ -2243,7 +2252,10 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty =
     | TType_app (_, tinst) -> 
         accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
     | TType_ucase (_, tinst) -> 
-        accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst 
+        accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst
+    // SWOORUP TODO: No idea wtf this is
+    | TType_erased_union (_, tinst) -> 
+        accFreeInTypesLeftToRight g cxFlag thruFlag acc tinst
     | TType_fun (d, r) -> 
         let dacc = accFreeInTypeLeftToRight g cxFlag thruFlag acc d 
         accFreeInTypeLeftToRight g cxFlag thruFlag dacc r
@@ -2680,7 +2692,7 @@ module SimplifyTypes =
         | TType_forall (_, body) -> foldTypeButNotConstraints f z body
         | TType_app (_, tys) 
         | TType_ucase (_, tys) 
-        | TType_anon (_, tys) 
+        | TType_anon (_, tys)
         | TType_tuple (_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
         | TType_fun (s, t) -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _ -> z

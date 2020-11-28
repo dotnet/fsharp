@@ -3953,7 +3953,9 @@ type TType =
     | TType_ucase of UnionCaseRef * TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    | TType_var of Typar 
+    | TType_var of Typar
+    
+    | TType_erased_union of ErasedUnionInfo * TTypes
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
@@ -3972,6 +3974,7 @@ type TType =
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
+        | TType_erased_union _ -> ""
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -3997,6 +4000,7 @@ type TType =
             | None -> tp.DisplayName
             | Some _ -> tp.DisplayName + " (solved)"
         | TType_measure ms -> ms.ToString()
+        | TType_erased_union (_, l) -> "( " + String.concat " | " (List.map string l) +  " )"
 
 type TypeInst = TType list 
 
@@ -4053,6 +4057,12 @@ type AnonRecdTypeInfo =
         x.SortedNames <- sortedNames
 
     member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
+    
+[<RequireQualifiedAccess>]
+type ErasedUnionInfo =
+    { UnionTy: TType }
+    static member Create(unionTy: TType) =
+        { UnionTy = unionTy }
     
 [<RequireQualifiedAccess>] 
 type TupInfo = 

@@ -625,6 +625,9 @@ val isStructAnonRecdTy    : TcGlobals -> TType -> bool
 val isAnonRecdTy    : TcGlobals -> TType -> bool
 
 val isUnionTy          : TcGlobals -> TType -> bool
+val isErasedUnionTy    : TcGlobals -> TType -> bool
+
+val getErasedUnionCasesTy : TcGlobals -> TType -> TTypes
 
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 

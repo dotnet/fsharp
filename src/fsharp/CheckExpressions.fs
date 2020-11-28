@@ -4235,7 +4235,53 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
             let item = Item.AnonRecdField(anonInfo, sortedCheckedArgTys, i, x.idRange)
             CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,emptyTyparInst,ItemOccurence.UseInType,env.eAccessRights))
         TType_anon(anonInfo, sortedCheckedArgTys),tpenv
-
+        
+    | SynType.ErasedUnion(synCases, m) ->
+        // Helper method for eliminating duplicate types from lists of types that form a union type,
+        // create a disjoint set of cases
+        // taking into account that a subtype is a "duplicate" of its supertype.
+        let rec addToCases (pt: TType) (list: ResizeArray<TType>) =
+            if not <| ResizeArray.exists (isObjTy g) list then
+                if isObjTy g pt then
+                    list.Clear()
+                    list.Add(pt)
+                elif isErasedUnionTy g pt then
+                    let cases = getErasedUnionCasesTy g pt
+                    for t in cases do addToCases t list
+                else
+                    let mutable shouldAdd = true
+                    let mutable i = 0
+                    while i < list.Count && shouldAdd do
+                        let t = list.[i]
+                        if isSubTypeOf cenv.g cenv.amap m pt t then
+                            shouldAdd <- false
+                        elif isSuperTypeOf cenv.g cenv.amap m pt t then
+                            list.RemoveAt(i)
+                            i <- i - 1 // redo this index
+                        i <- i + 1
+                    if shouldAdd then list.Add pt
+            
+        let unionTypeCases = ResizeArray(List.length synCases)
+        synCases
+        |> List.map(fun (ErasedUnionCase(typ=ty)) -> TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType env tpenv ty |> fst)
+        |> List.iter (fun ty -> addToCases ty unionTypeCases)
+//        |> ListSet.setify (typeEquiv g) 
+//        |> List.sortBy(fun ty -> ty.ToString())
+            
+        let superTypes = 
+            unionTypeCases
+            |> List.ofSeq
+            |> List.map (AllPrimarySuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.No)
+        
+        let baseType = 
+            List.fold (ListSet.intersect (typeEquiv cenv.g)) (List.head superTypes) (List.tail superTypes)
+            |> List.head
+        
+//        printfn "Types in Union: %0A" (unionTypeCases |> List.ofSeq)
+//        printfn "SuperTypes in Union: %0A" superTypes
+        let erasedUnionInfo = ErasedUnionInfo.Create(baseType)
+        TType_erased_union(erasedUnionInfo, ResizeArray.toList unionTypeCases), tpenv
+    
     | SynType.Fun(domainTy, resultTy, _) -> 
         let domainTy', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy
         let resultTy', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv resultTy
