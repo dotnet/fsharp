@@ -299,6 +299,7 @@ let rec occursCheck g un ty =
     | TType_ucase(_, l)
     | TType_app (_, l) 
     | TType_anon(_, l)
+    | TType_erased_union (_, l)
     | TType_tuple (_, l) -> List.exists (occursCheck g un) l
     | TType_fun (d, r) -> occursCheck g un d || occursCheck g un r
     | TType_var r   ->  typarEq un r 
@@ -981,7 +982,7 @@ and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: Anon
         ErrorD (ConstraintSolverError(message, csenv.m,m2)) 
     else 
         ResultD ())
-
+        
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
 /// Propagate all effects of adding this constraint, e.g. to solve type variables 
 and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) (cxsln:(TraitConstraintInfo * TraitConstraintSln) option) ty1 ty2 = 
@@ -1018,6 +1019,14 @@ and SolveTypeEqualsType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         -> SolveTypeEqualsType csenv ndeep m2 trace None ms (TType_measure Measure.One)
 
     | TType_app (tc1, l1), TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace None l1 l2
+    
+    | TType_app (_,_), TType_erased_union (_, _) ->
+        if typeAEquiv csenv.g csenv.EquivEnv sty1 sty2 then
+            CompleteD
+        else localAbortD
+    | TType_erased_union (_, _), TType_app (_,_) 
+    | TType_erased_union (_, _), TType_erased_union (_,_) when typeAEquiv csenv.g csenv.EquivEnv sty1 sty2 ->
+        CompleteD
     | TType_app (_, _), TType_app (_, _)   ->  localAbortD
     | TType_tuple (tupInfo1, l1), TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else

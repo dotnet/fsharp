@@ -538,7 +538,7 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         EraseUnions.GetILTypeForAlternative cuspec idx
         
     | TType_erased_union (erasedUnionInfo, _) ->
-        GenTypeArgAux amap m tyenv erasedUnionInfo.UnionTy
+        GenTypeArgAux amap m tyenv erasedUnionInfo.CommonAncestorTy
 
     | TType_forall (tps, tau) ->
         let tps = DropErasedTypars tps

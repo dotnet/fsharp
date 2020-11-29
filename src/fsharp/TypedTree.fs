@@ -3955,6 +3955,7 @@ type TType =
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
     | TType_var of Typar
     
+    /// Indicates the type is a union type, containing common ancestor type and the disjoint cases
     | TType_erased_union of ErasedUnionInfo * TTypes
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
@@ -4060,9 +4061,9 @@ type AnonRecdTypeInfo =
     
 [<RequireQualifiedAccess>]
 type ErasedUnionInfo =
-    { UnionTy: TType }
-    static member Create(unionTy: TType) =
-        { UnionTy = unionTy }
+    { CommonAncestorTy: TType }
+    static member Create(commonAncestorTy: TType) =
+        { CommonAncestorTy = commonAncestorTy }
     
 [<RequireQualifiedAccess>] 
 type TupInfo = 

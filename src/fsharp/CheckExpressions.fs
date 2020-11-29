@@ -4246,7 +4246,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                     list.Clear()
                     list.Add(pt)
                 elif isErasedUnionTy g pt then
-                    let cases = getErasedUnionCasesTy g pt
+                    let cases = getDisjointErasedUnionCasesTyps g pt
                     for t in cases do addToCases t list
                 else
                     let mutable shouldAdd = true
@@ -4265,21 +4265,17 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         synCases
         |> List.map(fun (ErasedUnionCase(typ=ty)) -> TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType env tpenv ty |> fst)
         |> List.iter (fun ty -> addToCases ty unionTypeCases)
-//        |> ListSet.setify (typeEquiv g) 
-//        |> List.sortBy(fun ty -> ty.ToString())
             
         let superTypes = 
             unionTypeCases
             |> List.ofSeq
             |> List.map (AllPrimarySuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.No)
         
-        let baseType = 
+        let commonAncestorTy = 
             List.fold (ListSet.intersect (typeEquiv cenv.g)) (List.head superTypes) (List.tail superTypes)
             |> List.head
         
-//        printfn "Types in Union: %0A" (unionTypeCases |> List.ofSeq)
-//        printfn "SuperTypes in Union: %0A" superTypes
-        let erasedUnionInfo = ErasedUnionInfo.Create(baseType)
+        let erasedUnionInfo = ErasedUnionInfo.Create(commonAncestorTy)
         TType_erased_union(erasedUnionInfo, ResizeArray.toList unionTypeCases), tpenv
     
     | SynType.Fun(domainTy, resultTy, _) -> 

@@ -627,8 +627,6 @@ val isAnonRecdTy    : TcGlobals -> TType -> bool
 val isUnionTy          : TcGlobals -> TType -> bool
 val isErasedUnionTy    : TcGlobals -> TType -> bool
 
-val getErasedUnionCasesTy : TcGlobals -> TType -> TTypes
-
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 
 val isFSharpObjModelTy : TcGlobals -> TType -> bool
@@ -844,6 +842,7 @@ val typarConstraintsAEquivAux : Erasure -> TcGlobals -> TypeEquivEnv -> TyparCon
 val typarConstraintsAEquiv    :            TcGlobals -> TypeEquivEnv -> TyparConstraint      -> TyparConstraint      -> bool
 
 val typarsAEquiv              :            TcGlobals -> TypeEquivEnv -> Typars               -> Typars               -> bool
+val erasedCaseTypsIsSubsetOfOther             :            TcGlobals -> TypeEquivEnv -> TTypes               -> TTypes               -> bool
 
 val typeAEquivAux             : Erasure -> TcGlobals -> TypeEquivEnv -> TType                  -> TType                  -> bool
 
@@ -2218,6 +2217,12 @@ val LinearizeTopMatch : TcGlobals -> ParentRef -> Expr -> Expr
 val AdjustPossibleSubsumptionExpr : TcGlobals -> Expr -> Exprs -> (Expr * Exprs) option
 
 val NormalizeAndAdjustPossibleSubsumptionExprs : TcGlobals -> Expr -> Expr
+
+//-------------------------------------------------------------------------
+// Erased union constructors
+//-------------------------------------------------------------------------
+
+val getDisjointErasedUnionCasesTyps : TcGlobals -> TType -> TTypes
 
 //-------------------------------------------------------------------------
 // XmlDoc signatures, used by both VS mode and XML-help emit

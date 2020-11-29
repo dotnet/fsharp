@@ -194,9 +194,11 @@ let rec remapTypeAux (tyenv: Remap) (ty: TType) =
       | Some tcref' -> TType_ucase (UnionCaseRef(tcref', n), remapTypesAux tyenv tinst)
       | None -> TType_ucase (UnionCaseRef(tcref, n), remapTypesAux tyenv tinst)
   
-  // SWOORUP TODO: idk whats this
-  | TType_erased_union _ as ty ->
-      ty
+  // Remap single disjoint?
+  | TType_erased_union (_, l) as ty ->
+      match l with
+      | [singleCase] -> singleCase
+      | _ -> ty
 
   | TType_anon (anonInfo, l) as ty -> 
       let tupInfo' = remapTupInfoAux tyenv anonInfo.TupInfo
@@ -813,7 +815,6 @@ let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupIn
 let destTyparTy g ty = ty |> stripTyEqns g |> (function TType_var v -> v | _ -> failwith "destTyparTy: not a typar type")
 let destAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var v -> v | TType_measure unt -> destUnitParMeasure g unt | _ -> failwith "destAnyParTy: not a typar or unpar type")
 let destMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure m -> m | _ -> failwith "destMeasureTy: not a unit-of-measure type")
-let getErasedUnionCasesTy g ty = ty |> stripTyEqns g |> (function TType_erased_union (_, l) -> l | _ -> failwith "getErasedUnionCasesTy: not an erased union type")
 let isFunTy g ty = ty |> stripTyEqns g |> (function TType_fun _ -> true | _ -> false)
 let isForallTy g ty = ty |> stripTyEqns g |> (function TType_forall _ -> true | _ -> false)
 let isAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple _ -> true | _ -> false)
@@ -831,7 +832,7 @@ let isFSharpEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -
 let isTyparTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | _ -> false)
 let isAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | TType_measure unt -> isUnitParMeasure g unt | _ -> false)
 let isMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true | _ -> false)
-
+let getDisjointErasedUnionCasesTyps g ty = ty |> stripTyEqns g |> (function TType_erased_union (_, l) -> l | _ -> failwith "getDisjointErasedUnionCasesTyps: not an erased union type")
 
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
@@ -995,6 +996,7 @@ and tcrefAEquiv g aenv tc1 tc2 =
     tyconRefEq g tc1 tc2 || 
       (match aenv.EquivTycons.TryFind tc1 with Some v -> tyconRefEq g v tc2 | None -> false)
 
+/// Union types alters the meaning of in such a way the A is equal to (A|B)
 and typeAEquivAux erasureFlag g aenv ty1 ty2 = 
     let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
     let ty2 = stripTyEqnsWrtErasure erasureFlag g ty2
@@ -1003,6 +1005,12 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 rty2
     | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 -> 
         true
+    | TType_var tp1, TType_erased_union (_, tps2) ->
+        match aenv.EquivTypars.TryFind tp1 with
+        | Some v -> erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv [v] tps2
+        | None -> false
+    | TType_erased_union (_, typs1), TType_app _ ->
+        erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv [ty2] typs1
     | TType_var tp1, _ ->
         match aenv.EquivTypars.TryFind tp1 with
         | Some v -> typeEquivAux erasureFlag g v ty2
@@ -1024,7 +1032,10 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_measure m1, TType_measure m2 -> 
         match erasureFlag with 
         | EraseNone -> measureAEquiv g aenv m1 m2 
-        | _ -> true 
+        | _ -> true
+    | TType_erased_union (_, l1), TType_erased_union (_, l2) ->
+        // TODO: Check if entirety is subset
+        erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv l2 l1
     | _ -> false
     // SWOORUP TODO: Erased union here
 
@@ -1053,6 +1064,7 @@ and measureAEquiv g aenv un1 un2 =
 
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
+and erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv l1 l2 = ListSet.isSubsetOf (typeAEquivAux erasureFlag g aenv) l1 l2
 and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEnv.Empty ty1 ty2
 
 let typeAEquiv g aenv ty1 ty2 = typeAEquivAux EraseNone g aenv ty1 ty2
@@ -1061,6 +1073,7 @@ let traitsAEquiv g aenv t1 t2 = traitsAEquivAux EraseNone g aenv t1 t2
 let traitKeysAEquiv g aenv t1 t2 = traitKeysAEquivAux EraseNone g aenv t1 t2
 let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g aenv c1 c2
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
+let erasedCaseTypsIsSubsetOfOther g aenv d1 d2 = erasedCaseTypsIsSubsetOfOtherAux EraseNone g aenv d1 d2
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2
@@ -2693,6 +2706,7 @@ module SimplifyTypes =
         | TType_app (_, tys) 
         | TType_ucase (_, tys) 
         | TType_anon (_, tys)
+        | TType_erased_union (_, tys) // fold to up
         | TType_tuple (_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
         | TType_fun (s, t) -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _ -> z
