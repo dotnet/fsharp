@@ -1600,10 +1600,10 @@ FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 GetHashCode(S
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] Item1
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] Item2
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_Item1()
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_Item2()
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] filterRange
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] handlerRange
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_filterRange()
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_handlerRange()
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(ILExceptionClause)
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
