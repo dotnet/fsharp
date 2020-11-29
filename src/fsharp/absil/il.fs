@@ -1304,13 +1304,13 @@ type ILFieldInit =
 // --------------------------------------------------------------------
 // Native Types, for marshalling to the native C interface.
 // These are taken directly from the ILASM syntax, and don't really
-// correspond yet to the ECMA Spec (Partition II, 7.4).
+// correspond yet to the CLI ECMA-335 Spec (Partition II, 7.4).
 // --------------------------------------------------------------------
 
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeType =
     | Empty
-    | Custom of ILGuid * string * string * byte[] (* guid, nativeTypeName, custMarshallerName, cookieString *)
+    | Custom of ILGuid * nativeTypeName: string * custMarshallerName: string * cookieString: byte[]
     | FixedSysString of int32
     | FixedArray of int32
     | Currency
