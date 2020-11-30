@@ -677,11 +677,12 @@ type ILNativeVariant =
     | UInt                
 
 /// Native Types, for marshalling to the native C interface.
-/// These are taken directly from the ILASM syntax, see ECMA Spec (Partition II, 7.4).  
+/// These are taken directly from the ILASM syntax.
+/// Most of these are listed in the CLI ECMA-335 Spec (Partition II, 7.4).  
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeType = 
     | Empty
-    | Custom of ILGuid * string * string * byte[] (* guid,nativeTypeName,custMarshallerName,cookieString *)
+    | Custom of ILGuid * nativeTypeName: string * custMarshallerName: string * cookieString: byte[]
     | FixedSysString of int32
     | FixedArray of int32
     | Currency

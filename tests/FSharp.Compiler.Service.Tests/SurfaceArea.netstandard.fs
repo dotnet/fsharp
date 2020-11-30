@@ -14771,9 +14771,9 @@ FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsUInt64()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsVariantBool()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsVoid()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] Item1
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] Item4
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] cookieString
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_Item1()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_Item4()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_cookieString()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -14781,11 +14781,11 @@ FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String Item2
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String Item3
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String nativeTypeName
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String custMarshallerName
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_Item2()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_Item3()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_nativeTypeName()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_custMarshallerName()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
