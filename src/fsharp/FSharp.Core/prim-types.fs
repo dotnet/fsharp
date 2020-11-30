@@ -4509,7 +4509,10 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToString")>]
         let inline string (value: 'T) = 
              anyToString "" value
-             when 'T : string     = (# "" value : string #)     // force no-op
+
+             when 'T : string =
+                if value = unsafeDefault<'T> then ""
+                else (# "" value : string #)     // force no-op
 
              // Using 'let x = (# ... #) in x.ToString()' leads to better IL, without it, an extra stloc and ldloca.s (get address-of)
              // gets emitted, which are unnecessary. With it, the extra address-of-variable is not created
