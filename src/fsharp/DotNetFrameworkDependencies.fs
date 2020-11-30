@@ -62,13 +62,18 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //          packs\Microsoft.NETCore.App.Ref\sdk-version\netcoreappn.n
     //     we will rely on the sdk-version match on the two paths to ensure that we get the product that ships with the
     //     version of the runtime we are executing on
-    //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location.
+    //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location that is 
+    //     lower than or equal to the implementation version.
     let version, frameworkRefsPackDirectoryRoot =
         try
             let version = DirectoryInfo(implementationAssemblyDir).Name
             let microsoftNETCoreAppRef = Path.Combine(implementationAssemblyDir, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(microsoftNETCoreAppRef) then
-                Some version, Some microsoftNETCoreAppRef
+                let directory = DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
+                                |> Array.sortBy (fun di -> di.Name)
+                                |> Array.filter(fun di -> di.Name <= version)
+                                |> Array.last
+                Some (directory.Name), Some microsoftNETCoreAppRef
             else
                Some version,  None
         with | _ -> None, None
