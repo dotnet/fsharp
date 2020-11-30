@@ -29,7 +29,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             location
 
     let inline ifEmptyUse alternative filename = if String.IsNullOrWhiteSpace filename then alternative else filename
-    
+
     let getFSharpCoreLibraryName = "FSharp.Core"
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
     let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
@@ -64,13 +64,19 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //     version of the runtime we are executing on
     //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location that is 
     //     lower than or equal to the implementation version.
+    let zeroVersion = Version("0.0.0.0")
     let version, frameworkRefsPackDirectoryRoot =
         try
+            let computeVersion version =
+                match Version.TryParse(version) with
+                | true, v -> v
+                | false, _ -> zeroVersion
+
             let version = DirectoryInfo(implementationAssemblyDir).Name
             let microsoftNETCoreAppRef = Path.Combine(implementationAssemblyDir, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(microsoftNETCoreAppRef) then
                 let directory = DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
-                                |> Array.sortBy (fun di -> di.Name)
+                                |> Array.sortBy (fun di -> (computeVersion di.Name))
                                 |> Array.filter(fun di -> di.Name <= version)
                                 |> Array.last
                 Some (directory.Name), Some microsoftNETCoreAppRef
