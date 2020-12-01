@@ -40,142 +40,6 @@ type SignatureHelpData =
       ArgumentCount: int
       ArgumentName: string option }
 
-module internal SynExprAppLocationsImpl =
-    let rec private searchSynArgExpr traverseSynExpr expr ranges =
-        match expr with
-        | SynExpr.Const(SynConst.Unit, _) ->
-            None, None
-
-        | SynExpr.Paren(SynExpr.Tuple (_, exprs, _commas, _tupRange), _, _, _parenRange) ->
-            let rec loop (exprs: SynExpr list) ranges =
-                match exprs with
-                | [] -> ranges
-                | h::t ->
-                    loop t (h.Range :: ranges)
-
-            let res = loop exprs ranges
-            Some (res), None
-
-        | SynExpr.Paren(SynExpr.Paren(_, _, _, _) as synExpr, _, _, _parenRange) -> 
-            let r, _cacheOpt = searchSynArgExpr traverseSynExpr synExpr ranges
-            r, None
-
-        | SynExpr.Paren(SynExpr.App (_, _isInfix, _, _, _range), _, _, parenRange) ->
-            Some (parenRange :: ranges), None
-
-        | e -> 
-            let inner = traverseSynExpr e
-            match inner with
-            | None ->
-                Some (e.Range :: ranges), Some inner
-            | _ -> None, Some inner
-
-    let getAllCurriedArgsAtPosition pos parseTree =
-        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
-            member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
-                match expr with
-                | SynExpr.App (_exprAtomicFlag, _isInfix, funcExpr, argExpr, range) when posEq pos range.Start ->
-                    let isInfixFuncExpr =
-                        match funcExpr with
-                        | SynExpr.App (_, isInfix, _, _, _) -> isInfix
-                        | _ -> false
-
-                    if isInfixFuncExpr then
-                        traverseSynExpr funcExpr
-                    else
-                        let workingRanges =
-                            match traverseSynExpr funcExpr with
-                            | Some ranges -> ranges
-                            | None -> []
-
-                        let xResult, cacheOpt = searchSynArgExpr traverseSynExpr argExpr workingRanges
-                        match xResult, cacheOpt with
-                        | Some ranges, _ -> Some ranges
-                        | None, Some cache -> cache
-                        | _ -> traverseSynExpr argExpr
-                | _ -> defaultTraverse expr })
-        |> Option.map List.rev
-
-[<AutoOpen>]
-module ParseFileExtensions =
-    type FSharpParseFileResults with
-        member scope.GetAllArgumentsForApplicationAtPosition pos =
-            match scope.ParseTree with
-            | Some input -> SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
-            | None -> None
-        
-        member scope.TryRangeOfFunctionOrMethodBeingApplied pos =
-            let rec getIdentRangeForFuncExprInApp expr pos =
-                match expr with
-                | SynExpr.Ident ident -> ident.idRange
-                
-                | SynExpr.LongIdent(_, _, _, range) -> range
-
-                | SynExpr.Paren(expr, _, _, range) when rangeContainsPos range pos ->
-                    getIdentRangeForFuncExprInApp expr pos
-
-                | SynExpr.App(_, _, funcExpr, argExpr, _) ->
-                    match argExpr with
-                    | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
-                        getIdentRangeForFuncExprInApp argExpr pos
-                    | _ ->
-                        match funcExpr with
-                        | SynExpr.App (_, true, _, _, _) when rangeContainsPos argExpr.Range pos ->
-                            // x |> List.map 
-                            // Don't dive into the funcExpr (the operator expr)
-                            // because we dont want to offer sig help for that!
-                            getIdentRangeForFuncExprInApp argExpr pos
-                        | _ ->
-                            // Generally, we want to dive into the func expr to get the range
-                            // of the identifier of the function we're after
-                            getIdentRangeForFuncExprInApp funcExpr pos
-                | expr -> expr.Range // Exhaustiveness, this shouldn't actually be necessary...right?
-
-            match scope.ParseTree with
-            | Some input ->
-                AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
-                    member _.VisitExpr(_, _, defaultTraverse, expr) =
-                        match expr with
-                        | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
-                            getIdentRangeForFuncExprInApp app pos
-                            |> Some
-                        | _ -> defaultTraverse expr
-                })
-            | None -> None
-
-        member scope.IsPosContainedInApplication pos =
-            match scope.ParseTree with
-            | Some input ->
-                let result =
-                    AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
-                        member _.VisitExpr(_, _, defaultTraverse, expr) =
-                            match expr with
-                            | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
-                                Some range
-                            | _ -> defaultTraverse expr
-                    })
-                result.IsSome
-            | None -> false
-
-        member scope.TryIdentOfPipelineAndNumArgsApplied pos =
-            match scope.ParseTree with
-            | Some input ->
-                AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
-                    member _.VisitExpr(_, _, defaultTraverse, expr) =
-                        match expr with
-                        | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
-                            if ident.idText = "op_PipeRight" then
-                                Some (ident, 1)
-                            elif ident.idText = "op_PipeRight2" then
-                                Some (ident, 2)
-                            elif ident.idText = "op_PipeRight3" then
-                                Some (ident, 3)
-                            else
-                                None
-                        | _ -> defaultTraverse expr
-                })
-            | None -> None
-
 [<Shared>]
 [<Export(typeof<IFSharpSignatureHelpProvider>)>]
 type internal FSharpSignatureHelpProvider 
@@ -417,7 +281,7 @@ type internal FSharpSignatureHelpProvider
                 | FSharpToolTipText []
                 | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
                 | _ ->                    
-                    let possiblePipelineIdent = parseResults.TryIdentOfPipelineAndNumArgsApplied symbolUse.RangeAlternate.Start
+                    let possiblePipelineIdent = parseResults.TryIdentOfPipelineContainingPosAndNumArgsApplied symbolUse.RangeAlternate.Start
                     let numArgsAlreadyApplied =
                         match possiblePipelineIdent with
                         | None -> 0
@@ -428,7 +292,7 @@ type internal FSharpSignatureHelpProvider
                     let numDefinedArgs = definedArgs.Length
 
                     let curriedArgsInSource =
-                        parseResults.GetAllArgumentsForApplicationAtPosition symbolUse.RangeAlternate.Start
+                        parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.RangeAlternate.Start
                         |> Option.defaultValue []
                         |> Array.ofList
 
