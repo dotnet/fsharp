@@ -302,6 +302,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         yield "System.Data"
         yield "System.Drawing"
         yield "System.Core"
+        yield "System.Configuration"
 
         yield getFSharpCoreLibraryName
         if useFsiAuxLib then yield getFsiLibraryName
@@ -378,6 +379,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             yield "System.Xml" 
             yield "System.Runtime.Remoting"
             yield "System.Runtime.Serialization.Formatters.Soap"
+            yield "System.Configuration"
             yield "System.Data"
             yield "System.Deployment"
             yield "System.Design"
