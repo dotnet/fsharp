@@ -2849,7 +2849,7 @@ let TcStaticUpcast cenv denv m tgtTy srcTy =
             error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, m)) 
             //else warning(UpcastUnnecessary m)
 
-    if isSealedTy cenv.g tgtTy && not (isTyparTy cenv.g tgtTy) then 
+    if isSealedTy cenv.g tgtTy && not (isTyparTy cenv.g tgtTy) && not (isErasedUnionTy cenv.g tgtTy) then 
         warning(CoercionTargetSealed(denv, tgtTy, m))
 
     if typeEquiv cenv.g srcTy tgtTy then 
@@ -4260,23 +4260,25 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                             i <- i - 1 // redo this index
                         i <- i + 1
                     if shouldAdd then list.Add pt
+        let createCases synCases = 
+            let unionTypeCases = ResizeArray()
+            do
+                synCases
+                |> List.map(fun (ErasedUnionCase(typ=ty)) -> TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType env tpenv ty |> fst)
+                |> List.iter (fun ty -> addToCases ty unionTypeCases)
+            ResizeArray.toList unionTypeCases
             
-        let unionTypeCases = ResizeArray(List.length synCases)
-        synCases
-        |> List.map(fun (ErasedUnionCase(typ=ty)) -> TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType env tpenv ty |> fst)
-        |> List.iter (fun ty -> addToCases ty unionTypeCases)
-            
-        let superTypes = 
-            unionTypeCases
-            |> List.ofSeq
-            |> List.map (AllPrimarySuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.No)
+        let cases = createCases synCases 
+        let superTypes = List.map (AllPrimarySuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.No) cases
+        let commonAncestorTy = List.fold (ListSet.intersect (typeEquiv cenv.g)) (List.head superTypes) (List.tail superTypes) |> List.head
         
-        let commonAncestorTy = 
-            List.fold (ListSet.intersect (typeEquiv cenv.g)) (List.head superTypes) (List.tail superTypes)
-            |> List.head
-        
-        let erasedUnionInfo = ErasedUnionInfo.Create(commonAncestorTy)
-        TType_erased_union(erasedUnionInfo, ResizeArray.toList unionTypeCases), tpenv
+        let (sourceOrderIndices, cases') = 
+            cases 
+            |> List.indexed
+            |> List.sortBy (fun ty -> ty.ToString())
+            |> List.unzip
+        let erasedUnionInfo = ErasedUnionInfo.Create(commonAncestorTy, sourceOrderIndices)
+        TType_erased_union(erasedUnionInfo, cases'), tpenv
     
     | SynType.Fun(domainTy, resultTy, _) -> 
         let domainTy', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy
@@ -5519,7 +5521,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.Typed (synBodyExpr, synType, m) ->
         let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv synType
         UnifyTypes cenv env m overallTy tgtTy
-        let expr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr 
+        let expr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
         expr, tpenv
 
     // e :? ty

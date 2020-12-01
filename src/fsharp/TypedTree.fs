@@ -4061,9 +4061,13 @@ type AnonRecdTypeInfo =
     
 [<RequireQualifiedAccess>]
 type ErasedUnionInfo =
-    { CommonAncestorTy: TType }
-    static member Create(commonAncestorTy: TType) =
-        { CommonAncestorTy = commonAncestorTy }
+    { /// the common ancestor type for all cases in this union type
+      CommonAncestorTy: TType
+      /// as sorted in source
+      CaseSourceSortingIndices: int list }
+    static member Create(commonAncestorTy: TType, caseSourceSortingIndices) =
+        { CommonAncestorTy = commonAncestorTy
+          CaseSourceSortingIndices = caseSourceSortingIndices }
     
 [<RequireQualifiedAccess>] 
 type TupInfo = 

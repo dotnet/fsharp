@@ -996,7 +996,7 @@ and tcrefAEquiv g aenv tc1 tc2 =
     tyconRefEq g tc1 tc2 || 
       (match aenv.EquivTycons.TryFind tc1 with Some v -> tyconRefEq g v tc2 | None -> false)
 
-/// Union types alters the meaning of in such a way the A is equal to (A|B)
+/// Test ty1 = ty2
 and typeAEquivAux erasureFlag g aenv ty1 ty2 = 
     let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
     let ty2 = stripTyEqnsWrtErasure erasureFlag g ty2
@@ -1005,12 +1005,6 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 rty2
     | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 -> 
         true
-    | TType_var tp1, TType_erased_union (_, tps2) ->
-        match aenv.EquivTypars.TryFind tp1 with
-        | Some v -> erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv [v] tps2
-        | None -> false
-    | TType_erased_union (_, typs1), TType_app _ ->
-        erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv [ty2] typs1
     | TType_var tp1, _ ->
         match aenv.EquivTypars.TryFind tp1 with
         | Some v -> typeEquivAux erasureFlag g v ty2
@@ -1034,10 +1028,8 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | EraseNone -> measureAEquiv g aenv m1 m2 
         | _ -> true
     | TType_erased_union (_, l1), TType_erased_union (_, l2) ->
-        // TODO: Check if entirety is subset
-        erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv l2 l1
+        typesAEquivAux erasureFlag g aenv l1 l2
     | _ -> false
-    // SWOORUP TODO: Erased union here
 
 
 and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =

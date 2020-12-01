@@ -94,6 +94,7 @@ let TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
 /// The feasible coercion relation. Part of the language spec.
+/// Test whether ty2 :> ty1, for erased union (A|B :> A)
 let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 = 
     if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
     let ty1 = stripTyEqns g ty1
