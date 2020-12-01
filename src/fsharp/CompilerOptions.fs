@@ -1137,8 +1137,13 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     
     CompilerOption
        ("tokenize", tagNone,
-        OptionUnit (fun () -> tcConfigB.tokenizeOnly <- true),
+        OptionUnit (fun () -> tcConfigB.tokenize <- TokenizeOption.Only),
         Some(InternalCommandLineOption("--tokenize", rangeCmdArgs)), None)
+
+    CompilerOption
+       ("tokenize-unfiltered", tagNone,
+        OptionUnit (fun () -> tcConfigB.tokenize <- TokenizeOption.Unfiltered),
+        Some(InternalCommandLineOption("--tokenize-unfiltered", rangeCmdArgs)), None)
     
     CompilerOption
        ("testInteractionParser", tagNone,
