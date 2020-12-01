@@ -103,6 +103,7 @@ module TaggedTextOps =
     val tagRecordField : (string -> TaggedText)
     val tagModule : (string -> TaggedText)
     val tagModuleBinding : (string -> TaggedText)
+    val tagFunction : (string -> TaggedText)
     val tagMember : (string -> TaggedText)
     val tagNamespace : (string -> TaggedText)
     val tagNumericLiteral : (string -> TaggedText)
