@@ -51,4 +51,7 @@ let ``all default assembly references are system assemblies``(assumeNetFx, useSd
             let ref = Path.GetFullPath(r.[3..])
             let baseName = Path.GetFileNameWithoutExtension(ref)
             if not (FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies.Contains(baseName)) then
-                failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeNetFx, useSdk, flags)
+                printfn "Failing, printing options from GetProjectOptionsFromScript..."
+                for opt in options.OtherOptions do
+                    printfn "option: %s" opt
+                failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeNetFx, useSdk, flags) 
