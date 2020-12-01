@@ -117,6 +117,19 @@ stacktype.Name = "Stack"
         | Ok(_) -> Assert.False(true, "expected a failure")
         | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
+
+    [<Fact>]
+    member _.``Script using System.Configuration succeeds``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("""
+#r "nuget:System.Configuration.ConfigurationManager,5.0.0"
+open System.Configuration
+System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOCAL" """)
+        Assert.Empty(errors)
+        match result with
+        | Ok(_) -> ()
+        | Error(ex) -> Assert.True(true, "expected no failures")
+
     [<Theory>]
     [<InlineData("""#i""", "input.fsx (1,1)-(1,3) interactive warning Invalid directive '#i '")>]                                               // No argument
     [<InlineData("""#i "" """, "input.fsx (1,1)-(1,6) interactive error #i is not supported by the registered PackageManagers")>]               // empty argument
