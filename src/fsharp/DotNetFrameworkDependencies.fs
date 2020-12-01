@@ -72,16 +72,17 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                 | true, v -> v
                 | false, _ -> zeroVersion
 
-            let version = DirectoryInfo(implementationAssemblyDir).Name
+            let version = computeVersion (DirectoryInfo(implementationAssemblyDir).Name)
             let microsoftNETCoreAppRef = Path.Combine(implementationAssemblyDir, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(microsoftNETCoreAppRef) then
                 let directory = DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
-                                |> Array.sortBy (fun di -> (computeVersion di.Name))
-                                |> Array.filter(fun di -> di.Name <= version)
+                                |> Array.map (fun di -> computeVersion di.Name)
+                                |> Array.sort
+                                |> Array.filter(fun v -> v <= version)
                                 |> Array.last
-                Some (directory.Name), Some microsoftNETCoreAppRef
+                Some (directory.ToString()), Some microsoftNETCoreAppRef
             else
-               Some version,  None
+               None,  None
         with | _ -> None, None
 
     // Tries to figure out the tfm for the compiler instance.
