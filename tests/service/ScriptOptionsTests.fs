@@ -32,3 +32,23 @@ let ``can generate options for different frameworks regardless of execution envi
     match errors with
     | [] -> ()
     | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
+
+[<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
+[<TestCase(false, true, [| "--targetprofile:netcore" |])>]
+[<Test>]
+let ``all default assembly references are system assemblies``(assumeNetFx, useSdk, flags) =
+    let path = Path.GetTempPath()
+    let file = Path.GetTempFileName()
+    let tempFile = Path.Combine(path, file)
+    let (options, errors) =
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
+        |> Async.RunSynchronously
+    match errors with
+    | [] -> ()
+    | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
+    for r in options.OtherOptions do 
+        if r.StartsWith("-r:") then 
+            let ref = Path.GetFullPath(r.[3..])
+            let baseName = Path.GetFileNameWithoutExtension(ref)
+            if not (FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies.Contains(baseName)) then
+                failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeNetFx, useSdk, flags)
