@@ -120,7 +120,7 @@ module ParseFileExtensions =
                         getIdentRangeForFuncExprInApp argExpr pos
                     | _ ->
                         match funcExpr with
-                        | SynExpr.App (_, true, _, _, _) ->
+                        | SynExpr.App (_, true, _, _, _) when rangeContainsPos argExpr.Range pos ->
                             // x |> List.map 
                             // Don't dive into the funcExpr (the operator expr)
                             // because we dont want to offer sig help for that!
@@ -163,18 +163,15 @@ module ParseFileExtensions =
                 AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
                     member _.VisitExpr(_, _, defaultTraverse, expr) =
                         match expr with
-                        | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) ->
-                            if rangeContainsPos argExpr.Range pos then
-                                if ident.idText = "op_PipeRight" then
-                                    Some (ident, 1)
-                                elif ident.idText = "op_PipeRight2" then
-                                    Some (ident, 2)
-                                elif ident.idText = "op_PipeRight3" then
-                                    Some (ident, 3)
-                                else
-                                    defaultTraverse expr
+                        | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
+                            if ident.idText = "op_PipeRight" then
+                                Some (ident, 1)
+                            elif ident.idText = "op_PipeRight2" then
+                                Some (ident, 2)
+                            elif ident.idText = "op_PipeRight3" then
+                                Some (ident, 3)
                             else
-                                defaultTraverse expr
+                                None
                         | _ -> defaultTraverse expr
                 })
             | None -> None
