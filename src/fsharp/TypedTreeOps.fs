@@ -823,11 +823,12 @@ let isStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo
 let isAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon _ -> true | _ -> false)
 let isStructAnonRecdTy g ty = ty |> stripTyEqns g |> (function TType_anon (anonInfo, _) -> evalAnonInfoIsStruct anonInfo | _ -> false)
 let isUnionTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsUnionTycon | _ -> false)
-let isErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union _ -> true | _ -> false)
 let isReprHiddenTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsHiddenReprTycon | _ -> false)
 let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpObjectModelTycon | _ -> false)
 let isRecdTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsRecordTycon | _ -> false)
 let isFSharpStructOrEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpStructOrEnumTycon | _ -> false)
+let isErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union _ -> true | _ -> false)
+let isStructErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union (erasedUnionInfo, _) -> isFSharpStructOrEnumTy g erasedUnionInfo.CommonAncestorTy | _ -> false)
 let isFSharpEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpEnumTycon | _ -> false)
 let isTyparTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | _ -> false)
 let isAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | TType_measure unt -> isUnitParMeasure g unt | _ -> false)
@@ -1093,7 +1094,7 @@ let rec getErasedTypes g ty =
         getErasedTypes g rty
     | TType_var tp -> 
         if tp.IsErased then [ty] else []
-    | TType_app (_, b) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) -> 
+    | TType_app (_, b) | TType_ucase(_, b) | TType_anon (_, b) | TType_tuple (_, b) | TType_erased_union (_, b) -> 
         List.foldBack (fun ty tys -> getErasedTypes g ty @ tys) b []
     | TType_fun (dty, rty) -> 
         getErasedTypes g dty @ getErasedTypes g rty
@@ -1829,7 +1830,7 @@ let isStructTy g ty =
     | ValueSome tcref -> 
         isStructTyconRef tcref
     | _ -> 
-        isStructAnonRecdTy g ty || isStructTupleTy g ty
+        isStructAnonRecdTy g ty || isStructTupleTy g ty || isStructErasedUnionTy g ty
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -1842,7 +1843,8 @@ let isRefTy g ty =
         isReprHiddenTy g ty || 
         isFSharpObjModelRefTy g ty || 
         isUnitTy g ty ||
-        (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty))
+        (isAnonRecdTy g ty && not (isStructAnonRecdTy g ty)) ||
+        (isErasedUnionTy g ty && not (isStructErasedUnionTy g ty))
     )
 
 let isForallFunctionTy g ty =
@@ -8385,9 +8387,13 @@ let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberIn
 
 let isSealedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
-    not (isRefTy g ty) ||
-    isUnitTy g ty || 
-    isArrayTy g ty || 
+    let isRefTy' = isRefTy g ty
+    let isUnitTy' = isUnitTy g ty
+    let isArrayTy' = isArrayTy g ty
+    
+    not (isRefTy') ||
+    isUnitTy' || 
+    isArrayTy' || 
 
     match metadataOfTy g ty with 
 #if !NO_EXTENSIONTYPING
@@ -8398,7 +8404,9 @@ let isSealedTy g ty =
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
           let tcref = tcrefOfAppTy g ty
           TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some true
-       else 
+       elif (isErasedUnionTy g ty) then
+           false
+       else
           // All other F# types, array, byref, tuple types are sealed
           true
    
