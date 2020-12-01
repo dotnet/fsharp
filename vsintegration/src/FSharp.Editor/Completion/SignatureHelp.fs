@@ -380,7 +380,13 @@ type internal FSharpSignatureHelpProvider
                         loop (sourceText.GetSubText(c - 1)) (c - 1)
                     else
                         c
-                loop (sourceText.GetSubText(caretPosition)) caretPosition
+                let startText =
+                    if caretPosition = sourceText.Length then
+                        sourceText.GetSubText(caretPosition)
+                    else
+                        sourceText.GetSubText(TextSpan(caretPosition, 1))
+                
+                loop startText caretPosition
 
             let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
