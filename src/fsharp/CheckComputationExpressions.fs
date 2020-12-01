@@ -949,8 +949,14 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | SynExpr.Paren (_, _, _, m) -> 
             error(Error(FSComp.SR.tcConstructIsAmbiguousInComputationExpression(), m))
 
+        // In some cases the node produced by `mkSynCall "Zero" m []` may be discarded in the case
+        // of implicit yields - for example "list { 1; 2 }" when each expression checks as an implicit yield.
+        // If it is not discarded, the syntax node will later be checked and the existence/non-existence of the Zero method
+        // will be checked/reported appropriately (though the error message won't mention computation expressions
+        // like our other error messages for missing methods).
         | SynExpr.ImplicitZero m -> 
-            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Zero"), m))
+            if (not enableImplicitYield) && 
+               isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Zero"), m))
             Some (translatedCtxt (mkSynCall "Zero" m []))
             
         | OptionalSequential (JoinOrGroupJoinOrZipClause (_, _, _, _, _, mClause), _) 
