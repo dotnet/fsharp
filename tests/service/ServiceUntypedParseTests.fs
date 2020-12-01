@@ -643,3 +643,65 @@ let addStr x y = string x + string y
             |> shouldEqual [(2, 35)]
         | None ->
             Assert.Fail("No arguments found in source code")
+
+module PipelinesAndArgs =
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =
+        let source = """
+let f x = ()
+f 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 3 0)
+        Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, but infix app``() =
+        let source = """
+let square x = x * 
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 18)
+        Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Single pipeline``() =
+        let source = """
+[1..10] |> List.map 
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 19)
+        match res with
+        | Some (ident, numArgs) ->
+            (ident.idText, numArgs)
+            |> shouldEqual ("op_PipeRight", 1)
+        | None ->
+            Assert.Fail("No pipeline found")
+                
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Double pipeline``() =
+        let source = """
+([1..10], 1) ||> List.fold
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 26)
+        match res with
+        | Some (ident, numArgs) ->
+            (ident.idText, numArgs)
+            |> shouldEqual ("op_PipeRight2", 2)
+        | None ->
+            Assert.Fail("No pipeline found")
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Triple pipeline``() =
+        let source = """
+([1..10], [1..10], 3) |||> List.fold2
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 37)
+        match res with
+        | Some (ident, numArgs) ->
+            (ident.idText, numArgs)
+            |> shouldEqual ("op_PipeRight3", 3)
+        | None ->
+            Assert.Fail("No pipeline found")
