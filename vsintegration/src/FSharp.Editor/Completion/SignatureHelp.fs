@@ -374,6 +374,7 @@ type internal FSharpSignatureHelpProvider
             filePath: string
         ) =
         asyncMaybe {
+            // Backtrack to find a non-whitespace character to get curried arg infos (if present) and a symbol to inspect.
             let adjustedColumnInSource =
                 let rec loop s c =
                     if String.IsNullOrWhiteSpace(s.ToString()) then
