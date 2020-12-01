@@ -157,14 +157,24 @@ module ParseFileExtensions =
                 result.IsSome
             | None -> false
 
-        member scope.TryIdentOfOperatorInInfixAppContainainPos pos =
+        member scope.TryIdentOfPipelineAndNumArgsApplied pos =
             match scope.ParseTree with
             | Some input ->
                 AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
                     member _.VisitExpr(_, _, defaultTraverse, expr) =
                         match expr with
-                        | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) when rangeContainsPos argExpr.Range pos ->
-                            Some ident
+                        | SynExpr.App (_, _, SynExpr.App(_, true, SynExpr.Ident ident, _, _), argExpr, _) ->
+                            if rangeContainsPos argExpr.Range pos then
+                                if ident.idText = "op_PipeRight" then
+                                    Some (ident, 1)
+                                elif ident.idText = "op_PipeRight2" then
+                                    Some (ident, 2)
+                                elif ident.idText = "op_PipeRight3" then
+                                    Some (ident, 3)
+                                else
+                                    defaultTraverse expr
+                            else
+                                defaultTraverse expr
                         | _ -> defaultTraverse expr
                 })
             | None -> None
@@ -402,71 +412,45 @@ type internal FSharpSignatureHelpProvider
                 match tooltip with
                 | FSharpToolTipText []
                 | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
-                | _ ->
-                    
-                    let possibleIdent = parseResults.TryIdentOfOperatorInInfixAppContainainPos symbolUse.RangeAlternate.Start
-                    let numToChopFromEnd =
-                        match possibleIdent with
+                | _ ->                    
+                    let possiblePipelineIdent = parseResults.TryIdentOfPipelineAndNumArgsApplied symbolUse.RangeAlternate.Start
+                    let numArgsAlreadyApplied =
+                        match possiblePipelineIdent with
                         | None -> 0
-                        | Some ident ->
-                            if ident.idText = "op_PipeRight" then
-                                2
-                            elif ident.idText = "op_PipeRight2" then
-                                3
-                            elif ident.idText = "op_PipeRight3" then
-                                4
-                            else
-                                0 // Just show everything, it's not the end of the world
-
+                        | Some (_, numArgsApplied) -> numArgsApplied
 
                     let definedArgs = mfv.CurriedParameterGroups |> Seq.concat |> Array.ofSeq
                         
                     let numDefinedArgs = definedArgs.Length
 
-                    // TODO - need to:
-                    // 1. Detect if we're in an infix app
-                    // 2. Count the number of args applied via infix app if true
                     let curriedArgsInSource =
-                        let args =
-                            parseResults.GetAllArgumentsForApplicationAtPosition symbolUse.RangeAlternate.Start
-                            |> Option.defaultValue []
-                            |> Array.ofList
-                        
-                        // If args are applied via pipelines, chop them off based on the pipeline used
-                        match possibleIdent with
-                        | None -> args
-                        | Some ident ->
-                            if ident.idText = "op_PipeRight" && args.Length > 1 then
-                                args.[.. args.Length - numToChopFromEnd]
-                            elif ident.idText = "op_PipeRight2" && args.Length > 2 then
-                                args.[.. args.Length - numToChopFromEnd]
-                            elif ident.idText = "op_PipeRight3" && args.Length > 3 then
-                                args.[.. args.Length - numToChopFromEnd]
-                            else
-                                args // Just show everything, it's not the end of the world
-                        
+                        parseResults.GetAllArgumentsForApplicationAtPosition symbolUse.RangeAlternate.Start
+                        |> Option.defaultValue []
+                        |> Array.ofList
 
                     do! Option.guard (numDefinedArgs >= curriedArgsInSource.Length)
 
-                    // Calculate the argument index for fun and profit! It's a doozy...
-                    //
-                    // Firstly, we need to use the caret position unlike before.
-                    //
-                    // If the caret position is exactly in range of an existing argument, pick its index.
-                    //
-                    // The rest answers the question of, "what is the NEXT index to show?", because
-                    // when you're not cycling through parameters with the caret, you're typing,
-                    // and you want to know what the next argument should be.
-                    //
-                    // A possibility is you've deleted a parameter and want to enter a new one that
-                    // corresponds to the argument you're "at". We need to find the correct next index.
-                    // This could also correspond to an existing argument application. Buuuuuut that's okay.
-                    // If you want the "used to be 3rd arg, but is now 2nd arg" to remain, when you cycle
-                    // past the "now 2nd arg", it will calculate the 3rd arg as the next argument.
-                    //
-                    // If none of that applies, then we apply the magic of arithmetic
-                    // to find the next index if we're not at the max defined args for the application.
-                    // Otherwise, we're outa here!
+                    (*
+                       Calculate the argument index for fun and profit! It's a doozy...
+                   
+                       Firstly, we need to use the caret position unlike before.
+                   
+                       If the caret position is exactly in range of an existing argument, pick its index.
+                   
+                       The rest answers the question of, "what is the NEXT index to show?", because
+                       when you're not cycling through parameters with the caret, you're typing,
+                       and you want to know what the next argument should be.
+                   
+                       A possibility is you've deleted a parameter and want to enter a new one that
+                       corresponds to the argument you're "at". We need to find the correct next index.
+                       This could also correspond to an existing argument application. Buuuuuut that's okay.
+                       If you want the "used to be 3rd arg, but is now 2nd arg" to remain, when you cycle
+                       past the "now 2nd arg", it will calculate the 3rd arg as the next argument.
+                   
+                       If none of that applies, then we apply the magic of arithmetic
+                       to find the next index if we're not at the max defined args for the application.
+                       Otherwise, we're outa here!
+                   *)
                     let! argumentIndex =
                         let caretTextLinePos = sourceText.Lines.GetLinePosition(caretPosition)
                         let caretPos = mkPos (Line.fromZ caretTextLinePos.Line) caretTextLinePos.Character
@@ -485,7 +469,7 @@ type internal FSharpSignatureHelpProvider
                             match possibleNextIndex with
                             | Some index -> Some index
                             | None ->
-                                if numDefinedArgs > curriedArgsInSource.Length then
+                                if numDefinedArgs - numArgsAlreadyApplied > curriedArgsInSource.Length then
                                     Some (numDefinedArgs - (numDefinedArgs - curriedArgsInSource.Length))
                                 else
                                     None
@@ -512,8 +496,10 @@ type internal FSharpSignatureHelpProvider
                     for part in mainDescription do
                         RoslynHelpers.CollectTaggedText parts part
 
-                    let args = ResizeArray()
-                    for argument in definedArgs.[.. definedArgs.Length - numToChopFromEnd] do
+                    let displayArgs = ResizeArray()
+
+                    // Offset by 1 here until we support reverse indexes in this codebase
+                    for argument in definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] do
                         let taggedText = ResizeArray()
                         let tt = ResizeArray()
                         let layout = argument.Type.FormatLayout symbolUse.DisplayContext
@@ -538,7 +524,9 @@ type internal FSharpSignatureHelpProvider
                               Documentation = ResizeArray()
                               DisplayParts = display }
 
-                        args.Add(info)
+                        displayArgs.Add(info)
+
+                    do! Option.guard (displayArgs.Count > 0)
 
                     let prefixParts =
                         [|
@@ -559,32 +547,13 @@ type internal FSharpSignatureHelpProvider
                             TaggedText(TextTags.Space, " ")
                         |]
 
-                    let ret =
-                        let taggedText = ResizeArray()
-                        let tt = ResizeArray()
-                        let layout = mfv.ReturnParameter.Type.FormatLayout symbolUse.DisplayContext
-                        Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
-                        for part in taggedText do
-                            RoslynHelpers.CollectTaggedText tt part
-                        tt
-
-                    let suffixParts =
-                        [|
-                            TaggedText(TextTags.Space, " ")
-                            TaggedText(TextTags.Operator, "->")
-                            TaggedText(TextTags.Space, " ")
-                        |]
-                        |> ResizeArray
-
-                    suffixParts.AddRange(ret)
-
                     let sigHelpItem =
                         { HasParamArrayArg = false
                           Documentation = docs
                           PrefixParts = prefixParts
                           SeparatorParts = separatorParts
-                          SuffixParts = suffixParts.ToArray()
-                          Parameters = args.ToArray()
+                          SuffixParts = [||]
+                          Parameters = displayArgs.ToArray()
                           MainDescription = ResizeArray() }
 
                     let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
@@ -593,7 +562,7 @@ type internal FSharpSignatureHelpProvider
                         { SignatureHelpItems = [| sigHelpItem |]
                           ApplicableSpan = TextSpan(symbolSpan.End, caretPosition - symbolSpan.End)
                           ArgumentIndex = argumentIndex
-                          ArgumentCount = args.Count
+                          ArgumentCount = displayArgs.Count
                           ArgumentName = None }
 
                     return! Some data
