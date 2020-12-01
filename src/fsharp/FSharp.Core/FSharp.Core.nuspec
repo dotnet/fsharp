@@ -7,7 +7,7 @@
             <group targetFramework=".NETStandard2.0" />
         </dependencies>
         <contentFiles> <!-- Deploy doc comments as Content -->
-            <files include="**/*" buildAction="None" copyToOutput="true" flatten="true" />
+            <files include="**/FSharp.Core.xml" buildAction="None" copyToOutput="true" flatten="true" />
         </contentFiles> 
     </metadata>
     <files>
