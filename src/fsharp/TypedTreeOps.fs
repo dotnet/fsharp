@@ -1056,7 +1056,6 @@ and measureAEquiv g aenv un1 un2 =
 
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
-and erasedCaseTypsIsSubsetOfOtherAux erasureFlag g aenv l1 l2 = ListSet.isSubsetOf (typeAEquivAux erasureFlag g aenv) l1 l2
 and typeEquivAux erasureFlag g ty1 ty2 = typeAEquivAux erasureFlag g TypeEquivEnv.Empty ty1 ty2
 
 let typeAEquiv g aenv ty1 ty2 = typeAEquivAux EraseNone g aenv ty1 ty2
@@ -1065,7 +1064,6 @@ let traitsAEquiv g aenv t1 t2 = traitsAEquivAux EraseNone g aenv t1 t2
 let traitKeysAEquiv g aenv t1 t2 = traitKeysAEquivAux EraseNone g aenv t1 t2
 let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g aenv c1 c2
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
-let erasedCaseTypsIsSubsetOfOther g aenv d1 d2 = erasedCaseTypsIsSubsetOfOtherAux EraseNone g aenv d1 d2
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2

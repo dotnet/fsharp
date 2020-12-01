@@ -842,7 +842,6 @@ val typarConstraintsAEquivAux : Erasure -> TcGlobals -> TypeEquivEnv -> TyparCon
 val typarConstraintsAEquiv    :            TcGlobals -> TypeEquivEnv -> TyparConstraint      -> TyparConstraint      -> bool
 
 val typarsAEquiv              :            TcGlobals -> TypeEquivEnv -> Typars               -> Typars               -> bool
-val erasedCaseTypsIsSubsetOfOther             :            TcGlobals -> TypeEquivEnv -> TTypes               -> TTypes               -> bool
 
 val typeAEquivAux             : Erasure -> TcGlobals -> TypeEquivEnv -> TType                  -> TType                  -> bool
 
