@@ -31,6 +31,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 open FSharp.Compiler.Range
+open Microsoft.CodeAnalysis
 
 let filePath = "C:\\test.fs"
 
@@ -50,6 +51,9 @@ let internal projectOptions = {
     ExtraProjectInfo = None
     Stamp = None
 }
+
+let internal parsingOptions =
+    { FSharpParsingOptions.Default with SourceFiles = [| filePath |] }
 
 let private DefaultDocumentationProvider = 
     { new IDocumentationBuilder with
@@ -210,6 +214,9 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
                 let x =
                     checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
                     |> Async.RunSynchronously
+
+                if x.IsNone then
+                    Assert.Fail("Could not parse and check document.")
                 x.Value
 
             let actual = 
@@ -244,6 +251,253 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
     match sb.ToString() with
     | "" -> ()
     | errorText -> Assert.Fail errorText
+
+[<Test>]
+let ``single argument function application``() =
+    let fileContents = """
+sqrt 
+"""
+    let marker = "sqrt "
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let sourceText = SourceText.From(fileContents)
+    let perfOptions = LanguageServicePerformanceOptions.Default
+    let textVersionHash = 0
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let parseResults, _, checkFileResults =
+        let x =
+            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            |> Async.RunSynchronously
+
+        if x.IsNone then
+            Assert.Fail("Could not parse and check document.")
+        x.Value
+    
+    let sigHelp =
+        FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+            parseResults,
+            checkFileResults,
+            documentId,
+            [],
+            DefaultDocumentationProvider,
+            sourceText,
+            caretPosition,
+            filePath)
+        |> Async.RunSynchronously
+
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    match sigHelp with
+    | None -> Assert.Fail("Expected signature help")
+    | Some sigHelp ->
+        Assert.AreEqual(1, sigHelp.ArgumentCount)
+        Assert.AreEqual(0, sigHelp.ArgumentIndex)
+
+[<Test>]
+let ``multi-argument function application``() =
+    let fileContents = """
+let add2 x y = x + y
+add2 1 
+"""
+    let marker = "add2 1 "
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let sourceText = SourceText.From(fileContents)
+    let perfOptions = LanguageServicePerformanceOptions.Default
+    let textVersionHash = 0
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let parseResults, _, checkFileResults =
+        let x =
+            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            |> Async.RunSynchronously
+
+        if x.IsNone then
+            Assert.Fail("Could not parse and check document.")
+        x.Value
+    
+    let sigHelp =
+        FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+            parseResults,
+            checkFileResults,
+            documentId,
+            [],
+            DefaultDocumentationProvider,
+            sourceText,
+            caretPosition,
+            filePath)
+        |> Async.RunSynchronously
+
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    match sigHelp with
+    | None -> Assert.Fail("Expected signature help")
+    | Some sigHelp ->
+        Assert.AreEqual(2, sigHelp.ArgumentCount)
+        Assert.AreEqual(1, sigHelp.ArgumentIndex)
+
+[<Test>]
+let ``qualified function application``() =
+    let fileContents = """
+module M =
+    let f x = x
+M.f 
+"""
+    let marker = "M.f "
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let sourceText = SourceText.From(fileContents)
+    let perfOptions = LanguageServicePerformanceOptions.Default
+    let textVersionHash = 0
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let parseResults, _, checkFileResults =
+        let x =
+            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            |> Async.RunSynchronously
+
+        if x.IsNone then
+            Assert.Fail("Could not parse and check document.")
+        x.Value
+    
+    let sigHelp =
+        FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+            parseResults,
+            checkFileResults,
+            documentId,
+            [],
+            DefaultDocumentationProvider,
+            sourceText,
+            caretPosition,
+            filePath)
+        |> Async.RunSynchronously
+
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    match sigHelp with
+    | None -> Assert.Fail("Expected signature help")
+    | Some sigHelp ->
+        Assert.AreEqual(1, sigHelp.ArgumentCount)
+        Assert.AreEqual(0, sigHelp.ArgumentIndex)
+
+[<Test>]
+let ``function application in single pipeline with no additional args``() =
+    let fileContents = """
+[1..10] |> id 
+"""
+    let marker = "id "
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let sourceText = SourceText.From(fileContents)
+    let perfOptions = LanguageServicePerformanceOptions.Default
+    let textVersionHash = 0
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let parseResults, _, checkFileResults =
+        let x =
+            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            |> Async.RunSynchronously
+
+        if x.IsNone then
+            Assert.Fail("Could not parse and check document.")
+        x.Value
+    
+    let sigHelp =
+        FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+            parseResults,
+            checkFileResults,
+            documentId,
+            [],
+            DefaultDocumentationProvider,
+            sourceText,
+            caretPosition,
+            filePath)
+        |> Async.RunSynchronously
+
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    Assert.True(sigHelp.IsNone, "No signature help is expected because there are no additional args to apply.")
+
+[<Test>]
+let ``function application in single pipeline with an additional argument``() =
+    let fileContents = """
+[1..10] |> List.map  
+"""
+    let marker = "List.map "
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let sourceText = SourceText.From(fileContents)
+    let perfOptions = LanguageServicePerformanceOptions.Default
+    let textVersionHash = 0
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let parseResults, _, checkFileResults =
+        let x =
+            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            |> Async.RunSynchronously
+
+        if x.IsNone then
+            Assert.Fail("Could not parse and check document.")
+        x.Value
+    
+    let sigHelp =
+        FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+            parseResults,
+            checkFileResults,
+            documentId,
+            [],
+            DefaultDocumentationProvider,
+            sourceText,
+            caretPosition,
+            filePath)
+        |> Async.RunSynchronously
+
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    match sigHelp with
+    | None -> Assert.Fail("Expected signature help")
+    | Some sigHelp ->
+        Assert.AreEqual(1, sigHelp.ArgumentCount)
+        Assert.AreEqual(0, sigHelp.ArgumentIndex)
+
+[<Test>]
+let ``function application in middle of pipeline with an additional argument``() =
+    let fileContents = """
+[1..10]
+|> List.map 
+|> List.filer (fun x -> x > 3)
+"""
+    let marker = "List.map "
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let sourceText = SourceText.From(fileContents)
+    let perfOptions = LanguageServicePerformanceOptions.Default
+    let textVersionHash = 0
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let parseResults, _, checkFileResults =
+        let x =
+            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            |> Async.RunSynchronously
+
+        if x.IsNone then
+            Assert.Fail("Could not parse and check document.")
+        x.Value
+    
+    let sigHelp =
+        FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+            parseResults,
+            checkFileResults,
+            documentId,
+            [],
+            DefaultDocumentationProvider,
+            sourceText,
+            caretPosition,
+            filePath)
+        |> Async.RunSynchronously
+
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    match sigHelp with
+    | None -> Assert.Fail("Expected signature help")
+    | Some sigHelp ->
+        Assert.AreEqual(1, sigHelp.ArgumentCount)
+        Assert.AreEqual(0, sigHelp.ArgumentIndex)
 
 // migrated from legacy test
 [<Test>]
