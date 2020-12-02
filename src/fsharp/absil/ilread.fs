@@ -673,15 +673,15 @@ let simpleIndexCompare (idx1: int) (idx2: int) =
 
 type TypeDefAsTypIdx = TypeDefAsTypIdx of ILBoxity * ILGenericArgs * int
 type TypeRefAsTypIdx = TypeRefAsTypIdx of ILBoxity * ILGenericArgs * int
-type BlobAsMethodSigIdx = BlobAsMethodSigIdx of int * int32
-type BlobAsFieldSigIdx = BlobAsFieldSigIdx of int * int32
-type BlobAsPropSigIdx = BlobAsPropSigIdx of int * int32
-type BlobAsLocalSigIdx = BlobAsLocalSigIdx of int * int32
-type MemberRefAsMspecIdx = MemberRefAsMspecIdx of int * int
-type MethodSpecAsMspecIdx = MethodSpecAsMspecIdx of int * int
-type MemberRefAsFspecIdx = MemberRefAsFspecIdx of int * int
-type CustomAttrIdx = CustomAttrIdx of CustomAttributeTypeTag * int * int32
-type GenericParamsIdx = GenericParamsIdx of int * TypeOrMethodDefTag * int
+type BlobAsMethodSigIdx = BlobAsMethodSigIdx of numtypars: int * blobIdx: int32
+type BlobAsFieldSigIdx = BlobAsFieldSigIdx of numtypars: int * blobIdx: int32
+type BlobAsPropSigIdx = BlobAsPropSigIdx of numtypars: int * blobIdx: int32
+type BlobAsLocalSigIdx = BlobAsLocalSigIdx of numtypars: int * blobIdx: int32
+type MemberRefAsMspecIdx = MemberRefAsMspecIdx of numtypars: int * idx: int
+type MethodSpecAsMspecIdx = MethodSpecAsMspecIdx of numtypars: int * idx: int
+type MemberRefAsFspecIdx = MemberRefAsFspecIdx of numtypars: int * idx: int
+type CustomAttrIdx = CustomAttrIdx of CustomAttributeTypeTag * idx: int * valIdx: int32
+type GenericParamsIdx = GenericParamsIdx of numtypars: int * TypeOrMethodDefTag * idx: int
 
 //---------------------------------------------------------------------
 // Polymorphic caches for row and heap readers
@@ -834,8 +834,8 @@ let seekReadIndexedRow info =
 // IL Reading proper
 //---------------------------------------------------------------------
 
-type MethodData = MethodData of ILType * ILCallingConv * string * ILTypes * ILType * ILTypes
-type VarArgMethodData = VarArgMethodData of ILType * ILCallingConv * string * ILTypes * ILVarArgs * ILType * ILTypes
+type MethodData = MethodData of enclTy: ILType * ILCallingConv * name: string * argtys: ILTypes * retty: ILType * minst: ILTypes
+type VarArgMethodData = VarArgMethodData of enclTy: ILType * ILCallingConv * name: string * argtys: ILTypes * ILVarArgs * retty: ILType * minst: ILTypes
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type PEReader = 
