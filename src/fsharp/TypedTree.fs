@@ -4061,13 +4061,13 @@ type AnonRecdTypeInfo =
     
 [<RequireQualifiedAccess>]
 type ErasedUnionInfo =
-    { /// the common ancestor type for all cases in this union type
+    { /// Common ancestor type for all cases in this union, used for ILgen
       CommonAncestorTy: TType
-      /// as sorted in source
-      CaseSourceSortingIndices: int list }
-    static member Create(commonAncestorTy: TType, caseSourceSortingIndices) =
+      /// Indices representing order of cases they were defined in
+      UnsortedCaseSourceIndices: int [] }
+    static member Create(commonAncestorTy: TType, unsortedCaseSourceIndices: int[]) =
         { CommonAncestorTy = commonAncestorTy
-          CaseSourceSortingIndices = caseSourceSortingIndices }
+          UnsortedCaseSourceIndices = unsortedCaseSourceIndices }
     
 [<RequireQualifiedAccess>] 
 type TupInfo = 

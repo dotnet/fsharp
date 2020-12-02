@@ -828,13 +828,11 @@ let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, 
 let isRecdTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsRecordTycon | _ -> false)
 let isFSharpStructOrEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpStructOrEnumTycon | _ -> false)
 let isErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union _ -> true | _ -> false)
-let isStructErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union (erasedUnionInfo, _) -> isFSharpStructOrEnumTy g erasedUnionInfo.CommonAncestorTy | _ -> false)
+let isStructErasedUnionTy g ty = ty |> stripTyEqns g |> (function TType_erased_union (unionInfo, _) -> isFSharpStructOrEnumTy g unionInfo.CommonAncestorTy | _ -> false)
 let isFSharpEnumTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsFSharpEnumTycon | _ -> false)
 let isTyparTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | _ -> false)
 let isAnyParTy g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | TType_measure unt -> isUnitParMeasure g unt | _ -> false)
 let isMeasureTy g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true | _ -> false)
-let getDisjointErasedUnionCasesTyps g ty = ty |> stripTyEqns g |> (function TType_erased_union (_, l) -> l | _ -> failwith "getDisjointErasedUnionCasesTyps: not an erased union type")
-
 let isProvenUnionCaseTy ty = match ty with TType_ucase _ -> true | _ -> false
 
 let mkAppTy tcref tyargs = TType_app(tcref, tyargs)
@@ -855,6 +853,20 @@ let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref, tinst) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo, tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
 
+let tryUnsortedErasedUnionTyCases g ty =
+    let ty = ty |> stripTyEqns g 
+    match ty with
+    | TType_erased_union (unionInfo, tys) -> 
+        let sigma = unionInfo.UnsortedCaseSourceIndices
+        let unsortedTyps =
+            tys
+            |> List.indexed
+            |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+            |> List.map snd
+                
+        ValueSome (unsortedTyps)
+    | _ -> ValueNone
+    
 let tryNiceEntityRefOfTy ty = 
     let ty = stripTyparEqnsAux false ty 
     match ty with
@@ -1029,7 +1041,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | EraseNone -> measureAEquiv g aenv m1 m2 
         | _ -> true
     | TType_erased_union (_, l1), TType_erased_union (_, l2) ->
-        typesAEquivAux erasureFlag g aenv l1 l2
+        ListSet.equals (typeAEquivAux erasureFlag g aenv) l1 l2
     | _ -> false
 
 

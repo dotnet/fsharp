@@ -2849,7 +2849,7 @@ let TcStaticUpcast cenv denv m tgtTy srcTy =
             error(IndeterminateStaticCoercion(denv, srcTy, tgtTy, m)) 
             //else warning(UpcastUnnecessary m)
 
-    if isSealedTy cenv.g tgtTy && not (isTyparTy cenv.g tgtTy) && not (isErasedUnionTy cenv.g tgtTy) then 
+    if isSealedTy cenv.g tgtTy && not (isTyparTy cenv.g tgtTy) then 
         warning(CoercionTargetSealed(denv, tgtTy, m))
 
     if typeEquiv cenv.g srcTy tgtTy then 
@@ -4246,8 +4246,9 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                     list.Clear()
                     list.Add(pt)
                 elif isErasedUnionTy g pt then
-                    let cases = getDisjointErasedUnionCasesTyps g pt
-                    for t in cases do addToCases t list
+                    let otherUnsortedCases = tryUnsortedErasedUnionTyCases g pt |> ValueOption.defaultValue []
+                    for otherCase in otherUnsortedCases
+                        do addToCases otherCase list
                 else
                     let mutable shouldAdd = true
                     let mutable i = 0
@@ -4260,25 +4261,32 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                             i <- i - 1 // redo this index
                         i <- i + 1
                     if shouldAdd then list.Add pt
-        let createCases synCases = 
+                    
+        let createDisjointTypes synErasedUnionCases = 
             let unionTypeCases = ResizeArray()
             do
-                synCases
+                synErasedUnionCases
                 |> List.map(fun (ErasedUnionCase(typ=ty)) -> TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType env tpenv ty |> fst)
                 |> List.iter (fun ty -> addToCases ty unionTypeCases)
             ResizeArray.toList unionTypeCases
-            
-        let cases = createCases synCases 
-        let superTypes = List.map (AllPrimarySuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.No) cases
-        let commonAncestorTy = List.fold (ListSet.intersect (typeEquiv cenv.g)) (List.head superTypes) (List.tail superTypes) |> List.head
         
-        let (sourceOrderIndices, cases') = 
-            cases 
+        let commonAncestorTy g amap tys = 
+            let superTypes = List.map (AllPrimarySuperTypesOfType g amap m AllowMultiIntfInstantiations.No) tys
+            List.fold (ListSet.intersect (typeEquiv g)) (List.head superTypes) (List.tail superTypes) |> List.head
+        
+        // Sort into order for ordered equality
+        let sortedIndexedErasedUnionCases =
+            createDisjointTypes synCases 
             |> List.indexed
-            |> List.sortBy (fun ty -> ty.ToString())
-            |> List.unzip
-        let erasedUnionInfo = ErasedUnionInfo.Create(commonAncestorTy, sourceOrderIndices)
-        TType_erased_union(erasedUnionInfo, cases'), tpenv
+            |> List.sortBy (snd >> stripTyEqnsAndMeasureEqns g >> string)
+            
+        // Map from sorted indexes to unsorted index
+        let sigma = List.map fst sortedIndexedErasedUnionCases |> List.toArray
+        let sortedErasedUnionCases = List.map snd sortedIndexedErasedUnionCases
+        let commonAncestorTy = commonAncestorTy g cenv.amap sortedErasedUnionCases
+        
+        let erasedUnionInfo = ErasedUnionInfo.Create(commonAncestorTy, sigma)
+        TType_erased_union(erasedUnionInfo, sortedErasedUnionCases), tpenv
     
     | SynType.Fun(domainTy, resultTy, _) -> 
         let domainTy', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy

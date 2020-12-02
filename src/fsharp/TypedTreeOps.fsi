@@ -2218,10 +2218,10 @@ val AdjustPossibleSubsumptionExpr : TcGlobals -> Expr -> Exprs -> (Expr * Exprs)
 val NormalizeAndAdjustPossibleSubsumptionExprs : TcGlobals -> Expr -> Expr
 
 //-------------------------------------------------------------------------
-// Erased union constructors
+// Erased union helper
 //-------------------------------------------------------------------------
 
-val getDisjointErasedUnionCasesTyps : TcGlobals -> TType -> TTypes
+val tryUnsortedErasedUnionTyCases : TcGlobals -> TType -> TTypes ValueOption
 
 //-------------------------------------------------------------------------
 // XmlDoc signatures, used by both VS mode and XML-help emit

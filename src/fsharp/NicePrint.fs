@@ -701,8 +701,16 @@ module private PrintTypes =
 
         | TType_measure unt -> layoutMeasure denv unt
         
-        | TType_erased_union (_, t) -> 
-            bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "|")) t)
+        | TType_erased_union (unionInfo, types) ->
+            let sigma = unionInfo.UnsortedCaseSourceIndices
+            
+            let unsortedTyps =
+                types
+                |> List.indexed
+                |> List.sortBy (fun (sortedIdx, _) -> sigma.[sortedIdx])
+                |> List.map snd
+                
+            bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "|")) unsortedTyps)
 
     /// Layout a list of types, separated with the given separator, either '*' or ','
     and private layoutTypesWithInfoAndPrec denv env prec sep typl = 
