@@ -209,11 +209,14 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 // If neither and we are at the end of overload resolution then use the Nullable
                 elif enforceNullableOptionalsKnownTypes then 
                     calledArgTy
-                // If at the beginning of inference then use a type variable
+                // If at the beginning of inference then use a type variable or use the Nullable if we are not optional.
                 else 
-                    let compgenId = mkSynId range0 unassignedTyparName
-                    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
-                    |> mkNullableTy g
+                    match calledArg.OptArgInfo with
+                    | NotOptional ->
+                        calledArgTy
+                    | _ ->
+                        let compgenId = mkSynId range0 unassignedTyparName
+                        mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
             else
                 calledArgTy
 
