@@ -213,6 +213,7 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 else 
                     let compgenId = mkSynId range0 unassignedTyparName
                     mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+                    |> mkNullableTy g
             else
                 calledArgTy
 
