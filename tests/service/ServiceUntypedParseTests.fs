@@ -644,6 +644,148 @@ let addStr x y = string x + string y
         | None ->
             Assert.Fail("No arguments found in source code")
 
+    [<Test>]
+    let ``IsPosContainedInApplication - no``() =
+        let source = """
+sqrt x
+12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 3 2), "Pos should not be in application")
+
+    [<Test>]
+    let ``IsPosContainedInApplication - yes, single arg``() =
+        let source = """
+sqrt x
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should be in application")
+
+    [<Test>]
+    let ``IsPosContainedInApplication - yes, multi arg``() =
+        let source = """
+let add2 x y = x + y
+add2 x y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 3 6), "Pos should be in application")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - no application``() =
+        let source = """
+let add2 x y = x + y
+add2 x y
+12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 4 2)
+        Assert.IsTrue(res.IsNone, "Not in a function application but got one")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - single arg application``() =
+        let source = """
+sqrt 12.0
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 9)
+        match res with
+        | None -> Assert.Fail("Expected 'sqrt' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((2, 0), (2, 4))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application``() =
+        let source = """
+let f x y z = ()
+f 1 2 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 5)
+        match res with
+        | None -> Assert.Fail("Expected 'f' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 0), (3, 1))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application but at function itself``() =
+        let source = """
+let f x y z = ()
+f 1 2 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 1)
+        match res with
+        | None -> Assert.Fail("Expected 'f' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 0), (3, 1))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - function in pipeline``() =
+        let source = """
+[1..10] |> List.map id
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 20)
+        match res with
+        | None -> Assert.Fail("Expected 'List.map' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((2, 11), (2, 19))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline``() =
+        let source = """
+[1..10]
+|> List.filter (fun x -> x > 3)
+|> List.map id
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 14)
+        match res with
+        | None -> Assert.Fail("Expected 'List.filter' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 3), (3, 14))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline, no qualification``() =
+        let source = """
+[1..10]
+|> id
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 5)
+        match res with
+        | None -> Assert.Fail("Expected 'id' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 3), (3, 5))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - incomplete infix app``() =
+        let source = """
+let add2 x y = x + y
+let square x = x *
+add2 1 2
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 18)
+        match res with
+        | None -> Assert.Fail("Expected '*' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 17), (3, 18))
+
 module PipelinesAndArgs =
     [<Test>]
     let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =
