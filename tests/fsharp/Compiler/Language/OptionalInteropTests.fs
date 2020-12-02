@@ -122,6 +122,28 @@ open CSharpTest
 
 Test.M(x = Some 1)
 Test.MethodTakingNullables(6, "aaaaaa", 8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), "aaaaaa", 8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, "aaaaaa", 8.0) |> ignore
+
+Test.MethodTakingNullables(6, "aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", d=Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", d=Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), "aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, "aaaaaa", d=8.0) |> ignore
+
+Test.MethodTakingNullables(6, y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0) |> ignore
+
+Test.MethodTakingNullables(6, y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0) |> ignore
             """
 
         let fsharpCoreAssembly =
