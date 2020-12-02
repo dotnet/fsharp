@@ -15,7 +15,6 @@ open FSharp.Compiler
 open FSharp.Compiler.Layout
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
 
 type SignatureHelpParameterInfo =
     { ParameterName: string
@@ -55,12 +54,6 @@ type internal FSharpSignatureHelpProvider
 
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
-
-    static let joinWithLineBreaks segments =
-        let lineBreak = TaggedTextOps.Literals.lineBreak
-        match segments |> List.filter (Seq.isEmpty >> not) with
-        | [] -> Seq.empty
-        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
 
     static member internal ProvideMethodsAsyncAux
         (
@@ -354,7 +347,7 @@ type internal FSharpSignatureHelpProvider
                         exceptions.Add,
                         tooltip)
 
-                    let fsharpDocs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                    let fsharpDocs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                                        
                     let docs = ResizeArray()
                     for fsharpDoc in fsharpDocs do
