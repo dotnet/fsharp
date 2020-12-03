@@ -407,6 +407,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             yield "System.ComponentModel.EventBasedAsync"
             yield "System.ComponentModel.Primitives"
             yield "System.ComponentModel.TypeConverter"
+            yield "System.Configuration"
             yield "System.Console"
             yield "System.Core"
             yield "System.Data"
