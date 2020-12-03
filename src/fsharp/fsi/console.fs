@@ -126,7 +126,7 @@ module internal Utils =
         | _, _ -> previousWordFromIdx line (idx - 1, true)
         
     let rec nextWordFromIdx (line: string) (idx, isInWord) =
-        if idx >= line.Length - 1 then line.Length - 1 else
+        if idx >= line.Length then line.Length - 1 else
         match line.Chars(idx), isInWord with
         | ' ', true -> idx - 1
         | ' ', false -> nextWordFromIdx line (idx + 1, false)
@@ -328,7 +328,13 @@ type internal ReadLineConsole() =
         let moveWordRight() =
             if (current < input.Length) then
                 let line = input.ToString()
-                current <- Utils.nextWordFromIdx line (current + 1, false)
+                let idxToMoveTo = Utils.nextWordFromIdx line (current + 1, false)
+                
+                // if has reached end of the last word
+                if idxToMoveTo = current && current < line.Length
+                then current <- line.Length
+                else current <- idxToMoveTo
+                
                 anchor.PlaceAt(x.Inset, current)
 
         let setInput(line:string) =
