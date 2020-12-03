@@ -159,15 +159,15 @@ let main argv = 0"""
 
                 if not (String.IsNullOrWhiteSpace errors) then
                     printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" error
+                    printfn "Errors:\n=======\n%s\n" errors
                     Assert.Fail errors
                 if p.ExitCode <> 0 then
                     printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" error
+                    printfn "Errors:\n=======\n%s\n" errors
                     Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
                 if not succeeded then
                     printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" error
+                    printfn "Errors:\n=======\n%s\n" errors
                     Assert.Fail(sprintf "Program timed out after %d ms" timeout)
 
                 File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
