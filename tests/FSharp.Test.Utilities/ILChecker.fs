@@ -40,10 +40,10 @@ module ILChecker =
 
     let private replaceRe (re: string) (replacement: string) (where: string) : string =
         Regex.Replace(where, re, replacement)
- 
+
     let private trimEnd (chars: char array) (where: string) : string =
         where.TrimEnd(chars)
-        
+
     let private cleanupIL (il: string) : string =
         il
         |> replaceRe @"(.*\.line[^'$]*)('.+)?" ""
@@ -54,7 +54,8 @@ module ILChecker =
         |> replaceRe " = \([0-9a-hA-H\s]+\)" ""
 
         // Filter 'indexed' locals:
-        |> replaceRe "\[\d+\]\s" ""
+        // |> replaceRe "\[\d+\]\s" ""
+        |> replaceRe "\[\(\d+\)\]\s(\s.+)" "$1"
 
         // Unify assembly names:
         |> replaceRe "\[System.Diagnostics.Debug\]|\[System.Runtime\]|\[System.Runtime.Extensions\]|\[mscorlib\]" "[runtime]"
@@ -63,10 +64,10 @@ module ILChecker =
         |> replaceRe ".module '(\S+)'$" ".module $1"
         |> replaceRe "\.mresource public '?(FSharpSignatureData|FSharpOptimizationData)\.\S+'?$" ".mresource public $1.assembly"
 
-        // Replace comments: 
+        // Replace comments:
         |> replaceRe @"//.+$" "\n"
         |> replaceRe @"/\*(.*?)\*/" ""
-        
+
         // Replace strings and verbatim strings:
         |> replaceRe @"""((\\[^\n]|[^""\n])*)""" "$1"
         |> replaceRe @"@(""[^""]*"")+" "$1"
@@ -79,7 +80,7 @@ module ILChecker =
         //      but hosted compiler will generate 'x@8-3'
         // these are functionally the same, merely a naming difference
         // strip off the single quotes and -N tag.
-               
+
         |> replaceRe @"'(\w+@\d+)-\d+'" "$1"
 
         // Trim any trailing spaces and tabs
@@ -91,12 +92,12 @@ module ILChecker =
     let private tryGetAssemblyName (il: string) : string option =
         let m = Regex.Match(il, ".module '?(\S+)'?\.dll")
         if m.Success then Some(m.Groups.[1].Value) else None
-        
+
     let private checkILAux' ildasmArgs dllFilePath expectedIL =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
 
         let errorMsgs = ResizeArray()
-                   
+
         let mutable actualIL = String.Empty
         try
             let ildasmPath = config.ILDASM
@@ -114,12 +115,12 @@ module ILChecker =
                     System.Text.RegularExpressions.RegexOptions.Singleline)
 
             let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
-            
+
             let text =
                 File.ReadAllText(ilFilePath)
                 |> normalizeAssemblyName asmName
                 |> unifyRuntimeAssemblyName
-                
+
             let blockComments = @"/\*(.*?)\*/"
             let lineComments = @"//(.*?)\r?\n"
             let strings = @"""((\\[^\n]|[^""\n])*)"""
@@ -139,22 +140,22 @@ module ILChecker =
                 |> Array.map cleanupIL
                 |> List.ofSeq
                 |> String.concat "\n"
-                
+
             expectedIL
             |> List.map (fun (ilCode: string) ->
                          let il = ilCode.Trim() |> unifyRuntimeAssemblyName
                          match tryGetAssemblyName il with
                          | Some name -> il |> normalizeAssemblyName name
                          | None -> il)
-                         
+
             |> List.iter (fun (ilCode: string) ->
 
                 let expectedLines = ilCode.Split('\n') |> Array.map cleanupIL
 
                 let startIL = expectedLines.[0].Trim()
                 let startIndex = textNoComments.IndexOf(startIL)
-                          
-                if startIndex = -1 then               
+
+                if startIndex = -1 then
                     errorMsgs.Add("\nExpected IL was not found in the output:\n" + startIL + "\n")
                 else
                     let errors = ResizeArray()
@@ -189,7 +190,7 @@ module ILChecker =
         match errorMsgs.Count with
         | 0 -> (true, String.Empty, String.Empty)
         | _ ->
-            let messages = String.concat "\n" errorMsgs 
+            let messages = String.concat "\n" errorMsgs
             (false, messages, actualIL)
 
     let private checkILAux ildasmArgs dllFilePath expectedIL =
@@ -209,9 +210,9 @@ module ILChecker =
 
     let verifyIL (dllFilePath: string) (expectedIL: string) =
         checkIL dllFilePath [expectedIL]
-        
+
     let verifyILAndReturnActual (dllFilePath: string) (expectedIL: string list) = checkILAux' [] dllFilePath expectedIL
-    
+
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
         let errors, _ = exec ilasmPath ([ sprintf "%s /output=%s /dll" ilFilePath dllFilePath ])
