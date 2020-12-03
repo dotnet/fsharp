@@ -128,7 +128,7 @@ module internal Utils =
     let rec nextWordFromIdx (line: string) (idx, isInWord) =
         if idx >= line.Length then line.Length - 1 else
         match line.Chars(idx), isInWord with
-        | ' ', true -> idx - 1
+        | ' ', true -> idx 
         | ' ', false -> nextWordFromIdx line (idx + 1, false)
         | _, _ -> nextWordFromIdx line (idx + 1, true)
                     
