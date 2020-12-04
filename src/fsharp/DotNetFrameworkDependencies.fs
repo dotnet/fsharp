@@ -29,7 +29,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             location
 
     let inline ifEmptyUse alternative filename = if String.IsNullOrWhiteSpace filename then alternative else filename
-    
+
     let getFSharpCoreLibraryName = "FSharp.Core"
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
     let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
@@ -62,15 +62,27 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //          packs\Microsoft.NETCore.App.Ref\sdk-version\netcoreappn.n
     //     we will rely on the sdk-version match on the two paths to ensure that we get the product that ships with the
     //     version of the runtime we are executing on
-    //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location.
+    //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location that is 
+    //     lower than or equal to the implementation version.
+    let zeroVersion = Version("0.0.0.0")
     let version, frameworkRefsPackDirectoryRoot =
         try
-            let version = DirectoryInfo(implementationAssemblyDir).Name
+            let computeVersion version =
+                match Version.TryParse(version) with
+                | true, v -> v
+                | false, _ -> zeroVersion
+
+            let version = computeVersion (DirectoryInfo(implementationAssemblyDir).Name)
             let microsoftNETCoreAppRef = Path.Combine(implementationAssemblyDir, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(microsoftNETCoreAppRef) then
-                Some version, Some microsoftNETCoreAppRef
+                let directory = DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
+                                |> Array.map (fun di -> computeVersion di.Name)
+                                |> Array.sort
+                                |> Array.filter(fun v -> v <= version)
+                                |> Array.last
+                Some (directory.ToString()), Some microsoftNETCoreAppRef
             else
-               Some version,  None
+               None,  None
         with | _ -> None, None
 
     // Tries to figure out the tfm for the compiler instance.
@@ -369,91 +381,132 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     // referenced from TcGlobals must be listed here.
     let systemAssemblies =
         HashSet [
+            // NOTE: duplicates are ok in this list
+
+            // .NET Framework list
             yield "mscorlib"
             yield "netstandard"
-            yield "System.Runtime"
-            yield getFSharpCoreLibraryName
-
             yield "System"
-            yield "System.Xml" 
-            yield "System.Runtime.Remoting"
-            yield "System.Runtime.Serialization.Formatters.Soap"
-            yield "System.Data"
-            yield "System.Deployment"
-            yield "System.Design"
-            yield "System.Messaging"
-            yield "System.Drawing"
-            yield "System.Net"
-            yield "System.Web"
-            yield "System.Web.Services"
-            yield "System.Windows.Forms"
-            yield "System.Core"
-            yield "System.Runtime"
-            yield "System.Observable"
-            yield "System.Numerics"
-            yield "System.ValueTuple"
-
-            // Additions for coreclr and portable profiles
-            yield "System.Collections"
-            yield "System.Collections.Concurrent"
-            yield "System.Console"
-            yield "System.Diagnostics.Debug"
-            yield "System.Diagnostics.Tools"
-            yield "System.Globalization"
-            yield "System.IO"
-            yield "System.Linq"
-            yield "System.Linq.Expressions"
-            yield "System.Linq.Queryable"
-            yield "System.Net.Requests"
-            yield "System.Reflection"
-            yield "System.Reflection.Emit"
-            yield "System.Reflection.Emit.ILGeneration"
-            yield "System.Reflection.Extensions"
-            yield "System.Resources.ResourceManager"
-            yield "System.Runtime.Extensions"
-            yield "System.Runtime.InteropServices"
-            yield "System.Runtime.InteropServices.PInvoke"
-            yield "System.Runtime.Numerics"
-            yield "System.Text.Encoding"
-            yield "System.Text.Encoding.Extensions"
-            yield "System.Text.RegularExpressions"
-            yield "System.Threading"
-            yield "System.Threading.Tasks"
-            yield "System.Threading.Tasks.Parallel"
-            yield "System.Threading.Thread"
-            yield "System.Threading.ThreadPool"
-            yield "System.Threading.Timer"
-
+            yield getFSharpCoreLibraryName
             yield "FSharp.Compiler.Interactive.Settings"
-            yield "Microsoft.Win32.Registry"
-            yield "System.Diagnostics.Tracing"
-            yield "System.Globalization.Calendars"
-            yield "System.Reflection.Primitives"
-            yield "System.Runtime.Handles"
+            yield "Microsoft.CSharp"
+            yield "Microsoft.VisualBasic"
+            yield "Microsoft.VisualBasic.Core"
             yield "Microsoft.Win32.Primitives"
-            yield "System.IO.FileSystem"
-            yield "System.Net.Primitives"
-            yield "System.Net.Sockets"
-            yield "System.Private.Uri"
+            yield "Microsoft.Win32.Registry"
             yield "System.AppContext"
             yield "System.Buffers"
+            yield "System.Collections"
+            yield "System.Collections.Concurrent"
             yield "System.Collections.Immutable"
+            yield "System.Collections.NonGeneric"
+            yield "System.Collections.Specialized"
+            yield "System.ComponentModel"
+            yield "System.ComponentModel.Annotations"
+            yield "System.ComponentModel.DataAnnotations"
+            yield "System.ComponentModel.EventBasedAsync"
+            yield "System.ComponentModel.Primitives"
+            yield "System.ComponentModel.TypeConverter"
+            yield "System.Configuration"
+            yield "System.Console"
+            yield "System.Core"
+            yield "System.Data"
+            yield "System.Data.Common"
+            yield "System.Data.DataSetExtensions"
+            yield "System.Deployment"
+            yield "System.Design"
+            yield "System.Diagnostics.Contracts"
+            yield "System.Diagnostics.Debug"
             yield "System.Diagnostics.DiagnosticSource"
+            yield "System.Diagnostics.FileVersionInfo"
             yield "System.Diagnostics.Process"
+            yield "System.Diagnostics.StackTrace"
+            yield "System.Diagnostics.TextWriterTraceListener"
+            yield "System.Diagnostics.Tools"
             yield "System.Diagnostics.TraceSource"
+            yield "System.Diagnostics.Tracing"
+            yield "System.Drawing"
+            yield "System.Drawing.Primitives"
+            yield "System.Dynamic.Runtime"
+            yield "System.Formats.Asn1"
+            yield "System.Globalization"
+            yield "System.Globalization.Calendars"
             yield "System.Globalization.Extensions"
+            yield "System.IO"
             yield "System.IO.Compression"
+            yield "System.IO.Compression.Brotli"
+            yield "System.IO.Compression.FileSystem"
             yield "System.IO.Compression.ZipFile"
+            yield "System.IO.FileSystem"
+            yield "System.IO.FileSystem.DriveInfo"
             yield "System.IO.FileSystem.Primitives"
+            yield "System.IO.FileSystem.Watcher"
+            yield "System.IO.IsolatedStorage"
+            yield "System.IO.MemoryMappedFiles"
+            yield "System.IO.Pipes"
+            yield "System.IO.UnmanagedMemoryStream"
+            yield "System.Linq"
+            yield "System.Linq.Expressions"
+            yield "System.Linq.Expressions"
+            yield "System.Linq.Parallel"
+            yield "System.Linq.Queryable"
+            yield "System.Memory"
+            yield "System.Messaging"
+            yield "System.Net"
             yield "System.Net.Http"
+            yield "System.Net.Http.Json"
+            yield "System.Net.HttpListener"
+            yield "System.Net.Mail"
             yield "System.Net.NameResolution"
+            yield "System.Net.NetworkInformation"
+            yield "System.Net.Ping"
+            yield "System.Net.Primitives"
+            yield "System.Net.Requests"
+            yield "System.Net.Security"
+            yield "System.Net.ServicePoint"
+            yield "System.Net.Sockets"
+            yield "System.Net.WebClient"
             yield "System.Net.WebHeaderCollection"
+            yield "System.Net.WebProxy"
+            yield "System.Net.WebSockets"
+            yield "System.Net.WebSockets.Client"
+            yield "System.Numerics"
+            yield "System.Numerics.Vectors"
             yield "System.ObjectModel"
+            yield "System.Observable"
+            yield "System.Private.Uri"
+            yield "System.Reflection"
+            yield "System.Reflection.DispatchProxy"
+            yield "System.Reflection.Emit"
+            yield "System.Reflection.Emit.ILGeneration"
             yield "System.Reflection.Emit.Lightweight"
+            yield "System.Reflection.Extensions"
             yield "System.Reflection.Metadata"
+            yield "System.Reflection.Primitives"
             yield "System.Reflection.TypeExtensions"
+            yield "System.Resources.Reader"
+            yield "System.Resources.ResourceManager"
+            yield "System.Resources.Writer"
+            yield "System.Runtime"
+            yield "System.Runtime.CompilerServices.Unsafe"
+            yield "System.Runtime.CompilerServices.VisualC"
+            yield "System.Runtime.Extensions"
+            yield "System.Runtime.Handles"
+            yield "System.Runtime.InteropServices"
+            yield "System.Runtime.InteropServices.PInvoke"
             yield "System.Runtime.InteropServices.RuntimeInformation"
+            yield "System.Runtime.InteropServices.WindowsRuntime"
+            yield "System.Runtime.Intrinsics"
             yield "System.Runtime.Loader"
+            yield "System.Runtime.Numerics"
+            yield "System.Runtime.Remoting"
+            yield "System.Runtime.Serialization"
+            yield "System.Runtime.Serialization.Formatters"
+            yield "System.Runtime.Serialization.Formatters.Soap"
+            yield "System.Runtime.Serialization.Json"
+            yield "System.Runtime.Serialization.Primitives"
+            yield "System.Runtime.Serialization.Xml"
+            yield "System.Security"
             yield "System.Security.Claims"
             yield "System.Security.Cryptography.Algorithms"
             yield "System.Security.Cryptography.Cng"
@@ -464,10 +517,43 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             yield "System.Security.Cryptography.X509Certificates"
             yield "System.Security.Principal"
             yield "System.Security.Principal.Windows"
+            yield "System.Security.SecureString"
+            yield "System.ServiceModel.Web"
+            yield "System.ServiceProcess"
+            yield "System.Text.Encoding"
+            yield "System.Text.Encoding.CodePages"
+            yield "System.Text.Encoding.Extensions"
+            yield "System.Text.Encodings.Web"
+            yield "System.Text.Json"
+            yield "System.Text.RegularExpressions"
+            yield "System.Threading"
+            yield "System.Threading.Channels"
             yield "System.Threading.Overlapped"
+            yield "System.Threading.Tasks"
+            yield "System.Threading.Tasks.Dataflow"
             yield "System.Threading.Tasks.Extensions"
+            yield "System.Threading.Tasks.Parallel"
+            yield "System.Threading.Thread"
+            yield "System.Threading.ThreadPool"
+            yield "System.Threading.Timer"
+            yield "System.Transactions"
+            yield "System.Transactions.Local"
+            yield "System.ValueTuple"
+            yield "System.Web"
+            yield "System.Web.HttpUtility"
+            yield "System.Web.Services"
+            yield "System.Windows"
+            yield "System.Windows.Forms"
+            yield "System.Xml"
+            yield "System.Xml.Linq"
             yield "System.Xml.ReaderWriter"
+            yield "System.Xml.Serialization"
             yield "System.Xml.XDocument"
+            yield "System.Xml.XmlDocument"
+            yield "System.Xml.XmlSerializer"
+            yield "System.Xml.XPath"
+            yield "System.Xml.XPath.XDocument"
+            yield "WindowsBase"
         ]
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 

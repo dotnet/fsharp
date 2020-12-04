@@ -56,12 +56,20 @@ it's a good idea to check the previous link for any old or stalled insertions in
 ## Less interesting links
 
 [FSharp.Core (Official NuGet Release)](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=72).
-Uploads the final FSharp.Core package from the specified build to NuGet.  This should only be run when we know for
+Uploads the final `FSharp.Core` package from the specified build to NuGet.  This should only be run when we know for
 certain which build produced the final offical package.
 
 [FSharp.Core (Preview NuGet Release)](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=92).
-Uploads the preview FSharp.Core.5.0.0-beta.* package from the specified build to NuGet.  This should be run every time
+Uploads the preview `FSharp.Core.*-beta.*` package from the specified build to NuGet.  This should be run every time
 a new SDK preview is released.
+
+[FCS (Official NuGet Release)](https://dev.azure.com/dnceng/internal/_release?view=mine&_a=releases&definitionId=99).
+Uploads the final `FSharp.Compiler.Service` package from the specified build to NuGet.  Only builds from the `release/fcs`
+branch can be selected.  This should only be run when we're fairly certain that the package is complete.
+
+[FCS (Preview NuGet Release)](https://dev.azure.com/dnceng/internal/_release?view=mine&_a=releases&definitionId=98).
+Uploads the preview `FSharp.Compiler.Service.*-beta.*` package from the specified build to NuGet.  Only builds from the
+`main` branch can be selected.  This can be run whenever we think we're ready to preview a new FCS build.
 
 [Nightly VSIX (main) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=70).  Uploads
 a package from every build of `main` to the [Nightly VSIX feed](README.md#using-nightly-releases-in-visual-studio).
