@@ -449,10 +449,10 @@ type internal ReadLineConsole() =
             | ConsoleKey.DownArrow ->
                 setInput(history.Next())
                 change()
-            | ConsoleKey.RightArrow ->
+            | ConsoleKey.RightArrow when key.Modifiers &&& ConsoleModifiers.Control = enum 0 ->
                 moveRight()
                 change()
-            | ConsoleKey.LeftArrow ->
+            | ConsoleKey.LeftArrow when key.Modifiers &&& ConsoleModifiers.Control = enum 0 ->
                 moveLeft()
                 change()
             | ConsoleKey.Escape ->
