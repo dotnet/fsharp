@@ -1928,15 +1928,15 @@ type Expr with
         checkNonNull "methodInfo" methodInfo
         mkInstanceMethodCall (obj, methodInfo, arguments)
 
-    static member CallWithWitnesses (methodInfo: MethodInfo, methodInfoWithWitnesses: MethodInfo, witnessArguments, arguments) =
+    static member CallWithWitnesses (methodInfo: MethodInfo, methodInfoWithWitnesses: MethodInfo, witnesses, arguments) =
         checkNonNull "methodInfo" methodInfo
         checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
-        mkStaticMethodCallW (methodInfo, methodInfoWithWitnesses, List.length witnessArguments, witnessArguments@arguments)
+        mkStaticMethodCallW (methodInfo, methodInfoWithWitnesses, List.length witnesses, witnesses@arguments)
 
-    static member CallWithWitnesses (obj: Expr, methodInfo: MethodInfo, methodInfoWithWitnesses: MethodInfo, witnessArguments, arguments) =
+    static member CallWithWitnesses (obj: Expr, methodInfo: MethodInfo, methodInfoWithWitnesses: MethodInfo, witnesses, arguments) =
         checkNonNull "methodInfo" methodInfo
         checkNonNull "methodInfoWithWitnesses" methodInfoWithWitnesses
-        mkInstanceMethodCallW (obj, methodInfo, methodInfoWithWitnesses, List.length witnessArguments, witnessArguments@arguments)
+        mkInstanceMethodCallW (obj, methodInfo, methodInfoWithWitnesses, List.length witnesses, witnesses@arguments)
 
     static member Coerce (source: Expr, target: Type) =
         checkNonNull "target" target

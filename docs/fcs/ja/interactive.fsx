@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../artifacts/bin/fcs/net461"
+#I "../../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 インタラクティブサービス: F# Interactiveの組み込み
 ==================================================
@@ -55,8 +55,8 @@ open System.IO
 open System.Text
 
 // 入出力のストリームを初期化
-let sbOut = new StringBuilder()
-let sbErr = new StringBuilder()
+let sbOut = StringBuilder()
+let sbErr = StringBuilder()
 let inStream = new StringReader("")
 let outStream = new StringWriter(sbOut)
 let errStream = new StringWriter(sbErr)

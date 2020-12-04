@@ -153,13 +153,8 @@ module public Tooltips =
 
     val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
 
-    val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
-
 // Implementation details used by other code in the compiler    
-module internal SymbolHelpers = 
-
-    val isFunction : TcGlobals -> TType -> bool
-
+module internal SymbolHelpers =
     val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
 
     val GetXmlDocSigOfEntityRef : InfoReader -> range -> EntityRef -> (string option * string) option

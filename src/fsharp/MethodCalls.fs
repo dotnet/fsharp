@@ -209,10 +209,16 @@ let AdjustCalledArgTypeForOptionals (g: TcGlobals) enforceNullableOptionalsKnown
                 // If neither and we are at the end of overload resolution then use the Nullable
                 elif enforceNullableOptionalsKnownTypes then 
                     calledArgTy
-                // If at the beginning of inference then use a type variable
+                // If at the beginning of inference then use a type variable.
                 else 
-                    let compgenId = mkSynId range0 unassignedTyparName
-                    mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+                    let destTy = destNullableTy g calledArgTy
+                    match calledArg.OptArgInfo with
+                    // Use the type variable from the Nullable if called arg is not optional.
+                    | NotOptional when isTyparTy g destTy ->
+                        destTy
+                    | _ ->
+                        let compgenId = mkSynId range0 unassignedTyparName
+                        mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
             else
                 calledArgTy
 
@@ -1864,6 +1870,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
             let argTypes =
                 minfo.GetParamTypes(amap, m, methArgTys) 
                 |> List.concat 
+
             // do not apply coercion to the 'receiver' argument
             let receiverArgOpt, argExprs = 
                 if minfo.IsInstance then
@@ -1871,6 +1878,13 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     | h :: t -> Some h, t
                     | argExprs -> None, argExprs
                 else None, argExprs
+
+            // For methods taking no arguments, 'argExprs' will be a single unit expression here
+            let argExprs = 
+                 match argTypes, argExprs with
+                 | [], [_] -> []
+                 | _ -> argExprs
+
             let convertedArgs = (argExprs, argTypes) ||> List.map2 (fun expr expectedTy -> mkCoerceIfNeeded g expectedTy (tyOfExpr g expr) expr)
             match receiverArgOpt with
             | Some r -> r :: convertedArgs

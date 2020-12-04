@@ -2,6 +2,8 @@
 
 You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET Core](https://dotnet.microsoft.com/).
 
+You will also need the latest .NET 5 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/5.0).
+
 ## Contributing
 
 ### Quickstart on Windows
@@ -70,6 +72,10 @@ Alternatively, if you _really_ want to live on the bleeding edge, you can set up
 
 * Set your feed to the preview feed: https://dotnet.myget.org/F/fsharp-preview/vsix
 * Install a VSIX manually from the preview feed: https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp
+
+## Per-build NuGet packages
+
+Per-build verions of our NuGet packages are available via this URL: `https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json `
 
 ## Branches
 

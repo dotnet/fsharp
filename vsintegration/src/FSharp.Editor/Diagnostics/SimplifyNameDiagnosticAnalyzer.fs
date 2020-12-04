@@ -7,27 +7,24 @@ open System.Composition
 open System.Collections.Immutable
 open System.Diagnostics
 open System.Threading
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
-open FSharp.Compiler
 open FSharp.Compiler.Range
 open System.Runtime.Caching
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open FSharp.Compiler.SourceCodeServices
 
-type private TextVersionHash = int
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
 
 [<Export(typeof<IFSharpSimplifyNameDiagnosticAnalyzer>)>]
-type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
+type internal SimplifyNameDiagnosticAnalyzer
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider, 
+        projectInfoManager: FSharpProjectOptionsManager
+    ) =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
-    let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
-
     static let cache = new MemoryCache("FSharp.Editor." + userOpName)
     // Make sure only one document is being analyzed at a time, to be nice
     static let guard = new SemaphoreSlim(1)
@@ -36,12 +33,12 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
     interface IFSharpSimplifyNameDiagnosticAnalyzer with
 
-        member this.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
+        member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
             asyncMaybe {
                 do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
                 do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
-                let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
                 let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
@@ -51,7 +48,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
                     | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Diagnostics
                     | _ ->
                         let! sourceText = document.GetTextAsync()
-                        let checker = getChecker document
+                        let checker = checkerProvider.Checker
                         let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName=userOpName)
                         let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
                         let mutable diag = ResizeArray()
