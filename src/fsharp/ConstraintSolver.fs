@@ -2512,12 +2512,12 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
             else 
                 let s = calledMethGroup |> List.map (fun cmeth -> cmeth.UnassignedNamedArgs |> List.map (fun na -> na.Name)|> Set.ofList) |> Set.intersectMany
                 let nl = System.Environment.NewLine
-                let methods = 
-                  nl + (
-                  [for c in calledMethGroup -> FSComp.SR.formatDashItem (NicePrint.stringOfMethInfo amap m denv c.Method)]
-                  |> String.concat nl
-                  |> FSComp.SR.csCandidates
-                  ) + nl
+                let methods =
+                    [for c in calledMethGroup -> FSComp.SR.formatDashItem (NicePrint.stringOfMethInfo amap m denv c.Method)]
+                    |> String.concat nl
+                    |> FSComp.SR.csCandidates 
+
+                let methods = nl + methods + nl
 
                 if s.IsEmpty then 
                     let erN, message = FSComp.SR.csNoMemberTakesTheseArguments2((ShowAccessDomain ad), methodName, nUnnamedCallerArgs, nNamedCallerArgs)
