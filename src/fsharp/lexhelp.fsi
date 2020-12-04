@@ -93,8 +93,6 @@ val escape: char -> char
 
 exception ReservedKeyword of string * Range.range
 
-exception IndentationProblem of string * Range.range
-
 module Keywords = 
 
     val KeywordOrIdentifierToken: LexArgs -> UnicodeLexing.Lexbuf -> string -> token

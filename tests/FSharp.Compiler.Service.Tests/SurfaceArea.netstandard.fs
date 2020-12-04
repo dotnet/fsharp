@@ -1600,10 +1600,10 @@ FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 GetHashCode(S
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] Item1
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] Item2
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_Item1()
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_Item2()
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] filterRange
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] handlerRange
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_filterRange()
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_handlerRange()
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(ILExceptionClause)
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -14771,9 +14771,9 @@ FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsUInt64()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsVariantBool()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsVoid()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] Item1
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] Item4
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] cookieString
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_Item1()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_Item4()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_cookieString()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -14781,11 +14781,11 @@ FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String Item2
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String Item3
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String nativeTypeName
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String custMarshallerName
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_Item2()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_Item3()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_nativeTypeName()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_custMarshallerName()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -18037,16 +18037,17 @@ FSharp.Compiler.AbstractIL.Internal.Library+Array: T[][] heads[T](T[])
 FSharp.Compiler.AbstractIL.Internal.Library+Array: Void revInPlace[T](T[])
 FSharp.Compiler.AbstractIL.Internal.Library+Array: a[] mapq[a](Microsoft.FSharp.Core.FSharpFunc`2[a,a], a[])
 FSharp.Compiler.AbstractIL.Internal.Library+Array: a[] replace[a](Int32, a, a[])
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Bind[i,j](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[i,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[j]])
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Combine[f](Cancellable`1, Cancellable`1)
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Bind[k,l](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[k,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[l]])
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Combine[h](Cancellable`1, Cancellable`1)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Delay[a](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[a]])
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Return[h](h)
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 For[f,g](System.Collections.Generic.IEnumerable`1[f], Microsoft.FSharp.Core.FSharpFunc`2[f,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[g]])
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Return[j](j)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 TryFinally[b](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 TryWith[e](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[e]])
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Using[c,d](c, Microsoft.FSharp.Core.FSharpFunc`2[c,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[d]])
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Zero()
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Void .ctor()
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: g ReturnFrom[g](g)
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: i ReturnFrom[i](i)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableModule: Cancellable`1 bind[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[b]], Cancellable`1)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableModule: Cancellable`1 canceled[a]()
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableModule: Cancellable`1 delay[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[T]])
@@ -18369,8 +18370,8 @@ FSharp.Compiler.AbstractIL.Internal.Library+UndefinedException: Int32 GetHashCod
 FSharp.Compiler.AbstractIL.Internal.Library+UndefinedException: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.Internal.Library+UndefinedException: Void .ctor()
 FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: Int32 Encode(T)
-FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: KeyCollection Table
-FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: KeyCollection get_Table()
+FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: System.Collections.Generic.ICollection`1[T] Table
+FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: System.Collections.Generic.ICollection`1[T] get_Table()
 FSharp.Compiler.AbstractIL.Internal.Library+UniqueStampGenerator`1[T]: Void .ctor()
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOptionInternal: Microsoft.FSharp.Core.FSharpValueOption`1[a] ofOption[a](Microsoft.FSharp.Core.FSharpOption`1[a])
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOptionInternal: Microsoft.FSharp.Core.FSharpValueOption`1[b] bind[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,Microsoft.FSharp.Core.FSharpValueOption`1[b]], Microsoft.FSharp.Core.FSharpValueOption`1[a])
@@ -18421,7 +18422,8 @@ FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: Int32 g
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: System.String ToString()
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: ValueOrCancelled`1 NewCancelled(System.OperationCanceledException)
 FSharp.Compiler.AbstractIL.Internal.Library+ValueOrCancelled`1[TResult]: ValueOrCancelled`1 NewValue(TResult)
-FSharp.Compiler.AbstractIL.Internal.Library: AnyCallerThreadToken AssumeAnyCallerThreadWithoutEvidence()
+FSharp.Compiler.AbstractIL.Internal.Library: AnyCallerThreadToken AnyCallerThread
+FSharp.Compiler.AbstractIL.Internal.Library: AnyCallerThreadToken get_AnyCallerThread()
 FSharp.Compiler.AbstractIL.Internal.Library: Boolean String.EndsWithOrdinal(System.String, System.String)
 FSharp.Compiler.AbstractIL.Internal.Library: Boolean String.StartsWithOrdinal(System.String, System.String)
 FSharp.Compiler.AbstractIL.Internal.Library: Boolean isNilOrSingleton[a](Microsoft.FSharp.Collections.FSharpList`1[a])
@@ -19329,6 +19331,7 @@ FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagMethod()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagModule()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagModuleBinding()
+FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagFunction()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagNamespace()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagNumericLiteral()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagOperator()
@@ -19362,6 +19365,7 @@ FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagMethod
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagModule
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagModuleBinding
+FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagFunction
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagNamespace
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagNumericLiteral
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagOperator
@@ -20019,6 +20023,20 @@ FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+LexerStringStyle
 FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+SyntaxError
 FSharp.Compiler.ParseHelpers: ILInstr[] ParseAssemblyCodeInstructions(System.String, range)
 FSharp.Compiler.ParseHelpers: ILType ParseAssemblyCodeType(System.String, range)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Exception)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Object)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.ParseHelpers+IndentationProblem: Int32 GetHashCode()
+FSharp.Compiler.ParseHelpers+IndentationProblem: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.ParseHelpers+IndentationProblem: System.String Data0
+FSharp.Compiler.ParseHelpers+IndentationProblem: System.String get_Data0()
+FSharp.Compiler.ParseHelpers+IndentationProblem: Void .ctor()
+FSharp.Compiler.ParseHelpers+IndentationProblem: Void .ctor(System.String, range)
+FSharp.Compiler.ParseHelpers+IndentationProblem: range Data1
+FSharp.Compiler.ParseHelpers+IndentationProblem: range get_Data1()
+FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+IndentationProblem
+FSharp.Compiler.ParseHelpers: System.String warningStringOfCoords(Int32, Int32)
+FSharp.Compiler.ParseHelpers: System.String warningStringOfPos(pos)
 FSharp.Compiler.PartialLongName: Boolean Equals(FSharp.Compiler.PartialLongName)
 FSharp.Compiler.PartialLongName: Boolean Equals(System.Object)
 FSharp.Compiler.PartialLongName: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -20617,6 +20635,8 @@ FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOp
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[FSharp.Compiler.SourceCodeServices.FSharpExpr,FSharp.Compiler.SourceCodeServices.FSharpType,FSharp.Compiler.SourceCodeServices.FSharpUnionCase,FSharp.Compiler.SourceCodeServices.FSharpField,FSharp.Compiler.SourceCodeServices.FSharpExpr]] |UnionCaseSet|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`5[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |Call|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],System.String,FSharp.Compiler.SyntaxTree+MemberFlags,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |TraitCall|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
+FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] |WitnessArg|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
+FSharp.Compiler.SourceCodeServices.BasicPatterns: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`6[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpType],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpExpr]]] |CallWithWitnesses|_|(FSharp.Compiler.SourceCodeServices.FSharpExpr)
 FSharp.Compiler.SourceCodeServices.CompilerEnvironment: Microsoft.FSharp.Core.FSharpOption`1[System.String] BinFolderOfDefaultFSharpCompiler(Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.CompilerEnvironmentModule: Boolean IsCheckerSupportedSubcategory(System.String)
 FSharp.Compiler.SourceCodeServices.CompilerEnvironmentModule: Microsoft.FSharp.Collections.FSharpList`1[System.String] DefaultReferencesForOrphanSources(Boolean)
@@ -21399,6 +21419,8 @@ FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.Collections.Generic.I
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.Collections.Generic.IList`1[System.Tuple`4[FSharp.Compiler.SourceCodeServices.FSharpType,System.String,System.Boolean,System.Object]] get_NamedArguments()
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.String Format(FSharp.Compiler.SourceCodeServices.FSharpDisplayContext)
 FSharp.Compiler.SourceCodeServices.FSharpAttribute: System.String ToString()
+FSharp.Compiler.SourceCodeServices.FSharpAttribute: range Range
+FSharp.Compiler.SourceCodeServices.FSharpAttribute: range get_Range()
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer)
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer+Succeeded: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -21442,19 +21464,19 @@ FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.Sourc
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpOpenDeclaration[] get_OpenDeclarations()
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpProjectContext ProjectContext
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpProjectContext get_ProjectContext()
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpDeclarationListInfo] GetDeclarationListInfo(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Object,FSharp.Compiler.Range+range],System.Boolean]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpFindDeclResult] GetDeclarationLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpMethodGroup] GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse[]] GetAllUsesOfAllSymbolsInFile()
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse[]] GetUsesOfSymbolInFile(FSharp.Compiler.SourceCodeServices.FSharpSymbol)
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[Internal.Utilities.StructuredFormat.Layout]] GetStructuredToolTipText(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[System.String]] GetToolTipText(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]]] GetDeclarationListSymbols(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]]], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.Object,FSharp.Compiler.Range+range],System.Boolean]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpDisplayContext]] GetDisplayContextForPos(pos)
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]] GetSymbolUseAtLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]]] GetMethodsAsSymbols(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[System.String]] GetF1Keyword(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Control.FSharpAsync`1[System.Boolean] IsRelativeNameResolvableFromSymbol(pos, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.SourceCodeServices.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpDeclarationListInfo GetDeclarationListInfo(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]]])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpFindDeclResult GetDeclarationLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpMethodGroup GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: System.Collections.Generic.IEnumerable`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse] GetAllUsesOfAllSymbolsInFile(Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpSymbolUse[] GetUsesOfSymbolInFile(FSharp.Compiler.SourceCodeServices.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[Internal.Utilities.StructuredFormat.Layout] GetStructuredToolTipText(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32)
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[System.String] GetToolTipText(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32)
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]] GetDeclarationListSymbols(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults], Int32, System.String, FSharp.Compiler.PartialLongName, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]]])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpDisplayContext] GetDisplayContextForPos(pos)
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse] GetSymbolUseAtLocation(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse]] GetMethodsAsSymbols(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[System.String] GetF1Keyword(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Boolean IsRelativeNameResolvableFromSymbol(pos, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.SourceCodeServices.FSharpSymbol)
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpImplementationFileContents] ImplementationFile
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpImplementationFileContents] get_ImplementationFile()
 FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults: System.String ToString()
@@ -21474,14 +21496,14 @@ FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: FSharp.Compiler.So
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[] get_Errors()
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: FSharp.Compiler.SourceCodeServices.FSharpProjectContext ProjectContext
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: FSharp.Compiler.SourceCodeServices.FSharpProjectContext get_ProjectContext()
-FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse[]] GetAllUsesOfAllSymbols()
-FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpSymbolUse[]] GetUsesOfSymbol(FSharp.Compiler.SourceCodeServices.FSharpSymbol)
+FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: FSharp.Compiler.SourceCodeServices.FSharpSymbolUse[] GetAllUsesOfAllSymbols(Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
+FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: FSharp.Compiler.SourceCodeServices.FSharpSymbolUse[] GetUsesOfSymbol(FSharp.Compiler.SourceCodeServices.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: System.String ToString()
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: System.String[] DependencyFiles
 FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Boolean ImplicitlyStartBackgroundWork
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Boolean get_ImplicitlyStartBackgroundWork()
-FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.ReferenceResolver+Resolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker Create(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.ReferenceResolver+Resolver], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.DateTime],Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.IntPtr,System.Int32]]]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker Instance
 FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpChecker get_Instance()
 FSharp.Compiler.SourceCodeServices.FSharpChecker: FSharp.Compiler.SourceCodeServices.FSharpProjectOptions GetProjectOptionsFromCommandLineArgs(System.String, System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.Object])
@@ -21496,20 +21518,20 @@ FSharp.Compiler.SourceCodeServices.FSharpChecker: Int32 get_GlobalForegroundPars
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Int32 get_GlobalForegroundTypeCheckCountStatistic()
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Int32 get_MaxMemory()
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Int32 get_PauseBeforeBackgroundWork()
-FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer] CheckFileInProject(FSharp.Compiler.SourceCodeServices.FSharpParseFileResults, System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Object], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer] CheckFileInProject(FSharp.Compiler.SourceCodeServices.FSharpParseFileResults, System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpCheckProjectResults] ParseAndCheckProject(FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults] GetBackgroundParseResultsForFileInProject(System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults] ParseFile(System.String, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpParsingOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults] ParseFileInProject(System.String, System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults] ParseFileNoCache(System.String, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpParsingOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.SourceCodeServices.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Object], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.SourceCodeServices.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyProjectCleaned(FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Range+range]] FindBackgroundReferencesInFile(System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, FSharp.Compiler.SourceCodeServices.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.Range+range,FSharp.Compiler.Range+range][]] MatchBraces(System.String, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpParsingOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.Range+range,FSharp.Compiler.Range+range][]] MatchBraces(System.String, System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[],System.Int32]] Compile(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+ParsedInput], System.String, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[],System.Int32]] Compile(System.String[], Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults,FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer]] ParseAndCheckFileInProject(System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Object], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults,FSharp.Compiler.SourceCodeServices.FSharpCheckFileAnswer]] ParseAndCheckFileInProject(System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpParseFileResults,FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults]] GetBackgroundCheckResultsForFileInProject(System.String, FSharp.Compiler.SourceCodeServices.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpProjectOptions,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpErrorInfo]]] GetProjectOptionsFromScript(System.String, FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.String[]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Object], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.SourceCodeServices.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`3[FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[],System.Int32,Microsoft.FSharp.Core.FSharpOption`1[System.Reflection.Assembly]]] CompileToDynamicAssembly(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+ParsedInput], System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.IO.TextWriter,System.IO.TextWriter]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -21562,6 +21584,10 @@ FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: Microsoft.FSharp.C
 FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[Internal.Utilities.StructuredFormat.Layout]] get_StructuredDescriptionTextAsync()
 FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[System.String]] DescriptionTextAsync
 FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[System.String]] get_DescriptionTextAsync()
+FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[Internal.Utilities.StructuredFormat.Layout] StructuredDescriptionText
+FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[Internal.Utilities.StructuredFormat.Layout] get_StructuredDescriptionText()
+FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[System.String] DescriptionText
+FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[System.String] get_DescriptionText()
 FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpAccessibility] Accessibility
 FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpAccessibility] get_Accessibility()
 FSharp.Compiler.SourceCodeServices.FSharpDeclarationListItem: Microsoft.FSharp.Core.FSharpOption`1[System.String] NamespaceToOpen
@@ -21762,6 +21788,8 @@ FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String get_QualifiedName
 FSharp.Compiler.SourceCodeServices.FSharpEntity: System.String get_XmlDocSig()
 FSharp.Compiler.SourceCodeServices.FSharpEntity: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpEntity: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpEntity: Boolean IsAbstractClass
+FSharp.Compiler.SourceCodeServices.FSharpEntity: Boolean get_IsAbstractClass()
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity Severity
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: FSharp.Compiler.SourceCodeServices.FSharpErrorSeverity get_Severity()
 FSharp.Compiler.SourceCodeServices.FSharpErrorInfo: Int32 EndColumn
@@ -22527,6 +22555,7 @@ FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String 
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: System.String get_XmlDocSig()
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpMemberOrFunctionOrValue: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[System.String,System.Collections.Generic.IList`1[FSharp.Compiler.SourceCodeServices.FSharpParameter]]] GetWitnessPassingInfo()
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: FSharp.Compiler.SourceCodeServices.FSharpMethodGroupItem[] Methods
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: FSharp.Compiler.SourceCodeServices.FSharpMethodGroupItem[] get_Methods()
 FSharp.Compiler.SourceCodeServices.FSharpMethodGroup: System.String MethodName
@@ -22723,8 +22752,11 @@ FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Boolean get_ParseHadE
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[] Errors
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[] get_Errors()
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.SourceCodeServices.FSharpNavigationItems GetNavigationItems()
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] TryRangeOfRefCellDereferenceContainingPos(pos)
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] TryRangeOfRecordExpressionContainingPos(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] ValidateBreakpointLocation(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpNoteworthyParamInfoLocations] FindNoteworthyParamInfoLocations(pos)
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] ParseTree
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] get_ParseTree()
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: System.String FileName
@@ -22826,6 +22858,8 @@ FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: System.String get_Full
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: System.String get_Name()
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range DeclarationLocation
 FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range get_DeclarationLocation()
+FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range Range
+FSharp.Compiler.SourceCodeServices.FSharpStaticParameter: range get_Range()
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean IsAccessible(FSharp.Compiler.SourceCodeServices.FSharpAccessibilityRights)
 FSharp.Compiler.SourceCodeServices.FSharpSymbol: Boolean IsEffectivelySameAs(FSharp.Compiler.SourceCodeServices.FSharpSymbol)
@@ -24978,7 +25012,7 @@ FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange: Void .ctor(r
 FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange: range Range
 FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange: range get_Range()
 FSharp.Compiler.SourceCodeServices.SimplifyNames: FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange
-FSharp.Compiler.SourceCodeServices.SimplifyNames: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange]] getSimplifiableNames(FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String])
+FSharp.Compiler.SourceCodeServices.SimplifyNames: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.SourceCodeServices.SimplifyNames+SimplifiableRange]] getSimplifiableNames(FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String])
 FSharp.Compiler.SourceCodeServices.SourceFile: Boolean IsCompilable(System.String)
 FSharp.Compiler.SourceCodeServices.SourceFile: Boolean MustBeSingleFileProject(System.String)
 FSharp.Compiler.SourceCodeServices.Structure+Collapse+Tags: Int32 Below
@@ -25314,7 +25348,6 @@ FSharp.Compiler.SourceCodeServices.Symbol: Microsoft.FSharp.Core.FSharpOption`1[
 FSharp.Compiler.SourceCodeServices.Symbol: System.Tuple`2[FSharp.Compiler.SourceCodeServices.FSharpEntity,Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpType]] getEntityAbbreviatedType(FSharp.Compiler.SourceCodeServices.FSharpEntity)
 FSharp.Compiler.SourceCodeServices.Tooltips: FSharp.Compiler.SourceCodeServices.FSharpToolTipElement`1[System.String] ToFSharpToolTipElement(FSharp.Compiler.SourceCodeServices.FSharpToolTipElement`1[Internal.Utilities.StructuredFormat.Layout])
 FSharp.Compiler.SourceCodeServices.Tooltips: FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[System.String] ToFSharpToolTipText(FSharp.Compiler.SourceCodeServices.FSharpToolTipText`1[Internal.Utilities.StructuredFormat.Layout])
-FSharp.Compiler.SourceCodeServices.Tooltips: Microsoft.FSharp.Control.FSharpAsync`1[T2] Map[T1,T2](Microsoft.FSharp.Core.FSharpFunc`2[T1,T2], Microsoft.FSharp.Control.FSharpAsync`1[T1])
 FSharp.Compiler.SourceCodeServices.UnresolvedReferencesSet: Boolean Equals(FSharp.Compiler.SourceCodeServices.UnresolvedReferencesSet)
 FSharp.Compiler.SourceCodeServices.UnresolvedReferencesSet: Boolean Equals(System.Object)
 FSharp.Compiler.SourceCodeServices.UnresolvedReferencesSet: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -25343,7 +25376,7 @@ FSharp.Compiler.SourceCodeServices.UntypedParseImpl: Microsoft.FSharp.Core.FShar
 FSharp.Compiler.SourceCodeServices.UntypedParseImpl: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryFindExpressionIslandInPosition(pos, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput])
 FSharp.Compiler.SourceCodeServices.UntypedParseImpl: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Range+pos,System.Boolean]] TryFindExpressionASTLeftOfDotLeftOfCursor(pos, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput])
 FSharp.Compiler.SourceCodeServices.UntypedParseImpl: System.String[] GetFullNameOfSmallestModuleOrNamespaceAtPoint(ParsedInput, pos)
-FSharp.Compiler.SourceCodeServices.UnusedDeclarations: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Range+range]] getUnusedDeclarations(FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults, Boolean)
+FSharp.Compiler.SourceCodeServices.UnusedDeclarations: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Range+range]] getUnusedDeclarations(FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults, Boolean)
 FSharp.Compiler.SourceCodeServices.UnusedOpens: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Range+range]] getUnusedOpens(FSharp.Compiler.SourceCodeServices.FSharpCheckFileResults, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.String])
 FSharp.Compiler.SourceCodeServices.XmlDocComment: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] isBlank(System.String)
 FSharp.Compiler.SourceCodeServices.XmlDocParser: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.XmlDocable] getXmlDocables(FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput])
@@ -41785,7 +41818,7 @@ FSharp.Compiler.SyntaxTreeOps: SynExpr mkSynTrifix(range, System.String, SynExpr
 FSharp.Compiler.SyntaxTreeOps: SynExpr mkSynUnit(range)
 FSharp.Compiler.SyntaxTreeOps: SynExpr |SynExprErrorSkip|(SynExpr)
 FSharp.Compiler.SyntaxTreeOps: SynField mkAnonField(SynType)
-FSharp.Compiler.SyntaxTreeOps: SynField mkNamedField(Ident, SynType)
+FSharp.Compiler.SyntaxTreeOps: SynField mkNamedField(Ident, SynType, range)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynPatMaybeVar(LongIdentWithDots, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], range)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynPatVar(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+SynAccess], Ident)
 FSharp.Compiler.SyntaxTreeOps: SynPat mkSynThisPatVar(Ident)
@@ -42166,6 +42199,7 @@ Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Member
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Method
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Module
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 ModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Function
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Namespace
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 NumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Operator
@@ -42202,6 +42236,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsMember
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsMethod
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsModule
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsFunction
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsNamespace
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsNumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsOperator
@@ -42235,6 +42270,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsMember()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsMethod()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsModule()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsModuleBinding()
+Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsFunction()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsNamespace()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsNumericLiteral()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsOperator()
@@ -42272,6 +42308,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredForm
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Method
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Module
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag ModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Function
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Namespace
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag NumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Operator
@@ -42305,6 +42342,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredForm
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Method()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Module()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_ModuleBinding()
+Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Function()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Namespace()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_NumericLiteral()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Operator()
@@ -42372,6 +42410,7 @@ Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.Structured
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagMethod(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagModule(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagModuleBinding(System.String)
+Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagFunction(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagNamespace(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagNumericLiteral(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagOperator(System.String)

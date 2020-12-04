@@ -3,13 +3,6 @@
 namespace Microsoft.DotNet.DependencyManager
 
 open System
-open System.Collections.Generic
-
-module internal RidHelpers =
-    val probingRids:string []
-    val baseRid:string
-    val platformRid:string
-
 
 /// Signature for Native library resolution probe callback
 /// host implements this, it's job is to return a list of package roots to probe.
@@ -19,6 +12,8 @@ type NativeResolutionProbe = delegate of Unit -> seq<string>
 type NativeDllResolveHandler =
 
     /// Construct a new NativeDllResolveHandler
-    new: nativeProbingRoots: NativeResolutionProbe -> NativeDllResolveHandler
+    new: _nativeProbingRoots: NativeResolutionProbe -> NativeDllResolveHandler
+
+    member internal RefreshPathsInEnvironment: string seq -> unit
 
     interface IDisposable

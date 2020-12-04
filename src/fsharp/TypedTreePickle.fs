@@ -844,10 +844,10 @@ let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
         // an identical copy of the source for the DLL containing the data being unpickled.  A message will
         // then be printed indicating the name of the item.
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) =
+let unpickleObjWithDanglingCcus file viewedScope (ilModule: ILModuleDef option) u (phase2bytes: ReadOnlyByteMemory) =
     let st2 =
        { is = ByteStream.FromBytes (phase2bytes, 0, phase2bytes.Length)
-         iilscope= ilscope
+         iilscope= viewedScope
          iccus= new_itbl "iccus (fake)" [| |]
          ientities= NodeInTable<_, _>.Create (Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", 0)
          itypars= NodeInTable<_, _>.Create (Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", 0)
@@ -858,7 +858,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
          ipubpaths = new_itbl "ipubpaths (fake)" [| |]
          isimpletys = new_itbl "isimpletys (fake)" [| |]
          ifile=file
-         iILModule = iILModule }
+         iILModule = ilModule }
     let ccuNameTab = u_array u_encoded_ccuref st2
     let z1 = u_int st2
     let ntycons = if z1 < 0 then -z1-1 else z1
@@ -881,7 +881,7 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
         let st1 =
            { is = ByteStream.FromBytes (phase1bytes, 0, phase1bytes.Length)
              iccus=  ccuTab
-             iilscope= ilscope
+             iilscope= viewedScope
              ientities= NodeInTable<_, _>.Create(Tycon.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itycons", ntycons)
              itypars= NodeInTable<_, _>.Create(Typar.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "itypars", ntypars)
              ivals=   NodeInTable<_, _>.Create(Val.NewUnlinked, (fun osgn tg -> osgn.Link tg), (fun osgn -> osgn.IsLinked), "ivals", nvals)
@@ -891,12 +891,12 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule: ILModuleDef option) u (
              inlerefs = nlerefTab
              isimpletys = simpletypTab
              ifile=file
-             iILModule = iILModule }
+             iILModule = ilModule }
         let res = u st1
 #if !LAZY_UNPICKLE
-        check ilscope st1.ientities
-        check ilscope st1.ivals
-        check ilscope st1.itypars
+        check viewedScope st1.ientities
+        check viewedScope st1.ivals
+        check viewedScope st1.itypars
 #endif
         res
 
@@ -2486,7 +2486,7 @@ and p_op x st =
     | TOp.While _                    -> p_byte 20 st
     | TOp.For (_, dir)                 -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
     | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st
-    | TOp.TryCatch _                 -> p_byte 23 st
+    | TOp.TryWith _                 -> p_byte 23 st
     | TOp.TryFinally _               -> p_byte 24 st
     | TOp.ValFieldGetAddr (a, _)     -> p_byte 25 st; p_rfref a st
     | TOp.UInt16s arr                -> p_byte 26 st; p_array p_uint16 arr st
@@ -2552,7 +2552,7 @@ and u_op st =
     | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
             TOp.For (DebugPointAtFor.No, dir)
     | 22 -> TOp.Bytes (u_bytes st)
-    | 23 -> TOp.TryCatch (DebugPointAtTry.No, DebugPointAtWith.No)
+    | 23 -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)
     | 24 -> TOp.TryFinally (DebugPointAtTry.No, DebugPointAtFinally.No)
     | 25 -> let a = u_rfref st
             TOp.ValFieldGetAddr (a, false)

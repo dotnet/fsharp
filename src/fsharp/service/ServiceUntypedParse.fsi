@@ -19,8 +19,21 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of a record expression containing the given position.
+    member TryRangeOfRecordExpressionContainingPos: pos: pos -> Option<range>
+
+    /// <summary>
+    /// Given the position of an expression, attempts to find the range of the
+    /// '!' in a derefence operation of that expression, like:
+    /// '!expr', '!(expr)', etc.
+    /// </summary>
+    member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> Option<range>
+
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
+
+    /// Determines if the given position is contained within a curried parameter in a binding.
+    member IsPositionContainedInACurriedParameter: pos: pos -> bool
 
     /// Name of the file for which this information were created
     member FileName                       : string

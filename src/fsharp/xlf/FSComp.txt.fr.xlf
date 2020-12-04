@@ -92,6 +92,11 @@
         <target state="translated">littéral float32 sans point</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="new">more types support units of measure</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">section à index fixe 3D/4D</target>
@@ -247,6 +252,11 @@
         <target state="translated">Valeur non reconnue '{0}' pour --langversion use --langversion:? pour la liste complète</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">La fonctionnalité de gestion des packages nécessite la version 5.0 du langage. Utilisez /langversion:preview</target>
@@ -275,6 +285,11 @@
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
         <target state="translated">Chaîne verbatim interpolée incomplète ayant débuté à cet emplacement ou avant</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -2708,7 +2723,7 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
         <target state="translated">Unités de mesure prises en charge uniquement pour les types float, float32, decimal et integer signés</target>
         <note />
       </trans-unit>

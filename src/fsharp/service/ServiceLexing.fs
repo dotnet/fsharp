@@ -16,6 +16,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
+open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Range
@@ -615,7 +616,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     let fsx = 
         match filename with
         | None -> false
-        | Some value -> CompileOps.IsScript value
+        | Some value -> ParseAndCheckInputs.IsScript value
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
@@ -919,7 +920,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
 
 [<Sealed>]
-type FSharpSourceTokenizer(defineConstants: string list, filename: string option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, filename: string option) =
 
     // Public callers are unable to answer LanguageVersion feature support questions.
     // External Tools including the VS IDE will enable the default LanguageVersion 
@@ -927,7 +928,7 @@ type FSharpSourceTokenizer(defineConstants: string list, filename: string option
  
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
-    let lexargs = mkLexargs(defineConstants, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexargs = mkLexargs(conditionalDefines, LightSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf = UnicodeLexing.StringAsLexbuf(isFeatureSupported, lineText)

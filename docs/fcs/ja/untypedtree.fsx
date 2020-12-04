@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../artifacts/bin/fcs/net461"
+#I "../../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 コンパイラサービス：型無し構文木の処理
 ======================================
@@ -42,6 +42,7 @@
 #r "FSharp.Compiler.Service.dll"
 open System
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 (**
 
 ### 型無しパースの実行
@@ -70,14 +71,14 @@ let getUntypedTree (file, input) =
   // 1つのスクリプトファイルから推測される「プロジェクト」用の
   // コンパイラオプションを取得する
   let projOptions, errors =
-      checker.GetProjectOptionsFromScript(file, input) 
+      checker.GetProjectOptionsFromScript(file, SourceText.ofString input) 
       |> Async.RunSynchronously
 
   let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
 
   // コンパイラの第1フェーズを実行する
   let untypedRes = 
-      checker.ParseFile(file, input, parsingOptions) 
+      checker.ParseFile(file, SourceText.ofString input, parsingOptions) 
       |> Async.RunSynchronously
 
   match untypedRes.ParseTree with
@@ -101,7 +102,7 @@ ASTを理解するには
 
 ASTに関連する要素は以下の名前空間に含まれています:
 *)
-open FSharp.Compiler.Ast
+open FSharp.Compiler.SyntaxTree
 (**
 
 ASTを処理する場合、異なる文法的要素に対するパターンマッチを行うような

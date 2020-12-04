@@ -62,6 +62,7 @@ module TaggedTextOps =
     let tagMember = TaggedTextOps.mkTag LayoutTag.Member
     let tagModule = TaggedTextOps.tagModule
     let tagModuleBinding = TaggedTextOps.tagModuleBinding
+    let tagFunction = TaggedTextOps.tagFunction
     let tagNamespace = TaggedTextOps.tagNamespace
     let tagNumericLiteral = TaggedTextOps.tagNumericLiteral
     let tagOperator = TaggedTextOps.tagOperator

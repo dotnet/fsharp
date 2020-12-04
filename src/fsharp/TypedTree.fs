@@ -4115,6 +4115,8 @@ type Attrib =
 
     member x.TyconRef = (let (Attrib(tcref, _, _, _, _, _, _)) = x in tcref)
 
+    member x.Range = (let (Attrib(_, _, _, _, _, _, m)) = x in m)
+
     override x.ToString() = "attrib" + x.TyconRef.ToString()
 
 /// We keep both source expression and evaluated expression around to help intellisense and signature printing
@@ -4626,8 +4628,8 @@ type TOp =
     /// An operation representing a lambda-encoded for loop
     | For of DebugPointAtFor * ForLoopStyle (* count up or down? *)
 
-    /// An operation representing a lambda-encoded try/catch
-    | TryCatch of DebugPointAtTry * DebugPointAtWith
+    /// An operation representing a lambda-encoded try/with
+    | TryWith of DebugPointAtTry * DebugPointAtWith
 
     /// An operation representing a lambda-encoded try/finally
     | TryFinally of DebugPointAtTry * DebugPointAtFinally
@@ -4673,7 +4675,9 @@ type TOp =
     | TupleFieldGet of TupInfo * int 
 
     /// IL assembly code - type list are the types pushed on the stack 
-    | ILAsm of ILInstr list * TTypes 
+    | ILAsm of 
+        instrs: ILInstr list * 
+        retTypes: TTypes 
 
     /// Generate a ldflda on an 'a ref. 
     | RefAddrGet of bool
@@ -4699,16 +4703,22 @@ type TOp =
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 
 
-    /// ILCall(useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, noTailCall, mref, actualTypeInst, actualMethInst, retTy)
-    ///  
     /// IL method calls.
-    ///     value -- is the object a value type? 
-    ///     isProp -- used for quotation reflection.
-    ///     noTailCall - DllImport? if so don't tailcall 
-    ///     actualTypeInst -- instantiation of the enclosing type
-    ///     actualMethInst -- instantiation of the method
-    ///     retTy -- the types of pushed values, if any 
-    | ILCall of bool * bool * bool * bool * ValUseFlag * bool * bool * ILMethodRef * TypeInst * TypeInst * TTypes   
+    ///     isProperty -- used for quotation reflection, property getters & setters  
+    ///     noTailCall - DllImport? if so don't tailcall  
+    ///     retTypes -- the types of pushed values, if any
+    | ILCall of 
+        isVirtual: bool * 
+        isProtected: bool * 
+        isStruct: bool * 
+        isCtor: bool * 
+        valUseFlag: ValUseFlag * 
+        isProperty: bool * 
+        noTailCall: bool * 
+        ilMethRef: ILMethodRef * 
+        enclTypeInst: TypeInst * 
+        methInst: TypeInst * 
+        retTypes: TTypes   
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4725,7 +4735,7 @@ type TOp =
         | UInt16s _ -> "UInt16s(..)"
         | While _ -> "While"
         | For _ -> "For"
-        | TryCatch _ -> "TryCatch"
+        | TryWith _ -> "TryWith"
         | TryFinally _ -> "TryFinally"
         | Recd (_, tcref) -> "Recd(" + tcref.LogicalName + ")"
         | ValFieldSet rfref -> "ValFieldSet(" + rfref.FieldName + ")"
@@ -4748,7 +4758,7 @@ type TOp =
         | Label n -> "Label(" + string n + ")"
         | TraitCall info -> "TraitCall(" + info.MemberName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
-        | ILCall (_,_,_,_,_,_,_,m,_,_,_) -> "ILCall(" + m.ToString() + ",..)"
+        | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
 
 /// Represents the kind of record construction operation.
 type RecordConstructionInfo = 

@@ -92,6 +92,11 @@
         <target state="translated">noktasız float32 sabit değeri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="new">more types support units of measure</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">sabit dizinli dilim 3d/4d</target>
@@ -247,6 +252,11 @@
         <target state="translated">--langversion için '{0}' değeri tanınmıyor. Tam liste için --langversion:? kullanın</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="new">Display compiler version banner and exit</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">Paket yönetimi özelliği dil sürümü 5.0 gerektiriyor, /langversion:preview kullanın</target>
@@ -275,6 +285,11 @@
       <trans-unit id="parsEofInInterpolatedVerbatimString">
         <source>Incomplete interpolated verbatim string begun at or before here</source>
         <target state="translated">Tamamlanmamış düz metin arasına kod eklenmiş düz metin dizesi, burada veya daha önce başlıyordu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -2708,8 +2723,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
-        <target state="translated">Ölçü birimleri yalnızca kayan, float32, ondalık ve işaretli tamsayı türlerinde desteklenir</target>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="needs-review-translation">Ölçü birimleri yalnızca kayan, float32, ondalık ve işaretli tamsayı türlerinde desteklenir</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">

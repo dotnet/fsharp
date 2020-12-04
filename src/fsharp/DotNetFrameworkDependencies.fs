@@ -314,6 +314,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         yield "System.Data"
         yield "System.Drawing"
         yield "System.Core"
+        yield "System.Configuration"
 
         yield getFSharpCoreLibraryName
         if useFsiAuxLib then yield getFsiLibraryName
