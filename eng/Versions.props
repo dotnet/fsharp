@@ -28,11 +28,11 @@
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>38</FCSMajorVersion>
-    <FCSMinorVersion>$(FSMinorVersion)</FCSMinorVersion>
-    <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
+    <FCSMinorVersion>0</FCSMinorVersion>
+    <FCSBuildVersion>1</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
-    <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)-$(FCSMinorVersion)-$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
+    <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- The current published nuget package -->
     <FSharpCoreShippedPackageVersion>4.7.2</FSharpCoreShippedPackageVersion>
     <!-- The pattern for specifying the preview package -->
