@@ -77,7 +77,7 @@ type ExprValueInfo =
   /// SizeValue(size, value)
   /// 
   /// Records size info (maxDepth) for an ExprValueInfo 
-  | SizeValue of int * ExprValueInfo        
+  | SizeValue of size: int * ExprValueInfo        
 
   /// ValValue(vref, value)
   ///
@@ -102,10 +102,10 @@ type ExprValueInfo =
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
   ///    ty: The type of lambda term
-  | CurriedLambdaValue of Unique * int * int * Expr * TType
+  | CurriedLambdaValue of id: Unique * arity: int * size: int * value: Expr * TType
 
   /// ConstExprValue(size, value)
-  | ConstExprValue of int * Expr
+  | ConstExprValue of size: int * value: Expr
 
 type ValInfo =
     { ValMakesNoCriticalTailcalls: bool
