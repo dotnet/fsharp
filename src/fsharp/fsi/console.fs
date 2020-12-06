@@ -118,6 +118,20 @@ module internal Utils =
             | None          -> failwith "Internal Error: cannot bind to method"
             | Some methInfo -> methInfo
 
+    let rec previousWordFromIdx (line: string) (idx, isInWord) =
+        if idx < 0 then 0 else
+        match line.Chars(idx), isInWord with
+        | ' ', true -> idx + 1
+        | ' ', false -> previousWordFromIdx line (idx - 1, false)
+        | _, _ -> previousWordFromIdx line (idx - 1, true)
+        
+    let rec nextWordFromIdx (line: string) (idx, isInWord) =
+        if idx >= line.Length then line.Length - 1 else
+        match line.Chars(idx), isInWord with
+        | ' ', true -> idx 
+        | ' ', false -> nextWordFromIdx line (idx + 1, false)
+        | _, _ -> nextWordFromIdx line (idx + 1, true)
+                    
 [<Sealed>]
 type internal Cursor =
     static member ResetTo(top,left) =
@@ -304,6 +318,24 @@ type internal ReadLineConsole() =
                 let c = input.Chars(current)
                 current <- current + 1
                 Cursor.Move(x.Inset, x.GetCharacterSize(c))
+                
+        let moveWordLeft() =
+            if (current > 0 && (current - 1 < input.Length)) then
+                let line = input.ToString()
+                current <- Utils.previousWordFromIdx line (current - 1, false)
+                anchor.PlaceAt(x.Inset, current)
+                
+        let moveWordRight() =
+            if (current < input.Length) then
+                let line = input.ToString()
+                let idxToMoveTo = Utils.nextWordFromIdx line (current + 1, false)
+                
+                // if has reached end of the last word
+                if idxToMoveTo = current && current < line.Length
+                then current <- line.Length
+                else current <- idxToMoveTo
+                
+                anchor.PlaceAt(x.Inset, current)
 
         let setInput(line:string) =
             input.Length <- 0
@@ -346,14 +378,7 @@ type internal ReadLineConsole() =
         let deleteWordLeadingToCursor() =
             if (input.Length > 0 && current > 0) then
                 let line = input.ToString()
-                let rec prevWord (idx, isInWord) =
-                    if idx < 0 then 0 else
-                    match line.Chars(idx), isInWord with
-                    | ' ', true -> idx + 1
-                    | ' ', false -> prevWord (idx - 1, false)
-                    |   _, _ -> prevWord (idx - 1, true)
-                    
-                let idx = prevWord (current - 1, false)
+                let idx = Utils.previousWordFromIdx line (current - 1, false)
                 input.Remove(idx, current - idx) |> ignore
                 current <- idx
                 render()
@@ -424,10 +449,10 @@ type internal ReadLineConsole() =
             | ConsoleKey.DownArrow ->
                 setInput(history.Next())
                 change()
-            | ConsoleKey.RightArrow ->
+            | ConsoleKey.RightArrow when key.Modifiers &&& ConsoleModifiers.Control = enum 0 ->
                 moveRight()
                 change()
-            | ConsoleKey.LeftArrow ->
+            | ConsoleKey.LeftArrow when key.Modifiers &&& ConsoleModifiers.Control = enum 0 ->
                 moveLeft()
                 change()
             | ConsoleKey.Escape ->
@@ -454,6 +479,14 @@ type internal ReadLineConsole() =
                 change ()
             | (ConsoleModifiers.Control, ConsoleKey.F) ->
                 moveRight()
+                change ()
+            | (ConsoleModifiers.Control, ConsoleKey.LeftArrow) 
+            | (ConsoleModifiers.Alt, ConsoleKey.B) ->
+                moveWordLeft()
+                change ()
+            | (ConsoleModifiers.Control, ConsoleKey.RightArrow) 
+            | (ConsoleModifiers.Alt, ConsoleKey.F) ->
+                moveWordRight()
                 change ()
             | (ConsoleModifiers.Control, ConsoleKey.K) ->
                 deleteToEndOfLine()
