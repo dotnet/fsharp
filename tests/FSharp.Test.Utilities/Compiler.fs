@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Test.Utilities
 
@@ -13,9 +14,6 @@ open NUnit.Framework
 open System
 open System.Collections.Immutable
 open System.IO
-open System.Text.RegularExpressions
-open System.Text
-
 
 module rec Compiler =
 
@@ -32,7 +30,7 @@ module rec Compiler =
         | FS  of FSharpCompilationSource
         | CS  of CSharpCompilationSource
         | IL  of ILCompilationSource
-        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this)
+        override this.ToString() = match this with | FS fs -> fs.ToString() | _ -> (sprintf "%A" this   )
 
     type FSharpCompilationSource =
         { Source:         TestType
@@ -79,14 +77,9 @@ module rec Compiler =
           StdOut:   string
           StdErr:   string }
 
-    type CompilationOutput =
-        { StdOut: string
-          StdErr: string }
-
     type RunOutput =
         | EvalOutput of EvalOutput
         | ExecutionOutput of ExecutionOutput
-        | CompilationOutput of CompilationOutput
 
     type Output =
         { OutputPath:   string option
@@ -171,16 +164,6 @@ module rec Compiler =
 
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CS
-
-    let asFsx (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS src -> FS { src with SourceKind = SourceKind.Fsx }
-        | _ -> failwith "Only F# compilation can be of type Fsx."
-
-    let asFs (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | FS src -> FS { src with SourceKind = SourceKind.Fs }
-        | _ -> failwith "Only F# compilation can be of type Fs."
 
     let withName (name: string) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -278,9 +261,9 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
 
-        let ((errinfo: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
-        let diagnostics = errinfo |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpErrorInfo
 
         let result =
             { OutputPath   = None
@@ -536,7 +519,7 @@ module rec Compiler =
         | _ -> failwith "Baseline tests are only supported for F#."
 
         cUnit
-        
+
     let verifyIL (il: string list) (result: TestResult) : unit =
         match result with
         | Success s ->
@@ -556,10 +539,7 @@ module rec Compiler =
                         match bsl.ILBaseline with
                         | Some b -> b.Replace("\r\n","\n")
                         | None ->  String.Empty
-
-                    let expectedILList = expectedIL.Split('\n') |> List.ofArray
-
-                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedILList
+                    let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
 
                     if not success then
                         createBaselineErrors bsl actualIL "fs.il.err"
@@ -601,6 +581,7 @@ module rec Compiler =
             for exp in expected do
                 if not (List.exists (fun (el: ErrorInfo) -> (getErrorNumber el.Error) = exp) source) then
                     failwith (sprintf "Mismatch in ErrorNumber, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
+            assertErrorsLength source expected
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
             let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
@@ -701,23 +682,6 @@ module rec Compiler =
         let private checkErrorMessages (messages: string list) (selector: Output -> ErrorInfo list) (result: TestResult) : TestResult =
             match result with
             | Success r | Failure r -> assertErrorMessages (selector r) messages
-            result
-
-        let private diagnosticMatches (pattern: string) (diagnostics: ErrorInfo list) : bool =
-            diagnostics |> List.exists (fun d -> Regex.IsMatch(d.Message, pattern))
-            
-        let withDiagnosticMessageMatches (pattern: string) (result: TestResult) : TestResult =
-            match result with
-            | Success r | Failure r ->
-                if not <| diagnosticMatches pattern r.Diagnostics then
-                    failwith "Expected diagnostic message pattern was not found in compilation diagnostics."
-            result
-
-        let withDiagnosticMessageDoesntMatch (pattern: string) (result: TestResult) : TestResult =
-            match result with
-            | Success r | Failure r ->
-                if diagnosticMatches pattern r.Diagnostics then
-                    failwith "Diagnostic message pattern was not expected, but was present."
             result
 
         let withMessages (messages: string list) (result: TestResult) : TestResult =
