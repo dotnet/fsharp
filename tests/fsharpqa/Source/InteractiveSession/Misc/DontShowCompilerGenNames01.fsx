@@ -9,6 +9,7 @@
 //<Expect status="success">type DiscUnion = \| DataTag of int \* string</Expects>
 //<Expect status="success">val f : x:int -> y:int -> int</Expects>
 
+
 type T = 
     member z.M1 ((x : int), (y: string)) = ignore
     member z.M2 ((x, y) : int * string) = ignore          // we used to display "member M2 : _arg11:(int * string) -> ('a0 -> unit)" - yikes!
