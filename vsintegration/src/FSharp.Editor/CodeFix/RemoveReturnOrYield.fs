@@ -2,31 +2,10 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-
-open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.SourceCodeServices
-
-[<AutoOpen>]
-module Traversal =
-    type FSharpParseFileResults with
-        member scope.TryRangeOfExprInYieldOrReturn pos =
-            match scope.ParseTree with
-            | Some parseTree ->
-                AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
-                    member __.VisitExpr(_path, _, defaultTraverse, expr) =
-                        match expr with
-                        | SynExpr.YieldOrReturn(_, expr, range)
-                        | SynExpr.YieldOrReturnFrom(_, expr, range) when rangeContainsPos range pos ->
-                            Some expr.Range
-                        | _ -> defaultTraverse expr })
-            | None -> None
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveReturnOrYield"); Shared>]
 type internal FSharpRemoveReturnOrYieldCodeFixProvider
@@ -40,9 +19,9 @@ type internal FSharpRemoveReturnOrYieldCodeFixProvider
     static let userOpName = "RemoveReturnOrYield"
     let fixableDiagnosticIds = set ["FS0748"; "FS0747"]
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override this.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context =
         asyncMaybe {
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
