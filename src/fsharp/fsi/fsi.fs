@@ -2770,7 +2770,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         { InferredFramework = TargetFrameworkForScripts (if FSharpEnvironment.isRunningOnCoreClr then "netcore" else "netfx")
           WhereInferred = None }
 
-    let fxResolver = FxResolver(ReduceMemoryFlag.Yes, tryGetMetadataSnapshot, Some inferredTargetFramework.UseDotNetFramework)
+    let fxResolver = FxResolver(Some inferredTargetFramework.UseDotNetFramework)
 
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 

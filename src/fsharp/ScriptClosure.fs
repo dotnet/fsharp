@@ -134,7 +134,7 @@ module ScriptPreprocessClosure =
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
-        let fxResolver = FxResolver(reduceMemoryUsage, tryGetMetadataSnapshot, Some inferredTargetFramework.UseDotNetFramework)
+        let fxResolver = FxResolver(Some inferredTargetFramework.UseDotNetFramework)
 
         let tcConfigB = 
             TcConfigBuilder.CreateNew

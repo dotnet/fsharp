@@ -740,6 +740,20 @@ type OperatorsModule2() =
         
     [<Fact>]
     member _.string() =
+
+        let result = Operators.string null
+        Assert.AreEqual("", result)
+
+        let nullStr:string = null
+        let result = Operators.string nullStr
+        Assert.AreEqual("", result)
+
+        let result = Operators.string null
+        Assert.AreEqual("", result)
+
+        let result = Operators.string (null:string)
+        Assert.AreEqual("", result)
+
         // value type
         let result = Operators.string 100
         Assert.AreEqual("100", result)

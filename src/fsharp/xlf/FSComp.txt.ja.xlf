@@ -752,11 +752,6 @@
         <target state="translated">ディレクティブが無効です。'#r \"&lt;file-or-assembly&gt;\"' という形式で指定する必要があります。</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildInvalidHashloadDirective">
-        <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="translated">ディレクティブが無効です。'#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"' が必要でした。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
         <source>Invalid directive. Expected '#time', '#time \"on\"' or '#time \"off\"'.</source>
         <target state="translated">ディレクティブが無効です。'#time'、'#time \"on\"'、または '#time \"off\"' という形式で指定する必要があります。</target>
@@ -2330,11 +2325,6 @@
       <trans-unit id="fsiWrongFrameworkNetFx">
         <source>This script is executing using .NET Framework, but .NET Core has been specified.</source>
         <target state="new">This script is executing using .NET Framework, but .NET Core has been specified.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ifExpression">
-        <source>The 'if' expression needs to have type '{0}' to satisfy context type requirements. It currently has type '{1}'.</source>
-        <target state="new">The 'if' expression needs to have type '{0}' to satisfy context type requirements. It currently has type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsOnlyHashDirectivesAllowed">
@@ -4772,11 +4762,6 @@
         <target state="translated">UTF-8 エンコードでメッセージを出力します</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsFullpaths">
-        <source>Output messages with fully qualified paths</source>
-        <target state="translated">完全修飾パスを含むメッセージを出力します</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsLib">
         <source>Specify a directory for the include path which is used to resolve source files and assemblies (Short form: -I)</source>
         <target state="translated">ソース ファイルおよびアセンブリの解決に使用する include パスのディレクトリを指定します (短い形式: -I)</target>
@@ -4895,11 +4880,6 @@
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
         <target state="translated">認識されないプラットフォーム '{0}'。有効な値は 'x86'、'x64'、'Itanium'、'anycpu32bitpreferred'、および 'anycpu' です。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsInternalNoDescription">
-        <source>The command-line option '{0}' is for test purposes only</source>
-        <target state="translated">コマンド ライン オプション '{0}' はテスト目的でのみ使用できます</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDCLONoDescription">

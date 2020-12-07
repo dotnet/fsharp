@@ -1797,7 +1797,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let fxResolver = FxResolver(reduceMemoryUsage, tryGetMetadataSnapshot, None)
+    let fxResolver = FxResolver(None)
 
     let tcConfigB = 
         TcConfigBuilder.CreateNew(legacyReferenceResolver,
@@ -1842,7 +1842,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             exiter.Exit 1 
     
     let useDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
-    tcConfigB.fxResolver <- FxResolver(tcConfigB.reduceMemoryUsage, tcConfigB.tryGetMetadataSnapshot, Some useDotNetFramework)
+    tcConfigB.fxResolver <- FxResolver(Some useDotNetFramework)
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
     displayBannerIfNeeded tcConfigB
@@ -2007,7 +2007,7 @@ let main0OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let fxResolver = FxResolver(reduceMemoryUsage, tryGetMetadataSnapshot, None)
+    let fxResolver = FxResolver(None)
 
     let tcConfigB = 
         TcConfigBuilder.CreateNew(legacyReferenceResolver,

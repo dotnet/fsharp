@@ -67,7 +67,7 @@
     <Compile Include="..\service\ScriptOptionsTests.fs">
       <Link>ScriptOptionsTests.fs</Link>
     </Compile>
-    <Compile Include="..\service\ParserTests.fs" >
+    <Compile Include="..\service\ParserTests.fs">
       <Link>ParserTests.fs</Link>
     </Compile>
     <Compile Include="..\service\Program.fs">

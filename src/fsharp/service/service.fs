@@ -724,7 +724,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 return (parseResults, typedResults)
             | Some builder -> 
                 let! (parseTreeOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (ctok, filename)
-                let! tcProj = builder.GetCheckResultsAfterFileInProject (ctok, filename)
+                let! tcProj = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
 
                 let tcInfo, tcInfoOptional = tcProj.TcInfoWithOptional ctok
 
@@ -777,9 +777,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             | None -> return Seq.empty
             | Some builder -> 
                 if builder.ContainsFile filename then
-                    let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                    let _, tcInfoOptional = checkResults.TcInfoWithOptional ctok
-                    match tcInfoOptional.itemKeyStore with
+                    let! checkResults = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
+                    match checkResults.TryGetItemKeyStore ctok with
                     | None -> return Seq.empty
                     | Some reader -> return reader.FindAll symbol.Item
                 else
@@ -793,9 +792,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 match builderOpt with
                 | None -> return [||]
                 | Some builder -> 
-                    let! checkResults = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                    let _, tcInfoOptional = checkResults.TcInfoWithOptional ctok
-                    return tcInfoOptional.semanticClassification })
+                    let! checkResults = builder.GetFullCheckResultsAfterFileInProject (ctok, filename)
+                    return checkResults.GetSemanticClassification ctok })
 
     /// Try to get recent approximate type check results for a file. 
     member __.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, sourceText: ISourceText option, _userOpName: string) =
@@ -815,7 +813,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
           | None -> 
               return FSharpCheckProjectResults (options.ProjectFileName, None, keepAssemblyContents, creationErrors, None)
           | Some builder -> 
-              let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) = builder.GetCheckResultsAndImplementationsForProject(ctok)
+              let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt) = builder.GetFullCheckResultsAndImplementationsForProject(ctok)
               let errorOptions = tcProj.TcConfig.errorSeverityOptions
               let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
 
@@ -1418,7 +1416,7 @@ module CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
     /// are not associated with a project
     let DefaultReferencesForOrphanSources useDotNetFramework =
-        let fxResolver = FxResolver(ReduceMemoryFlag.Yes, (fun _ -> None), Some useDotNetFramework)
+        let fxResolver = FxResolver(Some useDotNetFramework)
         fxResolver.GetDefaultReferencesForScriptsAndOutOfProjectSources (useFsiAuxLib=false, useDotNetFramework=useDotNetFramework, useSdkRefs=false)
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
