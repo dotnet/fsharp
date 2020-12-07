@@ -71,7 +71,7 @@ module internal PrintUtilities =
             elif xref.IsTypeAbbrev then
                 let ty = xref.TypeAbbrev.Value
                 match stripTyEqns denv.g ty with
-                | TType_app(tcref, _) when tcref.IsStructOrEnumTycon ->
+                | TType_app(tcref, _, _) when tcref.IsStructOrEnumTycon ->
                     tagStruct name
                 | _ ->
                     tagAlias name
