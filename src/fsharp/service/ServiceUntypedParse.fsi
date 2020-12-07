@@ -19,6 +19,9 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of an expression `expr` contained in a `yield expr`  or `return expr` expression (and bang-variants).
+    member TryRangeOfExprInYieldOrReturn: pos: pos -> Option<range>
+
     /// Attempts to find the range of a record expression containing the given position.
     member TryRangeOfRecordExpressionContainingPos: pos: pos -> Option<range>
 
