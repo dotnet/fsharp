@@ -104,10 +104,10 @@ type internal FSharpAddOpenCodeFixProvider
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             
             let! symbol = 
-                asyncMaybe {
+                maybe {
                     let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
                     return checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland)
-                } |> liftAsync
+                }
 
             do! Option.guard symbol.IsNone
 
