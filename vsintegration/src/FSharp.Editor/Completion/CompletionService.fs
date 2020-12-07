@@ -43,6 +43,13 @@ type internal FSharpCompletionService
             .WithDismissIfLastCharacterDeleted(true)
             .WithDefaultEnterKeyRule(enterKeyRule)
 
+    /// Indicates the text span to be replaced by a committed completion list item.
+    override _.GetDefaultCompletionListSpan(sourceText, caretIndex) =
+        let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
+        let document = workspace.CurrentSolution.GetDocument(documentId)
+        let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+        CompletionUtils.getDefaultCompletionListSpan(sourceText, caretIndex, documentId, document.FilePath, defines)
+
 [<Shared>]
 [<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpCompletionServiceFactory 

@@ -23,6 +23,7 @@ type LanguageFeature =
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations
+    | ExpandedMeasurables
     | NullnessChecking
 
 /// LanguageVersion management

@@ -10,6 +10,11 @@ We recommend the following overall workflow when developing for this repository:
 * Always work in your fork
 * Always keep your fork up to date
 
+Before updating your fork, run this command:
+```
+git remote add upstream https://github.com/dotnet/fsharp.git
+```
+
 This will make management of multiple forks and your own work easier over time.
 
 ## Updating your fork
@@ -38,6 +43,8 @@ Install the latest released [Visual Studio](https://www.visualstudio.com/downloa
 
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
+
+You will also need the latest .NET 5 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/5.0).
 
 Building is simple:
 
@@ -80,15 +87,19 @@ You can then open `FSharp.sln` in your editor of choice.
 
 ## Testing from the command line
 
-You can find all test options as separate flags. For example:
+You can find all test options as separate flags. For example `build -testAll`:
 
 ```
-build -testDesktop                          -- test all net472 target frameworks
-build -testCoreClr                          -- test all netstandard and netcoreapp target frameworks
-build -testFSharpQA                         -- test all F# Cambridge tests
-build -testVs                               -- test all VS integration points
-build -testFcs                              -- test F# compiler service components
-build -testAll                              -- all of the above
+  -testAll                  Run all tests
+  -testCambridge            Run Cambridge tests
+  -testCompiler             Run FSharpCompiler unit tests
+  -testCompilerService      Run FSharpCompilerService unit tests
+  -testDesktop              Run tests against full .NET Framework
+  -testCoreClr              Run tests against CoreCLR
+  -testFSharpCore           Run FSharpCore unit tests
+  -testFSharpQA             Run F# Cambridge tests
+  -testScripting            Run Scripting tests
+  -testVs                   Run F# editor unit tests
 ```
 
 Running any of the above will build the latest changes and run tests against them.

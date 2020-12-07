@@ -12,6 +12,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <NGenBinary>true</NGenBinary>
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">

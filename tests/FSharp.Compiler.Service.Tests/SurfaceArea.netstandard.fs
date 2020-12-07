@@ -1600,10 +1600,10 @@ FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 GetHashCode(S
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: Int32 get_Tag()
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] Item1
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] Item2
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_Item1()
-FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_Item2()
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] filterRange
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] handlerRange
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_filterRange()
+FSharp.Compiler.AbstractIL.IL+ILExceptionClause+FilterCatch: System.Tuple`2[System.Int32,System.Int32] get_handlerRange()
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(ILExceptionClause)
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILExceptionClause+Finally: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -14771,9 +14771,9 @@ FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsUInt64()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsVariantBool()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Boolean get_IsVoid()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] Item1
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] Item4
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] cookieString
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_Item1()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_Item4()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Byte[] get_cookieString()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -14781,11 +14781,11 @@ FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 GetHashCode()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 Tag
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: Int32 get_Tag()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String Item2
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String Item3
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String nativeTypeName
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String custMarshallerName
 FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String ToString()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_Item2()
-FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_Item3()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_nativeTypeName()
+FSharp.Compiler.AbstractIL.IL+ILNativeType+Custom: System.String get_custMarshallerName()
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(ILNativeType)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(System.Object)
 FSharp.Compiler.AbstractIL.IL+ILNativeType+FixedArray: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
@@ -18037,16 +18037,17 @@ FSharp.Compiler.AbstractIL.Internal.Library+Array: T[][] heads[T](T[])
 FSharp.Compiler.AbstractIL.Internal.Library+Array: Void revInPlace[T](T[])
 FSharp.Compiler.AbstractIL.Internal.Library+Array: a[] mapq[a](Microsoft.FSharp.Core.FSharpFunc`2[a,a], a[])
 FSharp.Compiler.AbstractIL.Internal.Library+Array: a[] replace[a](Int32, a, a[])
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Bind[i,j](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[i,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[j]])
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Combine[f](Cancellable`1, Cancellable`1)
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Bind[k,l](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[k,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[l]])
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Combine[h](Cancellable`1, Cancellable`1)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Delay[a](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[a]])
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Return[h](h)
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 For[f,g](System.Collections.Generic.IEnumerable`1[f], Microsoft.FSharp.Core.FSharpFunc`2[f,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[g]])
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Return[j](j)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 TryFinally[b](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.Unit])
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 TryWith[e](Cancellable`1, Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[e]])
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Using[c,d](c, Microsoft.FSharp.Core.FSharpFunc`2[c,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[d]])
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Cancellable`1 Zero()
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: Void .ctor()
-FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: g ReturnFrom[g](g)
+FSharp.Compiler.AbstractIL.Internal.Library+CancellableBuilder: i ReturnFrom[i](i)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableModule: Cancellable`1 bind[a,b](Microsoft.FSharp.Core.FSharpFunc`2[a,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[b]], Cancellable`1)
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableModule: Cancellable`1 canceled[a]()
 FSharp.Compiler.AbstractIL.Internal.Library+CancellableModule: Cancellable`1 delay[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,FSharp.Compiler.AbstractIL.Internal.Library+Cancellable`1[T]])
@@ -19328,6 +19329,7 @@ FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagMethod()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagModule()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagModuleBinding()
+FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagFunction()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagNamespace()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagNumericLiteral()
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] get_tagOperator()
@@ -19361,6 +19363,7 @@ FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagMethod
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagModule
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagModuleBinding
+FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagFunction
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagNamespace
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagNumericLiteral
 FSharp.Compiler.Layout+TaggedTextOps: Microsoft.FSharp.Core.FSharpFunc`2[System.String,Internal.Utilities.StructuredFormat.TaggedText] tagOperator
@@ -22751,8 +22754,11 @@ FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Boolean get_ParseHadE
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[] Errors
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.SourceCodeServices.FSharpErrorInfo[] get_Errors()
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: FSharp.Compiler.SourceCodeServices.FSharpNavigationItems GetNavigationItems()
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] TryRangeOfRefCellDereferenceContainingPos(pos)
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] TryRangeOfRecordExpressionContainingPos(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Range+range] ValidateBreakpointLocation(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SourceCodeServices.FSharpNoteworthyParamInfoLocations] FindNoteworthyParamInfoLocations(pos)
+FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(pos)
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] ParseTree
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.SyntaxTree+ParsedInput] get_ParseTree()
 FSharp.Compiler.SourceCodeServices.FSharpParseFileResults: System.String FileName
@@ -42429,6 +42435,7 @@ Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Member
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Method
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Module
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 ModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Function
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Namespace
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 NumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag+Tags: Int32 Operator
@@ -42465,6 +42472,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsMember
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsMethod
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsModule
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsFunction
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsNamespace
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsNumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean IsOperator
@@ -42498,6 +42506,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsMember()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsMethod()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsModule()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsModuleBinding()
+Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsFunction()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsNamespace()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsNumericLiteral()
 Internal.Utilities.StructuredFormat.LayoutTag: Boolean get_IsOperator()
@@ -42535,6 +42544,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredForm
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Method
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Module
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag ModuleBinding
+Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Function
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Namespace
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag NumericLiteral
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag Operator
@@ -42568,6 +42578,7 @@ Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredForm
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Method()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Module()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_ModuleBinding()
+Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Function()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Namespace()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_NumericLiteral()
 Internal.Utilities.StructuredFormat.LayoutTag: Internal.Utilities.StructuredFormat.LayoutTag get_Operator()
@@ -42635,6 +42646,7 @@ Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.Structured
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagMethod(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagModule(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagModuleBinding(System.String)
+Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagFunction(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagNamespace(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagNumericLiteral(System.String)
 Internal.Utilities.StructuredFormat.TaggedTextOps: Internal.Utilities.StructuredFormat.TaggedText tagOperator(System.String)
