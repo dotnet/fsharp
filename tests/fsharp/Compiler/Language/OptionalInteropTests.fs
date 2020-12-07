@@ -23,6 +23,94 @@ namespace CSharpTest
     public static class Test
     {
         public static void M(FSharpOption<int> x = null) { }
+        public static int MethodTakingOptionals(int x = 3, string y = "abc", double d = 5.0)
+        {
+            return x + y.Length + (int) d;
+        }
+        public static int MethodTakingNullableOptionalsWithDefaults(int? x = 3, string y = "abc", double? d = 5.0)
+        {
+            return (x.HasValue ? x.Value : -100) + y.Length + (int) (d.HasValue ? d.Value : 0.0);
+        }
+        public static int MethodTakingNullableOptionals(int? x = null, string y = null, double? d = null)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0);
+        }
+        public static int OverloadedMethodTakingOptionals(int x = 3, string y = "abc", double d = 5.0)
+        {
+            return x + y.Length + (int) d;
+        }
+        public static int OverloadedMethodTakingOptionals(int x = 3, string y = "abc", System.Single d = 5.0f)
+        {
+            return x + y.Length + (int) d + 7;
+        }
+        public static int OverloadedMethodTakingNullableOptionalsWithDefaults(int? x = 3, string y = "abc", double? d = 5.0)
+        {
+            return (x.HasValue ? x.Value : -100) + y.Length + (int) (d.HasValue ? d.Value : 0.0);
+        }
+        public static int OverloadedMethodTakingNullableOptionalsWithDefaults(long? x = 3, string y = "abc", double? d = 5.0)
+        {
+            return (x.HasValue ? (int) x.Value : -100) + y.Length + (int) (d.HasValue ? d.Value : 0.0) + 7;
+        }
+        public static int OverloadedMethodTakingNullableOptionals(int? x = null, string y = null, double? d = null)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0);
+        }
+        public static int OverloadedMethodTakingNullableOptionals(long? x = null, string y = null, double? d = null)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? (int) x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0) + 7;
+        }
+        public static int MethodTakingNullables(int? x, string y, double? d)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0);
+        }
+
+        public static int OverloadedMethodTakingNullables(int? x, string y, double? d)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0);
+        }
+        public static int OverloadedMethodTakingNullables(long? x, string y, double? d)
+        {
+            int length;
+            if (y == null)
+                length = -1;
+            else
+                length = y.Length;
+            return (x.HasValue ? (int) x.Value : -1) + length + (int) (d.HasValue ? d.Value : -1.0) + 7;
+        }
+        public static int SimpleOverload(int? x = 3)
+        {
+            return (x.HasValue ? x.Value : 100);
+        }
+
+        public static int SimpleOverload(int x = 3)
+        {
+            return (x + 200);
+        }
     }
 }
             """
@@ -33,6 +121,29 @@ open System
 open CSharpTest
 
 Test.M(x = Some 1)
+Test.MethodTakingNullables(6, "aaaaaa", 8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), "aaaaaa", 8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, "aaaaaa", 8.0) |> ignore
+
+Test.MethodTakingNullables(6, "aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", d=Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, "aaaaaa", d=Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), "aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, "aaaaaa", d=8.0) |> ignore
+
+Test.MethodTakingNullables(6, y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0) |> ignore
+
+Test.MethodTakingNullables(6, y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable 8.0) |> ignore
+Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable ()) |> ignore
+Test.MethodTakingNullables(Nullable (), y="aaaaaa", d=8.0) |> ignore
+Test.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0) |> ignore
             """
 
         let fsharpCoreAssembly =

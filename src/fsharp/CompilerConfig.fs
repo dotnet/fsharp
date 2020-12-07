@@ -877,8 +877,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
                 None, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
 
-    let systemAssemblies = systemAssemblies
-
     member x.primaryAssembly = data.primaryAssembly
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
