@@ -9,7 +9,7 @@ open FSharp.Test.Utilities.Xunit.Attributes
 module AsyncExpressionStepping =
     
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/codegen/EmittedIL/AsyncExpressionStepping")>]
-    let ``Verify Async Computational Expressoin Stepping`` compilation = // Regression tests for FSHARP1.0:4058 
+    let ``Verify Async Computational Expression Stepping`` compilation = // Regression tests for FSHARP1.0:4058 
         compilation
         |> ignoreWarnings
         |> withOptions ["-a"; "-g"; "--test:EmitFeeFeeAs100001"; "--optimize-"]

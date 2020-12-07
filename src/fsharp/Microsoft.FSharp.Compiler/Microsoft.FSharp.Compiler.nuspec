@@ -51,7 +51,7 @@
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                            target="lib\netcoreapp3.1" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.xml"                            target="lib\netcoreapp3.1" />
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.dll"    target="lib\netcoreapp3.1" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp3.1\FSharp.Build.dll"                           target="lib\netcoreapp3.1" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\FSharp.Build.dll"                          target="lib\netcoreapp3.1" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
                                                                                                           target="lib\netcoreapp3.1" />
         <file src="Microsoft.DotNet.DependencyManager\$configuration$\netstandard2.0\Microsoft.DotNet.DependencyManager.dll"
@@ -61,11 +61,11 @@
 
         <!-- additional files -->
         <file src="fsc\$Configuration$\netcoreapp3.1\default.win32manifest"                               target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp3.1\Microsoft.FSharp.Targets"                   target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp3.1\Microsoft.Portable.FSharp.Targets"          target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp3.1\Microsoft.FSharp.NetSdk.props"              target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp3.1\Microsoft.FSharp.NetSdk.targets"            target="contentFiles\any\any" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp3.1\Microsoft.FSharp.Overrides.NetSdk.targets"  target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.Targets"                   target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.Portable.FSharp.Targets"          target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.NetSdk.props"              target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.NetSdk.targets"            target="contentFiles\any\any" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"  target="contentFiles\any\any" />
 
         <!-- resources -->
         <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll"               target="lib\netcoreapp3.1" />
@@ -73,7 +73,7 @@
                                                                                                           target="lib\netcoreapp3.1" />
         <file src="FSharp.Compiler.Interactive.Settings\$Configuration$\netstandard2.0\**\FSharp.Compiler.Interactive.Settings.resources.dll"
                                                                                                           target="lib\netcoreapp3.1" />
-        <file src="FSharp.Build\$Configuration$\netcoreapp3.1\**\FSharp.Build.resources.dll"              target="lib\netcoreapp3.1" />
+        <file src="FSharp.Build\$Configuration$\netstandard2.0\**\FSharp.Build.resources.dll"             target="lib\netcoreapp3.1" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\**\FSharp.DependencyManager.Nuget.resources.dll"
                                                                                                           target="lib\netcoreapp3.1" />
         <file src="Microsoft.DotNet.DependencyManager\$Configuration$\netstandard2.0\**\Microsoft.DotNet.DependencyManager.resources.dll"

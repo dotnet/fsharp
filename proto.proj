@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj">
-      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp3.1</AdditionalProperties>
+    <Projects Include="src\fsharp\FSharp.Build\FSharp.Build.fsproj" />
+      <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netstandard2.0</AdditionalProperties>
     </Projects>
     <Projects Include="src\fsharp\fsc\fsc.fsproj">
       <AdditionalProperties Condition="'$(OS)' == 'Unix'">TargetFramework=netcoreapp3.1</AdditionalProperties>
