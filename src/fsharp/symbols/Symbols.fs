@@ -2059,7 +2059,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     member x.IsValue =
         match d with
-        | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
+        | V valRef -> not (isForallFunctionTy cenv.g valRef.Type)
         | _ -> false
 
     override x.Equals(other: obj) =

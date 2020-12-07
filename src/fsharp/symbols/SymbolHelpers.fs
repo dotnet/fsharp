@@ -316,11 +316,6 @@ type CompletionItem =
 
 [<AutoOpen>]
 module internal SymbolHelpers = 
-
-    let isFunction g ty =
-        let _, tau = tryDestForallTy g ty
-        isFunTy g tau 
-
     let OutputFullName isListItem ppF fnF r = 
       // Only display full names in quick info, not declaration lists or method lists
       if not isListItem then 
@@ -903,7 +898,7 @@ module internal SymbolHelpers =
         | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames.[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
-        | Item.ILField finfo -> bufs (fun os -> NicePrint.outputILTypeRef denv os finfo.ILTypeRef; bprintf os ".%s" finfo.FieldName)
+        | Item.ILField finfo -> bufs (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
         | Item.Event einfo -> bufs (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
         | Item.Property(_, (pinfo :: _)) -> bufs (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
@@ -1140,7 +1135,7 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoField())) ^^
-                NicePrint.layoutILTypeRef denv finfo.ILTypeRef ^^
+                NicePrint.layoutType denv finfo.ApparentEnclosingAppType ^^
                 SepL.dot ^^
                 wordL (tagField finfo.FieldName) ^^
                 RightL.colon ^^
@@ -1527,8 +1522,8 @@ module internal SymbolHelpers =
         | Item.NewDef _ 
         | Item.ILField _ -> []
         | Item.Event _ -> []
-        | Item.RecdField rfinfo -> if isFunction g rfinfo.FieldType then [item] else []
-        | Item.Value v -> if isFunction g v.Type then [item] else []
+        | Item.RecdField rfinfo -> if isForallFunctionTy g rfinfo.FieldType then [item] else []
+        | Item.Value v -> if isForallFunctionTy g v.Type then [item] else []
         | Item.UnionCase(ucr, _) -> if not ucr.UnionCase.IsNullary then [item] else []
         | Item.ExnCase ecr -> if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
         | Item.Property(_, pinfos) -> 

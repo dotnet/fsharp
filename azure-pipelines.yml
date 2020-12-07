@@ -56,6 +56,8 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - name: DotNetSdkVersion
+    value: '5.0.100'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -239,6 +241,16 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # Mock official build
+        - job: MockOfficial
+          pool:
+            vmImage: windows-2019
+          steps:
+          - checkout: self
+            clean: true
+          - pwsh: .\eng\MockBuild.ps1
+            displayName: Build with OfficialBuildId
+
         # Linux
         - job: Linux
           pool:
@@ -311,7 +323,7 @@ stages:
           - checkout: self
             clean: true
           - script: .\Build.cmd -c Release
-          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests -c Release
+          - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
         # Source Build Windows
@@ -397,6 +409,12 @@ stages:
         #     displayName: Initial build
         #   - script: dotnet --list-sdks
         #     displayName: Report dotnet SDK versions
+        #   - task: UseDotNet@2
+        #       displayName: install SDK
+        #       inputs:
+        #         packageType: sdk
+        #         version: $(DotNetSdkVersion)
+        #         installationPath: $(Agent.ToolsDirectory)/dotnet
         #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
         #     displayName: Regular rebuild
 
@@ -414,6 +432,12 @@ stages:
             displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              version: $(DotNetSdkVersion)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
 
@@ -431,6 +455,12 @@ stages:
             displayName: Initial build
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              version: $(DotNetSdkVersion)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
 

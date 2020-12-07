@@ -43,6 +43,38 @@ type LanguagePrimitivesModule() =
 
         let y = 2y
         Assert.AreEqual(y, y |> LanguagePrimitives.SByteWithMeasure<m> |> sbyte)
+        
+        let n = 2n
+        Assert.AreEqual(n, n |> LanguagePrimitives.IntPtrWithMeasure<m> |> nativeint)
+        
+        let i = 2u
+        Assert.AreEqual(i, i |> LanguagePrimitives.UInt32WithMeasure<m> |> uint)
+
+        let l = 2UL
+        Assert.AreEqual(l, l |> LanguagePrimitives.UInt64WithMeasure<m> |> uint64)
+
+        let s = 2us
+        Assert.AreEqual(s, s |> LanguagePrimitives.UInt16WithMeasure<m> |> uint16)
+        
+        let uy = 2uy
+        Assert.AreEqual(uy, uy |> LanguagePrimitives.ByteWithMeasure<m> |> byte)
+
+        let n = 2un
+        Assert.AreEqual(n, n |> LanguagePrimitives.UIntPtrWithMeasure<m> |> unativeint)
+
+    [<Fact>]
+    member _.MeasurableAliases() =
+        let f (x: int<m>) y: int32<m> = x + y   // should be: `int<m> -> int<m> -> int32<m>`
+        let g (x: int<m>) (y:int32<m>) = x * y  // should be: `int<m> -> int32<m> -> int<m^2>`
+        let h (x: int<m>) y = x * y
+        let i (x: int32<m>) y = x * y
+        
+        let tres = 3<m>
+        let ocho : int32<m> = 8<m>
+        
+        Assert.Equal(ocho, f tres 5<m>)
+        Assert.Equal(64<m^2>, g ocho ocho)
+        Assert.Equal(h ocho tres, i tres ocho)
 
     [<Fact>]
     member this.MaxMinNan() =

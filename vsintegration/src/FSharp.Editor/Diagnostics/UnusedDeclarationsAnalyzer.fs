@@ -4,24 +4,22 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]
-type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
+type internal UnusedDeclarationsAnalyzer
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider, 
+        projectInfoManager: FSharpProjectOptionsManager
+    ) =
     
     static let userOpName = "UnusedDeclarationsAnalyzer"
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
-    let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
-    
 
     interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
@@ -31,10 +29,10 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
 
                 do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                 do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-                match! getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName) with
+                match! projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName) with
                 | (_parsingOptions, projectOptions) ->
                     let! sourceText = document.GetTextAsync()
-                    let checker = getChecker document
+                    let checker = checkerProvider.Checker
                     let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, userOpName = userOpName)
                     let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
                     return
