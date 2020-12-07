@@ -19023,7 +19023,7 @@ FSharp.Compiler.FxResolver: System.Collections.Generic.HashSet`1[System.String] 
 FSharp.Compiler.FxResolver: System.String GetRid()
 FSharp.Compiler.FxResolver: System.String GetTfm()
 FSharp.Compiler.FxResolver: System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[System.String],Microsoft.FSharp.Core.FSharpOption`1[System.String]] TryGetDefaultSdkDirAndRid(Boolean)
-FSharp.Compiler.FxResolver: Void .ctor(System.Object, System.Object, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
+FSharp.Compiler.FxResolver: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[System.Boolean])
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanRead
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanSeek
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanWrite
