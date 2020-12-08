@@ -1070,26 +1070,6 @@ and SolveFunTypeEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 = trackErrors {
     return! SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln r1 r2
   }
 
-// ty1: expected 
-// ty2: actual
-//
-// "ty2 casts to any of the disjoint cases of ty1"
-// "a value of type ty2 can be used where a value of type ty1 is expected"
-and SolveErasedUnionTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) cxsln ty1Cases ty2 =
-    let g = csenv.g
-    let aenv = csenv.EquivEnv
-    match ty2 with
-    // What if TType_app wraps another TType_erased_union
-    | TType_app (_,_) when ListSet.contains (typeAEquiv g aenv) ty2 ty1Cases ->
-        match List.tryFind (typeAEquiv g aenv ty2) ty1Cases with 
-        | Some v1 -> 
-            SolveTypeSubsumesType csenv ndeep m2 trace cxsln v1 ty2
-        | None -> failwithf "SolveErasedUnionTypeSubsumesType failed"
-    | TType_erased_union (_,l2) when ListSet.isSubsetOf (typeAEquiv g aenv) l2 ty1Cases ->
-        let subset1 = ListSet.intersect (typeAEquiv g aenv) l2 ty1Cases 
-        SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln subset1 l2 
-    | _ -> failwithf "SolveErasedUnionTypeSubsumesType: Should never reach here"
-    
 // ty1: expected
 // ty2: actual
 //
@@ -1158,10 +1138,14 @@ and SolveTypeSubsumesType (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optional
     | TType_ucase (uc1, l1), TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
         SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
         
-    | TType_erased_union (_, l1), TType_app (_,_) when ListSet.contains (typeAEquiv g aenv) sty2 l1 -> 
-        SolveErasedUnionTypeSubsumesType csenv ndeep m2 trace cxsln l1 sty2
-    | TType_erased_union (_, l1), TType_erased_union (_, l2) when ListSet.isSubsetOf (typeAEquiv g aenv) l2 l1 -> 
-        SolveErasedUnionTypeSubsumesType csenv ndeep m2 trace cxsln l1 sty2
+    | TType_erased_union (_,l1), TType_erased_union (_,l2) when typeAEquiv g aenv sty1 sty2 ->
+        SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
+        
+    | TType_erased_union _, TType_app _ 
+    | TType_app _, TType_erased_union _ 
+    | TType_erased_union _, TType_erased_union _ when
+        TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m2 sty1 CanCoerce sty2 ->
+        CompleteD
     | _ ->  
         // By now we know the type is not a variable type 
 
