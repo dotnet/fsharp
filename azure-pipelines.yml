@@ -191,7 +191,7 @@ stages:
         # Windows
         - job: Windows
           pool:
-            vmImage: windows-2019
+            vmImage: windows-latest
           timeoutInMinutes: 120
           strategy:
             maxParallel: 4
@@ -244,7 +244,7 @@ stages:
         # Mock official build
         - job: MockOfficial
           pool:
-            vmImage: windows-2019
+            vmImage: windows-latest
           steps:
           - checkout: self
             clean: true
@@ -318,7 +318,7 @@ stages:
         # End to end build
         - job: EndToEndBuildTests
           pool:
-            vmImage: windows-2019
+            vmImage: windows-latest
           steps:
           - checkout: self
             clean: true
@@ -330,7 +330,7 @@ stages:
         - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
           - job: SourceBuild_Windows
             pool:
-              vmImage: windows-2019
+              vmImage: windows-latest
             steps:
             - checkout: self
               clean: true
@@ -355,7 +355,7 @@ stages:
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
         #  pool:
-        #    vmImage: windows-2019
+        #    vmImage: windows-latest
         #  steps:
         #  - checkout: self
         #    clean: true
@@ -366,9 +366,9 @@ stages:
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
         # Source Build Semi-Official
-        # used until https://github.com/dotnet/source-build/issues/1795 is fixed
         - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
           - job: SourceBuild_Official
+            # used until https://github.com/dotnet/source-build/issues/1795 is fixed
             pool:
               name: NetCorePublic-Pool
               queue: BuildPool.Ubuntu.1604.amd64.Open
