@@ -3517,6 +3517,7 @@ module DebugPrint =
            auxTyparsL env tcL prefix tinst
         | TType_anon (anonInfo, tys) -> braceBarL (sepListL (wordL (tagText ";")) (List.map2 (fun nm ty -> wordL (tagField nm) --- auxTypeAtomL env ty) (Array.toList anonInfo.SortedNames) tys))
         | TType_tuple (_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
+        | TType_erased_union (_, tys) -> leftL (tagText "(") ^^ sepListL (wordL (tagText "|")) (List.map (auxTypeAtomL env) tys) ^^ rightL (tagText ")")
         | TType_fun (f, x) -> ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
         | TType_var typar -> auxTyparWrapL env isAtomic typar 
         | TType_measure unt -> 
@@ -8079,6 +8080,9 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
         typarEnc g (gtpsType, gtpsMethod) typar
 
     | TType_measure _ -> "?"
+    | TType_erased_union (_, tys) ->
+        // SWOORUP TODO idk
+        typeEnc g (gtpsType, gtpsMethod) (List.head tys) + "|"
 
 and tyargsEnc g (gtpsType, gtpsMethod) args = 
      match args with     

@@ -7,6 +7,7 @@ module internal FSharp.Compiler.TypeRelations
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Lib
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -78,6 +79,9 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
 
     | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
         (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) d1 d2 && (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) r1 r2
+        
+    | TType_erased_union (_, l1), TType_erased_union (_, l2)     -> 
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
     | TType_measure _, TType_measure _ ->
         true
@@ -108,7 +112,12 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     | TType_tuple _, TType_tuple _
     | TType_anon _, TType_anon _
     | TType_fun _, TType_fun _ -> TypesFeasiblyEquiv ndeep g amap m ty1 ty2
-
+    | TType_app _, TType_erased_union (_, l2) ->
+        List.forall (TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce) l2
+    | TType_erased_union (_, l1), TType_app _ ->
+        List.exists (fun x1 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce ty1) l1
+    | TType_erased_union (_, l1), TType_erased_union (_, l2) ->
+        ListSet.isSupersetOf (fun x1 x2 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce x2) l1 l2
     | TType_measure _, TType_measure _ ->
         true
 

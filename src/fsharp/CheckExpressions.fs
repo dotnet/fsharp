@@ -4270,7 +4270,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
                 |> List.iter (fun ty -> addToCases ty unionTypeCases)
             ResizeArray.toList unionTypeCases
         
-        let commonAncestorTy g amap tys = 
+        let getCommonAncestorOfTys g amap tys = 
             let superTypes = List.map (AllPrimarySuperTypesOfType g amap m AllowMultiIntfInstantiations.No) tys
             List.fold (ListSet.intersect (typeEquiv g)) (List.head superTypes) (List.tail superTypes) |> List.head
         
@@ -4283,7 +4283,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         // Map from sorted indexes to unsorted index
         let sigma = List.map fst sortedIndexedErasedUnionCases |> List.toArray
         let sortedErasedUnionCases = List.map snd sortedIndexedErasedUnionCases
-        let commonAncestorTy = commonAncestorTy g cenv.amap sortedErasedUnionCases
+        let commonAncestorTy = getCommonAncestorOfTys g cenv.amap sortedErasedUnionCases
         
         let erasedUnionInfo = ErasedUnionInfo.Create(commonAncestorTy, sigma)
         TType_erased_union(erasedUnionInfo, sortedErasedUnionCases), tpenv
