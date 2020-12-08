@@ -419,16 +419,6 @@ let x = y |> y + 1
     Assert.True(res.IsNone, "Expected not to find any ranges.")
 
 [<Test>]
-let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - not in range``() =
-    let source = """
-let x = y => y + 1
-"""
-    let parseFileResults, _ = getParseAndCheckResults source
-    let res = parseFileResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage (mkPos 2 15)
-    Assert.True(res.IsNone, "Expected not to find any ranges.")
-
-
-[<Test>]
 let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - error arg pos``() =
     let source = """
 let x = y => y + 1
