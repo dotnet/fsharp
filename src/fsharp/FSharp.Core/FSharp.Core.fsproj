@@ -230,4 +230,13 @@
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
   </ItemGroup>
 
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
+    <PropertyGroup>
+      <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>
+    </PropertyGroup>
+    <ItemGroup>
+      <BuiltProjectOutputGroupKeyOutput Include="$(BuildOutputGroupLocation)\FSharp.Core.xml" />
+    </ItemGroup>
+  </Target>
+
 </Project>

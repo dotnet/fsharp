@@ -99,6 +99,18 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
     member scope.ParseHadErrors = parseHadErrors
 
     member scope.ParseTree = input
+    
+    member scope.TryRangeOfExprInYieldOrReturn pos =
+        match scope.ParseTree with
+        | Some parseTree ->
+            AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
+                member __.VisitExpr(_path, _, defaultTraverse, expr) =
+                    match expr with
+                    | SynExpr.YieldOrReturn(_, expr, range)
+                    | SynExpr.YieldOrReturnFrom(_, expr, range) when rangeContainsPos range pos ->
+                        Some expr.Range
+                    | _ -> defaultTraverse expr })
+        | None -> None
 
     member scope.TryRangeOfRecordExpressionContainingPos pos =
         match input with
