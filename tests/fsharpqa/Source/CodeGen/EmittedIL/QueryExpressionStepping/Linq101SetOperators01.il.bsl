@@ -45,13 +45,13 @@
   // Offset: 0x00000390 Length: 0x0000011E
 }
 .module Linq101SetOperators01.exe
-// MVID: {5FCFBF69-4EE5-349F-A745-038369BFCF5F}
+// MVID: {5FCFFD0D-4EE5-349F-A745-03830DFDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05760000
+// Image base: 0x05230000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -394,7 +394,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'categoryNames@22-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>
   {
-    .field static assembly initonly class Linq101SetOperators01/'categoryNames@22-1' Instance
+    .field static assembly initonly class Linq101SetOperators01/'categoryNames@22-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -427,9 +427,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101SetOperators01/'categoryNames@22-1'::.ctor()
-      IL_0005:  stsfld     class Linq101SetOperators01/'categoryNames@22-1' Linq101SetOperators01/'categoryNames@22-1'::Instance
+      IL_0005:  stsfld     class Linq101SetOperators01/'categoryNames@22-1' Linq101SetOperators01/'categoryNames@22-1'::@_instance
       IL_000a:  ret
     } // end of method 'categoryNames@22-1'::.cctor
 
@@ -511,7 +511,7 @@
       IL_002a:  nop
       .line 23,23 : 9,26 ''
       IL_002b:  ldarg.0
-      IL_002c:  ldsfld     class Linq101SetOperators01/'categoryNames@22-1' Linq101SetOperators01/'categoryNames@22-1'::Instance
+      IL_002c:  ldsfld     class Linq101SetOperators01/'categoryNames@22-1' Linq101SetOperators01/'categoryNames@22-1'::@_instance
       IL_0031:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101SetOperators01::get_products()
       IL_0036:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<class [Utils]Utils/Product,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                   class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
@@ -768,7 +768,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'productFirstChars@32-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>
   {
-    .field static assembly initonly class Linq101SetOperators01/'productFirstChars@32-1' Instance
+    .field static assembly initonly class Linq101SetOperators01/'productFirstChars@32-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -801,9 +801,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101SetOperators01/'productFirstChars@32-1'::.ctor()
-      IL_0005:  stsfld     class Linq101SetOperators01/'productFirstChars@32-1' Linq101SetOperators01/'productFirstChars@32-1'::Instance
+      IL_0005:  stsfld     class Linq101SetOperators01/'productFirstChars@32-1' Linq101SetOperators01/'productFirstChars@32-1'::@_instance
       IL_000a:  ret
     } // end of method 'productFirstChars@32-1'::.cctor
 
@@ -885,7 +885,7 @@
       IL_002d:  nop
       .line 33,33 : 9,33 ''
       IL_002e:  ldarg.0
-      IL_002f:  ldsfld     class Linq101SetOperators01/'productFirstChars@32-1' Linq101SetOperators01/'productFirstChars@32-1'::Instance
+      IL_002f:  ldsfld     class Linq101SetOperators01/'productFirstChars@32-1' Linq101SetOperators01/'productFirstChars@32-1'::@_instance
       IL_0034:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101SetOperators01::get_products()
       IL_0039:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<class [Utils]Utils/Product,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                   class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
@@ -1144,7 +1144,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'customerFirstChars@38-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>>
   {
-    .field static assembly initonly class Linq101SetOperators01/'customerFirstChars@38-1' Instance
+    .field static assembly initonly class Linq101SetOperators01/'customerFirstChars@38-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1177,9 +1177,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101SetOperators01/'customerFirstChars@38-1'::.ctor()
-      IL_0005:  stsfld     class Linq101SetOperators01/'customerFirstChars@38-1' Linq101SetOperators01/'customerFirstChars@38-1'::Instance
+      IL_0005:  stsfld     class Linq101SetOperators01/'customerFirstChars@38-1' Linq101SetOperators01/'customerFirstChars@38-1'::@_instance
       IL_000a:  ret
     } // end of method 'customerFirstChars@38-1'::.cctor
 
@@ -1261,7 +1261,7 @@
       IL_002d:  nop
       .line 39,39 : 9,33 ''
       IL_002e:  ldarg.0
-      IL_002f:  ldsfld     class Linq101SetOperators01/'customerFirstChars@38-1' Linq101SetOperators01/'customerFirstChars@38-1'::Instance
+      IL_002f:  ldsfld     class Linq101SetOperators01/'customerFirstChars@38-1' Linq101SetOperators01/'customerFirstChars@38-1'::@_instance
       IL_0034:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101SetOperators01::get_customers()
       IL_0039:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>,class [Utils]Utils/Customer>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                      class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)

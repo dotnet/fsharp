@@ -36,13 +36,13 @@
   // Offset: 0x00000208 Length: 0x00000092
 }
 .module IfThenElse01.dll
-// MVID: {5FCFBF67-2D6C-0B5D-A745-038367BFCF5F}
+// MVID: {5FCFFD09-2D6C-0B5D-A745-038309FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B60000
+// Image base: 0x067C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,7 +58,7 @@
     .class auto ansi serializable sealed nested assembly beforefieldinit f5@5
            extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
     {
-      .field static assembly initonly class IfThenElse01/M/f5@5 Instance
+      .field static assembly initonly class IfThenElse01/M/f5@5 @_instance
       .method assembly specialname rtspecialname 
               instance void  .ctor() cil managed
       {
@@ -92,9 +92,9 @@
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
         .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       11 (0xb)
-        .maxstack  8
+        .maxstack  10
         IL_0000:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
-        IL_0005:  stsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::Instance
+        IL_0005:  stsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::@_instance
         IL_000a:  ret
       } // end of method f5@5::.cctor
 
@@ -107,7 +107,6 @@
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .field static assembly initonly class IfThenElse01/M/f5@5 Instance
       .method assembly specialname rtspecialname 
               instance void  .ctor(class IfThenElse01/M/f5@5 self0@) cil managed
       {
@@ -154,16 +153,6 @@
         IL_0013:  ret
       } // end of method f5@5T::Invoke
 
-      .method private specialname rtspecialname static 
-              void  .cctor() cil managed
-      {
-        // Code size       11 (0xb)
-        .maxstack  8
-        IL_0000:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
-        IL_0005:  stsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::Instance
-        IL_000a:  ret
-      } // end of method f5@5T::.cctor
-
     } // end of class f5@5T
 
     .method public static char  m() cil managed
@@ -176,7 +165,7 @@
                [3] int32 V_3,
                [4] int32 V_4)
       .line 100001,100001 : 0,0 ''
-      IL_0000:  ldsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::Instance
+      IL_0000:  ldsfld     class IfThenElse01/M/f5@5 IfThenElse01/M/f5@5::@_instance
       IL_0005:  stloc.0
       .line 6,6 : 9,25 ''
       IL_0006:  ldloc.0

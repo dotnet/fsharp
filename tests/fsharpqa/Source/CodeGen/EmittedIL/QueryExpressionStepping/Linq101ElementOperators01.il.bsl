@@ -45,13 +45,13 @@
   // Offset: 0x00000388 Length: 0x00000127
 }
 .module Linq101ElementOperators01.exe
-// MVID: {5FCFBF69-19D7-C20D-A745-038369BFCF5F}
+// MVID: {5FCFFD0D-19D7-C20D-A745-03830DFDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05930000
+// Image base: 0x05A30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -394,7 +394,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'products12@13-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,bool>
   {
-    .field static assembly initonly class Linq101ElementOperators01/'products12@13-1' Instance
+    .field static assembly initonly class Linq101ElementOperators01/'products12@13-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -424,9 +424,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101ElementOperators01/'products12@13-1'::.ctor()
-      IL_0005:  stsfld     class Linq101ElementOperators01/'products12@13-1' Linq101ElementOperators01/'products12@13-1'::Instance
+      IL_0005:  stsfld     class Linq101ElementOperators01/'products12@13-1' Linq101ElementOperators01/'products12@13-1'::@_instance
       IL_000a:  ret
     } // end of method 'products12@13-1'::.cctor
 
@@ -765,7 +765,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'startsWithO@23-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,bool>
   {
-    .field static assembly initonly class Linq101ElementOperators01/'startsWithO@23-1' Instance
+    .field static assembly initonly class Linq101ElementOperators01/'startsWithO@23-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -796,9 +796,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101ElementOperators01/'startsWithO@23-1'::.ctor()
-      IL_0005:  stsfld     class Linq101ElementOperators01/'startsWithO@23-1' Linq101ElementOperators01/'startsWithO@23-1'::Instance
+      IL_0005:  stsfld     class Linq101ElementOperators01/'startsWithO@23-1' Linq101ElementOperators01/'startsWithO@23-1'::@_instance
       IL_000a:  ret
     } // end of method 'startsWithO@23-1'::.cctor
 
@@ -1467,7 +1467,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'fourthLowNum@53-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
-    .field static assembly initonly class Linq101ElementOperators01/'fourthLowNum@53-1' Instance
+    .field static assembly initonly class Linq101ElementOperators01/'fourthLowNum@53-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1496,9 +1496,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101ElementOperators01/'fourthLowNum@53-1'::.ctor()
-      IL_0005:  stsfld     class Linq101ElementOperators01/'fourthLowNum@53-1' Linq101ElementOperators01/'fourthLowNum@53-1'::Instance
+      IL_0005:  stsfld     class Linq101ElementOperators01/'fourthLowNum@53-1' Linq101ElementOperators01/'fourthLowNum@53-1'::@_instance
       IL_000a:  ret
     } // end of method 'fourthLowNum@53-1'::.cctor
 
@@ -1676,7 +1676,7 @@
                                                                                       int32,
                                                                                       class [Utils]Utils/Product)
     IL_001f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0024:  ldsfld     class Linq101ElementOperators01/'products12@13-1' Linq101ElementOperators01/'products12@13-1'::Instance
+    IL_0024:  ldsfld     class Linq101ElementOperators01/'products12@13-1' Linq101ElementOperators01/'products12@13-1'::@_instance
     IL_0029:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_002e:  callvirt   instance !!0 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Head<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
@@ -1729,7 +1729,7 @@
                                                                                        int32,
                                                                                        string)
     IL_00bd:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_00c2:  ldsfld     class Linq101ElementOperators01/'startsWithO@23-1' Linq101ElementOperators01/'startsWithO@23-1'::Instance
+    IL_00c2:  ldsfld     class Linq101ElementOperators01/'startsWithO@23-1' Linq101ElementOperators01/'startsWithO@23-1'::@_instance
     IL_00c7:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_00cc:  callvirt   instance !!0 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Head<string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
@@ -1797,7 +1797,7 @@
                                                                                         int32,
                                                                                         int32)
     IL_015b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0160:  ldsfld     class Linq101ElementOperators01/'fourthLowNum@53-1' Linq101ElementOperators01/'fourthLowNum@53-1'::Instance
+    IL_0160:  ldsfld     class Linq101ElementOperators01/'fourthLowNum@53-1' Linq101ElementOperators01/'fourthLowNum@53-1'::@_instance
     IL_0165:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_016a:  ldc.i4.1

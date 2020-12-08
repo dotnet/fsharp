@@ -45,13 +45,13 @@
   // Offset: 0x000003D0 Length: 0x0000012E
 }
 .module Linq101Where01.exe
-// MVID: {5FCFBF69-FF23-CD21-A745-038369BFCF5F}
+// MVID: {5FCFFD0D-FF23-CD21-A745-03830DFDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B10000
+// Image base: 0x00C30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -106,7 +106,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'lowNums@15-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
-    .field static assembly initonly class Linq101Where01/'lowNums@15-1' Instance
+    .field static assembly initonly class Linq101Where01/'lowNums@15-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -135,9 +135,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'lowNums@15-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'lowNums@15-1' Linq101Where01/'lowNums@15-1'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'lowNums@15-1' Linq101Where01/'lowNums@15-1'::@_instance
       IL_000a:  ret
     } // end of method 'lowNums@15-1'::.cctor
 
@@ -146,7 +146,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'lowNums@16-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
-    .field static assembly initonly class Linq101Where01/'lowNums@16-2' Instance
+    .field static assembly initonly class Linq101Where01/'lowNums@16-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -173,9 +173,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'lowNums@16-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'lowNums@16-2' Linq101Where01/'lowNums@16-2'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'lowNums@16-2' Linq101Where01/'lowNums@16-2'::@_instance
       IL_000a:  ret
     } // end of method 'lowNums@16-2'::.cctor
 
@@ -226,7 +226,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'soldOutProducts@25-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,bool>
   {
-    .field static assembly initonly class Linq101Where01/'soldOutProducts@25-1' Instance
+    .field static assembly initonly class Linq101Where01/'soldOutProducts@25-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -256,9 +256,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'soldOutProducts@25-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'soldOutProducts@25-1' Linq101Where01/'soldOutProducts@25-1'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'soldOutProducts@25-1' Linq101Where01/'soldOutProducts@25-1'::@_instance
       IL_000a:  ret
     } // end of method 'soldOutProducts@25-1'::.cctor
 
@@ -267,7 +267,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'soldOutProducts@26-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
-    .field static assembly initonly class Linq101Where01/'soldOutProducts@26-2' Instance
+    .field static assembly initonly class Linq101Where01/'soldOutProducts@26-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -294,9 +294,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'soldOutProducts@26-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'soldOutProducts@26-2' Linq101Where01/'soldOutProducts@26-2'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'soldOutProducts@26-2' Linq101Where01/'soldOutProducts@26-2'::@_instance
       IL_000a:  ret
     } // end of method 'soldOutProducts@26-2'::.cctor
 
@@ -347,7 +347,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'expensiveInStockProducts@33-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,bool>
   {
-    .field static assembly initonly class Linq101Where01/'expensiveInStockProducts@33-1' Instance
+    .field static assembly initonly class Linq101Where01/'expensiveInStockProducts@33-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -401,9 +401,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'expensiveInStockProducts@33-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'expensiveInStockProducts@33-1' Linq101Where01/'expensiveInStockProducts@33-1'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'expensiveInStockProducts@33-1' Linq101Where01/'expensiveInStockProducts@33-1'::@_instance
       IL_000a:  ret
     } // end of method 'expensiveInStockProducts@33-1'::.cctor
 
@@ -412,7 +412,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'expensiveInStockProducts@34-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
-    .field static assembly initonly class Linq101Where01/'expensiveInStockProducts@34-2' Instance
+    .field static assembly initonly class Linq101Where01/'expensiveInStockProducts@34-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -439,9 +439,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'expensiveInStockProducts@34-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'expensiveInStockProducts@34-2' Linq101Where01/'expensiveInStockProducts@34-2'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'expensiveInStockProducts@34-2' Linq101Where01/'expensiveInStockProducts@34-2'::@_instance
       IL_000a:  ret
     } // end of method 'expensiveInStockProducts@34-2'::.cctor
 
@@ -492,7 +492,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'waCustomers@43-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,bool>
   {
-    .field static assembly initonly class Linq101Where01/'waCustomers@43-1' Instance
+    .field static assembly initonly class Linq101Where01/'waCustomers@43-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -523,9 +523,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'waCustomers@43-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'waCustomers@43-1' Linq101Where01/'waCustomers@43-1'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'waCustomers@43-1' Linq101Where01/'waCustomers@43-1'::@_instance
       IL_000a:  ret
     } // end of method 'waCustomers@43-1'::.cctor
 
@@ -534,7 +534,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'waCustomers@44-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [Utils]Utils/Customer>
   {
-    .field static assembly initonly class Linq101Where01/'waCustomers@44-2' Instance
+    .field static assembly initonly class Linq101Where01/'waCustomers@44-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -561,9 +561,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'waCustomers@44-2'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'waCustomers@44-2' Linq101Where01/'waCustomers@44-2'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'waCustomers@44-2' Linq101Where01/'waCustomers@44-2'::@_instance
       IL_000a:  ret
     } // end of method 'waCustomers@44-2'::.cctor
 
@@ -572,7 +572,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit shortDigits@55
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>,class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>>
   {
-    .field static assembly initonly class Linq101Where01/shortDigits@55 Instance
+    .field static assembly initonly class Linq101Where01/shortDigits@55 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -601,9 +601,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/shortDigits@55::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/shortDigits@55 Linq101Where01/shortDigits@55::Instance
+      IL_0005:  stsfld     class Linq101Where01/shortDigits@55 Linq101Where01/shortDigits@55::@_instance
       IL_000a:  ret
     } // end of method shortDigits@55::.cctor
 
@@ -612,7 +612,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'shortDigits@54-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`3<int32,string,class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>>
   {
-    .field static assembly initonly class Linq101Where01/'shortDigits@54-1' Instance
+    .field static assembly initonly class Linq101Where01/'shortDigits@54-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -655,9 +655,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'shortDigits@54-1'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'shortDigits@54-1' Linq101Where01/'shortDigits@54-1'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'shortDigits@54-1' Linq101Where01/'shortDigits@54-1'::@_instance
       IL_000a:  ret
     } // end of method 'shortDigits@54-1'::.cctor
 
@@ -666,7 +666,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'shortDigits@51-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<string>>
   {
-    .field static assembly initonly class Linq101Where01/'shortDigits@51-3' Instance
+    .field static assembly initonly class Linq101Where01/'shortDigits@51-3' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -699,9 +699,9 @@
             void  .cctor() cil managed
     {
       // Code size       11 (0xb)
-      .maxstack  8
+      .maxstack  10
       IL_0000:  newobj     instance void Linq101Where01/'shortDigits@51-3'::.ctor()
-      IL_0005:  stsfld     class Linq101Where01/'shortDigits@51-3' Linq101Where01/'shortDigits@51-3'::Instance
+      IL_0005:  stsfld     class Linq101Where01/'shortDigits@51-3' Linq101Where01/'shortDigits@51-3'::@_instance
       IL_000a:  ret
     } // end of method 'shortDigits@51-3'::.cctor
 
@@ -783,7 +783,7 @@
       IL_002a:  nop
       .line 52,52 : 9,17 ''
       IL_002b:  ldarg.0
-      IL_002c:  ldsfld     class Linq101Where01/'shortDigits@51-3' Linq101Where01/'shortDigits@51-3'::Instance
+      IL_002c:  ldsfld     class Linq101Where01/'shortDigits@51-3' Linq101Where01/'shortDigits@51-3'::@_instance
       IL_0031:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Where01::get_digits()
       IL_0036:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<string>,string>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
@@ -1265,10 +1265,10 @@
     IL_0064:  newobj     instance void Linq101Where01/lowNums@14::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_0069:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<int32,class [mscorlib]System.Collections.IEnumerable,int32,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_006e:  ldsfld     class Linq101Where01/'lowNums@15-1' Linq101Where01/'lowNums@15-1'::Instance
+    IL_006e:  ldsfld     class Linq101Where01/'lowNums@15-1' Linq101Where01/'lowNums@15-1'::@_instance
     IL_0073:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_0078:  ldsfld     class Linq101Where01/'lowNums@16-2' Linq101Where01/'lowNums@16-2'::Instance
+    IL_0078:  ldsfld     class Linq101Where01/'lowNums@16-2' Linq101Where01/'lowNums@16-2'::@_instance
     IL_007d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<int32,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0082:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -1293,10 +1293,10 @@
     IL_00ba:  newobj     instance void Linq101Where01/soldOutProducts@24::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_00bf:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_00c4:  ldsfld     class Linq101Where01/'soldOutProducts@25-1' Linq101Where01/'soldOutProducts@25-1'::Instance
+    IL_00c4:  ldsfld     class Linq101Where01/'soldOutProducts@25-1' Linq101Where01/'soldOutProducts@25-1'::@_instance
     IL_00c9:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_00ce:  ldsfld     class Linq101Where01/'soldOutProducts@26-2' Linq101Where01/'soldOutProducts@26-2'::Instance
+    IL_00ce:  ldsfld     class Linq101Where01/'soldOutProducts@26-2' Linq101Where01/'soldOutProducts@26-2'::@_instance
     IL_00d3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_00d8:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -1315,10 +1315,10 @@
     IL_00ff:  newobj     instance void Linq101Where01/expensiveInStockProducts@32::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_0104:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0109:  ldsfld     class Linq101Where01/'expensiveInStockProducts@33-1' Linq101Where01/'expensiveInStockProducts@33-1'::Instance
+    IL_0109:  ldsfld     class Linq101Where01/'expensiveInStockProducts@33-1' Linq101Where01/'expensiveInStockProducts@33-1'::@_instance
     IL_010e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_0113:  ldsfld     class Linq101Where01/'expensiveInStockProducts@34-2' Linq101Where01/'expensiveInStockProducts@34-2'::Instance
+    IL_0113:  ldsfld     class Linq101Where01/'expensiveInStockProducts@34-2' Linq101Where01/'expensiveInStockProducts@34-2'::@_instance
     IL_0118:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_011d:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -1343,10 +1343,10 @@
     IL_0152:  newobj     instance void Linq101Where01/waCustomers@42::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_0157:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Customer,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_015c:  ldsfld     class Linq101Where01/'waCustomers@43-1' Linq101Where01/'waCustomers@43-1'::Instance
+    IL_015c:  ldsfld     class Linq101Where01/'waCustomers@43-1' Linq101Where01/'waCustomers@43-1'::@_instance
     IL_0161:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
-    IL_0166:  ldsfld     class Linq101Where01/'waCustomers@44-2' Linq101Where01/'waCustomers@44-2'::Instance
+    IL_0166:  ldsfld     class Linq101Where01/'waCustomers@44-2' Linq101Where01/'waCustomers@44-2'::@_instance
     IL_016b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Customer>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0170:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -1390,8 +1390,8 @@
     IL_01ec:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Where01>'.$Linq101Where01::digits@48
     IL_01f1:  stloc.s    digits
     .line 49,55 : 1,21 ''
-    IL_01f3:  ldsfld     class Linq101Where01/shortDigits@55 Linq101Where01/shortDigits@55::Instance
-    IL_01f8:  ldsfld     class Linq101Where01/'shortDigits@54-1' Linq101Where01/'shortDigits@54-1'::Instance
+    IL_01f3:  ldsfld     class Linq101Where01/shortDigits@55 Linq101Where01/shortDigits@55::@_instance
+    IL_01f8:  ldsfld     class Linq101Where01/'shortDigits@54-1' Linq101Where01/'shortDigits@54-1'::@_instance
     IL_01fd:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0202:  stloc.s    V_13
     IL_0204:  ldnull
