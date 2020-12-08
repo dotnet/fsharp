@@ -23,8 +23,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveExeDescr">
-        <source>Select executable to use for F# Interactive</source>
-        <target state="new">Select executable to use for F# Interactive</target>
+        <source>Select F# Interactive executable to use for script execution</source>
+        <target state="new">Select F# Interactive executable to use for script execution</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
@@ -48,8 +48,8 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreviewModeDescr">
-        <source>Enable preview of in-development language features in F# Interactive</source>
-        <target state="translated">Abilita l'anteprima delle funzionalità del linguaggio in fase di sviluppo in F# Interactive</target>
+        <source>Enable preview of in-development language features in F# Interactive script execution</source>
+        <target state="needs-review-translation">Abilita l'anteprima delle funzionalità del linguaggio in fase di sviluppo in F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
@@ -83,13 +83,13 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCore">
-        <source>Use .NET Core</source>
-        <target state="new">Use .NET Core</target>
+        <source>Use .NET Core Scripting</source>
+        <target state="new">Use .NET Core Scripting</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCoreDescr">
-        <source>Use F# Interactive for .NET Core</source>
-        <target state="new">Use F# Interactive for .NET Core</target>
+        <source>Use F# Interactive for .NET Core for script execution. When editing assume scripts target .NET Core if no explicit #targetfx "netfx" is given</source>
+        <target state="new">Use F# Interactive for .NET Core for script execution. When editing assume scripts target .NET Core if no explicit #targetfx "netfx" is given</target>
         <note />
       </trans-unit>
     </body>

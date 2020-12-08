@@ -98,7 +98,14 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-                let! scriptProjectOptions, _ = checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath, sourceText.ToFSharpSourceText(), SessionsProperties.fsiPreview, userOpName=userOpName)
+                
+                let! scriptProjectOptions, _ =
+                    checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath,
+                        sourceText.ToFSharpSourceText(),
+                        SessionsProperties.fsiPreview,
+                        defaultToDotNetFramework=not SessionsProperties.fsiUseNetCore,
+                        userOpName=userOpName)
+
                 let projectOptions =
                     if isScriptFile document.FilePath then
                         scriptProjectOptions
