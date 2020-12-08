@@ -382,3 +382,29 @@ let x = { Name = "Hello" }
     let parseFileResults, _ = getParseAndCheckResults source
     let res = parseFileResults.TryRangeOfRecordExpressionContainingPos (mkPos 2 7)
     Assert.True(res.IsNone, "Expected not to find a range.")
+
+[<Test>]
+let ``TryRangeOfExprInYieldOrReturn - not contained``() =
+    let source = """
+let f x =
+    x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfExprInYieldOrReturn (mkPos 3 4)
+    Assert.True(res.IsNone, "Expected not to find a range.")
+
+[<Test>]
+let ``TryRangeOfExprInYieldOrReturn - contained``() =
+    let source = """
+let f x =
+    return x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfExprInYieldOrReturn (mkPos 3 4)
+    match res with
+    | Some range ->
+        range
+        |> tups
+        |> shouldEqual ((3, 11), (3, 12))
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
