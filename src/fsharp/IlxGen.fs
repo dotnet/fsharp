@@ -4456,9 +4456,8 @@ and GenSequenceExpr
     let ilCloTyInner = mkILFormalBoxedTy ilCloTypeRef ilCloGenericParams
     let ilCloLambdas = Lambdas_return ilCloRetTyInner
     let cloref = IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloAllFreeVars)
-    let canUseStaticField = false
-    let ilxCloSpec = IlxClosureSpec.Create(cloref, GenGenericArgs m eenvouter.tyenv cloFreeTyvars, canUseStaticField)
-    let formalClospec = IlxClosureSpec.Create(cloref, mkILFormalGenericArgs 0 ilCloGenericParams, canUseStaticField)
+    let ilxCloSpec = IlxClosureSpec.Create(cloref, GenGenericArgs m eenvouter.tyenv cloFreeTyvars, false)
+    let formalClospec = IlxClosureSpec.Create(cloref, mkILFormalGenericArgs 0 ilCloGenericParams, false)
 
     let getFreshMethod =
         let _, mbody =
@@ -4544,7 +4543,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
           let fspec = cloSpec.GetStaticFieldSpec()
           let ilCode = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode ([ I_newobj (cloSpec.Constructor, None); mkNormalStsfld fspec ]), None)
           let cctor = mkILClassCtor (MethodBody.IL ilCode)
-          let ilFieldDef = mkILStaticField(fspec.Name, fspec.FormalType, None, None, ILMemberAccess.Private).WithInitOnly(true)
+          let ilFieldDef = mkILStaticField(fspec.Name, fspec.FormalType, None, None, ILMemberAccess.Assembly).WithInitOnly(true)
           (cctor :: mdefs), [ ilFieldDef ]
       else
           mdefs, []
@@ -4935,10 +4934,10 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc canUseStaticField thisVars eenvoute
         else
             [], ilReturnTy, ilCloLambdas
     
-
     let useStaticField = canUseStaticField && (ilCloAllFreeVars.Length = 0)      
 
     let ilxCloSpec = IlxClosureSpec.Create(IlxClosureRef(ilCloTypeRef, ilCloLambdas, ilCloAllFreeVars), ilCloGenericActuals, useStaticField)
+
     let cloinfo =
         { cloExpr=expr
           cloName=ilCloTypeRef.Name
