@@ -67,6 +67,26 @@
         <target state="translated">Před {0} vložte podtržítko.</target>
         <note />
       </trans-unit>
+      <trans-unit id="RemoveReturn">
+        <source>Remove 'return'</source>
+        <target state="new">Remove 'return'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturnBang">
+        <source>Remove 'return!'</source>
+        <target state="new">Remove 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYield">
+        <source>Remove 'yield'</source>
+        <target state="new">Remove 'yield'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYieldBang">
+        <source>Remove yield!'</source>
+        <target state="new">Remove yield!'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
         <source>Rename '{0}' to '_'</source>
         <target state="translated">Přejmenujte {0} na _.</target>
