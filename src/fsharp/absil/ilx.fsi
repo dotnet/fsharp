@@ -14,23 +14,23 @@ open FSharp.Compiler.AbstractIL.IL
 
 [<Sealed>]
 type IlxUnionField = 
-    new : ILFieldDef -> IlxUnionField
-    member Type : ILType
-    member Name : string
+    new: ILFieldDef -> IlxUnionField
+    member Type: ILType
+    member Name: string
     /// The name used for the field in parameter or IL field position.
-    member LowerName : string 
-    member ILField : ILFieldDef
+    member LowerName: string 
+    member ILField: ILFieldDef
     
 type IlxUnionAlternative = 
     { altName: string
       altFields: IlxUnionField[]
       altCustomAttrs: ILAttributes }
 
-    member FieldDefs : IlxUnionField[]
-    member FieldDef : int -> IlxUnionField
-    member Name : string
-    member IsNullary  : bool
-    member FieldTypes : ILType[]
+    member FieldDefs: IlxUnionField[]
+    member FieldDef:  int -> IlxUnionField
+    member Name:  string
+    member IsNullary :  bool
+    member FieldTypes:  ILType[]
 
 
 type IlxUnionHasHelpers = 
@@ -44,16 +44,26 @@ type IlxUnionRef =
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member DeclaringType : ILType
-    member GenericArgs : ILGenericArgs
-    member Alternatives : IlxUnionAlternative list
-    member AlternativesArray : IlxUnionAlternative[]
-    member Boxity : ILBoxity
-    member TypeRef : ILTypeRef 
-    member IsNullPermitted : bool
-    member HasHelpers : IlxUnionHasHelpers
-    member Alternative : int -> IlxUnionAlternative
-    member FieldDef : int -> int -> IlxUnionField
+
+    member DeclaringType:  ILType
+
+    member GenericArgs:  ILGenericArgs
+
+    member Alternatives:  IlxUnionAlternative list
+
+    member AlternativesArray:  IlxUnionAlternative[]
+
+    member Boxity:  ILBoxity
+
+    member TypeRef:  ILTypeRef 
+
+    member IsNullPermitted:  bool
+
+    member HasHelpers:  IlxUnionHasHelpers
+
+    member Alternative:  int -> IlxUnionAlternative
+
+    member FieldDef: int -> int -> IlxUnionField
 
 // -------------------------------------------------------------------- 
 // Closure references 
@@ -73,15 +83,27 @@ type IlxClosureRef =
     | IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
 
 type IlxClosureSpec = 
-    | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType
+    | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType * useStaticField: bool
 
-    member TypeRef : ILTypeRef
-    member ILType : ILType
-    member ClosureRef : IlxClosureRef
-    member FormalLambdas : IlxClosureLambdas
-    member GenericArgs : ILGenericArgs
-    static member Create : IlxClosureRef * ILGenericArgs -> IlxClosureSpec
-    member Constructor : ILMethodSpec
+    member TypeRef: ILTypeRef
+
+    member ILType: ILType
+
+    member ClosureRef: IlxClosureRef
+
+    member FormalLambdas: IlxClosureLambdas
+
+    member FormalFreeVars: IlxClosureFreeVar[]
+
+    member GenericArgs: ILGenericArgs
+
+    static member Create: IlxClosureRef * ILGenericArgs * useStaticField: bool -> IlxClosureSpec
+
+    member Constructor: ILMethodSpec
+
+    member GetStaticFieldSpec: unit -> ILFieldSpec
+
+    member UseStaticField: bool
 
 
 /// IlxClosureApps - i.e. types being applied at a callsite.
@@ -90,26 +112,35 @@ type IlxClosureApps =
     | Apps_app of ILType * IlxClosureApps 
     | Apps_done of ILType
 
-// -------------------------------------------------------------------- 
-// ILX extensions to the kinds of type definitions available
-// -------------------------------------------------------------------- 
-
+/// Represents a closure prior to erasure
 type IlxClosureInfo = 
-    { cloStructure: IlxClosureLambdas
+    { 
+      cloStructure: IlxClosureLambdas
       cloFreeVars: IlxClosureFreeVar[]  
-      cloCode: Lazy<ILMethodBody> }
+      cloCode: Lazy<ILMethodBody>
+      cloUseStaticField: bool 
+    }
 
+/// Represents a discriminated union type prior to erasure
 type IlxUnionInfo = 
-    { /// Is the representation public? 
+    { 
+      /// Is the representation public? 
       cudReprAccess: ILMemberAccess 
+
       /// Are the representation helpers public? 
       cudHelpersAccess: ILMemberAccess 
+
       /// Generate the helpers? 
       cudHasHelpers: IlxUnionHasHelpers 
+
       cudDebugProxies: bool 
+
       cudDebugDisplayAttributes: ILAttribute list
+
       cudAlternatives: IlxUnionAlternative[]
+
       cudNullPermitted: bool
+
       /// Debug info for generated code for classunions.
       cudWhere: ILSourceMarker option  
     }
@@ -121,13 +152,11 @@ type IlxUnionInfo =
 val instAppsAux: int -> ILGenericArgs -> IlxClosureApps -> IlxClosureApps
 val destTyFuncApp: IlxClosureApps -> ILType * IlxClosureApps
 
-val mkILFormalCloRef: ILGenericParameterDefs -> IlxClosureRef -> IlxClosureSpec
-
+val mkILFormalCloRef: ILGenericParameterDefs -> IlxClosureRef -> useStaticField: bool -> IlxClosureSpec
 
 // -------------------------------------------------------------------- 
 // MS-ILX: Unions
 // -------------------------------------------------------------------- 
-
 
 val actualTypOfIlxUnionField: IlxUnionSpec -> int -> int -> ILType
 

@@ -361,7 +361,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       let nowTypeRef =  mkILNestedTyRef (ILScopeRef.Local, encl, td.Name)
       let nowTy = mkILFormalBoxedTy nowTypeRef td.GenericParams
       let nowCloRef = IlxClosureRef(nowTypeRef, clo.cloStructure, nowFields)
-      let nowCloSpec = mkILFormalCloRef td.GenericParams nowCloRef
+      let nowCloSpec = mkILFormalCloRef td.GenericParams nowCloRef clo.cloUseStaticField
       let tagApp = (Lazy.force clo.cloCode).SourceMarker
       
       let tyargsl, tmargsl, laterStruct = stripSupportedAbstraction clo.cloStructure
@@ -428,7 +428,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let selfFreeVar = mkILFreeVar(CompilerGeneratedName ("self"+string nowFields.Length), true, nowCloSpec.ILType)
               let laterFields =  Array.append nowFields [| selfFreeVar |]
               let laterCloRef = IlxClosureRef(laterTypeRef, laterStruct, laterFields)
-              let laterCloSpec = mkILFormalCloRef laterGenericParams laterCloRef
+              let laterCloSpec = mkILFormalCloRef laterGenericParams laterCloRef false
               
               let laterCode = rewriteCodeToAccessArgsFromEnv laterCloSpec [(0, selfFreeVar)]
               let laterTypeDefs = 
@@ -522,7 +522,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let laterFreeVars = argToFreeVarMap |> List.map snd |> List.toArray
               let laterFields = Array.append nowFields laterFreeVars
               let laterCloRef = IlxClosureRef(laterTypeRef, laterStruct, laterFields)
-              let laterCloSpec = mkILFormalCloRef laterGenericParams laterCloRef
+              let laterCloSpec = mkILFormalCloRef laterGenericParams laterCloRef false
               
               // This is the code which will first get called. 
               let nowCode = 
