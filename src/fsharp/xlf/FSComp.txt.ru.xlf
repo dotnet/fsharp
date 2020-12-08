@@ -92,15 +92,14 @@
         <target state="translated">литерал float32 без точки</target>
         <note />
       </trans-unit>
-<<<<<<< HEAD
       <trans-unit id="featureExtensionConstraintSolutions">
         <source>extension constraint solutions</source>
         <target state="new">extension constraint solutions</target>
-=======
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="new">more types support units of measure</target>
->>>>>>> 512b1de3705a344df610dd9013532111724287e5
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">

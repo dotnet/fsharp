@@ -102,11 +102,6 @@
         <target state="new">extension constraint solutions</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureFixedIndexSlice3d4d">
-        <source>fixed-index slice 3d/4d</source>
-        <target state="new">fixed-index slice 3d/4d</target>
-        <note />
-      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
         <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</target>
@@ -1947,19 +1942,9 @@
         <target state="translated">演算子 '{0}' をサポートする型が必要ですが、タプル型が指定されました</target>
         <note />
       </trans-unit>
-      <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">型 '{0}' はいずれも演算子 '{1}' をサポートしていません</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
         <source>The type '{0}' does not support the operator '{1}'</source>
         <target state="translated">型 '{0}' は演算子 '{1}' をサポートしていません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">型 '{0}' はいずれも演算子 '{1}' をサポートしていません。'Microsoft.FSharp.Linq.NullableOperators' モジュールを開いてください。</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">
@@ -2005,11 +1990,6 @@
       <trans-unit id="csTypeDoesNotSupportComparison2">
         <source>The type '{0}' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface</source>
         <target state="translated">型 '{0}' は 'comparison' 制約をサポートしません。たとえば、'System.IComparable' インターフェイスをサポートしません。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureFromEndSlicing">
-        <source>from-end slicing</source>
-        <target state="new">from-end slicing</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportComparison3">
