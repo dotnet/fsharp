@@ -362,6 +362,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       let nowTy = mkILFormalBoxedTy nowTypeRef td.GenericParams
       let nowCloRef = IlxClosureRef(nowTypeRef, clo.cloStructure, nowFields)
       let nowCloSpec = mkILFormalCloRef td.GenericParams nowCloRef clo.cloUseStaticField
+      let nowMethods = List.map (convMethodDef (Some nowCloSpec)) td.Methods.AsList
       let tagApp = (Lazy.force clo.cloCode).SourceMarker
       
       let tyargsl, tmargsl, laterStruct = stripSupportedAbstraction clo.cloStructure
@@ -433,7 +434,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let laterCode = rewriteCodeToAccessArgsFromEnv laterCloSpec [(0, selfFreeVar)]
               let laterTypeDefs = 
                 convIlxClosureDef cenv encl
-                  (td.With(genericParams=laterGenericParams, name=laterTypeName))
+                  (td.With(genericParams=laterGenericParams, name=laterTypeName, methods=emptyILMethods, fields=emptyILFields))
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
                             cloCode=notlazy laterCode}
@@ -490,7 +491,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                           nestedTypes = emptyILTypeDefs,
                           layout=ILTypeDefLayout.Auto,
                           extends= Some cenv.mkILTyFuncTy,
-                          methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef] @ td.Methods.AsList) ,
+                          methods= mkILMethods (ctorMethodDef :: nowApplyMethDef :: nowMethods) ,
                           fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList),
                           customAttrs=emptyILCustomAttrs,
                           methodImpls=emptyILMethodImpls,
@@ -547,7 +548,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
               let laterTypeDefs = 
                 convIlxClosureDef cenv encl
-                  (td.With(genericParams=laterGenericParams, name=laterTypeName))
+                  (td.With(genericParams=laterGenericParams, name=laterTypeName, methods=emptyILMethods, fields=emptyILFields))
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
                             cloCode=notlazy laterCode}
@@ -587,7 +588,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                               layout=ILTypeDefLayout.Auto,
                               nestedTypes = emptyILTypeDefs,
                               extends= Some nowEnvParentClass,
-                              methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef] @ td.Methods.AsList),
+                              methods= mkILMethods (ctorMethodDef :: nowApplyMethDef :: nowMethods),
                               fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList),
                               customAttrs=emptyILCustomAttrs,
                               methodImpls=emptyILMethodImpls,
@@ -634,7 +635,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     extends= (match td.Extends with None -> Some cenv.ilg.typ_Object | Some x -> Some(x)),
                     name = td.Name,
                     genericParams= td.GenericParams,
-                    methods= mkILMethods (ctorMethodDef :: List.map (convMethodDef (Some nowCloSpec)) td.Methods.AsList),
+                    methods= mkILMethods (ctorMethodDef :: nowMethods),
                     fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList))
 
           [cloTypeDef]

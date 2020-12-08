@@ -4610,8 +4610,7 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars e
                 let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
                 let ilContractCtor = mkILNonGenericEmptyCtor None g.ilg.typ_Object
 
-                let ilContractMeths = [ ilContractCtor; mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilContractMethTyargs, [], mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
-
+                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke", ILMemberAccess.Assembly, ilContractMethTyargs, [], mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
                 let ilContractTypeDef =
                     ILTypeDef(name = ilContractTypeRef.Name,
                               layout = ILTypeDefLayout.Auto,
