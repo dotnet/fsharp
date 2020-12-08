@@ -4540,8 +4540,10 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
   let mdefs, fdefs =
       if cloInfo.cloUseStaticField then
           let cloSpec = cloSpec.Value
-          let fspec = cloSpec.GetStaticFieldSpec()
-          let ilCode = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode ([ I_newobj (cloSpec.Constructor, None); mkNormalStsfld fspec ]), None)
+          let cloTy = mkILFormalBoxedTy cloSpec.TypeRef (mkILFormalTypars cloSpec.GenericArgs)
+          let fspec = mkILFieldSpec (cloSpec.GetStaticFieldSpec().FieldRef, cloTy)
+          let ctorSpec = mkILMethSpecForMethRefInTy (cloSpec.Constructor.MethodRef, cloTy, [])
+          let ilCode = mkILMethodBody (true, [], 8, nonBranchingInstrsToCode ([ I_newobj (ctorSpec, None); mkNormalStsfld fspec ]), None)
           let cctor = mkILClassCtor (MethodBody.IL ilCode)
           let ilFieldDef = mkILStaticField(fspec.Name, fspec.FormalType, None, None, ILMemberAccess.Assembly).WithInitOnly(true)
           (cctor :: mdefs), [ ilFieldDef ]

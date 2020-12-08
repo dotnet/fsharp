@@ -126,8 +126,8 @@ type IlxClosureSpec =
 
     member x.GetStaticFieldSpec() = 
         assert x.UseStaticField
-        let cloTy = x.ILType
-        mkILFieldSpecInTy (cloTy, "Instance", cloTy)
+        let formalCloTy = mkILFormalBoxedTy x.TypeRef (mkILFormalTypars x.GenericArgs)
+        mkILFieldSpecInTy (x.ILType, "@_instance", formalCloTy)
 
 // Define an extension of the IL algebra of type definitions
 type IlxClosureInfo = 

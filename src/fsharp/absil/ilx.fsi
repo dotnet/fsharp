@@ -82,6 +82,7 @@ type IlxClosureFreeVar =
 type IlxClosureRef = 
     | IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
 
+/// Represents a usage of a closure 
 type IlxClosureSpec = 
     | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType * useStaticField: bool
 
@@ -99,10 +100,13 @@ type IlxClosureSpec =
 
     static member Create: IlxClosureRef * ILGenericArgs * useStaticField: bool -> IlxClosureSpec
 
+    /// Get the constructor for the closure
     member Constructor: ILMethodSpec
 
+    /// Get the static field used to store an instance of this closure, if useStaticField is true
     member GetStaticFieldSpec: unit -> ILFieldSpec
 
+    /// Indicates if a static field being used to store an instance of this closure (because it has no free variables)
     member UseStaticField: bool
 
 
