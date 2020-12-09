@@ -613,6 +613,30 @@
     <Compile Include="..\OptimizeInputs.fs">
       <Link>Driver\OptimizeInputs.fs</Link>
     </Compile>
+    <Compile Include="..\XmlDocFileWriter.fsi">
+      <Link>Driver\XmlDocFileWriter.fsi</Link>
+    </Compile>
+    <Compile Include="..\XmlDocFileWriter.fs">
+      <Link>Driver\XmlDocFileWriter.fs</Link>
+    </Compile>
+    <Compile Include="..\BinaryResourceFormats.fsi">
+      <Link>Driver\BinaryResourceFormats.fsi</Link>
+    </Compile>
+    <Compile Include="..\BinaryResourceFormats.fs">
+      <Link>Driver\BinaryResourceFormats.fs</Link>
+    </Compile>
+    <Compile Include="..\CreateILModule.fsi">
+      <Link>Driver\CreateILModule.fsi</Link>
+    </Compile>
+    <Compile Include="..\CreateILModule.fs">
+      <Link>Driver\CreateILModule.fs</Link>
+    </Compile>
+    <Compile Include="..\StaticLinking.fsi">
+      <Link>Driver\StaticLinking.fsi</Link>
+    </Compile>
+    <Compile Include="..\StaticLinking.fs">
+      <Link>Driver\StaticLinking.fs</Link>
+    </Compile>
     <Compile Include="..\fsc.fsi">
       <Link>Driver\fsc.fsi</Link>
     </Compile>
