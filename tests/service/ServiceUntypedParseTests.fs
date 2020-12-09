@@ -383,6 +383,471 @@ let x = { Name = "Hello" }
     let res = parseFileResults.TryRangeOfRecordExpressionContainingPos (mkPos 2 7)
     Assert.True(res.IsNone, "Expected not to find a range.")
 
+module FunctionApplicationArguments =
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Single arg``() =
+        let source = """
+let f x = ()
+f 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg``() =
+        let source = """
+let f x y z = ()
+f 1 2 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 4); (3, 6)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg parentheses``() =
+        let source = """
+let f x y z = ()
+f (1) (2) (3)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 6); (3, 10)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg nested parentheses``() =
+        let source = """
+let f x y z = ()
+f ((1)) (((2))) ((((3))))
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 3); (3, 10); (3, 19)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - unit``() =
+        let source = """
+let f () = ()
+f ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        Assert.IsTrue(res.IsNone, "Found argument for unit-accepting function, which shouldn't be the case.")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - curried function``() =
+        let source = """
+let f x y = x + y
+f 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple value``() =
+        let source = """
+let f (t: int * int) = ()
+let t = (1, 2)
+f t
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 4 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(4, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple literal``() =
+        let source = """
+let f (t: int * int) = ()
+f (1, 2)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 3); (3, 6)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple value with definition that has explicit names``() =
+        let source = """
+let f ((x, y): int * int) = ()
+let t = (1, 2)
+f t
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 4 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(4, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple literal inside parens``() =
+        let source = """
+let f (x, y) = ()
+f ((1, 2))
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 4); (3, 7)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuples with elements as arguments``() =
+        let source = """
+let f (a, b) = ()
+f (1, 2)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 3); (3, 6)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - top-level arguments with nested function call``() =
+        let source = """
+let f x y = x + y
+f (f 1 2) 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 10)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function argument positions``() =
+        let source = """
+let f x y = x + y
+f (f 1 2) 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 3)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 5); (3, 7)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function application in infix expression``() =
+        let source = """
+let addStr x y = string x + y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 17)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 24)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function application outside of infix expression``() =
+        let source = """
+let addStr x y = x + string y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 21)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 28)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function applications both inside and outside of infix expression``() =
+        let source = """
+let addStr x y = string x + string y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 17)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 24)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+        
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 28)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 35)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``IsPosContainedInApplication - no``() =
+        let source = """
+sqrt x
+12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 3 2), "Pos should not be in application")
+
+    [<Test>]
+    let ``IsPosContainedInApplication - yes, single arg``() =
+        let source = """
+sqrt x
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should be in application")
+
+    [<Test>]
+    let ``IsPosContainedInApplication - yes, multi arg``() =
+        let source = """
+let add2 x y = x + y
+add2 x y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 3 6), "Pos should be in application")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - no application``() =
+        let source = """
+let add2 x y = x + y
+add2 x y
+12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 4 2)
+        Assert.IsTrue(res.IsNone, "Not in a function application but got one")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - single arg application``() =
+        let source = """
+sqrt 12.0
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 9)
+        match res with
+        | None -> Assert.Fail("Expected 'sqrt' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((2, 0), (2, 4))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application``() =
+        let source = """
+let f x y z = ()
+f 1 2 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 5)
+        match res with
+        | None -> Assert.Fail("Expected 'f' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 0), (3, 1))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - multi arg application but at function itself``() =
+        let source = """
+let f x y z = ()
+f 1 2 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 1)
+        match res with
+        | None -> Assert.Fail("Expected 'f' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 0), (3, 1))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - function in pipeline``() =
+        let source = """
+[1..10] |> List.map id
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 2 20)
+        match res with
+        | None -> Assert.Fail("Expected 'List.map' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((2, 11), (2, 19))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline``() =
+        let source = """
+[1..10]
+|> List.filter (fun x -> x > 3)
+|> List.map id
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 14)
+        match res with
+        | None -> Assert.Fail("Expected 'List.filter' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 3), (3, 14))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - function in middle of pipeline, no qualification``() =
+        let source = """
+[1..10]
+|> id
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 5)
+        match res with
+        | None -> Assert.Fail("Expected 'id' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 3), (3, 5))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - incomplete infix app``() =
+        let source = """
+let add2 x y = x + y
+let square x = x *
+add2 1 2
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 3 18)
+        match res with
+        | None -> Assert.Fail("Expected '*' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((3, 17), (3, 18))
+
+module PipelinesAndArgs =
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, no infix app``() =
+        let source = """
+let f x = ()
+f 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 3 0)
+        Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - No pipeline, but infix app``() =
+        let source = """
+let square x = x * 
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 18)
+        Assert.True(res.IsNone, sprintf "Got a result, did not expect one: %A" res)
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Single pipeline``() =
+        let source = """
+[1..10] |> List.map 
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 19)
+        match res with
+        | Some (ident, numArgs) ->
+            (ident.idText, numArgs)
+            |> shouldEqual ("op_PipeRight", 1)
+        | None ->
+            Assert.Fail("No pipeline found")
+                
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Double pipeline``() =
+        let source = """
+([1..10], 1) ||> List.fold
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 26)
+        match res with
+        | Some (ident, numArgs) ->
+            (ident.idText, numArgs)
+            |> shouldEqual ("op_PipeRight2", 2)
+        | None ->
+            Assert.Fail("No pipeline found")
+
+    [<Test>]
+    let ``TryIdentOfPipelineContainingPosAndNumArgsApplied - Triple pipeline``() =
+        let source = """
+([1..10], [1..10], 3) |||> List.fold2
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryIdentOfPipelineContainingPosAndNumArgsApplied (mkPos 2 37)
+        match res with
+        | Some (ident, numArgs) ->
+            (ident.idText, numArgs)
+            |> shouldEqual ("op_PipeRight3", 3)
+        | None ->
+            Assert.Fail("No pipeline found")
+
 [<Test>]
 let ``TryRangeOfExprInYieldOrReturn - not contained``() =
     let source = """

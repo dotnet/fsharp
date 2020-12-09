@@ -28,6 +28,19 @@ type public FSharpParseFileResults =
     /// Attempts to find the range of a record expression containing the given position.
     member TryRangeOfRecordExpressionContainingPos: pos: pos -> Option<range>
 
+    /// Attempts to find an Ident of a pipeline containing the given position, and the number of args already applied in that pipeline.
+    /// For example, '[1..10] |> List.map ' would give back the ident of '|>' and 1, because it applied 1 arg (the list) to 'List.map'.
+    member TryIdentOfPipelineContainingPosAndNumArgsApplied: pos: pos -> Option<(Ident * int)>
+
+    /// Determines if the given position is inside a function or method application.
+    member IsPosContainedInApplication: pos: pos -> bool
+
+    /// Attempts to find the range of a function or method that is being applied. Also accounts for functions in pipelines.
+    member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> Option<range>
+
+    /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
+    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
     /// '!' in a derefence operation of that expression, like:
