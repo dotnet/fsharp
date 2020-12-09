@@ -253,8 +253,17 @@ type SemanticModel private (tcConfig: TcConfig,
         | _ ->
             None
 
-    member _.Invalidate() =
-        lazyTcInfoState := None
+    member this.Invalidate() =
+        let hasSig = this.BackingSignature.IsSome
+        match !lazyTcInfoState with
+        // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
+        | Some(PartialState _) when enablePartialTypeChecking && hasSig -> ()
+        // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
+        | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState := Some(PartialState tcInfo)
+        | _ ->
+            lazyTcInfoState := None
+
+        // Always invalidate the syntax tree cache.
         syntaxTreeOpt
         |> Option.iter (fun x -> x.Invalidate())
 
