@@ -65,6 +65,33 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Prevent assignment to `const` fields, by [Chet Husk](https://github.com/baronfel)
 * Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
+### FSharp Compiler Service 39.0.0
+*  Add ConvertToAnonymousRecord quick fixeroony [#10493](https://github.com/dotnet/fsharp/pull/10493)
+* Add UseMutationWhenValueIsMutable code fix [#10488](https://github.com/dotnet/fsharp/pull/10488)
+* Add MakeDeclarationMutable code fix [#10480](https://github.com/dotnet/fsharp/pull/10480)
+* Add ChangeToUpcast code fix [#10463](https://github.com/dotnet/fsharp/pull/10463)
+* Add AddMissingEqualsToTypeDefinition code fixer [#10470](https://github.com/dotnet/fsharp/pull/10470)
+* Tag items in tooltips consistenly with respect to document classification. [#9563](https://github.com/dotnet/fsharp/pull/9563)
+* Add ConvertToSingleEqualsEqualityExpression code fix [#10462](https://github.com/dotnet/fsharp/pull/10462)
+* Turn XML doc and Sig<->Impl mismatch warnings on by default [#10457](https://github.com/dotnet/fsharp/pull/10457)
+* Add ChangeRefCellDerefToNotExpression code fixer [#10469](https://github.com/dotnet/fsharp/pull/10469)
+* Add WrapExpressionInParentheses code fix [#10460](https://github.com/dotnet/fsharp/pull/10460)
+* Add ChangePrefixNegationToInfixSubtraction code fixeroo [#10471](https://github.com/dotnet/fsharp/pull/10471)
+* Fix generic overloads with nullable [#10582](https://github.com/dotnet/fsharp/pull/10582)
+* Resolve issue with implicit yields requiring Zero [#10556](https://github.com/dotnet/fsharp/pull/10556), by [Ryan Coy](https://github.com/laenas)
+* Fix issue10550 FSI accessing System.Configuration. [#10572](https://github.com/dotnet/fsharp/pull/10572)
+* Add field names to ILNativeType.Custom. [#10567](https://github.com/dotnet/fsharp/pull/10567), by [Scott Hutchinson](https://github.com/ScottHutchinson)
+* Add field names to the ILExceptionClause.FilterCatch constructor. [#10559](https://github.com/dotnet/fsharp/pull/10559), by [Scott Hutchinson](https://github.com/ScottHutchinson)
+* Fix completion with backticks, underscores, numbers [#10500](https://github.com/dotnet/fsharp/pull/10500), by [zanaptak](https://github.com/zanaptak)
+* Emitting IsReadOnly/In attributes on abstract properties [#10542](https://github.com/dotnet/fsharp/pull/10542)
+* Disable partial type checking when getting full results for a file [#10448](https://github.com/dotnet/fsharp/pull/10448)
+* Fix unused open type declaration detection [#10510](https://github.com/dotnet/fsharp/pull/10510), by [André Slupik](https://github.com/asik)
+
+### FSharp Compiler Service 38.0.1
+* add check for system assemblies completion [#10575](https://github.com/dotnet/fsharp/pull/10575)
+* Fix net sdk references discovery [#10569](https://github.com/dotnet/fsharp/pull/10569)
+* Fix FSC nuget package dependencies. [#10588](https://github.com/dotnet/fsharp/pull/10588)
+
 ### FSharp Compiler Service 38.0.0
 
 The most notable change for FSharp.Compiler.Service is that it is now built and deployed as a part of the dotnet/fsharp codebase. Builds are produced nightly, matching exactly the nightly builds of the F# compiler, FSharp.Core, and F# tools.
@@ -1791,3 +1818,112 @@ Includes commits up to `3385e58aabc91368c8e1f551650ba48705aaa285`
 [4.0.0]: https://fsharp.org
 [3.1.2]: http://blogs.msdn.com/b/fsharpteam/archive/2014/08/20/announcing-the-release-of-visual-f-tools-3-1-2.aspx
 [3.1.1]: http://blogs.msdn.com/b/fsharpteam/archive/2014/01/22/announcing-visual-f-3-1-1-and-support-for-desktop-express.aspx
+
+
+Features Added in F# Language Versions
+======================================
+
+# [F# 4.7](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-47)
+
+- Compiler support for `LangVersion`
+- Implicit `yield`s
+- No more required double underscore (wildcard identifier)
+- Indentation relaxations for parameters passed to constructors and static methods
+
+# [F# 4.6](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-46)
+
+- Anonymous records
+- `ValueOption` module functions
+
+# [F# 4.5](https://docs.microsoft.com/en-us/dotnet/fsharp/whats-new/fsharp-45)
+
+- Versioning alignment of binary, package, and language
+- Support for `Span<'T>` and related types
+- Ability to produce `byref` returns
+- The `voidptr` type
+- The `inref<'T>` and `outref<'T>` types to represent readonly and write-only `byref`s
+- `IsByRefLike` structs
+- `IsReadOnly` structs
+- Extension method support for `byref<'T>`/`inref<'T>`/`outref<'T>`
+- `match!` keyword in computation expressions
+- Relaxed upcast with `yield` in F# sequence/list/array expressions
+- Relaxed indentation with list and array expressions
+- Enumeration cases emitted as public
+
+# [F# 4.1](https://fsharp.org/specs/language-spec/4.1/FSharpSpec-4.1-latest.pdf)
+
+- Struct tuples which inter-operate with C# tuples
+- Struct annotations for Records
+- Struct annotations for Single-case Discriminated Unions
+- Underscores in numeric literals
+- Caller info argument attributes
+- Result type and some basic Result functions
+- Mutually referential types and modules within the same file
+- Implicit `Module` syntax on modules with shared name as type
+- Byref returns, supporting consuming C# `ref`-returning methods
+- Error message improvements
+- Support for `fixed`
+
+# [F# 4.0](https://fsharp.org/specs/language-spec/4.0/FSharpSpec-4.0-final.pdf)
+
+- `printf` on unitized values
+- Extension property initializers
+- Non-null provided types
+- Primary constructors as functions
+- Static parameters for provided methods
+- `printf` interpolation
+- Extended `#if` grammar
+- Multiple interface instantiations
+- Optional type args
+- Params dictionaries
+
+# [F# 3.1](https://fsharp.org/specs/language-spec/3.1/FSharpSpec-3.1-final.pdf)
+
+- Named union type fields
+- Extensions to array slicing
+- Type inference enhancements
+
+# [F# 3.0](https://fsharp.org/specs/language-spec/3.0/FSharpSpec-3.0-final.pdf)
+
+- Type providers
+- LINQ query expressions
+- CLIMutable attribute
+- Triple-quoted strings
+- Auto-properties
+- Provided units-of-measure
+
+# [F# 2.0](https://fsharp.org/specs/language-spec/2.0/FSharpSpec-2.0-April-2012.pdf)
+
+- Active patterns
+- Units of measure
+- Sequence expressions
+- Asynchronous programming
+- Agent programming
+- Extension members
+- Named arguments
+- Optional arguments
+- Array slicing
+- Quotations
+- Native interoperability
+- Computation expressions
+
+# [F# 1.1](https://docs.microsoft.com/en-us/archive/blogs/dsyme/a-taste-of-whats-new-in-f-1-1)
+
+- Interactive environment
+- Object programming
+- Encapsulation Extensions
+
+# [F# 1.0](https://docs.microsoft.com/en-us/archive/blogs/dsyme/welcome-to-dons-f-blog)
+
+- Discriminated unions
+- Records
+- Tuples
+- Pattern matching
+- Type abbreviations
+- Object expressions
+- Structs
+- Signature files
+- Imperative programming
+- Modules (no functors)
+- Nested modules
+- .NET Interoperability

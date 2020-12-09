@@ -16,10 +16,12 @@ open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
-type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
-
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
-    let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
+type internal UnusedOpensDiagnosticAnalyzer
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider, 
+        projectInfoManager: FSharpProjectOptionsManager
+    ) =
 
     static let userOpName = "UnusedOpensAnalyzer"
 
@@ -28,13 +30,7 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
             do! Option.guard document.FSharpOptions.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
             let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, userOpName = userOpName)
-#if DEBUG
-            let sw = Stopwatch.StartNew()
-#endif
             let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
-#if DEBUG
-            Logging.Logging.logInfof "*** Got %d unused opens in %O" unusedOpens.Length sw.Elapsed
-#endif
             return unusedOpens
         } 
 
@@ -44,9 +40,9 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
             asyncMaybe {
                 do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
                 do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-                let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync()
-                let checker = getChecker document
+                let checker = checkerProvider.Checker
                 let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
             
                 return 

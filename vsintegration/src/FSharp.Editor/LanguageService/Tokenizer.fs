@@ -1,4 +1,4 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Generic
@@ -805,15 +805,16 @@ module internal Tokenizer =
             | -1 | 0 -> span
             | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
+    let private doubleBackTickDelimiter = "``"
+
+    let isDoubleBacktickIdent (s: string) =
+        let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
+        if s.Length > doubledDelimiter && s.StartsWith(doubleBackTickDelimiter, StringComparison.Ordinal) && s.EndsWith(doubleBackTickDelimiter, StringComparison.Ordinal) then
+            let inner = s.AsSpan(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
+            not (inner.Contains(doubleBackTickDelimiter.AsSpan(), StringComparison.Ordinal))
+        else false
+
     let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
-        let doubleBackTickDelimiter = "``"
-        
-        let isDoubleBacktickIdent (s: string) =
-            let doubledDelimiter = 2 * doubleBackTickDelimiter.Length
-            if s.Length > doubledDelimiter && s.StartsWith(doubleBackTickDelimiter, StringComparison.Ordinal) && s.EndsWith(doubleBackTickDelimiter, StringComparison.Ordinal) then
-                let inner = s.AsSpan(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
-                not (inner.Contains(doubleBackTickDelimiter.AsSpan(), StringComparison.Ordinal))
-            else false
         
         let isIdentifier (ident: string) =
             if isDoubleBacktickIdent ident then

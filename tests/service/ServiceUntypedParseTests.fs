@@ -847,3 +847,83 @@ let square x = x *
             |> shouldEqual ("op_PipeRight3", 3)
         | None ->
             Assert.Fail("No pipeline found")
+
+[<Test>]
+let ``TryRangeOfExprInYieldOrReturn - not contained``() =
+    let source = """
+let f x =
+    x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfExprInYieldOrReturn (mkPos 3 4)
+    Assert.True(res.IsNone, "Expected not to find a range.")
+
+[<Test>]
+let ``TryRangeOfExprInYieldOrReturn - contained``() =
+    let source = """
+let f x =
+    return x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfExprInYieldOrReturn (mkPos 3 4)
+    match res with
+    | Some range ->
+        range
+        |> tups
+        |> shouldEqual ((3, 11), (3, 12))
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
+
+[<Test>]
+let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - not correct operator``() =
+    let source = """
+let x = y |> y + 1
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage (mkPos 2 8)
+    Assert.True(res.IsNone, "Expected not to find any ranges.")
+
+[<Test>]
+let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - error arg pos``() =
+    let source = """
+let x = y => y + 1
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage (mkPos 2 8)
+    match res with
+    | Some (overallRange, argRange, exprRange) ->
+        [overallRange; argRange; exprRange]
+        |> List.map tups
+        |> shouldEqual [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
+
+[<Test>]
+let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - error expr pos``() =
+    let source = """
+let x = y => y + 1
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage (mkPos 2 13)
+    match res with
+    | Some (overallRange, argRange, exprRange) ->
+        [overallRange; argRange; exprRange]
+        |> List.map tups
+        |> shouldEqual [((2, 8), (2, 18)); ((2, 8), (2, 9)); ((2, 13), (2, 18))]
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
+
+[<Test>]
+let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - parenthesized lambda``() =
+    let source = """
+[1..10] |> List.map (x => x + 1)
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfParenEnclosingOpEqualsGreaterUsage (mkPos 2 21)
+    match res with
+    | Some (overallRange, argRange, exprRange) ->
+        [overallRange; argRange; exprRange]
+        |> List.map tups
+        |> shouldEqual [((2, 21), (2, 31)); ((2, 21), (2, 22)); ((2, 26), (2, 31))]
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")

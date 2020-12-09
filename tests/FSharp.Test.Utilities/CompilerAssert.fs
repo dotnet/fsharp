@@ -172,9 +172,18 @@ let main argv = 0"""
                 output <- p.StandardOutput.ReadToEnd ()
                 errors <- p.StandardError.ReadToEnd ()
 
-                if not (String.IsNullOrWhiteSpace errors) then Assert.Fail errors
-                if p.ExitCode <> 0 then Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
-                if not succeeded then Assert.Fail(sprintf "Program timed out after %d ms" timeout)
+                if not (String.IsNullOrWhiteSpace errors) then
+                    printfn "Output:\n=======\n%s\n" output
+                    printfn "Errors:\n=======\n%s\n" errors
+                    Assert.Fail errors
+                if p.ExitCode <> 0 then
+                    printfn "Output:\n=======\n%s\n" output
+                    printfn "Errors:\n=======\n%s\n" errors
+                    Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
+                if not succeeded then
+                    printfn "Output:\n=======\n%s\n" output
+                    printfn "Errors:\n=======\n%s\n" errors
+                    Assert.Fail(sprintf "Program timed out after %d ms" timeout)
 
                 File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
             with | e ->
@@ -453,7 +462,7 @@ let main argv = 0"""
         "tfm": "netcoreapp3.1",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "3.1.0"
+            "version": "5.0.0"
         }
     }
 }"""

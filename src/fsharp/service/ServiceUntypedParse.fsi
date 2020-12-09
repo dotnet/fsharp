@@ -19,6 +19,12 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of an attempted lambda expression or pattern, the argument range, and the expr range when writing a C#-style "lambda" (which is actually an operator application)
+    member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: pos -> Option<range * range * range>
+
+    /// Attempts to find the range of an expression `expr` contained in a `yield expr`  or `return expr` expression (and bang-variants).
+    member TryRangeOfExprInYieldOrReturn: pos: pos -> Option<range>
+
     /// Attempts to find the range of a record expression containing the given position.
     member TryRangeOfRecordExpressionContainingPos: pos: pos -> Option<range>
 
