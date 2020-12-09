@@ -300,19 +300,6 @@ type FsiSession() =
     /// interrupt timeout in miliseconds 
     let interruptTimeoutMS   = 1000 
 
-#if FSI_SERVER_INTELLISENSE
-
-    // timeout in miliseconds.
-    // This timeout is to catch any issue with remoting becoming unresponsive.
-    // On it's duration, it is better from user POV to wait a few seconds and see,
-    // than to abort an intelisense request that would return,
-    // since an abort request has no useful information at all.
-    // 2 seconds seems to slow. (which was surprising, maybe
-    // the tcEnv were still being computed).
-    let completionsTimeoutMS = 3000
-       
-#endif
-
     let checkLeaseStatus myService =
         if false then
             let myLease = RemotingServices.GetLifetimeService(myService) :?> ILease
@@ -356,20 +343,6 @@ type FsiSession() =
             if verboseSession then cmdProcess.Exited.Add(fun _ -> fsiOutput.Trigger (cmdProcess.Id.ToString()))
         with e -> 
             fsiOutput.Trigger (VFSIstrings.SR.killingProcessRaisedException (e.ToString()))
-
-#if FSI_SERVER_INTELLISENSE
-    member x.Completions(s:string) = 
-       checkLeaseStatus client
-       match timeoutApp "VFSI completions" completionsTimeoutMS (fun () -> client.Completions(s)) () with
-       | Some names -> names
-       | None       -> [| |]
-
-    member x.GetDeclarations(s: string, plid: string[]) = 
-       checkLeaseStatus client       
-       match timeoutApp "VFSI intelisense" completionsTimeoutMS (fun () -> client.GetDeclarations(s,plid)) () with
-       | Some results -> results
-       | None         -> [| |]
-#endif
 
 //-------------------------------------------------------------------------
 // sessions
@@ -432,26 +405,3 @@ type FsiSessions() =
     member x.Kill()         = kill()
     member x.Restart()      = restart()
     member x.Exited         = fsiExited.Publish
-
-#if FSI_SERVER_INTELLISENSE
-    member x.Completions(s) = 
-        match sessionR with
-        | None -> [| |]
-        | Some session -> session.Completions(s)
-
-    member x.GetDeclarations(s,plid) = 
-        match sessionR with
-        | None -> [| |]
-        | Some session -> session.GetDeclarations(s,plid)
-
-    member x.GetDeclarationInfos (str:string) = 
-        // RPC to the session to get the completions based on the latest state.                        
-        let plid = Microsoft.VisualStudio.FSharp.Interactive.QuickParse.GetPartialLongName(str,str.Length-1) // Subtract one to convert to zero-relative            
-        let project = function (name,None) -> [name] | (name,Some residue) -> [name;residue]
-        let plid = plid |> List.collect project |> List.toArray
-        // diagnostics.Log(sprintf "RPC GetDeclarations with str =[[%s]]" str)
-        // diagnostics.Log(sprintf "RPC GetDeclarations with plid=[[%s]]" (String.concat "." plid))
-        let declInfos = x.GetDeclarations(str,plid)        
-        declInfos
-
-#endif
