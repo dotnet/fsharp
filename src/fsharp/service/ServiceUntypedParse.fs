@@ -211,6 +211,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
                     | SynExpr.YieldOrReturnFrom(_, expr, range) when rangeContainsPos range pos ->
                         Some expr.Range
                     | _ -> defaultTraverse expr })
+        | None -> None
 
     member scope.TryRangeOfRecordExpressionContainingPos pos =
         match input with
