@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="UndefinedName2">
         <source> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</source>
-        <target state="translated">Konstruktor s tímto názvem se našel v knihovně FSharp.PowerPack.dll, která obsahuje určité moduly a typy implicitně odkazované v některých dřívějších verzích F#. Abyste tento kód mohli zkompilovat, bude možná potřeba přidat explicitní odkaz na tuto knihovnu DLL.</target>
+        <target state="translated"> Konstruktor s tímto názvem se našel v knihovně FSharp.PowerPack.dll, která obsahuje určité moduly a typy implicitně odkazované v některých dřívějších verzích F#. Abyste tento kód mohli zkompilovat, bude možná potřeba přidat explicitní odkaz na tuto knihovnu DLL.</target>
         <note />
       </trans-unit>
       <trans-unit id="FieldNotMutable">
