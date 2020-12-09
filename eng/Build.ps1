@@ -455,6 +455,9 @@ try {
 
     Push-Location $RepoRoot
 
+    Get-ChildItem ENV: | Sort-Object Name
+    Write-Host ""
+
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
