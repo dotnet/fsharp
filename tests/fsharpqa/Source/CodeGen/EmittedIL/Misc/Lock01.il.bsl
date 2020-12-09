@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.Lock01
 {
-  // Offset: 0x00000000 Length: 0x0000017E
+  // Offset: 0x00000000 Length: 0x00000180
 }
 .mresource public FSharpOptimizationData.Lock01
 {
   // Offset: 0x00000188 Length: 0x00000064
 }
 .module Lock01.exe
-// MVID: {5F1F9A50-2BCA-B308-A745-0383509A1F5F}
+// MVID: {5FCFFD09-2BCA-B308-A745-038309FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06970000
+// Image base: 0x06B00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,6 +59,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit clo@20
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
+    .field static assembly initonly class Lock01/clo@20 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -77,10 +78,20 @@
       // Code size       2 (0x2)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 20,20 : 19,21 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Lock01.fs'
+      .line 20,20 : 19,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Lock01.fs'
       IL_0000:  ldnull
       IL_0001:  ret
     } // end of method clo@20::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Lock01/clo@20::.ctor()
+      IL_0005:  stsfld     class Lock01/clo@20 Lock01/clo@20::@_instance
+      IL_000a:  ret
+    } // end of method clo@20::.cctor
 
   } // end of class clo@20
 
@@ -127,7 +138,7 @@
     .line 20,20 : 1,23 ''
     IL_000c:  call       object Lock01::get_o()
     IL_0011:  stloc.1
-    IL_0012:  newobj     instance void Lock01/clo@20::.ctor()
+    IL_0012:  ldsfld     class Lock01/clo@20 Lock01/clo@20::@_instance
     IL_0017:  stloc.2
     IL_0018:  ldc.i4.0
     IL_0019:  stloc.3

@@ -2451,7 +2451,6 @@ let mkILFieldSpec (tref, ty) = { FieldRef= tref; DeclaringType=ty }
 let mkILFieldSpecInTy (ty: ILType, nm, fty) =
     mkILFieldSpec (mkILFieldRef (ty.TypeRef, nm, fty), ty)
 
-
 let andTailness x y =
   match x with Tailcall when y -> Tailcall | _ -> Normalcall
 

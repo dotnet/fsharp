@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly TestFunction15
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction15
 {
-  // Offset: 0x00000000 Length: 0x000001EA
+  // Offset: 0x00000000 Length: 0x000001E6
 }
 .mresource public FSharpOptimizationData.TestFunction15
 {
   // Offset: 0x000001F0 Length: 0x00000072
 }
 .module TestFunction15.exe
-// MVID: {59B19208-A624-4662-A745-03830892B159}
+// MVID: {5FCFFD21-A624-4662-A745-038321FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02B10000
+// Image base: 0x06690000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit TestFunction15@6
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
+    .field static assembly initonly class TestFunction15/TestFunction15@6 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -72,12 +73,22 @@
       // Code size       4 (0x4)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 35,40 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction15.fs'
+      .line 6,6 : 35,40 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction15.fs'
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.1
       IL_0002:  add
       IL_0003:  ret
     } // end of method TestFunction15@6::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction15/TestFunction15@6::.ctor()
+      IL_0005:  stsfld     class TestFunction15/TestFunction15@6 TestFunction15/TestFunction15@6::@_instance
+      IL_000a:  ret
+    } // end of method TestFunction15@6::.cctor
 
   } // end of class TestFunction15@6
 
@@ -93,7 +104,7 @@
     IL_0002:  add
     IL_0003:  stloc.0
     .line 6,6 : 5,41 ''
-    IL_0004:  newobj     instance void TestFunction15/TestFunction15@6::.ctor()
+    IL_0004:  ldsfld     class TestFunction15/TestFunction15@6 TestFunction15/TestFunction15@6::@_instance
     IL_0009:  ldc.i4.1
     IL_000a:  ldc.i4.2
     IL_000b:  ldc.i4.3
