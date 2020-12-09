@@ -3877,6 +3877,11 @@
         <target state="translated">インターフェイスに具象メンバーの定義を含めることはできません。必要に応じて、型にコンストラクターを定義して、型がクラスであることを示してください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcConstructorsDisallowedInExceptionAugmentation">
         <source>Constructors cannot be specified in exception augmentations</source>
         <target state="translated">例外の拡張にコンストラクターは指定できません</target>
@@ -4045,6 +4050,11 @@
       <trans-unit id="tcMemberAndLocalClassBindingHaveSameName">
         <source>A member and a local class binding both have the name '{0}'</source>
         <target state="translated">メンバーとローカル クラスの束縛はどちらも '{0}' という名前を使用しています</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationsCannotHaveInterfaceDeclaration">
