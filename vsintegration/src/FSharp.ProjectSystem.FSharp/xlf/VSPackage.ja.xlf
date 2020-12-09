@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="DefaultNamespaceDescription">
         <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
-        <target state="translated">[新しい項目の追加]5D; ダイアログ ボックスで追加されるクラスのような、追加項目に対する既定の名前空間を指定します。</target>
+        <target state="translated">[新しい項目の追加] ダイアログ ボックスで追加されるクラスのような、追加項目に対する既定の名前空間を指定します。</target>
         <note />
       </trans-unit>
       <trans-unit id="StartupObject">
