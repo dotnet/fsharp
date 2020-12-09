@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault1">
         <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
-        <target state="translated">既定の型 '{0}' を型推論の変数に適用するときに、型の制約が一致しませんでした。</target>
+        <target state="translated">既定の型 '{0}' を型推論の変数に適用するときに、型の制約が一致しませんでした。 </target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault2">
@@ -1009,7 +1009,7 @@
       </trans-unit>
       <trans-unit id="UnexpectedEndOfInput">
         <source>Unexpected end of input</source>
-        <target state="translated">予期しない入力の終わりです:</target>
+        <target state="translated">予期しない入力の終わりです</target>
         <note />
       </trans-unit>
       <trans-unit id="Unexpected">
@@ -1189,7 +1189,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">キーワード</target>
+        <target state="translated">キーワード </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">

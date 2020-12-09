@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AddMissingEqualsToTypeDefinition">
         <source>Add missing '=' to type definition</source>
-        <target state="new">Add missing '=' to type definition</target>
+        <target state="translated">Tür tanımına eksik '=' işaretini ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -14,17 +14,17 @@
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
-        <target state="new">Convert to Anonymous Record</target>
+        <target state="translated">Anonim Kayda Dönüştür</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
-        <target state="new">Use '=' for equality check</target>
+        <target state="translated">Eşitlik denetimi için '=' kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
-        <target state="new">Use subtraction instead of negation</target>
+        <target state="translated">Negatif yapma yerine çıkarmayı kullanın</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
-        <target state="new">Make declaration 'mutable'</target>
+        <target state="translated">Bildirimi 'mutable' yapın</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -224,27 +224,27 @@
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
-        <target state="new">Use '&lt;-' to mutate value</target>
+        <target state="translated">Değeri değiştirmek için '&lt;-' kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
-        <target state="new">Use 'upcast'</target>
+        <target state="translated">'upcast' kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastOperator">
         <source>Use ':&gt;' operator</source>
-        <target state="new">Use ':&gt;' operator</target>
+        <target state="translated">':&gt;' operatörünü kullan</target>
         <note />
       </trans-unit>
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
-        <target state="new">Use 'not' to negate expression</target>
+        <target state="translated">İfadeyi negatif yapmak için 'not' kullanın</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
-        <target state="new">Wrap expression in parentheses</target>
+        <target state="translated">İfadeyi parantez içinde sarmalayın</target>
         <note />
       </trans-unit>
     </body>

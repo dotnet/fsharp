@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AddMissingEqualsToTypeDefinition">
         <source>Add missing '=' to type definition</source>
-        <target state="new">Add missing '=' to type definition</target>
+        <target state="translated">將缺少的 '=' 新增至類型定義</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -14,17 +14,17 @@
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
-        <target state="new">Convert to Anonymous Record</target>
+        <target state="translated">轉換為匿名記錄</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
-        <target state="new">Use '=' for equality check</target>
+        <target state="translated">使用 '=' 檢查是否相等</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
-        <target state="new">Use subtraction instead of negation</target>
+        <target state="translated">使用減號代替否定</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
-        <target state="new">Make declaration 'mutable'</target>
+        <target state="translated">將宣告設定為「可變動」</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -224,27 +224,27 @@
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
-        <target state="new">Use '&lt;-' to mutate value</target>
+        <target state="translated">使用 '&lt;-' 來變動值</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
-        <target state="new">Use 'upcast'</target>
+        <target state="translated">使用「向上轉型」</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastOperator">
         <source>Use ':&gt;' operator</source>
-        <target state="new">Use ':&gt;' operator</target>
+        <target state="translated">使用 ':&gt;' 運算子</target>
         <note />
       </trans-unit>
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
-        <target state="new">Use 'not' to negate expression</target>
+        <target state="translated">使用 'not' 來否定運算式</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
-        <target state="new">Wrap expression in parentheses</target>
+        <target state="translated">使用括弧包裝運算式</target>
         <note />
       </trans-unit>
     </body>

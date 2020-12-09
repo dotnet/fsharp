@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="AddMissingEqualsToTypeDefinition">
         <source>Add missing '=' to type definition</source>
-        <target state="new">Add missing '=' to type definition</target>
+        <target state="translated">Ajouter un '=' manquant à la définition de type</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -14,17 +14,17 @@
       </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
-        <target state="new">Convert to Anonymous Record</target>
+        <target state="translated">Convertir en enregistrement anonyme</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
-        <target state="new">Use '=' for equality check</target>
+        <target state="translated">Utiliser '=' pour vérifier l'égalité</target>
         <note />
       </trans-unit>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
-        <target state="new">Use subtraction instead of negation</target>
+        <target state="translated">Utiliser la soustraction à la place de la négation</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="MakeDeclarationMutable">
         <source>Make declaration 'mutable'</source>
-        <target state="new">Make declaration 'mutable'</target>
+        <target state="translated">Rendre la déclaration 'mutable'</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
@@ -224,27 +224,27 @@
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
-        <target state="new">Use '&lt;-' to mutate value</target>
+        <target state="translated">Utiliser '&lt;-' pour muter la valeur</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
-        <target state="new">Use 'upcast'</target>
+        <target state="translated">Utiliser 'upcast'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastOperator">
         <source>Use ':&gt;' operator</source>
-        <target state="new">Use ':&gt;' operator</target>
+        <target state="translated">Utiliser l'opérateur ':&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseNotForNegation">
         <source>Use 'not' to negate expression</source>
-        <target state="new">Use 'not' to negate expression</target>
+        <target state="translated">Utiliser 'not' pour annuler l'expression</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
         <source>Wrap expression in parentheses</source>
-        <target state="new">Wrap expression in parentheses</target>
+        <target state="translated">Mettre l'expression entre parenthèses</target>
         <note />
       </trans-unit>
     </body>
