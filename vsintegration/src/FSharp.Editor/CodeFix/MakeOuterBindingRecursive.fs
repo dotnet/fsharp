@@ -28,11 +28,15 @@ module TreeExt =
 
             let rec walkBinding expr workingRange =
                 match expr with
+
+                // This lets us dive into subexpressions that may contain the binding we're after
                 | SynExpr.Sequential (_, _, expr1, expr2, _) ->
                     if rangeContainsPos expr1.Range pos then
                         walkBinding expr1 workingRange
                     else
                         walkBinding expr2 workingRange
+
+
                 | SynExpr.LetOrUse(_, _, bindings, bodyExpr, _) ->
                     let potentialNestedRange =
                         bindings
@@ -43,6 +47,8 @@ module TreeExt =
                         walkBinding bodyExpr range
                     | None ->
                         walkBinding bodyExpr workingRange
+
+                
                 | _ ->
                     Some workingRange
 
@@ -58,8 +64,7 @@ module TreeExt =
                             match tryGetIdentRangeFromBinding b with
                             | Some range -> walkBinding expr range
                             | None -> None
-                        | _ -> defaultTraverse binding
-                })
+                        | _ -> defaultTraverse binding })
             | None -> None
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "MakeOuterBindingRecursive"); Shared>]
