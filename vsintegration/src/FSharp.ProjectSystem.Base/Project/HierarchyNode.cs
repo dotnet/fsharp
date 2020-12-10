@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
@@ -2828,7 +2827,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         {
                             // Cleanup.
                             this.DeleteFromStorage(docNew);
-                            if (this is ProjectNode && FSLib.Shim.FileSystem.SafeExists(docNew))
+                            if (this is ProjectNode && File.Exists(docNew))
                             {
                                 File.Delete(docNew);
                             }
