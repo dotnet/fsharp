@@ -4466,7 +4466,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (templateStructTy, stateVars, thi
     //
     // Note, the 'let' bindings for the stateVars have already been transformed to 'set' expressions, and thus the stateVars are now
     // free variables of the expression.
-    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false (mkLocalValRef moveNextMethodThisVar :: thisVars) eenvouter moveNextExpr
+    let cloinfo, _, eenvinner = GetIlxClosureInfo cenv m ILBoxity.AsValue false false (mkLocalValRef moveNextMethodThisVar :: thisVars) eenvouter moveNextExpr
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
