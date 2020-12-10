@@ -388,6 +388,9 @@
     <Compile Include="$(FsYaccOutputFolder)\lex.fs">
       <Link>ParserAndUntypedAST\FsLexOutput\lex.fs</Link>
     </Compile>
+    <Compile Include="..\LexFilter.fsi">
+      <Link>ParserAndUntypedAST\LexFilter.fsi</Link>
+    </Compile>
     <Compile Include="..\LexFilter.fs">
       <Link>ParserAndUntypedAST\LexFilter.fs</Link>
     </Compile>

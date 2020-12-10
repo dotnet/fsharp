@@ -384,10 +384,13 @@
       <Link>ParserAndUntypedAST\lexhelp.fs</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)pplex.fs">
-      <Link>ParserAndUntypedAST\FsLex\pplex.fsl</Link>
+      <Link>ParserAndUntypedAST\FsLexOutput\pplex.fsl</Link>
     </Compile>
     <Compile Include="$(FsYaccOutputFolder)lex.fs">
-      <Link>ParserAndUntypedAST\FsLex\lex.fs</Link>
+      <Link>ParserAndUntypedAST\FsLexOutput\lex.fs</Link>
+    </Compile>
+    <Compile Include="..\LexFilter.fsi">
+      <Link>ParserAndUntypedAST\LexFilter.fsi</Link>
     </Compile>
     <Compile Include="..\LexFilter.fs">
       <Link>ParserAndUntypedAST\LexFilter.fs</Link>

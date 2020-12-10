@@ -8,6 +8,7 @@ open System.IO
 
 open Internal.Utilities
 open Internal.Utilities.Filename
+open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
@@ -192,6 +193,7 @@ let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImp
                 | _ -> () 
           for hd in hashDirectives do 
               yield! GetScopedPragmasForHashDirective hd ]
+
     ParsedInput.ImplFile (ParsedImplFileInput (filename, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland))
   
 let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSigFile (hashDirectives, specs)) = 
@@ -254,17 +256,20 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
     //    then it also asserts. But these are edge cases that can be fixed later, e.g. in bug 4651.
     //System.Diagnostics.Debug.Assert(System.IO.Path.IsPathRooted filename, sprintf "should be absolute: '%s'" filename)
     let lower = String.lowercase filename 
+
     // Delay sending errors and warnings until after the file is parsed. This gives us a chance to scrape the
     // #nowarn declarations for the file
     let delayLogger = CapturingErrorLogger("Parsing")
     use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayLogger)
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+
     let mutable scopedPragmas = []
     try     
         let input = 
             if mlCompatSuffixes |> List.exists (Filename.checkSuffix lower) then  
                 mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup 
 
+            // Call the appropriate parser - for signature files or implementation files
             if FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower) then  
                 let impl = Parser.implementationFile lexer lexbuf 
                 PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, impl)
@@ -273,6 +278,7 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
                 PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, intfs)
             else 
                 delayLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension filename, Range.rangeStartup))
+
         scopedPragmas <- GetScopedPragmasForInput input
         input
     finally
@@ -280,69 +286,112 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
         let filteringErrorLogger = GetErrorLoggerFilteringByScopedPragmas(false, scopedPragmas, errorLogger)
         delayLogger.CommitDelayedDiagnostics filteringErrorLogger
 
+// Show all tokens in the stream, for testing purposes
+let ShowAllTokensAndExit (shortFilename, tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
+    while true do 
+        printf "tokenize - getting one token from %s\n" shortFilename
+        let t = tokenizer.GetToken()
+        printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
+        match t with
+        | Parser.EOF _ -> exit 0 
+        | _ -> ()
+        if lexbuf.IsPastEndOfStream then printf "!!! at end of stream\n"
 
-/// Filename is (ml/mli/fs/fsi source). Parse it to AST. 
+// Test one of the parser entry points, just for testing purposes 
+let TestInteractionParserAndExit (tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
+    while true do 
+        match (Parser.interaction (fun _ -> tokenizer.GetToken()) lexbuf) with
+        | IDefns(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
+        | IHash (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
+    exit 0
+
+// Report the statistics for testing purposes
+let ReportParsingStatistics res =
+    let rec flattenSpecs specs = 
+            specs |> List.collect (function (SynModuleSigDecl.NestedModule (_, _, subDecls, _)) -> flattenSpecs subDecls | spec -> [spec])
+    let rec flattenDefns specs = 
+            specs |> List.collect (function (SynModuleDecl.NestedModule (_, _, subDecls, _, _)) -> flattenDefns subDecls | defn -> [defn])
+
+    let flattenModSpec (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) = flattenSpecs decls
+    let flattenModImpl (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) = flattenDefns decls
+    match res with 
+    | ParsedInput.SigFile (ParsedSigFileInput (_, _, _, _, specs)) -> 
+        printfn "parsing yielded %d specs" (List.collect flattenModSpec specs).Length
+    | ParsedInput.ImplFile (ParsedImplFileInput (modules = impls)) -> 
+        printfn "parsing yielded %d definitions" (List.collect flattenModImpl impls).Length
+
+/// Parse an input, drawing tokens from the LexBuffer
 let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger) =
     use unwindbuildphase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
     try 
-        let skip = true in (* don't report whitespace from lexer *)
+
+        // Don't report whitespace from lexer
+        let skipWhitespaceTokens = true 
+
+        // Set up the initial status for indentation-aware processing
         let lightStatus = LightSyntaxStatus (tcConfig.ComputeLightSyntaxInitialStatus filename, true) 
+        
+        // Set up the initial lexer arguments
         let lexargs = mkLexargs (conditionalCompilationDefines@tcConfig.conditionalCompilationDefines, lightStatus, lexResourceManager, [], errorLogger, tcConfig.pathMap)
+
+        // Set up the initial lexer arguments
         let shortFilename = SanitizeFileName filename tcConfig.implicitIncludeDir 
+
         let input = 
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
-                if verbose then dprintn ("Parsing... "+shortFilename)
-                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
+                
+                // Set up the LexFilter over the token stream
+                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf)
 
+                // If '--tokenize' then show the tokens now and exit
                 if tcConfig.tokenizeOnly then 
-                    while true do 
-                        printf "tokenize - getting one token from %s\n" shortFilename
-                        let t = tokenizer.Lexer lexbuf
-                        printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
-                        (match t with Parser.EOF _ -> exit 0 | _ -> ())
-                        if lexbuf.IsPastEndOfStream then printf "!!! at end of stream\n"
+                    ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf)
 
+                // Test hook for one of the parser entry points
                 if tcConfig.testInteractionParser then 
-                    while true do 
-                        match (Parser.interaction tokenizer.Lexer lexbuf) with
-                        | IDefns(l, m) -> dprintf "Parsed OK, got %d defs @ %a\n" l.Length outputRange m
-                        | IHash (_, m) -> dprintf "Parsed OK, got hash @ %a\n" outputRange m
-                    exit 0
+                    TestInteractionParserAndExit (tokenizer, lexbuf)
 
-                let res = ParseInput(tokenizer.Lexer, errorLogger, lexbuf, None, filename, isLastCompiland)
+                // Parse the input
+                let res = ParseInput((fun _ -> tokenizer.GetToken()), errorLogger, lexbuf, None, filename, isLastCompiland)
 
+                // Report the statistics for testing purposes
                 if tcConfig.reportNumDecls then 
-                    let rec flattenSpecs specs = 
-                          specs |> List.collect (function (SynModuleSigDecl.NestedModule (_, _, subDecls, _)) -> flattenSpecs subDecls | spec -> [spec])
-                    let rec flattenDefns specs = 
-                          specs |> List.collect (function (SynModuleDecl.NestedModule (_, _, subDecls, _, _)) -> flattenDefns subDecls | defn -> [defn])
+                    ReportParsingStatistics res
 
-                    let flattenModSpec (SynModuleOrNamespaceSig(_, _, _, decls, _, _, _, _)) = flattenSpecs decls
-                    let flattenModImpl (SynModuleOrNamespace(_, _, _, decls, _, _, _, _)) = flattenDefns decls
-                    match res with 
-                    | ParsedInput.SigFile (ParsedSigFileInput (_, _, _, _, specs)) -> 
-                        dprintf "parsing yielded %d specs" (List.collect flattenModSpec specs).Length
-                    | ParsedInput.ImplFile (ParsedImplFileInput (modules = impls)) -> 
-                        dprintf "parsing yielded %d definitions" (List.collect flattenModImpl impls).Length
                 res
             )
-        if verbose then dprintn ("Parsed "+shortFilename)
         Some input 
-    with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 
 
+    with e -> 
+        errorRecovery e rangeStartup
+        None 
             
+let ValidSuffixes = FSharpSigFileSuffixes@FSharpImplFileSuffixes
+
+/// Parse an input from disk
 let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     try 
        let lower = String.lowercase filename
-       if List.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes) then  
+
+       if List.exists (Filename.checkSuffix lower) ValidSuffixes then  
+
             if not(FileSystem.SafeExists filename) then
                 error(Error(FSComp.SR.buildCouldNotFindSourceFile filename, rangeStartup))
-            let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
+
+            // Get a stream reader for the file
             use reader = File.OpenReaderAndRetry (filename, tcConfig.inputCodePage, retryLocked)
-            let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(isFeatureSupported, reader)
+
+            // Set up the LexBuffer for the file
+            let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(tcConfig.langVersion.SupportsFeature, reader)
+
+            // Parse the file drawing tokens from the lexbuf
             ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
-       else error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
-    with e -> (* errorR(Failure("parse failed")); *) errorRecovery e rangeStartup; None 
+       else
+           error(Error(FSComp.SR.buildInvalidSourceFileExtension(SanitizeFileName filename tcConfig.implicitIncludeDir), rangeStartup))
+
+    with e -> 
+        errorRecovery e rangeStartup
+        None 
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,

@@ -519,14 +519,16 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         try
             let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint 
 
-            isLastCompiland
-            |> List.zip sourceFiles
+            List.zip sourceFiles isLastCompiland
             // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-            |> List.choose (fun (sourceFile: string, isLastCompiland) -> 
+            |> List.choose (fun (sourceFile, isLastCompiland) -> 
+
                 let sourceFileDirectory = Path.GetDirectoryName sourceFile
+
                 match ParseOneInputFile(tcConfig, lexResourceManager, ["COMPILED"], sourceFile, (isLastCompiland, isExe), errorLogger, (*retryLocked*)false) with
                 | Some input -> Some (input, sourceFileDirectory)
                 | None -> None) 
+
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1
@@ -541,9 +543,14 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     if not tcConfig.continueAfterParseFailure then 
         AbortOnError(errorLogger, exiter)
 
+    // Print the AST if requested
     if tcConfig.printAst then                
-        inputs |> List.iter (fun (input, _filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
+        for (input, _filename) in inputs do 
+            printf "AST:\n"
+            printfn "%+A" input
+            printf "\n"
 
+    // Apply any nowarn flags
     let tcConfig =
         (tcConfig, inputs) ||> List.fold (fun z (input, sourceFileDirectory) ->
             ApplyMetaCommandsFromInputToTcConfig(z, input, sourceFileDirectory, dependencyProvider))
@@ -552,6 +559,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     // Import other assemblies
     ReportTime tcConfig "Import non-system references"
+
     let tcImports =
         TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> Cancellable.runWithoutCancellation
