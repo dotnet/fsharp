@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">F# 交互窗口指令:</target>
+        <target state="translated">  F# 交互窗口指令:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
         <source>  F# Interactive command line options:</source>
-        <target state="translated">F# 交互窗口命令行选项:</target>
+        <target state="translated">  F# 交互窗口命令行选项:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">

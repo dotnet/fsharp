@@ -119,26 +119,7 @@ type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:u
         null
 
     override this.GetDeclarations(_snapshot,line:int,col:int,info:TokenInfo,reason:ParseReason) =
-        match sessions with
-        | None -> (new FsiDeclarations() :> Declarations)
-        | Some sessions ->
-#if FSI_SERVER_INTELLISENSE
-          if Guids.enable_fsi_intellisense then
-            let lines = view.GetBuffer()                   |> throwOnFailure1
-            //NOTE:
-            //  There is an issue of how much preceeding text to grab for the intellisense.
-            //  Ideally, we want all text from the end of the last executed interaction.
-            //  However, we do not have an interactive "scanner" yet.
-            //------
-            // The decision is use the current "input area" as the source context.
-            // Multiline input is available to a limited degree (and could be improved).
-            let span = readOnlySpanGetter()
-            let str   = lines.GetLineText(span.iEndLine,span.iEndIndex,line,col) |> throwOnFailure1           
-            let declInfos = sessions.GetDeclarationInfos (str:string)
-            new FsiDeclarations(declInfos) :> Declarations
-          else
-#endif
-            (new FsiDeclarations() :> Declarations)
+        (new FsiDeclarations() :> Declarations)
 
     override this.GetMethods(line:int,col:int,name:string) = 
         new FsiMethods() :> Methods

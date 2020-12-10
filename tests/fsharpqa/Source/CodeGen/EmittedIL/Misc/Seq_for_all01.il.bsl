@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly Seq_for_all01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Seq_for_all01
 {
-  // Offset: 0x00000000 Length: 0x000001AB
+  // Offset: 0x00000000 Length: 0x000001A7
 }
 .mresource public FSharpOptimizationData.Seq_for_all01
 {
   // Offset: 0x000001B0 Length: 0x00000072
 }
 .module Seq_for_all01.exe
-// MVID: {59B19213-D30D-BA80-A745-03831392B159}
+// MVID: {5FCFFD09-D30D-BA80-A745-038309FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02A60000
+// Image base: 0x00F60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit q@4
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
+    .field static assembly initonly class Seq_for_all01/q@4 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -72,7 +73,7 @@
       // Code size       18 (0x12)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 31,47 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
+      .line 5,5 : 31,47 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
       IL_0000:  ldc.i4.1
       IL_0001:  ldc.i4.0
       IL_0002:  ceq
@@ -97,6 +98,16 @@
       IL_0010:  ldc.i4.1
       IL_0011:  ret
     } // end of method q@4::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Seq_for_all01/q@4::.ctor()
+      IL_0005:  stsfld     class Seq_for_all01/q@4 Seq_for_all01/q@4::@_instance
+      IL_000a:  ret
+    } // end of method q@4::.cctor
 
   } // end of class q@4
 
@@ -132,7 +143,7 @@
     .maxstack  5
     .locals init ([0] bool q)
     .line 4,7 : 1,28 ''
-    IL_0000:  newobj     instance void Seq_for_all01/q@4::.ctor()
+    IL_0000:  ldsfld     class Seq_for_all01/q@4 Seq_for_all01/q@4::@_instance
     IL_0005:  ldc.i4.1
     IL_0006:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
     IL_000b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,

@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.ForEachOnList01
 {
-  // Offset: 0x00000000 Length: 0x000002E7
+  // Offset: 0x00000000 Length: 0x000002E9
 }
 .mresource public FSharpOptimizationData.ForEachOnList01
 {
   // Offset: 0x000002F0 Length: 0x000000DB
 }
 .module ForEachOnList01.dll
-// MVID: {5F1FBE49-56DF-F74F-A745-038349BE1F5F}
+// MVID: {5FCFFFA6-56DF-F74F-A745-0383A6FFCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04F10000
+// Image base: 0x072F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,6 +59,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit test6@38
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
+    .field static assembly initonly class ForEachOnList01/test6@38 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -77,18 +78,29 @@
       // Code size       4 (0x4)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 39,39 : 21,26 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnList01.fs'
+      .line 39,39 : 21,26 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\ForEachOnList01.fs'
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.1
       IL_0002:  add
       IL_0003:  ret
     } // end of method test6@38::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void ForEachOnList01/test6@38::.ctor()
+      IL_0005:  stsfld     class ForEachOnList01/test6@38 ForEachOnList01/test6@38::@_instance
+      IL_000a:  ret
+    } // end of method test6@38::.cctor
+
   } // end of class test6@38
 
   .class auto ansi serializable sealed nested assembly beforefieldinit test7@47
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
+    .field static assembly initonly class ForEachOnList01/test7@47 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -112,6 +124,16 @@
       IL_0002:  add
       IL_0003:  ret
     } // end of method test7@47::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void ForEachOnList01/test7@47::.ctor()
+      IL_0005:  stsfld     class ForEachOnList01/test7@47 ForEachOnList01/test7@47::@_instance
+      IL_000a:  ret
+    } // end of method test7@47::.cctor
 
   } // end of class test7@47
 
@@ -395,7 +417,7 @@
              [2] int32 i,
              [3] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3)
     .line 36,40 : 5,21 ''
-    IL_0000:  newobj     instance void ForEachOnList01/test6@38::.ctor()
+    IL_0000:  ldsfld     class ForEachOnList01/test6@38 ForEachOnList01/test6@38::@_instance
     IL_0005:  ldc.i4.1
     IL_0006:  ldc.i4.2
     IL_0007:  ldc.i4.3
@@ -458,7 +480,7 @@
              [3] int32 tmp,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_4)
     .line 45,49 : 5,21 ''
-    IL_0000:  newobj     instance void ForEachOnList01/test7@47::.ctor()
+    IL_0000:  ldsfld     class ForEachOnList01/test7@47 ForEachOnList01/test7@47::@_instance
     IL_0005:  ldc.i4.1
     IL_0006:  ldc.i4.2
     IL_0007:  ldc.i4.3

@@ -1528,7 +1528,8 @@ module Lexer =
             let lexer = Lexer.token lexargs canSkipTrivia
 
             if canUseLexFilter then
-                LexFilter.LexFilter(lexargs.lightStatus, isCompilingFSharpCore, lexer, lexbuf).Lexer
+                let lexFilter = LexFilter.LexFilter(lexargs.lightStatus, isCompilingFSharpCore, lexer, lexbuf)
+                (fun _ -> lexFilter.GetToken())
             else
                 lexer
 

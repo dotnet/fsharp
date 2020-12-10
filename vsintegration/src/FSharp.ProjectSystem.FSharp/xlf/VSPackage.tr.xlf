@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="NeedReloadToChangeTargetFx">
         <source>Changing the Target Framework requires that the current project be closed and then reopened.\nAny unsaved changes within the project will be automatically saved.\n\nChanging Target Framework may require manual modification of project files in order to build.\n\nAre you sure you want to change the Target Framework for this project?</source>
-        <target state="translated">Hedef Framework'ü değiştirmek geçerli projenin kapatılıp yeniden açılmasını gerektiriyor.\nProje içindeki tüm kaydedilmemiş değişiklikler otomatik olarak kaydedilecek.\n\nHedef Framework'ü değiştirmek, yapı için proje dosyalarının el ile değiştirilmesini gerektirebilir.\nHedef Framework'ü bu proje için değiştirmek istediğinizden emin misiniz?</target>
+        <target state="translated">Hedef Framework'ü değiştirmek geçerli projenin kapatılıp yeniden açılmasını gerektiriyor.\nProje içindeki tüm kaydedilmemiş değişiklikler otomatik olarak kaydedilecek.\n\nHedef Framework'ü değiştirmek, yapı için proje dosyalarının el ile değiştirilmesini gerektirebilir.\n\nHedef Framework'ü bu proje için değiştirmek istediğinizden emin misiniz?</target>
         <note />
       </trans-unit>
       <trans-unit id="AddReferenceDialogTitle">

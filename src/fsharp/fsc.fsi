@@ -22,34 +22,23 @@ type ErrorLoggerProvider =
     new : unit -> ErrorLoggerProvider
     abstract CreateErrorLoggerUpToMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> ErrorLogger
 
-type StrongNameSigningInfo 
+/// The default ErrorLoggerProvider implementation, reporting messages to the Console up to the maxerrors maximum
+type ConsoleLoggerProvider = 
+    new : unit -> ConsoleLoggerProvider
+    inherit ErrorLoggerProvider
 
-val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Remap * generatedCcu: CcuThunk * outfile: string * isIncrementalBuild: bool -> ILAttribute list * ILResource list
+/// Encode the F# interface data into a set of IL attributes and resources
+val EncodeSignatureData:
+    tcConfig:TcConfig *
+    tcGlobals:TcGlobals *
+    exportRemapping:Remap *
+    generatedCcu: CcuThunk *
+    outfile: string *
+    isIncrementalBuild: bool
+      -> ILAttribute list * ILResource list
 
-val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TopAttribs -> StrongNameSigningInfo
-
-val GetStrongNameSigner : StrongNameSigningInfo -> ILStrongNameSigner option
-
-/// Process the given set of command line arguments
-val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
-
-//---------------------------------------------------------------------------
-// The entry point used by fsc.exe
-
-val typecheckAndCompile : 
-    ctok: CompilationThreadToken *
-    argv : string[] * 
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
-    bannerAlreadyPrinted : bool * 
-    reduceMemoryUsage: ReduceMemoryFlag * 
-    defaultCopyFSharpCore: CopyFSharpCoreFlag * 
-    exiter : Exiter *
-    loggerProvider: ErrorLoggerProvider *
-    tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
-      -> unit
-
-val mainCompile : 
+/// The main (non-incremental) compilation entry point used by fsc.exe
+val mainCompile: 
     ctok: CompilationThreadToken *
     argv: string[] * 
     legacyReferenceResolver: ReferenceResolver.Resolver * 
@@ -62,7 +51,8 @@ val mainCompile :
     dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
       -> unit
 
-val compileOfAst : 
+/// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
+val compileOfAst: 
     ctok: CompilationThreadToken *
     legacyReferenceResolver: ReferenceResolver.Resolver * 
     reduceMemoryUsage: ReduceMemoryFlag * 
@@ -86,14 +76,3 @@ type InProcErrorLoggerProvider =
     member CapturedWarnings : Diagnostic[]
     member CapturedErrors : Diagnostic[]
 
-/// The default ErrorLogger implementation, reporting messages to the Console up to the maxerrors maximum
-type ConsoleLoggerProvider = 
-    new : unit -> ConsoleLoggerProvider
-    inherit ErrorLoggerProvider
-
-// For unit testing
-module internal MainModuleBuilder =
-    
-    val fileVersion: findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
-    val productVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
-    val productVersionToILVersionInfo: string -> ILVersionInfo

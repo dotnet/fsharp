@@ -20,7 +20,6 @@ namespace N2
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Typecheck\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Typechecked\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write XML docs\]</Expects>
-//<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Write HTML docs\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[Encode Interface Data\]</Expects>
 //<Expects status="success">TIME:.+Delta:.+Mem:.+G0:.+G1:.+G2:.+\[TAST -> IL\]</Expects>
 //<Expects status="success">ilwrite: TIME.+Write Started</Expects>
