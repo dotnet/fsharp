@@ -31,6 +31,10 @@
 {
   // Offset: 0x00000000 Length: 0x0000033A
 }
+.mresource public FSharpSignatureDataB.TestFunction23
+{
+  // Offset: 0x00000218 Length: 0x00000002
+}
 .mresource public FSharpOptimizationData.TestFunction23
 {
   // Offset: 0x00000340 Length: 0x000000E3
