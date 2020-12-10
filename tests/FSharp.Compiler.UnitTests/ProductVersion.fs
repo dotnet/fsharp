@@ -7,7 +7,7 @@ open Xunit
 open FSharp.Test.Utilities
 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Driver.MainModuleBuilder
+open FSharp.Compiler.CreateILModule.MainModuleBuilder
 
 #nowarn "3180"
 
