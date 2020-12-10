@@ -547,12 +547,12 @@ Zmiana tego ustawienia spowoduje zresetowanie ustawień we wszystkich konfigurac
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_HelpLabelText">
         <source>Specify the code access security permissions that your ClickOnce application requires in order to run. Learn more about code access security...</source>
-        <target state="translated">Określ uprawnienia zabezpieczeń dostępu kodu, jakie musi spełniać aplikacja ClickOnce, aby mogła zostać uruchomiona. Dowiedz się więcej o zabezpieczeniach dostępu kodu…</target>
+        <target state="translated">Określ uprawnienia zabezpieczeń dostępu kodu, jakie musi spełniać aplikacja ClickOnce, aby mogła zostać uruchomiona. Dowiedz się więcej o zabezpieczeniach dostępu kodu...</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_HelpLabelLink">
         <source>Learn more about code access security...</source>
-        <target state="translated">Dowiedz się więcej o zabezpieczeniach dostępu kodu…</target>
+        <target state="translated">Dowiedz się więcej o zabezpieczeniach dostępu kodu...</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_BadDropDownValue">
@@ -975,7 +975,7 @@ Błąd:</target>
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceCompileWaiting">
         <source>Gathering list of unused references...</source>
-        <target state="translated">Gromadzenie listy nieużywanych odwołań…</target>
+        <target state="translated">Gromadzenie listy nieużywanych odwołań...</target>
         <note />
       </trans-unit>
       <trans-unit id="PropPage_UnusedReferenceError">
@@ -2521,7 +2521,7 @@ Czy chcesz zaktualizować wartość w pliku settings?</target>
       </trans-unit>
       <trans-unit id="SD_LinkPartOfDescriptionText">
         <source>Learn more about application settings...</source>
-        <target state="translated">Dowiedz się więcej o ustawieniach aplikacji…</target>
+        <target state="translated">Dowiedz się więcej o ustawieniach aplikacji...</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_IncludeSensitiveInfoInConnectionStringWarning">
@@ -2799,7 +2799,7 @@ Czy chcesz zaktualizować wartość w pliku settings?</target>
       </trans-unit>
       <trans-unit id="PPG_Services_HelpLabelLink">
         <source>Learn more about client application services...</source>
-        <target state="translated">Dowiedz się więcej o usługach aplikacji klienckich…</target>
+        <target state="translated">Dowiedz się więcej o usługach aplikacji klienckich...</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ServicesAdvancedPage_Title">

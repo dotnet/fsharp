@@ -19,12 +19,12 @@
       </trans-unit>
       <trans-unit id="MoreAbout">
         <source>For more about F#, see:</source>
-        <target state="translated">F#에 대한 자세한 내용은 다음을 참조하세요.</target>
+        <target state="translated">F#에 대한 자세한 내용은 다음을 참조하세요:</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeDocumentaton">
         <source>To see this tutorial in documentation form, see:</source>
-        <target state="translated">이 자습서를 설명서 형식으로 보려면 다음을 참조하세요.</target>
+        <target state="translated">이 자습서를 설명서 형식으로 보려면 다음을 참조하세요:</target>
         <note />
       </trans-unit>
       <trans-unit id="LearnMoreAbout">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="SupportsComments">
         <source>F# supports three kinds of comments:</source>
-        <target state="translated">F#에서는 세 가지 종류의 주석을 지원합니다.</target>
+        <target state="translated">F#에서는 세 가지 종류의 주석을 지원합니다:</target>
         <note />
       </trans-unit>
       <trans-unit id="DoubleSlash">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line2">
         <source>To learn more, see:</source>
-        <target state="translated">자세히 알아보려면 다음을 참조하세요.</target>
+        <target state="translated">자세히 알아보려면 다음을 참조하세요:</target>
         <note />
       </trans-unit>
       <trans-unit id="Booleans-Line3">
@@ -1169,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="DuStruct-Line4">
         <source>However, there are two important things to know when doing this:</source>
-        <target state="translated">하지만 이 작업을 수행할 때는 다음 두 가지 중요한 사항을 알고 있어야 합니다.</target>
+        <target state="translated">하지만 이 작업을 수행할 때는 다음 두 가지 중요한 사항을 알고 있어야 합니다:</target>
         <note />
       </trans-unit>
       <trans-unit id="DuStruct-Line5">

@@ -108,7 +108,7 @@ Clique em OK para ignorar e continuar. Clique em CANCELAR para escolher um camin
       </trans-unit>
       <trans-unit id="PPG_KeyFileBrowseText">
         <source>&lt;Browse...&gt;</source>
-        <target state="translated">&lt;Procurar... &gt;</target>
+        <target state="translated">&lt;Procurar...&gt;</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_ComboBoxSelect_None">

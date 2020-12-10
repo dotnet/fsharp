@@ -4,34 +4,22 @@
 
 module internal FSharp.Compiler.OptimizeInputs
 
-open System
-open System.IO
-
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
-open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.CheckDeclarations
-open FSharp.Compiler.ErrorLogger
 
-open Internal.Utilities
 open Internal.Utilities.StructuredFormat
-
 
 //----------------------------------------------------------------------------
 // PrintWholeAssemblyImplementation

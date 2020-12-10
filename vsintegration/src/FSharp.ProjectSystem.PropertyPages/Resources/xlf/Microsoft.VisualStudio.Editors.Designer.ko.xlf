@@ -320,7 +320,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
         <source>The following events are available for MyApplication:</source>
-        <target state="translated">MyApplication에 대해 다음 이벤트를 사용할 수 있습니다.</target>
+        <target state="translated">MyApplication에 대해 다음 이벤트를 사용할 수 있습니다:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine3">
@@ -2536,7 +2536,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_COMMON1">
         <source>This class allows you to handle specific events on the settings class:</source>
-        <target state="translated">이 클래스를 사용하여 설정 클래스에 대한 특정 이벤트를 처리할 수 있습니다.</target>
+        <target state="translated">이 클래스를 사용하여 설정 클래스에 대한 특정 이벤트를 처리할 수 있습니다:</target>
         <note>Comments for user part of extending generated settings class</note>
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_COMMON2">
@@ -2561,7 +2561,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HOWTO_ATTACHEVTS">
         <source>To add event handlers for saving and changing settings, uncomment the lines below:</source>
-        <target state="translated">설정을 저장 및 변경하기 위한 이벤트 처리기를 추가하려면 아래 줄에서 주석 처리를 제거하세요.</target>
+        <target state="translated">설정을 저장 및 변경하기 위한 이벤트 처리기를 추가하려면 아래 줄에서 주석 처리를 제거하세요:</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HANDLE_CHANGING">

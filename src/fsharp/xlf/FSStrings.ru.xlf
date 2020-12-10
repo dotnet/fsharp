@@ -379,7 +379,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
         <source>type application </source>
-        <target state="translated">приложение типа</target>
+        <target state="translated">приложение типа </target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON">
@@ -1189,7 +1189,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">Ключевое слово</target>
+        <target state="translated">Ключевое слово </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">

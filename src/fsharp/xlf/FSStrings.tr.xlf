@@ -154,7 +154,7 @@
       </trans-unit>
       <trans-unit id="UndefinedName2">
         <source> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</source>
-        <target state="translated">Bu adlı bir yapı, F# dilinin önceki bazı sürümlerinde örtük olarak başvurulan bazı modül ve türleri içeren FSharp.PowerPack.dll dosyasında bulundu. Bu kodu derleyebilmek için bu DLL'ye açık başvuru eklemeniz gerekebilir.</target>
+        <target state="translated"> Bu adlı bir yapı, F# dilinin önceki bazı sürümlerinde örtük olarak başvurulan bazı modül ve türleri içeren FSharp.PowerPack.dll dosyasında bulundu. Bu kodu derleyebilmek için bu DLL'ye açık başvuru eklemeniz gerekebilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="FieldNotMutable">
@@ -379,7 +379,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
         <source>type application </source>
-        <target state="translated">tür uygulaması</target>
+        <target state="translated">tür uygulaması </target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON">
@@ -1189,12 +1189,12 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">anahtar sözcük</target>
+        <target state="translated">anahtar sözcük </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
         <source>symbol </source>
-        <target state="translated">simge</target>
+        <target state="translated">simge </target>
         <note />
       </trans-unit>
       <trans-unit id="FixReplace">

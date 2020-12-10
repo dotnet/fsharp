@@ -486,6 +486,12 @@ type TcConfig =
     /// Allow forking and subsuequent modification of the TcConfig via a new TcConfigBuilder
     member CloneToBuilder: unit -> TcConfigBuilder
 
+    /// Indicates if the compilation will result in F# signature data resource in the generated binary
+    member GenerateSignatureData: bool 
+
+    /// Indicates if the compilation will result in an F# optimization data resource in the generated binary
+    member GenerateOptimizationData: bool
+
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
 [<Sealed>]
