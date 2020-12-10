@@ -3123,6 +3123,8 @@ let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintIn
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
+    // Witnesses ignore units of measure
+    let tyargs = tyargs |> List.map (stripTyEqnsWrtErasure EraseMeasures g)
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let ftps, _renaming, tinst = FreshenTypeInst m typars
