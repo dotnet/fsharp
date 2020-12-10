@@ -31,22 +31,18 @@
 {
   // Offset: 0x00000000 Length: 0x0000033A
 }
-.mresource public FSharpSignatureDataB.TestFunction23
-{
-  // Offset: 0x00000340 Length: 0x00000001
-}
 .mresource public FSharpOptimizationData.TestFunction23
 {
-  // Offset: 0x00000348 Length: 0x000000E3
+  // Offset: 0x00000340 Length: 0x000000E3
 }
 .module TestFunction23.exe
-// MVID: {5F972A6E-A643-451C-A745-03836E2A975F}
+// MVID: {5FCFFD21-A643-451C-A745-038321FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06750000
+// Image base: 0x07570000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -116,6 +112,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit g@13
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
+    .field static assembly initonly class TestFunction23/g@13 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -146,6 +143,16 @@
       IL_0021:  ret
     } // end of method g@13::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction23/g@13::.ctor()
+      IL_0005:  stsfld     class TestFunction23/g@13 TestFunction23/g@13::@_instance
+      IL_000a:  ret
+    } // end of method g@13::.cctor
+
   } // end of class g@13
 
   .method public static class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> 
@@ -155,7 +162,7 @@
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> g)
     .line 100001,100001 : 0,0 ''
-    IL_0000:  newobj     instance void TestFunction23/g@13::.ctor()
+    IL_0000:  ldsfld     class TestFunction23/g@13 TestFunction23/g@13::@_instance
     IL_0005:  stloc.0
     .line 15,15 : 5,13 ''
     IL_0006:  ldloc.0

@@ -36,13 +36,13 @@
   // Offset: 0x000003A0 Length: 0x0000010D
 }
 .module ArgumentNamesInClosures01.dll
-// MVID: {5F972A55-39CA-41B5-A745-0383552A975F}
+// MVID: {5FCFFD09-39CA-41B5-A745-038309FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x08E40000
+// Image base: 0x05A70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -95,7 +95,7 @@
       // Code size       6 (0x6)
       .maxstack  8
       .line 41,41 : 22,23 ''
-      IL_0000:  newobj     instance void M/get_F@41::.ctor()
+      IL_0000:  ldsfld     class M/get_F@41 M/get_F@41::@_instance
       IL_0005:  ret
     } // end of method T::get_F
 
@@ -109,6 +109,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit get_F@41
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>
   {
+    .field static assembly initonly class M/get_F@41 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -132,6 +133,16 @@
       IL_0003:  call       int32 M::I(class M/C)
       IL_0008:  ret
     } // end of method get_F@41::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void M/get_F@41::.ctor()
+      IL_0005:  stsfld     class M/get_F@41 M/get_F@41::@_instance
+      IL_000a:  ret
+    } // end of method get_F@41::.cctor
 
   } // end of class get_F@41
 

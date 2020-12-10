@@ -175,12 +175,6 @@ type internal FSharpAsyncQuickInfoSource
         _settings: EditorOptions
     ) =
 
-    static let joinWithLineBreaks segments =
-        let lineBreak = TaggedTextOps.Literals.lineBreak
-        match segments |> List.filter (Seq.isEmpty >> not) with
-        | [] -> Seq.empty
-        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
-
     // test helper
     static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
         asyncMaybe {
@@ -205,7 +199,7 @@ type internal FSharpAsyncQuickInfoSource
     static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:QuickInfo) =
         let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
-        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
         (mainDescription, docs)
 
     interface IAsyncQuickInfoSource with
@@ -258,9 +252,9 @@ type internal FSharpAsyncQuickInfoSource
                               | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
                                     yield! sigDocumentation
                               | Some _  , Some _ ->
-                                    yield! joinWithLineBreaks [ sigDocumentation; [ TaggedTextOps.tagText "-------------" ]; targetDocumentation ]
+                                    yield! RoslynHelpers.joinWithLineBreaks [ sigDocumentation; [ TaggedTextOps.tagText "-------------" ]; targetDocumentation ]
                             ] |> ResizeArray
-                        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                        let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(statusBar, checkerProvider.Checker, projectInfoManager, document, symbolUseRange)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)

@@ -19,11 +19,27 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of an attempted lambda expression or pattern, the argument range, and the expr range when writing a C#-style "lambda" (which is actually an operator application)
+    member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: pos -> Option<range * range * range>
+
     /// Attempts to find the range of an expression `expr` contained in a `yield expr`  or `return expr` expression (and bang-variants).
     member TryRangeOfExprInYieldOrReturn: pos: pos -> Option<range>
 
     /// Attempts to find the range of a record expression containing the given position.
     member TryRangeOfRecordExpressionContainingPos: pos: pos -> Option<range>
+
+    /// Attempts to find an Ident of a pipeline containing the given position, and the number of args already applied in that pipeline.
+    /// For example, '[1..10] |> List.map ' would give back the ident of '|>' and 1, because it applied 1 arg (the list) to 'List.map'.
+    member TryIdentOfPipelineContainingPosAndNumArgsApplied: pos: pos -> Option<(Ident * int)>
+
+    /// Determines if the given position is inside a function or method application.
+    member IsPosContainedInApplication: pos: pos -> bool
+
+    /// Attempts to find the range of a function or method that is being applied. Also accounts for functions in pipelines.
+    member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> Option<range>
+
+    /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
+    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the

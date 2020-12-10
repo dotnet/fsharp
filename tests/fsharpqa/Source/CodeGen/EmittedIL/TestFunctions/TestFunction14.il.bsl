@@ -36,13 +36,13 @@
   // Offset: 0x000001F0 Length: 0x00000072
 }
 .module TestFunction14.exe
-// MVID: {5F972A6E-A624-4587-A745-03836E2A975F}
+// MVID: {5FCFFD21-A624-4587-A745-038321FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06C10000
+// Image base: 0x06A40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit TestFunction14@5
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,int32>
   {
+    .field static assembly initonly class TestFunction14/TestFunction14@5 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -80,11 +81,22 @@
       IL_0009:  ret
     } // end of method TestFunction14@5::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction14/TestFunction14@5::.ctor()
+      IL_0005:  stsfld     class TestFunction14/TestFunction14@5 TestFunction14/TestFunction14@5::@_instance
+      IL_000a:  ret
+    } // end of method TestFunction14@5::.cctor
+
   } // end of class TestFunction14@5
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'TestFunction14@5-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
+    .field static assembly initonly class TestFunction14/'TestFunction14@5-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -109,6 +121,16 @@
       IL_0003:  ret
     } // end of method 'TestFunction14@5-1'::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction14/'TestFunction14@5-1'::.ctor()
+      IL_0005:  stsfld     class TestFunction14/'TestFunction14@5-1' TestFunction14/'TestFunction14@5-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'TestFunction14@5-1'::.cctor
+
   } // end of class 'TestFunction14@5-1'
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -117,8 +139,8 @@
     // Code size       28 (0x1c)
     .maxstack  8
     .line 5,5 : 5,47 ''
-    IL_0000:  newobj     instance void TestFunction14/TestFunction14@5::.ctor()
-    IL_0005:  newobj     instance void TestFunction14/'TestFunction14@5-1'::.ctor()
+    IL_0000:  ldsfld     class TestFunction14/TestFunction14@5 TestFunction14/TestFunction14@5::@_instance
+    IL_0005:  ldsfld     class TestFunction14/'TestFunction14@5-1' TestFunction14/'TestFunction14@5-1'::@_instance
     IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>>::get_Empty()
     IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>>::Cons(!0,
                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)

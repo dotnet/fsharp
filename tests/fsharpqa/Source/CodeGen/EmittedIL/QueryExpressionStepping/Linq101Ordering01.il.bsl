@@ -40,13 +40,13 @@
   // Offset: 0x000003B8 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {5F972A56-649A-6956-A745-0383562A975F}
+// MVID: {5FCFFD0D-649A-6956-A745-03830DFDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x09620000
+// Image base: 0x06F50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -389,6 +389,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedWords@12-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedWords@12-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -410,6 +411,16 @@
       IL_0000:  ldarg.1
       IL_0001:  ret
     } // end of method 'sortedWords@12-1'::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedWords@12-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedWords@12-1' Linq101Ordering01/'sortedWords@12-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedWords@12-1'::.cctor
 
   } // end of class 'sortedWords@12-1'
 
@@ -746,6 +757,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedWords2@19-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedWords2@19-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -768,6 +780,16 @@
       IL_0001:  callvirt   instance int32 [mscorlib]System.String::get_Length()
       IL_0006:  ret
     } // end of method 'sortedWords2@19-1'::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedWords2@19-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedWords2@19-1' Linq101Ordering01/'sortedWords2@19-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedWords2@19-1'::.cctor
 
   } // end of class 'sortedWords2@19-1'
 
@@ -816,6 +838,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedProducts@27-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedProducts@27-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -840,11 +863,22 @@
       IL_0008:  ret
     } // end of method 'sortedProducts@27-1'::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedProducts@27-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedProducts@27-1' Linq101Ordering01/'sortedProducts@27-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedProducts@27-1'::.cctor
+
   } // end of class 'sortedProducts@27-1'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedProducts@28-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedProducts@28-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -866,6 +900,16 @@
       IL_0000:  ldarg.1
       IL_0001:  ret
     } // end of method 'sortedProducts@28-2'::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedProducts@28-2'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedProducts@28-2' Linq101Ordering01/'sortedProducts@28-2'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedProducts@28-2'::.cctor
 
   } // end of class 'sortedProducts@28-2'
 
@@ -1202,6 +1246,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedProducts2@45-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedProducts2@45-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1225,6 +1270,16 @@
       IL_0003:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
       IL_0008:  ret
     } // end of method 'sortedProducts2@45-1'::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedProducts2@45-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedProducts2@45-1' Linq101Ordering01/'sortedProducts2@45-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedProducts2@45-1'::.cctor
 
   } // end of class 'sortedProducts2@45-1'
 
@@ -1561,6 +1616,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedDigits@53-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedDigits@53-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1584,11 +1640,22 @@
       IL_0006:  ret
     } // end of method 'sortedDigits@53-1'::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedDigits@53-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedDigits@53-1' Linq101Ordering01/'sortedDigits@53-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedDigits@53-1'::.cctor
+
   } // end of class 'sortedDigits@53-1'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedDigits@54-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedDigits@54-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1610,6 +1677,16 @@
       IL_0000:  ldarg.1
       IL_0001:  ret
     } // end of method 'sortedDigits@54-2'::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedDigits@54-2'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedDigits@54-2' Linq101Ordering01/'sortedDigits@54-2'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedDigits@54-2'::.cctor
 
   } // end of class 'sortedDigits@54-2'
 
@@ -1658,6 +1735,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedProducts3@61-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedProducts3@61-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1682,11 +1760,22 @@
       IL_0008:  ret
     } // end of method 'sortedProducts3@61-1'::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedProducts3@61-1'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedProducts3@61-1' Linq101Ordering01/'sortedProducts3@61-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedProducts3@61-1'::.cctor
+
   } // end of class 'sortedProducts3@61-1'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedProducts3@62-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,valuetype [mscorlib]System.Decimal>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedProducts3@62-2' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1711,11 +1800,22 @@
       IL_0008:  ret
     } // end of method 'sortedProducts3@62-2'::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedProducts3@62-2'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedProducts3@62-2' Linq101Ordering01/'sortedProducts3@62-2'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedProducts3@62-2'::.cctor
+
   } // end of class 'sortedProducts3@62-2'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sortedProducts3@63-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
+    .field static assembly initonly class Linq101Ordering01/'sortedProducts3@63-3' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -1737,6 +1837,16 @@
       IL_0000:  ldarg.1
       IL_0001:  ret
     } // end of method 'sortedProducts3@63-3'::Invoke
+
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Linq101Ordering01/'sortedProducts3@63-3'::.ctor()
+      IL_0005:  stsfld     class Linq101Ordering01/'sortedProducts3@63-3' Linq101Ordering01/'sortedProducts3@63-3'::@_instance
+      IL_000a:  ret
+    } // end of method 'sortedProducts3@63-3'::.cctor
 
   } // end of class 'sortedProducts3@63-3'
 
@@ -1944,7 +2054,7 @@
                                                                                int32,
                                                                                string)
     IL_003b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0040:  newobj     instance void Linq101Ordering01/'sortedWords@12-1'::.ctor()
+    IL_0040:  ldsfld     class Linq101Ordering01/'sortedWords@12-1' Linq101Ordering01/'sortedWords@12-1'::@_instance
     IL_0045:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_004a:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -1963,7 +2073,7 @@
                                                                                 int32,
                                                                                 string)
     IL_006c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0071:  newobj     instance void Linq101Ordering01/'sortedWords2@19-1'::.ctor()
+    IL_0071:  ldsfld     class Linq101Ordering01/'sortedWords2@19-1' Linq101Ordering01/'sortedWords2@19-1'::@_instance
     IL_0076:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_007b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -1989,10 +2099,10 @@
     IL_00b3:  newobj     instance void Linq101Ordering01/sortedProducts@26::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_00b8:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_00bd:  newobj     instance void Linq101Ordering01/'sortedProducts@27-1'::.ctor()
+    IL_00bd:  ldsfld     class Linq101Ordering01/'sortedProducts@27-1' Linq101Ordering01/'sortedProducts@27-1'::@_instance
     IL_00c2:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_00c7:  newobj     instance void Linq101Ordering01/'sortedProducts@28-2'::.ctor()
+    IL_00c7:  ldsfld     class Linq101Ordering01/'sortedProducts@28-2' Linq101Ordering01/'sortedProducts@28-2'::@_instance
     IL_00cc:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_00d1:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -2011,7 +2121,7 @@
                                                                                    int32,
                                                                                    class [Utils]Utils/Product)
     IL_00f4:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_00f9:  newobj     instance void Linq101Ordering01/'sortedProducts2@45-1'::.ctor()
+    IL_00f9:  ldsfld     class Linq101Ordering01/'sortedProducts2@45-1' Linq101Ordering01/'sortedProducts2@45-1'::@_instance
     IL_00fe:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortByDescending<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0103:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -2066,10 +2176,10 @@
                                                                                 int32,
                                                                                 string)
     IL_0199:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_019e:  newobj     instance void Linq101Ordering01/'sortedDigits@53-1'::.ctor()
+    IL_019e:  ldsfld     class Linq101Ordering01/'sortedDigits@53-1' Linq101Ordering01/'sortedDigits@53-1'::@_instance
     IL_01a3:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<string,class [mscorlib]System.Collections.IEnumerable,int32>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_01a8:  newobj     instance void Linq101Ordering01/'sortedDigits@54-2'::.ctor()
+    IL_01a8:  ldsfld     class Linq101Ordering01/'sortedDigits@54-2' Linq101Ordering01/'sortedDigits@54-2'::@_instance
     IL_01ad:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::ThenBy<string,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_01b2:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::get_Source()
@@ -2091,13 +2201,13 @@
     IL_01e1:  newobj     instance void Linq101Ordering01/sortedProducts3@60::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
     IL_01e6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_01eb:  newobj     instance void Linq101Ordering01/'sortedProducts3@61-1'::.ctor()
+    IL_01eb:  ldsfld     class Linq101Ordering01/'sortedProducts3@61-1' Linq101Ordering01/'sortedProducts3@61-1'::@_instance
     IL_01f0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::SortBy<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,string>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_01f5:  newobj     instance void Linq101Ordering01/'sortedProducts3@62-2'::.ctor()
+    IL_01f5:  ldsfld     class Linq101Ordering01/'sortedProducts3@62-2' Linq101Ordering01/'sortedProducts3@62-2'::@_instance
     IL_01fa:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::ThenByDescending<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,valuetype [mscorlib]System.Decimal>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_01ff:  newobj     instance void Linq101Ordering01/'sortedProducts3@63-3'::.ctor()
+    IL_01ff:  ldsfld     class Linq101Ordering01/'sortedProducts3@63-3' Linq101Ordering01/'sortedProducts3@63-3'::@_instance
     IL_0204:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
     IL_0209:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::get_Source()

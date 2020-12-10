@@ -1209,7 +1209,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">Schlüsselwort</target>
+        <target state="translated">Schlüsselwort </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">

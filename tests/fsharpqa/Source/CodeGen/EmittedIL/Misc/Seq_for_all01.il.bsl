@@ -36,13 +36,13 @@
   // Offset: 0x000001B0 Length: 0x00000072
 }
 .module Seq_for_all01.exe
-// MVID: {5F972A55-D30D-BA80-A745-0383552A975F}
+// MVID: {5FCFFD09-D30D-BA80-A745-038309FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D10000
+// Image base: 0x00F60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit q@4
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
+    .field static assembly initonly class Seq_for_all01/q@4 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -98,6 +99,16 @@
       IL_0011:  ret
     } // end of method q@4::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void Seq_for_all01/q@4::.ctor()
+      IL_0005:  stsfld     class Seq_for_all01/q@4 Seq_for_all01/q@4::@_instance
+      IL_000a:  ret
+    } // end of method q@4::.cctor
+
   } // end of class q@4
 
   .method public specialname static bool 
@@ -132,7 +143,7 @@
     .maxstack  5
     .locals init ([0] bool q)
     .line 4,7 : 1,28 ''
-    IL_0000:  newobj     instance void Seq_for_all01/q@4::.ctor()
+    IL_0000:  ldsfld     class Seq_for_all01/q@4 Seq_for_all01/q@4::@_instance
     IL_0005:  ldc.i4.1
     IL_0006:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
     IL_000b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,

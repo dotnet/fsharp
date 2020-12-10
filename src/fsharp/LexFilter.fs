@@ -13,10 +13,11 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
-open FSharp.Compiler.SyntaxTree
+
 let debug = false
 
 let stringOfPos (p: Position) = sprintf "(%d:%d)" p.OriginalLine p.Column
+
 let outputPos os (p: Position) = Printf.fprintf os "(%d:%d)" p.OriginalLine p.Column
 
 /// Used for warning strings, which should display columns as 1-based and display 
@@ -2383,7 +2384,8 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     //--------------------------------------------------------------------------
 
     member __.LexBuffer = lexbuf
-    member __.Lexer _ = 
+
+    member __.GetToken() = 
         if not initialized then 
             let _firstTokenTup = peekInitial()
             ()
@@ -2392,7 +2394,6 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         then hwTokenFetch true  
         else swTokenFetch()
   
-
 // LexFilterImpl does the majority of the work for offsides rules and other magic.
 // LexFilter just wraps it with light post-processing that introduces a few more 'coming soon' symbols, to
 // make it easier for the parser to 'look ahead' and safely shift tokens in a number of recovery scenarios.
@@ -2409,7 +2410,7 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
             let tokenTup = delayedStack.Pop()
             tokenTup
         else
-            inner.Lexer()
+            inner.GetToken()
 
     let insertComingSoonTokens comingSoon isHere =
         if debug then dprintf "inserting 6 copies of %+A before %+A\n" comingSoon isHere
@@ -2417,8 +2418,9 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
         for i in 1..6 do
             delayToken comingSoon
 
-    member __.LexBuffer = inner.LexBuffer 
-    member __.Lexer _ = 
+    member _.LexBuffer = inner.LexBuffer 
+
+    member _.GetToken () = 
         let rec loop() =
             let token = popNextToken()
             match token with
@@ -2433,5 +2435,3 @@ type LexFilter (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbuf: U
                 loop()
             | _ -> token
         loop()
-
-let token lexargs skip = Lexer.token lexargs skip

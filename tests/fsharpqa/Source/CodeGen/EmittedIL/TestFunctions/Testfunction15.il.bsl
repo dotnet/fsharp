@@ -36,13 +36,13 @@
   // Offset: 0x000001F0 Length: 0x00000072
 }
 .module TestFunction15.exe
-// MVID: {5F972A6E-A624-4662-A745-03836E2A975F}
+// MVID: {5FCFFD21-A624-4662-A745-038321FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06900000
+// Image base: 0x06690000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit TestFunction15@6
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
+    .field static assembly initonly class TestFunction15/TestFunction15@6 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -79,6 +80,16 @@
       IL_0003:  ret
     } // end of method TestFunction15@6::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction15/TestFunction15@6::.ctor()
+      IL_0005:  stsfld     class TestFunction15/TestFunction15@6 TestFunction15/TestFunction15@6::@_instance
+      IL_000a:  ret
+    } // end of method TestFunction15@6::.cctor
+
   } // end of class TestFunction15@6
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -93,7 +104,7 @@
     IL_0002:  add
     IL_0003:  stloc.0
     .line 6,6 : 5,41 ''
-    IL_0004:  newobj     instance void TestFunction15/TestFunction15@6::.ctor()
+    IL_0004:  ldsfld     class TestFunction15/TestFunction15@6 TestFunction15/TestFunction15@6::@_instance
     IL_0009:  ldc.i4.1
     IL_000a:  ldc.i4.2
     IL_000b:  ldc.i4.3

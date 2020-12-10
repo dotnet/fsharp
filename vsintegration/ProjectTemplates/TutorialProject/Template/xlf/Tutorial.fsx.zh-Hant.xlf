@@ -39,17 +39,17 @@
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
         <source>'Tools' --&gt; 'Extensions and Updates' --&gt; `Online` and search</source>
-        <target state="translated">[工具]5D; --&gt; [延伸模組和更新]5D; --&gt; [連線]5D; 並搜尋</target>
+        <target state="translated">[工具] --&gt; [延伸模組和更新] --&gt; [連線] 並搜尋</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line1">
         <source>For additional templates to use with F#, see the 'Online Templates' in Visual Studio,</source>
-        <target state="translated">如需有關搭配 F# 一起使用的其他範本，請參閱 Visual Studio 中的 [線上範本]5D;，</target>
+        <target state="translated">如需有關搭配 F# 一起使用的其他範本，請參閱 Visual Studio 中的 [線上範本]，</target>
         <note />
       </trans-unit>
       <trans-unit id="AdditionalTemplates-Line2">
         <source>'New Project' --&gt; 'Online Templates'</source>
-        <target state="translated">[新增專案]5D; --&gt; [線上範本]5D;</target>
+        <target state="translated">[新增專案] --&gt; [線上範本]</target>
         <note />
       </trans-unit>
       <trans-unit id="SupportsComments">
@@ -679,7 +679,7 @@
       </trans-unit>
       <trans-unit id="ListFilter-Line1">
         <source>There are many other list combinations. The following computes the sum of the squares of the</source>
-        <target state="translated">還有許多其他清單組合。以下會計算下項的平方總和:</target>
+        <target state="translated">還有許多其他清單組合。以下會計算下項的平方總和</target>
         <note />
       </trans-unit>
       <trans-unit id="ListFilter-Line2">
@@ -849,7 +849,7 @@
       </trans-unit>
       <trans-unit id="RecFunDef-Line1">
         <source>This example shows a recursive function that computes the factorial of an</source>
-        <target state="translated">此範例顯示遞迴函式，其可計算下項的階乘:</target>
+        <target state="translated">此範例顯示遞迴函式，其可計算下項的階乘</target>
         <note />
       </trans-unit>
       <trans-unit id="RecRunDef-Line2">
@@ -934,12 +934,12 @@
       </trans-unit>
       <trans-unit id="UpdateRecord-Line2">
         <source>a new record value that is a copy of contact1, but has different values for</source>
-        <target state="translated">新記錄值，其為 contact1 的複本，但對於下項有不同的值:</target>
+        <target state="translated">新記錄值，其為 contact1 的複本，但對於下項有不同的值</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateRecord-Line3">
         <source>the 'Phone' and 'Verified' fields.</source>
-        <target state="translated">[Phone]5D; 與 [Verified]5D; 欄位。</target>
+        <target state="translated">[Phone] 與 [Verified] 欄位。</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateRecord-Line4">
@@ -1339,7 +1339,7 @@
       </trans-unit>
       <trans-unit id="CalcShippingZone-Line2">
         <source>This uses combinators in the Option module to allow a functional pipeline for</source>
-        <target state="translated">這會在 Option 模組中使用結合器，以允許在執行下列功能時使用功能管線:</target>
+        <target state="translated">這會在 Option 模組中使用結合器，以允許在執行下列功能時使用功能管線</target>
         <note />
       </trans-unit>
       <trans-unit id="CalcShippingZone-Line3">
