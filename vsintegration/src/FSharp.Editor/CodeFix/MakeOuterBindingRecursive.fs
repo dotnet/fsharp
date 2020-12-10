@@ -15,7 +15,7 @@ open FSharp.Compiler.SourceCodeServices
 module TreeExt =
     type FSharpParseFileResults with
         member scope.TryRangeOfNearestOuterBindingContainingPos pos =
-            let toot binding =
+            let tryGetIdentRangeFromBinding binding =
                 match binding with
                 | SynBinding.Binding (_, _, _, _, _, _, _, headPat, _, _, _, _) ->
                     match headPat with
@@ -26,18 +26,18 @@ module TreeExt =
                     | _ ->
                         None
 
-            let rec yeet expr workingRange =
+            let rec walkBinding expr workingRange =
                 match expr with
-                | SynExpr.LetOrUse(false, false, bindings, bodyExpr, range) when rangeContainsPos range pos ->
+                | SynExpr.LetOrUse(false, _, bindings, bodyExpr, _) ->
                     let potentialNestedRange =
                         bindings
                         |> List.tryFind (fun binding -> rangeContainsPos binding.RangeOfBindingAndRhs pos)
-                        |> Option.bind toot
+                        |> Option.bind tryGetIdentRangeFromBinding
                     match potentialNestedRange with
                     | Some range ->
-                        yeet bodyExpr range
+                        walkBinding bodyExpr range
                     | None ->
-                        Some workingRange
+                        walkBinding bodyExpr workingRange
                 | _ ->
                     Some workingRange
 
@@ -50,8 +50,8 @@ module TreeExt =
                     override _.VisitBinding(defaultTraverse, binding) =
                         match binding with
                         | SynBinding.Binding (_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingAndRhs pos ->
-                            match toot b with
-                            | Some range -> yeet expr range
+                            match tryGetIdentRangeFromBinding b with
+                            | Some range -> walkBinding expr range
                             | None -> None
                         | _ -> defaultTraverse binding
                 })
