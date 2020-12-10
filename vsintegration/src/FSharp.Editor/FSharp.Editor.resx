@@ -261,4 +261,13 @@
   <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
     <value>Use '&lt;-' to mutate value</value>
   </data>
+<<<<<<< Updated upstream
+=======
+  <data name="UseFSharpLambda" xml:space="preserve">
+    <value>Use F# lambda syntax</value>
+  </data>
+  <data name="MakeOuterBindingRecursive" xml:space="preserve">
+    <value>Make outer binding recursive</value>
+  </data>
+>>>>>>> Stashed changes
 </root>

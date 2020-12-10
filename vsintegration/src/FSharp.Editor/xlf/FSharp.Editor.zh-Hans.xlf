@@ -62,6 +62,11 @@
         <target state="new">Make declaration 'mutable'</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make outer binding recursive</source>
+        <target state="new">Make outer binding recursive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">带下划线的前缀“{0}”</target>
