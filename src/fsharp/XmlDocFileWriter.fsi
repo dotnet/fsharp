@@ -7,6 +7,6 @@ open FSharp.Compiler.TcGlobals
 
 module XmlDocWriter =
 
-    val computeXmlDocSigs: tcGlobals: TcGlobals * generatedCcu: CcuThunk -> unit
+    val ComputeXmlDocSigs: tcGlobals: TcGlobals * generatedCcu: CcuThunk -> unit
 
-    val writeXmlDoc: assemblyName: string * generatedCcu: CcuThunk * xmlfile: string -> unit
+    val WriteXmlDocFile: assemblyName: string * generatedCcu: CcuThunk * xmlfile: string -> unit

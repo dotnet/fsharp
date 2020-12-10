@@ -18,8 +18,7 @@ module XmlDocWriter =
 
     let hasDoc (doc: XmlDoc) = not doc.IsEmpty
         
-    let computeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
-        (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
+    let ComputeXmlDocSigs (tcGlobals, generatedCcu: CcuThunk) =
         let g = tcGlobals
         let doValSig ptext (v: Val)  = if hasDoc v.XmlDoc then v.XmlDocSig <- XmlDocSigOfVal g false ptext v
         let doTyconSig ptext (tc: Tycon) = 
@@ -61,10 +60,10 @@ module XmlDocWriter =
        
         doModuleSig None generatedCcu.Contents          
 
-    let writeXmlDoc (assemblyName, generatedCcu: CcuThunk, xmlfile) =
+    let WriteXmlDocFile (assemblyName, generatedCcu: CcuThunk, xmlfile) =
         if not (Filename.hasSuffixCaseInsensitive "xml" xmlfile ) then 
             error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup))
-        (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
+
         let mutable members = []
         let addMember id xmlDoc = 
             if hasDoc xmlDoc then
@@ -84,7 +83,6 @@ module XmlDocWriter =
 
         let modulMember (m: ModuleOrNamespace) = addMember m.XmlDocSig m.XmlDoc
         
-        (* moduleSpec - recurses *)
         let rec doModule (mspec: ModuleOrNamespace) = 
             let mtype = mspec.ModuleOrNamespaceType
             if mspec.IsModule then modulMember mspec

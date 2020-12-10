@@ -736,12 +736,12 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
     ReportTime tcConfig ("Write XML document signatures")
     if tcConfig.xmlDocOutputFile.IsSome then 
-        XmlDocWriter.computeXmlDocSigs (tcGlobals, generatedCcu) 
+        XmlDocWriter.ComputeXmlDocSigs (tcGlobals, generatedCcu) 
 
     ReportTime tcConfig ("Write XML docs")
     tcConfig.xmlDocOutputFile |> Option.iter (fun xmlFile -> 
         let xmlFile = tcConfig.MakePathAbsolute xmlFile
-        XmlDocWriter.writeXmlDoc (assemblyName, generatedCcu, xmlFile))
+        XmlDocWriter.WriteXmlDocFile (assemblyName, generatedCcu, xmlFile))
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)

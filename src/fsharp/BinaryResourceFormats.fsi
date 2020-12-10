@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.BinaryResourceFormats 
 
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.Internal
 
 module VersionResourceFormat = 
 
