@@ -14,6 +14,9 @@ open NUnit.Framework
 open System
 open System.Collections.Immutable
 open System.IO
+open System.Text
+open System.Text.RegularExpressions
+
 
 module rec Compiler =
 
@@ -695,7 +698,7 @@ module rec Compiler =
 
         let private diagnosticMatches (pattern: string) (diagnostics: ErrorInfo list) : bool =
             diagnostics |> List.exists (fun d -> Regex.IsMatch(d.Message, pattern))
-            
+
         let withDiagnosticMessageMatches (pattern: string) (result: TestResult) : TestResult =
             match result with
             | Success r | Failure r ->
