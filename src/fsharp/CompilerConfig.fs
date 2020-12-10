@@ -1159,6 +1159,12 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         with _ ->
             false
 
+    member tcConfig.GenerateSignatureData = 
+        not tcConfig.standalone && not tcConfig.noSignatureData 
+
+    member tcConfig.GenerateOptimizationData = 
+        tcConfig.GenerateSignatureData
+
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig, 
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
 type TcConfigProvider = 

@@ -199,18 +199,16 @@ let requireFile dir path =
 
 let config configurationName envVars =
     let SCRIPT_ROOT = __SOURCE_DIRECTORY__
+    let fsharpCoreArchitecture = "netstandard2.0"
+    let fsharpBuildArchitecture = "netstandard2.0"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
-    let fsharpCoreArchitecture = "netstandard2.0"
-    let fsharpBuildArchitecture = "net472"
     let fsharpCompilerInteractiveSettingsArchitecture = "net472"
     let peverifyArchitecture = "net472"
 #else
     let fscArchitecture = "netcoreapp3.1"
     let fsiArchitecture = "netcoreapp3.1"
-    let fsharpCoreArchitecture = "netstandard2.0"
-    let fsharpBuildArchitecture = "netcoreapp3.1"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
     let peverifyArchitecture = "netcoreapp3.1"
 #endif

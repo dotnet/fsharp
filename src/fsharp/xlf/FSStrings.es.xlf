@@ -324,7 +324,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
         <source>symbol '&amp;&amp;'</source>
-        <target state="translated">símbolo "&amp; &amp;"</target>
+        <target state="translated">símbolo "&amp;&amp;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.BAR.BAR">

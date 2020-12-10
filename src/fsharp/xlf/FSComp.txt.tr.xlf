@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">tür daha ölçü birimlerini destekler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -189,7 +189,7 @@
       </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated4">
         <source>Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</source>
-        <target state="translated">IFormattable veya FormattableString türü olarak kullanılan düz metin arasına kod eklenmiş dizeler '%' belirticilerini kullanamaz. Yalnızca '{{ifade}}', '{{ifade,3}}' veya '{{ifade:N5}}' gibi .NET stili düz metin arasına kod ekleme işlemleri kullanılabilir.</target>
+        <target state="translated">IFormattable veya FormattableString türü olarak kullanılan düz metin arasına kod eklenmiş dizeler '%' belirticilerini kullanamaz. Yalnızca '{{expr}}', '{{expr,3}}' veya '{{expr:N5}}' gibi .NET stili düz metin arasına kod ekleme işlemleri kullanılabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">Derleyici sürümü başlığını görüntüle ve çık</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">Tür tanımında beklenmeyen belirteç var. '{0}' türünden sonra '=' bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -2634,7 +2634,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">F# kodunda '(typ,...,typ) ident' söz dizimi kullanılmaz . Bunun yerine 'ident&lt;typ,...,typ&gt;' söz dizimini kullanmayı göz önünde bulundurun</target>
+        <target state="translated">F# kodunda '(typ,...,typ) ident' söz dizimi kullanılmaz. Bunun yerine 'ident&lt;typ,...,typ&gt;' söz dizimini kullanmayı göz önünde bulundurun</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -2729,7 +2729,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="needs-review-translation">Ölçü birimleri yalnızca kayan, float32, ondalık ve işaretli tamsayı türlerinde desteklenir</target>
+        <target state="translated">Ölçü birimleri yalnızca kayan, float32, ondalık ve tamsayı türlerinde desteklenir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -5549,7 +5549,7 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">Tür adı ile tür parametresi arasındaki boşlukları kaldırın (ör. \"C &lt;'T&gt;\" değil \"C&lt;'T&gt;\". Tür parametreleri doğrudan tür adına bitişik olarak yerleştirilmelidir.</target>
+        <target state="translated">Tür adı ile tür parametresi arasındaki boşlukları kaldırın, ör. \"C &lt;'T&gt;\" değil \"C&lt;'T&gt;\". Tür parametreleri doğrudan tür adına bitişik olarak yerleştirilmelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -6339,7 +6339,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">Koleksiyonda {0} değişkeni</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">
@@ -6649,7 +6649,7 @@
       </trans-unit>
       <trans-unit id="erasedTo">
         <source>Erased to</source>
-        <target state="translated">Silindiği öğe:</target>
+        <target state="translated">Silindiği öğe</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnfinishedExpression">
@@ -7559,7 +7559,7 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralWithSuggestion">
         <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="translated">Bu üyelere uygulama verilmedi: {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ..." kapsamında listelenmesi gerektiğini unutmayın.</target>
+        <target state="translated">Bu üyelere uygulama verilmedi: {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ...") kapsamında listelenmesi gerektiğini unutmayın.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncated">
@@ -7569,7 +7569,7 @@
       </trans-unit>
       <trans-unit id="typrelNoImplementationGivenSeveralTruncatedWithSuggestion">
         <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
-        <target state="translated">Bu üyelere uygulama verilmedi (bazı sonuçlar atlandı): {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ..." kapsamında listelenmesi gerektiğini unutmayın.</target>
+        <target state="translated">Bu üyelere uygulama verilmedi (bazı sonuçlar atlandı): {0}Tüm arabirim üyelerinin uygulanması ve uygun bir "arabirim" bildirimi (ör. "arabirim ... ile üye ...") kapsamında listelenmesi gerektiğini unutmayın.</target>
         <note />
       </trans-unit>
       <trans-unit id="expressionHasNoName">

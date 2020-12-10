@@ -1497,7 +1497,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceNameName">
         <source>Name</source>
-        <target state="translated">Nom </target>
+        <target state="translated">Nom</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceNameDescription">
@@ -1507,7 +1507,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceNameDisplayName">
         <source>Name</source>
-        <target state="translated">Nom </target>
+        <target state="translated">Nom</target>
         <note />
       </trans-unit>
       <trans-unit id="AttrEditor_WebServiceDescName">
@@ -1612,7 +1612,7 @@ Erreur :</target>
       </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
         <source>Name</source>
-        <target state="translated">Nom </target>
+        <target state="translated">Nom</target>
         <note>Column names for the string table</note>
       </trans-unit>
       <trans-unit id="RSE_TypeColumn">
@@ -1798,7 +1798,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Name">
         <source>Name</source>
-        <target state="translated">Nom </target>
+        <target state="translated">Nom</target>
         <note>Columns for the "Details" view of the resource editor</note>
       </trans-unit>
       <trans-unit id="RSE_DetailsCol_Filename">
@@ -2335,7 +2335,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_ComboBoxItem_BrowseType">
         <source>Browse...</source>
-        <target state="translated">Parcourir</target>
+        <target state="translated">Parcourir...</target>
         <note>Added as the last item in the list of available types to let the user browse for a new type</note>
       </trans-unit>
       <trans-unit id="SD_ComboBoxItem_ApplicationScope">
@@ -2350,7 +2350,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="SD_GridViewNameColumnHeaderText">
         <source>Name</source>
-        <target state="translated">Nom </target>
+        <target state="translated">Nom</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_GridViewTypeColumnHeaderText">

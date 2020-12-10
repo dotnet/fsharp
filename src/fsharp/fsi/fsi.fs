@@ -2128,8 +2128,8 @@ type internal FsiInteractionProcessor
 
             let input = 
                 Lexhelp.reusingLexbufForParsing tokenizer.LexBuffer (fun () -> 
-                    let lexerWhichSavesLastToken lexbuf = 
-                        let tok = tokenizer.Lexer lexbuf
+                    let lexerWhichSavesLastToken _lexbuf = 
+                        let tok = tokenizer.GetToken()
                         lastToken <- tok
                         tok                        
                     Parser.interaction lexerWhichSavesLastToken tokenizer.LexBuffer)
@@ -2142,7 +2142,7 @@ type internal FsiInteractionProcessor
                 let mutable tok = Parser.ELSE (* <-- any token <> SEMICOLON_SEMICOLON will do *)
                 while (match tok with  Parser.SEMICOLON_SEMICOLON -> false | _ -> true) 
                       && not tokenizer.LexBuffer.IsPastEndOfStream do
-                    tok <- tokenizer.Lexer tokenizer.LexBuffer
+                    tok <- tokenizer.GetToken()
 
             stopProcessingRecovery e range0    
             None
@@ -2382,7 +2382,7 @@ type internal FsiInteractionProcessor
 
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
-            Parser.typedSeqExprEOF tokenizer.Lexer tokenizer.LexBuffer)
+            Parser.typedSeqExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
 
     let mainThreadProcessParsedExpression ctok errorLogger (expr, istate) = 
       istate |> InteractiveCatch errorLogger (fun istate ->
