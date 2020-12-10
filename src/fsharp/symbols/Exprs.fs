@@ -232,6 +232,15 @@ module FSharpExprConvert =
         | AI_not -> Some mkCallUnaryNotOperator
         | _ -> None
 
+    let (|ILMulDivOp|_|) e = 
+        match e with 
+        | AI_mul        -> Some (mkCallMultiplyOperator, true)
+        | AI_mul_ovf
+        | AI_mul_ovf_un -> Some (mkCallMultiplyChecked, true)
+        | AI_div
+        | AI_div_un     -> Some (mkCallDivisionOperator, false)
+        | _ -> None
+
     let (|ILBinaryOp|_|) e = 
         match e with 
         | AI_add        -> Some mkCallAdditionOperator
@@ -240,11 +249,6 @@ module FSharpExprConvert =
         | AI_sub        -> Some mkCallSubtractionOperator
         | AI_sub_ovf
         | AI_sub_ovf_un -> Some mkCallSubtractionChecked
-        | AI_mul        -> Some mkCallMultiplyOperator
-        | AI_mul_ovf
-        | AI_mul_ovf_un -> Some mkCallMultiplyChecked
-        | AI_div
-        | AI_div_un     -> Some mkCallDivisionOperator
         | AI_rem
         | AI_rem_un     -> Some mkCallModulusOperator
         | AI_ceq        -> Some mkCallEqualsOperator
@@ -749,6 +753,19 @@ module FSharpExprConvert =
             | TOp.ILAsm ([ ILBinaryOp binaryOp ], _), _, [arg1;arg2] -> 
                 let ty = tyOfExpr cenv.g arg1
                 let op = binaryOp cenv.g m ty arg1 arg2
+                ConvExprPrim cenv env op
+
+            // For units of measure some binary operators change their return type, e.g. a * b where each is int<kg> gives int<kg*kg>
+            | TOp.ILAsm ([ ILMulDivOp (binaryOp, isMul) ], _), _, [arg1;arg2] -> 
+                let argty1 = tyOfExpr cenv.g arg1
+                let argty2 = tyOfExpr cenv.g arg2
+                let rty = 
+                    match getMeasureOfType cenv.g argty1, getMeasureOfType cenv.g argty2 with
+                    | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
+                    | Some _, None  -> argty1
+                    | None, Some _ -> argty2
+                    | None, None -> argty1
+                let op = binaryOp cenv.g m argty1 argty2 rty arg1 arg2
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ ILConvertOp convertOp1; ILConvertOp convertOp2 ], _), _, [arg] -> 

@@ -1324,7 +1324,7 @@ and DepthCheck ndeep m =
 
 // If this is a type that's parameterized on a unit-of-measure (expected to be numeric), unify its measure with 1
 and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
-    match GetMeasureOfType csenv.g ty with
+    match getMeasureOfType csenv.g ty with
     | Some (tcref, _) -> 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
     | None ->
@@ -1379,7 +1379,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           when 
                IsMulDivTypeArgPair permitWeakResolution minfos g argty1 argty2 ->
                    
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
           | Some (tcref, ms1) -> 
             let ms2 = freshMeasure ()
             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 (mkAppTy tcref [TType_measure ms2])
@@ -1388,7 +1388,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
           | _ ->
 
-            match GetMeasureOfType g argty2 with
+            match getMeasureOfType g argty2 with
             | Some (tcref, ms2) -> 
               let ms1 = freshMeasure ()
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure ms1]) 
@@ -1512,7 +1512,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
       | _, false, "Sqrt", [argty1] 
           when isFpTy g argty1 ->
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
             | Some (tcref, _) -> 
               let ms1 = freshMeasure () 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
@@ -1563,7 +1563,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           when isFpTy g argty1 -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
           | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure Measure.One])
           return TTraitBuiltIn
@@ -3300,7 +3300,7 @@ let ApplyDefaultsAfterWitnessGeneration (g: TcGlobals) amap css denv sln =
             ChooseSolutionsForUnsolved css denv unsolved2)
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
+let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let denv = DisplayEnv.Empty g
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
@@ -3333,7 +3333,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo = trackErrors {
+let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let denv = DisplayEnv.Empty g
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
