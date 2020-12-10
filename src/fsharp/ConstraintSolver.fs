@@ -350,6 +350,14 @@ type PermitWeakResolution =
             | LegacyYesAtInlineGeneralization -> true
             | No -> false
 
+// Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
+let GetMeasureOfType g ty =
+    match ty with 
+    | AppTy g (tcref, [tyarg]) ->
+        match stripTyEqns g tyarg with  
+        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
+        | _ -> None
+    | _ -> None
 
 let rec isNativeIntegerTy g ty =
     typeEquivAux EraseMeasures g g.nativeint_ty ty || 
@@ -394,9 +402,28 @@ let isFpTy g ty =
 let isDecimalTy g ty = 
     typeEquivAux EraseMeasures g g.decimal_ty ty 
 
+// int*, int*<_> float*, float<_>*, enums
+//
+// Addition is supported on these via built-in resolution.  Note even on enums, so
+//    System.DayOfWeek.Monday + System.DayOfWeek.Tuesday
+// is allowed 
 let IsNonDecimalNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty
 
+// int*, int*<_> float*, float<_>*, enums, decimal, decimal<_>
+//
+// This is used for one side of multiplication supported via built-in resolution
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
+
+// decimal<_> but not decimal
+let IsUnitizedDecimalType g ty = 
+    Option.isSome (GetMeasureOfType g ty) && isDecimalTy g ty
+
+// int*, int*<_> float*, float<_>*, enums, decimal<_> but NOT plain decimal
+//
+// This is used for other side of multiplication supported via built-in resolution
+
+let IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g ty = 
+    IsNonDecimalNumericOrIntegralEnumType g ty || IsUnitizedDecimalType g ty
 
 let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
 
@@ -404,19 +431,11 @@ let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
 
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
-// Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
-let GetMeasureOfType g ty =
-    match ty with 
-    | AppTy g (tcref, [tyarg]) ->
-        match stripTyEqns g tyarg with  
-        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
-        | _ -> None
-    | _ -> None
-
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
 /// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
-let IsAddSubModType nm g ty = IsNonDecimalNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
+let IsAddSubModType nm g ty =
+    IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
 
 /// Checks the argument type for a built-in solution to a bitwise operator constraint
 let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
@@ -482,14 +501,22 @@ let IsRelationalOpArgTypePair permitWeakResolution minfos g ty1 ty2 =
 let IsBitwiseOpArgTypePair permitWeakResolution minfos g ty1 ty2 =
     IsSymmetricBinaryOpArgTypePair (IsBitwiseOpType g) permitWeakResolution minfos g ty1 ty2  
 
+// So 
+//    decimal<_> * decimal<_>
+//    decimal<_> * decimal
+//    decimal * decimal<_>
+// are supported via built-in resolution, but
+//    decimal * decimal
+// is not since there is an op_Multiply call available for that.
+//
+// Note 
+//     System.DayOfWeek.Monday * System.DayOfWeek.Tuesday
+// is allowed for enums, somewhat weirdly but that's how it is
+//
 let IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty1 ty2 =
     IsBinaryOpArgTypePair 
         (IsNumericOrIntegralEnumType g) 
-        // This next condition checks that either 
-        //   - Neither type contributes any methods OR
-        //   - We have the special case "decimal<_> * decimal". In this case we have some 
-        //     possibly-relevant methods from "decimal" but we ignore them in this case.
-        (fun ty2 -> IsNumericOrIntegralEnumType g ty2 || (Option.isSome (GetMeasureOfType g ty1) && isDecimalTy g ty2))
+        (IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g)
         permitWeakResolution 
         minfos 
         g 
@@ -3285,6 +3312,8 @@ let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintIn
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
 let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
+    // Witnesses ignore units of measure
+    let tyargs = tyargs |> List.map (stripTyEqnsWrtErasure EraseAll g)
     let css = CreateCodegenState tcVal g amap
     let denv = DisplayEnv.Empty g
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
