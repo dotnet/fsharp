@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="LearnMoreAbout">
         <source>To learn more about applied F# programming, use</source>
-        <target state="translated">Uygulamalı F# programlama hakkında daha fazla bilgi edinmek için şunu kullanın:</target>
+        <target state="translated">Uygulamalı F# programlama hakkında daha fazla bilgi edinmek için şunu kullanın</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line1">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="Booleans-Line2">
         <source>To learn more, see:</source>
-        <target state="translated">Daha fazla bilgi için bkz.</target>
+        <target state="translated">Daha fazla bilgi için bkz:</target>
         <note />
       </trans-unit>
       <trans-unit id="Booleans-Line3">

@@ -1454,13 +1454,13 @@ module internal ParseAndCheckFile =
         let lexargs = { lexargs with applyLineDirectives = false }
 
         let tokenizer = LexFilter.LexFilter(lightStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
-        tokenizer.Lexer
+        (fun _ -> tokenizer.GetToken())
 
     // Public callers are unable to answer LanguageVersion feature support questions.
     // External Tools including the VS IDE will enable the default LanguageVersion 
     let isFeatureSupported (_featureId:LanguageFeature) = true
 
-    let createLexbuf sourceText isFeatureSupported =
+    let createLexbuf sourceText =
         UnicodeLexing.SourceTextAsLexbuf(isFeatureSupported, sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
@@ -1476,7 +1476,7 @@ module internal ParseAndCheckFile =
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         
         let matchingBraces = new ResizeArray<_>()
-        Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
+        Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, sourceText, suggestNamesForErrors)
             let lexfun = createLexerFunction fileName options lexbuf errHandler
             let parenTokensBalance t1 t2 =
@@ -1553,16 +1553,20 @@ module internal ParseAndCheckFile =
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
-            Lexhelp.usingLexbufForParsing(createLexbuf sourceText isFeatureSupported, fileName) (fun lexbuf ->
+            Lexhelp.usingLexbufForParsing(createLexbuf sourceText, fileName) (fun lexbuf ->
+
                 let lexfun = createLexerFunction fileName options lexbuf errHandler
                 let isLastCompiland =
                     fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
                     ParseAndCheckInputs.IsScript(fileName)
                 let isExe = options.IsExe
-                try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
+
+                try 
+                    Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
                 with e ->
                     errHandler.ErrorLogger.StopProcessingRecovery e Range.range0 // don't re-raise any exceptions, we must return None.
                     None)
+
         errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
 
 

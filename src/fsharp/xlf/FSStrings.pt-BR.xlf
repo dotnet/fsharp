@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault1">
         <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
-        <target state="translated">Restrições de tipo incompatíveis ao aplicar o tipo padrão '{0}' para uma variável de inferência de tipo.</target>
+        <target state="translated">Restrições de tipo incompatíveis ao aplicar o tipo padrão '{0}' para uma variável de inferência de tipo. </target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault2">
@@ -379,7 +379,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
         <source>type application </source>
-        <target state="translated">aplicação de tipo</target>
+        <target state="translated">aplicação de tipo </target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON">
@@ -1189,12 +1189,12 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">Palavra-chave</target>
+        <target state="translated">Palavra-chave </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
         <source>symbol </source>
-        <target state="translated">símbolo</target>
+        <target state="translated">símbolo </target>
         <note />
       </trans-unit>
       <trans-unit id="FixReplace">
@@ -1284,7 +1284,7 @@
       </trans-unit>
       <trans-unit id="UseOfAddressOfOperator">
         <source>The use of native pointers may result in unverifiable .NET IL code</source>
-        <target state="translated">O uso de ponteiros nativos podem resultar em código .NET IL não verificável </target>
+        <target state="translated">O uso de ponteiros nativos podem resultar em código .NET IL não verificável</target>
         <note />
       </trans-unit>
       <trans-unit id="DefensiveCopyWarning">

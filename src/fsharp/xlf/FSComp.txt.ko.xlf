@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">더 많은 형식이 측정 단위를 지원함</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">컴파일러 버전 배너를 표시하고 종료</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -314,7 +314,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">형식 정의에 예기치 않은 토큰이 있습니다. '{0}' 형식 뒤에 '='가 필요합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -484,7 +484,7 @@
       </trans-unit>
       <trans-unit id="undefinedNameSuggestionsIntro">
         <source>Maybe you want one of the following:</source>
-        <target state="translated">다음 중 하나가 필요할 수 있습니다.</target>
+        <target state="translated">다음 중 하나가 필요할 수 있습니다:</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameTypeParameter">
@@ -2749,7 +2749,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="translated">측정 단위는 float, float32, decimal 및 부호 있는 정수 형식에 대해서만 지원됩니다.</target>
+        <target state="translated">측정 단위는 float, float32, 10진 및 정수 형식에 대해서만 지원됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">

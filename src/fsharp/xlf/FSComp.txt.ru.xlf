@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">другие типы поддерживают единицы измерения</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">Отобразить окно с версией компилятора и выйти</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -314,7 +314,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">Неожиданный токен в определении типа. После типа "{0}" ожидается "=".</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -2749,7 +2749,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
         <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="needs-review-translation">Единицы измерения поддерживаются только с типами float, float32, decimal и signed integer</target>
+        <target state="translated">Единицы измерения поддерживаются только с типами float, float32, decimal и integer.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -6359,7 +6359,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">Переменная {0} в коллекции</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">
@@ -6374,7 +6374,7 @@
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresBody">
         <source>'{0}' must come after a 'for' selection clause and be followed by the rest of the query. Syntax: ... {1} ...</source>
-        <target state="translated">Перед "{0}" должно идти предложение выбора "for", а после — оставшаяся часть запроса. Синтаксис: … {1} …</target>
+        <target state="translated">Перед "{0}" должно идти предложение выбора "for", а после — оставшаяся часть запроса. Синтаксис: ... {1} ...</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCustomOperationHasIncorrectArgCount">

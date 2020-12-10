@@ -39,9 +39,9 @@ open UnitTests.TestLib.LanguageService
 // AppDomain helper
 type Worker () =
     inherit MarshalByRefObject()
-                            
+
     let filePath = "C:\\test.fsx"
-    let projectOptions = { 
+    let projectOptions = {
         ProjectFileName = "C:\\test.fsproj"
         ProjectId = None
         SourceFiles =  [| filePath |]
@@ -136,7 +136,6 @@ module FsxCompletionProviderTests =
         let adSetup =
             let setup = new System.AppDomainSetup ()
             setup.PrivateBinPath <- pathToThisDll
-            setup.ApplicationBase <- Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SomeNonExistentDirectory")
             setup
 
         let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
@@ -144,7 +143,6 @@ module FsxCompletionProviderTests =
 
     [<Test>]
     let fsiShouldTriggerCompletionInFsxFile() =
-    
         let fileContents = """
     fsi.
     """

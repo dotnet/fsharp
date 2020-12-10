@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly TestFunction14
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction14
 {
-  // Offset: 0x00000000 Length: 0x000001EA
+  // Offset: 0x00000000 Length: 0x000001E6
 }
 .mresource public FSharpOptimizationData.TestFunction14
 {
   // Offset: 0x000001F0 Length: 0x00000072
 }
 .module TestFunction14.exe
-// MVID: {59B19208-A624-4587-A745-03830892B159}
+// MVID: {5FCFFD21-A624-4587-A745-038321FDCF5F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x006B0000
+// Image base: 0x06A40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,6 +54,7 @@
   .class auto ansi serializable sealed nested assembly beforefieldinit TestFunction14@5
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>,int32>
   {
+    .field static assembly initonly class TestFunction14/TestFunction14@5 @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -72,7 +73,7 @@
       // Code size       10 (0xa)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 24,27 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction14.fs'
+      .line 5,5 : 24,27 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction14.fs'
       IL_0000:  ldarg.1
       IL_0001:  ldc.i4.2
       IL_0002:  tail.
@@ -80,11 +81,22 @@
       IL_0009:  ret
     } // end of method TestFunction14@5::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction14/TestFunction14@5::.ctor()
+      IL_0005:  stsfld     class TestFunction14/TestFunction14@5 TestFunction14/TestFunction14@5::@_instance
+      IL_000a:  ret
+    } // end of method TestFunction14@5::.cctor
+
   } // end of class TestFunction14@5
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'TestFunction14@5-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
+    .field static assembly initonly class TestFunction14/'TestFunction14@5-1' @_instance
     .method assembly specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -109,6 +121,16 @@
       IL_0003:  ret
     } // end of method 'TestFunction14@5-1'::Invoke
 
+    .method private specialname rtspecialname static 
+            void  .cctor() cil managed
+    {
+      // Code size       11 (0xb)
+      .maxstack  10
+      IL_0000:  newobj     instance void TestFunction14/'TestFunction14@5-1'::.ctor()
+      IL_0005:  stsfld     class TestFunction14/'TestFunction14@5-1' TestFunction14/'TestFunction14@5-1'::@_instance
+      IL_000a:  ret
+    } // end of method 'TestFunction14@5-1'::.cctor
+
   } // end of class 'TestFunction14@5-1'
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
@@ -117,8 +139,8 @@
     // Code size       28 (0x1c)
     .maxstack  8
     .line 5,5 : 5,47 ''
-    IL_0000:  newobj     instance void TestFunction14/TestFunction14@5::.ctor()
-    IL_0005:  newobj     instance void TestFunction14/'TestFunction14@5-1'::.ctor()
+    IL_0000:  ldsfld     class TestFunction14/TestFunction14@5 TestFunction14/TestFunction14@5::@_instance
+    IL_0005:  ldsfld     class TestFunction14/'TestFunction14@5-1' TestFunction14/'TestFunction14@5-1'::@_instance
     IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>>::get_Empty()
     IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>>::Cons(!0,
                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
