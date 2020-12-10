@@ -2839,7 +2839,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_VersionWarning">
         <source>To enable client application services, you must set the Target Framework for your application to .NET Framework 3.5 or later. In C#, you can do this on the Application property page. In Visual Basic, you can do this one the Compile property page by clicking Advanced Compile Options.</source>
-        <target state="translated">若要啟用用戶端應用程式服務，必須將應用程式的目標 Framework 設定成 .NET Framework 3.5 (含) 以後版本。在 C#，您可以在 [應用程式]5D; 屬性頁上進行此設定。在 Visual Basic，您可以按一下 [進階編譯選項]5D;，在 [編譯]5D; 屬性頁上進行此設定。</target>
+        <target state="translated">若要啟用用戶端應用程式服務，必須將應用程式的目標 Framework 設定成 .NET Framework 3.5 (含) 以後版本。在 C#，您可以在 [應用程式] 屬性頁上進行此設定。在 Visual Basic，您可以按一下 [進階編譯選項]，在 [編譯] 屬性頁上進行此設定。</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_InvalidAppConfigXml">
@@ -2929,7 +2929,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
         <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
-        <target state="translated">由於這項要求的更高權限，此應用程式將無法在選取的區域中執行。如需詳細資訊，請按一下上方的 [說明]5D; 連結。</target>
+        <target state="translated">由於這項要求的更高權限，此應用程式將無法在選取的區域中執行。如需詳細資訊，請按一下上方的 [說明] 連結。</target>
         <note />
       </trans-unit>
     </body>

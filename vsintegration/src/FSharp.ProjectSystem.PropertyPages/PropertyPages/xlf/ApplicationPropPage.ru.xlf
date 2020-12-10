@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">
         <source>Tar&amp;get Framework:</source>
-        <target state="translated">&amp;Целевая рабочая среда</target>
+        <target state="translated">&amp;Целевая рабочая среда:</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFSharpCoreVersionLabel.Text">

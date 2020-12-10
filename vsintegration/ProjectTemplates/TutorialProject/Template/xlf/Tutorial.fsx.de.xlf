@@ -29,12 +29,12 @@
       </trans-unit>
       <trans-unit id="LearnMoreAbout">
         <source>To learn more about applied F# programming, use</source>
-        <target state="translated">Verwenden Sie Folgendes, um weitere Informationen zur praktischen F#-Programmierung zu erhalten:</target>
+        <target state="translated">Verwenden Sie Folgendes, um weitere Informationen zur praktischen F#-Programmierung zu erhalten</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line1">
         <source>To install the Visual F# Power Tools, use</source>
-        <target state="translated">Verwenden Sie Folgendes, um die Visual F# Power Tools zu installieren:</target>
+        <target state="translated">Verwenden Sie Folgendes, um die Visual F# Power Tools zu installieren</target>
         <note />
       </trans-unit>
       <trans-unit id="ToInstall-Line2">
@@ -669,7 +669,7 @@
       </trans-unit>
       <trans-unit id="ListMap-Line2">
         <source>This definition produces a new list by squaring the numbers in numberList, using the pipeline</source>
-        <target state="translated">Diese Definition erzeugt eine neue Liste, indem die Zahlen in "numberList" quadriert werden. Dabei wird der Pipeline-</target>
+        <target state="translated">Diese Definition erzeugt eine neue Liste, indem die Zahlen in "numberList" quadriert werden. Dabei wird der Pipeline</target>
         <note />
       </trans-unit>
       <trans-unit id="ListMap-Line3">

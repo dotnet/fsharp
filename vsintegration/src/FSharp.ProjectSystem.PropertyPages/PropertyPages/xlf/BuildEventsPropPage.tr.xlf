@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="translated">Derleme sonrası olayını çalıştır:</target>
+        <target state="translated">Derle&amp;me sonrası olayını çalıştır:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">

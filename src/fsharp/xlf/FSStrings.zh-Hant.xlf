@@ -1189,7 +1189,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">關鍵字</target>
+        <target state="translated">關鍵字 </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">

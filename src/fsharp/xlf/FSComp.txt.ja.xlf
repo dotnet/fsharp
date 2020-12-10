@@ -87,24 +87,19 @@
         <target state="translated">既定のインターフェイス メンバーの消費</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDotlessFloat32Literal">
+        <source>dotless float32 literal</source>
+        <target state="translated">ドットなしの float32 リテラル</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
-        <target state="new">more types support units of measure</target>
+        <target state="translated">単位をサポートするその他の型</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">固定インデックス スライス 3d/4d</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
-        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="new">The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDotlessFloat32Literal">
-        <source>dotless float32 literal</source>
-        <target state="translated">ドットなしの float32 リテラル</target>
         <note />
       </trans-unit>
       <trans-unit id="featureFromEndSlicing">
@@ -254,22 +249,17 @@
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
         <source>Unrecognized value '{0}' for --langversion use --langversion:? for complete list</source>
-        <target state="new">Unrecognized value '{0}' for --langversion use --langversion:? for complete list</target>
+        <target state="translated">--langversion の値 '{0}' が認識されません。完全なリストについては、--langversion:? を使用してください</target>
         <note />
       </trans-unit>
       <trans-unit id="optsVersion">
         <source>Display compiler version banner and exit</source>
-        <target state="new">Display compiler version banner and exit</target>
+        <target state="translated">コンパイラ バージョンのバナーを表示して終了する</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
-        <target state="needs-review-translation">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FieldNotContainedTypesDiffer">
-        <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
-        <target state="new">The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</target>
+        <target state="translated">パッケージ管理機能では、言語バージョン 5.0 で /langversion:preview を使用する必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEmptyFillInInterpolatedString">
@@ -299,7 +289,7 @@
       </trans-unit>
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
-        <target state="new">Unexpected token in type definition. Expected '=' after the type '{0}'.</target>
+        <target state="translated">型定義に予期しないトークンがあります。型 '{0}' の後には '=' が必要です。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -352,16 +342,6 @@
         <target state="translated">属性を型拡張に適用することはできません。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcConstructorsIllegalForThisType">
-        <source>Constructors cannot be defined for this type</source>
-        <target state="new">Constructors cannot be defined for this type</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcDefaultImplementationForInterfaceHasAlreadyBeenAdded">
-        <source>A default implementation of this interface has already been added because the explicit implementation of the interface was not specified at the definition of the type</source>
-        <target state="new">A default implementation of this interface has already been added because the explicit implementation of the interface was not specified at the definition of the type</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Byref 型は、オープン型宣言では使用できません。</target>
@@ -390,11 +370,6 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">リテラルとしてマークされた値に '{0}' を割り当てることはできません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcRecursiveBindingsWithMembersMustBeDirectAugmentation">
-        <source>Recursive bindings that include member specifications can only occur as a direct augmentation of a type</source>
-        <target state="new">Recursive bindings that include member specifications can only occur as a direct augmentation of a type</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRequireMergeSourcesOrBindN">
@@ -824,12 +799,12 @@
       </trans-unit>
       <trans-unit id="tastDuplicateTypeDefinitionInAssembly">
         <source>Two type definitions named '{0}' occur in namespace '{1}' in two parts of this assembly</source>
-        <target state="translated">{0}' という 2 つの型の定義が、このアセンブリの 2 か所の名前空間 '{1}' で発生しています</target>
+        <target state="translated">'{0}' という 2 つの型の定義が、このアセンブリの 2 か所の名前空間 '{1}' で発生しています</target>
         <note />
       </trans-unit>
       <trans-unit id="tastConflictingModuleAndTypeDefinitionInAssembly">
         <source>A module and a type definition named '{0}' occur in namespace '{1}' in two parts of this assembly</source>
-        <target state="translated">{0}' というモジュールおよび型の定義が、このアセンブリの 2 か所の名前空間 '{1}' で発生しています</target>
+        <target state="translated">'{0}' というモジュールおよび型の定義が、このアセンブリの 2 か所の名前空間 '{1}' で発生しています</target>
         <note />
       </trans-unit>
       <trans-unit id="tastInvalidMemberSignature">
@@ -854,7 +829,7 @@
       </trans-unit>
       <trans-unit id="tastUnexpectedByRef">
         <source>Unexpected use of a byref-typed variable</source>
-        <target state="translated">byref 型変数の予期しない使用方法です:</target>
+        <target state="translated">byref 型変数の予期しない使用方法です</target>
         <note />
       </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
@@ -884,17 +859,17 @@
       </trans-unit>
       <trans-unit id="tastUnexpectedDecodeOfAutoOpenAttribute">
         <source>Unexpected decode of AutoOpenAttribute</source>
-        <target state="translated">AutoOpenAttribute の予期しないデコードです:</target>
+        <target state="translated">AutoOpenAttribute の予期しないデコードです</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUnexpectedDecodeOfInternalsVisibleToAttribute">
         <source>Unexpected decode of InternalsVisibleToAttribute</source>
-        <target state="translated">InternalsVisibleToAttribute の予期しないデコードです:</target>
+        <target state="translated">InternalsVisibleToAttribute の予期しないデコードです</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUnexpectedDecodeOfInterfaceDataVersionAttribute">
         <source>Unexpected decode of InterfaceDataVersionAttribute</source>
-        <target state="translated">InterfaceDataVersionAttribute の予期しないデコードです:</target>
+        <target state="translated">InterfaceDataVersionAttribute の予期しないデコードです</target>
         <note />
       </trans-unit>
       <trans-unit id="tastActivePatternsLimitedToSeven">
@@ -1072,6 +1047,11 @@
         <target state="translated">シグネチャと実装の型 '{1}' の {0} 定義に互換性がありません。実装の種類はシールドですが、シグネチャではシールドが暗黙的に示されていません。シグネチャに [&lt;Sealed&gt;] 属性を追加してください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
+        <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
+        <target state="translated">シグネチャと実装の種類 '{1}' の {0} 定義に互換性がありません。実装の種類はシールド型ではありませんが、シグネチャは暗黙的にシールド型に設定されています。実装に [&lt;Sealed&gt;] 属性を追加することを検討してください。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
         <target state="translated">シグネチャと実装の型 '{1}' の {0} 定義に互換性がありません。実装は抽象クラスですが、シグネチャは抽象クラスではありません。シグネチャに [&lt;AbstractClass&gt;] 属性を追加してください。</target>
@@ -1227,6 +1207,11 @@
         <target state="translated">モジュールにはフィールド\n    {0}    \nが含まれますが、シグネチャでは\n    {1}    \nを指定しています。'literal' 修飾子が異なります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="FieldNotContainedTypesDiffer">
+        <source>The module contains the field\n    {0}    \nbut its signature specifies\n    {1}    \nThe types differ</source>
+        <target state="translated">モジュールにはフィールド\n    {0}    \nが含まれますが、シグネチャでは\n    {1}    \nを指定しています。型が異なります。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
         <target state="translated">この場所またはその付近にあるジェネリック コンストラクトの暗黙的なインスタンス化を解決できませんでした。これは、関連性のない複数の型に解決される可能性があるためです (たとえば、'{0}' と '{1}')。あいまいさを解決するために、型の注釈を使用してください。</target>
@@ -1299,42 +1284,42 @@
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleHiddenBySignature">
         <source>The exception definitions are not compatible because a CLI exception mapping is being hidden by a signature. The exception mapping must be visible to other modules. The module contains the exception definition\n    {0}    \nbut its signature specifies\n\t{1}</source>
-        <target state="translated">CLI の例外のマッピングがシグネチャによって隠ぺいされているため、例外の定義に互換性がありません。例外のマッピングは他のモジュールから参照できるようにする必要があります。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}\nを指定しています。</target>
+        <target state="translated">CLI の例外のマッピングがシグネチャによって隠ぺいされているため、例外の定義に互換性がありません。例外のマッピングは他のモジュールから参照できるようにする必要があります。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}を指定しています</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleDotNetRepresentationsDiffer">
         <source>The exception definitions are not compatible because the CLI representations differ. The module contains the exception definition\n    {0}    \nbut its signature specifies\n\t{1}</source>
-        <target state="translated">CLI 表現が異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}\nを指定しています。</target>
+        <target state="translated">CLI 表現が異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}を指定しています</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleAbbreviationHiddenBySignature">
         <source>The exception definitions are not compatible because the exception abbreviation is being hidden by the signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature. The module contains the exception definition\n    {0}    \nbut its signature specifies\n\t{1}.</source>
-        <target state="translated">例外の省略形がシグネチャによって隠ぺいされているため、例外の定義に互換性がありません。省略形は他の CLI 言語から参照できるようにする必要があります。シグネチャ内の省略形を参照できるようにしてください。モジュールには例外の定義\n    {0}    \nがありますが、シグネチャでは\n\t{1}\nを指定しています。</target>
+        <target state="translated">例外の省略形がシグネチャによって隠ぺいされているため、例外の定義に互換性がありません。省略形は他の CLI 言語から参照できるようにする必要があります。シグネチャ内の省略形を参照できるようにしてください。モジュールには例外の定義\n    {0}    \nがありますが、シグネチャでは\n\t{1}を指定しています。</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleSignaturesDiffer">
         <source>The exception definitions are not compatible because the exception abbreviations in the signature and implementation differ. The module contains the exception definition\n    {0}    \nbut its signature specifies\n\t{1}.</source>
-        <target state="translated">例外の省略形がシグネチャと実装とで異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}\nを指定しています。</target>
+        <target state="translated">例外の省略形がシグネチャと実装とで異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}を指定しています。</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleExceptionDeclarationsDiffer">
         <source>The exception definitions are not compatible because the exception declarations differ. The module contains the exception definition\n    {0}    \nbut its signature specifies\n\t{1}.</source>
-        <target state="translated">例外の宣言が異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}\nを指定しています。</target>
+        <target state="translated">例外の宣言が異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}を指定しています。</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleFieldInSigButNotImpl">
         <source>The exception definitions are not compatible because the field '{0}' was required by the signature but was not specified by the implementation. The module contains the exception definition\n    {1}    \nbut its signature specifies\n\t{2}.</source>
-        <target state="translated">シグネチャにはフィールド '{0}' が必要ですが、実装では指定されなかったため、例外の定義に互換性がありません。モジュールには例外の定義\n    {1}    \nが含まれますが、シグネチャでは\n\t{2}\nを指定しています。</target>
+        <target state="translated">シグネチャにはフィールド '{0}' が必要ですが、実装では指定されなかったため、例外の定義に互換性がありません。モジュールには例外の定義\n    {1}    \nが含まれますが、シグネチャでは\n\t{2}を指定しています。</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleFieldInImplButNotSig">
         <source>The exception definitions are not compatible because the field '{0}' was present in the implementation but not in the signature. The module contains the exception definition\n    {1}    \nbut its signature specifies\n\t{2}.</source>
-        <target state="translated">実装にはフィールド '{0}' がありますが、シグネチャにはないため、例外の定義に互換性がありません。モジュールには例外の定義\n    {1}    \nが含まれますが、シグネチャでは\n\t{2}\nを指定しています。</target>
+        <target state="translated">実装にはフィールド '{0}' がありますが、シグネチャにはないため、例外の定義に互換性がありません。モジュールには例外の定義\n    {1}    \nが含まれますが、シグネチャでは\n\t{2}を指定しています。</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleFieldOrderDiffers">
         <source>The exception definitions are not compatible because the order of the fields is different in the signature and implementation. The module contains the exception definition\n    {0}    \nbut its signature specifies\n\t{1}.</source>
-        <target state="translated">フィールドの順序がシグネチャと実装とで異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}\nを指定しています。</target>
+        <target state="translated">フィールドの順序がシグネチャと実装とで異なるため、例外の定義に互換性がありません。モジュールには例外の定義\n    {0}    \nが含まれますが、シグネチャでは\n\t{1}を指定しています。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelModuleNamespaceAttributesDifferInSigAndImpl">
@@ -2304,7 +2289,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFile">
         <source>Unexpected end of input</source>
-        <target state="translated">予期しない入力の終わりです:</target>
+        <target state="translated">予期しない入力の終わりです</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedVisibilityDeclaration">
@@ -2364,7 +2349,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEmptyModuleDefn">
         <source>Unexpected empty type moduleDefn list</source>
-        <target state="translated">予期しない空の型の moduleDefn リストです:</target>
+        <target state="translated">予期しない空の型の moduleDefn リストです</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAttributesMustComeBeforeVal">
@@ -2499,7 +2484,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedIdentifier">
         <source>Unexpected identifier: '{0}'</source>
-        <target state="translated">予期しない識別子: '{0}':</target>
+        <target state="translated">予期しない識別子: '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnionCasesCannotHaveVisibilityDeclarations">
@@ -2639,7 +2624,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedInfixOperator">
         <source>Unexpected infix operator in type expression</source>
-        <target state="translated">型式に予期しない挿入演算子が見つかりました:</target>
+        <target state="translated">型式に予期しない挿入演算子が見つかりました</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
@@ -2659,7 +2644,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedIntegerLiteralForUnitOfMeasure">
         <source>Unexpected integer literal in unit-of-measure expression</source>
-        <target state="translated">単位式に予期しない整数リテラルが見つかりました:</target>
+        <target state="translated">単位式に予期しない整数リテラルが見つかりました</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedTypeParameter">
@@ -2717,19 +2702,9 @@
         <target state="translated">/ に続く暗黙的な単位の積</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
-        <target state="translated">float 型、float32 型、decimal 型、および符号付き整数型でのみサポートされる単位です</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="keywordDescriptionIn">
-        <source>Used for sequence expressions and, in verbose syntax, to separate expressions from bindings.</source>
-        <target state="new">Used for sequence expressions and, in verbose syntax, to separate expressions from bindings.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnexpectedMeasureAnon">
         <source>Unexpected SynMeasure.Anon</source>
-        <target state="translated">予期しない SynMeasure.Anon です:</target>
+        <target state="translated">予期しない SynMeasure.Anon です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonZeroConstantCannotHaveGenericUnit">
@@ -2744,17 +2719,22 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedBigRationalConstant">
         <source>Unexpected big rational constant</source>
-        <target state="translated">有理定数が大きすぎます:</target>
+        <target state="translated">有理定数が大きすぎます</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="translated">単位は、float、float32、decimal、整数型でのみサポートされます。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
         <source>Unexpected Const_uint16array</source>
-        <target state="translated">予期しない Const_uint16array です:</target>
+        <target state="translated">予期しない Const_uint16array です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstByteArray">
         <source>Unexpected Const_bytearray</source>
-        <target state="translated">予期しない Const_bytearray です:</target>
+        <target state="translated">予期しない Const_bytearray です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcParameterRequiresName">
@@ -2869,7 +2849,7 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedExprAtRecInfPoint">
         <source>Unexpected expression at recursive inference point</source>
-        <target state="translated">再帰的推論ポイントに予期しない式があります:</target>
+        <target state="translated">再帰的推論ポイントに予期しない式があります</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLessGenericBecauseOfAnnotation">
@@ -2944,7 +2924,7 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedPropertyInSyntaxTree">
         <source>Unexpected source-level property specification in syntax tree</source>
-        <target state="translated">構文ツリーに予期しないソースレベルのプロパティの指定があります:</target>
+        <target state="translated">構文ツリーに予期しないソースレベルのプロパティの指定があります</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticInitializerRequiresArgument">
@@ -2974,7 +2954,7 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedPropertySpec">
         <source>Unexpected source-level property specification</source>
-        <target state="translated">予期しないソースレベルのプロパティの指定があります:</target>
+        <target state="translated">予期しないソースレベルのプロパティの指定があります</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectExpressionFormDeprecated">
@@ -3119,7 +3099,7 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedSymbolInTypeExpression">
         <source>Unexpected {0} in type expression</source>
-        <target state="translated">型式に予期しない {0} があります:</target>
+        <target state="translated">型式に予期しない {0} があります</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeParameterInvalidAsTypeConstructor">
@@ -3144,12 +3124,12 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedSlashInType">
         <source>Unexpected / in type</source>
-        <target state="translated">型に予期しない / があります:</target>
+        <target state="translated">型に予期しない / があります</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedTypeArguments">
         <source>Unexpected type arguments</source>
-        <target state="translated">予期しない型引数です:</target>
+        <target state="translated">予期しない型引数です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOptionalArgsOnlyOnMembers">
@@ -3754,7 +3734,7 @@
       </trans-unit>
       <trans-unit id="tcUnexpectedConditionInImportedAssembly">
         <source>Unexpected condition in imported assembly: failed to decode AttributeUsage attribute</source>
-        <target state="translated">インポートされたアセンブリに予期しない条件があります。AttributeUsage 属性のデコードに失敗しました:</target>
+        <target state="translated">インポートされたアセンブリに予期しない条件があります。AttributeUsage 属性のデコードに失敗しました</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnrecognizedAttributeTarget">
@@ -3907,9 +3887,14 @@
         <target state="translated">構造体には、引数なしのオブジェクト コンストラクターを使用できません。構造体は既定のコンストラクターを自動的にサポートするため、これはすべての CLI 言語に課せられた制限です。</target>
         <note />
       </trans-unit>
-      <trans-unit id="packageManagerError">
-        <source>{0}</source>
-        <target state="new">{0}</target>
+      <trans-unit id="tcConstructorsIllegalForThisType">
+        <source>Constructors cannot be defined for this type</source>
+        <target state="translated">この型にコンストラクターは定義できません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcRecursiveBindingsWithMembersMustBeDirectAugmentation">
+        <source>Recursive bindings that include member specifications can only occur as a direct augmentation of a type</source>
+        <target state="translated">メンバーの指定を含む再帰的束縛は、型の直接的な拡張としてのみ実行できます</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlySimplePatternsInLetRec">
@@ -4080,6 +4065,11 @@
       <trans-unit id="tcAllImplementedInterfacesShouldBeDeclared">
         <source>All implemented interfaces should be declared on the initial declaration of the type</source>
         <target state="translated">実装したすべてのインターフェイスは、型の最初の宣言で宣言する必要があります</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcDefaultImplementationForInterfaceHasAlreadyBeenAdded">
+        <source>A default implementation of this interface has already been added because the explicit implementation of the interface was not specified at the definition of the type</source>
+        <target state="translated">インターフェイスの明示的な実装が型の定義時に指定されなかったため、このインターフェイスの既定の実装が追加されました。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMemberNotPermittedInInterfaceImplementation">
@@ -4464,7 +4454,7 @@
       </trans-unit>
       <trans-unit id="ilUnexpectedGetSetAnnotation">
         <source>Unexpected GetSet annotation on a property</source>
-        <target state="translated">プロパティに予期しない GetSet 注釈がありました:</target>
+        <target state="translated">プロパティに予期しない GetSet 注釈がありました</target>
         <note />
       </trans-unit>
       <trans-unit id="ilFieldOffsetAttributeCouldNotBeDecoded">
@@ -5099,7 +5089,7 @@
       </trans-unit>
       <trans-unit id="tlrUnexpectedTExpr">
         <source>Unexpected Expr.TyChoose</source>
-        <target state="translated">予期しない Expr.TyChoose です:</target>
+        <target state="translated">予期しない Expr.TyChoose です</target>
         <note />
       </trans-unit>
       <trans-unit id="tlrLambdaLiftingOptimizationsNotApplied">
@@ -5229,7 +5219,7 @@
       </trans-unit>
       <trans-unit id="nrUnexpectedEmptyLongId">
         <source>Unexpected empty long identifier</source>
-        <target state="translated">予期しない空の長識別子:</target>
+        <target state="translated">予期しない空の長識別子</target>
         <note />
       </trans-unit>
       <trans-unit id="nrRecordDoesNotContainSuchLabel">
@@ -5264,7 +5254,7 @@
       </trans-unit>
       <trans-unit id="ilwriteErrorCreatingPdb">
         <source>Unexpected error creating debug information file '{0}'</source>
-        <target state="translated">デバッグ情報ファイル '{0}' の作成中に予期しないエラーが発生しました:</target>
+        <target state="translated">デバッグ情報ファイル '{0}' の作成中に予期しないエラーが発生しました</target>
         <note />
       </trans-unit>
       <trans-unit id="lexOutsideIntegerRange">
@@ -7092,6 +7082,11 @@
         <target state="translated">条件分岐のコンストラクトで使用します。</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionIn">
+        <source>Used for sequence expressions and, in verbose syntax, to separate expressions from bindings.</source>
+        <target state="translated">冗語構文で、式のバインディングを分離するためにシーケンス式に使用します。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionInherit">
         <source>Used to specify a base class or base interface.</source>
         <target state="translated">基底クラスまたは基底インターフェイスを指定するために使用します。</target>
@@ -7414,7 +7409,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">関数またはメソッドによって返される byref ポインターが F# 4.5 の時点では暗黙的に逆参照されています。ポインターとして返り値を取得するには、address-of  演算子を使用して '&amp;f(x)' または '&amp;obj.Method(arg1, arg2)' などとします。</target>
+        <target state="translated">関数またはメソッドによって返される byref ポインターが F# 4.5 の時点では暗黙的に逆参照されています。ポインターとして返り値を取得するには、address-of 演算子を使用して '&amp;f(x)' または '&amp;obj.Method(arg1, arg2)' などとします。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">
@@ -7605,6 +7600,11 @@
       <trans-unit id="packageManagerUnknown">
         <source>Package manager key '{0}' was not registered in {1}. Currently registered: {2}</source>
         <target state="translated">パッケージ マネージャー キー '{0}' は {1} に登録されていませんでした。現在登録済み: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="packageManagerError">
+        <source>{0}</source>
+        <target state="translated">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="couldNotLoadDependencyManagerExtension">

@@ -37,9 +37,6 @@ module internal AssemblyAttributes =
     do()
 
 module internal Guids =
-#if FSI_SERVER_INTELLISENSE
-    let enable_fsi_intellisense         = true
-#endif
     
     // FSI Session command set
     let guidInteractiveCommands         = Microsoft.VisualStudio.VSConstants.VsStd11 

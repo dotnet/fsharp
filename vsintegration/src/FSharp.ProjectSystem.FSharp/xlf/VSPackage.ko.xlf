@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="DefaultNamespaceDescription">
         <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
-        <target state="translated">클래스처럼 [새 항목 추가]5D; 대화 상자를 통해 추가한 항목에 대해 기본 네임스페이스를 지정합니다.</target>
+        <target state="translated">클래스처럼 [새 항목 추가] 대화 상자를 통해 추가한 항목에 대해 기본 네임스페이스를 지정합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="StartupObject">
@@ -539,7 +539,7 @@
       </trans-unit>
       <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
         <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
-        <target state="translated">모든 Framework 어셈블리가 이미 참조되었습니다. [개체 브라우저]5D;를 사용하여 Framework에서 참조를 탐색하세요.</target>
+        <target state="translated">모든 Framework 어셈블리가 이미 참조되었습니다. [개체 브라우저]를 사용하여 Framework에서 참조를 탐색하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">
