@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -370,7 +369,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="path"></param>
         public override void DeleteFromStorage(string path)
         {
-            if (FSLib.Shim.FileSystem.SafeExists(path))
+            if (File.Exists(path))
             {
                 File.SetAttributes(path, FileAttributes.Normal); // make sure it's not readonly.
                 File.Delete(path);
@@ -654,7 +653,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             string moniker = this.GetMkDocument();
 
-            if (String.IsNullOrEmpty(moniker) || !FSLib.Shim.FileSystem.SafeExists(moniker))
+            if (String.IsNullOrEmpty(moniker) || !File.Exists(moniker))
             {
                 return false;
             }
@@ -704,7 +703,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>True if the file exist</returns>
         public virtual bool IsFileOnDisk(string path)
         {
-            return FSLib.Shim.FileSystem.SafeExists(path);
+            return File.Exists(path);
         }
 
         /// <summary>
