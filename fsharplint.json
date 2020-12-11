@@ -1,0 +1,10 @@
+{
+    "ignoreFiles": [
+        "*assemblyinfo.*"
+    ],
+    "formatting": {
+        "memberNames": {
+            "enabled": false
+        }
+    }
+}

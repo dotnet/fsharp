@@ -317,6 +317,7 @@ let convAssemblyRef (aref: ILAssemblyRef) =
 /// The global environment.
 type cenv = 
     { ilg: ILGlobals
+      emitTailcalls: bool
       tryFindSysILTypeRef: string -> ILTypeRef option
       generatePdb: bool
       resolveAssemblyRef: (ILAssemblyRef -> Choice<string, System.Reflection.Assembly> option) }
@@ -913,10 +914,10 @@ let emitInstrAlign (ilG: ILGenerator) = function
     | Unaligned4 -> ilG.Emit(OpCodes.Unaligned, 3L)
 
 /// Emit the tail. prefix if necessary
-let emitInstrTail (ilG: ILGenerator) tail emitTheCall = 
+let emitInstrTail (cenv: cenv) (ilG: ILGenerator) tail emitTheCall = 
     match tail with
-    | Tailcall -> ilG.EmitAndLog OpCodes.Tailcall; emitTheCall(); ilG.EmitAndLog OpCodes.Ret
-    | Normalcall -> emitTheCall()
+    | Tailcall when cenv.emitTailcalls -> ilG.EmitAndLog OpCodes.Tailcall; emitTheCall(); ilG.EmitAndLog OpCodes.Ret
+    | _ -> emitTheCall()
 
 let emitInstrNewobj cenv emEnv (ilG: ILGenerator) mspec varargs =
     match varargs with
@@ -928,7 +929,7 @@ let emitSilverlightCheck (ilG: ILGenerator) =
     ()
 
 let emitInstrCall cenv emEnv (ilG: ILGenerator) opCall tail (mspec: ILMethodSpec) varargs =
-    emitInstrTail ilG tail (fun () ->
+    emitInstrTail cenv ilG tail (fun () ->
         if mspec.MethodRef.Name = ".ctor" || mspec.MethodRef.Name = ".cctor" then
             let cinfo = convConstructorSpec cenv emEnv mspec
             match varargs with
@@ -1117,7 +1118,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         emitInstrCall cenv emEnv ilG OpCodes.Callvirt tail mspec varargs                                                     
 
     | I_calli (tail, callsig, None) -> 
-        emitInstrTail ilG tail (fun () ->
+        emitInstrTail cenv ilG tail (fun () ->
         ilG.EmitCalli(OpCodes.Calli, 
                       convCallConv callsig.CallingConv, 
                       convType cenv emEnv callsig.ReturnType, 
@@ -1125,7 +1126,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                       Unchecked.defaultof<System.Type[]>))
 
     | I_calli (tail, callsig, Some varargTys) -> 
-        emitInstrTail ilG tail (fun () ->
+        emitInstrTail cenv ilG tail (fun () ->
         ilG.EmitCalli(OpCodes.Calli, 
                       convCallConv callsig.CallingConv, 
                       convType cenv emEnv callsig.ReturnType, 
@@ -2123,8 +2124,8 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let modB = asmB.DefineDynamicModuleAndLog (assemblyName, filename, debugInfo)
     asmB, modB
 
-let emitModuleFragment (ilg, emEnv, asmB: AssemblyBuilder, modB: ModuleBuilder, modul: IL.ILModuleDef, debugInfo: bool, resolveAssemblyRef, tryFindSysILTypeRef) =
-    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tryFindSysILTypeRef }
+let emitModuleFragment (ilg, emitTailcalls, emEnv, asmB: AssemblyBuilder, modB: ModuleBuilder, modul: IL.ILModuleDef, debugInfo: bool, resolveAssemblyRef, tryFindSysILTypeRef) =
+    let cenv = { ilg = ilg ; emitTailcalls=emitTailcalls; generatePdb = debugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tryFindSysILTypeRef }
 
     let emEnv = buildModuleFragment cenv emEnv asmB modB modul
     match modul.Manifest with 
