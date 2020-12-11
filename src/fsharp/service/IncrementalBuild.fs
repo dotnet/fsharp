@@ -974,7 +974,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             initialSemanticModel <- None
             finalizedSemanticModel <- None
 
-            for i = 0 to logicalStampedFileNames.Length - 1 do
+            for i = 0 to stampedFileNames.Length - 1 do
                 stampedFileNames.[i] <- DateTime.MinValue
                 logicalStampedFileNames.[i] <- DateTime.MinValue
                 semanticModels.[i] <- None
