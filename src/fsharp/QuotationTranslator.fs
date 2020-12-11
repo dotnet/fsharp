@@ -737,7 +737,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         
                 let minfoOpt =
                     if g.generateWitnesses then 
-                        ConstraintSolver.CodegenWitnessForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args |> CommitOperationResult 
+                        ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo args |> CommitOperationResult 
                     else
                         None
                 match minfoOpt with
