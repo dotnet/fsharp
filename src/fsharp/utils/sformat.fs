@@ -724,7 +724,7 @@ module Display =
     let unitL = wordL (tagPunctuation "()")
           
     let makeRecordL nameXs =
-        let itemL (name, xL) = wordL name ^^ wordL Literals.equals -- xL
+        let itemL (name, xL) = (wordL name ^^ wordL Literals.equals) -- xL
         let braceL xs = (wordL Literals.leftBrace) ^^ xs ^^ (wordL Literals.rightBrace)
             
         nameXs
