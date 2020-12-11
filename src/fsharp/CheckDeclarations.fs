@@ -4221,7 +4221,12 @@ module EstablishTypeDefinitionCores =
             and accStructFieldType structTycon structTyInst fspec fieldTy (doneTypes, acc) =
                 let fieldTy = stripTyparEqns fieldTy
                 match fieldTy with
-                | TType_app (tcref2, tinst2) when tcref2.IsStructOrEnumTycon ->
+                | TType_tuple (_isStruct , tinst2) when isStructTupleTy cenv.g fieldTy ->
+                    // The field is a struct tuple. Check each element of the tuple.
+                    // This case was added to resolve issues/3916
+                    ((doneTypes, acc), tinst2)
+                    ||> List.fold (fun acc' x -> accStructFieldType structTycon structTyInst fspec x acc')
+                | TType_app (tcref2 , tinst2) when tcref2.IsStructOrEnumTycon ->
                     // The field is a struct.
                     // An edge (tycon, tycon2) should be recorded, unless it is the "static self-typed field" case.
                     let tycon2 = tcref2.Deref

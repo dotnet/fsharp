@@ -1058,6 +1058,15 @@ let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2
 
+// Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
+let getMeasureOfType g ty =
+    match ty with 
+    | AppTy g (tcref, [tyarg]) ->
+        match stripTyEqns g tyarg with  
+        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
+        | _ -> None
+    | _ -> None
+
 let isErasedType g ty = 
   match stripTyEqns g ty with
 #if !NO_EXTENSIONTYPING
@@ -6959,9 +6968,9 @@ let mkCallAdditionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForInt
 
 let mkCallSubtractionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallMultiplyOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyOperator (g: TcGlobals) m ty1 ty2 rty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_multiply_info, [[ty1; ty2; rty]], [e1;e2], m)
 
-let mkCallDivisionOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallDivisionOperator (g: TcGlobals) m ty1 ty2 rty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty1; ty2; rty]], [e1;e2], m)
 
 let mkCallModulusOperator (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_modulus_info, [[ty; ty; ty]], [e1;e2], m)
 
@@ -6985,7 +6994,7 @@ let mkCallAdditionChecked (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntr
 
 let mkCallSubtractionChecked (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
-let mkCallMultiplyChecked (g: TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyChecked (g: TcGlobals) m ty1 ty2 rty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty1; ty2; rty]], [e1;e2], m)
 
 let mkCallUnaryNegChecked (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.checked_unary_minus_info, [[ty]], [e1], m)
 

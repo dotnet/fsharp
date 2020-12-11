@@ -97,42 +97,64 @@ type IlxClosureRef =
     | IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
     
 type IlxClosureSpec = 
-    | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType
+    | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType * useStaticField: bool
+
     member x.TypeRef = let (IlxClosureRef(tref, _, _)) = x.ClosureRef in tref
-    member x.ILType = let (IlxClosureSpec(_, _, ty)) = x in ty
-    member x.ClosureRef = let (IlxClosureSpec(cloref, _, _)) = x in cloref 
+
+    member x.ILType = let (IlxClosureSpec(_, _, ty, _)) = x in ty
+
+    member x.ClosureRef = let (IlxClosureSpec(cloref, _, _, _)) = x in cloref 
+
     member x.FormalFreeVars = let (IlxClosureRef(_, _, fvs)) = x.ClosureRef in fvs
+
     member x.FormalLambdas = let (IlxClosureRef(_, lambdas, _)) = x.ClosureRef in lambdas
-    member x.GenericArgs = let (IlxClosureSpec(_, inst, _)) = x in inst
-    static member Create (cloref, inst) = 
+
+    member x.GenericArgs = let (IlxClosureSpec(_, inst, _, _)) = x in inst
+
+    static member Create (cloref, inst, useStaticField) = 
         let (IlxClosureRef(tref, _, _)) = cloref
-        IlxClosureSpec(cloref, inst, mkILBoxedType (mkILTySpec (tref, inst)))
-    member clospec.Constructor = 
-        let cloTy = clospec.ILType
-        let fields = clospec.FormalFreeVars
+        IlxClosureSpec(cloref, inst, mkILBoxedType (mkILTySpec (tref, inst)), useStaticField)
+
+    member x.Constructor = 
+        let cloTy = x.ILType
+        let fields = x.FormalFreeVars
         mkILCtorMethSpecForTy (cloTy, fields |> Array.map (fun fv -> fv.fvType) |> Array.toList)
 
+    member x.UseStaticField = 
+        let (IlxClosureSpec(_, _, _, useStaticField)) = x
+        useStaticField
+
+    member x.GetStaticFieldSpec() = 
+        assert x.UseStaticField
+        let formalCloTy = mkILFormalBoxedTy x.TypeRef (mkILFormalTypars x.GenericArgs)
+        mkILFieldSpecInTy (x.ILType, "@_instance", formalCloTy)
 
 // Define an extension of the IL algebra of type definitions
 type IlxClosureInfo = 
     { cloStructure: IlxClosureLambdas
       cloFreeVars: IlxClosureFreeVar[]  
-      cloCode: Lazy<ILMethodBody> }
+      cloCode: Lazy<ILMethodBody>
+      cloUseStaticField: bool}
 
 type IlxUnionInfo = 
     { /// is the representation public? 
       cudReprAccess: ILMemberAccess 
+
       /// are the representation public? 
       cudHelpersAccess: ILMemberAccess 
+
       /// generate the helpers? 
       cudHasHelpers: IlxUnionHasHelpers 
+
       /// generate the helpers? 
       cudDebugProxies: bool 
       cudDebugDisplayAttributes: ILAttribute list
       cudAlternatives: IlxUnionAlternative[]
       cudNullPermitted: bool
+
       /// debug info for generated code for classunions 
-      cudWhere: ILSourceMarker option }
+      cudWhere: ILSourceMarker option
+     }
 
 // --------------------------------------------------------------------
 // Define these as extensions of the IL types
@@ -140,7 +162,7 @@ type IlxUnionInfo =
 
 let destTyFuncApp = function Apps_tyapp (b, c) -> b, c | _ -> failwith "destTyFuncApp"
 
-let mkILFormalCloRef gparams csig = IlxClosureSpec.Create(csig, mkILFormalGenericArgs 0 gparams)
+let mkILFormalCloRef gparams csig useStaticField = IlxClosureSpec.Create(csig, mkILFormalGenericArgs 0 gparams, useStaticField)
 
 let actualTypOfIlxUnionField (cuspec : IlxUnionSpec) idx fidx =
   instILType cuspec.GenericArgs (cuspec.FieldDef idx fidx).Type

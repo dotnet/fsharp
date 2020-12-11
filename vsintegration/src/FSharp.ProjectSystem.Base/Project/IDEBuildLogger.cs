@@ -310,7 +310,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 // Add error to task list
-                var taskText = global::FSharp.Compiler.ErrorLogger.NewlineifyErrorString(errorEvent.Message);
+                // Code below is for --flaterrors flag that is only used by the IDE
+
+                var stringThatIsAProxyForANewlineInFlatErrors = new string(new[] { (char)29 });
+                var taskText = errorEvent.Message.Replace(stringThatIsAProxyForANewlineInFlatErrors, Environment.NewLine);
 
                 if (errorReporter != null)
                 {

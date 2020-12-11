@@ -240,7 +240,7 @@ module CoreTests =
     [<Test>]
     let ``SDKTests`` () =
         let cfg = testConfig' "SDKTests"
-        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj"))
+        exec cfg cfg.DotNetExe ("msbuild " + Path.Combine(cfg.Directory, "AllSdkTargetsTests.proj") + " /p:Configuration=" + cfg.BUILD_CONFIG)
 
 #if !NETCOREAPP
     [<Test>]

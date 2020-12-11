@@ -379,15 +379,6 @@ let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
 
 let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
-// Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
-let GetMeasureOfType g ty =
-    match ty with 
-    | AppTy g (tcref, [tyarg]) ->
-        match stripTyEqns g tyarg with  
-        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
-        | _ -> None
-    | _ -> None
-
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
 /// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
@@ -1204,7 +1195,7 @@ and DepthCheck ndeep m =
 
 // If this is a type that's parameterized on a unit-of-measure (expected to be numeric), unify its measure with 1
 and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
-    match GetMeasureOfType csenv.g ty with
+    match getMeasureOfType csenv.g ty with
     | Some (tcref, _) -> 
         SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ty (mkAppTy tcref [TType_measure Measure.One])
     | None ->
@@ -1287,12 +1278,12 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                      //   - Neither type contributes any methods OR
                      //   - We have the special case "decimal<_> * decimal". In this case we have some 
                      //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (isNil minfos || (Option.isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
+                     (isNil minfos || (Option.isSome (getMeasureOfType g argty1) && isDecimalTy g argty2)) in
 
                    checkRuleAppliesInPreferenceToMethods argty1 argty2 || 
                    checkRuleAppliesInPreferenceToMethods argty2 argty1) ->
                    
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
           | Some (tcref, ms1) -> 
             let ms2 = freshMeasure ()
             do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 (mkAppTy tcref [TType_measure ms2])
@@ -1301,7 +1292,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
           | _ ->
 
-            match GetMeasureOfType g argty2 with
+            match getMeasureOfType g argty2 with
             | Some (tcref, ms2) -> 
               let ms1 = freshMeasure ()
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure ms1]) 
@@ -1430,7 +1421,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
       | _, _, false, "Sqrt", [argty1] 
           when isFpTy g argty1 ->
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
             | Some (tcref, _) -> 
               let ms1 = freshMeasure () 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))])
@@ -1479,7 +1470,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
       | _, _, false, "Atan2", [argty1; argty2] 
           when isFpTy g argty1 -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
-          match GetMeasureOfType g argty1 with
+          match getMeasureOfType g argty1 with
           | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           | Some (tcref, _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure Measure.One])
           return TTraitBuiltIn
@@ -3113,12 +3104,11 @@ let CreateCodegenState tcVal g amap =
       InfoReader = new InfoReader(g, amap) }
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-let CodegenWitnessForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
+let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-    let sln = GenWitnessExpr amap g m traitInfo argExprs
-    return sln
+    return GenWitnessExpr amap g m traitInfo argExprs
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
@@ -3132,7 +3122,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
   }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTraitWitness tcVal g amap m traitInfo = trackErrors {
+let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
     let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo

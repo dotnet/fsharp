@@ -20,6 +20,7 @@ open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
@@ -143,6 +144,9 @@ module IncrementalBuildSyntaxTree =
                 | _ -> parse sigNameOpt
             | _ -> parse sigNameOpt
 
+        member _.Invalidate() =
+            weakCache <- None
+
         member _.FileName = filename
 
 /// Accumulated results of type checking. The minimum amount of state in order to continue type-checking following files.
@@ -237,6 +241,32 @@ type SemanticModel private (tcConfig: TcConfig,
     member _.TcGlobals = tcGlobals
 
     member _.TcImports = tcImports
+
+    member _.BackingSignature =
+        match syntaxTreeOpt with
+        | Some syntaxTree ->
+            let sigFileName = Path.ChangeExtension(syntaxTree.FileName, ".fsi")
+            match prevTcInfo.sigNameOpt with
+            | Some (expectedSigFileName, sigName) when String.Equals(expectedSigFileName, sigFileName, StringComparison.OrdinalIgnoreCase) ->
+                Some sigName
+            | _ ->
+                None
+        | _ ->
+            None
+
+    member this.Invalidate() =
+        let hasSig = this.BackingSignature.IsSome
+        match !lazyTcInfoState with
+        // If partial checking is enabled and we have a backing sig file, then do nothing. The partial state contains the sig state.
+        | Some(PartialState _) when enablePartialTypeChecking && hasSig -> ()
+        // If partial checking is enabled and we have a backing sig file, then use the partial state. The partial state contains the sig state.
+        | Some(FullState(tcInfo, _)) when enablePartialTypeChecking && hasSig -> lazyTcInfoState := Some(PartialState tcInfo)
+        | _ ->
+            lazyTcInfoState := None
+
+        // Always invalidate the syntax tree cache.
+        syntaxTreeOpt
+        |> Option.iter (fun x -> x.Invalidate())
 
     member this.GetState(partialCheck: bool) =
         let partialCheck =
@@ -344,7 +374,7 @@ type SemanticModel private (tcConfig: TcConfig,
                     }
         }
 
-    member private _.TypeCheck (partialCheck: bool) =  
+    member private this.TypeCheck (partialCheck: bool) =  
         match partialCheck, !lazyTcInfoState with
         | true, Some (PartialState _ as state)
         | true, Some (FullState _ as state) -> state |> Eventually.Done
@@ -357,12 +387,7 @@ type SemanticModel private (tcConfig: TcConfig,
             | Some syntaxTree ->
                 let sigNameOpt =
                     if partialCheck then
-                        let sigFileName = Path.ChangeExtension(syntaxTree.FileName, ".fsi")
-                        match prevTcInfo.sigNameOpt with
-                        | Some (expectedSigFileName, sigName) when String.Equals(expectedSigFileName, sigFileName, StringComparison.OrdinalIgnoreCase) ->
-                            Some sigName
-                        | _ ->
-                            None
+                        this.BackingSignature
                     else
                         None
                 match syntaxTree.Parse sigNameOpt with
@@ -608,7 +633,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
                       
     let sigData = 
-        let _sigDataAttributes, sigDataResources = Driver.EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
+        let _sigDataAttributes, sigDataResources = Driver.EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         [ for r in sigDataResources  do
             let ccuName = GetSignatureDataResourceName r
             yield (ccuName, (fun () -> r.GetBytes())) ]
@@ -851,8 +876,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     let ilAssemRef = 
                         let publicKey = 
                             try 
-                                let signingInfo = Driver.ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
-                                match Driver.GetStrongNameSigner signingInfo with 
+                                let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
+                                match GetStrongNameSigner signingInfo with 
                                 | None -> None
                                 | Some s -> Some (PublicKey.KeyAsToken(s.PublicKey))
                             with e -> 
@@ -910,7 +935,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
     let stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
     let mutable initialSemanticModel = None
-    let semanticModels = Array.zeroCreate fileNames.Length
+    let semanticModels = Array.zeroCreate<SemanticModel option> fileNames.Length
     let mutable finalizedSemanticModel = None
 
     let computeStampedFileName (cache: TimeStampCache) (ctok: CompilationThreadToken) slot fileInfo cont =
@@ -918,15 +943,20 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let stamp = StampFileNameTask cache ctok fileInfo
 
         if currentStamp <> stamp then
-            // Something changed, the finalized view of the project must be invalidated.
-            finalizedSemanticModel <- None
+            match semanticModels.[slot] with
+            // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
+            | Some(semanticModel) when enablePartialTypeChecking && semanticModel.BackingSignature.IsSome ->
+                semanticModel.Invalidate()
+            | _ ->
+                // Something changed, the finalized view of the project must be invalidated.
+                finalizedSemanticModel <- None
 
-            // Invalidate the file and all files below it.
-            stampedFileNames.[slot..]
-            |> Array.iteri (fun j _ -> 
-                stampedFileNames.[slot + j] <- StampFileNameTask cache ctok fileNames.[slot + j]
-                semanticModels.[slot + j] <- None
-            )
+                // Invalidate the file and all files below it.
+                stampedFileNames.[slot..]
+                |> Array.iteri (fun j _ -> 
+                    stampedFileNames.[slot + j] <- StampFileNameTask cache ctok fileNames.[slot + j]
+                    semanticModels.[slot + j] <- None
+                )
 
         if semanticModels.[slot].IsNone then
             cont slot fileInfo

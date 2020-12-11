@@ -2,13 +2,13 @@
 
 module internal FSharp.Compiler.Lib
 
+open System
 open System.IO
 open System.Collections.Generic
 open System.Runtime.InteropServices
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
-
 
 /// is this the developer-debug build? 
 let debug = false 
@@ -565,3 +565,19 @@ type MaybeLazy<'T> =
         | Lazy x -> x.Force()
 
 let inline vsnd ((_, y): struct('T * 'T)) = y
+
+/// Track a set of resources to cleanup
+type DisposablesTracker() = 
+
+    let items = Stack<IDisposable>()
+
+    /// Regsiter some items to dispose
+    member _.Register i = items.Push i
+
+    interface IDisposable with
+
+        member _.Dispose() = 
+            let l = List.ofSeq items
+            items.Clear()
+            for i in l do 
+                try i.Dispose() with _ -> ()

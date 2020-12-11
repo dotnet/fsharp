@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault1">
         <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
-        <target state="translated">在为类型推理变量应用默认类型“{0}”时，类型约束不匹配。</target>
+        <target state="translated">在为类型推理变量应用默认类型“{0}”时，类型约束不匹配。 </target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault2">
@@ -319,7 +319,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP">
         <source>symbol '&amp;'</source>
-        <target state="translated">符号 "&amp; amp;"</target>
+        <target state="translated">符号 "&amp;"</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AMP.AMP">
@@ -379,7 +379,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
         <source>type application </source>
-        <target state="translated">类型应用程序</target>
+        <target state="translated">类型应用程序 </target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON">
@@ -1189,7 +1189,7 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">关键字</target>
+        <target state="translated">关键字 </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">

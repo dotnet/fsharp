@@ -209,7 +209,7 @@
       </trans-unit>
       <trans-unit id="fsiAbortingMainThread">
         <source>- Aborting main thread...</source>
-        <target state="translated">— Отменяется главный поток…</target>
+        <target state="translated">— Отменяется главный поток...</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiCouldNotInstallCtrlCHandler">
