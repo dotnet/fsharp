@@ -74,17 +74,12 @@ type StableNiceNameGenerator() =
 
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
-    // ++GLOBAL MUTABLE STATE (concurrency safe by locking inside NiceNameGenerator)
     let globalNng = NiceNameGenerator()
 
-
     /// A global generator of stable compiler generated names
-    // MUTABLE STATE (concurrency safe by locking inside StableNiceNameGenerator)
     let globalStableNameGenerator = StableNiceNameGenerator ()
 
     /// A name generator used by IlxGen for static fields, some generated arguments and other things.
-    /// REVIEW: this will mean the hosted compiler service is not deterministic. We should at least create a new one
-    /// of these for each compilation.
     let ilxgenGlobalNng = NiceNameGenerator ()
 
     member __.NiceNameGenerator = globalNng

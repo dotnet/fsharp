@@ -20021,7 +20021,6 @@ FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+LexerIfdefStackEntry
 FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+LexerStringKind
 FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+LexerStringStyle
 FSharp.Compiler.ParseHelpers: FSharp.Compiler.ParseHelpers+SyntaxError
-FSharp.Compiler.ParseHelpers: ILInstr[] ParseAssemblyCodeInstructions(System.String, range)
 FSharp.Compiler.ParseHelpers: ILType ParseAssemblyCodeType(System.String, range)
 FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Exception)
 FSharp.Compiler.ParseHelpers+IndentationProblem: Boolean Equals(System.Object)
