@@ -2080,7 +2080,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
         printfn "let assemblyBuilder%d = System.AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName(Name=\"%s\"), enum %d, %A)" (abs <| hash asmB) asmName.Name (LanguagePrimitives.EnumToValue flags) asmDir
     asmB
 
-let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
+let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collectible) =
     let filename = assemblyName + ".dll"
     let asmDir = "."
     let asmName = new AssemblyName()

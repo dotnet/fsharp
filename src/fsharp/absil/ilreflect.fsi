@@ -24,7 +24,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
 open FSharp.Core.Printf
 
-val mkDynamicAssemblyAndModule: assemblyName:string * optimize:bool * debugInfo:'a * collectible:bool -> AssemblyBuilder * ModuleBuilder
+val mkDynamicAssemblyAndModule: assemblyName:string * optimize:bool * debugInfo:bool * collectible:bool -> AssemblyBuilder * ModuleBuilder
 
 type cenv = 
     { ilg: ILGlobals

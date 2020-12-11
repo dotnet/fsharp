@@ -164,11 +164,11 @@ type CapturingErrorLogger =
 [<Class>]
 type internal CompileThreadStatic =
 
-    static member BuildPhase: BuildPhase
+    static member BuildPhase: BuildPhase with get, set
 
-    static member BuildPhaseUnchecked: BuildPhase
+    static member BuildPhaseUnchecked: BuildPhase with get
 
-    static member ErrorLogger: ErrorLogger
+    static member ErrorLogger: ErrorLogger with get, set
   
 [<AutoOpen>]
 module ErrorLoggerExtensions =
