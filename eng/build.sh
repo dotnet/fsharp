@@ -244,21 +244,20 @@ function BuildSolution {
     BuildMessage="Error building tools"
     MSBuild "$repo_root/src/buildtools/buildtools.proj" \
       /restore \
-      /p:Configuration=$bootstrap_config \
-      /t:Publish
+      /p:Configuration=$bootstrap_config
 
     mkdir -p "$bootstrap_dir"
-    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fslex
-    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fsyacc
+    cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fslex
+    cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsyacc
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     BuildMessage="Error building bootstrap"
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /p:Configuration=$bootstrap_config \
-      /t:Publish
 
-    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1/publish $bootstrap_dir/fsc
+
+    cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsc
   fi
 
   # do real build
