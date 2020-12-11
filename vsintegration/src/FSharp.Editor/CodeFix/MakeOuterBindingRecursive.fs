@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.Composition
 
 open Microsoft.CodeAnalysis.Text
@@ -41,7 +42,7 @@ type internal FSharpMakeOuterBindingRecursiveCodeFixProvider
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toImmutableArray
 
-            let title = SR.MakeOuterBindingRecursive()
+            let title = String.Format(SR.MakeOuterBindingRecursive(), sourceText.GetSubText(outerBindingNameSpan).ToString())
 
             let codeFix =
                 CodeFixHelpers.createTextChangeCodeFix(

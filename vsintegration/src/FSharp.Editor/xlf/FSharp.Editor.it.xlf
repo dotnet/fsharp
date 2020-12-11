@@ -63,8 +63,8 @@
         <note />
       </trans-unit>
       <trans-unit id="MakeOuterBindingRecursive">
-        <source>Make outer binding recursive</source>
-        <target state="new">Make outer binding recursive</target>
+        <source>Make '{0}' recursive</source>
+        <target state="new">Make '{0}' recursive</target>
         <note />
       </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
