@@ -15,7 +15,6 @@ module internal CodeFixHelpers =
             title,
             (fun (cancellationToken: CancellationToken) ->
                 async {
-                    let! cancellationToken = Async.CancellationToken
                     let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let! changesOpt = computeTextChanges()
                     match changesOpt with
