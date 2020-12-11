@@ -31,6 +31,9 @@ val typeEquiv       :            TcGlobals  -> TType          -> TType         -
 /// Check the equivalence of two units-of-measure
 val measureEquiv    :            TcGlobals  -> Measure  -> Measure -> bool
 
+/// Get the unit of measure for an annotated type
+val getMeasureOfType: TcGlobals -> TType -> (TyconRef * Measure) option
+
 /// Reduce a type to its more canonical form subject to an erasure flag, inference equations and abbreviations
 val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 
@@ -1895,9 +1898,9 @@ val mkCallAdditionOperator                   : TcGlobals -> range -> TType -> Ex
 
 val mkCallSubtractionOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallMultiplyOperator                   : TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
 
-val mkCallDivisionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator                   : TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
 
 val mkCallModulusOperator                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
@@ -1921,7 +1924,7 @@ val mkCallAdditionChecked                    : TcGlobals -> range -> TType -> Ex
 
 val mkCallSubtractionChecked                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyChecked                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallMultiplyChecked                    : TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
 
 val mkCallUnaryNegChecked                    : TcGlobals -> range -> TType -> Expr -> Expr
 
