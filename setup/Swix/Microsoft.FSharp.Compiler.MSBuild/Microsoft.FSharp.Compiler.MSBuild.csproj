@@ -46,7 +46,7 @@
 <![CDATA[
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\%(_XlfLanguages.Identity)"
   file source="$(ArtifactsBinDir)FSharp.Build\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Build.resources.dll"
-  file source="$(ArtifactsBinDir)FSharp.Compiler.Interactive.Settings\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Compiler.Interactive.Settings.resources.dll"
+  file source="$(ArtifactsBinDir)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Compiler.Interactive.Settings.resources.dll"
   file source="$(ArtifactsBinDir)FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Compiler.Private.resources.dll"
   file source="$(ArtifactsBinDir)FSharp.Core\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Core.resources.dll"
 ]]>
@@ -88,7 +88,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(BinariesFolder)\fsi\$(Configuration)\$(TargetFramework)\fsi.exe.config"
   file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsiAnyCpu.exe"
   file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe.config"
-  file source="$(BinariesFolder)\FSharp.Compiler.Interactive.Settings\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)\FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Private.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Buffers.dll"
   file source="$(BinariesFolder)\FSharp.Compiler.Private\$(Configuration)\$(TargetFramework)\System.Collections.Immutable.dll"
