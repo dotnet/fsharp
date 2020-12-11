@@ -261,4 +261,7 @@
   <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
     <value>Use '&lt;-' to mutate value</value>
   </data>
+  <data name="MakeFuncRecursive" xml:space="preserve">
+    <value>Make '{0}' recursive</value>
+  </data>
 </root>
