@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
@@ -713,7 +712,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return false;
             }
 
-            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && FSLib.Shim.FileSystem.SafeExists(this.referencedProjectFullPath));
+            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && File.Exists(this.referencedProjectFullPath));
         }
 
         /// <summary>
