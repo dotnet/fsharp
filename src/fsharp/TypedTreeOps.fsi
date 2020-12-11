@@ -2422,4 +2422,12 @@ val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType
 val mkLabelled: range -> ILCodeLabel -> Expr -> Expr 
 
 /// Shared helper for binding attributes
-val TryBindTyconRefAttribute: g:TcGlobals -> m:range -> BuiltinAttribInfo -> tcref:TyconRef -> f1:(ILAttribElem list * ILAttributeNamedArg list -> 'a option) -> f2:(Attrib -> 'a option) -> f3:(obj option list * (string * obj option) list -> 'a option) -> 'a option
+val TryBindTyconRefAttribute:
+    g:TcGlobals ->
+    m:range -> 
+    BuiltinAttribInfo ->
+    tcref:TyconRef ->
+    f1:(ILAttribElem list * ILAttributeNamedArg list -> 'a option) ->
+    f2:(Attrib -> 'a option) ->
+    f3:(obj option list * (string * obj option) list -> 'a option) 
+        -> 'a option

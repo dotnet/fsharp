@@ -4,12 +4,15 @@ module internal FSharp.Compiler.Infos
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.ExtensionTyping
 open FSharp.Compiler.Import
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+
+#if !NO_EXTENSIONTYPING
+open FSharp.Compiler.ExtensionTyping
+#endif
 
 /// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
 val ImportILType: scoref:ILScopeRef -> amap:ImportMap -> m:range -> importInst:TType list -> ilty:ILType -> TType
@@ -493,8 +496,12 @@ type MethInfo =
     /// For an extension member, drop the 'this' argument.
     member NumArgs: int list
 
-    /// Get the information about provided static parameters, if any
+/// Get the information about provided static parameters, if any
+#if NO_EXTENSIONTYPING
+    member ProvidedStaticParameterInfo: obj option
+#else
     member ProvidedStaticParameterInfo: (Tainted<ProvidedMethodBase> * Tainted<ProvidedParameterInfo> []) option
+#endif
 
     /// Get the TcGlobals value that governs the method declaration
     member TcGlobals: TcGlobals

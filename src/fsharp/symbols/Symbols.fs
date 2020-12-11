@@ -955,7 +955,7 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
         if isUnresolved() then None else 
         match d.TryRecdField with 
         | Choice1Of3 r -> getLiteralValue r.LiteralValue
-        | Choice2Of3 f -> f.LiteralValue |> Option.map AbstractIL.ILRuntimeWriter.convFieldInit 
+        | Choice2Of3 f -> f.LiteralValue |> Option.map (fun v -> v.AsObject())
         | Choice3Of3 _ -> None
 
     member _.IsVolatile = 
@@ -1170,6 +1170,8 @@ type FSharpGenericParameter(cenv, v:Typar) =
     inherit FSharpSymbol (cenv, 
                           (fun () -> Item.TypeVar(v.Name, v)), 
                           (fun _ _ _ad -> true))
+
+    member _.Range = v.Range
 
     member _.Name = v.DisplayName
 

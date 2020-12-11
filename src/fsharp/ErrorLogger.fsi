@@ -170,6 +170,7 @@ type internal CompileThreadStatic =
 
     static member ErrorLogger: ErrorLogger
   
+[<AutoOpen>]
 module ErrorLoggerExtensions =
 
     val tryAndDetectDev15: bool

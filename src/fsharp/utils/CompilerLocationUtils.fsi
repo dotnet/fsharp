@@ -6,7 +6,6 @@ open Microsoft.FSharp.Core
 
 module internal FSharpEnvironment =
 
-  module internal FSharpEnvironment =
     val FSharpBannerVersion: string
 
     val FSharpProductName: string

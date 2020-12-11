@@ -279,7 +279,6 @@ let IteratedAdjustArityOfLambda g amap topValInfo e =
     let vsl, body = IteratedAdjustArityOfLambdaBody g arities vsl body
     tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty
 
-
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
