@@ -13,8 +13,8 @@ open System.Reflection
 open System.Threading
 open System.Runtime.CompilerServices
 
-// Logical shift right treating int32 as unsigned integer.
-// Code that uses this should probably be adjusted to use unsigned integer types.
+/// Logical shift right treating int32 as unsigned integer.
+/// Code that uses this should probably be adjusted to use unsigned integer types.
 let (>>>&) (x: int32) (n: int32) = int32 (uint32 x >>> n)
 
 let notlazy v = Lazy<_>.CreateFromValue v
@@ -24,7 +24,7 @@ let inline isNil l = List.isEmpty l
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
 // Shim to match nullness checking library support in preview
 let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
-let inline nonNull<'T> (x: 'T) = x
+let inline nonNull<'T when 'T : null> (x: 'T) = x
 let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
 #endif
 
@@ -661,7 +661,6 @@ type ResultOrException<'TResult> =
     | Result of 'TResult
     | Exception of Exception
                      
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ResultOrException = 
 
     let success a = Result a
@@ -693,9 +692,9 @@ type ValueOrCancelled<'TResult> =
 ///
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.  
+[<Struct>]
 type Cancellable<'TResult> = Cancellable of (CancellationToken -> ValueOrCancelled<'TResult>)
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Cancellable = 
 
     /// Run a cancellable computation using the given cancellation token
@@ -840,7 +839,6 @@ type Eventually<'T> =
     | Done of 'T 
     | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventually = 
 
     let rec box e = 
@@ -1120,7 +1118,6 @@ type NameMultiMap<'T> = NameMap<'T list>
 
 type MultiMap<'T, 'U when 'T : comparison> = Map<'T, 'U list>
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 
 
     let empty = Map.empty
@@ -1193,7 +1190,6 @@ module NameMap =
              | None -> if p y then Some y else None 
              | _ -> acc) m None 
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
 
     let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
@@ -1216,7 +1212,6 @@ module NameMultiMap =
 
     let ofList (xs: (string * 'T) list) : NameMultiMap<'T> = xs |> Seq.groupBy fst |> Seq.map (fun (k, v) -> (k, List.ofSeq (Seq.map snd v))) |> Map.ofSeq 
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
 
     let existsInRange f (m: MultiMap<_, _>) = Map.exists (fun _ l -> List.exists f l) m

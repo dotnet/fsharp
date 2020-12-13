@@ -15,9 +15,9 @@ type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticId = FSharpIDEDiagnosticIds.SimplifyNamesDiagnosticId
         
-    override __.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
+    override _.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
 
-    override __.RegisterCodeFixesAsync(context: CodeFixContext) : Task =
+    override _.RegisterCodeFixesAsync(context: CodeFixContext) : Task =
        async {
            for diagnostic in context.Diagnostics |> Seq.filter (fun x -> x.Id = fixableDiagnosticId) do
                let title =

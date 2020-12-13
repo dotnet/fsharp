@@ -489,7 +489,6 @@ let GetBasicNameOfPossibleCompilerGeneratedName (name: string) =
 let CompilerGeneratedNameSuffix (basicName: string) suffix =
     basicName+compilerGeneratedMarker+suffix
 
-
 //-------------------------------------------------------------------------
 // Handle mangled .NET generic type names
 //------------------------------------------------------------------------- 
@@ -703,7 +702,6 @@ let mangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
     else
         typeLogicalName + "," + nonDefaultArgsText
 
-
 /// Mangle the static parameters for a provided type or method
 let computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues) =
     let nonDefaultArgs = 
@@ -762,6 +760,7 @@ let unassignedTyparName = "?"
 //--------------------------------------------------------------------------
 
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
 let FSharpOptimizationDataResourceNameB = "FSharpOptimizationDataB."
@@ -771,5 +770,6 @@ let FSharpSignatureDataResourceNameB = "FSharpSignatureDataB."
 // don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'
 // or 'FSharpSignatureData'
 let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
+
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 

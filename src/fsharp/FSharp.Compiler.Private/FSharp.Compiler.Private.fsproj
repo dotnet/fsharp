@@ -107,6 +107,9 @@
     <Compile Include="..\utils\HashMultiMap.fs">
       <Link>Utilities\HashMultiMap.fs</Link>
     </Compile>
+    <Compile Include="..\utils\EditDistance.fsi">
+      <Link>Utilities\EditDistance.fsi</Link>
+    </Compile>
     <Compile Include="..\utils\EditDistance.fs">
       <Link>Utilities\EditDistance.fs</Link>
     </Compile>
@@ -121,6 +124,9 @@
     </Compile>
     <Compile Include="..\absil\ildiag.fs">
       <Link>Utilities\ildiag.fs</Link>
+    </Compile>
+    <Compile Include="..\absil\illib.fsi">
+      <Link>Utilities\illib.fsi</Link>
     </Compile>
     <Compile Include="..\absil\illib.fs">
       <Link>Utilities\illib.fs</Link>
@@ -149,6 +155,9 @@
     <Compile Include="..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
     </Compile>
+    <Compile Include="..\XmlAdapters.fsi">
+      <Link>Utilities\XmlAdapters.fsi</Link>
+    </Compile>
     <Compile Include="..\XmlAdapters.fs">
       <Link>Utilities\XmlAdapters.fs</Link>
     </Compile>
@@ -158,8 +167,14 @@
     <Compile Include="..\InternalCollections.fs">
       <Link>Utilities\InternalCollections.fs</Link>
     </Compile>
+    <Compile Include="..\QueueList.fsi">
+      <Link>Utilities\QueueList.fsi</Link>
+    </Compile>
     <Compile Include="..\QueueList.fs">
       <Link>Utilities\QueueList.fs</Link>
+    </Compile>
+    <Compile Include="..\lib.fsi">
+      <Link>Utilities\lib.fsi</Link>
     </Compile>
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
@@ -182,8 +197,14 @@
     <Compile Include="..\range.fs">
       <Link>ErrorLogging\range.fs</Link>
     </Compile>
+    <Compile Include="..\ErrorLogger.fsi">
+      <Link>ErrorLogging\ErrorLogger.fsi</Link>
+    </Compile>
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogging\ErrorLogger.fs</Link>
+    </Compile>
+    <Compile Include="..\ErrorResolutionHints.fsi">
+      <Link>ErrorLogging\ErrorResolutionHints.fsi</Link>
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
@@ -280,8 +301,14 @@
     <Compile Include="..\absil\ilwrite.fs">
       <Link>AbsIL\ilwrite.fs</Link>
     </Compile>
+    <Compile Include="..\absil\ilreflect.fsi">
+      <Link>AbsIL\ilreflect.fsi</Link>
+    </Compile>
     <Compile Include="..\absil\ilreflect.fs">
       <Link>AbsIL\ilreflect.fs</Link>
+    </Compile>
+    <Compile Include="..\ReferenceResolver.fsi">
+      <Link>ReferenceResolution\ReferenceResolver.fsi</Link>
     </Compile>
     <Compile Include="..\ReferenceResolver.fs">
       <Link>ReferenceResolution\ReferenceResolver.fs</Link>
@@ -294,12 +321,21 @@
       <Link>ReferenceResolution/LegacyMSBuildReferenceResolver.fs</Link>
     </Compile>
     
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fsi">
+      <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fsi</Link>
+    </Compile>
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>ReferenceResolution/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
     <EmbeddedText Include="..\utils\UtilsStrings.txt" />
+    <Compile Include="..\utils\CompilerLocationUtils.fsi">
+      <Link>CompilerLocation\CompilerLocationUtils.fsi</Link>
+    </Compile>
     <Compile Include="..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
+    </Compile>
+    <Compile Include="..\PrettyNaming.fsi">
+      <Link>PrettyNaming\PrettyNaming.fsi</Link>
     </Compile>
     <Compile Include="..\PrettyNaming.fs">
       <Link>PrettyNaming\PrettyNaming.fs</Link>
@@ -359,14 +395,23 @@
     <Compile Include="..\layout.fs">
       <Link>ParserAndUntypedAST\layout.fs</Link>
     </Compile>
+    <Compile Include="..\XmlDoc.fsi">
+      <Link>ParserAndUntypedAST\XmlDoc.fsi</Link>
+    </Compile>
     <Compile Include="..\XmlDoc.fs">
       <Link>ParserAndUntypedAST\XmlDoc.fs</Link>
     </Compile>
     <Compile Include="..\SyntaxTree.fs">
       <Link>ParserAndUntypedAST\SyntaxTree.fs</Link>
     </Compile>
+    <Compile Include="..\SyntaxTreeOps.fsi">
+      <Link>ParserAndUntypedAST\SyntaxTreeOps.fsi</Link>
+    </Compile>
     <Compile Include="..\SyntaxTreeOps.fs">
       <Link>ParserAndUntypedAST\SyntaxTreeOps.fs</Link>
+    </Compile>
+    <Compile Include="..\ParseHelpers.fsi">
+      <Link>ParserAndUntypedAST\ParseHelpers.fsi</Link>
     </Compile>
     <Compile Include="..\ParseHelpers.fs">
       <Link>ParserAndUntypedAST\ParseHelpers.fs</Link>
@@ -413,11 +458,17 @@
     <Compile Include="..\QuotationPickler.fs">
       <Link>TypedTree\QuotationPickler.fs</Link>
     </Compile>
+    <Compile Include="..\CompilerGlobalState.fsi">
+      <Link>TypedTree\CompilerGlobalState.fsi</Link>
+    </Compile>
     <Compile Include="..\CompilerGlobalState.fs">
       <Link>TypedTree\CompilerGlobalState.fs</Link>
     </Compile>
     <Compile Include="..\TypedTree.fs">
       <Link>TypedTree\TypedTree.fs</Link>
+    </Compile>
+    <Compile Include="..\TypedTreeBasics.fsi">
+      <Link>TypedTree\TypedTreeBasics.fsi</Link>
     </Compile>
     <Compile Include="..\TypedTreeBasics.fs">
       <Link>TypedTree\TypedTreeBasics.fs</Link>
@@ -443,20 +494,38 @@
     <Compile Include="..\import.fs">
       <Link>Logic\import.fs</Link>
     </Compile>
+    <Compile Include="..\infos.fsi">
+      <Link>Logic\infos.fsi</Link>
+    </Compile>
     <Compile Include="..\infos.fs">
       <Link>Logic\infos.fs</Link>
+    </Compile>
+    <Compile Include="..\AccessibilityLogic.fsi">
+      <Link>Logic\AccessibilityLogic.fsi</Link>
     </Compile>
     <Compile Include="..\AccessibilityLogic.fs">
       <Link>Logic\AccessibilityLogic.fs</Link>
     </Compile>
+    <Compile Include="..\AttributeChecking.fsi">
+      <Link>Logic\AttributeChecking.fsi</Link>
+    </Compile>
     <Compile Include="..\AttributeChecking.fs">
       <Link>Logic\AttributeChecking.fs</Link>
+    </Compile>
+    <Compile Include="..\TypeRelations.fsi">
+      <Link>Logic\TypeRelations.fsi</Link>
     </Compile>
     <Compile Include="..\TypeRelations.fs">
       <Link>Logic\TypeRelations.fs</Link>
     </Compile>
+    <Compile Include="..\InfoReader.fsi">
+      <Link>Logic\InfoReader.fsi</Link>
+    </Compile>
     <Compile Include="..\InfoReader.fs">
       <Link>Logic\InfoReader.fs</Link>
+    </Compile>
+    <Compile Include="..\NicePrint.fsi">
+      <Link>Logic\NicePrint.fsi</Link>
     </Compile>
     <Compile Include="..\NicePrint.fs">
       <Link>Logic\NicePrint.fs</Link>
@@ -473,11 +542,20 @@
     <Compile Include="..\NameResolution.fs">
       <Link>Logic\NameResolution.fs</Link>
     </Compile>
+    <Compile Include="..\SignatureConformance.fsi">
+      <Link>Logic\SignatureConformance.fsi</Link>
+    </Compile>
     <Compile Include="..\SignatureConformance.fs">
       <Link>Logic\SignatureConformance.fs</Link>
     </Compile>
+    <Compile Include="..\MethodOverrides.fsi">
+      <Link>Logic\MethodOverrides.fsi</Link>
+    </Compile>
     <Compile Include="..\MethodOverrides.fs">
       <Link>Logic\MethodOverrides.fs</Link>
+    </Compile>
+    <Compile Include="..\MethodCalls.fsi">
+      <Link>Logic\MethodCalls.fsi</Link>
     </Compile>
     <Compile Include="..\MethodCalls.fs">
       <Link>Logic\MethodCalls.fs</Link>

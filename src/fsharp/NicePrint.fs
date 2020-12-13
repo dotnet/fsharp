@@ -1411,7 +1411,6 @@ module private TastDefinitionPrinting =
 #endif
         | TNoRepr -> false
       
-#if !NO_EXTENSIONTYPING
     let private layoutILFieldInfo denv amap m (e: ILFieldInfo) =
         let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
         let nameL = wordL (tagField (adjustILName e.FieldName))
@@ -1606,6 +1605,7 @@ module private TastDefinitionPrinting =
             |> List.map snd
 
         let nestedTypeLs =
+#if !NO_EXTENSIONTYPING
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref ->
                 match tcref.TypeReprInfo with 
@@ -1619,6 +1619,7 @@ module private TastDefinitionPrinting =
                 | _ ->
                     []
             | ValueNone ->
+#endif
                 []
 
         let inherits = 
@@ -1762,7 +1763,6 @@ module private TastDefinitionPrinting =
                     (lhsL ^^ WordL.equals) --- (layoutType { denv with shortTypeNames = false } a)
 
         layoutAttribs denv false ty tycon.TypeOrMeasureKind tycon.Attribs reprL
-#endif
 
     // Layout: exception definition
     let layoutExnDefn denv (exnc: Entity) =
@@ -1980,19 +1980,13 @@ let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.forma
 
 let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
 
-let outputExnDef denv os x = x |> TastDefinitionPrinting.layoutExnDefn denv |> bufferL os
-
 let layoutExnDef denv x = x |> TastDefinitionPrinting.layoutExnDefn denv
 
 let stringOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0 |> showL
 
-let outputTycon denv infoReader ad m (* width *) os x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Display.squashTo width *) |>  bufferL os
-
 let layoutTycon denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTycon denv infoReader ad m true WordL.keywordType x (* |> Display.squashTo width *)
 
 let layoutUnionCases denv x = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true
-
-let outputUnionCases denv os x = x |> TastDefinitionPrinting.layoutUnionCaseFields denv true |> bufferL os
 
 /// Pass negative number as pos in case of single cased discriminated unions
 let isGeneratedUnionCaseField pos f = TastDefinitionPrinting.isGeneratedUnionCaseField pos f

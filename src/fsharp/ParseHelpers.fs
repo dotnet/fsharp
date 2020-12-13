@@ -218,7 +218,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let internal internalParseAssemblyCodeInstructions s isFeatureSupported m =
+let internal internalParseAssemblyCodeInstructions s (isFeatureSupported: LanguageFeature -> bool) m : IL.ILInstr[] = 
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -234,12 +234,12 @@ let internal internalParseAssemblyCodeInstructions s isFeatureSupported m =
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
-let ParseAssemblyCodeInstructions s m =
+let ParseAssemblyCodeInstructions s m : IL.ILInstr[] =
     // Public API can not answer the isFeatureSupported questions, so here we support everything
     let isFeatureSupported (_featureId:LanguageFeature) = true
     internalParseAssemblyCodeInstructions s isFeatureSupported m
 
-let internal internalParseAssemblyCodeType s isFeatureSupported m =
+let internal internalParseAssemblyCodeType s (isFeatureSupported: Features.LanguageFeature -> bool) m =
     ignore s
     ignore isFeatureSupported
 

@@ -10,17 +10,21 @@ module public ReferenceResolver =
     type ResolutionEnvironment = 
         /// Indicates a script or source being edited or compiled. Uses reference assemblies (not implementation assemblies).
         | EditingOrCompilation of isEditing: bool
+
         /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
         | CompilationAndEvaluation 
 
     type ResolvedFile = 
-        { /// Item specification.
+        { 
+          /// Item specification.
           itemSpec:string
+
           /// Prepare textual information about where the assembly was resolved from, used for tooltip output
           prepareToolTip: string * string -> string
+
           /// Round-tripped baggage 
           baggage:string
-          }
+        }
 
         override this.ToString() = sprintf "ResolvedFile(%s)" this.itemSpec
 
