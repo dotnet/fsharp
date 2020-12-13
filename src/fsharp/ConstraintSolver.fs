@@ -1124,7 +1124,7 @@ and SolveTypeEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         // Unifying 'T1? and 'T2? 
         | ValueSome NullnessInfo.WithNull, ValueSome NullnessInfo.WithNull ->
             SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
-        //// Unifying 'T1 % and 'T2 % 
+        // // Unifying 'T1 % and 'T2 % 
         //| ValueSome NullnessInfo.AmbivalentToNull, ValueSome NullnessInfo.AmbivalentToNull ->
         //    SolveTyparEqualsType csenv ndeep m2 trace sty1 (replaceNullnessOfTy g.knownWithoutNull sty2) 
         | _ -> 

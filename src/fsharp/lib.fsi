@@ -218,17 +218,17 @@ val nullableSlotEmpty: unit -> 'T
 val nullableSlotFull: x:'a -> 'a
 
 /// Caches, mainly for free variables
-type cache<'T> = { mutable cacheVal: NonNullSlot<'T> }
+type cache<'T  when 'T : not struct> = { mutable cacheVal: NonNullSlot<'T> }
 
-val newCache: unit -> cache<'a>
+val newCache: unit -> cache<'a>  when 'a : not struct
 
-val inline cached: cache:cache<'a> -> resF:(unit -> 'a) -> 'a
+val inline cached: cache:cache<'a> -> resF:(unit -> 'a) -> 'a  when 'a : not struct
 
 val inline cacheOptByref: cache:byref<'T option> -> f:(unit -> 'T) -> 'T
 
 val inline cacheOptRef: cache:'a option ref -> f:(unit -> 'a) -> 'a
 
-val inline tryGetCacheValue: cache:cache<'a> -> NonNullSlot<'a> voption
+val inline tryGetCacheValue: cache:cache<'a> -> NonNullSlot<'a> voption  when 'a : not struct
 
 module AsyncUtil =
 

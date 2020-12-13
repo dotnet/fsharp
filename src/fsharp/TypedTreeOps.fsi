@@ -69,10 +69,6 @@ val valsOfBinds : Bindings -> Vals
 /// Look for a use of an F# value, possibly including application of a generic thing to a set of type arguments
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
-//val combineNullness: Nullness -> Nullness -> Nullness
-//val tryAddNullnessToTy: Nullness -> TType -> TType option
-//val addNullnessToTy: Nullness -> TType -> TType
-
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
 //------------------------------------------------------------------------- 

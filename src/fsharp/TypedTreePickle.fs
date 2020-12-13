@@ -26,7 +26,6 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
 
-
 let verbose = false
 
 let ffailwith fileName str =
