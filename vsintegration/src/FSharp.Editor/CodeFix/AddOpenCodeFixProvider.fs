@@ -33,33 +33,25 @@ type internal FSharpAddOpenCodeFixProvider
     let checker = checkerProvider.Checker
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
-    let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) = 
-        CodeAction.Create(
+    let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) =
+        CodeFixHelpers.createTextChangeCodeFix(
             fixUnderscoresInMenuText fullName,
-            fun (cancellationToken: CancellationToken) -> 
-                async {
-                    let! cancellationToken = Async.CancellationToken
-                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                    return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
-                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken))
+            context,
+            (fun () -> asyncMaybe.Return [| TextChange(context.Span, qualifier) |]))
 
     let openNamespaceFix (context: CodeFixContext) ctx name ns multipleNames = 
         let displayText = "open " + ns + if multipleNames then " (" + name + ")" else ""
-        // TODO when fresh Roslyn NuGet packages are published, assign "Namespace" Tag to this CodeAction to show proper glyph.
         CodeAction.Create(
             fixUnderscoresInMenuText displayText,
             (fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! cancellationToken = Async.CancellationToken
                     let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let changedText, _ = OpenDeclarationHelper.insertOpenDeclaration sourceText ctx ns
                     return context.Document.WithText(changedText)
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             displayText)
 
-    let getSuggestions (context: CodeFixContext) (candidates: (Entity * InsertContext) list) : unit =
-        //Logging.Logging.logInfof "Candidates: %+A" candidates
-
+    let addSuggestionsAsCodeFixes (context: CodeFixContext) (candidates: (Entity * InsertContext) list) =
         let openNamespaceFixes =
             candidates
             |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.Name, ctx))
@@ -91,9 +83,9 @@ type internal FSharpAddOpenCodeFixProvider
         for codeFix in openNamespaceFixes @ qualifiedSymbolFixes do
             context.RegisterCodeFix(codeFix, context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray)
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
@@ -150,7 +142,7 @@ type internal FSharpAddOpenCodeFixProvider
                 else OpenStatementInsertionPoint.Nearest
 
             let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents insertionPoint
-            return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
+            return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> addSuggestionsAsCodeFixes context
         } 
         |> Async.Ignore 
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

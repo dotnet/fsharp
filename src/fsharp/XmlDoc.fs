@@ -21,7 +21,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             elif lineAT.StartsWithOrdinal("<") then lines
             else 
                 ["<summary>"] @
-                (lines |> List.map Microsoft.FSharp.Core.XmlAdapters.escape) @
+                (lines |> List.map FSharp.Compiler.XmlAdapters.escape) @
                 ["</summary>"]
 
     /// Get the lines before insertion of implicit summary tags and encoding

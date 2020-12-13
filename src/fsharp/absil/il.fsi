@@ -629,6 +629,8 @@ type ILFieldInit =
     | Double of double
     | Null
 
+    member AsObject: unit -> obj
+
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeVariant = 
     | Empty

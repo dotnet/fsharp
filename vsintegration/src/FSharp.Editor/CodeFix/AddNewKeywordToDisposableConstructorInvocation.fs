@@ -3,32 +3,33 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CodeActions
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddNewKeyword"); Shared>]
 type internal FSharpAddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
-    override __.FixableDiagnosticIds = ImmutableArray.Create "FS0760"
+    static let fixableDiagnosticIds = set ["FS0760"]
 
-    override this.RegisterCodeFixesAsync context : Task =
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+
+    override _.RegisterCodeFixesAsync context : Task =
         async {
             let title = SR.AddNewKeyword()
-            context.RegisterCodeFix(
-                CodeAction.Create(
+            let diagnostics =
+                context.Diagnostics
+                |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
+                |> Seq.toImmutableArray
+
+            let codeFix =
+                CodeFixHelpers.createTextChangeCodeFix(
                     title,
-                    (fun (cancellationToken: CancellationToken) ->
-                        async {
-                            let! cancellationToken = Async.CancellationToken
-                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                            return context.Document.WithText(sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "new ")))
-                        } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                    title), context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id) |> Seq.toImmutableArray)
+                    context,
+                    (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "new ") |]))
+
+            context.RegisterCodeFix(codeFix, diagnostics)
         } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

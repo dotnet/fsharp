@@ -621,27 +621,6 @@ let convReturnModifiers cenv emEnv (p: ILReturn) =
     splitModifiers mods
 
 //----------------------------------------------------------------------------
-// convFieldInit
-//----------------------------------------------------------------------------
-
-let convFieldInit x = 
-    match x with 
-    | ILFieldInit.String s -> box s
-    | ILFieldInit.Bool bool -> box bool   
-    | ILFieldInit.Char u16 -> box (char (int u16))  
-    | ILFieldInit.Int8 i8 -> box i8     
-    | ILFieldInit.Int16 i16 -> box i16    
-    | ILFieldInit.Int32 i32 -> box i32    
-    | ILFieldInit.Int64 i64 -> box i64    
-    | ILFieldInit.UInt8 u8 -> box u8     
-    | ILFieldInit.UInt16 u16 -> box u16    
-    | ILFieldInit.UInt32 u32 -> box u32    
-    | ILFieldInit.UInt64 u64 -> box u64    
-    | ILFieldInit.Single ieee32 -> box ieee32 
-    | ILFieldInit.Double ieee64 -> box ieee64 
-    | ILFieldInit.Null -> (null :> Object)
-
-//----------------------------------------------------------------------------
 // Some types require hard work...
 //----------------------------------------------------------------------------
 
@@ -1652,14 +1631,14 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
                 // it is ok to init fields with type = enum that are defined in other assemblies
                 || not fieldT.Assembly.IsDynamic  
             then 
-                fieldB.SetConstant(convFieldInit initial)
+                fieldB.SetConstant(initial.AsObject())
                 emEnv
             else
                 // if field type (enum) is defined in FSI dynamic assembly it is created as nested type 
                 // => its underlying type cannot be explicitly specified and will be inferred at the very moment of first field definition
                 // => here we cannot detect if underlying type is already set so as a conservative solution we delay initialization of fields
                 // to the end of pass2 (types and members are already created but method bodies are yet not emitted)
-                { emEnv with delayedFieldInits = (fun() -> fieldB.SetConstant(convFieldInit initial)) :: emEnv.delayedFieldInits }
+                { emEnv with delayedFieldInits = (fun() -> fieldB.SetConstant(initial.AsObject())) :: emEnv.delayedFieldInits }
     fdef.Offset |> Option.iter (fun offset -> fieldB.SetOffset offset)
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
@@ -1684,7 +1663,7 @@ let buildPropertyPass2 cenv tref (typB: TypeBuilder) emEnv (prop: ILPropertyDef)
     prop.SetMethod |> Option.iter (fun mref -> propB.SetSetMethod(envGetMethB emEnv mref))
     prop.GetMethod |> Option.iter (fun mref -> propB.SetGetMethod(envGetMethB emEnv mref))
     // set default value
-    prop.Init |> Option.iter (fun initial -> propB.SetConstant(convFieldInit initial))
+    prop.Init |> Option.iter (fun initial -> propB.SetConstant(initial.AsObject()))
     // custom attributes
     let pref = ILPropertyRef.Create (tref, prop.Name)    
     envBindPropRef emEnv pref propB
@@ -2101,7 +2080,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
         printfn "let assemblyBuilder%d = System.AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName(Name=\"%s\"), enum %d, %A)" (abs <| hash asmB) asmName.Name (LanguagePrimitives.EnumToValue flags) asmDir
     asmB
 
-let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
+let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collectible) =
     let filename = assemblyName + ".dll"
     let asmDir = "."
     let asmName = new AssemblyName()
