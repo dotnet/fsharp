@@ -176,3 +176,16 @@ val FSharpSignatureDataResourceName: string
 val FSharpOptimizationDataResourceName2: string
 
 val FSharpSignatureDataResourceName2: string
+
+// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+[<Literal>] 
+val suffixForVariablesThatMayNotBeEliminated : string = "$cont"
+
+[<Literal>] 
+val prefixForVariablesThatMayNotBeEliminated : string = "__stack_"
+
+[<Literal>] 
+val stackStepName : string = "__stack_step"
+
+[<Literal>] 
+val expansionFunctionPrefix : string = "__expand_"
