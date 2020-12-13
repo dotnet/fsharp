@@ -153,20 +153,21 @@ module internal Utilities =
         else
             None
 
-    let drainStreamToMemory (stream: StreamReader) =
-        let mutable list = ResizeArray()
-        let rec copyLines () =
-            match stream.ReadLine() with
-            | null -> ()
-            | line ->
-                list.Add line
-                copyLines ()
-        copyLines ()
-        list.ToArray()
-
     let executeBuild pathToExe arguments workingDir =
         match pathToExe with
         | Some path ->
+            let errorsList = ResizeArray()
+            let outputList = ResizeArray()
+            let mutable errorslock = obj
+            let mutable outputlock = obj
+            let outputDataReceived (message: string) =
+                if not (isNull message) then
+                    lock outputlock (fun () -> outputList.Add(message))
+
+            let errorDataReceived (message: string) =
+                if not (isNull message) then
+                    lock errorslock (fun () -> errorsList.Add(message))
+
             let psi = ProcessStartInfo()
             psi.FileName <- path
             psi.WorkingDirectory <- workingDir
@@ -179,19 +180,20 @@ module internal Utilities =
 
             use p = new Process()
             p.StartInfo <- psi
-            p.Start() |> ignore
 
-            let stdOut = drainStreamToMemory p.StandardOutput
-            let stdErr = drainStreamToMemory p.StandardError
+            p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
+            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+
+            if p.Start() then
+                p.BeginOutputReadLine()
+                p.BeginErrorReadLine()
+                p.WaitForExit()
 
 #if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), stdOut)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), stdErr)
+            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
+            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
 #endif
-
-            p.WaitForExit()
-
-            p.ExitCode = 0, stdOut, stdErr
+            p.ExitCode = 0, outputList.ToArray(), errorsList.ToArray()
 
         | None -> false, Array.empty, Array.empty
 
