@@ -11,6 +11,13 @@ open Internal.Utilities.FSharpEnvironment
 open Microsoft.FSharp.Reflection
 open System.Collections.Concurrent
 
+module Option = 
+
+    /// Convert string into Option string where null and String.Empty result in None
+    let ofString s = 
+        if String.IsNullOrEmpty(s) then None
+        else Some(s)
+
 [<AutoOpen>]
 module ReflectionHelper =
     let dependencyManagerPattern = "*DependencyManager*.dll"

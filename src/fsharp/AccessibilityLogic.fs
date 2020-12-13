@@ -19,11 +19,9 @@ open FSharp.Compiler.ExtensionTyping
 /// Represents the 'keys' a particular piece of code can use to access other constructs?.
 [<NoEquality; NoComparison>]
 type AccessorDomain = 
-    /// AccessibleFrom(cpaths, tyconRefOpt)
-    ///
     /// cpaths: indicates we have the keys to access any members private to the given paths 
     /// tyconRefOpt:  indicates we have the keys to access any protected members of the super types of 'TyconRef' 
-    | AccessibleFrom of CompilationPath list * TyconRef option        
+    | AccessibleFrom of cpaths: CompilationPath list * tyconRefOpt: TyconRef option        
 
     /// An AccessorDomain which returns public items
     | AccessibleFromEverywhere
@@ -227,7 +225,6 @@ let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
     elif isFamilyAndAssembly then ILMemberAccess.FamilyAndAssembly
     else ILMemberAccess.Private
 
-/// IndiCompute the accessibility of a provided member
 let IsILFieldInfoAccessible g amap m ad x = 
     match x with 
     | ILFieldInfo (tinfo, fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access

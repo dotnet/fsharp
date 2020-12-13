@@ -254,8 +254,8 @@ type PhasedDiagnostic =
             // Recovery is to treat this as a 'build' error. Downstream, the project system and language service will treat this as
             // if it came from the build and not the language service.
             false
-    /// Return true if this phase is one that's known to be part of the 'compile'. This is the initial phase of the entire compilation that
 
+    /// Return true if this phase is one that's known to be part of the 'compile'. This is the initial phase of the entire compilation that
     /// the language service knows about.                
     member pe.IsPhaseInCompile() = 
         let isPhaseInCompile = 
@@ -513,13 +513,12 @@ let conditionallySuppressErrorReporting cond f = if cond then suppressErrorRepor
 
 //------------------------------------------------------------------------
 // Errors as data: Sometimes we have to reify errors as data, e.g. if backtracking 
-//
-// REVIEW: consider using F# computation expressions here
 
+/// The result type of a computational modality to colelct warnings and possibly fail
 [<NoEquality; NoComparison>]
 type OperationResult<'T> = 
-    | OkResult of (* warnings: *) exn list * 'T
-    | ErrorResult of (* warnings: *) exn list * exn
+    | OkResult of warnings: exn list * 'T
+    | ErrorResult of warnings: exn list * exn
     
 type ImperativeOperationResult = OperationResult<unit>
 
@@ -536,9 +535,13 @@ let CommitOperationResult res =
 let RaiseOperationResult res : unit = CommitOperationResult res
 
 let ErrorD err = ErrorResult([], err)
+
 let WarnD err = OkResult([err], ())
+
 let CompleteD = OkResult([], ())
+
 let ResultD x = OkResult([], x)
+
 let CheckNoErrorsAndGetWarnings res = 
     match res with 
     | OkResult (warns, _) -> Some warns
@@ -624,7 +627,6 @@ module OperationResult =
         | ErrorResult(warnings, err) -> ErrorResult(warnings, err)
 
 // Code below is for --flaterrors flag that is only used by the IDE
-
 let stringThatIsAProxyForANewlineInFlatErrors = new System.String [|char 29 |]
 
 let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyForANewlineInFlatErrors, Environment.NewLine)
@@ -674,13 +676,6 @@ type public FSharpErrorSeverityOptions =
           WarnAsError = []
           WarnAsWarn = []
         }
-
-
-// See https://github.com/Microsoft/visualfsharp/issues/6417, if a compile of the FSharp.Compiler.Services.dll or other compiler
-// binary produces exactly 65536 methods then older versions of the compiler raise a bug.  If you hit this bug again then try adding
-// this back in.
-// let dummyMethodFOrBug6417A() = () 
-// let dummyMethodFOrBug6417B() = () 
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then

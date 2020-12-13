@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -393,7 +392,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Verify that no directory/file already exists with the new name on disk.
                 // If it does, just subsume that name if our directory is empty.
-                if (Directory.Exists(newFullPath) || FSLib.Shim.FileSystem.SafeExists(newFullPath))
+                if (Directory.Exists(newFullPath) || File.Exists(newFullPath))
                 {
                     // We can't delete our old directory as it is not empty
                     if (Directory.EnumerateFileSystemEntries(this.Url).Any())

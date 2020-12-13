@@ -575,16 +575,6 @@ type FrameworkImportsCache(size) =
         return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
       }
 
-
-//------------------------------------------------------------------------------------
-// Rules for reactive building.
-//
-// This phrases the compile as a series of vector functions and vector manipulations.
-// Rules written in this language are then transformed into a plan to execute the 
-// various steps of the process.
-//-----------------------------------------------------------------------------------
-
-
 /// Represents the interim state of checking an assembly
 [<Sealed>]
 type PartialCheckResults private (semanticModel: SemanticModel, timeStamp: DateTime) = 
@@ -712,28 +702,19 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     //----------------------------------------------------
     // START OF BUILD TASK FUNCTIONS 
                 
-    /// This is a build task function that gets placed into the build rules as the computation for a VectorStamp
-    ///
     /// Get the timestamp of the given file name.
     let StampFileNameTask (cache: TimeStampCache) _ctok (_m: range, filename: string, _isLastCompiland) =
         cache.GetFileTimeStamp filename
 
-    /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
-    ///
     /// Parse the given file and return the given input.
     let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
         SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
         
-    /// This is a build task function that gets placed into the build rules as the computation for a Vector.Stamp
-    ///
     /// Timestamps of referenced assemblies are taken from the file's timestamp.
     let StampReferencedAssemblyTask (cache: TimeStampCache) ctok (_ref, timeStamper) =
         timeStamper cache ctok
                 
-         
-    /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
-    ///
     // Link all the assemblies together and produce the input typecheck accumulator               
     let CombineImportedAssembliesTask ctok : Cancellable<SemanticModel> =
       cancellable {
@@ -819,8 +800,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 defaultPartialTypeChecking,
                 beforeFileChecked, fileChecked, tcInfo, Eventually.Done (Some tcInfoOptional), None) }
                 
-    /// This is a build task function that gets placed into the build rules as the computation for a Vector.ScanLeft
-    ///
     /// Type check all files.     
     let TypeCheckTask ctok (prevSemanticModel: SemanticModel) syntaxTree: Eventually<SemanticModel> =
         eventually {
@@ -832,8 +811,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             return semanticModel
         }
 
-    /// This is a build task function that gets placed into the build rules as the computation for a Vector.Demultiplex
-    ///
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
     let FinalizeTypeCheckTask ctok (semanticModels: SemanticModel[]) = 
       cancellable {
@@ -932,7 +909,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     let fileNames = sourceFiles |> Array.ofList // TODO: This should be an immutable array.
     let referencedAssemblies =  nonFrameworkAssemblyInputs |> Array.ofList // TODO: This should be an immutable array.
 
+    (*
+        The data below represents a dependency graph.
+        
+        ReferencedAssembliesStamps => FileStamps => SemanticModels => FinalizedSemanticModel
+    *)
+
+    // stampedFileNames represent the real stamps of the files.
+    // logicalStampedFileNames represent the stamps of the files that are used to calculate the project's logical timestamp.
     let stampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
+    let logicalStampedFileNames = Array.init fileNames.Length (fun _ -> DateTime.MinValue)
     let stampedReferencedAssemblies = Array.init referencedAssemblies.Length (fun _ -> DateTime.MinValue)
     let mutable initialSemanticModel = None
     let semanticModels = Array.zeroCreate<SemanticModel option> fileNames.Length
@@ -946,6 +932,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             match semanticModels.[slot] with
             // This prevents an implementation file that has a backing signature file from invalidating the rest of the build.
             | Some(semanticModel) when enablePartialTypeChecking && semanticModel.BackingSignature.IsSome ->
+                stampedFileNames.[slot] <- StampFileNameTask cache ctok fileInfo
                 semanticModel.Invalidate()
             | _ ->
                 // Something changed, the finalized view of the project must be invalidated.
@@ -954,7 +941,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 // Invalidate the file and all files below it.
                 stampedFileNames.[slot..]
                 |> Array.iteri (fun j _ -> 
-                    stampedFileNames.[slot + j] <- StampFileNameTask cache ctok fileNames.[slot + j]
+                    let stamp = StampFileNameTask cache ctok fileNames.[slot + j]
+                    stampedFileNames.[slot + j] <- stamp
+                    logicalStampedFileNames.[slot + j] <- stamp
                     semanticModels.[slot + j] <- None
                 )
 
@@ -987,11 +976,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
             for i = 0 to stampedFileNames.Length - 1 do
                 stampedFileNames.[i] <- DateTime.MinValue
+                logicalStampedFileNames.[i] <- DateTime.MinValue
                 semanticModels.[i] <- None
 
     let getStampedFileNames cache ctok =
         computeStampedFileNames cache ctok
-        stampedFileNames
+        logicalStampedFileNames
 
     let getStampedReferencedAssemblies cache ctok =
         computeStampedReferencedAssemblies cache ctok
