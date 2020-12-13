@@ -33,8 +33,8 @@ module CheckNewOverloadsDoneConfusePreviousCode2 = begin
   type CheckNominal =
     class
       new : unit -> CheckNominal
-      static member CanResolveOverload : x:System.TimeSpan -> unit
       static member CanResolveOverload : x:System.Numerics.Complex -> unit
+      static member CanResolveOverload : x:System.TimeSpan -> unit
     end
   val f1 :
     x:System.Numerics.Complex ->
