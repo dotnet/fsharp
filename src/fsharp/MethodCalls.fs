@@ -484,34 +484,34 @@ type CalledMeth<'T>
 
     member x.amap = infoReader.amap
 
-      /// the method we're attempting to call 
+    /// The method we're attempting to call 
     member x.Method = minfo
 
-      /// the instantiation of the method we're attempting to call 
+    /// The instantiation of the method we're attempting to call 
     member x.CalledTyArgs = calledTyArgs
 
     member x.AllCalledArgs = fullCurriedCalledArgs
 
-      /// the instantiation of the method we're attempting to call 
+    /// The instantiation of the method we're attempting to call 
     member x.CalledTyparInst = 
         let tps = minfo.FormalMethodTypars 
         if tps.Length = calledTyArgs.Length then mkTyparInst tps calledTyArgs else []
 
-      /// the formal instantiation of the method we're attempting to call 
+    /// The formal instantiation of the method we're attempting to call 
     member x.CallerTyArgs = callerTyArgs
 
-      /// The types of the actual object arguments, if any
+    /// The types of the actual object arguments, if any
     member x.CallerObjArgTys = callerObjArgTys
 
-      /// The argument analysis for each set of curried arguments
+    /// The argument analysis for each set of curried arguments
     member x.ArgSets = argSets
 
-      /// return type after implicit deference of byref returns is taken into account
+    /// The return type after implicit deference of byref returns is taken into account
     member x.CalledReturnTypeAfterByrefDeref = 
         let retTy = methodRetTy
         if isByrefTy g retTy then destByrefTy g retTy else retTy
 
-      /// return type after tupling of out args is taken into account
+    /// Return type after tupling of out args is taken into account
     member x.CalledReturnTypeAfterOutArgTupling = 
         let retTy = x.CalledReturnTypeAfterByrefDeref
         if isNil unnamedCalledOutArgs then 
@@ -521,22 +521,22 @@ type CalledMeth<'T>
             if isUnitTy g retTy then mkRefTupledTy g outArgTys
             else mkRefTupledTy g (retTy :: outArgTys)
 
-      /// named setters
+    /// Named setters
     member x.AssignedItemSetters = assignedNamedProps
 
-      /// the property related to the method we're attempting to call, if any  
+    /// The property related to the method we're attempting to call, if any  
     member x.AssociatedPropertyInfo = pinfoOpt
 
-      /// unassigned args
+    /// Unassigned args
     member x.UnassignedNamedArgs = unassignedNamedItems
 
-      /// args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
+    /// Args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
     member x.AttributeAssignedNamedArgs = attributeAssignedNamedItems
 
-      /// unnamed called optional args: pass defaults for these
+    /// Unnamed called optional args: pass defaults for these
     member x.UnnamedCalledOptArgs = unnamedCalledOptArgs
 
-      /// unnamed called out args: return these as part of the return tuple
+    /// Unnamed called out args: return these as part of the return tuple
     member x.UnnamedCalledOutArgs = unnamedCalledOutArgs
 
     static member GetMethod (x: CalledMeth<'T>) = x.Method
@@ -752,10 +752,6 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
             id, objArgs
     let e, ety = f ccallInfo objArgs
     wrap e, ety
-
-//-------------------------------------------------------------------------
-// Build method calls.
-//------------------------------------------------------------------------- 
 
 /// Build an expression node that is a call to a .NET method. 
 let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst direct args = 

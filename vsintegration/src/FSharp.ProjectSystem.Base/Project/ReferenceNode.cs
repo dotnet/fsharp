@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-using FSLib = FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -305,7 +304,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         protected virtual bool CanShowUrlInOnObjectBrowser()
         {
-            return !string.IsNullOrEmpty(Url) && FSLib.Shim.FileSystem.SafeExists(Url);
+            return !string.IsNullOrEmpty(Url) && File.Exists(Url);
         }
 
         /// <summary>

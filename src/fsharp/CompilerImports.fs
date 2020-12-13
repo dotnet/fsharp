@@ -692,12 +692,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 //--------------------------------------------------------------------------
 
 [<Sealed>]
-type TcImportsSafeDisposal
-    (disposeActions: ResizeArray<unit -> unit>,
-#if !NO_EXTENSIONTYPING
-     disposeTypeProviderActions: ResizeArray<unit -> unit>
-#endif
-    ) =
+type TcImportsSafeDisposal(disposeActions: ResizeArray<unit -> unit>,disposeTypeProviderActions: ResizeArray<unit -> unit>) =
 
     let mutable isDisposed = false
 
@@ -706,9 +701,7 @@ type TcImportsSafeDisposal
         isDisposed <- true        
         if verbose then 
             dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
-#if !NO_EXTENSIONTYPING
         for action in disposeTypeProviderActions do action()
-#endif
         for action in disposeActions do action()
 
     override _.Finalize() =
@@ -758,7 +751,11 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option,
-                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option) as this = 
+                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option) 
+#if !NO_EXTENSIONTYPING
+                         as this  
+#endif
+       =
 
     let mutable resolutions = initialResolutions
     let mutable importsBase: TcImports option = importsBase
@@ -777,8 +774,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
-#if !NO_EXTENSIONTYPING
     let disposeTypeProviderActions = ResizeArray()
+#if !NO_EXTENSIONTYPING
     let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
 #endif
