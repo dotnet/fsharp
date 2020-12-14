@@ -2520,12 +2520,15 @@ exconCore:
      { SynExceptionDefnRepr($2, $4, $5, $1, $3, (match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
   
 /* Part of an exception definition */
-exconIntro: 
-  | ident 
+exconIntro:
+  | ident
       { UnionCase([], $1, UnionCaseFields [], PreXmlDoc.Empty, None, lhs parseState) }
 
-  | ident OF unionCaseRepr 
+  | ident OF unionCaseRepr
       { UnionCase([], $1, UnionCaseFields $3, PreXmlDoc.Empty, None, lhs parseState) }
+
+  | ident OF recover
+      { UnionCase([], $1, UnionCaseFields [], PreXmlDoc.Empty, None, lhs parseState) }
 
 exconRepr: 
   | /* EMPTY */
