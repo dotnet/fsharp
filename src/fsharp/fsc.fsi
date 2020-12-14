@@ -48,7 +48,7 @@ val mainCompile:
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
     tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+    dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option
       -> unit
 
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
@@ -66,7 +66,7 @@ val compileOfAst:
     loggerProvider: ErrorLoggerProvider * 
     inputs:ParsedInput list *
     tcImportsCapture : (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+    dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option
       -> unit
 
 /// Part of LegacyHostedCompilerForTesting
