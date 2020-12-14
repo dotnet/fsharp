@@ -32,6 +32,11 @@
         <target state="translated">Nie znaleziono katalogu źródłowego „{0}”</target>
         <note />
       </trans-unit>
+      <trans-unit id="timedoutResolvingPackages">
+        <source>Timed out resolving packages, process: '{0}' '{1}'</source>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">Nie można zastosować niejawnego argumentu o numerze {0}</target>

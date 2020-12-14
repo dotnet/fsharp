@@ -32,6 +32,11 @@
         <target state="translated">ソース ディレクトリ '{0}' が見つかりません</target>
         <note />
       </trans-unit>
+      <trans-unit id="timedoutResolvingPackages">
+        <source>Timed out resolving packages, process: '{0}' '{1}'</source>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">暗黙的な引数番号 {0} を適用できません</target>

@@ -32,6 +32,11 @@
         <target state="translated">소스 디렉터리 '{0}'을(를) 찾을 수 없음</target>
         <note />
       </trans-unit>
+      <trans-unit id="timedoutResolvingPackages">
+        <source>Timed out resolving packages, process: '{0}' '{1}'</source>
+        <target state="new">Timed out resolving packages, process: '{0}' '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="unableToApplyImplicitArgument">
         <source>Unable to apply implicit argument number {0}</source>
         <target state="translated">암시적 인수 번호 {0}을(를) 적용할 수 없습니다.</target>
