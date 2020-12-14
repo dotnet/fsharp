@@ -625,8 +625,6 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader: InfoReader) m origTy 
 let GetIntrinsicConstructorInfosOfType infoReader m ty = 
     GetIntrinsicConstructorInfosOfTypeAux infoReader m ty ty
 
-
-
 //-------------------------------------------------------------------------
 // Collecting methods and properties taking into account hiding rules in the hierarchy
 
