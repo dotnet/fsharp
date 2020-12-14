@@ -12,9 +12,19 @@
         <target state="translated">с наивысшей версией</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidTimeoutValue">
+        <source>Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</source>
+        <target state="new">Invalid value for timeout '{0}', valid values: none, -1 and integer milliseconds to wait</target>
+        <note />
+      </trans-unit>
       <trans-unit id="loadNugetPackage">
         <source>Load Nuget Package</source>
         <target state="translated">Загрузить пакет NuGet</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="missingTimeoutValue">
+        <source>Missing value for timeout</source>
+        <target state="new">Missing value for timeout</target>
         <note />
       </trans-unit>
       <trans-unit id="notUsed">

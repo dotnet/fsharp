@@ -2,6 +2,8 @@
 
 namespace FSharp.DependencyManager.UnitTests
 
+
+open System
 open System.Linq
 open FSharp.DependencyManager.Nuget
 
@@ -155,3 +157,44 @@ type DependencyManagerLineParserTests() =
              ]
             |> FSharpDependencyManager.parsePackageReference ".fsx" 
         Assert.Equal(timeout, Some 10)
+
+    [<Fact>]
+    member __.``Timeout invalid : timeout``() =
+        try
+            [ "timeout" ]
+            |> FSharpDependencyManager.parsePackageReference ".fsx" |> ignore
+            Assert.True(false, "ArgumentException expected")                    //Assert.Fail
+        with
+        | :? ArgumentException -> ()
+        | _ -> Assert.True(false, "ArgumentException expected")                 //Assert.Fail
+
+    [<Fact>]
+    member __.``Timeout invalid timeout=``() =
+        try
+            [ "timeout=" ]
+            |> FSharpDependencyManager.parsePackageReference ".fsx" |> ignore 
+            Assert.True(false, "ArgumentException expected")                    //Assert.Fail
+        with
+        | :? ArgumentException -> ()
+        | _ -> Assert.True(false, "ArgumentException expected")                 //Assert.Fail
+
+    [<Fact>]
+    member __.``Timeout invalid timeout=nonesuch``() =
+        try
+            [ "timeout=nonesuch" ]
+            |> FSharpDependencyManager.parsePackageReference ".fsx"  |> ignore
+            Assert.True(false, "ArgumentException expected")                    //Assert.Fail
+        with
+        | :? ArgumentException -> ()
+        | _ -> Assert.True(false, "ArgumentException expected")                 //Assert.Fail
+
+
+    [<Fact>]
+    member __.``Timeout invalid timeout=-20``() =
+        try
+            [ "timeout=-20" ]
+            |> FSharpDependencyManager.parsePackageReference ".fsx"  |> ignore
+            Assert.True(false, "ArgumentException expected")                    //Assert.Fail
+        with
+        | :? ArgumentException -> ()
+        | _ -> Assert.True(false, "ArgumentException expected")                 //Assert.Fail

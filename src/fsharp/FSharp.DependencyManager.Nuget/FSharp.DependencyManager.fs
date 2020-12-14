@@ -80,14 +80,15 @@ module FSharpDependencyManager =
                 | Some "restoresources", Some v -> Some { current with RestoreSources = concat current.RestoreSources v } |> parsePackageReferenceOption' rest implicitArgumentCount
                 | Some "restoresources", None -> raise (ArgumentException(SR.requiresAValue("RestoreSources")))
                 | Some "script", Some v -> Some { current with Script = v } |> parsePackageReferenceOption' rest implicitArgumentCount
+                | Some "timeout", None -> raise (ArgumentException(SR.missingTimeoutValue()))
                 | Some "timeout", value ->
                     match value with
-                    | Some v when (Int32.TryParse(v) |> fst) -> setTimeout (Some (Int32.Parse v))
-                    | Some v when v.ToLowerInvariant() = "none" -> setTimeout (Some -1)
-                    | _ ->
-                        // parser shouldn't get here because unkeyed values follow a different path, but for the sake of completeness and keeping the compiler happy,
-                        // this is fine
-                        setTimeout None // auto-generated logging location
+                    | Some v when v.GetType() = typeof<string> ->
+                        let parsed, value = Int32.TryParse(v)
+                        if parsed && value >= 0 then setTimeout (Some (Int32.Parse v))
+                        elif v = "none" then setTimeout (Some -1)
+                        else raise (ArgumentException(SR.invalidTimeoutValue(v)))
+                    | _ -> setTimeout None // auto-generated logging location
                     parsePackageReferenceOption' rest implicitArgumentCount packageReference
                 | Some "bl", value ->
                     match value with
@@ -106,6 +107,9 @@ module FSharpDependencyManager =
                         // to reference a package named 'bl' they still have the 'Include=bl' syntax as a fallback.
                         setBinLogPath (Some None) // auto-generated logging location
                         parsePackageReferenceOption' rest implicitArgumentCount packageReference
+                    | "timeout" ->
+                        // bare timeout is invalid
+                        raise (ArgumentException(SR.missingTimeoutValue()))
                     | _ ->
                         match implicitArgumentCount with
                         | 0 -> addInclude v
