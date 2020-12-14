@@ -179,29 +179,6 @@ let GetAttribInfosOfEvent amap m einfo =
     | ProvidedEvent _ -> []
 #endif
 
-/// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
-/// provided attributes.
-//
-// This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
-let TryBindTyconRefAttribute g m (AttribInfo (atref, _) as args) (tcref:TyconRef) f1 f2 f3 = 
-    ignore m; ignore f3
-    match metadataOfTycon tcref.Deref with 
-#if !NO_EXTENSIONTYPING
-    | ProvidedTypeMetadata info -> 
-        let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
-        match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)), m) with
-        | Some args -> f3 args
-        | None -> None
-#endif
-    | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
-        match TryDecodeILAttribute g atref tdef.CustomAttrs with 
-        | Some attr -> f1 attr
-        | _ -> None
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-        match TryFindFSharpAttribute g args tcref.Attribs with 
-        | Some attr -> f2 attr
-        | _ -> None
-
 /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 let BindMethInfoAttributes m minfo f1 f2 f3 = 
@@ -216,9 +193,8 @@ let BindMethInfoAttributes m minfo f1 f2 f3 =
 
 /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
-let TryBindMethInfoAttribute g m (AttribInfo(atref, _) as attribSpec) minfo f1 f2 f3 = 
-#if !NO_EXTENSIONTYPING
-#else
+let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) minfo f1 f2 f3 = 
+#if NO_EXTENSIONTYPING
     // to prevent unused parameter warning
     ignore f3
 #endif
@@ -237,7 +213,7 @@ let TryBindMethInfoAttribute g m (AttribInfo(atref, _) as attribSpec) minfo f1 f
 /// Try to find a specific attribute on a method, where the attribute accepts a string argument.
 ///
 /// This is just used for the 'ConditionalAttribute' attribute
-let TryFindMethInfoStringAttribute g m attribSpec minfo  =
+let TryFindMethInfoStringAttribute g (m: range) attribSpec minfo  =
     TryBindMethInfoAttribute g m attribSpec minfo 
                     (function ([ILAttribElem.String (Some msg) ], _) -> Some msg | _ -> None) 
                     (function (Attrib(_, _, [ AttribStringArg msg ], _, _, _, _)) -> Some msg | _ -> None)
@@ -438,7 +414,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g m ty minfo = 
+let MethInfoIsUnseen g (m: range) (ty: TType) minfo = 
     let isUnseenByObsoleteAttrib () = 
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 

@@ -25,23 +25,8 @@ type internal FSharpRenameUnusedValueCodeFixProvider
     
     inherit CodeFixProvider()
     static let userOpName = "RenameUnusedValueCodeFix"
-    let fixableDiagnosticIds = ["FS1182"]
+    let fixableDiagnosticIds = set ["FS1182"]
     let checker = checkerProvider.Checker
-        
-    let createCodeFix (context: CodeFixContext, symbolName: string, titleFormat: string, textChange: TextChange) =
-        let title = String.Format(titleFormat, symbolName)
-        let codeAction =
-            CodeAction.Create(
-                title,
-                (fun (cancellationToken: CancellationToken) ->
-                    async {
-                        let! cancellationToken = Async.CancellationToken
-                        let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                        return context.Document.WithText(sourceText.WithChanges(textChange))
-                    } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-                title)
-        let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
-        context.RegisterCodeFix(codeAction, diagnostics)
 
     override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -66,10 +51,29 @@ type internal FSharpRenameUnusedValueCodeFixProvider
                 let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
                 let symbolName = symbolUse.Symbol.DisplayName
 
+                let diagnostics =
+                    context.Diagnostics
+                    |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
+                    |> Seq.toImmutableArray
+
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as func ->
-                    createCodeFix(context, symbolName, SR.PrefixValueNameWithUnderscore(), TextChange(TextSpan(context.Span.Start, 0), "_"))
-                    if func.IsValue then createCodeFix(context, symbolName, SR.RenameValueToUnderscore(), TextChange(context.Span, "_"))
+                    let prefixTitle = String.Format(SR.PrefixValueNameWithUnderscore(), symbolName)
+                    let prefixCodeFix =
+                        CodeFixHelpers.createTextChangeCodeFix(
+                            prefixTitle,
+                            context,
+                            (fun () -> asyncMaybe.Return [| TextChange(TextSpan(context.Span.Start, 0), "_") |]))
+                    context.RegisterCodeFix(prefixCodeFix, diagnostics)
+
+                    if func.IsValue then
+                        let replaceTitle = String.Format(SR.RenameValueToUnderscore(), symbolName)
+                        let replaceCodeFix =
+                            CodeFixHelpers.createTextChangeCodeFix(
+                                replaceTitle,
+                                context,
+                                (fun () -> asyncMaybe.Return [| TextChange(context.Span, "_") |]))
+                        context.RegisterCodeFix(replaceCodeFix, diagnostics)
                 | _ -> ()
         } 
         |> Async.Ignore

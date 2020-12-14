@@ -38,8 +38,7 @@ module internal FSharpEnvironment =
     let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
 
-#if FX_NO_WIN_REGISTRY
-#else
+#if !FX_NO_WIN_REGISTRY
     [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
     extern uint32 RegOpenKeyExW(UIntPtr _hKey, string _lpSubKey, uint32 _ulOptions, int _samDesired, UIntPtr & _phkResult);
 
@@ -60,8 +59,7 @@ module internal FSharpEnvironment =
     let maxPath = 260;
     let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
 
-#if FX_NO_WIN_REGISTRY
-#else
+#if !FX_NO_WIN_REGISTRY
     let KEY_WOW64_DEFAULT = 0x0000
     let KEY_WOW64_32KEY = 0x0200
     let HKEY_LOCAL_MACHINE = UIntPtr(0x80000002u)

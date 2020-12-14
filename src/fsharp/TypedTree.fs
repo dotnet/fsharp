@@ -5434,7 +5434,7 @@ type Construct() =
 #endif
 
     /// Create a new entity node for a module or namespace
-    static member NewModuleOrNamespace cpath access (id: Ident) xml attribs mtype = 
+    static member NewModuleOrNamespace cpath access (id: Ident) (xml: XmlDoc) attribs mtype = 
         let stamp = newStamp() 
         // Put the module suffix on if needed 
         Tycon.New "mspec"

@@ -24,16 +24,20 @@ type internal QueueList<'T>(firstElementsIn:'T list, lastElementsRevIn: 'T list,
     let lastElements() = if push then [] else List.rev lastElementsRev
 
     static let empty = QueueList<'T>([], [], 0)
+
     static member Empty : QueueList<'T> = empty
+
     new (xs:'T list) = QueueList(xs,[],0)
     
     member x.ToList() = if push then firstElements else List.append firstElements (lastElements())
 
-    member internal x.FirstElements = firstElements
-    member internal x.LastElements = lastElements()
+    member x.FirstElements = firstElements
+
+    member x.LastElements = lastElements()
 
     /// This operation is O(1), unless a push happens, which is rare.
     member x.AppendOne(y) = QueueList(firstElements, y :: lastElementsRev, numLastElements+1)
+
     member x.Append(ys:seq<_>) =
         let newElements = Seq.toList ys
         let newLength = List.length newElements
@@ -43,24 +47,37 @@ type internal QueueList<'T>(firstElementsIn:'T list, lastElementsRevIn: 'T list,
     /// This operation is O(n) anyway, so executing ToList() here is OK
     interface IEnumerable<'T> with 
         member x.GetEnumerator() : IEnumerator<'T> = (x.ToList() :> IEnumerable<_>).GetEnumerator()
+
     interface IEnumerable with 
         member x.GetEnumerator() : IEnumerator = ((x :> IEnumerable<'T>).GetEnumerator() :> IEnumerator)
 
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal QueueList =
     let empty<'T> : QueueList<'T> = QueueList<'T>.Empty
+
     let ofSeq (x:seq<_>) = QueueList(List.ofSeq x)
+
     let rec iter f (x:QueueList<_>) = Seq.iter f x 
+
     let rec map f (x:QueueList<_>) = ofSeq (Seq.map f x)
+
     let rec exists f (x:QueueList<_>) = Seq.exists f x
+
     let rec filter f (x:QueueList<_>) = ofSeq (Seq.filter f x)
+
     let rec foldBack f (x:QueueList<_>) acc = List.foldBack f  x.FirstElements (List.foldBack f x.LastElements acc)
+
     let forall f (x:QueueList<_>) = Seq.forall f x
+
     let ofList (x:list<_>) = QueueList(x)
+
     let toList (x:QueueList<_>) = Seq.toList x
+
     let tryFind f (x:QueueList<_>) = Seq.tryFind f x
+
     let one(x) = QueueList [x]
+
     let appendOne (x:QueueList<_>) y = x.AppendOne(y)
+
     let append (x:QueueList<_>) (ys:QueueList<_>) = x.Append(ys)
 
 #if QUEUE_LIST_UNITTESTS

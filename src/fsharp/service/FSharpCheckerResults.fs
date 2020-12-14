@@ -502,7 +502,10 @@ type internal TypeCheckInfo
                 nameMatchesResidue n1 ||
                 meths |> List.exists (fun meth ->
                     let tcref = meth.ApparentEnclosingTyconRef
-                    tcref.IsProvided || nameMatchesResidue tcref.DisplayName)
+#if !NO_EXTENSIONTYPING
+                    tcref.IsProvided || 
+#endif
+                    nameMatchesResidue tcref.DisplayName)
             | _ -> residue = n1)
             
     /// Post-filter items to make sure they have precisely the right name
