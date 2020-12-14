@@ -30,7 +30,6 @@ let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
 let wrapCustomAttr setCustomAttr (cinfo, bytes) =
     setCustomAttr(cinfo, bytes)
 
-
 //----------------------------------------------------------------------------
 // logging to enable debugging
 //----------------------------------------------------------------------------
