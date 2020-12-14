@@ -1043,6 +1043,7 @@ let testFlag tcConfigB =
                 | "DumpDebugInfo"    -> tcConfigB.dumpDebugInfo <- true
                 | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
                 | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
+                | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
                 | str                -> warning(Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch str, rangeCmdArgs))), None,
              None)
 

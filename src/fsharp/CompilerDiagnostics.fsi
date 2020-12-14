@@ -13,6 +13,9 @@ module internal CompilerService =
     val showAssertForUnexpectedException: bool ref
 #endif // DEBUG
 
+/// For extra diagnostics 
+val mutable showParserStackOnParseError: bool
+
 /// This exception is an old-style way of reporting a diagnostic
 exception HashIncludeNotAllowedInNonScript of range
 
