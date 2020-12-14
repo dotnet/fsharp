@@ -2404,12 +2404,12 @@ attrUnionCaseDecls:
 
 /* The core of a union case definition */
 attrUnionCaseDecl:
-  | opt_attributes opt_access unionCaseName opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs parseState 3
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) }
 
-  | opt_attributes opt_access unionCaseName OF unionCaseRepr opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName OF unionCaseRepr
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields $5, xmlDoc, None, mDecl))) }
@@ -2419,13 +2419,13 @@ attrUnionCaseDecl:
         let mDecl = rhs2 parseState 1 4
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) }
 
-  | opt_attributes opt_access unionCaseName COLON topType opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName COLON topType
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         libraryOnlyWarning(lhs parseState)
         let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFullType $5, xmlDoc, None, mDecl))) }
 
-  | opt_attributes opt_access unionCaseName EQUALS constant opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName EQUALS constant
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 5
         (fun xmlDoc -> Choice1Of2 (EnumCase ( $1, $3, $5, xmlDoc, mDecl))) } 
