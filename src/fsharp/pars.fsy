@@ -2403,16 +2403,21 @@ attrUnionCaseDecls:
      { (fun xmlDoc -> [ $1 xmlDoc ]) }
 
 /* The core of a union case definition */
-attrUnionCaseDecl: 
+attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName opt_OBLOCKSEP
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs parseState 3
-        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) } 
+        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) }
 
-  | opt_attributes opt_access unionCaseName OF unionCaseRepr  opt_OBLOCKSEP
+  | opt_attributes opt_access unionCaseName OF unionCaseRepr opt_OBLOCKSEP
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
         let mDecl = rhs2 parseState 1 5
-        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields $5, xmlDoc, None, mDecl))) } 
+        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields $5, xmlDoc, None, mDecl))) }
+
+  | opt_attributes opt_access unionCaseName OF recover
+      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
+        let mDecl = rhs2 parseState 1 4
+        (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3, UnionCaseFields [], xmlDoc, None, mDecl))) }
 
   | opt_attributes opt_access unionCaseName COLON topType opt_OBLOCKSEP
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(), rhs parseState 2))
