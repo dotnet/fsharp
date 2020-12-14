@@ -122,7 +122,7 @@ type IDependencyManagerProvider =
     abstract Name: string
     abstract Key: string
     abstract HelpMessages: string[]
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string -> IResolveDependenciesResult
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string * timeout: int-> IResolveDependenciesResult
 
 type ReflectionDependencyManagerProvider(theType: Type, 
         nameProperty: PropertyInfo,
@@ -130,6 +130,7 @@ type ReflectionDependencyManagerProvider(theType: Type,
         helpMessagesProperty: PropertyInfo option,
         resolveDeps: MethodInfo option,
         resolveDepsEx: MethodInfo option,
+        resolveDepsExWithTimeout: MethodInfo option,
         outputDir: string option) =
     let instance = Activator.CreateInstance(theType, [| outputDir :> obj |])
     let nameProperty = nameProperty.GetValue >> string
@@ -152,11 +153,13 @@ type ReflectionDependencyManagerProvider(theType: Type,
         | Some _, Some nameProperty, Some keyProperty, None ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
+            let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int> |] resolveDependenciesMethodName
+            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, None, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, outputDir) :> IDependencyManagerProvider)
         | Some _, Some nameProperty, Some keyProperty, Some helpMessagesProperty ->
             let resolveMethod =   getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<string>; typeof<string>; typeof<string seq>; typeof<string> |] resolveDependenciesMethodName
             let resolveMethodEx = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string> |] resolveDependenciesMethodName
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, outputDir) :> IDependencyManagerProvider)
+            let resolveMethodExWithTimeout = getInstanceMethod<bool * string list * string list> theType [| typeof<string>; typeof<(string * string) seq>; typeof<string>; typeof<string>; typeof<int>; |] resolveDependenciesMethodName
+            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, keyProperty, Some helpMessagesProperty, resolveMethod, resolveMethodEx, resolveMethodExWithTimeout, outputDir) :> IDependencyManagerProvider)
 
     static member MakeResultFromObject(result: obj) = {
         new IResolveDependenciesResult with
@@ -231,14 +234,16 @@ type ReflectionDependencyManagerProvider(theType: Type,
         member _.HelpMessages = instance |> helpMessagesProperty
 
         /// Resolve the dependencies for the given arguments
-        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid): IResolveDependenciesResult =
+        member this.ResolveDependencies(scriptDir, mainScriptName, scriptName, scriptExt, packageManagerTextLines, tfm, rid, timeout): IResolveDependenciesResult =
             // The ResolveDependencies method, has two signatures, the original signaature in the variable resolveDeps and the updated signature resolveDepsEx
             // the resolve method can return values in two different tuples:
             //     (bool * string list * string list * string list)
             //     (bool * string list * string list)
             // We use reflection to get the correct method and to determine what we got back.
             let method, arguments =
-                if resolveDepsEx.IsSome then
+                if resolveDepsExWithTimeout.IsSome then
+                    resolveDepsExWithTimeout, [| box scriptExt; box packageManagerTextLines; box tfm; box rid; box timeout |]
+                elif resolveDepsEx.IsSome then
                     resolveDepsEx, [| box scriptExt; box packageManagerTextLines; box tfm; box rid |]
                 elif resolveDeps.IsSome then
                     resolveDeps, [| box scriptDir
@@ -407,7 +412,8 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                        [<Optional;DefaultParameterValue(null:string)>]executionRid: string,
                        [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string,
                        [<Optional;DefaultParameterValue("")>]mainScriptName: string,
-                       [<Optional;DefaultParameterValue("")>]fileName: string): IResolveDependenciesResult =
+                       [<Optional;DefaultParameterValue("")>]fileName: string,
+                       [<Optional;DefaultParameterValue(-1)>]timeout: int): IResolveDependenciesResult =
 
         let key = (packageManager.Key, scriptExt, Seq.toArray packageManagerTextLines, executionTfm, executionRid, implicitIncludeDir, mainScriptName, fileName)
 
@@ -419,7 +425,7 @@ type DependencyProvider (assemblyProbingPaths: AssemblyResolutionProbe, nativePr
                             RidHelpers.platformRid
                         else
                             executionRid
-                    Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid))
+                    Ok (packageManager.ResolveDependencies(implicitIncludeDir, mainScriptName, fileName, scriptExt, packageManagerTextLines, executionTfm, executionRid, timeout))
 
                 with e ->
                     let e = stripTieWrapper e
