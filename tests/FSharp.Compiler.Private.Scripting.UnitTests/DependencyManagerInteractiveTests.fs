@@ -801,3 +801,75 @@ x |> Seq.iter(fun r ->
         output.OutputProduced.Add (fun line -> verifyOutput line)
         let opt = script.Eval(text) |> getValue
         Assert.True(sawExpectedOutput.WaitOne(TimeSpan.FromSeconds(5.0)), sprintf "Expected to see error sentinel value written\nexpected:%A\nactual:%A" expected lines)
+
+
+    [<Fact>]
+    member __.``Verify that timeout --- times out and fails``() =
+        let nativeProbingRoots () = Seq.empty<string>
+        let mutable foundCorrectError = false
+        let mutable foundWrongError = false
+
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error ->
+                    if code = 3401 then foundCorrectError <- true
+                    else foundWrongError <- true
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"|], reportError, "netcoreapp3.1", timeout=0)           // Fail in 0 milliseconds
+        Assert.Equal(false, result.Success)
+        Assert.Equal(foundCorrectError, true)
+        Assert.Equal(foundWrongError, false)
+        ()
+
+    [<Fact>]
+    member __.``Verify that script based timeout overrides api based - timeout on script``() =
+        let nativeProbingRoots () = Seq.empty<string>
+        let mutable foundCorrectError = false
+        let mutable foundWrongError = false
+
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error ->
+                    if code = 3401 then foundCorrectError <- true
+                    else foundWrongError <- true
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"; "r", "timeout=0"|], reportError, "netcoreapp3.1", null, "", "", "", -1)           // Wait forever
+        Assert.Equal(false, result.Success)
+        Assert.Equal(foundCorrectError, true)
+        Assert.Equal(foundWrongError, false)
+        ()
+
+    [<Fact>]
+    member __.``Verify that script based timeout overrides api based - timeout on api , forever on script``() =
+        let nativeProbingRoots () = Seq.empty<string>
+        let mutable foundCorrectError = false
+        let mutable foundWrongError = false
+
+        use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error ->
+                    if code = 3401 then foundCorrectError <- true
+                    else foundWrongError <- true
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+        let result = dp.Resolve(idm, ".fsx", [|"r", "FSharp.Data"; "r", "timeout=none"|], reportError, "netcoreapp3.1", null, "", "", "", 0)           // Wait forever
+        Assert.Equal(true, result.Success)
+        Assert.Equal(foundCorrectError, false)
+        Assert.Equal(foundWrongError, false)
+        ()
+
+
