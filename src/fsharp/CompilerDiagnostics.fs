@@ -567,7 +567,9 @@ let LoadedSourceNotFoundIgnoringE() = DeclareResourceString("LoadedSourceNotFoun
 let MSBuildReferenceResolutionErrorE() = DeclareResourceString("MSBuildReferenceResolutionError", "%s%s")
 let TargetInvocationExceptionWrapperE() = DeclareResourceString("TargetInvocationExceptionWrapper", "%s")
 
+#if DEBUG
 let mutable showParserStackOnParseError = false
+#endif
 
 let getErrorString key = SR.GetString key
 
@@ -1149,6 +1151,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   Debug.Assert(false, result)
                   result
 
+#if DEBUG
           if showParserStackOnParseError then
               printfn "parser stack:" 
               for rps in ctxt.ReducibleProductions do 
@@ -1156,6 +1159,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   //printfn "   state %d" state
                   for rp in rps do
                       printfn "       non-terminal %+A: ... " (Parser.prodIdxToNonTerminal rp)
+#endif
 
           match ctxt.CurrentToken with 
           | None -> os.Append(UnexpectedEndOfInputE().Format) |> ignore
