@@ -4555,8 +4555,13 @@ namespace Microsoft.FSharp.Core
                 | _ -> value.ToString()
 
              // other commmon mscorlib reference types
-             when 'T : StringBuilder = let x = (# "" value : StringBuilder #) in x.ToString()
-             when 'T : IFormattable = let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
+             when 'T : StringBuilder =
+                if value = unsafeDefault<'T> then ""
+                else let x = (# "" value : StringBuilder #) in x.ToString()
+
+             when 'T : IFormattable =
+                if value = unsafeDefault<'T> then ""
+                else let x = (# "" value : IFormattable #) in x.ToString(null, CultureInfo.InvariantCulture)
 
         [<NoDynamicInvocation(isLegacy=true)>]
         [<CompiledName("ToChar")>]
