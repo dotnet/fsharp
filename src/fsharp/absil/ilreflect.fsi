@@ -28,6 +28,7 @@ val mkDynamicAssemblyAndModule: assemblyName:string * optimize:bool * debugInfo:
 
 type cenv = 
     { ilg: ILGlobals
+      emitTailcalls: bool
       tryFindSysILTypeRef: string -> ILTypeRef option
       generatePdb: bool
       resolveAssemblyRef: (ILAssemblyRef -> Choice<string, Assembly> option) }
