@@ -917,7 +917,7 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1 
-    | Some da -> da (tcGlobals,outfile,ilxMainModule)
+    | Some da -> da (tcConfig, tcGlobals, outfile, ilxMainModule)
 
     AbortOnError(errorLogger, exiter)
 
