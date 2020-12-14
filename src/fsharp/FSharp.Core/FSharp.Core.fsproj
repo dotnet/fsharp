@@ -219,6 +219,12 @@
     <Compile Include="fslib-extra-pervasives.fs">
       <Link>Extras/fslib-extra-pervasives.fs</Link>
     </Compile>
+    <Compile Include="Never.fs">
+      <Link>Never/Never.fs</Link>
+    </Compile>
+    <Compile Include="Never.fsi">
+      <Link>Never/Never.fsi</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
