@@ -40,5 +40,7 @@ let x = ()
 
         let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults
         match decls with
-        | [ SynModuleDecl.Types ([ UnionWithCases ["A"]; UnionWithCases ["B"; "C"] ], _); SynModuleDecl.Let _ ] -> ()
+        | [ SynModuleDecl.Types ([ UnionWithCases ["A"]], _)
+            SynModuleDecl.Types ([ UnionWithCases ["B"; "C"] ], _)
+            SynModuleDecl.Let _ ] -> ()
         | _ -> failwith "Unexpected tree"
