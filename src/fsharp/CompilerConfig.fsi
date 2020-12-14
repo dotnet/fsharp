@@ -41,10 +41,10 @@ type IRawFSharpAssemblyData =
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -163,6 +163,7 @@ type TcConfigBuilder =
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility:bool
+      mutable checkNullness: bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
       mutable outputDir: string option
@@ -271,7 +272,7 @@ type TcConfigBuilder =
       mutable langVersion : LanguageVersion
     }
 
-    static member Initial: TcConfigBuilder
+    static member Initial: ReferenceResolver.Resolver -> TcConfigBuilder
 
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *
@@ -341,6 +342,7 @@ type TcConfig =
     member embedResources: string list
     member errorSeverityOptions: FSharpErrorSeverityOptions
     member mlCompatibility:bool
+    member checkNullness: bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
     member outputDir: string option

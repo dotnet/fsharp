@@ -17,7 +17,7 @@ type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 open System.Runtime.Loader
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
-type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe) =
+type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProbe option) =
 
     let resolveAssemblyNetStandard (ctxt: AssemblyLoadContext) (assemblyName: AssemblyName): Assembly =
 
@@ -26,8 +26,8 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 
         let assemblyPaths =
             match assemblyProbingPaths with
-            | null -> Seq.empty<string>
-            | _ ->  assemblyProbingPaths.Invoke()
+            | None -> Seq.empty<string>
+            | Some assemblyProbingPaths ->  assemblyProbingPaths.Invoke()
 
         try
             // args.Name is a displayname formatted assembly version.
@@ -51,7 +51,7 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 #endif
 
 /// Type that encapsulates AssemblyResolveHandler for managed packages
-type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProbe) =
+type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProbe option) =
 
     let resolveAssemblyNET (assemblyName: AssemblyName): Assembly =
 
@@ -60,8 +60,8 @@ type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProb
 
         let assemblyPaths =
             match assemblyProbingPaths with
-            | null -> Seq.empty<string>
-            | _ ->  assemblyProbingPaths.Invoke()
+            | None -> Seq.empty<string>
+            | Some assemblyProbingPaths ->  assemblyProbingPaths.Invoke()
 
         try
             // args.Name is a displayname formatted assembly version.
@@ -82,7 +82,7 @@ type AssemblyResolveHandlerDeskTop (assemblyProbingPaths: AssemblyResolutionProb
         member _x.Dispose() =
             AppDomain.CurrentDomain.remove_AssemblyResolve(handler)
 
-type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe) =
+type AssemblyResolveHandler (assemblyProbingPaths: AssemblyResolutionProbe option) =
 
     let handler =
 #if NETSTANDARD

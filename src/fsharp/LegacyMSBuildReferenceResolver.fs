@@ -23,8 +23,8 @@ module LegacyMSBuildReferenceResolver
         // (the reference assemblies are always in the 32-bit location, which is PF(x86) on an x64 machine)
         let PF = 
             match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
-            | null -> Environment.GetEnvironmentVariable("ProgramFiles")  // if PFx86 is null, then we are 32-bit and just get PF
-            | s -> s 
+            | Null -> Environment.GetEnvironmentVariable("ProgramFiles")  // if PFx86 is null, then we are 32-bit and just get PF
+            | NonNull s -> s 
         PF + @"\Reference Assemblies\Microsoft\Framework\.NETFramework"
 
 
@@ -74,7 +74,7 @@ module LegacyMSBuildReferenceResolver
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
     /// This is only used to specify the "last resort" path for assembly resolution.
-    let GetPathToDotNetFrameworkImlpementationAssemblies(v) =
+    let GetPathToDotNetFrameworkImlpementationAssemblies(v) : string list =
         let v =
             match v with
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
@@ -91,8 +91,8 @@ module LegacyMSBuildReferenceResolver
         match v with
         | Some v -> 
             match ToolLocationHelper.GetPathToDotNetFramework v with
-            | null -> []
-            | x -> [x]
+            | Null -> []
+            | NonNull x -> [x]
         | _ -> []
 
     let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
@@ -102,8 +102,8 @@ module LegacyMSBuildReferenceResolver
         r
 #else
         match Microsoft.Build.Utilities.ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
-        | null | "" -> []
-        | x -> [x]
+        | Null | "" -> []
+        | NonNull x -> [x]
 #endif
 
     /// Use MSBuild to determine the version of the highest installed set of reference assemblies, failing that grab the highest installed framework version
