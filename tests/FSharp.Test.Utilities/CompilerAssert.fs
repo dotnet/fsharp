@@ -20,6 +20,7 @@ open System.Reflection.Emit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open FSharp.Test.Utilities.Utilities
+open TestFramework
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -76,56 +77,6 @@ and Compilation = private Compilation of source: string * SourceKind * CompileOu
 
 [<Sealed;AbstractClass>]
 type CompilerAssert private () =
-
-    // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
-    // returns exit code, stdio and stderr as string arrays
-    static let executeProcess pathToExe arguments workingDir timeout =
-        match pathToExe with
-        | Some path ->
-            let errorsList = ResizeArray()
-            let outputList = ResizeArray()
-            let mutable errorslock = obj
-            let mutable outputlock = obj
-            let outputDataReceived (message: string) =
-                if not (isNull message) then
-                    lock outputlock (fun () -> outputList.Add(message))
-
-            let errorDataReceived (message: string) =
-                if not (isNull message) then
-                    lock errorslock (fun () -> errorsList.Add(message))
-
-            let psi = ProcessStartInfo()
-            psi.FileName <- path
-            psi.WorkingDirectory <- workingDir
-            psi.RedirectStandardOutput <- true
-            psi.RedirectStandardError <- true
-            psi.Arguments <- arguments
-            psi.CreateNoWindow <- true
-            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
-            psi.UseShellExecute <- false
-
-            use p = new Process()
-            p.StartInfo <- psi
-
-            p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
-            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
-
-            if p.Start() then
-                p.BeginOutputReadLine()
-                p.BeginErrorReadLine()
-                if not(p.WaitForExit(timeout)) then
-                    // Timed out resolving throw a diagnostic.
-                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
-                else
-                    ()
-
-    #if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
-    #endif
-            p.ExitCode, outputList.ToArray(), errorsList.ToArray()
-
-        | None -> -1, Array.empty, Array.empty
 
     static let checker = FSharpChecker.Create(suggestNamesForErrors=true)
 
@@ -210,7 +161,7 @@ let main argv = 0"""
                 File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
                 let timeout = 30000
-                let exitCode, output, errors = executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
+                let exitCode, output, errors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
 
                 if exitCode <> 0 || errors.Length > 0 then
                     printfn "Output:\n=======\n"
@@ -505,7 +456,7 @@ let main argv = 0"""
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
         let timeout = 30000
-        let exitCode, output, errors = executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat Environment.NewLine, errors |> String.concat Environment.NewLine)
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
