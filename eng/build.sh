@@ -252,15 +252,16 @@ function BuildSolution {
   fi
   if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
     BuildMessage="Error building bootstrap"
+    echo "Build bootstrap"
     MSBuild "$repo_root/proto.proj" \
       /restore \
       /p:Configuration=$bootstrap_config \
-
 
     cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/netcoreapp3.1 $bootstrap_dir/fsc
   fi
 
   # do real build
+  echo "Do real build"
   BuildMessage="Error building solution"
   MSBuild $toolset_build_proj \
     $bl \

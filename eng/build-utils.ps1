@@ -230,7 +230,7 @@ function Run-MSBuild([string]$projectFilePath, [string]$buildArgs = "", [string]
 # Important to not set $script:bootstrapDir here yet as we're actually in the process of
 # building the bootstrap.
 function Make-BootstrapBuild() {
-    Write-Host "Building bootstrap '$bootstrapTfm' compiler"
+    Write-Host "Building bootstrap compiler"
 
     $dir = Join-Path $ArtifactsDir "Bootstrap"
     Remove-Item -re $dir -ErrorAction SilentlyContinue
@@ -244,7 +244,7 @@ function Make-BootstrapBuild() {
     $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
     $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
-    $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
+    $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity " + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
         $args += " /bl:$logFilePath"
@@ -257,11 +257,12 @@ function Make-BootstrapBuild() {
 
     # prepare compiler
     $protoProject = "`"$RepoRoot\proto.proj`""
-    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
+    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity " + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
         $args += " /bl:$logFilePath"
     }
+    Write-Host "$dotnetExe $args"
     Exec-Console $dotnetExe $args
 
     Copy-Item "$ArtifactsDir\bin\fsc\$bootstrapConfiguration\$bootstrapTfm" -Destination "$dir\fsc" -Force -Recurse
@@ -269,6 +270,3 @@ function Make-BootstrapBuild() {
 
     return $dir
 }
-
-
-

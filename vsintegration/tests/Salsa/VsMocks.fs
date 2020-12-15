@@ -1649,10 +1649,10 @@ module internal VsActual =
         let vsvar =
             let var = Environment.GetEnvironmentVariable("VS160COMNTOOLS")
             if String.IsNullOrEmpty var then
-                Environment.GetEnvironmentVariable("VSAPPIDDIR")
+                Environment.GetEnvironmentVariable("VSAPPDDIR")
             else
                 var
-        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPIDDIR environment variables not found."
+        if String.IsNullOrEmpty vsvar then failwith "VS160COMNTOOLS and VSAPPDDIR environment variables not found."
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =
