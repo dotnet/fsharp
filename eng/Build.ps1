@@ -18,7 +18,7 @@
 param (
     [string][Alias('c')]$configuration = "Debug",
     [string][Alias('v')]$verbosity = "m",
-    [string]$msbuildEngine = "vs",
+    [string]$msbuildEngine = "dotnet",
 
     # Actions
     [switch][Alias('r')]$restore,

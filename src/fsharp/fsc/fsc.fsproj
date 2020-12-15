@@ -12,11 +12,18 @@
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
+<!--
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <NGenBinary>false</NGenBinary>
     <UseAppHost>true</UseAppHost>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'!='Proto'">
+    <TargetExt>.exe</TargetExt>
+    <NGenBinary>true</NGenBinary>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+-->
+  <PropertyGroup>
     <TargetExt>.exe</TargetExt>
     <NGenBinary>true</NGenBinary>
     <UseAppHost>false</UseAppHost>
