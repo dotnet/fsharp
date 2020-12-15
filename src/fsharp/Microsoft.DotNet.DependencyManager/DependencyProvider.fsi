@@ -57,7 +57,7 @@ type IDependencyManagerProvider =
     abstract HelpMessages: string[]
 
     /// Resolve the dependencies, for the given set of arguments, go find the .dll references, scripts and additional include values.
-    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string -> IResolveDependenciesResult
+    abstract ResolveDependencies: scriptDir: string * mainScriptName: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * tfm: string * rid: string * timeout: int -> IResolveDependenciesResult
 
 /// Todo describe this API
 [<RequireQualifiedAccess>]
@@ -93,9 +93,9 @@ type DependencyProvider =
 
     /// Resolve reference for a list of package manager lines
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
-    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string -> IResolveDependenciesResult
+    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string * [<Optional;DefaultParameterValue(-1)>]timeout: int -> IResolveDependenciesResult
 #else
-    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string?)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string -> IResolveDependenciesResult
+    member Resolve : packageManager: IDependencyManagerProvider * scriptExt: string * packageManagerTextLines: (string * string) seq * reportError: ResolvingErrorReport * executionTfm: string * [<Optional;DefaultParameterValue(null:string?)>]executionRid: string  * [<Optional;DefaultParameterValue("")>]implicitIncludeDir: string * [<Optional;DefaultParameterValue("")>]mainScriptName: string * [<Optional;DefaultParameterValue("")>]fileName: string * [<Optional;DefaultParameterValue(-1)>]timeout: int -> IResolveDependenciesResult
 #endif
 
     /// Fetch a dependencymanager that supports a specific key
