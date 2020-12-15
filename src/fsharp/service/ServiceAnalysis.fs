@@ -330,6 +330,7 @@ module UnusedDeclarations =
             HashSet(usages)
 
         symbolsUses
+        |> Seq.distinctBy (fun su -> su.RangeAlternate) // Account for "hidden" uses, like a val in a member val definition. These aren't relevant
         |> Seq.choose(fun (su: FSharpSymbolUse) ->
             if su.IsFromDefinition && 
                 su.Symbol.DeclarationLocation.IsSome && 
