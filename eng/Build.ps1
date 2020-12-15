@@ -412,7 +412,7 @@ function TryDownloadDotnetFrameworkSdk() {
 }
 
 function EnablePreviewSdks() {
-  if (Test-Path variable:global:_MSBuildExe) {
+  if (-not (IsWindowsPlatform)) {
     return
   }
   $vsInfo = LocateVisualStudio
