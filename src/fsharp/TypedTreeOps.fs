@@ -2802,7 +2802,8 @@ type DisplayEnv =
         printVerboseSignatures = false
         g = tcGlobals
         contextAccessibility = taccessPublic
-        generatedValueLayout = (fun _ -> None) }
+        generatedValueLayout = (fun _ -> None)
+        genericParameterStyle = GenericParameterStyle.Implicit }
 
 
     member denv.AddOpenPath path = 
