@@ -494,13 +494,6 @@ function InitializeBuildTool() {
     }
     $dotnetPath = Join-Path $dotnetRoot (GetExecutableFileName 'dotnet')
     $buildTool = @{ Path = $dotnetPath; Command = 'msbuild'; Tool = 'dotnet'; Framework = 'netcoreapp2.1' }
-
-    # initialize Visual Studio variables if we can
-    try {
-      $msbuildPath = InitializeVisualStudioMSBuild -install:$restore
-    }
-    catch {
-    }
   } elseif ($msbuildEngine -eq "vs") {
     try {
       $msbuildPath = InitializeVisualStudioMSBuild -install:$restore
