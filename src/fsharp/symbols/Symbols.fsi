@@ -56,7 +56,15 @@ type FSharpDisplayContext =
 
     member WithShortTypeNames: bool -> FSharpDisplayContext
 
-/// Represents a symbol in checked F# source code or a compiled .NET component. 
+    /// Causes type signatures to be formatted with prefix-style generic parameters,
+    /// for example `list<int>`.
+    member WithPrefixGenericParameters: unit -> FSharpDisplayContext
+
+    /// Causes type signatures to be formatted with suffix-style generic parameters,
+    /// for example `int list`
+    member WithSuffixGenericParameters: unit -> FSharpDisplayContext
+
+/// Represents a symbol in checked F# source code or a compiled .NET component.
 ///
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
 /// FSharpField, FSharpGenericParameter, FSharpStaticParameter, FSharpMemberOrFunctionOrValue, FSharpParameter,

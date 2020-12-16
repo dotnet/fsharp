@@ -657,12 +657,22 @@ module private PrintTypes =
         | TType_app (tc, args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
 
-        // Layout a type application 
-        | TType_app (tc, args) -> 
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
+        // Layout a type application
+        | TType_app (tc, args) ->
+          let usePrefix =
+              match denv.genericParameterStyle with
+              | GenericParameterStyle.Implicit -> tc.IsPrefixDisplay
+              | GenericParameterStyle.Prefix -> true
+              | GenericParameterStyle.Suffix -> false
+          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec usePrefix args
 
-        | TType_ucase (UnionCaseRef(tc, _), args) -> 
-          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
+        | TType_ucase (UnionCaseRef(tc, _), args) ->
+          let usePrefix =
+              match denv.genericParameterStyle with
+              | GenericParameterStyle.Implicit -> tc.IsPrefixDisplay
+              | GenericParameterStyle.Prefix -> true
+              | GenericParameterStyle.Suffix -> false
+          layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec usePrefix args
 
         // Layout a tuple type 
         | TType_anon (anonInfo, tys) ->

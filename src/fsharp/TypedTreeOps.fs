@@ -2737,6 +2737,11 @@ module SimplifyTypes =
 // Print Signatures/Types
 //-------------------------------------------------------------------------- 
 
+type GenericParameterStyle =
+| Implicit
+| Prefix
+| Suffix
+
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames: bool
@@ -2763,7 +2768,8 @@ type DisplayEnv =
       printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout : (Val -> layout option) }
+      generatedValueLayout : (Val -> layout option)
+      genericParameterStyle: GenericParameterStyle }
 
     member x.SetOpenPaths paths = 
         { x with 
@@ -2807,6 +2813,9 @@ type DisplayEnv =
 
     member denv.AddAccessibility access =
         { denv with contextAccessibility = combineAccess denv.contextAccessibility access }
+
+    member denv.UseGenericParameterStyle style =
+        { denv with genericParameterStyle = style }
 
 let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
 

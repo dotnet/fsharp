@@ -208,6 +208,11 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
     member x.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
+    member x.WithPrefixGenericParameters () =
+        FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Prefix }  )
+
+    member x.WithSuffixGenericParameters () =
+        FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Suffix }  )
 
 // delay the realization of 'item' in case it is unresolved
 type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -> CcuThunk -> AccessorDomain -> bool)) =
