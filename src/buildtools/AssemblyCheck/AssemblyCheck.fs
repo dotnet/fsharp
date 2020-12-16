@@ -44,6 +44,10 @@ module AssemblyCheck =
         let excludedAssemblies =
             [ ] |> Set.ofList
 
+        let maybeNativeExe =
+            [ "fsi.exe"
+              "fsc.exe" ] |> Set.ofList
+
         let fsharpAssemblies =
             [ "FSharp*.dll"
               "fsc.exe"
@@ -63,8 +67,12 @@ module AssemblyCheck =
         let failedVersionCheck =
             fsharpAssemblies
             |> List.filter (fun a ->
-                let assemblyVersion = AssemblyName.GetAssemblyName(a).Version
-                assemblyVersion = versionZero || assemblyVersion = versionOne)
+                try
+                    let assemblyVersion = AssemblyName.GetAssemblyName(a).Version
+                    assemblyVersion = versionZero || assemblyVersion = versionOne
+                with | ?: System.BadImageFormatException ->
+                    // fsc.exe and fsi.exe are il on the desktop and native on the coreclr
+                    Set.contains (Path.GetFileName(a)) maybeNativeExe))
 
         if failedVersionCheck.Length > 0 then
             printfn "The following assemblies had a version of %A or %A" versionZero versionOne

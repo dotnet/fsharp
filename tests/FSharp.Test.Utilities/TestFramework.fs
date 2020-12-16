@@ -293,7 +293,11 @@ let config configurationName envVars =
         if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
         else DOTNET_EXE
 
+#if !NETCOREAPP
     let FSI_PATH = ("fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe")
+#else
+    let FSI_PATH = ("fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.dll")
+#endif
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
     let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
