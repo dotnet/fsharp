@@ -1788,8 +1788,6 @@ type FSharpCheckFileResults
     /// Intellisense autocompletions
     member __.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) = 
         let getAllEntities = defaultArg getAllEntities (fun() -> [])
-        //System.Diagnostics.Debugger.Launch() |> ignore
-        //System.Diagnostics.Debugger.Break() |> ignore
         threadSafeOp (fun () -> FSharpDeclarationListInfo.Empty) (fun scope -> 
             scope.GetDeclarations(parsedFileResults, line, lineText, partialName, getAllEntities))
 
