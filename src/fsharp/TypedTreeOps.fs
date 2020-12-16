@@ -2738,9 +2738,9 @@ module SimplifyTypes =
 //-------------------------------------------------------------------------- 
 
 type GenericParameterStyle =
-| Implicit
-| Prefix
-| Suffix
+    | Implicit
+    | Prefix
+    | Suffix
 
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
