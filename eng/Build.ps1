@@ -18,7 +18,7 @@
 param (
     [string][Alias('c')]$configuration = "Debug",
     [string][Alias('v')]$verbosity = "m",
-    [string]$msbuildEngine = "vs",
+    [string]$msbuildEngine = "dotnet",
 
     # Actions
     [switch][Alias('r')]$restore,
@@ -35,7 +35,7 @@ param (
     # Options
     [switch][Alias('proto')]$bootstrap,
     [string]$bootstrapConfiguration = "Proto",
-    [string]$bootstrapTfm = "net472",
+    [string]$bootstrapTfm = "netcoreapp3.1",
     [switch][Alias('bl')]$binaryLog = $true,
     [switch][Alias('nobl')]$excludeCIBinaryLog = $false,
     [switch][Alias('nolog')]$noBinaryLog = $false,
@@ -176,19 +176,8 @@ function Process-Arguments() {
 }
 
 function Update-Arguments() {
-    if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "netcoreapp3.1"
-        $script:msbuildEngine = "dotnet"
-    }
-
-    if ($bootstrapTfm -eq "netcoreapp3.1") {
-        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
-            $script:bootstrap = $True
-        }
-    } else {
-        if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe") -or (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
-            $script:bootstrap = $True
-        }
+    if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
+        $script:bootstrap = $True
     }
 }
 
@@ -300,29 +289,27 @@ function TestUsingNUnit([string] $testProject, [string] $targetFramework, [strin
 }
 
 function BuildCompiler() {
-    if ($bootstrapTfm -eq "netcoreapp3.1") {
-        $dotnetPath = InitializeDotNetCli
-        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-        $fscProject = "`"$RepoRoot\src\fsharp\fsc\fsc.fsproj`""
-        $fsiProject = "`"$RepoRoot\src\fsharp\fsi\fsi.fsproj`""
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $fscProject = "`"$RepoRoot\src\fsharp\fsc\fsc.fsproj`""
+    $fsiProject = "`"$RepoRoot\src\fsharp\fsi\fsi.fsproj`""
 
-        $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
-        $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
+    $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
+    $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
 
-        if ($binaryLog) {
-            $logFilePath = Join-Path $LogDir "fscBootstrapLog.binlog"
-            $args += " /bl:$logFilePath"
-        }
-        $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
-        Exec-Console $dotnetExe $args
-
-        if ($binaryLog) {
-            $logFilePath = Join-Path $LogDir "fsiBootstrapLog.binlog"
-            $args += " /bl:$logFilePath"
-        }
-        $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
-        Exec-Console $dotnetExe $args
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "fscBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
     }
+    $args = "build $fscProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
+    Exec-Console $dotnetExe $args
+
+    if ($binaryLog) {
+        $logFilePath = Join-Path $LogDir "fsiBootstrapLog.binlog"
+        $args += " /bl:$logFilePath"
+    }
+    $args = "build $fsiProject -c $configuration -v $verbosity -f netcoreapp3.1" + $argNoRestore + $argNoIncremental
+    Exec-Console $dotnetExe $args
 }
 
 function Prepare-TempDir() {
@@ -425,7 +412,7 @@ function TryDownloadDotnetFrameworkSdk() {
 }
 
 function EnablePreviewSdks() {
-  if (Test-Path variable:global:_MSBuildExe) {
+  if (-not (IsWindowsPlatform)) {
     return
   }
   $vsInfo = LocateVisualStudio
@@ -464,6 +451,7 @@ try {
     }
 
     $buildTool = InitializeBuildTool
+    $msbuildPath = InitializeVisualStudioMSBuild -install:$restore
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
     if ($bootstrap) {
