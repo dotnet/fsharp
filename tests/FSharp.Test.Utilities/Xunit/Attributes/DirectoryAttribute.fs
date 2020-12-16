@@ -24,8 +24,11 @@ type DirectoryAttribute(dir: string) =
     do
         if String.IsNullOrWhiteSpace(dir) then
             invalidArg "dir" "Directory cannot be null, empty or whitespace only."
+
     let directory = dir
 
+    let mutable includes = Array.empty<string>
+        
     let readFileOrDefault (path: string) : string option =
         match File.Exists(path) with
             | true -> Some <| File.ReadAllText path
@@ -50,17 +53,30 @@ type DirectoryAttribute(dir: string) =
           IgnoreWarnings = false
           References     = [] } |> FS
 
+    member x.Includes with get() = includes and set v = includes <- v
+    
     override _.GetData(_: MethodInfo) =
         let absolutePath = Path.GetFullPath(directory)
 
         if not (Directory.Exists(absolutePath)) then
             failwith (sprintf "Directory does not exist: \"%s\"." absolutePath)
 
-        let fsFiles = Directory.GetFiles(absolutePath, "*.fs") |> Array.map Path.GetFileName
+        let allFiles : string[] = Directory.GetFiles(absolutePath, "*.fs")
+
+        let filteredFiles =
+            match (includes |> Array.map (fun f -> absolutePath ++ f)) with
+                | [||] -> allFiles 
+                | incl -> incl
+                
+        let fsFiles = filteredFiles |> Array.map Path.GetFileName
 
         if fsFiles |> Array.length < 1 then
-            failwith (sprintf "No \".fs\" files found in \"%s\"." absolutePath)
+            failwith (sprintf "No required files found in \"%s\".\nAll files: %A.\nIncludes:%A." absolutePath allFiles includes)
 
+        for f in filteredFiles do
+            if not <| File.Exists(f) then
+                failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includes
+            
         fsFiles
         |> Array.map (fun fs -> createCompilationUnit absolutePath fs)
         |> Seq.map (fun c -> [| c |])
