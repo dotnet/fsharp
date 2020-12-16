@@ -862,7 +862,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         loadedTimeStamp, otherFlags,
         useFsiAuxLib: bool option,
         useSdkRefs: bool option,
-        defaultToDotNetFramework: bool option,
+        useDotNetFramework: bool option,
         extraProjectInfo: obj option,
         optionsStamp: int64 option,
         userOpName) = 
@@ -880,7 +880,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             // Do we assume .NET Framework references for scripts? In the absence of either explicit argument
             // or an explicit #targetfx declaration, then for compilation and analysis the default
             // depends on the toolchain the tooling is are running on.
-            let defaultToDotNetFramework = defaultArg defaultToDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
+            let useDotNetFramework = defaultArg useDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
             let extraFlags =
                 if previewEnabled then
                     [| "--langversion:preview" |]
@@ -902,7 +902,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
                     CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, new Lexhelp.LexResourceManager(), 
-                    applyCompilerOptions, defaultToDotNetFramework, 
+                    applyCompilerOptions, useDotNetFramework, 
                     tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
 
             let otherFlags = 
@@ -1303,9 +1303,9 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
-    member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?defaultToDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
+    member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?useDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, defaultToDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
+        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, useDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
 
     member __.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading

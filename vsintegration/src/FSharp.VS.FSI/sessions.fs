@@ -66,7 +66,6 @@ module SessionsProperties =
     let mutable useAnyCpuVersion = true // 64-bit by default
     let mutable fsiUseNetCore = false
     let mutable fsiArgs = "--optimize"
-    let mutable fsiExe : string = null
     let mutable fsiShadowCopy = true
     let mutable fsiDebugMode = false
     let mutable fsiPreview = false
@@ -132,15 +131,7 @@ let catchAll trigger x =
 let determineFsiPath () =    
     if SessionsProperties.fsiUseNetCore then 
         let exe = @"c:\Program Files\dotnet\dotnet.exe"
-        let arg = 
-            if String.IsNullOrWhiteSpace SessionsProperties.fsiExe then
-                "fsi"
-            else
-                if File.Exists SessionsProperties.fsiExe then
-                        SessionsProperties.fsiExe
-                else
-                    raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe SessionsProperties.fsiExe))
-
+        let arg = "fsi"
         if not (File.Exists exe) then
             raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe exe))
         exe, arg, false, false
@@ -161,13 +152,6 @@ let determineFsiPath () =
             Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
         let fsiExe =
-            if not (String.IsNullOrWhiteSpace SessionsProperties.fsiExe) then
-                if File.Exists SessionsProperties.fsiExe then
-                    SessionsProperties.fsiExe
-                else
-                    raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe SessionsProperties.fsiExe))
-            else
-
             // Choose VS extension path, if it exists (for developers)
             let fsiRelativePath1 = determineFsiRelativePath1()
             if  File.Exists fsiRelativePath1 then fsiRelativePath1 else
@@ -265,6 +249,8 @@ let fsiStartInfo channelName =
     procInfo.RedirectStandardOutput <- true
     procInfo.StandardOutputEncoding <- Encoding.UTF8
     procInfo.StandardErrorEncoding <- Encoding.UTF8
+    
+    // TODO - use the path of the currently open document if available
     let tmpPath = Path.GetTempPath()
     if Directory.Exists(tmpPath) then
         procInfo.WorkingDirectory <- tmpPath

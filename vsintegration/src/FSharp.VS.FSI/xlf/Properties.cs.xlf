@@ -17,14 +17,9 @@
         <target state="new">.NET Framework Options</target>
         <note />
       </trans-unit>
-      <trans-unit id="FSharpInteractiveExe">
-        <source>F# Interactive executable</source>
-        <target state="new">F# Interactive executable</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveExeDescr">
-        <source>Select F# Interactive executable to use for script execution</source>
-        <target state="new">Select F# Interactive executable to use for script execution</target>
+      <trans-unit id="FSharpInteractiveMisc">
+        <source>Misc</source>
+        <target state="new">Misc</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
@@ -80,16 +75,6 @@
       <trans-unit id="FSharpInteractiveStartup">
         <source>Startup</source>
         <target state="new">Startup</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveUseNetCore">
-        <source>Use .NET Core Scripting</source>
-        <target state="new">Use .NET Core Scripting</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
-        <source>Use F# Interactive for .NET Core for script execution. When editing assume scripts target .NET Core if no explicit #targetfx "netfx" is given</source>
-        <target state="new">Use F# Interactive for .NET Core for script execution. When editing assume scripts target .NET Core if no explicit #targetfx "netfx" is given</target>
         <note />
       </trans-unit>
     </body>
