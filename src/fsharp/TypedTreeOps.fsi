@@ -960,9 +960,13 @@ module PrettyTypes =
 
     val PrettifyInstAndCurriedSig : TcGlobals -> TyparInst * TTypes * CurriedArgInfos * TType -> (TyparInst * TTypes * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 
+/// Describes how generic type parameters in a type will be formatted during printing
 type GenericParameterStyle =
+/// Use the IsPrefixDisplay member of the TyCon to determine the style
 | Implicit
+/// Force the prefix style: List<int>
 | Prefix
+/// Force the suffix style: int List
 | Suffix
 
 [<NoEquality; NoComparison>]
