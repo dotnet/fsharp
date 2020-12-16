@@ -995,7 +995,7 @@ type DisplayEnv =
       printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout:(Val -> layout option)
+      generatedValueLayout: (Val -> layout option)
       genericParameterStyle: GenericParameterStyle }
 
     member SetOpenPaths: string list list -> DisplayEnv
