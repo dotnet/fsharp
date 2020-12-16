@@ -21583,6 +21583,8 @@ FSharp.Compiler.SourceCodeServices.FSharpDelegateSignature: System.String ToStri
 FSharp.Compiler.SourceCodeServices.FSharpDisplayContext: FSharp.Compiler.SourceCodeServices.FSharpDisplayContext Empty
 FSharp.Compiler.SourceCodeServices.FSharpDisplayContext: FSharp.Compiler.SourceCodeServices.FSharpDisplayContext WithShortTypeNames(Boolean)
 FSharp.Compiler.SourceCodeServices.FSharpDisplayContext: FSharp.Compiler.SourceCodeServices.FSharpDisplayContext get_Empty()
+FSharp.Compiler.SourceCodeServices.FSharpDisplayContext: FSharp.Compiler.SourceCodeServices.FSharpDisplayContext WithPrefixGenericParameters()
+FSharp.Compiler.SourceCodeServices.FSharpDisplayContext: FSharp.Compiler.SourceCodeServices.FSharpDisplayContext WithSuffixGenericParameters()
 FSharp.Compiler.SourceCodeServices.FSharpEnclosingEntityKind+Tags: Int32 Class
 FSharp.Compiler.SourceCodeServices.FSharpEnclosingEntityKind+Tags: Int32 DU
 FSharp.Compiler.SourceCodeServices.FSharpEnclosingEntityKind+Tags: Int32 Enum
