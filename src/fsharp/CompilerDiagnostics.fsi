@@ -11,6 +11,9 @@ open FSharp.Compiler.SyntaxTree
 #if DEBUG
 module internal CompilerService =
     val showAssertForUnexpectedException: bool ref
+
+/// For extra diagnostics 
+val mutable showParserStackOnParseError: bool
 #endif // DEBUG
 
 /// This exception is an old-style way of reporting a diagnostic

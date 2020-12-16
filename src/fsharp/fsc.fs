@@ -538,17 +538,17 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             let inputT, stateT = DeduplicateParsedInputModuleName state input 
             (inputT, x), stateT)
 
-    if tcConfig.parseOnly then exiter.Exit 0 
-
-    if not tcConfig.continueAfterParseFailure then 
-        AbortOnError(errorLogger, exiter)
-
     // Print the AST if requested
     if tcConfig.printAst then                
         for (input, _filename) in inputs do 
             printf "AST:\n"
             printfn "%+A" input
             printf "\n"
+
+    if tcConfig.parseOnly then exiter.Exit 0 
+
+    if not tcConfig.continueAfterParseFailure then 
+        AbortOnError(errorLogger, exiter)
 
     // Apply any nowarn flags
     let tcConfig =
