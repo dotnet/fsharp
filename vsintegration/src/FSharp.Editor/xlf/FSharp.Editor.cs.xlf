@@ -62,6 +62,11 @@
         <target state="translated">Nastavte deklaraci jako mutable.</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make '{0}' recursive</source>
+        <target state="new">Make '{0}' recursive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">Před {0} vložte podtržítko.</target>

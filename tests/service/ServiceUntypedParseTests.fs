@@ -927,3 +927,77 @@ let ``TryRangeOfParenEnclosingOpEqualsGreaterUsage - parenthesized lambda``() =
         |> shouldEqual [((2, 21), (2, 31)); ((2, 21), (2, 22)); ((2, 26), (2, 31))]
     | None ->
         Assert.Fail("Expected to get a range back, but got none.")
+
+[<Test>]
+let ``TryRangeOfNameOfNearestOuterBindingContainingPos - simple``() =
+    let source = """
+let x = nameof x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfNameOfNearestOuterBindingContainingPos (mkPos 2 15)
+    match res with
+    | Some range ->
+        range
+        |> tups
+        |> shouldEqual ((2, 4), (2, 5))
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
+
+[<Test>]
+let ``TryRangeOfNameOfNearestOuterBindingContainingPos - inside match``() =
+    let source = """
+let mySum xs acc =
+    match xs with
+    | [] -> acc
+    | _ :: tail ->
+        mySum tail (acc + 1)
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfNameOfNearestOuterBindingContainingPos (mkPos 6 8)
+    match res with
+    | Some range ->
+        range
+        |> tups
+        |> shouldEqual ((2, 4), (2, 9))
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
+
+[<Test>]
+let ``TryRangeOfNameOfNearestOuterBindingContainingPos - nested binding``() =
+    let source = """
+let f x =
+    let z = 12
+    let h x = 
+        h x
+    g x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfNameOfNearestOuterBindingContainingPos (mkPos 5 8)
+    match res with
+    | Some range ->
+        range
+        |> tups
+        |> shouldEqual ((4, 8), (4, 9))
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
+
+[<Test>]
+let ``TryRangeOfNameOfNearestOuterBindingContainingPos - nested and after other statements``() =
+    let source = """
+let f x =
+    printfn "doot doot"
+    printfn "toot toot"
+    let z = 12
+    let h x = 
+        h x
+    g x
+"""
+    let parseFileResults, _ = getParseAndCheckResults source
+    let res = parseFileResults.TryRangeOfNameOfNearestOuterBindingContainingPos (mkPos 7 8)
+    match res with
+    | Some range ->
+        range
+        |> tups
+        |> shouldEqual ((6, 8), (6, 9))
+    | None ->
+        Assert.Fail("Expected to get a range back, but got none.")
