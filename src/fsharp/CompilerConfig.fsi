@@ -131,35 +131,14 @@ type PackageManagerLine =
     static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
 
-/// A target profile option specified on the command line
-/// Valid values are "mscorlib", "netcore" or "netstandard"
-type TargetProfileCommandLineOption = TargetProfileCommandLineOption of string
-
 /// A target framework option specified in a script
-/// Current valid values are "netcore", "netfx" 
 type TargetFrameworkForScripts =
-    | TargetFrameworkForScripts of string
-
-    /// The string for the inferred target framework
-    member Value: string
+    | TargetFrameworkForScripts of PrimaryAssembly
 
     /// The kind of primary assembly associated with the compilation
     member PrimaryAssembly: PrimaryAssembly
 
     /// Indicates if the target framework is a .NET Framework target
-    member UseDotNetFramework: bool
-
-/// Indicates the inferred or declared target framework for a script
-type InferredTargetFrameworkForScripts =
-    { 
-      /// The inferred framework
-      InferredFramework: TargetFrameworkForScripts
-
-      /// The source location of the explicit declaration from which the framework was inferred, if anywhere
-      WhereInferred: range option 
-    }
-
-    /// Indicates if the inferred target framework is a .NET Framework target
     member UseDotNetFramework: bool
 
 [<NoEquality; NoComparison>]
@@ -175,7 +154,7 @@ type TcConfigBuilder =
       mutable includes: string list
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
-      mutable inferredTargetFrameworkForScripts : InferredTargetFrameworkForScripts option
+      mutable targetFrameworkForScripts : TargetFrameworkForScripts option
       mutable framework: bool
       mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
@@ -317,7 +296,7 @@ type TcConfigBuilder =
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
-        inferredTargetFrameworkForScripts: InferredTargetFrameworkForScripts option
+        targetFrameworkForScripts: TargetFrameworkForScripts option
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
@@ -325,8 +304,6 @@ type TcConfigBuilder =
     member TurnWarningOff: range * string -> unit
 
     member TurnWarningOn: range * string -> unit
-
-    member CheckExplicitFrameworkDirective: fx: TargetFrameworkForScripts * m: range -> unit
 
     member AddIncludePath: range * string * string -> unit
 
@@ -365,7 +342,7 @@ type TcConfig =
     member includes: string list
     member implicitOpens: string list
     member useFsiAuxLib: bool
-    member inferredTargetFrameworkForScripts: InferredTargetFrameworkForScripts option
+    member targetFrameworkForScripts: TargetFrameworkForScripts option
     member framework: bool
     member implicitlyResolveAssemblies: bool
     /// Set if the user has explicitly turned indentation-aware syntax on/off

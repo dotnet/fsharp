@@ -1311,7 +1311,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 let preInferredUseDotNetFramework =
                     match loadClosureOpt with 
                     | None -> None
-                    | Some loadClosure -> Some loadClosure.InferredTargetFramework.UseDotNetFramework
+                    | Some loadClosure -> Some loadClosure.TargetFramework.UseDotNetFramework
 
                 let fxResolver = FxResolver(preInferredUseDotNetFramework)
 
@@ -1326,7 +1326,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                          isInvalidationSupported=true, 
                          defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
                          tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-                         inferredTargetFrameworkForScripts=None) 
+                         targetFrameworkForScripts=None) 
 
                 tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
 
@@ -1361,8 +1361,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
                 tcConfigB.referencedDLLs <- []
-                tcConfigB.inferredTargetFrameworkForScripts <- Some loadClosure.InferredTargetFramework
-                tcConfigB.primaryAssembly <- loadClosure.InferredTargetFramework.InferredFramework.PrimaryAssembly
+                tcConfigB.targetFrameworkForScripts <- Some loadClosure.TargetFramework
+                tcConfigB.primaryAssembly <- loadClosure.TargetFramework.PrimaryAssembly
                 // Add one by one to remove duplicates
                 dllReferences |> List.iter (fun dllReference ->
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))

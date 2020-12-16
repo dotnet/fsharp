@@ -48,7 +48,6 @@ let internal projectOptions = {
     LoadTime = DateTime.MaxValue
     UnresolvedReferences = None
     OriginalLoadReferences = []
-    InferredTargetFrameworkForScripts = None
     ExtraProjectInfo = None
     Stamp = None
 }

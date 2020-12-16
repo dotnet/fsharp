@@ -1525,7 +1525,6 @@ type internal FsiDynamicCompiler
            (fun () ->
                ProcessMetaCommandsFromInput 
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
-                    (fun st (m,nm) -> tcConfigB.CheckExplicitFrameworkDirective(nm, m); st),
                     (fun st (m, path, directive) -> 
 
                         let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
@@ -2218,18 +2217,6 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("i", [path], m), _) -> 
                 packageManagerDirective Directive.Include path m
 
-            | IHash (ParsedHashDirective("targetfx", [fx], m), _) -> 
-                match fx with 
-                | "netfx" -> 
-                    if FSharpEnvironment.isRunningOnCoreClr then
-                        warning(Error(FSComp.SR.fsiWrongFrameworkNetCore(), m))
-                | "netcore" -> 
-                    if not FSharpEnvironment.isRunningOnCoreClr then
-                        warning(Error(FSComp.SR.fsiWrongFrameworkNetFx(), m))
-                | _ -> 
-                   errorR(Error(FSComp.SR.buildInvalidHashtimeDirective(), m))
-                istate,Completed None
-
             | IHash (ParsedHashDirective("I", [path], m), _) -> 
                 tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
@@ -2766,11 +2753,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some rr -> rr
 
     // We know the target framework up front
-    let inferredTargetFramework =
-        { InferredFramework = TargetFrameworkForScripts (if FSharpEnvironment.isRunningOnCoreClr then "netcore" else "netfx")
-          WhereInferred = None }
+    let targetFramework =
+        TargetFrameworkForScripts (if FSharpEnvironment.isRunningOnCoreClr then PrimaryAssembly.System_Runtime else PrimaryAssembly.Mscorlib)
 
-    let fxResolver = FxResolver(Some inferredTargetFramework.UseDotNetFramework)
+    let fxResolver = FxResolver(Some targetFramework.UseDotNetFramework)
 
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
@@ -2782,7 +2768,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-            inferredTargetFrameworkForScripts=Some inferredTargetFramework
+            targetFrameworkForScripts=Some targetFramework
          )
 
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)

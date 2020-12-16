@@ -211,16 +211,8 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     //    If --targetprofile:netcore has been specified, and a #netfx declaration exists in a script, then give a warning
     //    If --targetprofile:mscorlib has been specified, and a #netcore declaration exists in a script, then give a warning
     //    If --targetprofile:netstandard has been specified, and either a #netcore or #netfx declaration exists in a script, then give a warning
-    if commandLineSourceFiles |> List.exists IsScript && tcConfigB.inferredTargetFrameworkForScripts.IsNone then
-        let targetFrameworkForScripts =
-            match tcConfigB.primaryAssembly with
-            | PrimaryAssembly.Mscorlib -> 
-                TargetFrameworkForScripts "netfx"
-            | PrimaryAssembly.System_Runtime ->
-                TargetFrameworkForScripts "netcore"
-            | PrimaryAssembly.NetStandard -> 
-                TargetFrameworkForScripts "netstandard"
-        tcConfigB.inferredTargetFrameworkForScripts <- Some { InferredFramework = targetFrameworkForScripts; WhereInferred = None }
+    if commandLineSourceFiles |> List.exists IsScript && tcConfigB.targetFrameworkForScripts.IsNone then
+        tcConfigB.targetFrameworkForScripts <- Some (TargetFrameworkForScripts tcConfigB.primaryAssembly)
         
     let tcConfig = TcConfig.Create(tcConfigB, validate=false) 
 
@@ -251,16 +243,12 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
 
-            // If there was an explicit #targetfx in the script then push that as a requirement into the overall compilation and add all the framework references implied
+            // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
-            match closure.InferredTargetFramework.WhereInferred with
-            | Some m ->
-                tcConfigB.CheckExplicitFrameworkDirective(closure.InferredTargetFramework.InferredFramework, m)
-                tcConfigB.primaryAssembly <- closure.InferredTargetFramework.InferredFramework.PrimaryAssembly
-                if tcConfigB.framework then
-                    let references = closure.References |> List.collect snd
-                    references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
-            | None -> ()
+            tcConfigB.primaryAssembly <- closure.TargetFramework.PrimaryAssembly
+            if tcConfigB.framework then
+                let references = closure.References |> List.collect snd
+                references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             
         else AddIfNotPresent filename
          
@@ -480,7 +468,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             defaultCopyFSharpCore=defaultCopyFSharpCore, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot,
             // note - this may later be updated via script closure
-            inferredTargetFrameworkForScripts=None)
+            targetFrameworkForScripts=None)
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -671,7 +659,7 @@ let main1OfAst
             isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-            inferredTargetFrameworkForScripts=None)
+            targetFrameworkForScripts=None)
 
     let primaryAssembly =
         // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:

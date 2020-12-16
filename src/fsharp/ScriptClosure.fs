@@ -10,6 +10,7 @@ open System.Text
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -42,8 +43,8 @@ type LoadClosure =
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
       PackageReferences: (range * string list)[]
 
-      /// Whether an explicit #netfx or #netcore has been given
-      InferredTargetFramework: InferredTargetFrameworkForScripts
+      /// The target framework determined
+      TargetFramework: TargetFrameworkForScripts
 
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences: UnresolvedAssemblyReference list
@@ -124,7 +125,7 @@ module ScriptPreprocessClosure =
             useFsiAuxLib, 
             basicReferences,
             applyCommandLineArgs, 
-            inferredTargetFramework: InferredTargetFrameworkForScripts,
+            inferredTargetFramework: TargetFrameworkForScripts,
             useDotNetFramework: bool,
             useSdkRefs,
             tryGetMetadataSnapshot,
@@ -164,7 +165,7 @@ module ScriptPreprocessClosure =
         // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
         tcConfigB.useSdkRefs <- useSdkRefs
-        tcConfigB.primaryAssembly <- inferredTargetFramework.InferredFramework.PrimaryAssembly
+        tcConfigB.primaryAssembly <- inferredTargetFramework.PrimaryAssembly
 
         TcConfig.Create(tcConfigB, validate=true)
 
@@ -189,11 +190,10 @@ module ScriptPreprocessClosure =
         let tcConfigB = tcConfig.CloneToBuilder() 
         let mutable nowarns = [] 
         let addNoWarn = fun () (m, s) -> nowarns <- (s, m) :: nowarns
-        let addFramework = fun () (m, fx) -> tcConfigB.CheckExplicitFrameworkDirective(fx, m)
         let addReferenceDirective = fun () (m, s, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, s, directive)
         let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
         try 
-            ProcessMetaCommandsFromInput (addNoWarn, addFramework, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+            ProcessMetaCommandsFromInput (addNoWarn, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
         with ReportedError _ ->
             // Recover by using whatever did end up in the tcConfig
             ()
@@ -394,7 +394,7 @@ module ScriptPreprocessClosure =
               References = List.groupBy fst references |> List.map (map2Of2 (List.map snd))
               PackageReferences = packageReferences
               UnresolvedReferences = unresolvedReferences
-              InferredTargetFramework = tcConfig.inferredTargetFrameworkForScripts.Value
+              TargetFramework = tcConfig.targetFrameworkForScripts.Value
               Inputs = sourceInputs
               NoWarns = List.groupBy fst globalNoWarns |> List.map (map2Of2 (List.map snd))
               OriginalLoadReferences = tcConfig.loadedSources
@@ -404,27 +404,8 @@ module ScriptPreprocessClosure =
 
         result
 
-    let InferTargetFrameworkForScript (fileName, sourceText: ISourceText, defaultToDotNetFramework: bool) =
-        let res =
-            [| 0 .. sourceText.GetLineCount() - 1 |] 
-            |> Array.tryPick (fun i -> 
-                let text = sourceText.GetLineString(i).TrimEnd()
-                let m = mkRange fileName (mkPos (i+1) 0) (mkPos (i+1) text.Length)
-                if text = "#targetfx \"netcore\"" then Some (Some { InferredFramework = TargetFrameworkForScripts "netcore"; WhereInferred = Some m })
-                elif text = "#targetfx \"netfx\"" then Some (Some { InferredFramework = TargetFrameworkForScripts "netfx"; WhereInferred = Some m })
-                elif String.IsNullOrWhiteSpace(text) then None
-                elif text.StartsWith("#!") then None
-                elif text.StartsWith("//") then None
-                else Some None)
-            |> Option.flatten
-
-        // The inferred framework effectively acts as the explicit framework, ruling out
-        // any incompatible changes.
-        match res with 
-        | Some fx -> fx
-        | None -> 
-           let dflt = TargetFrameworkForScripts (if defaultToDotNetFramework then "netfx" else "netcore")
-           { InferredFramework = dflt; WhereInferred = None }
+    let InferTargetFrameworkForScript (_fileName, defaultToDotNetFramework: bool) =
+        TargetFrameworkForScripts (if defaultToDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
@@ -441,9 +422,9 @@ module ScriptPreprocessClosure =
         // first, then #I and other directives are processed.
         //
         // We first infer the explicit framework from the root script.
-        let inferredTargetFramework = InferTargetFrameworkForScript (filename, sourceText, defaultToDotNetFramework)
+        let inferredTargetFramework = InferTargetFrameworkForScript (filename, defaultToDotNetFramework)
 
-        let useDotNetFramework = inferredTargetFramework.InferredFramework.UseDotNetFramework
+        let useDotNetFramework = inferredTargetFramework.UseDotNetFramework
 
         let references0 = 
             let tcConfig = 
@@ -473,7 +454,7 @@ module ScriptPreprocessClosure =
              lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
         // Check we have already pre-inferred the target framework
-        assert tcConfig.inferredTargetFrameworkForScripts.IsSome 
+        assert tcConfig.targetFrameworkForScripts.IsSome 
         let mainFile, mainFileRange = List.last files
         let closureSources = files |> List.collect (fun (filename, m) -> ClosureSourceOfFilename(filename, m,tcConfig.inputCodePage,true))
         let closureFiles, tcConfig, packageReferences = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)

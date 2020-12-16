@@ -245,7 +245,6 @@ let main argv = 0"""
             LoadTime = DateTime()
             UnresolvedReferences = None
             OriginalLoadReferences = []
-            InferredTargetFrameworkForScripts = None
             ExtraProjectInfo = None
             Stamp = None
         }

@@ -394,7 +394,6 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
 
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
-      frameworkF: 'state -> range * TargetFrameworkForScripts -> 'state,
       hashReferenceF: 'state -> range * string * Directive -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder, 
@@ -443,11 +442,6 @@ let ProcessMetaCommandsFromInput
 
             | ParsedHashDirective("nowarn",numbers,m) ->
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
-
-            | ParsedHashDirective("targetfx", [("netfx" | "netcore") as d],m) ->
-               if not canHaveScriptMetaCommands then 
-                   errorR(Error(FSComp.SR.buildInvalidHashNetDirective(), m))
-               frameworkF state (m, TargetFrameworkForScripts d)
 
             | ParsedHashDirective(("reference" | "r"), args, m) -> 
                 matchedm<-m
@@ -531,11 +525,10 @@ let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaComm
     // Clone
     let tcConfigB = tcConfig.CloneToBuilder() 
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
-    let addFramework = fun () (_m, _s) -> ()
     let addReferenceDirective = fun () (_m, _s, _) -> ()
     let addLoadedSource = fun () (_m, _s) -> ()
     ProcessMetaCommandsFromInput
-        (addNoWarn, addFramework, addReferenceDirective, addLoadedSource)
+        (addNoWarn, addReferenceDirective, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
@@ -543,11 +536,10 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     // Clone
     let tcConfigB = tcConfig.CloneToBuilder()
     let addNoWarn () _ = () 
-    let addFramework () (m, fx) = tcConfigB.CheckExplicitFrameworkDirective(fx, m)
     let addReferenceDirective () (m, path, directive) = tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
     let addLoadedSource () (m,s) = tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
     ProcessMetaCommandsFromInput
-        (addNoWarn, addFramework, addReferenceDirective, addLoadedSource)
+        (addNoWarn, addReferenceDirective, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 

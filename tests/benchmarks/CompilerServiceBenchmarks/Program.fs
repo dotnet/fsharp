@@ -102,7 +102,6 @@ module Helpers =
             LoadTime = DateTime()
             UnresolvedReferences = None
             OriginalLoadReferences = []
-            InferredTargetFrameworkForScripts = None
             ExtraProjectInfo = None
             Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
         }

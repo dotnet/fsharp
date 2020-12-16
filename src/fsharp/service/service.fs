@@ -58,7 +58,6 @@ type FSharpProjectOptions =
       ReferencedProjects: (string * FSharpProjectOptions)[]
       IsIncompleteTypeCheckEnvironment : bool
       UseScriptResolutionRules : bool      
-      InferredTargetFrameworkForScripts: string option
       LoadTime : System.DateTime
       UnresolvedReferences : UnresolvedReferencesSet option
       OriginalLoadReferences: (range * string * string) list
@@ -84,7 +83,6 @@ type FSharpProjectOptions =
         options1.SourceFiles = options2.SourceFiles &&
         options1.OtherOptions = options2.OtherOptions &&
         options1.UnresolvedReferences = options2.UnresolvedReferences &&
-        options1.InferredTargetFrameworkForScripts = options2.InferredTargetFrameworkForScripts &&
         options1.OriginalLoadReferences = options2.OriginalLoadReferences &&
         options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
         Array.forall2 (fun (n1,a) (n2,b) ->
@@ -924,7 +922,6 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     ReferencedProjects= [| |]  
                     IsIncompleteTypeCheckEnvironment = false
                     UseScriptResolutionRules = true 
-                    InferredTargetFrameworkForScripts = Some loadClosure.InferredTargetFramework.InferredFramework.Value
                     LoadTime = loadedTimeStamp
                     UnresolvedReferences = Some (UnresolvedReferencesSet(loadClosure.UnresolvedReferences))
                     OriginalLoadReferences = loadClosure.OriginalLoadReferences
@@ -1319,7 +1316,6 @@ type FSharpChecker(legacyReferenceResolver,
           ReferencedProjects= [| |]  
           IsIncompleteTypeCheckEnvironment = false
           UseScriptResolutionRules = false
-          InferredTargetFrameworkForScripts = None
           LoadTime = loadedTimeStamp
           UnresolvedReferences = None
           OriginalLoadReferences=[]

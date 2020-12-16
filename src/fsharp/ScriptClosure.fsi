@@ -39,7 +39,7 @@ type LoadClosure =
       PackageReferences: (range * string list)[]
 
       /// Whether an explicit #netfx or #netcore has been given
-      InferredTargetFramework: InferredTargetFrameworkForScripts
+      TargetFramework: TargetFrameworkForScripts
 
       /// The list of references that were not resolved during load closure.
       UnresolvedReferences: UnresolvedAssemblyReference list

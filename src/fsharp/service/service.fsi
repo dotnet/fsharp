@@ -43,9 +43,6 @@ type public FSharpProjectOptions =
       /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
       UseScriptResolutionRules : bool
 
-      /// Whether an explicit framework has been given for scripts, e.g. "netfx" or "netcore"
-      InferredTargetFrameworkForScripts: string option
-
       /// Timestamp of project/script load, used to differentiate between different instances of a project load.
       /// This ensures that a complete reload of the project or script type checking
       /// context occurs on project or script unload/reload.

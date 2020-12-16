@@ -35,7 +35,6 @@ val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLe
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
     (('T -> range * string -> 'T) * 
-     ('T -> range * TargetFrameworkForScripts -> 'T) *
      ('T -> range * string * Directive -> 'T) *
      ('T -> range * string -> unit))
       -> TcConfigBuilder * ParsedInput * string * 'T 

@@ -315,37 +315,13 @@ type PackageManagerLine =
     static member StripDependencyManagerKey (packageKey: string) (line: string): string =
         line.Substring(packageKey.Length + 1).Trim()
 
-/// A target profile option specified on the command line
-/// Valid values are "mscorlib", "netcore" or "netstandard"
-type TargetProfileCommandLineOption = TargetProfileCommandLineOption of string
-
 /// A target framework option specified in a script
-/// Current valid values are "netcore", "netfx" 
 type TargetFrameworkForScripts =
-    | TargetFrameworkForScripts of string
+    | TargetFrameworkForScripts of PrimaryAssembly
 
-    member fx.Value  = (let (TargetFrameworkForScripts v) = fx in v)
+    member fx.PrimaryAssembly =  (let (TargetFrameworkForScripts v) = fx in v)
 
-    member fx.PrimaryAssembly =
-        match fx.Value with
-        | "netcore" -> PrimaryAssembly.System_Runtime
-        | "netfx"  -> PrimaryAssembly.Mscorlib
-        | "netstandard"  -> PrimaryAssembly.NetStandard
-        | _  -> failwith "invalid value"
-        // // Indicates we assume "netstandard.dll", i.e .NET Standard 2.0 and above
-        // | "netstandard"  -> PrimaryAssembly.NetStandard
-        // | _ -> error(Error(FSComp.SR.optsInvalidTargetProfile v, rangeCmdArgs))
-
-    member fx.UseDotNetFramework =
-        not (fx.Value.StartsWith ("netcore"))
-
-type InferredTargetFrameworkForScripts =
-    { 
-      InferredFramework: TargetFrameworkForScripts
-      WhereInferred: range option 
-    }
-
-    member fx.UseDotNetFramework = fx.InferredFramework.UseDotNetFramework
+    member fx.UseDotNetFramework = (fx.PrimaryAssembly = PrimaryAssembly.Mscorlib)
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -360,7 +336,7 @@ type TcConfigBuilder =
       mutable includes: string list
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
-      mutable inferredTargetFrameworkForScripts: InferredTargetFrameworkForScripts option
+      mutable targetFrameworkForScripts: TargetFrameworkForScripts option
       mutable framework: bool
       mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
@@ -525,7 +501,7 @@ type TcConfigBuilder =
           compilingFslib = false
           useIncrementalBuilder = false
           useFsiAuxLib = false
-          inferredTargetFrameworkForScripts = None
+          targetFrameworkForScripts = None
           implicitOpens = []
           includes = []
           resolutionEnvironment = ResolutionEnvironment.EditingOrCompilation false
@@ -678,7 +654,7 @@ type TcConfigBuilder =
         isInvalidationSupported,
         defaultCopyFSharpCore,
         tryGetMetadataSnapshot,
-        inferredTargetFrameworkForScripts) =
+        targetFrameworkForScripts) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
@@ -697,7 +673,7 @@ type TcConfigBuilder =
                 copyFSharpCore = defaultCopyFSharpCore
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
                 useFsiAuxLib = isInteractive
-                inferredTargetFrameworkForScripts = inferredTargetFrameworkForScripts
+                targetFrameworkForScripts = targetFrameworkForScripts
             }
         tcConfigBuilder
 
@@ -842,21 +818,6 @@ type TcConfigBuilder =
     member tcConfigB.AddPathMapping (oldPrefix, newPrefix) =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
     
-    member tcConfigB.CheckExplicitFrameworkDirective (fx: TargetFrameworkForScripts, m: range) =
-        match tcConfigB.inferredTargetFrameworkForScripts with
-        | Some fx0 ->
-            if  fx0.InferredFramework <> fx then
-                warning(Error(FSComp.SR.optsIncompatibleFrameworks(fx0.InferredFramework.Value, fx.Value), m))
-            let m2 = defaultArg  fx0.WhereInferred m
-            // If the directive is in the same file as the explicit directive used for inference
-            // then report a warning
-            if m2.FileName = m.FileName && m2 <> m then
-                warning(Error(FSComp.SR.optsExplicitFrameworkNotFirstDeclaration(), m))
-        | None ->
-            // If the explicit framework has not been inferred by the first-non-comment rule
-            // then it can't be set by any other means.
-            warning(Error(FSComp.SR.optsExplicitFrameworkNotFirstDeclaration(), m))
-
     static member SplitCommandLineResourceInfo (ri: string) =
         let p = ri.IndexOf ','
         if p <> -1 then
@@ -954,7 +915,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.includes = data.includes
     member x.implicitOpens = data.implicitOpens
     member x.useFsiAuxLib = data.useFsiAuxLib
-    member x.inferredTargetFrameworkForScripts = data.inferredTargetFrameworkForScripts
+    member x.targetFrameworkForScripts = data.targetFrameworkForScripts
     member x.framework = data.framework
     member x.implicitlyResolveAssemblies = data.implicitlyResolveAssemblies
     member x.resolutionEnvironment = data.resolutionEnvironment
