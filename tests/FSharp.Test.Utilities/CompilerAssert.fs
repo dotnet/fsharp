@@ -20,6 +20,7 @@ open System.Reflection.Emit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open FSharp.Test.Utilities.Utilities
+open TestFramework
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -119,11 +120,11 @@ type CompilerAssert private () =
 
     static let directoryBuildProps = """
 <Project>
-  <PropertyGroup>
-    <DisableCompilerRedirection>true</DisableCompilerRedirection>
-  </PropertyGroup>
+</Project>
+"""
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+    static let directoryBuildTargets = """
+<Project>
 </Project>
 """
 
@@ -148,6 +149,7 @@ let main argv = 0"""
                 let projectFileName = Path.Combine(projectDirectory, "ProjectFile.fsproj")
                 let programFsFileName = Path.Combine(projectDirectory, "Program.fs")
                 let directoryBuildPropsFileName = Path.Combine(projectDirectory, "Directory.Build.props")
+                let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                 let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
                 File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "netcoreapp3.1").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
@@ -156,34 +158,17 @@ let main argv = 0"""
 #endif
                 File.WriteAllText(programFsFileName, programFs)
                 File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
+                File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
-                let pInfo = ProcessStartInfo ()
-                pInfo.FileName <- config.DotNetExe
-                pInfo.Arguments <- "build"
-                pInfo.WorkingDirectory <- projectDirectory
-                pInfo.RedirectStandardOutput <- true
-                pInfo.RedirectStandardError <- true
-                pInfo.UseShellExecute <- false
-
-                let p = Process.Start(pInfo)
                 let timeout = 30000
-                let succeeded = p.WaitForExit(timeout)
+                let exitCode, output, errors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
 
-                output <- p.StandardOutput.ReadToEnd ()
-                errors <- p.StandardError.ReadToEnd ()
-
-                if not (String.IsNullOrWhiteSpace errors) then
-                    printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" errors
-                    Assert.Fail errors
-                if p.ExitCode <> 0 then
-                    printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" errors
-                    Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
-                if not succeeded then
-                    printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" errors
-                    Assert.Fail(sprintf "Program timed out after %d ms" timeout)
+                if exitCode <> 0 || errors.Length > 0 then
+                    printfn "Output:\n=======\n"
+                    output |> Seq.iter(fun line -> printfn "STDOUT:%s\n" line)
+                    printfn "Errors:\n=======\n"
+                    errors  |> Seq.iter(fun line -> printfn "STDERR:%s\n" line)
+                    Assert.True(false, "Errors produced generating References")
 
                 File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
             with | e ->
@@ -447,14 +432,12 @@ let main argv = 0"""
         (exitCode, stdout.ToString(), stderr.ToString())
 
     static let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
-        let mutable pinfo = ProcessStartInfo()
-        pinfo.RedirectStandardError <- true
-        pinfo.RedirectStandardOutput <- true
 #if !NETCOREAPP
-        pinfo.FileName <- outputFilePath
+        let filename = outputFilePath
+        let arguments = ""
 #else
-        pinfo.FileName <- "dotnet"
-        pinfo.Arguments <- outputFilePath
+        let filename = "dotnet"
+        let arguments = outputFilePath
 
         let runtimeconfig = """
 {
@@ -472,18 +455,9 @@ let main argv = 0"""
             { new IDisposable with
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
-        pinfo.UseShellExecute <- false
-        let p = Process.Start pinfo
-
-        let output = p.StandardOutput.ReadToEnd()
-        let errors = p.StandardError.ReadToEnd()
-
-        let exited = p.WaitForExit(120000)
-
-        let exitCode = if not exited then -2 else p.ExitCode
-
-        (exitCode, output, errors)
-
+        let timeout = 30000
+        let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        (exitCode, output |> String.concat Environment.NewLine, errors |> String.concat Environment.NewLine)
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
