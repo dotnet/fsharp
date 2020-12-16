@@ -31,6 +31,10 @@
 {
   // Offset: 0x00000000 Length: 0x0000030C
 }
+.mresource public FSharpSignatureDataB.SteppingMatch09
+{
+  // Offset: 0x00000218 Length: 0x00000002
+}
 .mresource public FSharpOptimizationData.SteppingMatch09
 {
   // Offset: 0x00000310 Length: 0x000000EB

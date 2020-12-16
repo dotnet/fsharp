@@ -359,9 +359,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
                                    match obj with 
                                    | null -> None 
                                    | _ when aty.IsAssignableFrom(obj.GetType())  ->  
-                                       match printer obj with 
+                                       let text = printer obj
+                                       match box text with 
                                        | null -> None
-                                       | s -> Some (wordL (TaggedTextOps.tagText s)) 
+                                       | _ -> Some (wordL (TaggedTextOps.tagText text)) 
                                    | _ -> None)
                                    
                          | Choice2Of2 (aty: System.Type, converter) -> 
@@ -1023,7 +1024,7 @@ let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
         if FSharp.Reflection.FSharpType.IsFunction reflectionTy then
             let ctors = reflectionTy.GetConstructors(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
             if ctors.Length = 1 && 
-               ctors.[0].GetCustomAttribute<CompilerGeneratedAttribute>() <> null && 
+               not (isNull (box (ctors.[0].GetCustomAttribute<CompilerGeneratedAttribute>()))) && 
                not ctors.[0].IsPublic && 
                PrettyNaming.IsCompilerGeneratedName reflectionTy.Name then
                 let rec get (typ: Type) = if FSharp.Reflection.FSharpType.IsFunction typ.BaseType then get typ.BaseType else typ
@@ -1477,10 +1478,10 @@ type internal FsiDynamicCompiler
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
                 match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
-                | null ->
+                | Null ->
                     errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
                     istate
-                | dependencyManager ->
+                | NonNull dependencyManager ->
                     let directive d =
                         match d with
                         | Directive.Resolution -> "r"
@@ -1528,7 +1529,7 @@ type internal FsiDynamicCompiler
                         let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
 
                         match dm with
-                        | _, dependencyManager when not(isNull dependencyManager) ->
+                        | _, NonNull dependencyManager ->
                             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                                 fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
                                 st
@@ -1541,8 +1542,11 @@ type internal FsiDynamicCompiler
                             st
 
                         // #r "Assembly"
-                        | path, _ ->
+                        | NonNull path, _ ->
                             snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
+
+                        | Null, Null ->
+                           st
                     ),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
@@ -1862,7 +1866,11 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
-        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) : Assembly = 
+#else
+        let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) : Assembly? = 
+#endif
 
            try 
                // Grab the name of the assembly
@@ -1986,17 +1994,25 @@ type internal FsiStdinLexerProvider
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
 
-    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF = 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string) = 
+#else
+    let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) (readF: unit -> string?) = 
+#endif
         UnicodeLexing.FunctionAsLexbuf
           (isFeatureSupported, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readF()) with :? EndOfStreamException -> None
-            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
+            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add ((match t with Null -> "" | NonNull t -> t) + "\n"))
             match inputOption with 
-            |  Some(null) | None -> 
+            |  Some(Null) | None -> 
                  if progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
-            | Some (input:string) ->
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+            | Some input ->
+#else
+            | Some (NonNull input) ->
+#endif
                 let input  = input + "\n" 
                 let ninput = input.Length 
                 if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
@@ -2010,11 +2026,18 @@ type internal FsiStdinLexerProvider
     // Reading stdin as a lex stream
     //----------------------------------------------------------------------------
 
-    let removeZeroCharsFromString (str:string) = (* bug:/4466 *)
-        if str<>null && str.Contains("\000") then
-          System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
-        else
-          str
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    let removeZeroCharsFromString (str:string) =
+#else
+    let removeZeroCharsFromString (str:string?) : string? =
+#endif
+        match str with 
+        | Null -> str
+        | NonNull str -> 
+            if str.Contains("\000") then
+              System.String(str |> Seq.filter (fun c -> c<>'\000') |> Seq.toArray)
+            else
+              str
 
     let CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger) =
 
@@ -2152,11 +2175,11 @@ type internal FsiInteractionProcessor
         let packageManagerDirective directive path m =
             let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
-            | null, null ->
+            | Null, Null ->
                 // error already reported
                 istate, CompletedWithAlreadyReportedError
 
-            | _, dependencyManager when not(isNull dependencyManager) ->
+            | _, NonNull dependencyManager ->
                if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                    fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
                    istate, Completed None
@@ -2168,7 +2191,7 @@ type internal FsiInteractionProcessor
                 errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
                 istate,Completed None
 
-            | p, _ ->
+            | NonNull p, Null ->
                 let path =
                     if String.IsNullOrWhiteSpace(p) then ""
                     else p
@@ -2189,6 +2212,9 @@ type internal FsiInteractionProcessor
                         else
                             FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
                     fsiConsoleOutput.uprintnfnn "%s" format)
+                istate,Completed None
+
+            | _, _ ->
                 istate,Completed None
 
         istate |> InteractiveCatch errorLogger (fun istate ->

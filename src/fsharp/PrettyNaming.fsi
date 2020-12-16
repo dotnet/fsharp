@@ -173,6 +173,10 @@ val FSharpOptimizationDataResourceName: string
 
 val FSharpSignatureDataResourceName: string
 
+val FSharpOptimizationDataResourceNameB: string
+
+val FSharpSignatureDataResourceNameB: string
+
 val FSharpOptimizationDataResourceName2: string
 
 val FSharpSignatureDataResourceName2: string

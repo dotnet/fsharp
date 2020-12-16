@@ -24,7 +24,11 @@ val inline isSingleton: l:'a list -> bool
 
 val inline isNonNull: x:'a -> bool when 'a: null
 
-val inline nonNull: msg:string -> x:'a -> 'a when 'a: null
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+val inline (|NonNullQuick|): 'T -> 'T when 'T : null
+val inline (|Null|NonNull|): 'T -> Choice<unit,'T> when 'T : null
+val inline nonNull: x:'T -> 'T when 'T : null
+#endif
 
 val inline ( === ): x:'a -> y:'a -> bool when 'a: not struct
 
@@ -230,9 +234,6 @@ module String =
     val lowerCaseFirstChar: str:string -> string
 
     val extractTrailingIndex: str:string -> string * int option
-
-    /// Remove all trailing and leading whitespace from the string, return null if the string is null
-    val trim: value:string -> string
 
     /// Splits a string into substrings based on the strings in the array separators
     val split : options:StringSplitOptions -> separator:string [] -> value:string -> string []
