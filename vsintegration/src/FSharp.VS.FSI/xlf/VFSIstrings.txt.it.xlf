@@ -23,13 +23,13 @@
         <note />
       </trans-unit>
       <trans-unit id="sessionInitialMessage">
-        <source>Welcome to F# Interactive. To execute code in F# Interactive, use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. Or press Enter to start an F# Interactive session not associated to any script.</source>
-        <target state="new">Welcome to F# Interactive. To execute code in F# Interactive, use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. Or press Enter to start an F# Interactive session not associated to any script.</target>
+        <source>Welcome to F# Interactive. To execute code, either\n  1. 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use settings associated with that script.\n  2. Press 'Enter' to start an F# Interactive process not associated to any script.</source>
+        <target state="new">Welcome to F# Interactive. To execute code, either\n  1. 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use settings associated with that script.\n  2. Press 'Enter' to start an F# Interactive process not associated to any script.</target>
         <note />
       </trans-unit>
       <trans-unit id="sessionTerminationDetected">
-        <source>Session termination detected. Press Enter to restart.</source>
-        <target state="translated">Rilevata terminazione di sessione. Premere INVIO per riavviare.</target>
+        <source>Session termination detected.</source>
+        <target state="needs-review-translation">Rilevata terminazione di sessione. Premere INVIO per riavviare.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsharpInteractive">

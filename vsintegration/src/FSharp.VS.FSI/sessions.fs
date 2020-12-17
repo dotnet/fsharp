@@ -234,7 +234,7 @@ let fsiStartInfo channelName sourceFile =
         |> addStringOption true "fsi-server-output-codepage" outCP
         |> addStringOption true "fsi-server-input-codepage" inCP
         |> addStringOption true "fsi-server-lcid" System.Threading.Thread.CurrentThread.CurrentUICulture.LCID
-        //|> addStringOption true "fsi-initial-file" sourceFile
+        //|> addStringOption true "fsi-server-association-file" sourceFile
         |> addStringOption true "fsi-server" channelName
         |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
         |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" SessionsProperties.fsiShadowCopy

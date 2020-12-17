@@ -47,6 +47,9 @@
     <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0800">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
     </CommandPlacement>
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidQuitProcess" priority="0x0900">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
     <CommandPlacement guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100">
       <Parent guid ="guidSHLMainMenu" id ="IDM_VS_CTXT_ITEMNODE" />
     </CommandPlacement>

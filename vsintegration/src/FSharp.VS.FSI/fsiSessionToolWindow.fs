@@ -194,14 +194,18 @@ type internal FsiToolWindow() as this =
     let history  = HistoryBuffer()
     let sessions = Session.FsiSessions()
     do  fsiLangService.Sessions <- sessions    
-    let writeTextAndScroll (str:string) =
+
+    let writeText scroll (str:string) =
         if str <> null && textLines <> null then
             lock textLines (fun () ->
                 textStream.DirectWrite(fixServerPrompt str)
-                setScrollToEndOfBuffer()    // I'm not convinced that users want jump to end on output.
-            )                               // IP sample did it. Previously, VFSI did not.
-                                            // What if there is scrolling output on a timer and a user wants to look over it??                                        
-                                            // Maybe, if already at the end, then stay at the end?
+                if scroll then 
+                    setScrollToEndOfBuffer()
+            )
+
+    let writeTextAndScroll (str:string) = writeText true str
+
+    let writeTextNoScroll (str:string) = writeText false str
 
     // Merge stdout/stderr events prior to buffering. Paired with StdOut/StdErr keys so we can split them afterwards.  
     let responseE = Observable.merge (Observable.map (pair StdOut) sessions.Output) (Observable.map (pair StdErr) sessions.Error)
@@ -219,21 +223,22 @@ type internal FsiToolWindow() as this =
         | StdErr,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: hence keep them split.
     do  responseBufferE.Add(fun keyStrings -> let keyChunks : (Response * string list) list = chunkKeyValues keyStrings
                                               List.iter writeKeyChunk keyChunks)
+    let showInitialMessage scroll =
+        writeText scroll ((VFSIstrings.SR.sessionInitialMessage())+Environment.NewLine)
 
     // Write message on a session termination. Should be called on Gui thread.
     let recordTermination () = 
         if not sessions.Alive then // check is likely redundant
             synchronizationContext.Post(
                 System.Threading.SendOrPostCallback(
-                    fun _ -> writeTextAndScroll ((VFSIstrings.SR.sessionTerminationDetected())+Environment.NewLine)
+                    fun _ -> 
+                        writeTextAndScroll ((VFSIstrings.SR.sessionTerminationDetected())+Environment.NewLine)
+                        showInitialMessage(true)
             ), null)
             
     do  sessions.Exited.Add(fun _ -> recordTermination())
 
-    let showInitialMessage() =
-        writeTextAndScroll ((VFSIstrings.SR.sessionInitialMessage())+Environment.NewLine)
-
-    do  showInitialMessage()
+    do  showInitialMessage(false)
 
     let clearUndoStack (textLines:IVsTextLines) = // Clear the UNDO stack.
         let undoManager = textLines.GetUndoManager() |> throwOnFailure1
@@ -312,7 +317,8 @@ type internal FsiToolWindow() as this =
     let supportWhenInInputArea (sender:obj) (args:EventArgs) =    
         let command = sender :?> MenuCommand
         if null <> command then // are these null checks needed?
-            command.Supported <- not source.IsCompletorActive && isCurrentPositionInInputArea()
+            let enabled = not source.IsCompletorActive && isCurrentPositionInInputArea()
+            command.Supported <- enabled
 
     /// Support command except when completion is active.    
     let supportUnlessCompleting (sender:obj) (args:EventArgs) =    
@@ -328,28 +334,40 @@ type internal FsiToolWindow() as this =
     let supportWhenAtStartOfInputArea (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand       
         if command <> null then
-            command.Supported  <- isCurrentPositionAtStartOfInputArea()
+            let enabled = isCurrentPositionAtStartOfInputArea()
+            command.Enabled <- enabled
+            command.Supported  <- enabled
 
     /// Support when at the start of the input area AND no-selection (e.g. to enable NoAction on BACKSPACE).
     let supportWhenAtStartOfInputAreaAndNoSelection (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
-            command.Supported  <- isCurrentPositionAtStartOfInputArea() && not (haveTextViewSelection())
+            let enabled = isCurrentPositionAtStartOfInputArea() && not (haveTextViewSelection())
+            command.Enabled <- enabled
+            command.Supported  <- enabled
             
     let supportWhenSelectionIntersectsWithReadonlyOrNoSelection (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
-            command.Supported  <- isSelectionIntersectsWithReadonly() || not (haveTextViewSelection())
+            let enabled = isSelectionIntersectsWithReadonly() || not (haveTextViewSelection())
+            command.Enabled <- enabled
+            command.Supported  <- enabled
 
-    let supportWhenInterruptSupported (sender:obj) (_:EventArgs) =
+    let visibleWhenInterruptSupported (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
-            command.Supported  <- sessions.Alive && sessions.SupportsInterrupt
+            let enabled = sessions.Alive && sessions.SupportsInterrupt
+            command.Supported <- enabled
+            command.Enabled <- enabled
+            command.Visible <- enabled
 
-    let supportWhenSessionAlive (sender:obj) (_:EventArgs) =
+    let visibleWhenSessionAlive (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
-            command.Supported  <- sessions.Alive
+            let enabled = sessions.Alive
+            command.Supported  <- enabled
+            command.Enabled  <- enabled
+            command.Visible  <- enabled
 
     // NOTE: On* are command handlers.
 
@@ -451,6 +469,11 @@ type internal FsiToolWindow() as this =
             | Some _ -> FsiDebuggerState.AttachedToFSI, debuggedFsi
             | None -> FsiDebuggerState.AttachedNotToFSI, None
     
+    let visibleWhenDebugAttachedFSIProcess (sender:obj) (_:EventArgs) =
+        let command = sender :?> MenuCommand
+        if command <> null then
+            command.Visible  <- fst (getDebuggerState ()) = FsiDebuggerState.AttachedToFSI
+
     let getDebugAttachedFSIProcess () =
         match getDebuggerState () with
         | FsiDebuggerState.AttachedToFSI, opt -> opt
@@ -522,7 +545,7 @@ type internal FsiToolWindow() as this =
 
     let onQuitProcess (sender:obj) (args:EventArgs) =
         sessions.Kill()
-        showInitialMessage()
+        showInitialMessage(true)
 
     let sendTextToFSI text = 
         try
@@ -694,11 +717,11 @@ type internal FsiToolWindow() as this =
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.Cut)                 onCutDoCopy    (Some supportWhenSelectionIntersectsWithReadonlyOrNoSelection)
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.ClearPane)           onClearPane     None
             addCommand guidVSStd2KCmdID (int32 VSStd2KCmdID.SHOWCONTEXTMENU)     showContextMenu None
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     (Some supportWhenInterruptSupported)
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   (onRestart null)  (Some supportWhenSessionAlive)
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  (Some supportWhenSessionAlive)
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDQuitProcess         onQuitProcess  None
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     (Some visibleWhenInterruptSupported)
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   (onRestart null)  (Some visibleWhenSessionAlive)
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  (Some visibleWhenSessionAlive)
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  (Some visibleWhenDebugAttachedFSIProcess)
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDQuitProcess         onQuitProcess   (Some visibleWhenSessionAlive)
             
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSendSelection   None
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            onMLSendLine        None

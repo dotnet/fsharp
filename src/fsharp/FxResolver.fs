@@ -11,6 +11,7 @@ open System.Globalization
 open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
+open System.Text
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -62,18 +63,23 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 if File.Exists(candidate) then candidate else dotnet
             | None -> dotnet
 
-    static let desiredDotNetSdkVersionForDirectoryCache = ConcurrentDictionary<string, string>()
+    /// We only try once for each directory (cleared on solution unload) to prevent conditions where 
+    /// we repeatedly try to run dotnet.exe on every keystroke for a script
+    static let desiredDotNetSdkVersionForDirectoryCache = ConcurrentDictionary<string, Result<string, exn>>()
 
     /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
     /// taking into account any global.json
     let tryGetDesiredDotNetSdkVersionForDirectory() =
-        try
-            desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
-                let dotnetHostPath = getDotnetHostPath()
+        desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
+            let dotnetHostPath = getDotnetHostPath()
+            try
                 let psi = ProcessStartInfo(dotnetHostPath, "--version")
                 psi.RedirectStandardOutput <- true
                 psi.RedirectStandardError <- true
-                psi.UseShellExecute <- false // use path for 'dotnet'
+                psi.UseShellExecute <- false
+                psi.CreateNoWindow <- true
+                psi.StandardOutputEncoding <- Encoding.UTF8
+                psi.StandardErrorEncoding <- Encoding.UTF8
                 if Directory.Exists(projectDir) then
                     psi.WorkingDirectory <- projectDir
                 let p = Process.Start(psi)
@@ -81,12 +87,15 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 let stderr = p.StandardError.ReadToEnd()
                 p.WaitForExit()
                 if p.ExitCode <> 0 then 
-                    warning(Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, stderr, p.ExitCode), m))
-                    failwith "no sdk determined"
-                stdout.Trim()))
-            |> Some
-        with _ -> 
-            None
+                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, stderr, p.ExitCode), m))
+                else
+                    Result.Ok (stdout.Trim())
+            with err -> 
+                Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), m))))
+        // Make sure the warning gets replayed each time we call this
+        |> function
+            | Result.Ok res -> Some res
+            | Result.Error exn -> warning(exn); None
 
     /// Get the .NET Core SDK directory relevant to projectDir, used to infer the default target framework assemblies.
     let tryGetSdkDir() =
