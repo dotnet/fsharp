@@ -91,6 +91,7 @@
     <Compile Include="Commands\XmlDocCommandService.fs" />
     <Compile Include="CodeFix\CodeFixHelpers.fs" />
     <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
+    <Compile Include="CodeFix\MakeOuterBindingRecursive.fs" />
     <Compile Include="CodeFix\RemoveReturnOrYield.fs" />
     <Compile Include="CodeFix\ConvertToAnonymousRecord.fs" />
     <Compile Include="CodeFix\UseMutationWhenValueIsMutable.fs" />

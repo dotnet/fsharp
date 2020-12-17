@@ -99,6 +99,59 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
     member scope.ParseHadErrors = parseHadErrors
 
     member scope.ParseTree = input
+
+    member scope.TryRangeOfNameOfNearestOuterBindingContainingPos pos =
+        let tryGetIdentRangeFromBinding binding =
+            match binding with
+            | SynBinding.Binding (_, _, _, _, _, _, _, headPat, _, _, _, _) ->
+                match headPat with
+                | SynPat.LongIdent (longIdentWithDots, _, _, _, _, _) ->
+                    Some longIdentWithDots.Range
+                | SynPat.Named(_, ident, false, _, _) ->
+                    Some ident.idRange
+                | _ ->
+                    None
+
+        let rec walkBinding expr workingRange =
+            match expr with
+
+            // This lets us dive into subexpressions that may contain the binding we're after
+            | SynExpr.Sequential (_, _, expr1, expr2, _) ->
+                if rangeContainsPos expr1.Range pos then
+                    walkBinding expr1 workingRange
+                else
+                    walkBinding expr2 workingRange
+
+
+            | SynExpr.LetOrUse(_, _, bindings, bodyExpr, _) ->
+                let potentialNestedRange =
+                    bindings
+                    |> List.tryFind (fun binding -> rangeContainsPos binding.RangeOfBindingAndRhs pos)
+                    |> Option.bind tryGetIdentRangeFromBinding
+                match potentialNestedRange with
+                | Some range ->
+                    walkBinding bodyExpr range
+                | None ->
+                    walkBinding bodyExpr workingRange
+
+            
+            | _ ->
+                Some workingRange
+
+        match scope.ParseTree with
+        | Some input ->
+            AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
+                member _.VisitExpr(_, _, defaultTraverse, expr) =                        
+                    defaultTraverse expr
+
+                override _.VisitBinding(defaultTraverse, binding) =
+                    match binding with
+                    | SynBinding.Binding (_, _, _, _, _, _, _, _, _, expr, _range, _) as b when rangeContainsPos b.RangeOfBindingAndRhs pos ->
+                        match tryGetIdentRangeFromBinding b with
+                        | Some range -> walkBinding expr range
+                        | None -> None
+                    | _ -> defaultTraverse binding })
+        | None -> None
     
     member scope.TryIdentOfPipelineContainingPosAndNumArgsApplied pos =
         match scope.ParseTree with
