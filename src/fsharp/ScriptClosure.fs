@@ -128,7 +128,8 @@ module ScriptPreprocessClosure =
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
-        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeN filename 0)
+        let rangeForErrors = mkFirstLineOfFile filename
+        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeForErrors)
 
         let tcConfigB = 
             TcConfigBuilder.CreateNew

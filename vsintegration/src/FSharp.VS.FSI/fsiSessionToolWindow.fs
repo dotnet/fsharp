@@ -221,10 +221,12 @@ type internal FsiToolWindow() as this =
     let writeKeyChunk = function
         | StdOut,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: stdout and stderr may color differently
         | StdErr,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: hence keep them split.
+
     do  responseBufferE.Add(fun keyStrings -> let keyChunks : (Response * string list) list = chunkKeyValues keyStrings
                                               List.iter writeKeyChunk keyChunks)
-    let showInitialMessage scroll =
-        writeText scroll ((VFSIstrings.SR.sessionInitialMessage())+Environment.NewLine)
+    let showInitialMessageNetCore scroll =
+        if Session.SessionsProperties.fsiUseNetCore then
+            writeText scroll ((VFSIstrings.SR.sessionInitialMessageNetCore()))
 
     // Write message on a session termination. Should be called on Gui thread.
     let recordTermination () = 
@@ -233,12 +235,16 @@ type internal FsiToolWindow() as this =
                 System.Threading.SendOrPostCallback(
                     fun _ -> 
                         writeTextAndScroll ((VFSIstrings.SR.sessionTerminationDetected())+Environment.NewLine)
-                        showInitialMessage(true)
+                        showInitialMessageNetCore true
             ), null)
             
     do  sessions.Exited.Add(fun _ -> recordTermination())
 
-    do  showInitialMessage(false)
+    // For .NET Core the session doesn't start automatically.  Rather it may optionally be started by an Alt-Enter from a script,
+    // or else by pressing Enter in the REPL window.
+    do  showInitialMessageNetCore false
+        if not Session.SessionsProperties.fsiUseNetCore then 
+            sessions.Restart(null)
 
     let clearUndoStack (textLines:IVsTextLines) = // Clear the UNDO stack.
         let undoManager = textLines.GetUndoManager() |> throwOnFailure1
@@ -545,7 +551,7 @@ type internal FsiToolWindow() as this =
 
     let onQuitProcess (sender:obj) (args:EventArgs) =
         sessions.Kill()
-        showInitialMessage(true)
+        showInitialMessageNetCore(true)
 
     let sendTextToFSI text = 
         try
