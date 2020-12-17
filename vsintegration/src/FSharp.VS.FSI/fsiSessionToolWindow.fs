@@ -36,12 +36,12 @@ module internal Locals =
     let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\15.0"
     let settingsRegistrySubKey = @"General"
     let debugPromptRegistryValue = "FSharpHideScriptDebugWarning"
+    // Prompts come through as "SERVER-PROMPT>\n" (when in "server mode").
+    // In fsi.exe, the newline is needed to get the output send through to VS.
+    // Here the reverse mapping is applied.
+    let prompt = "SERVER-PROMPT>"
 
     let fixServerPrompt (str:string) =
-        // Prompts come through as "SERVER-PROMPT>\n" (when in "server mode").
-        // In fsi.exe, the newline is needed to get the output send through to VS.
-        // Here the reverse mapping is applied.
-        let prompt = "SERVER-PROMPT>" in
         (* Replace 'prompt' by ">" throughout string, add newline, unless ending in prompt *)
         let str = if str.EndsWith(prompt) then str + " " else str + Environment.NewLine
         let str = str.Replace(prompt,">")
@@ -226,7 +226,7 @@ type internal FsiToolWindow() as this =
                                               List.iter writeKeyChunk keyChunks)
     let showInitialMessageNetCore scroll =
         if Session.SessionsProperties.fsiUseNetCore then
-            writeText scroll ((VFSIstrings.SR.sessionInitialMessageNetCore()))
+            writeText scroll ((VFSIstrings.SR.sessionInitialMessageNetCore()+Environment.NewLine+prompt))
 
     // Write message on a session termination. Should be called on Gui thread.
     let recordTermination () = 
@@ -359,21 +359,21 @@ type internal FsiToolWindow() as this =
             command.Enabled <- enabled
             command.Supported  <- enabled
 
-    let visibleWhenInterruptSupported (sender:obj) (_:EventArgs) =
+    let supportWhenInterruptSupported (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
             let enabled = sessions.Alive && sessions.SupportsInterrupt
             command.Supported <- enabled
             command.Enabled <- enabled
-            command.Visible <- enabled
+            //command.Visible <- enabled
 
-    let visibleWhenSessionAlive (sender:obj) (_:EventArgs) =
+    let supportWhenSessionAlive (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
             let enabled = sessions.Alive
             command.Supported  <- enabled
             command.Enabled  <- enabled
-            command.Visible  <- enabled
+            //command.Visible  <- enabled
 
     // NOTE: On* are command handlers.
 
@@ -723,11 +723,11 @@ type internal FsiToolWindow() as this =
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.Cut)                 onCutDoCopy    (Some supportWhenSelectionIntersectsWithReadonlyOrNoSelection)
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.ClearPane)           onClearPane     None
             addCommand guidVSStd2KCmdID (int32 VSStd2KCmdID.SHOWCONTEXTMENU)     showContextMenu None
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     (Some visibleWhenInterruptSupported)
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   (onRestart null)  (Some visibleWhenSessionAlive)
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  (Some visibleWhenSessionAlive)
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     (Some supportWhenInterruptSupported)
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   (onRestart null)  (Some supportWhenSessionAlive)
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  (Some supportWhenSessionAlive)
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  (Some visibleWhenDebugAttachedFSIProcess)
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDQuitProcess         onQuitProcess   (Some visibleWhenSessionAlive)
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDQuitProcess         onQuitProcess   (Some supportWhenSessionAlive)
             
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSendSelection   None
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            onMLSendLine        None

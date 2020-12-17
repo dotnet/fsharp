@@ -22,9 +22,9 @@
         <target state="translated">未能加载 F# 语言服务</target>
         <note />
       </trans-unit>
-      <trans-unit id="sessionInitialMessage">
-        <source>Welcome to F# Interactive. To execute code, either\n  1. 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use settings associated with that script.\n  2. Press 'Enter' to start an F# Interactive process not associated to any script.</source>
-        <target state="new">Welcome to F# Interactive. To execute code, either\n  1. 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use settings associated with that script.\n  2. Press 'Enter' to start an F# Interactive process not associated to any script.</target>
+      <trans-unit id="sessionInitialMessageNetCore">
+        <source>Welcome to F# Interactive for .NET Core in Visual Studio. To execute code, either\n  1. Use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use any global.json settings associated with that script.\n  2. Press 'Enter' to start. The F# Interactive process will use default settings.</source>
+        <target state="new">Welcome to F# Interactive for .NET Core in Visual Studio. To execute code, either\n  1. Use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. The F# Interactive process will\n     use any global.json settings associated with that script.\n  2. Press 'Enter' to start. The F# Interactive process will use default settings.</target>
         <note />
       </trans-unit>
       <trans-unit id="sessionTerminationDetected">

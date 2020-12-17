@@ -448,11 +448,11 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
-            reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
-            isInteractive=false, isInvalidationSupported=false, 
-            defaultCopyFSharpCore=defaultCopyFSharpCore, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+       TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
+          reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
+          isInteractive=false, isInvalidationSupported=false, 
+          defaultCopyFSharpCore=defaultCopyFSharpCore, 
+          tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On

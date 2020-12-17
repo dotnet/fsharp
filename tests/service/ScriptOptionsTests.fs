@@ -32,7 +32,7 @@ let ``can generate options for different frameworks regardless of execution envi
         |> Async.RunSynchronously
     match errors with
     | [] -> ()
-    | errors -> failwithf "Error while parsing script with assumeNetFx:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
+    | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeNetFx useSdk flags errors
 
 [<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
 [<TestCase(false, true, [| "--targetprofile:netcore" |])>]
@@ -61,7 +61,7 @@ let ``sdk dir with dodgy global.json gives error``() =
     let tempFile = Path.GetTempFileName() + ".fsx"
     let tempPath = Path.GetDirectoryName(tempFile)
     let globalJsonPath = Path.Combine(tempPath, "global.json")
-    File.WriteAllText(Path.Combine(tempPath, "global.json"), """{ "sdk": { "version": "666.666.666" } }""")
+    File.WriteAllText(globalJsonPath, """{ "sdk": { "version": "666.666.666" } }""")
     let (options, errors) =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = false, useSdkRefs = true, otherFlags = [| |])
         |> Async.RunSynchronously
