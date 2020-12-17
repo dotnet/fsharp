@@ -62,6 +62,11 @@
         <target state="translated">Fazer com que a declaração seja 'mutable'</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make '{0}' recursive</source>
+        <target state="new">Make '{0}' recursive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">Prefixo '{0}' sem sublinhado</target>

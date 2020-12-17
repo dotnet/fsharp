@@ -62,6 +62,11 @@
         <target state="translated">선언을 '변경 가능'으로 지정</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make '{0}' recursive</source>
+        <target state="new">Make '{0}' recursive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">밑줄이 있는 '{0}' 접두사</target>
