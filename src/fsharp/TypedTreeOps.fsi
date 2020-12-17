@@ -960,6 +960,15 @@ module PrettyTypes =
 
     val PrettifyInstAndCurriedSig : TcGlobals -> TyparInst * TTypes * CurriedArgInfos * TType -> (TyparInst * TTypes * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 
+/// Describes how generic type parameters in a type will be formatted during printing
+type GenericParameterStyle =
+    /// Use the IsPrefixDisplay member of the TyCon to determine the style
+    | Implicit
+    /// Force the prefix style: List<int>
+    | Prefix
+    /// Force the suffix style: int List
+    | Suffix
+
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames : bool
@@ -986,7 +995,8 @@ type DisplayEnv =
       printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout:(Val -> layout option) }
+      generatedValueLayout: (Val -> layout option)
+      genericParameterStyle: GenericParameterStyle }
 
     member SetOpenPaths: string list list -> DisplayEnv
 
@@ -997,6 +1007,8 @@ type DisplayEnv =
     member AddOpenPath : string list  -> DisplayEnv
 
     member AddOpenModuleOrNamespace : ModuleOrNamespaceRef   -> DisplayEnv
+
+    member UseGenericParameterStyle : GenericParameterStyle -> DisplayEnv
 
 val tagEntityRefName: xref: EntityRef -> name: string -> StructuredFormat.TaggedText
 

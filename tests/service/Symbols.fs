@@ -192,3 +192,65 @@ type E = Ns1.Ns2.T
                 |> should equal expectedPrintedType
 
             | _ -> failwithf "Couldn't get entity: %s" symbolName)
+
+    [<Test>]
+    let ``FSharpType.Format can use prefix representations`` () =
+            let _, checkResults = getParseAndCheckResults """
+type 't folks =
+| Nil
+| Cons of 't * 't folks
+
+let tester: int folks = Cons(1, Nil)
+"""
+            let prefixForm = "folks<int>"
+            let entity = "tester"
+            let symbolUse = findSymbolUseByName entity checkResults
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as v ->
+                    v.FullType.Format (symbolUse.DisplayContext.WithPrefixGenericParameters())
+                    |> should equal prefixForm
+            | _ -> failwithf "Couldn't get member: %s" entity
+
+    [<Test>]
+    let ``FSharpType.Format can use suffix representations`` () =
+            let _, checkResults = getParseAndCheckResults """
+type Folks<'t> =
+| Nil
+| Cons of 't * Folks<'t>
+
+let tester: Folks<int> = Cons(1, Nil)
+"""
+            let suffixForm = "int Folks"
+            let entity = "tester"
+            let symbolUse = findSymbolUseByName entity checkResults
+            match symbolUse.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as v ->
+                    v.FullType.Format (symbolUse.DisplayContext.WithSuffixGenericParameters())
+                    |> should equal suffixForm
+            | _ -> failwithf "Couldn't get member: %s" entity
+
+    [<Test>]
+    let ``FSharpType.Format defaults to derived suffix representations`` () =
+            let _, checkResults = getParseAndCheckResults """
+type Folks<'t> =
+| Nil
+| Cons of 't * Folks<'t>
+
+type 't Group = 't list
+
+let tester: Folks<int> = Cons(1, Nil)
+
+let tester2: int Group = []
+"""
+            let cases =
+                ["tester", "Folks<int>"
+                 "tester2", "int Group"]
+            cases
+            |> List.iter (fun (entityName, expectedTypeFormat) ->
+                let symbolUse = findSymbolUseByName entityName checkResults
+                match symbolUse.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as v ->
+                        v.FullType.Format (symbolUse.DisplayContext)
+                        |> should equal expectedTypeFormat
+                | _ -> failwithf "Couldn't get member: %s" entityName
+            )
