@@ -130,7 +130,9 @@ let catchAll trigger x =
 
 let determineFsiPath () =    
     if SessionsProperties.fsiUseNetCore then 
-        let exe = @"c:\Program Files\dotnet\dotnet.exe"
+        let pf = Environment.GetEnvironmentVariable("ProgramW6432")
+        let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
+        let exe = Path.Combine(pf,"dotnet","dotnet.exe") 
         let arg = "fsi"
         if not (File.Exists exe) then
             raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe exe))
@@ -213,7 +215,7 @@ let readLinesAsync (reader: StreamReader) trigger =
         }
     Async.StartImmediate (read 0)
 
-let fsiStartInfo channelName =
+let fsiStartInfo channelName sourceFile =
     let procInfo = new ProcessStartInfo()
     let fsiPath, fsiFirstArgs, fsiSupportsServer, fsiSupportsShadowcopy  = determineFsiPath () 
 
@@ -232,6 +234,7 @@ let fsiStartInfo channelName =
         |> addStringOption true "fsi-server-output-codepage" outCP
         |> addStringOption true "fsi-server-input-codepage" inCP
         |> addStringOption true "fsi-server-lcid" System.Threading.Thread.CurrentThread.CurrentUICulture.LCID
+        //|> addStringOption true "fsi-initial-file" sourceFile
         |> addStringOption true "fsi-server" channelName
         |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
         |> addBoolOption fsiSupportsShadowcopy "shadowcopyreferences" SessionsProperties.fsiShadowCopy
@@ -250,17 +253,19 @@ let fsiStartInfo channelName =
     procInfo.StandardOutputEncoding <- Encoding.UTF8
     procInfo.StandardErrorEncoding <- Encoding.UTF8
     
-    // TODO - use the path of the currently open document if available
-    let tmpPath = Path.GetTempPath()
-    if Directory.Exists(tmpPath) then
-        procInfo.WorkingDirectory <- tmpPath
+    let initialPath = 
+        match sourceFile with 
+        | path when path <> null && Directory.Exists(Path.GetDirectoryName(path)) -> Path.GetDirectoryName(path)
+        | _ -> Path.GetTempPath()
+    if Directory.Exists(initialPath) then
+        procInfo.WorkingDirectory <- initialPath
     procInfo, fsiSupportsServer
 
 
 let nonNull = function null -> false | (s:string) -> true
 
 /// Represents an active F# Interactive process to which Visual Studio is connected via stdin/stdout/stderr and a remoting channel
-type FsiSession() = 
+type FsiSession(sourceFile: string) = 
     let randomSalt = System.Random()
     let channelName = 
         let pid  = System.Diagnostics.Process.GetCurrentProcess().Id
@@ -268,7 +273,7 @@ type FsiSession() =
         let salt = randomSalt.Next()
         sprintf "FSIChannel_%d_%d_%d" pid tick salt
 
-    let procInfo, fsiSupportsServer = fsiStartInfo channelName
+    let procInfo, fsiSupportsServer = fsiStartInfo channelName sourceFile
     let cmdProcess = new Process(StartInfo=procInfo)
     let fsiOutput = Event<_>()
     let fsiError = Event<_>()
@@ -339,6 +344,8 @@ type FsiSession() =
 
     member x.Alive       = not cmdProcess.HasExited
 
+    member x.SupportsInterrupt = not cmdProcess.HasExited && clientConnection.IsSome // clientConnection not on .NET Core
+
     member x.ProcessID   = cmdProcess.Id
 
     member x.ProcessArgs = procInfo.Arguments
@@ -375,10 +382,10 @@ type FsiSessions() =
           // clearing sessionR before kill() means session.Exited is ignored below
           session.Kill())
      
-    let restart() =
+    let restart(sourceFile) =
         kill()
         try 
-            let session = FsiSession()
+            let session = FsiSession(sourceFile)
             sessionR <- Some session          
             // All response callbacks are guarded by checks that "session" is still THE ACTIVE session.
             session.Output.Add(fun s -> if isCurrentSession session then fsiOut.Trigger s)
@@ -387,6 +394,9 @@ type FsiSessions() =
         with
             SessionError text -> fsiError.Trigger text
    
+    let ensure(sourceFile) =
+        if sessionR.IsNone then restart(sourceFile)
+
     member x.Interrupt()    = 
         sessionR |> Option.forall (fun session -> session.Interrupt())
 
@@ -400,6 +410,9 @@ type FsiSessions() =
     member x.Alive          = 
         sessionR |> Option.exists (fun session -> session.Alive)
 
+    member x.SupportsInterrupt          = 
+        sessionR |> Option.exists (fun session -> session.SupportsInterrupt)
+
     member x.ProcessID      = 
         match sessionR with
         | None -> -1 (* -1 assumed to never be a valid process ID *)
@@ -411,5 +424,9 @@ type FsiSessions() =
         | Some session -> session.ProcessArgs
 
     member x.Kill()         = kill()
-    member x.Restart()      = restart()
+    
+    member x.Ensure(sourceFile) = ensure(sourceFile)
+
+    member x.Restart(sourceFile) = restart(sourceFile)
+    
     member x.Exited         = fsiExited.Publish

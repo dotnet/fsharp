@@ -1308,12 +1308,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
                     | _ -> None
 
-                let useDotNetFramework =
+                let assumeDotNetFramework =
                     match loadClosureOpt with 
                     | None -> None
                     | Some loadClosure -> Some loadClosure.UseDotNetFramework
 
-                let fxResolver = FxResolver(useDotNetFramework, projectDirectory, range0)
+                let fxResolver = FxResolver(assumeDotNetFramework, projectDirectory, range0)
 
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 

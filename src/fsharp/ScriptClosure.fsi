@@ -79,7 +79,7 @@ type LoadClosure =
         useSdkRefs: bool * 
         lexResourceManager: Lexhelp.LexResourceManager * 
         applyCompilerOptions: (TcConfigBuilder -> unit) * 
-        useDotNetFramework: bool * 
+        assumeDotNetFramework: bool * 
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
         reduceMemoryUsage: ReduceMemoryFlag *
         dependencyProvider: DependencyProvider

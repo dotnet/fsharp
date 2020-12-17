@@ -23,38 +23,38 @@ let pi = Math.PI
 [<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
 [<TestCase(false, true, [| "--targetprofile:netcore" |])>]
 [<Test>]
-let ``can generate options for different frameworks regardless of execution environment``(useDotNetFramework, useSdk, flags) =
+let ``can generate options for different frameworks regardless of execution environment``(assumeDotNetFramework, useSdk, flags) =
     let path = Path.GetTempPath()
     let file = Path.GetTempFileName()
     let tempFile = Path.Combine(path, file)
     let (_, errors) =
-        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, useDotNetFramework = useDotNetFramework, useSdkRefs = useSdk, otherFlags = flags)
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeDotNetFramework, useSdkRefs = useSdk, otherFlags = flags)
         |> Async.RunSynchronously
     match errors with
     | [] -> ()
-    | errors -> failwithf "Error while parsing script with useDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" useDotNetFramework useSdk flags errors
+    | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeDotNetFramework useSdk flags errors
 
 [<TestCase(true, false, [| "--targetprofile:mscorlib" |])>]
 [<TestCase(false, true, [| "--targetprofile:netcore" |])>]
 [<Test>]
-let ``all default assembly references are system assemblies``(useDotNetFramework, useSdk, flags) =
+let ``all default assembly references are system assemblies``(assumeDotNetFramework, useSdk, flags) =
     let tempFile = Path.GetTempFileName() + ".fsx"
     let (options, errors) =
-        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, useDotNetFramework = useDotNetFramework, useSdkRefs = useSdk, otherFlags = flags)
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeDotNetFramework, useSdkRefs = useSdk, otherFlags = flags)
         |> Async.RunSynchronously
     match errors with
     | [] -> ()
-    | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" useDotNetFramework useSdk flags errors
+    | errors -> failwithf "Error while parsing script with assumeDotNetFramework:%b, useSdkRefs:%b, and otherFlags:%A:\n%A" assumeDotNetFramework useSdk flags errors
     for r in options.OtherOptions do 
         if r.StartsWith("-r:") then 
             let ref = Path.GetFullPath(r.[3..])
             let baseName = Path.GetFileNameWithoutExtension(ref)
             let projectDir = System.Environment.CurrentDirectory
-            if not (FSharp.Compiler.FxResolver(Some useDotNetFramework, projectDir, range0).GetSystemAssemblies().Contains(baseName)) then
+            if not (FSharp.Compiler.FxResolver(Some assumeDotNetFramework, projectDir, range0).GetSystemAssemblies().Contains(baseName)) then
                 printfn "Failing, printing options from GetProjectOptionsFromScript..."
                 for opt in options.OtherOptions do
                     printfn "option: %s" opt
-                failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (useDotNetFramework, useSdk, flags) 
+                failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeDotNetFramework, useSdk, flags) 
 
 [<Test>]
 let ``sdk dir with dodgy global.json gives error``() =
@@ -63,7 +63,7 @@ let ``sdk dir with dodgy global.json gives error``() =
     let globalJsonPath = Path.Combine(tempPath, "global.json")
     File.WriteAllText(Path.Combine(tempPath, "global.json"), """{ "sdk": { "version": "666.666.666" } }""")
     let (options, errors) =
-        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, useDotNetFramework = false, useSdkRefs = true, otherFlags = [| |])
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = false, useSdkRefs = true, otherFlags = [| |])
         |> Async.RunSynchronously
     File.Delete(globalJsonPath)
     match errors with

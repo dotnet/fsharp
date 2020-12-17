@@ -1178,7 +1178,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member tcConfig.GenerateOptimizationData = 
         tcConfig.GenerateSignatureData
 
-    member tcConfig.useDotNetFramework = 
+    member tcConfig.assumeDotNetFramework = 
         tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig, 

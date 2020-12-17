@@ -125,7 +125,7 @@ module ScriptPreprocessClosure =
             useFsiAuxLib, 
             basicReferences,
             applyCommandLineArgs, 
-            useDotNetFramework: bool,
+            assumeDotNetFramework: bool,
             useSdkRefs,
             tryGetMetadataSnapshot,
             reduceMemoryUsage) =  
@@ -134,7 +134,7 @@ module ScriptPreprocessClosure =
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
-        let fxResolver = FxResolver(Some useDotNetFramework, projectDir, rangeN scriptFileName 0)
+        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeN scriptFileName 0)
 
         let tcConfigB = 
             TcConfigBuilder.CreateNew
@@ -144,19 +144,19 @@ module ScriptPreprocessClosure =
 
         applyCommandLineArgs tcConfigB
 
-        let useDotNetFramework =
+        let assumeDotNetFramework =
 
             match basicReferences with 
             | None ->
-                let references, useDotNetFramework = fxResolver.GetDefaultReferences (useFsiAuxLib, useDotNetFramework, useSdkRefs)
+                let references, assumeDotNetFramework = fxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework, useSdkRefs)
                 // Add script references
                 for reference in references do
                    tcConfigB.AddReferencedAssemblyByPath(range0, reference)
-                useDotNetFramework 
+                assumeDotNetFramework 
             | Some rs ->
                 for m, reference in rs do
                     tcConfigB.AddReferencedAssemblyByPath(m, reference)
-                useDotNetFramework
+                assumeDotNetFramework
 
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
@@ -169,7 +169,7 @@ module ScriptPreprocessClosure =
         // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
         tcConfigB.useSdkRefs <- useSdkRefs
-        tcConfigB.primaryAssembly <- if useDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime
+        tcConfigB.primaryAssembly <- if assumeDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime
 
         TcConfig.Create(tcConfigB, validate=true)
 
@@ -414,28 +414,28 @@ module ScriptPreprocessClosure =
             scriptFileName, sourceText: ISourceText, codeContext, 
             useSimpleResolution, useFsiAuxLib, useSdkRefs,
             lexResourceManager: Lexhelp.LexResourceManager, 
-            applyCommandLineArgs, useDotNetFramework,
+            applyCommandLineArgs, assumeDotNetFramework,
             tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider) =
 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
         // first, then #I and other directives are processed.
-        let references0, useDotNetFramework = 
+        let references0, assumeDotNetFramework = 
             let tcConfig = 
                 CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, 
                     scriptFileName, codeContext, useSimpleResolution, 
-                    useFsiAuxLib, None, applyCommandLineArgs, useDotNetFramework, 
+                    useFsiAuxLib, None, applyCommandLineArgs, assumeDotNetFramework, 
                     useSdkRefs, tryGetMetadataSnapshot, reduceMemoryUsage)
 
             let resolutions0, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctok, tcConfig)
             let references0 = resolutions0 |> List.map (fun r->r.originalReference.Range, r.resolvedPath) |> Seq.distinct |> List.ofSeq
-            references0, tcConfig.useDotNetFramework
+            references0, tcConfig.assumeDotNetFramework
 
         let tcConfig = 
             CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, scriptFileName, 
                  codeContext, useSimpleResolution, useFsiAuxLib, Some references0, 
-                 applyCommandLineArgs, useDotNetFramework, useSdkRefs,
+                 applyCommandLineArgs, assumeDotNetFramework, useSdkRefs,
                  tryGetMetadataSnapshot, reduceMemoryUsage)
 
         let closureSources = [ClosureSource(scriptFileName, range0, sourceText, true)]
@@ -464,14 +464,14 @@ type LoadClosure with
                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
                       filename: string, sourceText: ISourceText, implicitDefines, useSimpleResolution: bool, 
                       useFsiAuxLib, useSdkRefs, lexResourceManager: Lexhelp.LexResourceManager, 
-                      applyCompilerOptions, useDotNetFramework, tryGetMetadataSnapshot,
+                      applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot,
                       reduceMemoryUsage, dependencyProvider) = 
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText
             (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, sourceText, 
              implicitDefines, useSimpleResolution, useFsiAuxLib, useSdkRefs, lexResourceManager, 
-             applyCompilerOptions, useDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
+             applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProvider)
 
     /// Analyze a set of script files and find the closure of their references.
     static member ComputeClosureOfScriptFiles

@@ -103,7 +103,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath,
                         sourceText.ToFSharpSourceText(),
                         SessionsProperties.fsiPreview,
-                        useDotNetFramework=not SessionsProperties.fsiUseNetCore,
+                        assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
                         userOpName=userOpName)
 
                 let projectOptions =

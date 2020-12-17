@@ -23,53 +23,44 @@ open FSharp.Compiler.Range
 ///   - script compilation
 ///   - out-of-project sources editing
 ///   - default references for fsc.exe
-type internal FxResolver(useDotNetFramework: bool option, projectDir: string, m: range) =
+type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, m: range) =
 
     static let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
     static let dotnet =
         if isWindows then "dotnet.exe" else "dotnet"
 
-    static let dotnetHostPath =
-        // How to find dotnet.exe --- woe is me; probing rules make me sad.
-        // Algorithm:
-        // 1. Look for DOTNET_HOST_PATH environment variable
-        //    this is the main user programable override .. provided by user to find a specific dotnet.exe
-        // 2. Probe for are we part of an .NetSDK install
-        //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
-        //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
-        // 3. We are loaded in-process to some other application ... Eg. try .net
-        //    See if the host is dotnet.exe ... from netcoreapp3.1 on this is fairly unlikely
-        // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
-        //
+    static let getDotnetDirectory() =
+        if isRunningOnCoreClr then
+            // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
+            let candidate =
+                let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+                Path.GetFullPath(Path.Combine(assemblyLocation, "../../.."))
+
+            if Directory.Exists(candidate) then
+                Some candidate
+            else
+                None
+        elif isWindows then
+            let pf = Environment.GetEnvironmentVariable("ProgramW6432")
+            let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
+            let candidate = Path.Combine(pf,"dotnet")
+            if Directory.Exists(candidate) then
+                Some candidate
+            else None
+        else
+            None
+
+    static let getDotnetHostPath() =
         match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
         | value when not (String.IsNullOrEmpty(value)) ->
             value                           // Value set externally
         | _ ->
-            // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
-            if isRunningOnCoreClr then
-                let dotnetLocation =
-                    let dotnetApp =
-                        let platform = Environment.OSVersion.Platform
-                        if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
-                    let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
-                    Path.GetFullPath(Path.Combine(assemblyLocation, "../../..", dotnetApp))
-
-                if File.Exists(dotnetLocation) then
-                    dotnetLocation
-                else
-                    let main = Process.GetCurrentProcess().MainModule
-                    if main.ModuleName ="dotnet" then
-                        main.FileName
-                    else
-                        dotnet
-            elif isWindows then
-                let loc = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"dotnet","dotnet.exe")
-                if File.Exists(loc) then
-                    loc
-                else dotnet
-            else
-                dotnet
+            match getDotnetDirectory() with
+            | Some dotnetDir ->
+                let candidate = Path.Combine(dotnetDir, dotnet)
+                if File.Exists(candidate) then candidate else dotnet
+            | None -> dotnet
 
     static let desiredDotNetSdkVersionForDirectoryCache = ConcurrentDictionary<string, string>()
 
@@ -78,6 +69,7 @@ type internal FxResolver(useDotNetFramework: bool option, projectDir: string, m:
     let tryGetDesiredDotNetSdkVersionForDirectory() =
         try
             desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
+                let dotnetHostPath = getDotnetHostPath()
                 let psi = ProcessStartInfo(dotnetHostPath, "--version")
                 psi.RedirectStandardOutput <- true
                 psi.RedirectStandardError <- true
@@ -93,22 +85,23 @@ type internal FxResolver(useDotNetFramework: bool option, projectDir: string, m:
                     failwith "no sdk determined"
                 stdout.Trim()))
             |> Some
-        with e -> 
+        with _ -> 
             None
 
     /// Get the .NET Core SDK directory relevant to projectDir, used to infer the default target framework assemblies.
     let tryGetSdkDir() =
-        match useDotNetFramework with 
+        match assumeDotNetFramework with 
         | Some true -> None
         | _ ->
             let sdksDir = 
-                if FSharpEnvironment.isRunningOnCoreClr || not (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))  then
-                    let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
-                    Path.GetFullPath(Path.Combine(assemblyLocation, "..", "..", "..", "sdk"))
-                else
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"dotnet","sdk")
+                match getDotnetDirectory() with
+                | Some dotnetDir ->
+                    let candidate = Path.GetFullPath(Path.Combine(dotnetDir, "sdk"))
+                    if Directory.Exists(candidate) then Some candidate else None
+                | None -> None
 
-            if Directory.Exists(sdksDir) then
+            match sdksDir with 
+            | Some sdksDir ->
                 // Find the sdk version by running `dotnet --version` in the script/project location
                 let desiredSdkVer = tryGetDesiredDotNetSdkVersionForDirectory()
 
@@ -121,7 +114,7 @@ type internal FxResolver(useDotNetFramework: bool option, projectDir: string, m:
                     |> Array.tryLast
                     |> Option.map (fun di -> di.FullName)
                 sdkDir
-            else
+            | _ -> 
                 None
 
     /// Get the framework implementation directory of the currently running process
@@ -694,9 +687,9 @@ type internal FxResolver(useDotNetFramework: bool option, projectDir: string, m:
     member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
-    member _.GetDefaultReferences (useFsiAuxLib, useDotNetFramework, useSdkRefs) =
-        if useDotNetFramework then
-            getDotNetFrameworkDefaultReferences useFsiAuxLib, useDotNetFramework
+    member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework, useSdkRefs) =
+        if assumeDotNetFramework then
+            getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
         else
             if useSdkRefs then
                 // Go fetch references
@@ -728,5 +721,5 @@ type internal FxResolver(useDotNetFramework: bool option, projectDir: string, m:
                         // then default back to .NET Framework and return a flag indicating this has been done
                         getDotNetFrameworkDefaultReferences useFsiAuxLib, true
             else
-                getDotNetCoreImplementationReferences useFsiAuxLib, useDotNetFramework
+                getDotNetCoreImplementationReferences useFsiAuxLib, assumeDotNetFramework
 

@@ -222,13 +222,13 @@ type public FSharpChecker =
     /// <param name="otherFlags">Other flags for compilation.</param>
     /// <param name="useFsiAuxLib">Add a default reference to the FSharp.Compiler.Interactive.Settings library.</param>
     /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
-    /// <param name="useDotNetFramework">Indicates scripts should be assumed to be .NET Framework scripts.</param>
+    /// <param name="assumeDotNetFramework">Indicates scripts should be assumed to be .NET Framework scripts.</param>
     /// <param name="extraProjectInfo">An extra data item added to the returned FSharpProjectOptions.</param>
     /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member GetProjectOptionsFromScript:
         filename: string * source: ISourceText * ?previewEnabled:bool * ?loadedTimeStamp: DateTime *
-        ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?useDotNetFramework: bool *
+        ?otherFlags: string[] * ?useFsiAuxLib: bool * ?useSdkRefs: bool * ?assumeDotNetFramework: bool *
         ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string
             -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
@@ -491,7 +491,7 @@ module public CompilerEnvironment =
 
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
-    val DefaultReferencesForOrphanSources: useDotNetFramework: bool -> string list
+    val DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
 
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list

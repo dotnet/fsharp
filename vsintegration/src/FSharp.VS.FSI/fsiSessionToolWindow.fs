@@ -229,9 +229,11 @@ type internal FsiToolWindow() as this =
             ), null)
             
     do  sessions.Exited.Add(fun _ -> recordTermination())
-    
-    // finally, start the session
-    do  sessions.Restart()
+
+    let showInitialMessage() =
+        writeTextAndScroll ((VFSIstrings.SR.sessionInitialMessage())+Environment.NewLine)
+
+    do  showInitialMessage()
 
     let clearUndoStack (textLines:IVsTextLines) = // Clear the UNDO stack.
         let undoManager = textLines.GetUndoManager() |> throwOnFailure1
@@ -288,19 +290,15 @@ type internal FsiToolWindow() as this =
                 strHandle.Free()
         )
 
-    let executeTextNoHistory (text:string) =
+    let executeTextNoHistory sourceFile (text:string) =
+        sessions.Ensure(sourceFile)
         textStream.DirectWriteLine()
         sessions.SendInput(text)
         setCursorAtEndOfBuffer()
         
-    let executeText (text:string) =
-        textStream.DirectWriteLine()
-        history.Add(text)
-        sessions.SendInput(text)
-        setCursorAtEndOfBuffer()
-
     let executeUserInput() = 
         if isCurrentPositionInInputArea() then
+            sessions.Ensure(null)
             let text = getInputAreaText()
             textStream.ExtendReadOnlyMarker()
             textStream.DirectWriteLine()
@@ -342,6 +340,16 @@ type internal FsiToolWindow() as this =
         let command = sender :?> MenuCommand
         if command <> null then
             command.Supported  <- isSelectionIntersectsWithReadonly() || not (haveTextViewSelection())
+
+    let supportWhenInterruptSupported (sender:obj) (_:EventArgs) =
+        let command = sender :?> MenuCommand
+        if command <> null then
+            command.Supported  <- sessions.Alive && sessions.SupportsInterrupt
+
+    let supportWhenSessionAlive (sender:obj) (_:EventArgs) =
+        let command = sender :?> MenuCommand
+        if command <> null then
+            command.Supported  <- sessions.Alive
 
     // NOTE: On* are command handlers.
 
@@ -400,7 +408,7 @@ type internal FsiToolWindow() as this =
     let onInterrupt (sender:obj) (args:EventArgs) =
         sessions.Interrupt() |> ignore
   
-    let onRestart (sender:obj) (args:EventArgs) =
+    let onRestart (sourceFileName: string) (sender:obj) (args:EventArgs) =
         sessions.Kill() // When Kill() returns there should be no more output/events from that session
         flushResponseBuffer()  // flush output and errors from the killed session that have been buffered, but have not yet come through.
         lock textLines (fun () ->        
@@ -411,13 +419,13 @@ type internal FsiToolWindow() as this =
             textLines.ReplaceLines(0, 0, lastLine, lastColumn, IntPtr.Zero, 0, null) |> throwOnFailure0
         )
         clearUndoStack textLines // The reset clear should not be undoable.
-        sessions.Restart()
+        sessions.Restart(sourceFileName)
 
     /// Handle RETURN, unless Intelisense completion is in progress.
     let onReturn (sender:obj) (e:EventArgs) =    
         lock textLines (fun () ->
             if not sessions.Alive then
-                sessions.Restart()
+                sessions.Restart(null)
             else
                 if isCurrentPositionInInputArea() then                                            
                     executeUserInput()
@@ -512,15 +520,19 @@ type internal FsiToolWindow() as this =
         detachDebugger()
         showNoActivate()
 
+    let onQuitProcess (sender:obj) (args:EventArgs) =
+        sessions.Kill()
+        showInitialMessage()
+
     let sendTextToFSI text = 
         try
             showNoActivate()
             let directiveC  = sprintf "# 1 \"stdin\""    (* stdin line number reset code *)                
             let text = "\n" + text + "\n" + directiveC + "\n;;\n"
-            executeTextNoHistory text
+            executeTextNoHistory null text
         with _ -> ()
 
-    let executeInteraction dbgBreak dir filename topLine text =
+    let executeInteraction dbgBreak dir (filename: string) topLine text =
         // Preserving previous functionality, including the #directives...
         let interaction =
             "\n"
@@ -531,7 +543,7 @@ type internal FsiToolWindow() as this =
           + "# 1 \"stdin\"" + "\n" (* stdin line number reset code *)
           + ";;" + "\n"
 
-        executeTextNoHistory interaction
+        executeTextNoHistory filename interaction
 
     let sendSelectionToFSI action =
         let dbgBreak,selectLine = 
@@ -682,10 +694,11 @@ type internal FsiToolWindow() as this =
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.Cut)                 onCutDoCopy    (Some supportWhenSelectionIntersectsWithReadonlyOrNoSelection)
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.ClearPane)           onClearPane     None
             addCommand guidVSStd2KCmdID (int32 VSStd2KCmdID.SHOWCONTEXTMENU)     showContextMenu None
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     None
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   onRestart       None
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  None
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     (Some supportWhenInterruptSupported)
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   (onRestart null)  (Some supportWhenSessionAlive)
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  (Some supportWhenSessionAlive)
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDQuitProcess         onQuitProcess  None
             
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSendSelection   None
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            onMLSendLine        None
@@ -718,6 +731,10 @@ type internal FsiToolWindow() as this =
 
         | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDDetachDebugger ->
             if getDebugAttachedFSIProcess () |> Option.isSome then Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+            else Some(OLECMDF.OLECMDF_INVISIBLE)
+
+        | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDQuitProcess  ->
+            if sessions.Alive  then Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
             else Some(OLECMDF.OLECMDF_INVISIBLE)
 
         | _ -> None

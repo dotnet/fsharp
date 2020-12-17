@@ -862,7 +862,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         loadedTimeStamp, otherFlags,
         useFsiAuxLib: bool,
         useSdkRefs: bool,
-        useDotNetFramework: bool,
+        assumeDotNetFramework: bool,
         extraProjectInfo: obj option,
         optionsStamp: int64 option,
         userOpName) = 
@@ -894,7 +894,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
                     CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, new Lexhelp.LexResourceManager(), 
-                    applyCompilerOptions, useDotNetFramework, 
+                    applyCompilerOptions, assumeDotNetFramework, 
                     tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
 
             let otherFlags = 
@@ -1296,15 +1296,15 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
-    member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?useDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
+    member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let useFsiAuxLib = defaultArg useFsiAuxLib true
         let useSdkRefs =  defaultArg useSdkRefs true
         let previewEnabled = defaultArg previewEnabled false
         // In the absence of an explicit argument then for compilation and analysis the default depends on the toolchain the tooling is are running on.
-        // Visual Studio always gives the useDotNetFramework flag explicitly
-        let useDotNetFramework = defaultArg useDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
-        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, useDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
+        // Visual Studio always gives the assumeDotNetFramework flag explicitly
+        let assumeDotNetFramework = defaultArg assumeDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
+        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, assumeDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
 
     member __.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
@@ -1410,10 +1410,10 @@ type CompilerEnvironment =
 module CompilerEnvironment =
 
     // Legacy entry point
-    let DefaultReferencesForOrphanSources useDotNetFramework =
+    let DefaultReferencesForOrphanSources assumeDotNetFramework =
         let currentDirectory = Directory.GetCurrentDirectory()
-        let fxResolver = FxResolver(Some useDotNetFramework, currentDirectory, range0)
-        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, useDotNetFramework=useDotNetFramework, useSdkRefs=false)
+        let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, range0)
+        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, assumeDotNetFramework=assumeDotNetFramework, useSdkRefs=true)
         references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.

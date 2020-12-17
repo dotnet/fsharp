@@ -22,6 +22,11 @@
         <target state="translated">No se pudo cargar el servicio del lenguaje F#.</target>
         <note />
       </trans-unit>
+      <trans-unit id="sessionInitialMessage">
+        <source>Welcome to F# Interactive. To execute code in F# Interactive, use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. Or press Enter to start an F# Interactive session not associated to any script.</source>
+        <target state="new">Welcome to F# Interactive. To execute code in F# Interactive, use 'Send to Interactive' (Alt-Enter or right-click) from an F# script. Or press Enter to start an F# Interactive session not associated to any script.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="sessionTerminationDetected">
         <source>Session termination detected. Press Enter to restart.</source>
         <target state="translated">Se detectó una terminación de sesión. Presione Entrar para reiniciar.</target>

@@ -2758,9 +2758,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some rr -> rr
 
     // We know the target framework up front
-    let useDotNetFramework = not FSharpEnvironment.isRunningOnCoreClr
+    let assumeDotNetFramework = not FSharpEnvironment.isRunningOnCoreClr
 
-    let fxResolver = FxResolver(Some useDotNetFramework, currentDirectory, range0)
+    let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, range0)
 
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
@@ -2842,6 +2842,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // When no source files to load, print ahead prompt here 
     do if List.isEmpty fsiOptions.SourceFiles then 
         fsiConsolePrompt.PrintAhead()       
+
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 

@@ -48,7 +48,6 @@ open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -214,7 +213,7 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     let AppendClosureInformation filename =
         if IsScript filename then 
 
-            let loadClosure = 
+            let closure = 
                 LoadClosure.ComputeClosureOfScriptFiles
                    (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, 
                     lexResourceManager, dependencyProvider)
@@ -223,22 +222,22 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
             // as the corresponding #I paths used to resolve them are local to the scripts and not added to the tcConfigB - they are
             // added to localized clones of the tcConfigB).
             let references =
-                loadClosure.References
+                closure.References
                 |> List.collect snd
                 |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
 
             // Also record the other declarations from the script.
-            loadClosure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
-            loadClosure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
-            loadClosure.AllRootFileDiagnostics |> List.iter diagnosticSink
+            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
+            closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
+            closure.AllRootFileDiagnostics |> List.iter diagnosticSink
 
             // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
-            tcConfigB.primaryAssembly <- (if loadClosure.UseDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+            tcConfigB.primaryAssembly <- (if closure.UseDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
             if tcConfigB.framework then
-                let references = loadClosure.References |> List.collect snd
+                let references = closure.References |> List.collect snd
                 references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             
         else AddIfNotPresent filename
@@ -487,8 +486,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
             exiter.Exit 1 
     
-    let useDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
-    tcConfigB.fxResolver <- FxResolver(Some useDotNetFramework, directoryBuildingFrom, range0)
+    let assumeDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
+    tcConfigB.fxResolver <- FxResolver(Some assumeDotNetFramework, directoryBuildingFrom, range0)
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
 

@@ -534,11 +534,11 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
     static member GetAllDllReferences (tcConfig: TcConfig) = [
             let primaryReference = tcConfig.PrimaryAssemblyDllReference()
 
-            let useDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
+            let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
 
             if not tcConfig.compilingFslib then 
                 yield tcConfig.CoreLibraryDllReference()
-                if useDotNetFramework then
+                if assumeDotNetFramework then
                     // When building desktop then we need these additional dependencies
                     yield AssemblyReference(rangeStartup, "System.Numerics.dll", None)
                     yield AssemblyReference(rangeStartup, "System.dll", None)
@@ -554,7 +554,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     if found then yield asm
 
             if tcConfig.framework then
-                let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib, useDotNetFramework, tcConfig.useSdkRefs)
+                let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib, assumeDotNetFramework, tcConfig.useSdkRefs)
                 for s in references do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
