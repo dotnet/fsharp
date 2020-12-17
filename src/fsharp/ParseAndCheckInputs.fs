@@ -525,21 +525,21 @@ let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaComm
     // Clone
     let tcConfigB = tcConfig.CloneToBuilder() 
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
-    let addReferenceDirective = fun () (_m, _s, _) -> ()
+    let addReference = fun () (_m, _s, _) -> ()
     let addLoadedSource = fun () (_m, _s) -> ()
     ProcessMetaCommandsFromInput
-        (addNoWarn, addReferenceDirective, addLoadedSource)
+        (addNoWarn, addReference, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
 let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource, dependencyProvider) = 
     // Clone
     let tcConfigB = tcConfig.CloneToBuilder()
-    let addNoWarn () _ = () 
-    let addReferenceDirective () (m, path, directive) = tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
+    let getWarningNumber () _ = () 
+    let addReference () (m, path, directive) = tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
     let addLoadedSource () (m,s) = tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
     ProcessMetaCommandsFromInput
-        (addNoWarn, addReferenceDirective, addLoadedSource)
+        (getWarningNumber, addReference, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 

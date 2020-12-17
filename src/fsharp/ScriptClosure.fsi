@@ -38,8 +38,8 @@ type LoadClosure =
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
       PackageReferences: (range * string list)[]
 
-      /// Whether an explicit #netfx or #netcore has been given
-      TargetFramework: TargetFrameworkForScripts
+      /// Whether we're decided to use .NET Framework analysis for this script
+      UseDotNetFramework: bool
 
       /// The list of references that were not resolved during load closure.
       UnresolvedReferences: UnresolvedAssemblyReference list

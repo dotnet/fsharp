@@ -312,7 +312,6 @@ module public Lexer =
         | WhitespaceTrivia
         | HashLine
         | HashLight
-        | HashFx
         | InactiveCode
         | LineCommentTrivia
         | StringText

@@ -205,15 +205,6 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     // Script compilation is active if the last item being compiled is a script and --noframework has not been specified
     let mutable allSources = []       
 
-    // In script compilation, we pre-infer the kind of scripts expected based on the compilation flags coming in on the command line.
-    //
-    // This has the following effect:
-    //    If --targetprofile:netcore has been specified, and a #netfx declaration exists in a script, then give a warning
-    //    If --targetprofile:mscorlib has been specified, and a #netcore declaration exists in a script, then give a warning
-    //    If --targetprofile:netstandard has been specified, and either a #netcore or #netfx declaration exists in a script, then give a warning
-    if commandLineSourceFiles |> List.exists IsScript && tcConfigB.targetFrameworkForScripts.IsNone then
-        tcConfigB.targetFrameworkForScripts <- Some (TargetFrameworkForScripts tcConfigB.primaryAssembly)
-        
     let tcConfig = TcConfig.Create(tcConfigB, validate=false) 
 
     let AddIfNotPresent(filename: string) =
@@ -223,7 +214,7 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     let AppendClosureInformation filename =
         if IsScript filename then 
 
-            let closure = 
+            let loadClosure = 
                 LoadClosure.ComputeClosureOfScriptFiles
                    (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, 
                     lexResourceManager, dependencyProvider)
@@ -232,22 +223,22 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
             // as the corresponding #I paths used to resolve them are local to the scripts and not added to the tcConfigB - they are
             // added to localized clones of the tcConfigB).
             let references =
-                closure.References
+                loadClosure.References
                 |> List.collect snd
                 |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
 
             // Also record the other declarations from the script.
-            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
-            closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
-            closure.AllRootFileDiagnostics |> List.iter diagnosticSink
+            loadClosure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
+            loadClosure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
+            loadClosure.AllRootFileDiagnostics |> List.iter diagnosticSink
 
             // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
-            tcConfigB.primaryAssembly <- closure.TargetFramework.PrimaryAssembly
+            tcConfigB.primaryAssembly <- (if loadClosure.UseDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
             if tcConfigB.framework then
-                let references = closure.References |> List.collect snd
+                let references = loadClosure.References |> List.collect snd
                 references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             
         else AddIfNotPresent filename
@@ -454,7 +445,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let fxResolver = FxResolver(None)
+    let fxResolver = FxResolver(None, directoryBuildingFrom, range0)
 
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
@@ -466,9 +457,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             implicitIncludeDir=directoryBuildingFrom, 
             isInteractive=false, isInvalidationSupported=false, 
             defaultCopyFSharpCore=defaultCopyFSharpCore, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-            // note - this may later be updated via script closure
-            targetFrameworkForScripts=None)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -499,7 +488,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             exiter.Exit 1 
     
     let useDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
-    tcConfigB.fxResolver <- FxResolver(Some useDotNetFramework)
+    tcConfigB.fxResolver <- FxResolver(Some useDotNetFramework, directoryBuildingFrom, range0)
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
 
@@ -645,7 +634,9 @@ let main1OfAst
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let fxResolver = FxResolver(None)
+    let directoryBuildingFrom = Directory.GetCurrentDirectory()
+
+    let fxResolver = FxResolver(None, directoryBuildingFrom, range0)
 
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
@@ -654,12 +645,11 @@ let main1OfAst
             fxResolver,
             defaultFSharpBinariesDir, 
             reduceMemoryUsage=reduceMemoryUsage,
-            implicitIncludeDir=Directory.GetCurrentDirectory(), 
+            implicitIncludeDir=directoryBuildingFrom, 
             isInteractive=false,
             isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-            targetFrameworkForScripts=None)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
     let primaryAssembly =
         // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:

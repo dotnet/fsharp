@@ -131,16 +131,6 @@ type PackageManagerLine =
     static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
 
-/// A target framework option specified in a script
-type TargetFrameworkForScripts =
-    | TargetFrameworkForScripts of PrimaryAssembly
-
-    /// The kind of primary assembly associated with the compilation
-    member PrimaryAssembly: PrimaryAssembly
-
-    /// Indicates if the target framework is a .NET Framework target
-    member UseDotNetFramework: bool
-
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -154,7 +144,6 @@ type TcConfigBuilder =
       mutable includes: string list
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
-      mutable targetFrameworkForScripts : TargetFrameworkForScripts option
       mutable framework: bool
       mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
@@ -295,8 +284,7 @@ type TcConfigBuilder =
         isInteractive: bool * 
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
-        targetFrameworkForScripts: TargetFrameworkForScripts option
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
@@ -342,7 +330,6 @@ type TcConfig =
     member includes: string list
     member implicitOpens: string list
     member useFsiAuxLib: bool
-    member targetFrameworkForScripts: TargetFrameworkForScripts option
     member framework: bool
     member implicitlyResolveAssemblies: bool
     /// Set if the user has explicitly turned indentation-aware syntax on/off
@@ -509,6 +496,9 @@ type TcConfig =
 
     /// Indicates if the compilation will result in an F# optimization data resource in the generated binary
     member GenerateOptimizationData: bool
+
+    /// Check if the primary assembly is mscorlib
+    member useDotNetFramework: bool
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

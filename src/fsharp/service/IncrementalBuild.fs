@@ -1308,12 +1308,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
                     | _ -> None
 
-                let preInferredUseDotNetFramework =
+                let useDotNetFramework =
                     match loadClosureOpt with 
                     | None -> None
-                    | Some loadClosure -> Some loadClosure.TargetFramework.UseDotNetFramework
+                    | Some loadClosure -> Some loadClosure.UseDotNetFramework
 
-                let fxResolver = FxResolver(preInferredUseDotNetFramework)
+                let fxResolver = FxResolver(useDotNetFramework, projectDirectory, range0)
 
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 
@@ -1325,8 +1325,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                          isInteractive=useScriptResolutionRules, 
                          isInvalidationSupported=true, 
                          defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-                         tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-                         targetFrameworkForScripts=None) 
+                         tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
 
                 tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
 
@@ -1361,8 +1360,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
                 tcConfigB.referencedDLLs <- []
-                tcConfigB.targetFrameworkForScripts <- Some loadClosure.TargetFramework
-                tcConfigB.primaryAssembly <- loadClosure.TargetFramework.PrimaryAssembly
+                tcConfigB.primaryAssembly <- (if loadClosure.UseDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
                 // Add one by one to remove duplicates
                 dllReferences |> List.iter (fun dllReference ->
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))

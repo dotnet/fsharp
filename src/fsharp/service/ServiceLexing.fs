@@ -289,7 +289,6 @@ module internal TokenClassifications =
         | END ->
             (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
-        | HASH_FX _
         | HASH_LIGHT _
         | HASH_LINE _
         | HASH_IF _
@@ -366,7 +365,6 @@ module internal LexerStateEncoding =
     let computeNextLexState token (prevLexcont: LexerContinuation) =
       match token with
       | HASH_LINE cont
-      | HASH_FX cont
       | HASH_LIGHT cont
       | HASH_IF(_, _, cont)
       | HASH_ELSE(_, _, cont)
@@ -972,7 +970,6 @@ module Lexer =
         | WhitespaceTrivia
         | HashLine
         | HashLight
-        | HashFx
         | InactiveCode
         | LineCommentTrivia
         | StringText
@@ -1182,7 +1179,6 @@ module Lexer =
             | COMMENT _ -> FSharpSyntaxTokenKind.CommentTrivia 
             | WHITESPACE _ -> FSharpSyntaxTokenKind.WhitespaceTrivia 
             | HASH_LINE _ -> FSharpSyntaxTokenKind.HashLine 
-            | HASH_FX _ -> FSharpSyntaxTokenKind.HashFx
             | HASH_LIGHT _ -> FSharpSyntaxTokenKind.HashLight 
             | INACTIVECODE _ -> FSharpSyntaxTokenKind.InactiveCode
             | LINE_COMMENT _ -> FSharpSyntaxTokenKind.LineCommentTrivia 

@@ -27,7 +27,6 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.ReferenceResolver
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 open Microsoft.DotNet.DependencyManager
@@ -35,7 +34,6 @@ open Microsoft.DotNet.DependencyManager
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
-
 #endif
 
 let (++) x s = x @ [s]
@@ -315,14 +313,6 @@ type PackageManagerLine =
     static member StripDependencyManagerKey (packageKey: string) (line: string): string =
         line.Substring(packageKey.Length + 1).Trim()
 
-/// A target framework option specified in a script
-type TargetFrameworkForScripts =
-    | TargetFrameworkForScripts of PrimaryAssembly
-
-    member fx.PrimaryAssembly =  (let (TargetFrameworkForScripts v) = fx in v)
-
-    member fx.UseDotNetFramework = (fx.PrimaryAssembly = PrimaryAssembly.Mscorlib)
-
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
@@ -336,7 +326,6 @@ type TcConfigBuilder =
       mutable includes: string list
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
-      mutable targetFrameworkForScripts: TargetFrameworkForScripts option
       mutable framework: bool
       mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
@@ -501,7 +490,6 @@ type TcConfigBuilder =
           compilingFslib = false
           useIncrementalBuilder = false
           useFsiAuxLib = false
-          targetFrameworkForScripts = None
           implicitOpens = []
           includes = []
           resolutionEnvironment = ResolutionEnvironment.EditingOrCompilation false
@@ -653,8 +641,7 @@ type TcConfigBuilder =
         isInteractive,
         isInvalidationSupported,
         defaultCopyFSharpCore,
-        tryGetMetadataSnapshot,
-        targetFrameworkForScripts) =
+        tryGetMetadataSnapshot) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
@@ -673,7 +660,6 @@ type TcConfigBuilder =
                 copyFSharpCore = defaultCopyFSharpCore
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
                 useFsiAuxLib = isInteractive
-                targetFrameworkForScripts = targetFrameworkForScripts
             }
         tcConfigBuilder
 
@@ -915,7 +901,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.includes = data.includes
     member x.implicitOpens = data.implicitOpens
     member x.useFsiAuxLib = data.useFsiAuxLib
-    member x.targetFrameworkForScripts = data.targetFrameworkForScripts
     member x.framework = data.framework
     member x.implicitlyResolveAssemblies = data.implicitlyResolveAssemblies
     member x.resolutionEnvironment = data.resolutionEnvironment
@@ -1192,6 +1177,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member tcConfig.GenerateOptimizationData = 
         tcConfig.GenerateSignatureData
+
+    member tcConfig.useDotNetFramework = 
+        tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig, 
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

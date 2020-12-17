@@ -858,11 +858,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member __.GetProjectOptionsFromScript(filename,
         sourceText,
-        previewEnabled: bool option, 
+        previewEnabled: bool, 
         loadedTimeStamp, otherFlags,
-        useFsiAuxLib: bool option,
-        useSdkRefs: bool option,
-        useDotNetFramework: bool option,
+        useFsiAuxLib: bool,
+        useSdkRefs: bool,
+        useDotNetFramework: bool,
         extraProjectInfo: obj option,
         optionsStamp: int64 option,
         userOpName) = 
@@ -871,16 +871,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
           cancellable {
             use errors = new ErrorScope()
 
-            // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
-            let useFsiAuxLib = defaultArg useFsiAuxLib true
-            let useSdkRefs =  defaultArg useSdkRefs true
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
-            let previewEnabled = defaultArg previewEnabled false
 
-            // Do we assume .NET Framework references for scripts? In the absence of either explicit argument
-            // or an explicit #targetfx declaration, then for compilation and analysis the default
-            // depends on the toolchain the tooling is are running on.
-            let useDotNetFramework = defaultArg useDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
             let extraFlags =
                 if previewEnabled then
                     [| "--langversion:preview" |]
@@ -1249,6 +1241,7 @@ type FSharpChecker(legacyReferenceResolver,
         System.GC.Collect()
         System.GC.WaitForPendingFinalizers() 
         backgroundCompiler.CompleteAllQueuedOps() // flush AsyncOp
+        FxResolver.ClearStaticCaches()
             
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
@@ -1305,6 +1298,12 @@ type FSharpChecker(legacyReferenceResolver,
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?useDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
+        let useFsiAuxLib = defaultArg useFsiAuxLib true
+        let useSdkRefs =  defaultArg useSdkRefs true
+        let previewEnabled = defaultArg previewEnabled false
+        // In the absence of an explicit argument then for compilation and analysis the default depends on the toolchain the tooling is are running on.
+        // Visual Studio always gives the useDotNetFramework flag explicitly
+        let useDotNetFramework = defaultArg useDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
         backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, useDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
 
     member __.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
@@ -1409,11 +1408,13 @@ type CompilerEnvironment =
 /// Information about the compilation environment
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CompilerEnvironment =
-    /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
-    /// are not associated with a project
+
+    // Legacy entry point
     let DefaultReferencesForOrphanSources useDotNetFramework =
-        let fxResolver = FxResolver(Some useDotNetFramework)
-        fxResolver.GetDefaultReferencesForScriptsAndOutOfProjectSources (useFsiAuxLib=false, useDotNetFramework=useDotNetFramework, useSdkRefs=false)
+        let currentDirectory = Directory.GetCurrentDirectory()
+        let fxResolver = FxResolver(Some useDotNetFramework, currentDirectory, range0)
+        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, useDotNetFramework=useDotNetFramework, useSdkRefs=false)
+        references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
     let GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =

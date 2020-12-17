@@ -11,6 +11,7 @@ open NUnit.Framework
 open System.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
+open FSharp.Compiler.Range
 
 // Add additional imports/constructs into this script text to verify that common scenarios
 // for FCS script typechecking can be supported
@@ -37,9 +38,7 @@ let ``can generate options for different frameworks regardless of execution envi
 [<TestCase(false, true, [| "--targetprofile:netcore" |])>]
 [<Test>]
 let ``all default assembly references are system assemblies``(useDotNetFramework, useSdk, flags) =
-    let path = Path.GetTempPath()
-    let file = Path.GetTempFileName()
-    let tempFile = Path.Combine(path, file)
+    let tempFile = Path.GetTempFileName() + ".fsx"
     let (options, errors) =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, useDotNetFramework = useDotNetFramework, useSdkRefs = useSdk, otherFlags = flags)
         |> Async.RunSynchronously
@@ -50,8 +49,27 @@ let ``all default assembly references are system assemblies``(useDotNetFramework
         if r.StartsWith("-r:") then 
             let ref = Path.GetFullPath(r.[3..])
             let baseName = Path.GetFileNameWithoutExtension(ref)
-            if not (FSharp.Compiler.FxResolver(Some useDotNetFramework).GetSystemAssemblies().Contains(baseName)) then
+            let projectDir = System.Environment.CurrentDirectory
+            if not (FSharp.Compiler.FxResolver(Some useDotNetFramework, projectDir, range0).GetSystemAssemblies().Contains(baseName)) then
                 printfn "Failing, printing options from GetProjectOptionsFromScript..."
                 for opt in options.OtherOptions do
                     printfn "option: %s" opt
                 failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (useDotNetFramework, useSdk, flags) 
+
+[<Test>]
+let ``sdk dir with dodgy global.json gives error``() =
+    let tempFile = Path.GetTempFileName() + ".fsx"
+    let tempPath = Path.GetDirectoryName(tempFile)
+    let globalJsonPath = Path.Combine(tempPath, "global.json")
+    File.WriteAllText(Path.Combine(tempPath, "global.json"), """{ "sdk": { "version": "666.666.666" } }""")
+    let (options, errors) =
+        checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, useDotNetFramework = false, useSdkRefs = true, otherFlags = [| |])
+        |> Async.RunSynchronously
+    File.Delete(globalJsonPath)
+    match errors with
+    | [] -> failwith "Expected error while parsing script" 
+    | errors -> 
+       for error in errors do 
+           // {C:\Users\Administrator\AppData\Local\Temp\tmp6F0F.tmp.fsx (0,1)-(0,1) The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' ensure the relevant .NET SDK is installed. The output from 'C:\Program Files\dotnet\dotnet.exe --version' in the script directory was: '        2.1.300 [C:\Program Files\dotnet\sdk]
+           Assert.AreEqual(3384, error.ErrorNumber)
+           Assert.AreEqual(tempFile, error.FileName) 

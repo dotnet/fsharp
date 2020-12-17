@@ -554,7 +554,8 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     if found then yield asm
 
             if tcConfig.framework then
-                for s in tcConfig.FxResolver.GetDefaultReferencesForScriptsAndOutOfProjectSources(tcConfig.useFsiAuxLib, useDotNetFramework, tcConfig.useSdkRefs) do
+                let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib, useDotNetFramework, tcConfig.useSdkRefs)
+                for s in references do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             yield! tcConfig.referencedDLLs

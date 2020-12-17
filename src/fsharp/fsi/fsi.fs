@@ -624,6 +624,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     let mutable fsiServerName = ""
     let mutable interact = true
     let mutable explicitArgs = []
+    let mutable writeReferencesAndExit = None
 
     let mutable inputFilesAcc   = []  
 
@@ -692,7 +693,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        PublicOptions(FSIstrings.SR.fsiAdvanced(),[]);
        PrivateOptions(
         [// Make internal fsi-server* options. Do not print in the help. They are used by VFSI. 
-         CompilerOption("fsi-server-prompt","", OptionUnit (fun () -> useServerPrompt <- true), None, None); // "FSI server prompt");
+         CompilerOption("fsi-references","", OptionString (fun s -> writeReferencesAndExit <- Some s), None, None); 
+         CompilerOption("fsi-server-prompt","", OptionUnit (fun () -> useServerPrompt <- true), None, None);
          CompilerOption("fsi-server","", OptionString (fun s -> fsiServerName <- s), None, None); // "FSI server mode on given named channel");
          CompilerOption("fsi-server-input-codepage","",OptionInt (fun n -> fsiServerInputCodePage <- Some(n)), None, None); // " Set the input codepage for the console"); 
          CompilerOption("fsi-server-output-codepage","",OptionInt (fun n -> fsiServerOutputCodePage <- Some(n)), None, None); // " Set the output codepage for the console"); 
@@ -838,6 +840,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member __.PeekAheadOnConsoleToPermitTyping = peekAheadOnConsoleToPermitTyping
     member __.SourceFiles = sourceFiles
     member __.Gui = gui
+
+    member _.WriteReferencesAndExit = writeReferencesAndExit
 
     member _.DependencyProvider = dependencyProvider
 
@@ -1492,7 +1496,8 @@ type internal FsiDynamicCompiler
                         packageManagerLines |> List.map (fun line -> directive line.Directive, line.Line)
 
                     try
-                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, tcConfigB.fxResolver.GetTfm(), tcConfigB.fxResolver.GetRid(), tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
+                        let tfm, rid = tcConfigB.fxResolver.GetTfmAndRid()
+                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, tfm, rid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
                         if result.Success then
                             for line in result.StdOut do Console.Out.WriteLine(line)
                             for line in result.StdError do Console.Error.WriteLine(line)
@@ -2753,10 +2758,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some rr -> rr
 
     // We know the target framework up front
-    let targetFramework =
-        TargetFrameworkForScripts (if FSharpEnvironment.isRunningOnCoreClr then PrimaryAssembly.System_Runtime else PrimaryAssembly.Mscorlib)
+    let useDotNetFramework = not FSharpEnvironment.isRunningOnCoreClr
 
-    let fxResolver = FxResolver(Some targetFramework.UseDotNetFramework)
+    let fxResolver = FxResolver(Some useDotNetFramework, currentDirectory, range0)
 
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
@@ -2767,9 +2771,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             isInteractive=true, 
             isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-            targetFrameworkForScripts=Some targetFramework
-         )
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
@@ -2806,6 +2808,16 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
 
+    do 
+      match fsiOptions.WriteReferencesAndExit with
+      | Some outFile -> 
+          let tcConfig = tcConfigP.Get(ctokStartup)
+          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctokStartup, tcConfig)
+          let lines = [ for r in references -> r.resolvedPath ]
+          File.WriteAllLines(outFile, lines)
+          exit 0
+      | _ -> ()
+
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 
     do
@@ -2830,7 +2842,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // When no source files to load, print ahead prompt here 
     do if List.isEmpty fsiOptions.SourceFiles then 
         fsiConsolePrompt.PrintAhead()       
-
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 

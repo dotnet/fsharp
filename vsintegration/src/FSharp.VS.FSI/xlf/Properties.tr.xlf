@@ -3,18 +3,13 @@
   <file datatype="xml" source-language="en" target-language="tr" original="../Properties.resx">
     <body>
       <trans-unit id="FSharpInteractive64Bit">
-        <source>64-bit for .NET Framework</source>
+        <source>64-bit F# Interactive</source>
         <target state="needs-review-translation">64 bit F# Etkileşimli</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
-        <source>If set to true, then run F# Interactive as a 64-bit process when using .NET Framework scripting on a 64-bit machine, otherwise, use a 32-bit process. If .NET Core scripting is enabled, F# Interactive is always a 64-bit process.</source>
+        <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
         <target state="needs-review-translation">True olarak ayarlanırsa ve geçerli makine 64 bit ise F# Etkileşimli'yi 64 bit işlem olarak çalıştırın. (Aksi takdirde F# Etkileşimli 32 bit işlemdir.)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FSharpInteractiveDotNetFramework">
-        <source>.NET Framework Options</source>
-        <target state="new">.NET Framework Options</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
@@ -43,7 +38,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractivePreviewModeDescr">
-        <source>Enable preview of in-development language features in F# Interactive script execution</source>
+        <source>Enable preview of in-development language features in F# Interactive</source>
         <target state="needs-review-translation">F# Interactive'deki geliştirme aşamasında olan dil özelliklerinin önizlemesini etkinleştir</target>
         <note />
       </trans-unit>
@@ -53,7 +48,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
-        <source>Prevents referenced assemblies from being locked by the F# Interactive process (.NET Framework only).</source>
+        <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
         <target state="needs-review-translation">Başvurulan bütünleştirilmiş kodların F# Etkileşimli işlemi tarafından kilitlenmesini engeller.</target>
         <note />
       </trans-unit>
@@ -63,7 +58,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
-        <source>Enable debugging of F# scripts (.NET Framework only, may impact script performance, requires reset of F# Interactive)</source>
+        <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
         <target state="needs-review-translation">F# betiklerinde hata ayıklamayı etkinleştir (betik performansını etkileyebilir, F# Etkileşimli'nin sıfırlanmasını gerektirir)</target>
         <note />
       </trans-unit>
@@ -72,9 +67,14 @@
         <target state="translated">Hata Ayıklama</target>
         <note />
       </trans-unit>
-      <trans-unit id="FSharpInteractiveStartup">
-        <source>Startup</source>
-        <target state="new">Startup</target>
+      <trans-unit id="FSharpInteractiveUseNetCore">
+        <source>Use .NET Core Scripting</source>
+        <target state="new">Use .NET Core Scripting</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInteractiveUseNetCoreDescr">
+        <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
+        <target state="new">Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</target>
         <note />
       </trans-unit>
     </body>

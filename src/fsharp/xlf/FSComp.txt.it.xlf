@@ -312,6 +312,11 @@
         <target state="translated">#i non è supportato dagli elementi PackageManager registrati</target>
         <note />
       </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' ensure the relevant .NET SDK is installed. The output from '{0} --version' in the script directory was: '{1}' and the exit code was '{2}'.</source>
+        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' ensure the relevant .NET SDK is installed. The output from '{0} --version' in the script directory was: '{1}' and the exit code was '{2}'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Questa funzionalità non è supportata in questa versione di F#. Per usare questa funzionalità, potrebbe essere necessario aggiungere /langversion:preview.</target>
