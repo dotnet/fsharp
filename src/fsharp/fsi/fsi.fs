@@ -620,7 +620,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     let mutable showILCode = false // show modul il code 
 #endif
     let mutable showTypes  = true  // show types after each interaction?
-    let mutable useServerPrompt = false
     let mutable fsiServerName = ""
     let mutable interact = true
     let mutable explicitArgs = []
@@ -694,7 +693,6 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        PrivateOptions(
         [// Make internal fsi-server* options. Do not print in the help. They are used by VFSI. 
          CompilerOption("fsi-server-report-references","", OptionString (fun s -> writeReferencesAndExit <- Some s), None, None); 
-         CompilerOption("fsi-server-prompt","", OptionUnit (fun () -> useServerPrompt <- true), None, None);
          CompilerOption("fsi-server","", OptionString (fun s -> fsiServerName <- s), None, None); // "FSI server mode on given named channel");
          CompilerOption("fsi-server-input-codepage","",OptionInt (fun n -> fsiServerInputCodePage <- Some(n)), None, None); // " Set the input codepage for the console"); 
          CompilerOption("fsi-server-output-codepage","",OptionInt (fun n -> fsiServerOutputCodePage <- Some(n)), None, None); // " Set the output codepage for the console"); 
@@ -831,7 +829,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member __.FsiServerInputCodePage = fsiServerInputCodePage
     member __.FsiServerOutputCodePage = fsiServerOutputCodePage
     member __.FsiLCID with get() = fsiLCID and set v = fsiLCID <- v
-    member __.UseServerPrompt = useServerPrompt
+    member __.UseServerPrompt = isInteractiveServer()
     member __.IsInteractiveServer = isInteractiveServer()
     member __.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
     member __.EnableConsoleKeyProcessing = enableConsoleKeyProcessing

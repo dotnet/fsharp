@@ -221,7 +221,6 @@ type internal FsiToolWindow() as this =
     let writeKeyChunk = function
         | StdOut,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: stdout and stderr may color differently
         | StdErr,strs -> writeTextAndScroll (String.concat Environment.NewLine strs)  // later: hence keep them split.
-
     do  responseBufferE.Add(fun keyStrings -> let keyChunks : (Response * string list) list = chunkKeyValues keyStrings
                                               List.iter writeKeyChunk keyChunks)
     let showInitialMessageNetCore scroll =
@@ -340,40 +339,18 @@ type internal FsiToolWindow() as this =
     let supportWhenAtStartOfInputArea (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand       
         if command <> null then
-            let enabled = isCurrentPositionAtStartOfInputArea()
-            command.Enabled <- enabled
-            command.Supported  <- enabled
+            command.Supported <- not source.IsCompletorActive && isCurrentPositionInInputArea()
 
     /// Support when at the start of the input area AND no-selection (e.g. to enable NoAction on BACKSPACE).
     let supportWhenAtStartOfInputAreaAndNoSelection (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
-            let enabled = isCurrentPositionAtStartOfInputArea() && not (haveTextViewSelection())
-            command.Enabled <- enabled
-            command.Supported  <- enabled
+            command.Supported  <- isCurrentPositionAtStartOfInputArea()
             
     let supportWhenSelectionIntersectsWithReadonlyOrNoSelection (sender:obj) (_:EventArgs) =
         let command = sender :?> MenuCommand
         if command <> null then
-            let enabled = isSelectionIntersectsWithReadonly() || not (haveTextViewSelection())
-            command.Enabled <- enabled
-            command.Supported  <- enabled
-
-    let supportWhenInterruptSupported (sender:obj) (_:EventArgs) =
-        let command = sender :?> MenuCommand
-        if command <> null then
-            let enabled = sessions.Alive && sessions.SupportsInterrupt
-            command.Supported <- enabled
-            command.Enabled <- enabled
-            //command.Visible <- enabled
-
-    let supportWhenSessionAlive (sender:obj) (_:EventArgs) =
-        let command = sender :?> MenuCommand
-        if command <> null then
-            let enabled = sessions.Alive
-            command.Supported  <- enabled
-            command.Enabled  <- enabled
-            //command.Visible  <- enabled
+            command.Supported  <- isSelectionIntersectsWithReadonly() || not (haveTextViewSelection())
 
     // NOTE: On* are command handlers.
 
@@ -475,11 +452,6 @@ type internal FsiToolWindow() as this =
             | Some _ -> FsiDebuggerState.AttachedToFSI, debuggedFsi
             | None -> FsiDebuggerState.AttachedNotToFSI, None
     
-    let visibleWhenDebugAttachedFSIProcess (sender:obj) (_:EventArgs) =
-        let command = sender :?> MenuCommand
-        if command <> null then
-            command.Visible  <- fst (getDebuggerState ()) = FsiDebuggerState.AttachedToFSI
-
     let getDebugAttachedFSIProcess () =
         match getDebuggerState () with
         | FsiDebuggerState.AttachedToFSI, opt -> opt
@@ -548,10 +520,6 @@ type internal FsiToolWindow() as this =
     let onDetachDebugger (sender:obj) (args:EventArgs) =
         detachDebugger()
         showNoActivate()
-
-    let onQuitProcess (sender:obj) (args:EventArgs) =
-        sessions.Kill()
-        showInitialMessageNetCore(true)
 
     let sendTextToFSI text = 
         try
@@ -723,11 +691,10 @@ type internal FsiToolWindow() as this =
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.Cut)                 onCutDoCopy    (Some supportWhenSelectionIntersectsWithReadonlyOrNoSelection)
             addCommand guidVSStd97CmdID (int32 VSStd97CmdID.ClearPane)           onClearPane     None
             addCommand guidVSStd2KCmdID (int32 VSStd2KCmdID.SHOWCONTEXTMENU)     showContextMenu None
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     (Some supportWhenInterruptSupported)
-            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   (onRestart null)  (Some supportWhenSessionAlive)
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  (Some supportWhenSessionAlive)
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  (Some visibleWhenDebugAttachedFSIProcess)
-            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDQuitProcess         onQuitProcess   (Some supportWhenSessionAlive)
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     None
+            addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   onRestart       None
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  None
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
             
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSendSelection   None
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            onMLSendLine        None
@@ -760,10 +727,6 @@ type internal FsiToolWindow() as this =
 
         | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDDetachDebugger ->
             if getDebugAttachedFSIProcess () |> Option.isSome then Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
-            else Some(OLECMDF.OLECMDF_INVISIBLE)
-
-        | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDQuitProcess  ->
-            if sessions.Alive  then Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
             else Some(OLECMDF.OLECMDF_INVISIBLE)
 
         | _ -> None
