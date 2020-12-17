@@ -19,6 +19,9 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of the name of the nearest outer binding that contains a given position.
+    member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: pos -> Option<range>
+
     /// Attempts to find the range of an attempted lambda expression or pattern, the argument range, and the expr range when writing a C#-style "lambda" (which is actually an operator application)
     member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: pos -> Option<range * range * range>
 
