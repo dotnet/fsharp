@@ -39,7 +39,7 @@ type LoadClosure =
       PackageReferences: (range * string list)[]
 
       /// Whether we're decided to use .NET Framework analysis for this script
-      UseDotNetFramework: bool
+      UseDesktopFramework: bool
 
       /// The list of references that were not resolved during load closure.
       UnresolvedReferences: UnresolvedAssemblyReference list

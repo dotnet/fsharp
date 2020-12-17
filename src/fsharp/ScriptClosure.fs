@@ -44,7 +44,7 @@ type LoadClosure =
       PackageReferences: (range * string list)[]
 
       /// Whether we're decided to use .NET Framework analysis for this script
-      UseDotNetFramework: bool
+      UseDesktopFramework: bool
 
       /// The list of references that were not resolved during load closure. These may still be extension references.
       UnresolvedReferences: UnresolvedAssemblyReference list
@@ -117,24 +117,18 @@ module ScriptPreprocessClosure =
 
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptTextTcConfig 
-           (legacyReferenceResolver,
-            defaultFSharpBinariesDir, 
-            scriptFileName: string,
-            codeContext, 
-            useSimpleResolution,
-            useFsiAuxLib, 
-            basicReferences,
-            applyCommandLineArgs, 
-            assumeDotNetFramework: bool,
-            useSdkRefs,
-            tryGetMetadataSnapshot,
-            reduceMemoryUsage) =  
+           (legacyReferenceResolver, defaultFSharpBinariesDir, 
+            filename: string, codeContext, 
+            useSimpleResolution, useFsiAuxLib, 
+            basicReferences, applyCommandLineArgs, 
+            assumeDotNetFramework, useSdkRefs,
+            tryGetMetadataSnapshot, reduceMemoryUsage) =  
 
-        let projectDir = Path.GetDirectoryName scriptFileName
+        let projectDir = Path.GetDirectoryName filename
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
-        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeN scriptFileName 0)
+        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeN filename 0)
 
         let tcConfigB = 
             TcConfigBuilder.CreateNew
@@ -196,11 +190,11 @@ module ScriptPreprocessClosure =
 
         let tcConfigB = tcConfig.CloneToBuilder() 
         let mutable nowarns = [] 
-        let addNoWarn = fun () (m, s) -> nowarns <- (s, m) :: nowarns
+        let getWarningNumber = fun () (m, s) -> nowarns <- (s, m) :: nowarns
         let addReferenceDirective = fun () (m, s, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, s, directive)
         let addLoadedSource = fun () (m, s) -> tcConfigB.AddLoadedSource(m, s, pathOfMetaCommandSource)
         try 
-            ProcessMetaCommandsFromInput (addNoWarn, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+            ProcessMetaCommandsFromInput (getWarningNumber, addReferenceDirective, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
         with ReportedError _ ->
             // Recover by using whatever did end up in the tcConfig
             ()
@@ -400,7 +394,7 @@ module ScriptPreprocessClosure =
             { SourceFiles = List.groupBy fst sourceFiles |> List.map (map2Of2 (List.map snd))
               References = List.groupBy fst references |> List.map (map2Of2 (List.map snd))
               PackageReferences = packageReferences
-              UseDotNetFramework = (tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib)
+              UseDesktopFramework = (tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib)
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
               NoWarns = List.groupBy fst globalNoWarns |> List.map (map2Of2 (List.map snd))
@@ -414,7 +408,7 @@ module ScriptPreprocessClosure =
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptText
            (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, 
-            scriptFileName, sourceText: ISourceText, codeContext, 
+            filename, sourceText, codeContext, 
             useSimpleResolution, useFsiAuxLib, useSdkRefs,
             lexResourceManager: Lexhelp.LexResourceManager, 
             applyCommandLineArgs, assumeDotNetFramework,
@@ -427,7 +421,7 @@ module ScriptPreprocessClosure =
         let references0, assumeDotNetFramework, scriptDefaultReferencesDiagnostics = 
             let tcConfig, scriptDefaultReferencesDiagnostics = 
                 CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, 
-                    scriptFileName, codeContext, useSimpleResolution, 
+                    filename, codeContext, useSimpleResolution, 
                     useFsiAuxLib, None, applyCommandLineArgs, assumeDotNetFramework, 
                     useSdkRefs, tryGetMetadataSnapshot, reduceMemoryUsage)
 
@@ -436,14 +430,14 @@ module ScriptPreprocessClosure =
             references0, tcConfig.assumeDotNetFramework, scriptDefaultReferencesDiagnostics
 
         let tcConfig, scriptDefaultReferencesDiagnostics = 
-            CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, scriptFileName, 
+            CreateScriptTextTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, 
                  codeContext, useSimpleResolution, useFsiAuxLib, Some (references0, scriptDefaultReferencesDiagnostics), 
                  applyCommandLineArgs, assumeDotNetFramework, useSdkRefs,
                  tryGetMetadataSnapshot, reduceMemoryUsage)
 
-        let closureSources = [ClosureSource(scriptFileName, range0, sourceText, true)]
-        let closureFiles, tcConfig, packageReferences = FindClosureFiles(scriptFileName, range0, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
-        GetLoadClosure(ctok, scriptFileName, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
+        let closureSources = [ClosureSource(filename, range0, sourceText, true)]
+        let closureFiles, tcConfig, packageReferences = FindClosureFiles(filename, range0, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)
+        GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext, packageReferences, scriptDefaultReferencesDiagnostics)
 
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
@@ -451,7 +445,6 @@ module ScriptPreprocessClosure =
             (ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, 
              lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
-        // Check we have already pre-inferred the target framework
         let mainFile, mainFileRange = List.last files
         let closureSources = files |> List.collect (fun (filename, m) -> ClosureSourceOfFilename(filename, m,tcConfig.inputCodePage,true))
         let closureFiles, tcConfig, packageReferences = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager, dependencyProvider)

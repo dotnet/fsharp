@@ -693,7 +693,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        PublicOptions(FSIstrings.SR.fsiAdvanced(),[]);
        PrivateOptions(
         [// Make internal fsi-server* options. Do not print in the help. They are used by VFSI. 
-         CompilerOption("fsi-references","", OptionString (fun s -> writeReferencesAndExit <- Some s), None, None); 
+         CompilerOption("fsi-server-report-references","", OptionString (fun s -> writeReferencesAndExit <- Some s), None, None); 
          CompilerOption("fsi-server-prompt","", OptionUnit (fun () -> useServerPrompt <- true), None, None);
          CompilerOption("fsi-server","", OptionString (fun s -> fsiServerName <- s), None, None); // "FSI server mode on given named channel");
          CompilerOption("fsi-server-input-codepage","",OptionInt (fun n -> fsiServerInputCodePage <- Some(n)), None, None); // " Set the input codepage for the console"); 
@@ -844,6 +844,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member _.WriteReferencesAndExit = writeReferencesAndExit
 
     member _.DependencyProvider = dependencyProvider
+    member _.FxResolver = tcConfigB.fxResolver
 
 /// Set the current ui culture for the current thread.
 let internal SetCurrentUICultureForThread (lcid : int option) =
@@ -1496,7 +1497,7 @@ type internal FsiDynamicCompiler
                         packageManagerLines |> List.map (fun line -> directive line.Directive, line.Line)
 
                     try
-                        let tfm, rid = tcConfigB.fxResolver.GetTfmAndRid()
+                        let tfm, rid = fsiOptions.FxResolver.GetTfmAndRid()
                         let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, tfm, rid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
                         if result.Success then
                             for line in result.StdOut do Console.Out.WriteLine(line)

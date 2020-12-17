@@ -439,7 +439,6 @@ let ProcessMetaCommandsFromInput
                | _ -> 
                    errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
                    state
-
             | ParsedHashDirective("nowarn",numbers,m) ->
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
@@ -535,11 +534,11 @@ let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaComm
 let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaCommandSource, dependencyProvider) = 
     // Clone
     let tcConfigB = tcConfig.CloneToBuilder()
-    let getWarningNumber () _ = () 
-    let addReference () (m, path, directive) = tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
-    let addLoadedSource () (m,s) = tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
+    let getWarningNumber = fun () _ -> () 
+    let addReferenceDirective = fun () (m, path, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
+    let addLoadedSource = fun () (m,s) -> tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
     ProcessMetaCommandsFromInput
-        (getWarningNumber, addReference, addLoadedSource)
+        (getWarningNumber, addReferenceDirective, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 

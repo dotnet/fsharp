@@ -16,7 +16,6 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Range
-open FSharp.Compiler.Text
 
 open Microsoft.DotNet.DependencyManager
 

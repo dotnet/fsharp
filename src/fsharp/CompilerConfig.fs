@@ -633,15 +633,8 @@ type TcConfigBuilder =
         } 
         |> Seq.distinct
 
-    static member CreateNew(legacyReferenceResolver, 
-        fxResolver,
-        defaultFSharpBinariesDir,
-        reduceMemoryUsage,
-        implicitIncludeDir,
-        isInteractive,
-        isInvalidationSupported,
-        defaultCopyFSharpCore,
-        tryGetMetadataSnapshot) =
+    static member CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
+                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
@@ -1017,9 +1010,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         TcConfig(builder, validate)
 
-    member _.legacyReferenceResolver = data.legacyReferenceResolver
+    member x.legacyReferenceResolver = data.legacyReferenceResolver
 
-    member _.CloneToBuilder() = 
+    member tcConfig.CloneToBuilder() = 
         { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) = 

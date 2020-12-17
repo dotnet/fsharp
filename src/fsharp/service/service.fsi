@@ -222,7 +222,7 @@ type public FSharpChecker =
     /// <param name="otherFlags">Other flags for compilation.</param>
     /// <param name="useFsiAuxLib">Add a default reference to the FSharp.Compiler.Interactive.Settings library.</param>
     /// <param name="useSdkRefs">Use the implicit references from the .NET SDK.</param>
-    /// <param name="assumeDotNetFramework">Indicates scripts should be assumed to be .NET Framework scripts.</param>
+    /// <param name="assumeDotNetFramework">Set up compilation and analysis for .NET Framework scripts.</param>
     /// <param name="extraProjectInfo">An extra data item added to the returned FSharpProjectOptions.</param>
     /// <param name="optionsStamp">An optional unique stamp for the options.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
@@ -488,14 +488,11 @@ type public CompilerEnvironment =
 /// Information about the compilation environment
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module public CompilerEnvironment =
-
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
     val DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
-
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
-
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     val IsCheckerSupportedSubcategory: string -> bool
 

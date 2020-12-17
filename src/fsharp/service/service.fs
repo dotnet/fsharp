@@ -856,23 +856,20 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.ParseAndCheckProject(options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok, userOpName))
 
-    member __.GetProjectOptionsFromScript(filename,
-        sourceText,
-        previewEnabled: bool, 
-        loadedTimeStamp, otherFlags,
-        useFsiAuxLib: bool,
-        useSdkRefs: bool,
-        assumeDotNetFramework: bool,
-        extraProjectInfo: obj option,
-        optionsStamp: int64 option,
-        userOpName) = 
+    member __.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, assumeDotNetFramework: bool option, extraProjectInfo: obj option, optionsStamp: int64 option, userOpName) = 
 
         reactor.EnqueueAndAwaitOpAsync (userOpName, "GetProjectOptionsFromScript", filename, fun ctok -> 
           cancellable {
             use errors = new ErrorScope()
 
+            // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
+            let useFsiAuxLib = defaultArg useFsiAuxLib true
+            let useSdkRefs =  defaultArg useSdkRefs true
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
+            let previewEnabled = defaultArg previewEnabled false
 
+            // Do we assume .NET Framework references for scripts?
+            let assumeDotNetFramework = defaultArg assumeDotNetFramework true
             let extraFlags =
                 if previewEnabled then
                     [| "--langversion:preview" |]
@@ -898,8 +895,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
 
             let otherFlags = 
-                [| yield "--noframework"
-                   yield "--warn:3"
+                [| yield "--noframework"; yield "--warn:3";
                    yield! otherFlags 
                    for r in loadClosure.References do yield "-r:" + fst r
                    for (code,_) in loadClosure.NoWarns do yield "--nowarn:" + code
@@ -1298,12 +1294,6 @@ type FSharpChecker(legacyReferenceResolver,
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        let useFsiAuxLib = defaultArg useFsiAuxLib true
-        let useSdkRefs =  defaultArg useSdkRefs true
-        let previewEnabled = defaultArg previewEnabled false
-        // In the absence of an explicit argument then for compilation and analysis the default depends on the toolchain the tooling is are running on.
-        // Visual Studio always gives the assumeDotNetFramework flag explicitly
-        let assumeDotNetFramework = defaultArg assumeDotNetFramework (not FSharpEnvironment.isRunningOnCoreClr)
         backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, assumeDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
 
     member __.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
@@ -1409,7 +1399,7 @@ type CompilerEnvironment =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CompilerEnvironment =
 
-    // Legacy entry point
+    // Legacy entry point, no longer used by FSharp.Editor
     let DefaultReferencesForOrphanSources assumeDotNetFramework =
         let currentDirectory = Directory.GetCurrentDirectory()
         let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, range0)

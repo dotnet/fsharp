@@ -212,7 +212,6 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
     
     let AppendClosureInformation filename =
         if IsScript filename then 
-
             let closure = 
                 LoadClosure.ComputeClosureOfScriptFiles
                    (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, 
@@ -235,7 +234,7 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
 
             // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
-            tcConfigB.primaryAssembly <- (if closure.UseDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+            tcConfigB.primaryAssembly <- (if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
             if tcConfigB.framework then
                 let references = closure.References |> List.collect snd
                 references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
@@ -449,11 +448,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(legacyReferenceResolver,
-            fxResolver,
-            defaultFSharpBinariesDir, 
-            reduceMemoryUsage=reduceMemoryUsage,
-            implicitIncludeDir=directoryBuildingFrom, 
+        TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
+            reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
             isInteractive=false, isInvalidationSupported=false, 
             defaultCopyFSharpCore=defaultCopyFSharpCore, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot)
@@ -640,13 +636,9 @@ let main1OfAst
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(legacyReferenceResolver,
-            fxResolver,
-            defaultFSharpBinariesDir, 
-            reduceMemoryUsage=reduceMemoryUsage,
-            implicitIncludeDir=directoryBuildingFrom, 
-            isInteractive=false,
-            isInvalidationSupported=false, 
+        TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
+            reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
+            isInteractive=false, isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot)
 
@@ -967,16 +959,8 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
 
 /// The main (non-incremental) compilation entry point used by fsc.exe
 let mainCompile 
-        (ctok,
-         argv,
-         legacyReferenceResolver,
-         bannerAlreadyPrinted,
-         reduceMemoryUsage, 
-         defaultCopyFSharpCore,
-         exiter: Exiter,
-         loggerProvider,
-         tcImportsCapture,
-         dynamicAssemblyCreator) =
+       (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, 
+        defaultCopyFSharpCore, exiter: Exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use disposables = new DisposablesTracker()
     let savedOut = System.Console.Out

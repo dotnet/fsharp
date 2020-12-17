@@ -1263,21 +1263,15 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     static member TryCreateIncrementalBuilderForProjectOptions
-                      (ctok,
-                       legacyReferenceResolver,
-                       defaultFSharpBinariesDir,
+                      (ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
                        frameworkTcImportsCache: FrameworkImportsCache,
                        loadClosureOpt: LoadClosure option,
                        sourceFiles: string list,
                        commandLineArgs: string list,
-                       projectReferences,
-                       projectDirectory,
-                       useScriptResolutionRules,
-                       keepAssemblyContents,
-                       keepAllBackgroundResolutions,
-                       maxTimeShareMilliseconds,
-                       tryGetMetadataSnapshot,
-                       suggestNamesForErrors,
+                       projectReferences, projectDirectory,
+                       useScriptResolutionRules, keepAssemblyContents,
+                       keepAllBackgroundResolutions, maxTimeShareMilliseconds,
+                       tryGetMetadataSnapshot, suggestNamesForErrors,
                        keepAllBackgroundSymbolUses,
                        enableBackgroundItemKeyStoreAndSemanticClassification,
                        enablePartialTypeChecking: bool,
@@ -1311,7 +1305,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 let assumeDotNetFramework =
                     match loadClosureOpt with 
                     | None -> None
-                    | Some loadClosure -> Some loadClosure.UseDotNetFramework
+                    | Some loadClosure -> Some loadClosure.UseDesktopFramework
 
                 let fxResolver = FxResolver(assumeDotNetFramework, projectDirectory, range0)
 
@@ -1360,7 +1354,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
                 tcConfigB.referencedDLLs <- []
-                tcConfigB.primaryAssembly <- (if loadClosure.UseDotNetFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+                tcConfigB.primaryAssembly <- (if loadClosure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
                 // Add one by one to remove duplicates
                 dllReferences |> List.iter (fun dllReference ->
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
