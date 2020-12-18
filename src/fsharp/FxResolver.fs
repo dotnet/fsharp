@@ -25,7 +25,7 @@ open FSharp.Compiler.Range
 ///   - out-of-project sources editing
 ///   - default references for fsc.exe
 ///   - default references for fsi.exe
-type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, useSdkRefs: bool, isInteractive: bool, m: range) =
+type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
 
     static let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
@@ -88,11 +88,11 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 let stderr = p.StandardError.ReadToEnd()
                 p.WaitForExit()
                 if p.ExitCode <> 0 then 
-                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, stderr, p.ExitCode), m))
+                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, stderr, p.ExitCode), rangeForErrors))
                 else
                     Result.Ok (stdout.Trim())
             with err -> 
-                Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), m))))
+                Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), rangeForErrors))))
         // Make sure the warning gets replayed each time we call this
         |> function
             | Result.Ok res -> Some res
@@ -106,6 +106,9 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         | Some true -> None
         | _ when not useSdkRefs -> None
         | _ ->
+        match sdkDirOverride with 
+        | Some sdkDir -> Some sdkDir
+        | None ->
             let sdksDir = 
                 match getDotnetDirectory() with
                 | Some dotnetDir ->

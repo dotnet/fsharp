@@ -256,6 +256,7 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
+      mutable sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -454,6 +455,8 @@ type TcConfig =
     member shadowCopyReferences: bool
 
     member useSdkRefs: bool
+
+    member sdkDirOverride: string option
 
     member legacyReferenceResolver: ReferenceResolver.Resolver
 

@@ -50,14 +50,14 @@ let ``all default assembly references are system assemblies``(assumeNetFx, useSd
             let ref = Path.GetFullPath(r.[3..])
             let baseName = Path.GetFileNameWithoutExtension(ref)
             let projectDir = System.Environment.CurrentDirectory
-            if not (FSharp.Compiler.FxResolver(Some assumeNetFx, projectDir, m=range0, useSdkRefs=useSdkRefs, isInteractive=false).GetSystemAssemblies().Contains(baseName)) then
+            if not (FSharp.Compiler.FxResolver(Some assumeNetFx, projectDir, rangeForErrors=range0, useSdkRefs=useSdkRefs, isInteractive=false, sdkDirOverride=None).GetSystemAssemblies().Contains(baseName)) then
                 printfn "Failing, printing options from GetProjectOptionsFromScript..."
                 for opt in options.OtherOptions do
                     printfn "option: %s" opt
                 failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeNetFx, useSdkRefs, flags) 
 
 [<Test>]
-let ``sdk dir with dodgy global.json gives error``() =
+let ``sdk dir with dodgy global.json gives warning``() =
     let tempFile = Path.GetTempFileName() + ".fsx"
     let tempPath = Path.GetDirectoryName(tempFile)
     let globalJsonPath = Path.Combine(tempPath, "global.json")

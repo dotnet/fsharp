@@ -1307,7 +1307,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     | None -> None
                     | Some loadClosure -> Some loadClosure.UseDesktopFramework
 
-                let fxResolver = FxResolver(assumeDotNetFramework, projectDirectory, m=range0, useSdkRefs=true, isInteractive=false)
+                let sdkDirOverride =
+                    match loadClosureOpt with 
+                    | None -> None
+                    | Some loadClosure -> loadClosure.SdkDirOverride
+
+                let fxResolver = FxResolver(assumeDotNetFramework, projectDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=sdkDirOverride)
 
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 
