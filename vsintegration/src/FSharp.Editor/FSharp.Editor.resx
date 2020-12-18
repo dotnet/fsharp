@@ -253,7 +253,7 @@
     <value>Remove 'yield'</value>
   </data>
   <data name="RemoveYieldBang" xml:space="preserve">
-    <value>Remove yield!'</value>
+    <value>Remove 'yield!'</value>
   </data>
   <data name="ConvertToAnonymousRecord" xml:space="preserve">
     <value>Convert to Anonymous Record</value>
