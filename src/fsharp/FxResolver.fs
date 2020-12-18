@@ -70,7 +70,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
 
     /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
     /// taking into account any global.json
-    let tryGetDesiredDotNetSdkVersionForDirectory() =
+    let tryGetDesiredDotNetSdkVersionForDirectoryInfo() =
         desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
             let dotnetHostPath = getDotnetHostPath()
             try
@@ -93,10 +93,12 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                     Result.Ok (stdout.Trim())
             with err -> 
                 Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), rangeForErrors))))
-        // Make sure the warning gets replayed each time we call this
-        |> function
-            | Result.Ok res -> Some res
-            | Result.Error exn -> warning(exn); None
+    
+    let tryGetDesiredDotNetSdkVersionForDirectory() =
+    // Make sure the warning gets replayed each time we call this
+        match tryGetDesiredDotNetSdkVersionForDirectoryInfo() with
+        | Result.Ok res -> Some res
+        | Result.Error exn -> warning(exn); None
 
     /// Get the .NET Core SDK directory relevant to projectDir, used to infer the default target framework assemblies.
     let tryGetSdkDir() =
@@ -712,6 +714,8 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         desiredDotNetSdkVersionForDirectoryCache.Clear()
 
     member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory()
+
+    member _.TryGetDesiredDotNetSdkVersionForDirectory() = tryGetDesiredDotNetSdkVersionForDirectoryInfo()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
     member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework) =

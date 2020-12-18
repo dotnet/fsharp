@@ -57,7 +57,7 @@ let ``all default assembly references are system assemblies``(assumeNetFx, useSd
                 failwithf "expected FSharp.Compiler.DotNetFrameworkDependencies.systemAssemblies to contain '%s' because '%s' is a default reference for a script, (assumeNetFx, useSdk, flags) = %A" baseName ref (assumeNetFx, useSdkRefs, flags) 
 
 [<Test>]
-let ``sdk dir with dodgy global.json gives warning``() =
+let ``sdk dir with dodgy global json gives warning``() =
     let tempFile = Path.GetTempFileName() + ".fsx"
     let tempPath = Path.GetDirectoryName(tempFile)
     let globalJsonPath = Path.Combine(tempPath, "global.json")
@@ -67,7 +67,16 @@ let ``sdk dir with dodgy global.json gives warning``() =
         |> Async.RunSynchronously
     File.Delete(globalJsonPath)
     match errors with
-    | [] -> failwith "Expected error while parsing script" 
+    | [] -> 
+        printfn "Failure!" 
+        printfn "tempPath = %A" tempPath
+        printfn "options = %A" options
+        let fxResolver = FSharp.Compiler.FxResolver(Some false, tempPath, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+        let result = fxResolver.TryGetDesiredDotNetSdkVersionForDirectory()
+        printfn "sdkVersion = %A" result
+
+        printfn "options = %A" options
+        failwith "Expected error while parsing script" 
     | errors -> 
        for error in errors do 
            // {C:\Users\Administrator\AppData\Local\Temp\tmp6F0F.tmp.fsx (0,1)-(0,1) The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' ensure the relevant .NET SDK is installed. The output from 'C:\Program Files\dotnet\dotnet.exe --version' in the script directory was: '        2.1.300 [C:\Program Files\dotnet\sdk]
