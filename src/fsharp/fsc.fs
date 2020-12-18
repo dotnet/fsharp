@@ -178,6 +178,16 @@ let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, a
         exiter.Exit 1
 
 /// Check for .fsx and, if present, compute the load closure for of #loaded files.
+///
+/// This is the "script compilation" feature that has always been present in the F# compiler, that allows you to compile scripts
+/// and get the load closure and references from them. This applies even if the script is in a project (with 'Compile' action), for example.
+///
+/// Any DLL references implied by package references are also retrieved from the script.
+///
+/// When script compilation is invoked, the outputs are not necessarily a functioning application - the referenced DLLs are not
+/// copied to the output folder, for example (except perhaps FSharp.Core.dll).
+///
+/// NOTE: there is similar code in IncrementalBuilder.fs and this code should really be reconciled with that
 let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFiles, lexResourceManager, dependencyProvider) =
 
     let combineFilePath file =
@@ -191,10 +201,11 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
         commandLineSourceFiles 
         |> List.map combineFilePath
         
+    // Script compilation is active if the last item being compiled is a script and --noframework has not been specified
     let mutable allSources = []       
-    
+
     let tcConfig = TcConfig.Create(tcConfigB, validate=false) 
-    
+
     let AddIfNotPresent(filename: string) =
         if not(allSources |> List.contains filename) then
             allSources <- filename :: allSources
@@ -206,17 +217,27 @@ let AdjustForScriptCompile(ctok, tcConfigB: TcConfigBuilder, commandLineSourceFi
                    (ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, 
                     lexResourceManager, dependencyProvider)
 
-            // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
-            // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
+            // Record the new references (non-framework) references from the analysis of the script. (The full resolutions are recorded
+            // as the corresponding #I paths used to resolve them are local to the scripts and not added to the tcConfigB - they are
+            // added to localized clones of the tcConfigB).
             let references =
                 closure.References
                 |> List.collect snd
                 |> List.filter (fun r -> not (Range.equals r.originalReference.Range range0) && not (Range.equals r.originalReference.Range rangeStartup))
 
             references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
+
+            // Also record the other declarations from the script.
             closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
+
+            // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
+            // by the script too.
+            tcConfigB.primaryAssembly <- (if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
+            if tcConfigB.framework then
+                let references = closure.References |> List.collect snd
+                references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
             
         else AddIfNotPresent filename
          
@@ -422,10 +443,12 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
+    let fxResolver = FxResolver(None, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
     let tcConfigB = 
-       TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, 
+       TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
           reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
           isInteractive=false, isInvalidationSupported=false, 
           defaultCopyFSharpCore=defaultCopyFSharpCore, 
@@ -459,6 +482,9 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
             exiter.Exit 1 
     
+    let assumeDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
+    tcConfigB.fxResolver <- FxResolver(Some assumeDotNetFramework, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
 
     // Display the banner text, if necessary
@@ -603,11 +629,15 @@ let main1OfAst
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
+    let directoryBuildingFrom = Directory.GetCurrentDirectory()
+
+    let fxResolver = FxResolver(None, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, 
-            reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=Directory.GetCurrentDirectory(), 
+        TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
+            reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
             isInteractive=false, isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
             tryGetMetadataSnapshot=tryGetMetadataSnapshot)

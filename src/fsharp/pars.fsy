@@ -627,7 +627,8 @@ interactiveSeparator:
 /* A #directive in a module, namespace or an interaction */
 hashDirective:
   | HASH IDENT hashDirectiveArgs                            
-     { ParsedHashDirective ($2, $3, lhs parseState) }
+     { let m = match $3 with [] -> rhs2  parseState 1 2 | _ -> rhs2  parseState 1 3
+       ParsedHashDirective ($2, $3, m) }
 
 
 /* The arguments to a #directive */
