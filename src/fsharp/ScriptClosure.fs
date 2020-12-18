@@ -129,7 +129,7 @@ module ScriptPreprocessClosure =
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
         let rangeForErrors = mkFirstLineOfFile filename
-        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeForErrors)
+        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, m=rangeForErrors, useSdkRefs=useSdkRefs, isInteractive=isInteractive)
 
         let tcConfigB = 
             TcConfigBuilder.CreateNew
@@ -146,7 +146,7 @@ module ScriptPreprocessClosure =
             | None ->
                 let errorLogger = CapturingErrorLogger("ScriptDefaultReferences") 
                 use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                let references, assumeDotNetFramework = fxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework, useSdkRefs)
+                let references, assumeDotNetFramework = fxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework)
                 // Add script references
                 for reference in references do
                     tcConfigB.AddReferencedAssemblyByPath(range0, reference)

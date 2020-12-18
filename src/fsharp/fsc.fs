@@ -443,7 +443,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let fxResolver = FxResolver(None, directoryBuildingFrom, range0)
+    let fxResolver = FxResolver(None, directoryBuildingFrom, m=range0, useSdkRefs=true, isInteractive=false)
 
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
@@ -483,7 +483,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
             exiter.Exit 1 
     
     let assumeDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
-    tcConfigB.fxResolver <- FxResolver(Some assumeDotNetFramework, directoryBuildingFrom, range0)
+    tcConfigB.fxResolver <- FxResolver(Some assumeDotNetFramework, directoryBuildingFrom, m=range0, useSdkRefs=true, isInteractive=false)
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
 
@@ -631,7 +631,7 @@ let main1OfAst
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
 
-    let fxResolver = FxResolver(None, directoryBuildingFrom, range0)
+    let fxResolver = FxResolver(None, directoryBuildingFrom, m=range0, useSdkRefs=true, isInteractive=false)
 
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 

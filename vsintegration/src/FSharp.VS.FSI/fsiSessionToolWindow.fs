@@ -409,7 +409,7 @@ type internal FsiToolWindow() as this =
     let onInterrupt (sender:obj) (args:EventArgs) =
         sessions.Interrupt() |> ignore
   
-    let onRestart (sourceFileName: string) (sender:obj) (args:EventArgs) =
+    let onRestart (sender:obj) (args:EventArgs) =
         sessions.Kill() // When Kill() returns there should be no more output/events from that session
         flushResponseBuffer()  // flush output and errors from the killed session that have been buffered, but have not yet come through.
         lock textLines (fun () ->        
@@ -420,7 +420,9 @@ type internal FsiToolWindow() as this =
             textLines.ReplaceLines(0, 0, lastLine, lastColumn, IntPtr.Zero, 0, null) |> throwOnFailure0
         )
         clearUndoStack textLines // The reset clear should not be undoable.
-        sessions.Restart(sourceFileName)
+        showInitialMessageNetCore true
+        if not Session.SessionsProperties.fsiUseNetCore then 
+            sessions.Restart(null)
 
     /// Handle RETURN, unless Intelisense completion is in progress.
     let onReturn (sender:obj) (e:EventArgs) =    

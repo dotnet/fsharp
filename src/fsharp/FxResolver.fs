@@ -24,7 +24,8 @@ open FSharp.Compiler.Range
 ///   - script compilation
 ///   - out-of-project sources editing
 ///   - default references for fsc.exe
-type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, m: range) =
+///   - default references for fsi.exe
+type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, useSdkRefs: bool, isInteractive: bool, m: range) =
 
     static let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
@@ -99,8 +100,11 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
 
     /// Get the .NET Core SDK directory relevant to projectDir, used to infer the default target framework assemblies.
     let tryGetSdkDir() =
+        // This path shouldn't be used with reflective processes
+        assert not isInteractive
         match assumeDotNetFramework with 
         | Some true -> None
+        | _ when not useSdkRefs -> None
         | _ ->
             let sdksDir = 
                 match getDotnetDirectory() with
@@ -132,24 +136,28 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         if String.IsNullOrWhiteSpace filename then getFSharpCompilerLocation() else filename
 
     /// Get the framework implementation directory, either of the selected SDK or the currently running process as a backup
+    /// F# interactive/reflective scenarios use the implementation directory of the currently running process
     let getImplementationAssemblyDir() =
-        let sdkDir = tryGetSdkDir()
-        match sdkDir with 
-        | Some dir -> 
-            let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-            let dotnetConfig = File.ReadAllText(dotnetConfigFile)
-            let pattern = "\"version\": \""
-            let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
-            let endPos = dotnetConfig.IndexOf("\"", startPos)
-            let ver = dotnetConfig.[startPos..endPos-1]
-            let path = Path.GetFullPath(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
-            if Directory.Exists(path) then
+        if isInteractive then
+            getRunningImplementationAssemblyDir()
+        else
+            let sdkDir = tryGetSdkDir()
+            match sdkDir with 
+            | Some dir -> 
+                let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                let dotnetConfig = File.ReadAllText(dotnetConfigFile)
+                let pattern = "\"version\": \""
+                let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
+                let endPos = dotnetConfig.IndexOf("\"", startPos)
+                let ver = dotnetConfig.[startPos..endPos-1]
+                let path = Path.GetFullPath(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
+                if Directory.Exists(path) then
+                    path
+                else
+                    getRunningImplementationAssemblyDir()
+            | None ->
+                let path = getRunningImplementationAssemblyDir()
                 path
-            else
-                getRunningImplementationAssemblyDir()
-        | None ->
-            let path = getRunningImplementationAssemblyDir()
-            path
 
     let getFSharpCoreLibraryName = "FSharp.Core"
 
@@ -165,23 +173,20 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
     let getSystemValueTupleImplementationReference () =
         let probeFile = Path.Combine(getImplementationAssemblyDir(), "System.ValueTuple.dll")
-        let sdkDir = tryGetSdkDir()
-        match sdkDir with 
-        | Some _ when File.Exists(probeFile) ->
-            Some probeFile
-        | _ -> 
-            
-        try
-            let asm = typeof<System.ValueTuple<int, int>>.Assembly
-            if asm.FullName.StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
-                Some asm.Location
-            else
-                let valueTuplePath = Path.Combine(getFSharpCompilerLocation(), "System.ValueTuple.dll")
-                if File.Exists(valueTuplePath) then
-                    Some valueTuplePath
+        if File.Exists(probeFile) then 
+            Some probeFile 
+        else
+            try
+                let asm = typeof<System.ValueTuple<int, int>>.Assembly
+                if asm.FullName.StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
+                    Some asm.Location
                 else
-                    None
-        with _ -> None
+                    let valueTuplePath = Path.Combine(getFSharpCompilerLocation(), "System.ValueTuple.dll")
+                    if File.Exists(valueTuplePath) then
+                        Some valueTuplePath
+                    else
+                        None
+            with _ -> None
 
     // Algorithm:
     //     use implementation location of obj type, on shared frameworks it will always be in:
@@ -205,14 +210,16 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 | true, v -> v
                 | false, _ -> zeroVersion
 
-            let version = computeVersion (DirectoryInfo(getImplementationAssemblyDir()).Name)
-            let microsoftNETCoreAppRef = Path.Combine(getImplementationAssemblyDir(), "../../../packs/Microsoft.NETCore.App.Ref")
+            let implDir = getImplementationAssemblyDir()
+            let version = computeVersion (DirectoryInfo(implDir).Name)
+            let microsoftNETCoreAppRef = Path.Combine(implDir, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(microsoftNETCoreAppRef) then
-                let directory = DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
-                                |> Array.map (fun di -> computeVersion di.Name)
-                                |> Array.sort
-                                |> Array.filter(fun v -> v <= version)
-                                |> Array.last
+                let directory = 
+                    DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
+                    |> Array.map (fun di -> computeVersion di.Name)
+                    |> Array.sort
+                    |> Array.filter(fun v -> v <= version)
+                    |> Array.last
                 Some (directory.ToString()), Some microsoftNETCoreAppRef
             else
                None,  None
@@ -220,7 +227,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
 
     // Tries to figure out the tfm for the compiler instance.
     // On coreclr it uses the deps.json file
-    let tryGetRunningTfm() =
+    let tryGetRunningDotNetCoreTfm() =
         let file =
             try
                 let asm = Assembly.GetEntryAssembly()
@@ -456,11 +463,12 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     ]
 
     let getDotNetCoreImplementationReferences useFsiAuxLib =
-        (getDependenciesOf [
-            yield! Directory.GetFiles(getImplementationAssemblyDir(), "*.dll")
-            yield getFSharpCoreImplementationReference()
-            if useFsiAuxLib then yield getFsiLibraryImplementationReference()
-        ]).Values |> Seq.toList
+        let implDir = getImplementationAssemblyDir()
+        let roots = 
+            [ yield! Directory.GetFiles(implDir, "*.dll")
+              yield getFSharpCoreImplementationReference()
+              if useFsiAuxLib then yield getFsiLibraryImplementationReference() ]
+        (getDependenciesOf roots).Values |> Seq.toList
 
     // A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared 
     // resources between projects in the compiler services.  Also all assemblies where well-known system types exist
@@ -655,22 +663,29 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member _.GetTfmAndRid() = 
-        let sdkDir = tryGetSdkDir()
+        // Interactive processes read their own configuration to find the running tfm
+
         let tfm =
-            match sdkDir with 
-            | Some dir -> 
-                let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                let dotnetConfig = File.ReadAllText(dotnetConfigFile)
-                let pattern = "\"tfm\": \""
-                let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
-                let endPos = dotnetConfig.IndexOf("\"", startPos)
-                let tfm = dotnetConfig.[startPos..endPos-1]
-                //printfn "GetTfmAndRid, tfm = '%s'" tfm
-                tfm
-            | None ->
-            match tryGetRunningTfm() with
-            | Some tfm -> tfm
-            | _ -> getRunningDotNetFrameworkTfm ()
+            if isInteractive then
+                match tryGetRunningDotNetCoreTfm() with
+                | Some tfm -> tfm
+                | _ -> getRunningDotNetFrameworkTfm ()
+            else
+                let sdkDir = tryGetSdkDir()
+                match sdkDir with 
+                | Some dir -> 
+                    let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                    let dotnetConfig = File.ReadAllText(dotnetConfigFile)
+                    let pattern = "\"tfm\": \""
+                    let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
+                    let endPos = dotnetConfig.IndexOf("\"", startPos)
+                    let tfm = dotnetConfig.[startPos..endPos-1]
+                    //printfn "GetTfmAndRid, tfm = '%s'" tfm
+                    tfm
+                | None ->
+                match tryGetRunningDotNetCoreTfm() with
+                | Some tfm -> tfm
+                | _ -> getRunningDotNetFrameworkTfm ()
 
         // Computer valid dotnet-rids for this environment:
         //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
@@ -696,7 +711,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
-    member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework, useSdkRefs) =
+    member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework) =
         if assumeDotNetFramework then
             getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
         else

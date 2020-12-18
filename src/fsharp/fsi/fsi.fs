@@ -2759,7 +2759,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // We know the target framework up front
     let assumeDotNetFramework = not FSharpEnvironment.isRunningOnCoreClr
 
-    let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, range0)
+    let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, m=range0, useSdkRefs=true, isInteractive=true)
 
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 

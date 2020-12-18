@@ -1403,8 +1403,8 @@ module CompilerEnvironment =
     // Legacy entry point, no longer used by FSharp.Editor
     let DefaultReferencesForOrphanSources assumeDotNetFramework =
         let currentDirectory = Directory.GetCurrentDirectory()
-        let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, range0)
-        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, assumeDotNetFramework=assumeDotNetFramework, useSdkRefs=true)
+        let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, m=range0, useSdkRefs=true, isInteractive=false)
+        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, assumeDotNetFramework=assumeDotNetFramework)
         references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
