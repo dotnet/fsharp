@@ -658,25 +658,6 @@ let NormalizeErrorString (text : string) =
         i <- i + delta
     buf.ToString()
 
-type public FSharpErrorSeverityOptions =
-    {
-      WarnLevel: int
-      GlobalWarnAsError: bool
-      WarnOff: int list
-      WarnOn: int list
-      WarnAsError: int list
-      WarnAsWarn: int list
-    }
-    static member Default =
-        {
-          WarnLevel = 3
-          GlobalWarnAsError = false
-          WarnOff = []
-          WarnOn = []
-          WarnAsError = []
-          WarnAsWarn = []
-        }
-
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
         let featureStr = langVersion.GetFeatureString langFeature

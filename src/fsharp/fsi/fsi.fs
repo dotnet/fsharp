@@ -1627,7 +1627,7 @@ type internal FsiDynamicCompiler
                 invalidArg "name" "Name cannot be null or white-space."
 
             // Verify that the name is a valid identifier for a value.
-            SourceCodeServices.Lexer.FSharpLexer.Lex(SourceText.ofString name, 
+            SourceCodeServices.FSharpLexer.Lex(SourceText.ofString name, 
                 let mutable foundOne = false
                 fun t -> 
                     if not t.IsIdentifier || foundOne then
@@ -2707,7 +2707,7 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
     runLoop();
 
 /// Thrown when there was an error compiling the given code in FSI.
-type FsiCompilationException(message: string, errorInfos: FSharpErrorInfo[] option) =
+type FsiCompilationException(message: string, errorInfos: FSharpDiagnostic[] option) =
     inherit System.Exception(message)
     member __.ErrorInfos = errorInfos
 

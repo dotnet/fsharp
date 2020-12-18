@@ -11,6 +11,7 @@ open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
+open FSharp.Compiler.SourceCodeServices
 
 type FileIndex = int32 
 

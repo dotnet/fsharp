@@ -2235,7 +2235,8 @@ inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState)
        let lhsm = lhs parseState 
-       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (internalParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2), lhsm) }
+       let ilType = ParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2)
+       SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm) }
 
 classOrInterfaceOrStruct: 
   | CLASS 
@@ -4478,7 +4479,9 @@ inlineAssemblyExpr:
   | HASH stringOrKeywordString opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
         let s, sm = $2, rhs parseState 2
-        (fun m -> SynExpr.LibraryOnlyILAssembly (internalParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm, $3, List.rev $4, $5, m)) }
+        (fun m ->
+            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm
+            SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
 
 optCurriedArgExprs:
   | optCurriedArgExprs argExpr  %prec expr_args

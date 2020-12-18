@@ -474,7 +474,7 @@ module internal DescriptionListsImpl =
 /// An intellisense declaration
 [<Sealed>]
 type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility option,
-                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+                               kind: FSharpCompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
     member _.Name = name
     member _.NameInCode = nameInCode
 
@@ -491,7 +491,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 
     member decl.DescriptionText = 
         decl.StructuredDescriptionText
-        |> Tooltips.ToFSharpToolTipText
+        |> FSharpToolTip.ToFSharpToolTipText
 
     member _.Glyph = glyph 
     member _.Accessibility = accessibility
@@ -664,7 +664,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
     static member Error message = 
         new FSharpDeclarationListInfo(
                 [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError message]),
-                                             None, CompletionItemKind.Other, false, 0, false, None) |], false, true)
+                                             None, FSharpCompletionItemKind.Other, false, 0, false, None) |], false, true)
     
     static member Empty = FSharpDeclarationListInfo([| |], false, false)
 
@@ -682,7 +682,7 @@ type FSharpMethodGroupItem(description: FSharpToolTipText<layout>, xmlDoc: FShar
     member _.StructuredDescription = description
 
     /// The formatted description text for the method (or other item)
-    member _.Description = Tooltips.ToFSharpToolTipText description
+    member _.Description = FSharpToolTip.ToFSharpToolTipText description
 
     /// The documentation for the item
     member _.XmlDoc = xmlDoc

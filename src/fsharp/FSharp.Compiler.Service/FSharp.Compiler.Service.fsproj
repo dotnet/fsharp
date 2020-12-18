@@ -142,6 +142,12 @@
     <Compile Include="..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
     </Compile>
+    <Compile Include="..\utils\FileSystem.fsi">
+      <Link>Utilities\FileSystem.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\FileSystem.fs">
+      <Link>Utilities\FileSystem.fs</Link>
+    </Compile>
     <Compile Include="..\absil\ildiag.fsi">
       <Link>Utilities\ildiag.fsi</Link>
     </Compile>
@@ -222,6 +228,12 @@
     </Compile>
     <Compile Include="..\range.fs">
       <Link>ErrorLogging\range.fs</Link>
+    </Compile>
+    <Compile Include="..\Diagnostics.fsi">
+      <Link>ErrorLogging\Diagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="..\Diagnostics.fs">
+      <Link>ErrorLogging\Diagnostics.fs</Link>
     </Compile>
     <Compile Include="..\ErrorLogger.fsi">
       <Link>ErrorLogging\ErrorLogger.fsi</Link>

@@ -224,7 +224,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         // We intercept this call only to get the initial extent
         // of what was committed to the source buffer.
         let result = decl.GetName(filterText, index)
-        Keywords.QuoteIdentifierIfNeeded result
+        FSharpKeywords.QuoteIdentifierIfNeeded result
 
     override decl.IsCommitChar(commitCharacter) =
         // Usual language identifier rules...

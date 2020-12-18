@@ -49,7 +49,7 @@ let changeX() =
     x = 20
     y = "test"
             """
-            FSharpErrorSeverity.Warning
+            FSharpDiagnosticSeverity.Warning
             20
             (6, 5, 6, 11)
             "The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '<-' operator e.g. 'x <- expression'."

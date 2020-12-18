@@ -27,6 +27,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree
 
 open Microsoft.DotNet.DependencyManager
@@ -342,7 +343,7 @@ type TcConfigBuilder =
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
       mutable embedResources: string list
-      mutable errorSeverityOptions: FSharpErrorSeverityOptions
+      mutable errorSeverityOptions: FSharpDiagnosticOptions
       mutable mlCompatibility: bool
       mutable checkOverflow: bool
       mutable showReferenceResolutions: bool
@@ -500,7 +501,7 @@ type TcConfigBuilder =
           projectReferences = []
           knownUnresolvedReferences = []
           loadedSources = []
-          errorSeverityOptions = FSharpErrorSeverityOptions.Default
+          errorSeverityOptions = FSharpDiagnosticOptions.Default
           embedResources = []
           inputCodePage = None
           reduceMemoryUsage = ReduceMemoryFlag.Yes // always gets set explicitly 

@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
-module public FSharp.Compiler.AbstractIL.Internal.Library 
+module internal FSharp.Compiler.AbstractIL.Internal.Library 
 
 open System
-open System.IO
 open System.Threading
 open System.Collections.Generic
 open System.Runtime.CompilerServices
@@ -635,58 +634,3 @@ type LayeredMultiMap<'Key,'Value when 'Key: comparison> =
     member Values: 'Value list
     static member Empty: LayeredMultiMap<'Key,'Value>
   
-[<AutoOpen>]
-module Shim =
-    type IFileSystem =
-
-        /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
-        abstract member AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly
-
-        /// Used to load type providers and located assemblies in F# Interactive
-        abstract member AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly
-
-        /// A shim over File.Delete
-        abstract member FileDelete: fileName:string -> unit
-        abstract member FileStreamCreateShim: fileName:string -> Stream
-
-        /// A shim over FileStream with FileMode.Open, FileAccess.Read, FileShare.ReadWrite
-        abstract member FileStreamReadShim: fileName:string -> Stream
-
-        /// A shim over FileStream with FileMode.Open, FileAccess.Write, FileShare.Read
-        abstract member FileStreamWriteExistingShim: fileName:string -> Stream
-
-        /// Take in a filename with an absolute path, and return the same filename
-        /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt) 
-        /// and '..' portions
-        abstract member GetFullPathShim: fileName:string -> string
-
-        /// Utc time of the last modification
-        abstract member GetLastWriteTimeShim: fileName:string -> DateTime
-
-        /// A shim over Path.GetTempPath
-        abstract member GetTempPathShim: unit -> string
-
-        /// A shim over Path.IsInvalidPath
-        abstract member IsInvalidPathShim: filename:string -> bool
-
-        /// A shim over Path.IsPathRooted
-        abstract member IsPathRootedShim: path:string -> bool
-
-        /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
-        abstract member IsStableFileHeuristic: fileName:string -> bool
-
-        /// A shim over File.ReadAllBytes
-        abstract member ReadAllBytesShim: fileName:string -> byte []
-
-        /// A shim over File.Exists
-        abstract member SafeExists: fileName:string -> bool
-    
-    /// The global hook into the file system
-    val mutable FileSystem: IFileSystem
-
-    type System.IO.File with
-        static member ReadBinaryChunk: fileName:string * start:int * len:int -> byte []
-
-        static member OpenReaderAndRetry: filename:string * codepage:int option * retryLocked:bool -> System.IO.StreamReader
-
-

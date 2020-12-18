@@ -274,10 +274,10 @@ let main argv = 0"""
             o.Dispose()
             reraise()
 
-    static let assertErrors libAdjust ignoreWarnings (errors: FSharpErrorInfo []) expectedErrors =
+    static let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errors =
             errors
-            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpErrorSeverity.Warning else true)
+            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning else true)
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
@@ -304,7 +304,7 @@ let main argv = 0"""
     static let compile isExe options source f =
         lock gate (fun _ -> compileAux isExe options source f)
 
-    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
+    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
         let compilationRefs, deps =
             match cmpl with
             | Compilation(_, _, _, _, cmpls, _) ->
@@ -678,10 +678,10 @@ let main argv = 0"""
     static member TypeCheckWithErrors (source: string) expectedTypeErrors =
         CompilerAssert.TypeCheckWithErrorsAndOptions [||] source expectedTypeErrors
 
-    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrorsAndOptions options source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+    static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
     static member CompileExeWithOptions options (source: string) =
@@ -707,7 +707,7 @@ let main argv = 0"""
     static member CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->
             let errors =
-                errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
+                errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had errors: %A" errors)
 
@@ -779,7 +779,7 @@ let main argv = 0"""
 
         Array.zip errors expectedParseErrors
         |> Array.iter (fun (info, expectedError) ->
-            let (expectedSeverity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
+            let (expectedSeverity: FSharpDiagnosticSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
             Assert.AreEqual(expectedSeverity, info.Severity)
             Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
             Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")

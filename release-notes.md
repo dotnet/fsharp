@@ -65,6 +65,23 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Prevent assignment to `const` fields, by [Chet Husk](https://github.com/baronfel)
 * Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
+### FSharp Compiler Service 40.0.0
+
+* Renamings
+*     FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
+*     FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
+*     FSharp.Compiler.SourceCodeServices.Lexer.* --> FSharp.Compiler.SourceCodeServices.*
+*
+* Renamings in FSharp.Compiler.SourceCodeServices
+*   FSharpToken*  --> FSharpToken*
+*   FSharpErrorInfo     --> FSharpDiagnostic
+*   FSharpErrorSeverity --> FSharpDiagnosticSeverity
+*   Keywords            --> FSharpKeywords
+*
+* Internalizations:
+*   FSharp.Compiler.AbstractIL.* now internal
+*   FSharp.Compiler.ErrorLogger.* now internal
+
 ### FSharp Compiler Service 39.0.0
 *  Add ConvertToAnonymousRecord quick fixeroony [#10493](https://github.com/dotnet/fsharp/pull/10493)
 * Add UseMutationWhenValueIsMutable code fix [#10488](https://github.com/dotnet/fsharp/pull/10488)
@@ -479,7 +496,7 @@ Significant improvements in the F# tools, such as performance enhancements and s
 There is now an experimental CodeLens implementation, contributed by [Victor Peter Rouven Müller](https://github.com/realvictorprm). You can turn it on in **Options > Text Editor > F# > Code Lens**.
 * A bug where the F# compiler service would incorrectly elide the module names in XML documentation has been fixed by [Sebastian Urban](https://github.com/surban).
 * Code that uses `Dictionary` with `ContainsKey` and subsequent `Item` calls has been changed to use `TryGetValue`, by [Eugene Auduchinok](https://github.com/auduchinok).
-* [Jakob Majoka](https://github.com/majocha) also contributed in the process of consuming a different API for Tooltips.
+* [Jakob Majoka](https://github.com/majocha) also contributed in the process of consuming a different API for FSharpToolTip.
 
 #### Infrastructure, Packaging, and Open Source Improvements
 
@@ -743,7 +760,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 * Integrate dotnet/fsharp from 5a8f454a1 to 05c558a61
 * Notable changes include:
   * Removal of the `Microsoft.FSharp.Compiler.SourceCodeServices` namespace
-  * A new API for determining if an identifier needs to be quoted is available: `FSharp.Compiler.LexHelp.Keywords.DoesIdentifierNeedQuotation`
+  * A new API for determining if an identifier needs to be quoted is available: `FSharp.Compiler.LexHelp.FSharpKeywords.DoesIdentifierNeedQuotation`
   * Enhancements to the correctness of PDBs
   * Better string formatting of records and values
   * More stack overflow fixes in the compiler
@@ -1053,7 +1070,7 @@ Integrate dotnet/fsharp from 48f932cf8 to 085985140. Notable changes include:
 
 * Integrate visualfsharp/master and fsharp/master --> master
 * Expose QualifiedName and FileName of FSharpImplementationFileContents
-* Add FSharpErrorInfo.ErrorNumber
+* Add FSharpDiagnostic.ErrorNumber
 
 ### 2.0.0.1-beta
 

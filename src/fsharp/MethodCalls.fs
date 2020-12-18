@@ -18,6 +18,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals

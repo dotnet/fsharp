@@ -36,7 +36,7 @@ type public FSharpDeclarationListItem =
 
     member Accessibility : FSharpAccessibility option
 
-    member Kind : CompletionItemKind
+    member Kind : FSharpCompletionItemKind
 
     member IsOwnMember : bool
 

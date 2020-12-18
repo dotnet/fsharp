@@ -24,14 +24,9 @@
 ///     class.  That is not particularly satisfactory, and it may be
 ///     a good idea to build a small library which extracts the information
 ///     you need.  
-module FSharp.Compiler.AbstractIL.ILBinaryReader 
+module internal FSharp.Compiler.AbstractIL.ILBinaryReader 
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.ErrorLogger
-open System.IO
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
 type ILReaderMetadataSnapshot = (obj * nativeint * int) 

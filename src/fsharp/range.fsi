@@ -2,13 +2,7 @@
 
 module public FSharp.Compiler.Range
 
-open System.Text
 open System.Collections.Generic
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler  
-
   
 /// An index into a global tables of filenames
 type FileIndex = int32 

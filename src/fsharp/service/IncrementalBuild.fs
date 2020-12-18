@@ -164,7 +164,7 @@ type TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated errors, last file first
-        tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
+        tcErrorsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
         tcDependencyFiles: string list
 
@@ -764,7 +764,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
              | Some loadClosure -> 
                 for inp in loadClosure.Inputs do
                     for (err, isError) in inp.MetaCommandDiagnostics do 
-                        yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
+                        yield err, (if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning) ]
 
         let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
         let tcInfo = 
@@ -1405,10 +1405,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 let errorSeverityOptions = builder.TcConfig.errorSeverityOptions
                 let errorLogger = CompilationErrorLogger("IncrementalBuilderCreation", errorSeverityOptions)
                 delayedLogger.CommitDelayedDiagnostics errorLogger
-                errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
+                errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpDiagnosticSeverity.Error)
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
+            |> Array.map (fun (d, isError) -> FSharpDiagnostic.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }

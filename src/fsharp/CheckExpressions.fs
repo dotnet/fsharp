@@ -5774,6 +5774,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         mkf n e2', tpenv
 
     | SynExpr.LibraryOnlyILAssembly (s, tyargs, args, rtys, m) ->
+        let s = (s :?> ILInstr[])
         let argTys = NewInferenceTypes args
         let tyargs', tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tyargs
         // No subsumption at uses of IL assembly code

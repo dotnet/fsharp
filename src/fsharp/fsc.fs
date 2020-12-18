@@ -46,6 +46,7 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree

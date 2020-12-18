@@ -22,6 +22,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
@@ -195,7 +196,6 @@ module ResponseFile =
             Choice1Of2 data
         with e ->
             Choice2Of2 e
-
 
 let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
   use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

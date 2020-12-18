@@ -27,7 +27,6 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Lexer
 
 type SemanticClassificationData = (struct(FSharp.Compiler.Range.range * SemanticClassificationType)[])
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<struct(range * SemanticClassificationType)>>
@@ -78,7 +77,7 @@ type internal FSharpClassificationService
         let text = text.GetSubText(textSpan)
         let result = ImmutableArray.CreateBuilder()
         let tokenCallback =
-            fun (tok: FSharpSyntaxToken) ->
+            fun (tok: FSharpToken) ->
                 let spanKind =
                     if tok.IsKeyword then
                         ClassificationTypeNames.Keyword

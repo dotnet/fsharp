@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The "unlinked" view of .NET metadata and code.  Central to the Abstract IL library
-module public FSharp.Compiler.AbstractIL.IL 
+module internal FSharp.Compiler.AbstractIL.IL 
 
 open FSharp.Compiler.AbstractIL.Internal
 open System.Collections.Generic

@@ -83,41 +83,6 @@ module internal Utils =
         with e ->
              FSharp.Compiler.ErrorLogger.warning(Failure(sprintf "Note: an unexpected exception in fsi.exe readline console support. Consider starting fsi.exe with the --no-readline option and report the stack trace below to the .NET or Mono implementors\n%s\n%s\n" e.Message e.StackTrace))
 
-    // Quick and dirty dirty method lookup for inlined IL
-    // In some situations, we can't use ldtoken to obtain a RuntimeMethodHandle, since the method
-    // in question's token may contain typars from an external type environment.  Such a token would
-    // cause the PE file to be flagged as invalid.
-    // In such a situation, we'll want to search out the MethodRef in a similar fashion to bindMethodBySearch
-    // but since we can't use ldtoken to obtain System.Type objects, we'll need to do everything with strings.
-    // This is the least fool-proof method for resolving the binding, but since the scenarios it's used in are
-    // so constrained, (fsi 2.0, methods with generic multi-dimensional arrays in their signatures), it's
-    // acceptable
-    let findMethod (parentT:Type,nm,marity,argtys : string [],rty : string) =
-        let staticOrInstanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
-        let methInfos = parentT.GetMethods(staticOrInstanceBindingFlags) |> Array.toList
-
-        let methInfos = methInfos |> List.filter (fun methInfo -> methInfo.Name = nm)
-        match methInfos with
-        | [methInfo] ->
-            methInfo
-        | _ ->
-            let select (methInfo:MethodInfo) =
-                let mtyargTIs = if methInfo.IsGenericMethod then methInfo.GetGenericArguments() else [| |]
-                if mtyargTIs.Length  <> marity then false else
-
-                let haveArgTs =
-                    let parameters = Array.toList (methInfo.GetParameters())
-                    parameters |> List.map (fun param -> param.ParameterType)
-                let haveResT  = methInfo.ReturnType
-
-                if argtys.Length <> haveArgTs.Length then false else
-                let res = rty :: (Array.toList argtys) = (List.map (fun (t : System.Type) -> t.Name) (haveResT :: haveArgTs))
-                res
-
-            match List.tryFind select methInfos with
-            | None          -> failwith "Internal Error: cannot bind to method"
-            | Some methInfo -> methInfo
-
     let rec previousWordFromIdx (line: string) (idx, isInWord) =
         if idx < 0 then 0 else
         match line.Chars(idx), isInWord with
@@ -138,6 +103,7 @@ type internal Cursor =
         Utils.guard(fun () ->
            Console.CursorTop <- min top (Console.BufferHeight - 1)
            Console.CursorLeft <- left)
+
     static member Move(inset, delta) =
         let position = Console.CursorTop * (Console.BufferWidth - inset) + (Console.CursorLeft - inset) + delta
         let top  = position / (Console.BufferWidth - inset)
@@ -153,8 +119,6 @@ type internal Anchor =
         let left = inset + (( (p.left - inset) + index) % (Console.BufferWidth - inset))
         let top = p.top + ( (p.left - inset) + index) / (Console.BufferWidth - inset)
         Cursor.ResetTo(top,left)
-
-
 
 type internal ReadLineConsole() =
     let history = new History()

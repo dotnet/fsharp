@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.ParseHelpers
+module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
@@ -21,28 +21,27 @@ val warningStringOfCoords: line:int -> column:int -> string
 
 val warningStringOfPos: p:pos -> string
 
-val internal posOfLexPosition: p:Position -> pos
+val posOfLexPosition: p:Position -> pos
 
-val internal mkSynRange: p1:Position -> p2:Position -> range
+val mkSynRange: p1:Position -> p2:Position -> range
 
-type internal LexBuffer<'Char> with
-    member internal LexemeRange: range
+type LexBuffer<'Char> with
+    member LexemeRange: range
 
-val internal lhs: parseState:IParseState -> range
+val lhs: parseState:IParseState -> range
 
-val internal rhs2: parseState:IParseState -> i:int -> j:int -> range
+val rhs2: parseState:IParseState -> i:int -> j:int -> range
 
-val internal rhs: parseState:IParseState -> i:int -> range
+val rhs: parseState:IParseState -> i:int -> range
 
-type internal IParseState with
-    member internal SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
-    member internal ResetSynArgNameGenerator: unit -> unit
+type IParseState with
+    member SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
+    member ResetSynArgNameGenerator: unit -> unit
 
 module LexbufLocalXmlDocStore =
-    val private xmlDocKey: string
-    val internal ClearXmlDoc: lexbuf:UnicodeLexing.Lexbuf -> unit
-    val internal SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
-    val internal GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> XmlDoc.PreXmlDoc
+    val ClearXmlDoc: lexbuf:UnicodeLexing.Lexbuf -> unit
+    val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
+    val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> XmlDoc.PreXmlDoc
   
 type LexerIfdefStackEntry =
     | IfDefIf
@@ -102,8 +101,6 @@ type LexerContinuation =
     
 and LexCont = LexerContinuation
 
-val internal internalParseAssemblyCodeInstructions: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILInstr[]
+val ParseAssemblyCodeInstructions: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILInstr[]
 
-val ParseAssemblyCodeInstructions: s:string -> m:range -> ILInstr array val internal internalParseAssemblyCodeType: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILType
-
-val ParseAssemblyCodeType: s:string -> m:range -> ILType
+val ParseAssemblyCodeType: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILType

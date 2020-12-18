@@ -16,6 +16,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.DotNet.DependencyManager
 
@@ -161,7 +162,7 @@ type TcConfigBuilder =
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
       mutable embedResources: string list
-      mutable errorSeverityOptions: FSharpErrorSeverityOptions
+      mutable errorSeverityOptions: FSharpDiagnosticOptions
       mutable mlCompatibility:bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
@@ -339,7 +340,7 @@ type TcConfig =
     member reduceMemoryUsage: ReduceMemoryFlag
     member inputCodePage: int option
     member embedResources: string list
-    member errorSeverityOptions: FSharpErrorSeverityOptions
+    member errorSeverityOptions: FSharpDiagnosticOptions
     member mlCompatibility:bool
     member checkOverflow:bool
     member showReferenceResolutions:bool

@@ -92,7 +92,7 @@ type CompletionContext =
 //----------------------------------------------------------------------------
 
 [<Sealed>]
-type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option, parseHadErrors: bool, dependencyFiles: string[]) = 
+type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput option, parseHadErrors: bool, dependencyFiles: string[]) = 
 
     member scope.Errors = errors
 
