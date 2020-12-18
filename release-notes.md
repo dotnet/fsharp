@@ -65,25 +65,37 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Prevent assignment to `const` fields, by [Chet Husk](https://github.com/baronfel)
 * Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
-### FSharp Compiler Service 40.0.0
-
+### FSharp Compiler Service 39.0.0
 * Renamings
 *     FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
 *     FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
-*     FSharp.Compiler.SourceCodeServices.Lexer.* --> FSharp.Compiler.SourceCodeServices.*
+*     FSharp.Compiler.AbstractIL.Internal.Layout  -> FSharp.Compiler.TextLayout.Layout
+*     FSharp.Compiler.AbstractIL.Internal.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+*     type FSharp.Compiler.Layout.layout -> FSharp.Compiler.TextLayout.Layout
+*     type FSharp.Compiler.Layout.Layout -> FSharp.Compiler.TextLayout.Layout
+*     module FSharp.Compiler.Layout -> FSharp.Compiler.TextLayout.LayoutRender
+*     FSharp.Compiler.LayoutOps -> FSharp.Compiler.TextLayout.Layout
+*     FSharp.Compiler.Layout.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+*     FSharp.Compiler.Layout.TaggedTextOps  -> FSharp.Compiler.TextLayout.TaggedText
+*     FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
 *
 * Renamings in FSharp.Compiler.SourceCodeServices
+*   Lexer.* --> FSharp.Compiler.SourceCodeServices.*
 *   FSharpSyntaxToken*  --> FSharpToken*
 *   FSharpErrorInfo     --> FSharpDiagnostic
 *   FSharpErrorSeverity --> FSharpDiagnosticSeverity
 *   ExternalSymbol      --> FSharpExternalSymbol
-*   Keywords            --> FSharpKeywords
+*   UnresolvedSymbol    --> FSharpUnresolvedSymbol
+*   CompletionKind      --> FSharpCompletionKind
+*   module Keywords     --> FSharpKeywords
+*   module Tooltips     --> FSharpTooltip
 *
+* Extension methods in  ServiceAssemblyContent.fsi now intrinsic methods on symbol types
+* 
 * Internalizations:
 *   FSharp.Compiler.AbstractIL.* now internal
 *   FSharp.Compiler.ErrorLogger.* now internal
 
-### FSharp Compiler Service 39.0.0
 *  Add ConvertToAnonymousRecord quick fixeroony [#10493](https://github.com/dotnet/fsharp/pull/10493)
 * Add UseMutationWhenValueIsMutable code fix [#10488](https://github.com/dotnet/fsharp/pull/10488)
 * Add MakeDeclarationMutable code fix [#10480](https://github.com/dotnet/fsharp/pull/10480)
