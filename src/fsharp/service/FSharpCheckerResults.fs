@@ -27,7 +27,6 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
@@ -38,6 +37,8 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
@@ -1041,7 +1042,7 @@ type internal TypeCheckInfo
             match matches with 
             | resolved::_ // Take the first seen
             | [resolved] -> 
-                let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
+                let tip = wordL (TaggedText.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
             | [] -> 
@@ -1057,7 +1058,7 @@ type internal TypeCheckInfo
                     let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
                     FSharpStructuredToolTipText.FSharpToolTipText 
                        [ for line in lines -> 
-                            let tip = wordL (TaggedTextOps.tagStringLiteral line)
+                            let tip = wordL (TaggedText.tagStringLiteral line)
                             FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 

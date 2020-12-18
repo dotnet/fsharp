@@ -42,7 +42,6 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
@@ -54,14 +53,15 @@ open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.XmlDoc
-
 open Internal.Utilities
-open Internal.Utilities.StructuredFormat
 
 open Microsoft.DotNet.DependencyManager
 
@@ -85,13 +85,13 @@ type FsiBoundValue(name: string, value: FsiValue) =
 [<AutoOpen>]
 module internal Utilities = 
     type IAnyToLayoutCall = 
-        abstract AnyToLayout : FormatOptions * obj * Type -> Internal.Utilities.StructuredFormat.Layout
-        abstract FsiAnyToLayout : FormatOptions * obj * Type -> Internal.Utilities.StructuredFormat.Layout
+        abstract AnyToLayout : FormatOptions * obj * Type -> Layout
+        abstract FsiAnyToLayout : FormatOptions * obj * Type -> Layout
 
     type private AnyToLayoutSpecialization<'T>() = 
         interface IAnyToLayoutCall with
-            member this.AnyToLayout(options, o : obj, ty : Type) = Internal.Utilities.StructuredFormat.Display.any_to_layout options ((Unchecked.unbox o : 'T), ty)
-            member this.FsiAnyToLayout(options, o : obj, ty : Type) = Internal.Utilities.StructuredFormat.Display.fsi_any_to_layout options ((Unchecked.unbox o : 'T), ty)
+            member this.AnyToLayout(options, o : obj, ty : Type) = Display.any_to_layout options ((Unchecked.unbox o : 'T), ty)
+            member this.FsiAnyToLayout(options, o : obj, ty : Type) = Display.fsi_any_to_layout options ((Unchecked.unbox o : 'T), ty)
     
     let getAnyToLayoutCall ty = 
         let specialized = typedefof<AnyToLayoutSpecialization<_>>.MakeGenericType [| ty |]
@@ -182,8 +182,8 @@ module internal Utilities =
             }
 
         layout
-        |> Internal.Utilities.StructuredFormat.Display.squash_layout opts
-        |> Layout.renderL renderer
+        |> Display.squash_layout opts
+        |> LayoutRender.renderL renderer
         |> ignore
 
         outWriter.WriteLine()
@@ -315,14 +315,14 @@ type FsiEvaluationSessionHostConfig () =
 type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: TcConfigBuilder, g: TcGlobals, generateDebugInfo, resolveAssemblyRef, outWriter: TextWriter) = 
 
     /// This printer is used by F# Interactive if no other printers apply.
-    let DefaultPrintingIntercept (ienv: Internal.Utilities.StructuredFormat.IEnvironment) (obj:obj) = 
+    let DefaultPrintingIntercept (ienv: IEnvironment) (obj:obj) = 
        match obj with 
        | null -> None 
        | :? System.Collections.IDictionary as ie ->
           let it = ie.GetEnumerator() 
           try 
               let itemLs = 
-                  Internal.Utilities.StructuredFormat.LayoutOps.unfoldL // the function to layout each object in the unfold
+                  Layout.unfoldL // the function to layout each object in the unfold
                           (fun obj -> ienv.GetLayout obj) 
                           // the function to call at each step of the unfold
                           (fun () -> 
@@ -332,10 +332,10 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
                           // the maximum length
                           (1+fsi.PrintLength/3) 
               let makeListL itemLs =
-                (leftL (TaggedTextOps.tagText "[")) ^^
-                sepListL (rightL (TaggedTextOps.tagText ";")) itemLs ^^
-                (rightL (TaggedTextOps.tagText "]"))
-              Some(wordL (TaggedTextOps.tagText "dict") --- makeListL itemLs)
+                (leftL (TaggedText.tagText "[")) ^^
+                sepListL (rightL (TaggedText.tagText ";")) itemLs ^^
+                (rightL (TaggedText.tagText "]"))
+              Some(wordL (TaggedText.tagText "dict") --- makeListL itemLs)
           finally
              match it with 
              | :? System.IDisposable as d -> d.Dispose()
@@ -346,7 +346,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
 
     /// Get the print options used when formatting output using the structured printer.
     member __.GetFsiPrintOptions() = 
-        { Internal.Utilities.StructuredFormat.FormatOptions.Default with 
+        { FormatOptions.Default with 
               FormatProvider = fsi.FormatProvider;
               PrintIntercepts = 
                   // The fsi object supports the addition of two kinds of printers, one which converts to a string
@@ -361,7 +361,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
                                    | _ when aty.IsAssignableFrom(obj.GetType())  ->  
                                        match printer obj with 
                                        | null -> None
-                                       | s -> Some (wordL (TaggedTextOps.tagText s)) 
+                                       | s -> Some (wordL (TaggedText.tagText s)) 
                                    | _ -> None)
                                    
                          | Choice2Of2 (aty: System.Type, converter) -> 
@@ -415,13 +415,13 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
               | PrintExpr -> 
                   anyToLayoutCall.AnyToLayout(opts, x, ty)
         with 
-        | :? ThreadAbortException -> Layout.wordL (TaggedTextOps.tagText "")
+        | :? ThreadAbortException -> Layout.wordL (TaggedText.tagText "")
         | e ->
 #if DEBUG
           printf "\n\nPrintValue: x = %+A and ty=%s\n" x (ty.FullName)
 #endif
           printf "%s" (FSIstrings.SR.fsiExceptionDuringPrettyPrinting(e.ToString())); 
-          Layout.wordL (TaggedTextOps.tagText "")
+          Layout.wordL (TaggedText.tagText "")
             
     /// Display the signature of an F# value declaration, along with its actual value.
     member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: IlxAssemblyGenerator, v:Val) =
@@ -468,7 +468,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
     member valuePrinter.FormatValue (obj:obj, objTy) = 
         let opts        = valuePrinter.GetFsiPrintOptions()
         let lay = valuePrinter.PrintValue (FsiValuePrinterMode.PrintExpr, opts, obj, objTy)
-        Internal.Utilities.StructuredFormat.Display.layout_to_string opts lay
+        Display.layout_to_string opts lay
     
     /// Fetch the saved value of an expression out of the 'it' register and show it.
     member valuePrinter.InvokeExprPrinter (denv, emEnv, ilxGenerator: IlxAssemblyGenerator, vref) = 
@@ -485,7 +485,7 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, tcConfigB: Tc
             if Option.isNone rhsL || isEmptyL rhsL.Value then
                 NicePrint.prettyLayoutOfValOrMemberNoInst denv vref (* the rhs was suppressed by the printer, so no value to print *)
             else
-                (NicePrint.prettyLayoutOfValOrMemberNoInst denv vref ++ wordL (TaggedTextOps.tagText "=")) --- rhsL.Value
+                (NicePrint.prettyLayoutOfValOrMemberNoInst denv vref ++ wordL (TaggedText.tagText "=")) --- rhsL.Value
 
         Utilities.colorPrintL outWriter opts fullL
 
@@ -1201,7 +1201,7 @@ type internal FsiDynamicCompiler
 
             for (TImplFile (_qname,_,mexpr,_,_,_)) in declaredImpls do
                 let responseL = NicePrint.layoutInferredSigOfModuleExpr false denv infoReader AccessibleFromSomewhere rangeStdin mexpr 
-                if not (Layout.isEmptyL responseL) then
+                if not (isEmptyL responseL) then
                     let opts = valuePrinter.GetFsiPrintOptions()
                     Utilities.colorPrintL outWriter opts responseL |> ignore
 

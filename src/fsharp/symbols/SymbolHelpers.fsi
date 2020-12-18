@@ -13,6 +13,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.ErrorLogger
@@ -67,8 +68,6 @@ type public FSharpXmlDoc =
 
     /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
-
-type public Layout = Internal.Utilities.StructuredFormat.Layout
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]

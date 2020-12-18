@@ -24,21 +24,21 @@
 ///     class.  That is not particularly satisfactory, and it may be
 ///     a good idea to build a small library which extracts the information
 ///     you need.  
-module internal FSharp.Compiler.AbstractIL.ILBinaryReader 
+module FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 open FSharp.Compiler.AbstractIL.IL 
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
-type ILReaderMetadataSnapshot = (obj * nativeint * int) 
-type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
+type internal ILReaderMetadataSnapshot = (obj * nativeint * int) 
+type internal ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
-type MetadataOnlyFlag = Yes | No
+type internal MetadataOnlyFlag = Yes | No
 
 [<RequireQualifiedAccess>]
-type ReduceMemoryFlag = Yes | No
+type internal ReduceMemoryFlag = Yes | No
 
-type ILReaderOptions =
+type internal ILReaderOptions =
    { pdbDirPath: string option
 
      // fsc.exe does not use reduceMemoryUsage (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging but FASTER and SIMPLER file access)
@@ -60,7 +60,7 @@ type ILReaderOptions =
 
 /// Represents a reader of the metadata of a .NET binary.  May also give some values (e.g. IL code) from the PE file
 /// if it was provided.
-type ILModuleReader =
+type public ILModuleReader =
     abstract ILModuleDef: ILModuleDef
     abstract ILAssemblyRefs: ILAssemblyRef list
     
@@ -78,23 +78,20 @@ val internal ClearAllILModuleReaderCache : unit -> unit
 /// Open a binary reader based on the given bytes. 
 val internal OpenILModuleReaderFromBytes: fileName:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
 
-type Statistics = 
+type internal Statistics = 
     { mutable rawMemoryFileCount : int
       mutable memoryMapFileOpenedCount : int
       mutable memoryMapFileClosedCount : int
       mutable weakByteFileCount : int
       mutable byteFileCount : int }
 
-val GetStatistics : unit -> Statistics
+val internal GetStatistics : unit -> Statistics
 
+/// The public API hook for changing the IL assembly reader, used by Resharper
 [<AutoOpen>]
-module Shim =
+module public Shim =
 
-    type IAssemblyReader =
+    type public IAssemblyReader =
         abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
-
-    [<Sealed>]
-    type DefaultAssemblyReader =
-        interface IAssemblyReader
 
     val mutable AssemblyReader: IAssemblyReader

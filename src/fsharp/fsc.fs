@@ -22,7 +22,6 @@ open System.Threading
 
 open Internal.Utilities
 open Internal.Utilities.Filename
-open Internal.Utilities.StructuredFormat
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
@@ -49,6 +48,9 @@ open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -345,7 +347,7 @@ module InterfaceFileWriter =
         for (TImplFile (_, _, mexpr, _, _, _)) in declaredImpls do
             let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
-              (NicePrint.layoutInferredSigOfModuleExpr true { denv with shrinkOverloads = false; printVerboseSignatures = true } infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> Layout.showL)
+              (NicePrint.layoutInferredSigOfModuleExpr true { denv with shrinkOverloads = false; printVerboseSignatures = true } infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
        
         if tcConfig.printSignatureFile <> "" then os.Dispose()
 

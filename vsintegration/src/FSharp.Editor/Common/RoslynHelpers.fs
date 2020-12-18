@@ -9,16 +9,18 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler
-open FSharp.Compiler.Layout
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
+type RoslynTaggedText = Microsoft.CodeAnalysis.TaggedText
+
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =
     let joinWithLineBreaks segments =
-        let lineBreak = TaggedTextOps.Literals.lineBreak
+        let lineBreak = TaggedText.lineBreak
         match segments |> List.filter (Seq.isEmpty >> not) with
         | [] -> Seq.empty
         | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
@@ -87,7 +89,7 @@ module internal RoslynHelpers =
         | LayoutTag.ModuleBinding // why no 'Identifier'? Does it matter?
         | LayoutTag.UnknownEntity -> TextTags.Text
 
-    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
+    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(RoslynTaggedText(roslynTag t.Tag, t.Text))
 
     type VolatileBarrier() =
         [<VolatileField>]

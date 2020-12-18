@@ -24,12 +24,14 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.ErrorLogger
 
 open Internal.Utilities
-open Internal.Utilities.StructuredFormat
 
 module Attributes = 
     open System.Runtime.CompilerServices
@@ -1621,10 +1623,10 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
             let filename = outfile + ".terms"
             use f = System.IO.File.CreateText (filename + "-" + string showTermFileCount + "-" + header)
             showTermFileCount <- showTermFileCount + 1
-            Layout.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else 
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            Layout.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL g expr))
             dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------

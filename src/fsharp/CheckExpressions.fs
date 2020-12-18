@@ -2661,15 +2661,15 @@ let TcVal checkAttributes cenv env tpenv (vref: ValRef) optInst optAfterResoluti
                             | ValInRecScope true 
                             | ValNotInRecScope ->
                                 let tpsorig, tps, tptys, tau = FreshenPossibleForallTy cenv.g m TyparRigidity.Flexible vty 
-                                //dprintfn "After Freshen: tau = %s" (Layout.showL (typeL tau))
+                                //dprintfn "After Freshen: tau = %s" (LayoutRender.showL (typeL tau))
                                 let (tinst: TypeInst), tpenv = checkTys tpenv (tps |> List.map (fun tp -> tp.Kind))
                                 checkInst tinst
-                                //dprintfn "After Check: tau = %s" (Layout.showL (typeL tau))
+                                //dprintfn "After Check: tau = %s" (LayoutRender.showL (typeL tau))
                                 if tptys.Length <> tinst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tps.Length, tinst.Length), m))
                                 List.iter2 (UnifyTypes cenv env m) tptys tinst
                                 TcValEarlyGeneralizationConsistencyCheck cenv env (v, vrec, tinst, vty, tau, m)
 
-                                //dprintfn "After Unify: tau = %s" (Layout.showL (typeL tau))
+                                //dprintfn "After Unify: tau = %s" (LayoutRender.showL (typeL tau))
                                 tpsorig, vrefFlags, tinst, tau, tpenv  
                       
                   let exprForVal = Expr.Val (vref, vrefFlags, m)

@@ -12,13 +12,15 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -31,15 +33,15 @@ module internal PrintUtilities =
 
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
 
-    let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
+    let angleL x = sepL TaggedText.leftAngle ^^ x ^^ rightL TaggedText.rightAngle
 
-    let braceL x = wordL Literals.leftBrace ^^ x ^^ wordL Literals.rightBrace
+    let braceL x = wordL TaggedText.leftBrace ^^ x ^^ wordL TaggedText.rightBrace
 
-    let braceBarL x = wordL Literals.leftBraceBar ^^ x ^^ wordL Literals.rightBraceBar
+    let braceBarL x = wordL TaggedText.leftBraceBar ^^ x ^^ wordL TaggedText.rightBraceBar
 
     let comment str = wordL (tagText (sprintf "(* %s *)" str))
 
-    let layoutsL (ls: layout list) : layout =
+    let layoutsL (ls: Layout list) : Layout =
         match ls with
         | [] -> emptyL
         | [x] -> x
@@ -159,14 +161,14 @@ module private PrintIL =
     let layoutILArrayShape (ILArrayShape sh) = 
         SepL.leftBracket ^^ wordL (tagPunctuation (sh |> List.tail |> List.map (fun _ -> ",") |> String.concat "")) ^^ RightL.rightBracket // drop off one "," so that a n-dimensional array has n - 1 ","'s
 
-    let paramsL (ps: layout list) : layout = 
+    let paramsL (ps: Layout list) : Layout = 
         match ps with
         | [] -> emptyL
         | _ -> 
             let body = Layout.commaListL ps
             SepL.leftAngle ^^ body ^^ RightL.rightAngle
 
-    let pruneParams (className: string) (ilTyparSubst: layout list) =
+    let pruneParams (className: string) (ilTyparSubst: Layout list) =
         let numParams = 
             // can't find a way to see the number of generic parameters for *this* class (the GenericParams also include type variables for enclosing classes); this will have to do
             let rightMost = className |> SplitNamesForILPath |> List.last
@@ -175,7 +177,7 @@ module private PrintIL =
             | false, _ -> 0 // looks like it's non-generic
         ilTyparSubst |> List.rev |> List.truncate numParams |> List.rev
  
-    let rec layoutILType (denv: DisplayEnv) (ilTyparSubst: layout list) (ty: ILType) : layout =
+    let rec layoutILType (denv: DisplayEnv) (ilTyparSubst: Layout list) (ty: ILType) : Layout =
         match ty with
         | ILType.Void -> WordL.structUnit // These are type-theoretically totally different type-theoretically `void` is Fin 0 and `unit` is Fin (S 0) ... but, this looks like as close as we can get.
         | ILType.Array (sh, t) -> layoutILType denv ilTyparSubst t ^^ layoutILArrayShape sh
@@ -215,8 +217,8 @@ module private PrintIL =
                 match init with
                 | ILFieldInit.Bool x -> 
                     if x
-                    then Some Literals.keywordTrue
-                    else Some Literals.keywordFalse
+                    then Some TaggedText.keywordTrue
+                    else Some TaggedText.keywordFalse
                 | ILFieldInit.Char c -> ("'" + (char c).ToString () + "'") |> (tagStringLiteral >> Some)
                 | ILFieldInit.Int8 x -> ((x |> int32 |> string) + "y") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int16 x -> ((x |> int32 |> string) + "s") |> (tagNumericLiteral >> Some)
@@ -254,7 +256,7 @@ module private PrintTypes =
     let layoutConst g ty c =
         let str = 
             match c with
-            | Const.Bool x -> if x then Literals.keywordTrue else Literals.keywordFalse
+            | Const.Bool x -> if x then TaggedText.keywordTrue else TaggedText.keywordFalse
             | Const.SByte x -> (x |> string)+"y" |> tagNumericLiteral
             | Const.Byte x -> (x |> string)+"uy" |> tagNumericLiteral
             | Const.Int16 x -> (x |> string)+"s" |> tagNumericLiteral

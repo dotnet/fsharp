@@ -33,8 +33,6 @@ open Microsoft.DotNet.DependencyManager
 open Internal.Utilities
 open Internal.Utilities.Collections
 
-type internal Layout = StructuredFormat.Layout
-
 [<AutoOpen>]
 module EnvMisc =
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5

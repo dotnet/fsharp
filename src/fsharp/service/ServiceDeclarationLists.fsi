@@ -7,6 +7,7 @@ open System
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Range
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]

@@ -14,12 +14,12 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
-
 module internal TaggedText =
-    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Text |> ignore 
+    let appendTo (sb: System.Text.StringBuilder) (t: TaggedText) = sb.Append t.Text |> ignore 
  
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //

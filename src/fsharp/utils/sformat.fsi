@@ -17,7 +17,7 @@
 #if COMPILER
 // fsc.exe:
 // FSharp.Compiler.Service.dll:
-namespace Internal.Utilities.StructuredFormat
+namespace FSharp.Compiler.TextLayout
 #else
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
@@ -36,21 +36,23 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
     type internal LayoutTag
 
+    [<Class>]
     type internal TaggedText =
-        abstract Tag: LayoutTag
-        abstract Text: string
+        member Tag: LayoutTag
+        member Text: string
+
 #else  // FSharp.Compiler.Service.dll, fsc.exe
 
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<StructuralEquality; NoComparison>]
-    type public Joint =
+    type internal Joint =
         | Unbreakable
         | Breakable of indentation: int
         | Broken of indentation: int
     
-    [<StructuralEquality; NoComparison>]
-    type public LayoutTag =
+    [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
+    type LayoutTag =
         | ActivePatternCase
         | ActivePatternResult
         | Alias
@@ -86,48 +88,51 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         | UnknownType
         | UnknownEntity
 
+    /// Represents text with a tag
     type public TaggedText =
-        abstract Tag: LayoutTag
-        abstract Text: string
-
+        new: tag: LayoutTag * text: string -> TaggedText
+        member Tag: LayoutTag
+        member Text: string
     
-    type public TaggedTextWriter =
+    type internal TaggedTextWriter =
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
 
-    /// Data representing structured layouts of terms.  The representation
-    /// of this data type is only for the consumption of formatting engines.
+    /// Data representing structured layouts of terms.
     [<NoEquality; NoComparison>]
     type public Layout =
+        internal
         | ObjLeaf of juxtLeft: bool * object: obj * juxtRight: bool
         | Leaf of juxtLeft: bool * text: TaggedText * justRight: bool
         | Node of leftLayout: Layout * rightLayout: Layout * joint: Joint
         | Attr of text: string * attributes: (string * string) list * layout: Layout
 
-        static member JuxtapositionMiddle: left: Layout * right: Layout -> bool
+        static member internal JuxtapositionMiddle: left: Layout * right: Layout -> bool
 #endif
 
+    module public TaggedText =
+        val tagText: string -> TaggedText
+        val tagField: string -> TaggedText
+        val tagKeyword: string -> TaggedText
+        val tagLocal: string -> TaggedText
+        val tagProperty: string -> TaggedText
+        val tagMethod: string -> TaggedText
+        val tagClass: string -> TaggedText
+        val tagUnionCase: string -> TaggedText
+
+        val comma: TaggedText
+
 #if COMPILER
-    module public TaggedTextOps =
-#else
-    module internal TaggedTextOps =
-#endif
         val mkTag: LayoutTag -> string -> TaggedText
         val keywordFunctions: Set<string>
         val tagAlias: string -> TaggedText
-        val tagClass: string -> TaggedText
-        val tagUnionCase: string -> TaggedText
         val tagDelegate: string -> TaggedText
         val tagEnum: string -> TaggedText
         val tagEvent: string -> TaggedText
-        val tagField: string -> TaggedText
         val tagInterface: string -> TaggedText
-        val tagKeyword: string -> TaggedText
         val tagLineBreak: string -> TaggedText
-        val tagMethod: string -> TaggedText
         val tagModuleBinding: string -> TaggedText
-        val tagFunction : string -> TaggedText
-        val tagLocal: string -> TaggedText
+        val tagFunction: string -> TaggedText
         val tagRecord: string -> TaggedText
         val tagRecordField: string -> TaggedText
         val tagModule: string -> TaggedText
@@ -135,34 +140,71 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val tagNumericLiteral: string -> TaggedText
         val tagOperator: string -> TaggedText
         val tagParameter: string -> TaggedText
-        val tagProperty: string -> TaggedText
         val tagSpace: string -> TaggedText
         val tagStringLiteral: string -> TaggedText
         val tagStruct: string -> TaggedText
         val tagTypeParameter: string -> TaggedText
-        val tagText: string -> TaggedText
         val tagPunctuation: string -> TaggedText
+        val tagActivePatternCase: string -> TaggedText
+        val tagActivePatternResult: string -> TaggedText
+        val tagUnion: string -> TaggedText
+        val tagMember: string -> TaggedText
+        val tagUnknownEntity: string -> TaggedText
+        val tagUnknownType: string -> TaggedText
 
-        module Literals =
-            // common tagged literals
-            val lineBreak: TaggedText
-            val space: TaggedText
-            val comma: TaggedText
-            val semicolon: TaggedText
-            val leftParen: TaggedText
-            val rightParen: TaggedText
-            val leftBracket: TaggedText
-            val rightBracket: TaggedText
-            val leftBrace: TaggedText
-            val rightBrace: TaggedText
-            val leftBraceBar: TaggedText
-            val rightBraceBar: TaggedText
-            val equals: TaggedText
-            val arrow: TaggedText
-            val questionMark: TaggedText
+        // common tagged literals
+        val dot: TaggedText
+        val leftAngle: TaggedText
+        val rightAngle: TaggedText
+        val colon: TaggedText
+        val minus: TaggedText
+        val keywordTrue: TaggedText
+        val keywordFalse: TaggedText
+        val lineBreak: TaggedText
+        val space: TaggedText
+        val semicolon: TaggedText
+        val leftParen: TaggedText
+        val rightParen: TaggedText
+        val leftBracket: TaggedText
+        val rightBracket: TaggedText
+        val leftBrace: TaggedText
+        val rightBrace: TaggedText
+        val leftBraceBar: TaggedText
+        val rightBraceBar: TaggedText
+        val equals: TaggedText
+        val arrow: TaggedText
+        val questionMark: TaggedText
+        val structUnit: TaggedText
+        val keywordStatic: TaggedText
+        val keywordMember: TaggedText
+        val keywordVal: TaggedText
+        val keywordEvent: TaggedText
+        val keywordWith: TaggedText
+        val keywordSet: TaggedText
+        val keywordGet: TaggedText
+        val bar: TaggedText
+        val keywordStruct: TaggedText
+        val keywordInherit: TaggedText
+        val keywordEnd: TaggedText
+        val keywordNested: TaggedText
+        val keywordType: TaggedText
+        val keywordDelegate: TaggedText
+        val keywordOf: TaggedText
+        val keywordInternal: TaggedText
+        val keywordPrivate: TaggedText
+        val keywordAbstract: TaggedText
+        val keywordOverride: TaggedText
+        val keywordEnum: TaggedText
+        val leftBracketBar: TaggedText
+        val rightBracketBar: TaggedText
+        val keywordTypeof: TaggedText
+        val keywordTypedefof: TaggedText
+        val leftBracketAngle: TaggedText
+        val rightBracketAngle: TaggedText
+        val star: TaggedText
+        val keywordNew: TaggedText
 
-#if COMPILER
-    type public IEnvironment = 
+    type internal IEnvironment = 
         /// Return to the layout-generation 
         /// environment to layout any otherwise uninterpreted object
         abstract GetLayout: obj -> Layout
@@ -183,14 +225,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// A joint is either unbreakable, breakable or broken.
     /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
     /// A layout can be squashed to for given width which forces breaks as required.
-#if COMPILER
-    module public LayoutOps =
-#else
-    module internal LayoutOps =
-#endif
+    module public Layout =
 
         /// The empty layout
-        val emptyL : Layout
+        val emptyL: Layout
 
         /// Is it the empty layout?
         val isEmptyL: layout:Layout -> bool
@@ -198,34 +236,40 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         /// An uninterpreted leaf, to be interpreted into a string
         /// by the layout engine. This allows leaf layouts for numbers, strings and
         /// other atoms to be customized according to culture.
-        val objL   : value:obj -> Layout
+        val objL  : value:obj -> Layout
 
         /// An string leaf 
-        val wordL  : text:TaggedText -> Layout
+        val wordL : text:TaggedText -> Layout
 
         /// An string which requires no spaces either side.
-        val sepL   : text:TaggedText -> Layout
+        val sepL  : text:TaggedText -> Layout
 
         /// An string which is right parenthesis (no space on the left).
-        val rightL : text:TaggedText -> Layout
+        val rightL: text:TaggedText -> Layout
 
         /// An string which is left  parenthesis (no space on the right).
-        val leftL  : text:TaggedText -> Layout
+        val leftL : text:TaggedText -> Layout
 
         /// Join, unbreakable. 
-        val ( ^^ ) : layout1:Layout -> layout2:Layout -> Layout   
+        val ( ^^ ): layout1:Layout -> layout2:Layout -> Layout   
 
         /// Join, possible break with indent=0
-        val ( ++ ) : layout1:Layout -> layout2:Layout -> Layout   
+        val ( ++ ): layout1:Layout -> layout2:Layout -> Layout   
 
         /// Join, possible break with indent=1
-        val ( -- ) : layout1:Layout -> layout2:Layout -> Layout   
+        val ( -- ): layout1:Layout -> layout2:Layout -> Layout   
 
         /// Join, possible break with indent=2 
         val ( --- ): layout1:Layout -> layout2:Layout -> Layout   
 
+        /// optional break, indent=3
+        val internal ( ---- )              : Layout -> Layout -> Layout
+
+        /// optional break, indent=4
+        val internal ( ----- )             : Layout -> Layout -> Layout
+
         /// Join broken with ident=0
-        val ( @@ ) : layout1:Layout -> layout2:Layout -> Layout   
+        val ( @@ ): layout1:Layout -> layout2:Layout -> Layout   
 
         /// Join broken with ident=1 
         val ( @@- ): layout1:Layout -> layout2:Layout -> Layout   
@@ -252,13 +296,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val squareBracketL: layout:Layout -> Layout
 
         /// Wrap braces around layout.        
-        val braceL : layout:Layout -> Layout
+        val braceL: layout:Layout -> Layout
 
         /// Form tuple of layouts.            
-        val tupleL : layouts:Layout list -> Layout
+        val tupleL: layouts:Layout list -> Layout
 
         /// Layout two vertically.
-        val aboveL : layout1:Layout -> layout2:Layout -> Layout
+        val aboveL: layout1:Layout -> layout2:Layout -> Layout
 
         /// Layout list vertically.    
         val aboveListL: layouts:Layout list -> Layout
@@ -267,7 +311,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val optionL: selector:('T -> Layout) -> value:'T option -> Layout
 
         /// Layout like an F# list.    
-        val listL  : selector:('T -> Layout) -> value:'T list   -> Layout
+        val listL : selector:('T -> Layout) -> value:'T list   -> Layout
 
         /// See tagL
         val tagAttrL: text:string -> maps:(string * string) list -> layout:Layout -> Layout
@@ -299,11 +343,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// </pre>
     /// </example>
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type public FormatOptions =
-#else
     type internal FormatOptions =
-#endif
         { FloatingPointFormat: string
           AttributeProcessor: (string -> (string * string) list -> bool -> unit)
 #if COMPILER  // FSharp.Core.dll: PrintIntercepts aren't used there
@@ -321,11 +361,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         static member Default: FormatOptions
 
-#if COMPILER
-    module public Display =
-#else
     module internal Display =
-#endif
 
 #if FSHARP_CORE
 
@@ -350,7 +386,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         /// Convert any value to a layout using the given formatting options.  The
         /// layout can then be processed using formatting display engines such as
-        /// those in the LayoutOps module.  any_to_string and output_any are
+        /// those in the Layout module.  any_to_string and output_any are
         /// built using any_to_layout with default format options.
         val layout_to_string: options:FormatOptions -> layout:Layout -> string
 

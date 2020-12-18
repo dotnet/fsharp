@@ -73,9 +73,10 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 *     FSharp.Compiler.SourceCodeServices.Lexer.* --> FSharp.Compiler.SourceCodeServices.*
 *
 * Renamings in FSharp.Compiler.SourceCodeServices
-*   FSharpToken*  --> FSharpToken*
+*   FSharpSyntaxToken*  --> FSharpToken*
 *   FSharpErrorInfo     --> FSharpDiagnostic
 *   FSharpErrorSeverity --> FSharpDiagnosticSeverity
+*   ExternalSymbol      --> FSharpExternalSymbol
 *   Keywords            --> FSharpKeywords
 *
 * Internalizations:
