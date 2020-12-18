@@ -499,6 +499,48 @@ let ``function application in middle of pipeline with an additional argument``()
         Assert.AreEqual(1, sigHelp.ArgumentCount)
         Assert.AreEqual(0, sigHelp.ArgumentIndex)
 
+[<Test>]
+let ``function application with function as parameter``() =
+    let fileContents = """
+let derp (f: int -> int -> int) x = f x 1
+derp 
+"""
+    let marker = "derp "
+    let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
+    let sourceText = SourceText.From(fileContents)
+    let perfOptions = LanguageServicePerformanceOptions.Default
+    let textVersionHash = 0
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    
+    let parseResults, _, checkFileResults =
+        let x =
+            checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, projectOptions, perfOptions, "TestSignatureHelpProvider")
+            |> Async.RunSynchronously
+
+        if x.IsNone then
+            Assert.Fail("Could not parse and check document.")
+        x.Value
+    
+    let sigHelp =
+        FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
+            parseResults,
+            checkFileResults,
+            documentId,
+            [],
+            DefaultDocumentationProvider,
+            sourceText,
+            caretPosition,
+            filePath)
+        |> Async.RunSynchronously
+
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    match sigHelp with
+    | None -> Assert.Fail("Expected signature help")
+    | Some sigHelp ->
+        Assert.AreEqual(2, sigHelp.ArgumentCount)
+        Assert.AreEqual(0, sigHelp.ArgumentIndex)
+
 // migrated from legacy test
 [<Test>]
 let ``Multi.ReferenceToProjectLibrary``() =
