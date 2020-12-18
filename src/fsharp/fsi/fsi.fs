@@ -36,7 +36,6 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
@@ -624,6 +623,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     let mutable fsiServerName = ""
     let mutable interact = true
     let mutable explicitArgs = []
+    let mutable writeReferencesAndExit = None
 
     let mutable inputFilesAcc   = []  
 
@@ -692,6 +692,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        PublicOptions(FSIstrings.SR.fsiAdvanced(),[]);
        PrivateOptions(
         [// Make internal fsi-server* options. Do not print in the help. They are used by VFSI. 
+         CompilerOption("fsi-server-report-references","", OptionString (fun s -> writeReferencesAndExit <- Some s), None, None); 
          CompilerOption("fsi-server","", OptionString (fun s -> fsiServerName <- s), None, None); // "FSI server mode on given named channel");
          CompilerOption("fsi-server-input-codepage","",OptionInt (fun n -> fsiServerInputCodePage <- Some(n)), None, None); // " Set the input codepage for the console"); 
          CompilerOption("fsi-server-output-codepage","",OptionInt (fun n -> fsiServerOutputCodePage <- Some(n)), None, None); // " Set the output codepage for the console"); 
@@ -828,6 +829,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member __.FsiServerInputCodePage = fsiServerInputCodePage
     member __.FsiServerOutputCodePage = fsiServerOutputCodePage
     member __.FsiLCID with get() = fsiLCID and set v = fsiLCID <- v
+    member __.UseServerPrompt = isInteractiveServer()
     member __.IsInteractiveServer = isInteractiveServer()
     member __.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
     member __.EnableConsoleKeyProcessing = enableConsoleKeyProcessing
@@ -837,7 +839,10 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member __.SourceFiles = sourceFiles
     member __.Gui = gui
 
+    member _.WriteReferencesAndExit = writeReferencesAndExit
+
     member _.DependencyProvider = dependencyProvider
+    member _.FxResolver = tcConfigB.fxResolver
 
 /// Set the current ui culture for the current thread.
 let internal SetCurrentUICultureForThread (lcid : int option) =
@@ -897,7 +902,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     let mutable dropPrompt = 0
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere 
     // uses to identify the prompt, see service\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
-    let prompt = if fsiOptions.IsInteractiveServer then "SERVER-PROMPT>\n" else "> "  
+    let prompt = if fsiOptions.UseServerPrompt then "SERVER-PROMPT>\n" else "> "  
 
     member __.Print()      = if dropPrompt = 0 then fsiConsoleOutput.uprintf "%s" prompt else dropPrompt <- dropPrompt - 1
     member __.PrintAhead() = dropPrompt <- dropPrompt + 1; fsiConsoleOutput.uprintf "%s" prompt
@@ -933,7 +938,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
          if fsiOptions.PeekAheadOnConsoleToPermitTyping then 
           (new Thread(fun () -> 
               match consoleOpt with 
-              | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.IsInteractiveServer ->
+              | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
                   if List.isEmpty fsiOptions.SourceFiles then 
                       if progress then fprintfn outWriter "first-line-reader-thread reading first line...";
                       firstLine <- Some(console()); 
@@ -1490,7 +1495,8 @@ type internal FsiDynamicCompiler
                         packageManagerLines |> List.map (fun line -> directive line.Directive, line.Line)
 
                     try
-                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, executionTfm, executionRid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
+                        let tfm, rid = fsiOptions.FxResolver.GetTfmAndRid()
+                        let result = fsiOptions.DependencyProvider.Resolve(dependencyManager, ".fsx", packageManagerTextLines, reportError m, tfm, rid, tcConfigB.implicitIncludeDir, "stdin.fsx", "stdin.fsx")
                         if result.Success then
                             for line in result.StdOut do Console.Out.WriteLine(line)
                             for line in result.StdError do Console.Error.WriteLine(line)
@@ -2031,7 +2037,7 @@ type internal FsiStdinLexerProvider
     member __.CreateStdinLexer (errorLogger) =
         let lexbuf = 
             match fsiConsoleInput.TryGetConsole() with 
-            | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.IsInteractiveServer -> 
+            | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt -> 
                 LexbufFromLineReader fsiStdinSyphon (fun () -> 
                     match fsiConsoleInput.TryGetFirstLine() with 
                     | Some firstLine -> firstLine
@@ -2750,8 +2756,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | None -> SimulatedMSBuildReferenceResolver.getResolver()
         | Some rr -> rr
 
+    // We know the target framework up front
+    let assumeDotNetFramework = not FSharpEnvironment.isRunningOnCoreClr
+
+    let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=true, sdkDirOverride=None)
+
     let tcConfigB =
         TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+            fxResolver,
             defaultFSharpBinariesDir=defaultFSharpBinariesDir, 
             reduceMemoryUsage=ReduceMemoryFlag.Yes, 
             implicitIncludeDir=currentDirectory, 
@@ -2767,7 +2779,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 #if NETSTANDARD
     do tcConfigB.useSdkRefs <- true
     do tcConfigB.useSimpleResolution <- true
-    do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
+    do if FSharpEnvironment.isRunningOnCoreClr then SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
@@ -2794,6 +2806,16 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do updateBannerText() // setting the correct banner so that 'fsi -?' display the right thing
 
     let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
+
+    do 
+      match fsiOptions.WriteReferencesAndExit with
+      | Some outFile -> 
+          let tcConfig = tcConfigP.Get(ctokStartup)
+          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(ctokStartup, tcConfig)
+          let lines = [ for r in references -> r.resolvedPath ]
+          File.WriteAllLines(outFile, lines)
+          exit 0
+      | _ -> ()
 
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 

@@ -386,4 +386,16 @@ module Range =
             member _.Equals(x1, x2) = equals x1 x2 
             member _.GetHashCode o = o.GetHashCode() }
 
-
+let mkFirstLineOfFile (file: string) =
+    try
+        let lines = File.ReadLines(file) |> Seq.indexed 
+        let nonWhiteLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrWhiteSpace s))
+        match nonWhiteLine with 
+        | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
+        | None -> 
+        let nonEmptyLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrEmpty s))
+        match nonEmptyLine with 
+        | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
+        | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
+    with _ -> 
+        mkRange file (mkPos 1 0) (mkPos 1 80)

@@ -96,6 +96,10 @@ val mkFileIndexRange : FileIndex -> pos -> pos -> range
 /// This view hides the use of file indexes and just uses filenames 
 val mkRange : string -> pos -> pos -> range
 
+/// Make a range for the first non-whitespace line of the file if any. Otherwise use line 1 chars 0-80.
+/// This involves reading the file.
+val mkFirstLineOfFile : string -> range
+
 val equals : range -> range -> bool
 
 /// Reduce a range so it only covers a line

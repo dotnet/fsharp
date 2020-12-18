@@ -181,7 +181,7 @@ let main argv = 0"""
                 raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
         finally
             if cleanUp then
-                try Directory.Delete(projectDirectory) with | _ -> ()
+                try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
 
 #if FX_NO_APP_DOMAINS
     static let executeBuiltApp assembly deps =

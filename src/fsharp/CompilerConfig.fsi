@@ -214,6 +214,7 @@ type TcConfigBuilder =
       mutable includewin32manifest: bool
       mutable linkResources: string list
       mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable fxResolver: FxResolver
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
       mutable utf8output: bool
@@ -256,6 +257,7 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
+      mutable sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
       /// and from which we can read the metadata. Only used when metadataOnly=true.
@@ -276,6 +278,7 @@ type TcConfigBuilder =
 
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *
+        fxResolver: FxResolver *
         defaultFSharpBinariesDir: string * 
         reduceMemoryUsage: ReduceMemoryFlag * 
         implicitIncludeDir: string * 
@@ -429,6 +432,8 @@ type TcConfig =
     member isInteractive: bool
     member isInvalidationSupported: bool 
 
+    member FxResolver: FxResolver
+
     member ComputeLightSyntaxInitialStatus: string -> bool
 
     member GetTargetFrameworkDirectories: unit -> string list
@@ -451,6 +456,8 @@ type TcConfig =
     member shadowCopyReferences: bool
 
     member useSdkRefs: bool
+
+    member sdkDirOverride: string option
 
     member legacyReferenceResolver: ReferenceResolver.Resolver
 
@@ -492,6 +499,9 @@ type TcConfig =
 
     /// Indicates if the compilation will result in an F# optimization data resource in the generated binary
     member GenerateOptimizationData: bool
+
+    /// Check if the primary assembly is mscorlib
+    member assumeDotNetFramework: bool
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
