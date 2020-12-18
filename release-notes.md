@@ -90,13 +90,18 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 *   module Keywords     --> FSharpKeywords
 *   module Tooltips     --> FSharpTooltip
 *
-* Extension methods in  ServiceAssemblyContent.fsi now intrinsic methods on symbol types
+* Extension methods in `ServiceAssemblyContent.fsi` now intrinsic methods on symbol types
 * 
 * Internalizations:
 *   FSharp.Compiler.AbstractIL.* now internal
 *   FSharp.Compiler.ErrorLogger.* now internal
-
-*  Add ConvertToAnonymousRecord quick fixeroony [#10493](https://github.com/dotnet/fsharp/pull/10493)
+*
+* New functions in the SourceCodeServices API:
+*
+*    `FSharpDiagnostic.NewlineifyErrorString`
+*    `FSharpDiagnostic.NormalizeErrorString`
+*
+* Add ConvertToAnonymousRecord quick fixeroony [#10493](https://github.com/dotnet/fsharp/pull/10493)
 * Add UseMutationWhenValueIsMutable code fix [#10488](https://github.com/dotnet/fsharp/pull/10488)
 * Add MakeDeclarationMutable code fix [#10480](https://github.com/dotnet/fsharp/pull/10480)
 * Add ChangeToUpcast code fix [#10463](https://github.com/dotnet/fsharp/pull/10463)
