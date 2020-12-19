@@ -242,6 +242,13 @@ module ScriptPreprocessClosure =
                                             tcConfigB.AddIncludePath(m, folder, "")
                                         tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
                                         tcConfig <- TcConfig.Create(tcConfigB, validate=false)
+
+                                    if not (Seq.isEmpty result.Resolutions) then
+                                        let tcConfigB = tcConfig.CloneToBuilder()
+                                        for resolution in result.Resolutions do
+                                            tcConfigB.AddReferencedAssemblyByPath(m, resolution)
+                                        tcConfig <- TcConfig.Create(tcConfigB, validate = false)
+
                                     for script in result.SourceFiles do
                                         let scriptText = File.ReadAllText script
                                         loadScripts.Add script |> ignore
