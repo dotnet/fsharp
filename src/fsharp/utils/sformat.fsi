@@ -1,25 +1,20 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// This file is compiled 2(!) times in the codebase
+// This file is compiled twice in the codebase
 //    - as the internal implementation of printf '%A' formatting 
-//           defines: FSHARP_CORE
-//    - as the internal implementation of structured formatting in FSharp.Compiler.Service.dll 
+//    - as the internal implementation of structured formatting in FSharp.Compiler.Service/Private.dll 
 //           defines: COMPILER 
-//           NOTE: this implementation is used by fsi.exe. This is very important.
+//           NOTE: this implementation is used by fsi.exe. 
 //
-// The one implementation file is used because we very much want to keep the implementations of
+// The one implementation file is used to keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However fsi.exe may have
 // a richer feature set.
 //
-// Note no layout objects are ever transferred between the above implementations, and in 
-// all 4 cases the layout types are really different types.
+// Note no layout objects are ever transferred between the above implementations.
 
 #if COMPILER
-// fsc.exe:
-// FSharp.Compiler.Service.dll:
 namespace FSharp.Compiler.TextLayout
 #else
-// FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
 
@@ -29,19 +24,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
-#if FSHARP_CORE
-    /// Data representing structured layouts of terms.  
-    // FSharp.Core.dll makes things internal and hides representations
-    type internal Layout
-
-    type internal LayoutTag
-
-    [<Class>]
-    type internal TaggedText =
-        member Tag: LayoutTag
-        member Text: string
-
-#else  // FSharp.Compiler.Service.dll, fsc.exe
+#if COMPILER
 
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
@@ -108,9 +91,24 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         | Attr of text: string * attributes: (string * string) list * layout: Layout
 
         static member internal JuxtapositionMiddle: left: Layout * right: Layout -> bool
+#else  // FSharp.Compiler.Service.dll, fsc.exe
+    /// Data representing structured layouts of terms.  
+    // FSharp.Core.dll makes things internal and hides representations
+    type internal Layout
+
+    type internal LayoutTag
+
+    [<Class>]
+    type internal TaggedText =
+        member Tag: LayoutTag
+        member Text: string
 #endif
 
+#if COMPILER
     module public TaggedText =
+#else
+    module internal TaggedText =
+#endif
         val tagText: string -> TaggedText
         val tagField: string -> TaggedText
         val tagKeyword: string -> TaggedText
@@ -225,8 +223,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// A joint is either unbreakable, breakable or broken.
     /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
     /// A layout can be squashed to for given width which forces breaks as required.
+#if COMPILER
     module public Layout =
-
+#else
+    module internal Layout =
+#endif
         /// The empty layout
         val emptyL: Layout
 
@@ -363,11 +364,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
     module internal Display =
 
-#if FSHARP_CORE
-
-        // Most functions aren't needed in FSharp.Core.dll, but we add one inernal entry for printf
-        val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T * Type -> string
-#else
+#if COMPILER
 
         val asTaggedTextWriter: writer: TextWriter -> TaggedTextWriter
 
@@ -382,6 +379,10 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val output_layout: options:FormatOptions -> writer:TextWriter -> layout:Layout -> unit
 
         val layout_as_string: options:FormatOptions -> value:'T * typValue:Type -> string
+#else
+
+        // Most functions aren't needed in FSharp.Core.dll, but we add one inernal entry for printf
+        val anyToStringForPrintf: options:FormatOptions -> bindingFlags:System.Reflection.BindingFlags -> value:'T * Type -> string
 #endif
 
         /// Convert any value to a layout using the given formatting options.  The
