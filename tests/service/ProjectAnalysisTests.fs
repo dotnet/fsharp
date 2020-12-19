@@ -4227,7 +4227,7 @@ let ``Test project31 Format C# method attributes`` () =
         objMethodsAttributes 
         |> set
         |> shouldEqual 
-              (set ["[<CLSCompliantAttribute(false)>]";
+              (set ["[<CLSCompliantAttribute (false)>]";
 #if !NETCOREAPP
                     "[<Security.SecuritySafeCriticalAttribute ()>]";
 #endif
