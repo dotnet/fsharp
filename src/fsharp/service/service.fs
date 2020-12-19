@@ -33,8 +33,6 @@ open Microsoft.DotNet.DependencyManager
 open Internal.Utilities
 open Internal.Utilities.Collections
 
-type internal Layout = StructuredFormat.Layout
-
 [<AutoOpen>]
 module EnvMisc =
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5
@@ -46,7 +44,7 @@ module EnvMisc =
     let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
     //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
-type UnresolvedReferencesSet = UnresolvedReferencesSet of UnresolvedAssemblyReference list
+type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
 // NOTE: may be better just to move to optional arguments here
 type FSharpProjectOptions =
@@ -59,7 +57,7 @@ type FSharpProjectOptions =
       IsIncompleteTypeCheckEnvironment : bool
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
-      UnresolvedReferences : UnresolvedReferencesSet option
+      UnresolvedReferences : FSharpUnresolvedReferencesSet option
       OriginalLoadReferences: (range * string * string) list
       ExtraProjectInfo : obj option
       Stamp : int64 option
@@ -141,14 +139,14 @@ module CompileHelpers =
 
         let errorSink isError exn = 
             let mainError, relatedErrors = SplitRelatedDiagnostics exn
-            let oneError e = errors.Add(FSharpErrorInfo.CreateFromException (e, isError, Range.range0, true)) // Suggest names for errors
+            let oneError e = errors.Add(FSharpDiagnostic.CreateFromException (e, isError, Range.range0, true)) // Suggest names for errors
             oneError mainError
             List.iter oneError relatedErrors
 
         let errorLogger = 
             { new ErrorLogger("CompileAPI") with 
                 member x.DiagnosticSink(exn, isError) = errorSink isError exn
-                member x.ErrorCount = errors |> Seq.filter (fun e -> e.Severity = FSharpErrorSeverity.Error) |> Seq.length }
+                member x.ErrorCount = errors |> Seq.filter (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> Seq.length }
 
         let loggerProvider = 
             { new ErrorLoggerProvider() with 
@@ -354,7 +352,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     // 
     /// Cache of builds keyed by options.        
     let incrementalBuildersCache = 
-        MruCache<AnyCallerThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[])>
+        MruCache<AnyCallerThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpDiagnostic[])>
                 (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
                  areSimilar =  FSharpProjectOptions.UseSameProject)
@@ -523,7 +521,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
          prevTcState,
          prevModuleNamesDict,
          prevTcErrors,
-         creationErrors: FSharpErrorInfo[],
+         creationErrors: FSharpDiagnostic[],
          userOpName: string) = 
     
         async {
@@ -911,13 +909,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     IsIncompleteTypeCheckEnvironment = false
                     UseScriptResolutionRules = true 
                     LoadTime = loadedTimeStamp
-                    UnresolvedReferences = Some (UnresolvedReferencesSet(loadClosure.UnresolvedReferences))
+                    UnresolvedReferences = Some (FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
                     OriginalLoadReferences = loadClosure.OriginalLoadReferences
                     ExtraProjectInfo=extraProjectInfo
                     Stamp = optionsStamp
                 }
             scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
-            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpErrorInfo.CreateFromException(exn, isError, range.Zero, false))
+            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
             return options, (diags @ errors.Diagnostics)
           })
             

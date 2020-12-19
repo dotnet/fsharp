@@ -9,6 +9,7 @@ open Microsoft.Win32
 open Microsoft.Build.Utilities
 open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
 // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
 // 1. List of frameworks

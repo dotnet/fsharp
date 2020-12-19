@@ -181,12 +181,14 @@ type XmlDocCollector() =
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 type PreXmlDoc =
+    | PreXmlDirect of unprocessedLines: string[] * range: range
     | PreXmlMerge of PreXmlDoc * PreXmlDoc
     | PreXmlDoc of pos * XmlDocCollector
     | PreXmlDocEmpty
 
-    member x.ToXmlDoc(check, paramNamesOpt: string list option) =
+    member x.ToXmlDoc(check: bool, paramNamesOpt: string list option) =
         match x with
+        | PreXmlDirect (lines, m) -> XmlDoc(lines, m)
         | PreXmlMerge(a, b) -> XmlDoc.Merge (a.ToXmlDoc(check, paramNamesOpt)) (b.ToXmlDoc(check, paramNamesOpt))
         | PreXmlDocEmpty -> XmlDoc.Empty
         | PreXmlDoc (pos, collector) ->
@@ -206,6 +208,8 @@ type PreXmlDoc =
         PreXmlDoc(grabPointPos, collector)
 
     static member Empty = PreXmlDocEmpty
+
+    static member Create(unprocessedLines, range) = PreXmlDirect(unprocessedLines, range)
 
     static member Merge a b = PreXmlMerge (a, b)
 

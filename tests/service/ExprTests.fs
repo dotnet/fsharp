@@ -729,9 +729,9 @@ let ``Test Unoptimized Declarations Project1`` () =
         printfn "Project1 error: <<<%s>>>" e.Message
 
     wholeProjectResults.Errors.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpErrorSeverity.Warning
-    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpErrorSeverity.Warning
-    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpErrorSeverity.Warning
+    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.AssemblyContents.ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
@@ -864,9 +864,9 @@ let ``Test Optimized Declarations Project1`` () =
         printfn "Project1 error: <<<%s>>>" e.Message
 
     wholeProjectResults.Errors.Length |> shouldEqual 3 // recursive value warning
-    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpErrorSeverity.Warning
-    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpErrorSeverity.Warning
-    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpErrorSeverity.Warning
+    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
+    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpDiagnosticSeverity.Warning
 
     wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
     let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]

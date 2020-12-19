@@ -15,6 +15,7 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -22,7 +23,6 @@ open FSharp.Compiler.TypedTreeOps
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
 #endif
-
 
 exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
@@ -137,7 +137,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       | TyparConstraint.DefaultsTo(_, _acty, _) -> true
                       | _ -> 
                           if not (List.exists  (typarConstraintsAEquiv g aenv implTyparCx) sigTypar.Constraints)
-                          then (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDiffer(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (implTypar, implTyparCx))), m)); false)
+                          then (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDiffer(sigTypar.Name, LayoutRender.showL(NicePrint.layoutTyparConstraint denv (implTypar, implTyparCx))), m)); false)
                           else  true) &&
 
                   // Check the constraints in the signature are present in the implementation
@@ -150,7 +150,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       | TyparConstraint.SupportsEquality _ -> true
                       | _ -> 
                           if not (List.exists  (fun implTyparCx -> typarConstraintsAEquiv g aenv implTyparCx sigTyparCx) implTypar.Constraints) then
-                              (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (sigTypar, sigTyparCx))), m)); false)
+                              (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, LayoutRender.showL(NicePrint.layoutTyparConstraint denv (sigTypar, sigTyparCx))), m)); false)
                           else  
                               true) &&
                   (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.SetAttribs attribs)))

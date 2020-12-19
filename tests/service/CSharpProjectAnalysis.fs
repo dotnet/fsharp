@@ -45,7 +45,7 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
     if results.HasCriticalErrors then
         let builder = new System.Text.StringBuilder()
         for err in results.Errors do
-            builder.AppendLine(sprintf "**** %s: %s" (if err.Severity = FSharpErrorSeverity.Error then "error" else "warning") err.Message)
+            builder.AppendLine(sprintf "**** %s: %s" (if err.Severity = FSharpDiagnosticSeverity.Error then "error" else "warning") err.Message)
             |> ignore
         failwith (builder.ToString())
     let assemblies =
