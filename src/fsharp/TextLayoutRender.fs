@@ -92,11 +92,6 @@ module LayoutRender =
 
     let spaces n = new String(' ', n)
       
-    let internal mkNode l r joint =
-       if isEmptyL l then r else
-       if isEmptyL r then l else
-       Node(l, r, joint)
-
     let renderL (rr: LayoutRenderer<_, _>) layout =
         let rec addL z pos i layout k = 
           match layout with

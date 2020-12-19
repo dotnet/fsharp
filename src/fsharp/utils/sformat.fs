@@ -248,9 +248,6 @@ module TaggedText =
 [<AutoOpen>]
 module Layout = 
 
-    let mkNode l r joint =
-        Node(l, r, joint)
-
     // constructors
     let objL (value:obj) = 
         match value with 
@@ -271,6 +268,11 @@ module Layout =
         match layout with 
         | Leaf(true, s, true) -> s.Text = ""
         | _ -> false
+
+    let mkNode l r joint =
+        if isEmptyL l then r else
+        if isEmptyL r then l else
+        Node(l, r, joint)
 
     let aboveL layout1 layout2 = mkNode layout1 layout2 (Broken 0)
 
