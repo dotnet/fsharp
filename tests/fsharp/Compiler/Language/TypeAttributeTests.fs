@@ -24,7 +24,7 @@ open System
 type String with 
     member this.test = 42
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             3246
             (4, 1, 4, 15)
             "Attributes cannot be applied to type extensions."
@@ -39,7 +39,7 @@ type Point = {x:int; y:int}
 type Point with 
     member this.test = 42
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             3246
             (4, 1, 4, 15)
             "Attributes cannot be applied to type extensions."

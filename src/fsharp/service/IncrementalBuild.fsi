@@ -58,14 +58,14 @@ type internal TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated errors, last file first
-        tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
+        tcErrorsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
         tcDependencyFiles: string list
 
         sigNameOpt: (string * SyntaxTree.QualifiedNameOfFile) option
     }
 
-     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
+     member TcErrors: (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
 /// Accumulated results of type checking. Optional data that isn't needed to type-check a file, but needed for more information for in tooling.
 [<NoEquality; NoComparison>]
@@ -220,7 +220,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity)[]>
+      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
@@ -243,7 +243,7 @@ type internal IncrementalBuilder =
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
           enablePartialTypeChecking: bool *
           dependencyProvider: DependencyProvider option
-             -> Cancellable<IncrementalBuilder option * FSharpErrorInfo[]>
+             -> Cancellable<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.
 module internal IncrementalBuild =

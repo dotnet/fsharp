@@ -9,6 +9,7 @@ open System.Runtime.InteropServices
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
 let debug = false 
 

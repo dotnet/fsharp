@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.SyntaxTreeOps
-
+module internal FSharp.Compiler.SyntaxTreeOps
 
 open FSharp.Compiler
 open FSharp.Compiler.Range

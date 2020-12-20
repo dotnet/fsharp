@@ -173,6 +173,14 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
 
 let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
 
+module Array =
+    /// Returns a new array with an element replaced with a given value.
+    let replace index value (array: _ []) =
+        if index >= array.Length then raise (IndexOutOfRangeException "index")
+        let res = Array.copy array
+        res.[index] <- value
+        res
+
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
         async {

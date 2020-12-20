@@ -346,7 +346,7 @@ let getParseAndCheckResults (source: string) =
 
 
 let inline dumpErrors results =
-    (^TResults: (member Errors: FSharpErrorInfo[]) results)
+    (^TResults: (member Errors: FSharpDiagnostic[]) results)
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')

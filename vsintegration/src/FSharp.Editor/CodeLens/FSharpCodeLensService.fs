@@ -19,20 +19,17 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
+open FSharp.Compiler.TextLayout
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
-
 open Microsoft.VisualStudio.Shell.Interop
-
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
-
-open Internal.Utilities.StructuredFormat
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
-    member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
+    member val TaggedText: Async<(ResizeArray<TaggedText> * QuickInfoNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
     member val FullTypeSignature: string = fullTypeSignature 
     member val UiElement: UIElement = uiElement with get, set
@@ -130,7 +127,7 @@ type internal FSharpCodeLensService
 
                     let inl =
                         match text with
-                        | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
+                        | :? NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
                             let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
                             h.Click.Add (fun _ -> 
                                 navigation.NavigateTo nav.Range)
@@ -190,7 +187,7 @@ type internal FSharpCodeLensService
                                 let displayContext = Option.defaultValue displayContext maybeContext
                                 let typeLayout = func.FormatLayout displayContext
                                 let taggedText = ResizeArray()        
-                                Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                                LayoutRender.emitL taggedText.Add typeLayout |> ignore
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
                                 let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results

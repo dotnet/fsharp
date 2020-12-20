@@ -879,7 +879,7 @@ let ``Type provider project references should not throw exceptions`` () =
 
     printfn "Parse Errors: %A" fileParseResults.Errors
     printfn "Errors: %A" fileCheckResults.Errors
-    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
+    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
 
 
 
@@ -975,6 +975,6 @@ let ``Projects creating generated types should not utilize cross-project-referen
 
     printfn "Parse Errors: %A" fileParseResults.Errors
     printfn "Errors: %A" fileCheckResults.Errors
-    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
+    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual false
 
 //------------------------------------------------------------------------------------

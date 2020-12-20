@@ -17,11 +17,9 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Utilities
 
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
-open FSharp.Compiler
-
-open Internal.Utilities.StructuredFormat
 
 type internal QuickInfo =
     { StructuredText: FSharpStructuredToolTipText
@@ -236,7 +234,7 @@ type internal FSharpAsyncQuickInfoSource
                         XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigQuickInfo.StructuredText)
                         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetQuickInfo.StructuredText)
                         // get whitespace nomalized documentation text
-                        let getText (tts: seq<Layout.TaggedText>) =
+                        let getText (tts: seq<TaggedText>) =
                             let text =
                                 (StringBuilder(), tts)
                                 ||> Seq.fold (fun sb tt ->
@@ -252,7 +250,7 @@ type internal FSharpAsyncQuickInfoSource
                               | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
                                     yield! sigDocumentation
                               | Some _  , Some _ ->
-                                    yield! RoslynHelpers.joinWithLineBreaks [ sigDocumentation; [ TaggedTextOps.tagText "-------------" ]; targetDocumentation ]
+                                    yield! RoslynHelpers.joinWithLineBreaks [ sigDocumentation; [ TaggedText.tagText "-------------" ]; targetDocumentation ]
                             ] |> ResizeArray
                         let docs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)

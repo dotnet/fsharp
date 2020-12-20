@@ -70,12 +70,12 @@ type public FSharpParseFileResults =
     member DependencyFiles : string[]
 
     /// Get the errors and warnings for the parse
-    member Errors : FSharpErrorInfo[]
+    member Errors : FSharpDiagnostic[]
 
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
-    internal new: errors: FSharpErrorInfo[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+    internal new: errors: FSharpDiagnostic[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
 
 /// Information about F# source file names
 module public SourceFile =
