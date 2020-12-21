@@ -457,7 +457,7 @@ let main argv = 0"""
 #endif
         let timeout = 30000
         let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
-        (exitCode, output |> String.concat '\n', errors |> String.concat '\n')
+        (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
