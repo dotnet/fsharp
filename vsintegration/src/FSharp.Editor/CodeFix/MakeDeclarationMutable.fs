@@ -11,7 +11,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.Internal.Library 
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "MakeDeclarationMutable"); Shared>]
 type internal FSharpMakeDeclarationMutableFixProvider

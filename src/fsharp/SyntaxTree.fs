@@ -168,16 +168,16 @@ type SynMeasure =
     | Named of longId: LongIdent * range: range
 
     /// A product of two units of measure, e.g. 'kg * m'
-    | Product of SynMeasure * SynMeasure * range: range
+    | Product of measure1: SynMeasure * measure2: SynMeasure * range: range
 
     /// A sequence of several units of measure, e.g. 'kg m m'
-    | Seq of SynMeasure list * range: range
+    | Seq of measures: SynMeasure list * range: range
 
     /// A division of two units of measure, e.g. 'kg / m'
-    | Divide of SynMeasure * SynMeasure * range: range
+    | Divide of measure1: SynMeasure * measure2: SynMeasure * range: range
 
     /// A power of a unit of measure, e.g. 'kg ^ 2'
-    | Power of SynMeasure * SynRationalConst * range: range
+    | Power of measure: SynMeasure * power: SynRationalConst * range: range
 
     /// The '1' unit of measure
     | One
@@ -186,15 +186,15 @@ type SynMeasure =
     | Anon of range: range
 
     /// A variable unit of measure
-    | Var of SynTypar * range: range
+    | Var of typar: SynTypar * range: range
 
 /// Represents an unchecked syntax tree of F# unit of measure exponents.
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynRationalConst =
    
-    | Integer of int32
+    | Integer of value: int32
 
-    | Rational of int32 * int32 * range: range
+    | Rational of numerator: int32 * denominator: int32 * range: range
 
     | Negate of SynRationalConst
 
@@ -963,7 +963,7 @@ type SynExpr =
 
     /// Only used in FSharp.Core
     | LibraryOnlyILAssembly of
-        ilCode: ILInstr array *
+        ilCode: obj * // this type is ILInstr[]  but is hidden to avoid the representation of AbstractIL being public
         typeArgs: SynType list *
         args: SynExpr list *
         retTy: SynType list *
@@ -1123,8 +1123,8 @@ type SynExpr =
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =
-    | String of string * range
-    | FillExpr of SynExpr * Ident option
+    | String of value: string * range: range
+    | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
 
 /// Represents a syntax tree for an F# indexer expression argument
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1373,7 +1373,7 @@ type SynPat =
 /// Represents a set of bindings that implement an interface
 [<NoEquality; NoComparison>]
 type SynInterfaceImpl =
-    | InterfaceImpl of SynType * SynBinding list * range: range
+    | InterfaceImpl of interfaceTy: SynType * bindings: SynBinding list * range: range
 
 /// Represents a clause in a 'match' expression
 [<NoEquality; NoComparison>]
@@ -1435,7 +1435,10 @@ type SynAttributes = SynAttributeList list
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of MemberFlags option * SynValInfo * Ident option
+    | SynValData of
+        memberFlags: MemberFlags option *
+        valInfo: SynValInfo *
+        thisIdOpt: Ident option
 
     member x.SynValInfo = (let (SynValData(_flags, synValInfo, _)) = x in synValInfo)
 
@@ -1561,7 +1564,7 @@ type SynTypeDefnKind =
     | TyconHiddenRepr
     | TyconAugmentation
     | TyconILAssemblyCode
-    | TyconDelegate of SynType * SynValInfo
+    | TyconDelegate of signature: SynType * signatureInfo: SynValInfo
 
 /// Represents the syntax tree for the core of a simple type definition, in either signature
 /// or implementation.
@@ -1601,7 +1604,7 @@ type SynTypeDefnSimpleRepr =
     ///
     /// F# syntax: "type X = (# "..."#)
     | LibraryOnlyILAssembly of
-        ilType: ILType *
+        ilType: obj * // this type is ILType but is hidden to avoid the representation of AbstractIL being public
         range: range
 
     /// A type abbreviation, "type X = A.B.C"
@@ -1636,8 +1639,9 @@ type SynEnumCase =
 
     | EnumCase of
         attributes: SynAttributes *
-        ident: Ident * SynConst *
-        xmldoc: PreXmlDoc *
+        ident: Ident * 
+        value: SynConst *
+        xmlDoc: PreXmlDoc *
         range: range
 
     /// Gets the syntax range of this construct
@@ -1671,7 +1675,7 @@ type SynUnionCaseType =
     | UnionCaseFields of cases: SynField list
 
     /// Full type spec given by 'UnionCase: ty1 * tyN -> rty'. Only used in FSharp.Core, otherwise a warning.
-    | UnionCaseFullType of SynType * SynValInfo
+    | UnionCaseFullType of fullType: SynType * fullTypeInfo: SynValInfo
 
 /// Represents the syntax tree for the right-hand-side of a type definition in a signature.
 /// Note: in practice, using a discriminated union to make a distinction between
@@ -1704,7 +1708,11 @@ type SynTypeDefnSigRepr =
 type SynTypeDefnSig =
 
     /// The information for a type definition in a signature
-    | TypeDefnSig of SynComponentInfo * SynTypeDefnSigRepr * SynMemberSig list * range: range
+    | TypeDefnSig of
+        typeInfo: SynComponentInfo *
+        typeRepr: SynTypeDefnSigRepr *
+        members: SynMemberSig list *
+        range: range
 
 /// Represents the syntax tree for a field declaration in a record or class
 [<NoEquality; NoComparison>]
@@ -1896,7 +1904,7 @@ type SynMemberDefn =
         attributes: SynAttributes *
         ctorArgs: SynSimplePats *
         selfIdentifier: Ident option *
-        doc: PreXmlDoc *
+        xmlDoc: PreXmlDoc *
         range: range
 
     /// An implicit inherit definition, 'inherit <typ>(args...) as base'

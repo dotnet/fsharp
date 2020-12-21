@@ -134,8 +134,8 @@ type public FsiEvaluationSessionHostConfig =
 [<Class>]
 type FsiCompilationException =
     inherit System.Exception
-    new : string * FSharpErrorInfo[] option -> FsiCompilationException
-    member ErrorInfos : FSharpErrorInfo[] option
+    new : string * FSharpDiagnostic[] option -> FsiCompilationException
+    member ErrorInfos : FSharpDiagnostic[] option
 
 /// Represents an F# Interactive evaluation session.
 [<Class>]
@@ -179,7 +179,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalInteractionNonThrowing : code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpErrorInfo[]
+    member EvalInteractionNonThrowing : code: string * ?cancellationToken: CancellationToken -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
 
     /// Execute the given script. Stop on first error, discarding the rest
     /// of the script. Errors are sent to the output writer, a 'true' return value indicates there
@@ -195,7 +195,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalScriptNonThrowing : filePath: string -> Choice<unit, exn> * FSharpErrorInfo[]
+    member EvalScriptNonThrowing : filePath: string -> Choice<unit, exn> * FSharpDiagnostic[]
 
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
@@ -214,7 +214,7 @@ type FsiEvaluationSession =
     ///
     /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
     /// by input from 'stdin'.
-    member EvalExpressionNonThrowing : code: string -> Choice<FsiValue option, exn> * FSharpErrorInfo[]
+    member EvalExpressionNonThrowing : code: string -> Choice<FsiValue option, exn> * FSharpDiagnostic[]
 
     /// Format a value to a string using the current PrintDepth, PrintLength etc settings provided by the active fsi configuration object
     member FormatValue : reflectionValue: obj * reflectionType: System.Type -> string

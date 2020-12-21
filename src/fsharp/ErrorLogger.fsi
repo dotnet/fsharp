@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module public FSharp.Compiler.ErrorLogger
+module internal FSharp.Compiler.ErrorLogger
 
 open System
-open FSharp.Compiler 
 open FSharp.Compiler.Range
 open FSharp.Compiler.Features
 
@@ -162,7 +161,7 @@ type CapturingErrorLogger =
     override ErrorCount: int
   
 [<Class>]
-type internal CompileThreadStatic =
+type CompileThreadStatic =
 
     static member BuildPhase: BuildPhase with get, set
 
@@ -320,21 +319,11 @@ val NewlineifyErrorString: message:string -> string
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'), 
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text:string -> string
-
-type FSharpErrorSeverityOptions =
-    { WarnLevel: int
-      GlobalWarnAsError: bool
-      WarnOff: int list
-      WarnOn: int list
-      WarnAsError: int list
-      WarnAsWarn: int list }
-
-    static member Default: FSharpErrorSeverityOptions
   
-val internal checkLanguageFeatureError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
+val checkLanguageFeatureError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
 
-val internal checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
+val checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
 
-val internal tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> exn option
+val tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> exn option
 
-val internal languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> 'a
+val languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> 'a

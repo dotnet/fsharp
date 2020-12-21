@@ -2,7 +2,7 @@
 
 /// Defines the global environment for all type checking.
 
-module FSharp.Compiler.CompilerGlobalState
+module internal FSharp.Compiler.CompilerGlobalState
 
 open FSharp.Compiler.Range
 

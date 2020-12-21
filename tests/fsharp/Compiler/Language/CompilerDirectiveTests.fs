@@ -17,7 +17,7 @@ module ``Test Compiler Directives`` =
         CompilerAssert.CompileWithErrors(
             Compilation.Create(source, Fsx, Library),
             [|
-                FSharpErrorSeverity.Warning, 213, (2,1,2,6), "'' is not a valid assembly name"
+                FSharpDiagnosticSeverity.Warning, 213, (2,1,2,6), "'' is not a valid assembly name"
             |])
 
     [<Test>]
@@ -28,5 +28,5 @@ module ``Test Compiler Directives`` =
         CompilerAssert.CompileWithErrors(
             Compilation.Create(source, Fsx, Library),
             [|
-                FSharpErrorSeverity.Warning, 213, (2,1,2,10), "'' is not a valid assembly name"
+                FSharpDiagnosticSeverity.Warning, 213, (2,1,2,10), "'' is not a valid assembly name"
             |])

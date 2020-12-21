@@ -1,55 +1,197 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Functions to retrieve framework dependencies
-module internal FSharp.Compiler.DotNetFrameworkDependencies
+namespace FSharp.Compiler
 
-    open System
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.IO
-    open System.Reflection
-    open System.Runtime.InteropServices
-    open Internal.Utilities
-    open Internal.Utilities.FSharpEnvironment
+open System
+open System.Collections.Concurrent
+open System.Collections.Generic
+open System.Diagnostics
+open System.Globalization
+open System.IO
+open System.Reflection
+open System.Runtime.InteropServices
+open System.Text
+open Internal.Utilities
+open Internal.Utilities.FSharpEnvironment
+open FSharp.Compiler.AbstractIL.ILBinaryReader
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Range
 
-    type private TypeInThisAssembly = class end
+/// Resolves the references for a chosen or currently-executing framework, for
+///   - script execution
+///   - script editing
+///   - script compilation
+///   - out-of-project sources editing
+///   - default references for fsc.exe
+///   - default references for fsi.exe
+type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
 
-    let fSharpCompilerLocation =
-        let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some location) with
-        | Some path -> path
+    static let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+
+    static let dotnet =
+        if isWindows then "dotnet.exe" else "dotnet"
+
+    static let getDotnetDirectory() =
+        if isRunningOnCoreClr then
+            // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
+            let candidate =
+                let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
+                Path.GetFullPath(Path.Combine(assemblyLocation, "../../.."))
+
+            if Directory.Exists(candidate) then
+                Some candidate
+            else
+                None
+        elif isWindows then
+            let pf = Environment.GetEnvironmentVariable("ProgramW6432")
+            let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
+            let candidate = Path.Combine(pf,"dotnet")
+            if Directory.Exists(candidate) then
+                Some candidate
+            else None
+        else
+            None
+
+    static let getDotnetHostPath() =
+        match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
+        | value when not (String.IsNullOrEmpty(value)) ->
+            value                           // Value set externally
+        | _ ->
+            match getDotnetDirectory() with
+            | Some dotnetDir ->
+                let candidate = Path.Combine(dotnetDir, dotnet)
+                if File.Exists(candidate) then candidate else dotnet
+            | None -> dotnet
+
+    /// We only try once for each directory (cleared on solution unload) to prevent conditions where 
+    /// we repeatedly try to run dotnet.exe on every keystroke for a script
+    static let desiredDotNetSdkVersionForDirectoryCache = ConcurrentDictionary<string, Result<string, exn>>()
+
+    /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
+    /// taking into account any global.json
+    let tryGetDesiredDotNetSdkVersionForDirectoryInfo() =
+        desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
+            let dotnetHostPath = getDotnetHostPath()
+            try
+                let psi = ProcessStartInfo(dotnetHostPath, "--version")
+                psi.RedirectStandardOutput <- true
+                psi.RedirectStandardError <- true
+                psi.UseShellExecute <- false
+                psi.CreateNoWindow <- true
+                psi.StandardOutputEncoding <- Encoding.UTF8
+                psi.StandardErrorEncoding <- Encoding.UTF8
+                if Directory.Exists(projectDir) then
+                    psi.WorkingDirectory <- projectDir
+                let p = Process.Start(psi)
+                let stdout = p.StandardOutput.ReadToEnd()
+                let stderr = p.StandardError.ReadToEnd()
+                p.WaitForExit()
+                if p.ExitCode <> 0 then 
+                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, stderr, p.ExitCode), rangeForErrors))
+                else
+                    Result.Ok (stdout.Trim())
+            with err -> 
+                Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), rangeForErrors))))
+    
+    let tryGetDesiredDotNetSdkVersionForDirectory() =
+    // Make sure the warning gets replayed each time we call this
+        match tryGetDesiredDotNetSdkVersionForDirectoryInfo() with
+        | Result.Ok res -> Some res
+        | Result.Error exn -> warning(exn); None
+
+    /// Get the .NET Core SDK directory relevant to projectDir, used to infer the default target framework assemblies.
+    let tryGetSdkDir() =
+        // This path shouldn't be used with reflective processes
+        assert not isInteractive
+        match assumeDotNetFramework with 
+        | Some true -> None
+        | _ when not useSdkRefs -> None
+        | _ ->
+        match sdkDirOverride with 
+        | Some sdkDir -> Some sdkDir
         | None ->
-#if DEBUG
-            Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
-                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
-                location)
-#endif
-            // Use the location of this dll
-            location
+            let sdksDir = 
+                match getDotnetDirectory() with
+                | Some dotnetDir ->
+                    let candidate = Path.GetFullPath(Path.Combine(dotnetDir, "sdk"))
+                    if Directory.Exists(candidate) then Some candidate else None
+                | None -> None
 
-    let inline ifEmptyUse alternative filename = if String.IsNullOrWhiteSpace filename then alternative else filename
+            match sdksDir with 
+            | Some sdksDir ->
+                // Find the sdk version by running `dotnet --version` in the script/project location
+                let desiredSdkVer = tryGetDesiredDotNetSdkVersionForDirectory()
+
+                let sdkDir =
+                    DirectoryInfo(sdksDir).GetDirectories()
+                    |> Array.filter (fun di -> di.Name |> Seq.forall (fun c -> Char.IsDigit(c) || c = '.'))
+                    // Filter to the version reported by `dotnet --version` in the location, if that succeeded
+                    |> Array.filter (fun di -> match desiredSdkVer with None -> true | Some v -> di.Name.Contains(v))
+                    |> Array.sortBy (fun di -> di.FullName)
+                    |> Array.tryLast
+                    |> Option.map (fun di -> di.FullName)
+                sdkDir
+            | _ -> 
+                None
+
+    /// Get the framework implementation directory of the currently running process
+    let getRunningImplementationAssemblyDir() =
+        let filename = Path.GetDirectoryName(typeof<obj>.Assembly.Location) 
+        if String.IsNullOrWhiteSpace filename then getFSharpCompilerLocation() else filename
+
+    /// Get the framework implementation directory, either of the selected SDK or the currently running process as a backup
+    /// F# interactive/reflective scenarios use the implementation directory of the currently running process
+    let getImplementationAssemblyDir() =
+        if isInteractive then
+            getRunningImplementationAssemblyDir()
+        else
+            let sdkDir = tryGetSdkDir()
+            match sdkDir with 
+            | Some dir -> 
+                let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                let dotnetConfig = File.ReadAllText(dotnetConfigFile)
+                let pattern = "\"version\": \""
+                let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
+                let endPos = dotnetConfig.IndexOf("\"", startPos)
+                let ver = dotnetConfig.[startPos..endPos-1]
+                let path = Path.GetFullPath(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
+                if Directory.Exists(path) then
+                    path
+                else
+                    getRunningImplementationAssemblyDir()
+            | None ->
+                let path = getRunningImplementationAssemblyDir()
+                path
 
     let getFSharpCoreLibraryName = "FSharp.Core"
+
     let getFsiLibraryName = "FSharp.Compiler.Interactive.Settings"
-    let getDefaultFSharpCoreLocation = Path.Combine(fSharpCompilerLocation, getFSharpCoreLibraryName + ".dll")
-    let getDefaultFsiLibraryLocation = Path.Combine(fSharpCompilerLocation, getFsiLibraryName + ".dll")
-    let implementationAssemblyDir = Path.GetDirectoryName(typeof<obj>.Assembly.Location) |> ifEmptyUse fSharpCompilerLocation
+
+    // Use the FSharp.Core that is executing with the compiler as a backup reference
+    let getFSharpCoreImplementationReference() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
+
+    // Use the FSharp.Compiler.Interactive.Settings executing with the compiler as a backup reference
+    let getFsiLibraryImplementationReference() = Path.Combine(getFSharpCompilerLocation(), getFsiLibraryName + ".dll")
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
-    let getDefaultSystemValueTupleReference () =
-        try
-            let asm = typeof<System.ValueTuple<int, int>>.Assembly
-            if asm.FullName.StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
-                Some asm.Location
-            else
-                let valueTuplePath = Path.Combine(fSharpCompilerLocation, "System.ValueTuple.dll")
-                if File.Exists(valueTuplePath) then
-                    Some valueTuplePath
+    let getSystemValueTupleImplementationReference () =
+        let probeFile = Path.Combine(getImplementationAssemblyDir(), "System.ValueTuple.dll")
+        if File.Exists(probeFile) then 
+            Some probeFile 
+        else
+            try
+                let asm = typeof<System.ValueTuple<int, int>>.Assembly
+                if asm.FullName.StartsWith("System.ValueTuple", StringComparison.OrdinalIgnoreCase) then
+                    Some asm.Location
                 else
-                    None
-        with _ -> None
+                    let valueTuplePath = Path.Combine(getFSharpCompilerLocation(), "System.ValueTuple.dll")
+                    if File.Exists(valueTuplePath) then
+                        Some valueTuplePath
+                    else
+                        None
+            with _ -> None
 
     // Algorithm:
     //     use implementation location of obj type, on shared frameworks it will always be in:
@@ -62,24 +204,27 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //          packs\Microsoft.NETCore.App.Ref\sdk-version\netcoreappn.n
     //     we will rely on the sdk-version match on the two paths to ensure that we get the product that ships with the
     //     version of the runtime we are executing on
-    //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location that is 
-    //     lower than or equal to the implementation version.
-    let zeroVersion = Version("0.0.0.0")
-    let version, frameworkRefsPackDirectoryRoot =
+    //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location.
+    let tryGetNetCoreRefsPackDirectoryRoot() =
         try
+            //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location that is 
+            //     lower than or equal to the implementation version.
+            let zeroVersion = Version("0.0.0.0")
             let computeVersion version =
                 match Version.TryParse(version) with
                 | true, v -> v
                 | false, _ -> zeroVersion
 
-            let version = computeVersion (DirectoryInfo(implementationAssemblyDir).Name)
-            let microsoftNETCoreAppRef = Path.Combine(implementationAssemblyDir, "../../../packs/Microsoft.NETCore.App.Ref")
+            let implDir = getImplementationAssemblyDir()
+            let version = computeVersion (DirectoryInfo(implDir).Name)
+            let microsoftNETCoreAppRef = Path.Combine(implDir, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(microsoftNETCoreAppRef) then
-                let directory = DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
-                                |> Array.map (fun di -> computeVersion di.Name)
-                                |> Array.sort
-                                |> Array.filter(fun v -> v <= version)
-                                |> Array.last
+                let directory = 
+                    DirectoryInfo(microsoftNETCoreAppRef).GetDirectories()
+                    |> Array.map (fun di -> computeVersion di.Name)
+                    |> Array.sort
+                    |> Array.filter(fun v -> v <= version)
+                    |> Array.last
                 Some (directory.ToString()), Some microsoftNETCoreAppRef
             else
                None,  None
@@ -87,7 +232,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
     // Tries to figure out the tfm for the compiler instance.
     // On coreclr it uses the deps.json file
-    let netcoreTfm =
+    let tryGetRunningDotNetCoreTfm() =
         let file =
             try
                 let asm = Assembly.GetEntryAssembly()
@@ -116,7 +261,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         | -1, _
         | _, -1 ->
             if isRunningOnCoreClr then
-                // Running on coreclr but no deps.json was deployed with the host so default to 3.0
+                // Running on coreclr but no deps.json was deployed with the host so default to 3.1
                 Some "netcoreapp3.1"
             else
                 // Running on desktop
@@ -127,7 +272,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
     // Tries to figure out the tfm for the compiler instance on the Windows desktop.
     // On full clr it uses the mscorlib version number
-    let getWindowsDesktopTfm () =
+    let getRunningDotNetFrameworkTfm () =
         let defaultMscorlibVersion = 4,8,3815,0
         let desktopProductVersionMonikers = [|
             // major, minor, build, revision, moniker
@@ -173,38 +318,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             // no TFM could be found, assume latest stable?
             "net48"
 
-    /// Gets the tfm E.g netcore3.0, net472
-    let executionTfm =
-        match netcoreTfm with
-        | Some tfm -> tfm
-        | _ -> getWindowsDesktopTfm ()
-
-    // Computer valid dotnet-rids for this environment:
-    //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
-    //
-    // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
-    let executionRid =
-        let processArchitecture = RuntimeInformation.ProcessArchitecture
-        let baseRid =
-            if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "win"
-            elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "osx"
-            else "linux"
-        let platformRid =
-            match processArchitecture with
-            | Architecture.X64 ->  baseRid + "-x64"
-            | Architecture.X86 -> baseRid + "-x86"
-            | Architecture.Arm64 -> baseRid + "-arm64"
-            | _ -> baseRid + "-arm"
-        platformRid
-
-    let isInReferenceAssemblyPackDirectory filename =
-        match frameworkRefsPackDirectoryRoot with
-        | Some root ->
-            let path = Path.GetDirectoryName(filename)
-            path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
-        | _ -> false
-
-    let frameworkRefsPackDirectory =
+    let tryGetSdkRefsPackDirectory() =
         let tfmPrefix = "netcoreapp"
         let tfmCompare c1 c2 =
             let deconstructTfmApp (netcoreApp: DirectoryInfo) =
@@ -224,18 +338,19 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                 | Some _, None -> 1
                 | _ -> 0
 
-        match version, frameworkRefsPackDirectoryRoot with
+        match tryGetNetCoreRefsPackDirectoryRoot() with
         | Some version, Some root ->
             try
                 let ref = Path.Combine(root, version, "ref")
-                let highestTfm = DirectoryInfo(ref).GetDirectories()
-                                 |> Array.sortWith tfmCompare
-                                 |> Array.tryLast
+                let highestTfm =
+                    DirectoryInfo(ref).GetDirectories()
+                    |> Array.sortWith tfmCompare
+                    |> Array.tryLast
 
                 match highestTfm with
                 | Some tfm -> Some (Path.Combine(ref, tfm.Name))
                 | None -> None
-            with | _ -> None
+            with _ -> None
         | _ -> None
 
     let getDependenciesOf assemblyReferences =
@@ -243,7 +358,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
 
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =
-            let root = Path.Combine(implementationAssemblyDir, simpleName)
+            let root = Path.Combine(getImplementationAssemblyDir(), simpleName)
             let pathOpt =
                 [| ""; ".dll"; ".exe" |]
                 |> Seq.tryPick(fun ext ->
@@ -289,14 +404,22 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
                             assemblies.Add(referenceName, path)
                         | _ ->
                             try
-                                let asm = System.Reflection.Assembly.LoadFrom(path)
-                                assemblies.Add(referenceName, path)
-                                for reference in asm.GetReferencedAssemblies() do
-                                    traverseDependencies reference.Name
-                            with e -> ()
-                with e -> ()
+                                let opts = 
+                                    { metadataOnly = MetadataOnlyFlag.Yes // turn this off here as we need the actual IL code
+                                      reduceMemoryUsage = ReduceMemoryFlag.Yes
+                                      pdbDirPath = None
+                                      tryGetMetadataSnapshot = (fun _ -> None) (* tryGetMetadataSnapshot *) } 
 
-        assemblyReferences |> List.iter(traverseDependencies)
+                                let reader = OpenILModuleReader path opts
+                                assemblies.Add(referenceName, path)
+                                for reference in reader.ILAssemblyRefs do
+                                    traverseDependencies reference.Name
+
+                            // There are many native assemblies which can't be cracked, raising exceptions
+                            with _ -> ()
+                with _ -> ()
+
+        assemblyReferences |> List.iter traverseDependencies
         assemblies
 
     // This list is the default set of references for "non-project" files. 
@@ -305,7 +428,7 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
     //    (a) included in the environment used for all .fsx files (see service.fs)
     //    (b) included in environment for files 'orphaned' from a project context
     //            -- for orphaned files (files in VS without a project context)
-    let getDesktopDefaultReferences useFsiAuxLib = [
+    let getDotNetFrameworkDefaultReferences useFsiAuxLib = [
         yield "mscorlib"
         yield "System"
         yield "System.Xml"
@@ -317,10 +440,10 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         yield "System.Configuration"
 
         yield getFSharpCoreLibraryName
-        if useFsiAuxLib then yield getFsiLibraryName
+        if useFsiAuxLib then yield fsiLibraryName
 
         // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
-        match getDefaultSystemValueTupleReference () with
+        match getSystemValueTupleImplementationReference () with
         | None -> ()
         | Some v -> yield v
 
@@ -344,38 +467,13 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
         yield "System.Numerics"
     ]
 
-    let fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib useSdkRefs assumeDotNetFramework =
-        let results =
-            if assumeDotNetFramework then
-                getDesktopDefaultReferences useFsiAuxLib
-            else
-                let dependencies =
-                    let getImplementationReferences () =
-                        // Coreclr supports netstandard assemblies only for now
-                        (getDependenciesOf [
-                            yield! Directory.GetFiles(implementationAssemblyDir, "*.dll")
-                            yield getDefaultFSharpCoreLocation
-                            if useFsiAuxLib then yield getDefaultFsiLibraryLocation
-                        ]).Values |> Seq.toList
-
-                    if useSdkRefs then
-                        // Go fetch references
-                        match frameworkRefsPackDirectory with
-                        | Some path ->
-                            try [ yield! Directory.GetFiles(path, "*.dll")
-                                  yield getDefaultFSharpCoreLocation
-                                  if useFsiAuxLib then yield getDefaultFsiLibraryLocation
-                                ]
-                            with | _ -> List.empty<string>
-                        | None ->
-                            getImplementationReferences ()
-                    else
-                        getImplementationReferences ()
-                dependencies
-        results
-
-    let defaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib assumeDotNetFramework useSdkRefs =
-        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib useSdkRefs assumeDotNetFramework
+    let getDotNetCoreImplementationReferences useFsiAuxLib =
+        let implDir = getImplementationAssemblyDir()
+        let roots = 
+            [ yield! Directory.GetFiles(implDir, "*.dll")
+              yield getFSharpCoreImplementationReference()
+              if useFsiAuxLib then yield getFsiLibraryImplementationReference() ]
+        (getDependenciesOf roots).Values |> Seq.toList
 
     // A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared 
     // resources between projects in the compiler services.  Also all assemblies where well-known system types exist
@@ -557,6 +655,102 @@ module internal FSharp.Compiler.DotNetFrameworkDependencies
             yield "WindowsBase"
         ]
 
+    member _.GetSystemAssemblies() = systemAssemblies
+
+    member _.IsInReferenceAssemblyPackDirectory filename =
+        match tryGetNetCoreRefsPackDirectoryRoot() with
+        | _, Some root ->
+            let path = Path.GetDirectoryName(filename)
+            path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
+        | _ -> false
+
+    member _.TryGetSdkDir() = tryGetSdkDir()
+
+    /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
+    member _.GetTfmAndRid() = 
+        // Interactive processes read their own configuration to find the running tfm
+
+        let tfm =
+            if isInteractive then
+                match tryGetRunningDotNetCoreTfm() with
+                | Some tfm -> tfm
+                | _ -> getRunningDotNetFrameworkTfm ()
+            else
+                let sdkDir = tryGetSdkDir()
+                match sdkDir with 
+                | Some dir -> 
+                    let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                    let dotnetConfig = File.ReadAllText(dotnetConfigFile)
+                    let pattern = "\"tfm\": \""
+                    let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
+                    let endPos = dotnetConfig.IndexOf("\"", startPos)
+                    let tfm = dotnetConfig.[startPos..endPos-1]
+                    //printfn "GetTfmAndRid, tfm = '%s'" tfm
+                    tfm
+                | None ->
+                match tryGetRunningDotNetCoreTfm() with
+                | Some tfm -> tfm
+                | _ -> getRunningDotNetFrameworkTfm ()
+
+        // Computer valid dotnet-rids for this environment:
+        //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
+        //
+        // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
+        let runningRid =
+            let processArchitecture = RuntimeInformation.ProcessArchitecture
+            let baseRid =
+                if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then "win"
+                elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then "osx"
+                else "linux"
+            match processArchitecture with
+            | Architecture.X64 ->  baseRid + "-x64"
+            | Architecture.X86 -> baseRid + "-x86"
+            | Architecture.Arm64 -> baseRid + "-arm64"
+            | _ -> baseRid + "-arm"
+
+        tfm, runningRid
+
+    static member ClearStaticCaches() = 
+        desiredDotNetSdkVersionForDirectoryCache.Clear()
+
+    member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory()
+
+    member _.TryGetDesiredDotNetSdkVersionForDirectory() = tryGetDesiredDotNetSdkVersionForDirectoryInfo()
+
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
-    let basicReferencesForScriptLoadClosure useFsiAuxLib useSdkRefs assumeDotNetFramework =
-        fetchPathsForDefaultReferencesForScriptsAndOutOfProjectSources useFsiAuxLib useSdkRefs assumeDotNetFramework
+    member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework) =
+        if assumeDotNetFramework then
+            getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
+        else
+            if useSdkRefs then
+                // Go fetch references
+                match tryGetSdkRefsPackDirectory() with
+                | Some path ->
+                    try 
+                        let sdkReferences = 
+                            [ yield! Directory.GetFiles(path, "*.dll")
+                              yield getFSharpCoreImplementationReference()
+                              if useFsiAuxLib then yield getFsiLibraryImplementationReference()
+                            ]
+                        sdkReferences, false
+                    with _ -> 
+                        if isRunningOnCoreClr then
+                            // If running on .NET Core and something goes wrong with getting the
+                            // .NET Core references then use .NET Core implementation assemblies for running process
+                            getDotNetCoreImplementationReferences useFsiAuxLib, false
+                        else
+                            // If running on .NET Framework and something goes wrong with getting the
+                            // .NET Core references then default back to .NET Framework and return a flag indicating this has been done
+                            getDotNetFrameworkDefaultReferences useFsiAuxLib, true
+                | None ->
+                    if isRunningOnCoreClr then
+                        // If running on .NET Core and there is no Sdk refs pack directory
+                        // then use .NET Core implementation assemblies for running process
+                        getDotNetCoreImplementationReferences useFsiAuxLib, false
+                    else
+                        // If running on .NET Framework and there is no Sdk refs pack directory
+                        // then default back to .NET Framework and return a flag indicating this has been done
+                        getDotNetFrameworkDefaultReferences useFsiAuxLib, true
+            else
+                getDotNetCoreImplementationReferences useFsiAuxLib, assumeDotNetFramework
+

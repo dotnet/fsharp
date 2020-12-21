@@ -7,6 +7,7 @@ open System
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Range
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]
@@ -36,7 +37,7 @@ type public FSharpDeclarationListItem =
 
     member Accessibility : FSharpAccessibility option
 
-    member Kind : CompletionItemKind
+    member Kind : FSharpCompletionItemKind
 
     member IsOwnMember : bool
 

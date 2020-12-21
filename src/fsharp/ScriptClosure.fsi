@@ -38,6 +38,12 @@ type LoadClosure =
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
       PackageReferences: (range * string list)[]
 
+      /// Whether we're decided to use .NET Framework analysis for this script
+      UseDesktopFramework: bool
+
+      /// Was the SDK directory override given?
+      SdkDirOverride: string option
+
       /// The list of references that were not resolved during load closure.
       UnresolvedReferences: UnresolvedAssemblyReference list
 
@@ -74,6 +80,7 @@ type LoadClosure =
         useSimpleResolution: bool * 
         useFsiAuxLib: bool * 
         useSdkRefs: bool * 
+        sdkDir: string option * 
         lexResourceManager: Lexhelp.LexResourceManager * 
         applyCompilerOptions: (TcConfigBuilder -> unit) * 
         assumeDotNetFramework: bool * 

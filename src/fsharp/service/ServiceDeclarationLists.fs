@@ -14,18 +14,20 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 [<Sealed>]
 /// Represents one parameter for one method (or other item) in a group. 
-type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: layout, isOptional: bool) = 
+type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: Layout, isOptional: bool) = 
 
     /// The name of the parameter.
     member _.ParameterName = name
@@ -102,7 +104,7 @@ module internal DescriptionListsImpl =
                     let nm = id.idText
                     // detect parameter type, if ptyOpt is None - this is .NET style optional argument
                     let pty = match ptyOpt with ValueSome x -> x | _ -> pty
-                    (nm, isOptArg, SepL.questionMark ^^ (wordL (TaggedTextOps.tagParameter nm))),  pty
+                    (nm, isOptArg, SepL.questionMark ^^ (wordL (TaggedText.tagParameter nm))),  pty
                 // Layout an unnamed argument 
                 | None, _, _ -> 
                     ("", isOptArg, emptyL), pty
@@ -112,11 +114,11 @@ module internal DescriptionListsImpl =
                     let prefix = 
                         if isParamArrayArg then
                             NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
-                            wordL (TaggedTextOps.tagParameter nm) ^^
+                            wordL (TaggedText.tagParameter nm) ^^
                             RightL.colon
                             //sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
                         else 
-                            wordL (TaggedTextOps.tagParameter nm) ^^
+                            wordL (TaggedText.tagParameter nm) ^^
                             RightL.colon
                             //sprintf "%s: " nm
                     (nm, isOptArg, prefix), pty)
@@ -177,7 +179,7 @@ module internal DescriptionListsImpl =
                     FSharpMethodGroupItemParameter(
                       name = spName,
                       canonicalTypeTextForSorting = showL spKind,
-                      display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedTextOps.tagParameter spName) ^^ RightL.colon ^^ spKind,
+                      display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedText.tagParameter spName) ^^ RightL.colon ^^ spKind,
                       //display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
                       isOptional=spOpt))
         | _ -> [| |]
@@ -474,7 +476,7 @@ module internal DescriptionListsImpl =
 /// An intellisense declaration
 [<Sealed>]
 type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility option,
-                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+                               kind: FSharpCompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
     member _.Name = name
     member _.NameInCode = nameInCode
 
@@ -491,7 +493,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 
     member decl.DescriptionText = 
         decl.StructuredDescriptionText
-        |> Tooltips.ToFSharpToolTipText
+        |> FSharpToolTip.ToFSharpToolTipText
 
     member _.Glyph = glyph 
     member _.Accessibility = accessibility
@@ -664,7 +666,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
     static member Error message = 
         new FSharpDeclarationListInfo(
                 [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError message]),
-                                             None, CompletionItemKind.Other, false, 0, false, None) |], false, true)
+                                             None, FSharpCompletionItemKind.Other, false, 0, false, None) |], false, true)
     
     static member Empty = FSharpDeclarationListInfo([| |], false, false)
 
@@ -674,15 +676,15 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
 /// a single, non-overloaded item such as union case or a named function value.
 // Note: instances of this type do not hold any references to any compiler resources.
 [<Sealed; NoEquality; NoComparison>]
-type FSharpMethodGroupItem(description: FSharpToolTipText<layout>, xmlDoc: FSharpXmlDoc,
-                           returnType: layout, parameters: FSharpMethodGroupItemParameter[],
+type FSharpMethodGroupItem(description: FSharpToolTipText<Layout>, xmlDoc: FSharpXmlDoc,
+                           returnType: Layout, parameters: FSharpMethodGroupItemParameter[],
                            hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
 
     /// The structured description representation for the method (or other item)
     member _.StructuredDescription = description
 
     /// The formatted description text for the method (or other item)
-    member _.Description = Tooltips.ToFSharpToolTipText description
+    member _.Description = FSharpToolTip.ToFSharpToolTipText description
 
     /// The documentation for the item
     member _.XmlDoc = xmlDoc

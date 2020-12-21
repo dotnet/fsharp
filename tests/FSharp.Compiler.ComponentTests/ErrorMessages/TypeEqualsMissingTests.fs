@@ -15,7 +15,7 @@ module ``Type definition missing equals`` =
             """
 type X | A | B
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             3360 
             (2, 8, 2, 9)
             "Unexpected token in type definition. Expected '=' after the type 'X'."

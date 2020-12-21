@@ -126,12 +126,12 @@ module rec Compiler =
               Name            = None
               References      = [] }
 
-    let private fromFSharpErrorInfo (errors: FSharpErrorInfo[]) : ErrorInfo list =
-        let toErrorInfo (e: FSharpErrorInfo) : ErrorInfo =
+    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : ErrorInfo list =
+        let toErrorInfo (e: FSharpDiagnostic) : ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
 
-            let error = if severity = FSharpErrorSeverity.Warning then Warning errorNumber else Error errorNumber
+            let error = if severity = FSharpDiagnosticSeverity.Warning then Warning errorNumber else Error errorNumber
 
             { Error   = error
               Range   =
@@ -274,9 +274,9 @@ module rec Compiler =
 
     let private compileFSharpCompilation compilation ignoreWarnings : TestResult =
 
-        let ((err: FSharpErrorInfo[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
+        let ((err: FSharpDiagnostic[], outputFilePath: string), deps) = CompilerAssert.CompileRaw(compilation, ignoreWarnings)
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -367,7 +367,7 @@ module rec Compiler =
         let parseResults = CompilerAssert.Parse source
         let failed = parseResults.ParseHadErrors
 
-        let diagnostics =  parseResults.Errors |> fromFSharpErrorInfo
+        let diagnostics =  parseResults.Errors |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -386,21 +386,21 @@ module rec Compiler =
         | FS fs -> parseFSharp fs
         | _ -> failwith "Parsing only supported for F#."
 
-    let private typecheckFSharpSourceAndReturnErrors (fsSource: FSharpCompilationSource) : FSharpErrorInfo [] =
+    let private typecheckFSharpSourceAndReturnErrors (fsSource: FSharpCompilationSource) : FSharpDiagnostic [] =
         let source = getSource fsSource.Source
         let options = fsSource.Options |> Array.ofList
 
         let name = match fsSource.Name with | None -> "test.fs" | Some n -> n
 
-        let (err: FSharpErrorInfo []) = CompilerAssert.TypeCheckWithOptionsAndName options name source
+        let (err: FSharpDiagnostic []) = CompilerAssert.TypeCheckWithOptionsAndName options name source
 
         err
 
     let private typecheckFSharpSource (fsSource: FSharpCompilationSource) : TestResult =
 
-        let (err: FSharpErrorInfo []) = typecheckFSharpSourceAndReturnErrors fsSource
+        let (err: FSharpDiagnostic []) = typecheckFSharpSourceAndReturnErrors fsSource
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None
@@ -450,9 +450,9 @@ module rec Compiler =
 
         use script = new FSharpScript(additionalArgs=options)
 
-        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpErrorInfo[])) = script.Eval(source)
+        let ((evalresult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[])) = script.Eval(source)
 
-        let diagnostics = err |> fromFSharpErrorInfo
+        let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
             { OutputPath   = None

@@ -3,59 +3,32 @@
 module internal FSharp.Compiler.CreateILModule 
 
 open System
-open System.Collections.Generic
-open System.Diagnostics
-open System.Globalization
 open System.IO
 open System.Reflection
-open System.Text
-open System.Threading
 
 open Internal.Utilities
-open Internal.Utilities.Collections
-open Internal.Utilities.Filename
-open Internal.Utilities.StructuredFormat
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Utils
-open FSharp.Compiler.AbstractIL.Diagnostics
-open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.BinaryResourceFormats
-open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
-open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
-open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.ScriptClosure
-open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.XmlDocFileWriter
-open FSharp.Compiler.StaticLinking
-open Microsoft.DotNet.DependencyManager
-
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-
-#if !NO_EXTENSIONTYPING
-open FSharp.Compiler.ExtensionTyping
-#endif
 
 //----------------------------------------------------------------------------
 // Helpers for finding attributes

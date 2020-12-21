@@ -15,11 +15,10 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.CheckDeclarations
-
-open Internal.Utilities.StructuredFormat
 
 //----------------------------------------------------------------------------
 // PrintWholeAssemblyImplementation
@@ -32,10 +31,10 @@ let PrintWholeAssemblyImplementation g (tcConfig:TcConfig) outfile header expr =
             let filename = outfile + ".terms"
             use f = System.IO.File.CreateText (filename + "-" + string showTermFileCount + "-" + header)
             showTermFileCount <- showTermFileCount + 1
-            Layout.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
         else 
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            Layout.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL g expr))
             dprintf "\n------------------\n"
 let AddExternalCcuToOptimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
     match ccuinfo.FSharpOptimizationData.Force() with 
@@ -57,10 +56,10 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
     PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFiles
 #if DEBUG
     if tcConfig.showOptimizationData then 
-        dprintf "Expression prior to optimization:\n%s\n" (Layout.showL (Display.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
+        dprintf "Expression prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
     
     if tcConfig.showOptimizationData then 
-        dprintf "CCU prior to optimization:\n%s\n" (Layout.showL (Display.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
+        dprintf "CCU prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
 #endif
 
     let optEnv0 = optEnv
@@ -89,7 +88,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
             let optSettings = { optSettings with abstractBigTargets = false; reportingPhase = false }
 #if DEBUG
             if tcConfig.showOptimizationData then 
-                dprintf "Optimization implFileOptData:\n%s\n" (Layout.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
+                dprintf "Optimization implFileOptData:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
 #endif
 
             let implFile, optEnvExtraLoop = 

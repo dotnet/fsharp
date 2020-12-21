@@ -19,3 +19,28 @@ let x = ()
         | [ SynModuleDecl.Types ([ TypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members = [ _; _ ])) ], _)
             SynModuleDecl.Let _ ] -> ()
         | _ -> failwith "Unexpected tree"
+
+    [<Test>]
+    let ``Union case 01 - of`` () =
+        let parseResults = getParseResults """
+type U1 =
+    | A of
+
+type U2 =
+    | B of
+    | C
+
+let x = ()
+    """
+        let (|UnionWithCases|_|) typeDefn =
+            match typeDefn with
+            | TypeDefn (typeRepr = SynTypeDefnRepr.Simple (SynTypeDefnSimpleRepr.Union (unionCases = cases), _)) ->
+                cases |> List.map (fun (UnionCase (ident = ident)) -> ident.idText) |> Some
+            | _ -> None
+
+        let (SynModuleOrNamespace (decls = decls)) = getSingleModuleLikeDecl parseResults
+        match decls with
+        | [ SynModuleDecl.Types ([ UnionWithCases ["A"]], _)
+            SynModuleDecl.Types ([ UnionWithCases ["B"; "C"] ], _)
+            SynModuleDecl.Let _ ] -> ()
+        | _ -> failwith "Unexpected tree"

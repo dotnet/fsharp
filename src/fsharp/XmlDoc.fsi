@@ -10,13 +10,16 @@ type XmlDoc =
 
     new: unprocessedLines:string [] * range:range -> XmlDoc
 
+    /// Merge two XML documentation
     static member Merge: doc1:XmlDoc -> doc2:XmlDoc -> XmlDoc
 
-    member Check: paramNamesOpt:string list option -> unit
+    /// Check the XML documentation
+    member internal Check: paramNamesOpt:string list option -> unit
 
     /// Get the lines after insertion of implicit summary tags and encoding
     member GetElaboratedXmlLines: unit -> string []
 
+    /// Get the elaborated XML documentation as XML text
     member GetXmlText: unit -> string
 
     member IsEmpty: bool
@@ -31,7 +34,7 @@ type XmlDoc =
     static member Empty: XmlDoc
   
 /// Used to collect XML documentation during lexing and parsing.
-type XmlDocCollector =
+type internal XmlDocCollector =
 
     new: unit -> XmlDocCollector
 
@@ -42,14 +45,14 @@ type XmlDocCollector =
     member LinesBefore: grabPointPos:pos -> (string * range) []
   
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
-type PreXmlDoc =
-    | PreXmlMerge of PreXmlDoc * PreXmlDoc
-    | PreXmlDoc of pos * XmlDocCollector
-    | PreXmlDocEmpty
+[<Sealed>]
+type public PreXmlDoc =
 
-    static member CreateFromGrabPoint: collector:XmlDocCollector * grabPointPos:pos -> PreXmlDoc
+    static member internal CreateFromGrabPoint: collector:XmlDocCollector * grabPointPos:pos -> PreXmlDoc
 
     static member Merge: a:PreXmlDoc -> b:PreXmlDoc -> PreXmlDoc
+    
+    static member Create: unprocessedLines:string [] * range:range -> PreXmlDoc
 
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
 

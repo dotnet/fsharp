@@ -3326,6 +3326,7 @@ module EstablishTypeDefinitionCores =
                 TNoRepr
 
             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, m) -> 
+                let s = (s :?> ILType)
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind cenv.g (TyconILAssemblyCode, attrs, [], [], inSig, true, m) |> ignore
                 TAsmRepr s
@@ -3930,6 +3931,7 @@ module EstablishTypeDefinitionCores =
                     TRecdRepr (Construct.MakeRecdFieldsTable recdFields), None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) -> 
+                    let s = (s :?> ILType)
                     noCLIMutableAttributeCheck()
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedAssemblyCode
@@ -5795,7 +5797,7 @@ let TypeCheckOneImplFile
             tcComputationExpression=TcComputationExpression)    
 
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
-    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None defs
+    let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None defs
 
     let implFileTypePriorToSig = !mtypeAcc 
 
@@ -5904,7 +5906,7 @@ let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, condition
              tcComputationExpression=TcComputationExpression)
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
-    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDocEmpty None specs
+    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs
     
     let sigFileType = !mtypeAcc 
     
