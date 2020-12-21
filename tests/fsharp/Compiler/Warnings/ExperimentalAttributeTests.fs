@@ -27,7 +27,7 @@ module TestModule =
     let ``ExperimentalAttribute warn when preview not specified``() =
         CompilerAssert.TypeCheckSingleError
             experimentalSource
-            FSharpErrorSeverity.Warning
+            FSharpDiagnosticSeverity.Warning
             57
             (7, 8, 7, 17)
             "Preview library feature, requires '--langversion:preview'. This warning can be disabled using '--nowarn:57' or '#nowarn \"57\"'."

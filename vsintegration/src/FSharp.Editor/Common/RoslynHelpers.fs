@@ -9,16 +9,18 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler
-open FSharp.Compiler.Layout
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
+type RoslynTaggedText = Microsoft.CodeAnalysis.TaggedText
+
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =
     let joinWithLineBreaks segments =
-        let lineBreak = TaggedTextOps.Literals.lineBreak
+        let lineBreak = TaggedText.lineBreak
         match segments |> List.filter (Seq.isEmpty >> not) with
         | [] -> Seq.empty
         | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
@@ -87,7 +89,7 @@ module internal RoslynHelpers =
         | LayoutTag.ModuleBinding // why no 'Identifier'? Does it matter?
         | LayoutTag.UnknownEntity -> TextTags.Text
 
-    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
+    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(RoslynTaggedText(roslynTag t.Tag, t.Text))
 
     type VolatileBarrier() =
         [<VolatileField>]
@@ -132,16 +134,16 @@ module internal RoslynHelpers =
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation  :> Task
 
-    let ConvertError(error: FSharpErrorInfo, location: Location) =
+    let ConvertError(error: FSharpDiagnostic, location: Location) =
         // Normalize the error message into the same format that we will receive it from the compiler.
         // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
         // (i.e the same error does not appear twice, where the only difference is the line endings.)
-        let normalizedMessage = error.Message |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
+        let normalizedMessage = error.Message |> FSharpDiagnostic.NormalizeErrorString |> FSharpDiagnostic.NewlineifyErrorString
 
         let id = "FS" + error.ErrorNumber.ToString("0000")
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(normalizedMessage)
-        let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let severity = if error.Severity = FSharpDiagnosticSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
         let customTags = 
             match error.ErrorNumber with
             | 1182 -> FSharpDiagnosticCustomTags.Unnecessary

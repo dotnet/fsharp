@@ -46,8 +46,8 @@
             this approach gives a very small deployment. Which is kind of necessary.
         -->
         <!-- assemblies -->
-        <file src="fsc\$Configuration$\netcoreapp3.1\fsc.exe"                                             target="lib\netcoreapp3.1" />
-        <file src="fsi\$Configuration$\netcoreapp3.1\fsi.exe"                                             target="lib\netcoreapp3.1" />
+        <file src="fsc\$Configuration$\netcoreapp3.1\fsc.dll"                                             target="lib\netcoreapp3.1" />
+        <file src="fsi\$Configuration$\netcoreapp3.1\fsi.dll"                                             target="lib\netcoreapp3.1" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.dll"                            target="lib\netcoreapp3.1" />
         <file src="FSharp.Core\$Configuration$\netstandard2.0\FSharp.Core.xml"                            target="lib\netcoreapp3.1" />
         <file src="FSharp.Compiler.Private\$Configuration$\netstandard2.0\FSharp.Compiler.Private.dll"    target="lib\netcoreapp3.1" />

@@ -157,5 +157,11 @@
   <data name="FSharpInteractivePreviewMode" xml:space="preserve">
     <value>Enable preview language features</value>
   </data>
+  <data name="FSharpInteractiveUseNetCore" xml:space="preserve">
+    <value>Use .NET Core Scripting</value>
+  </data>
+  <data name="FSharpInteractiveUseNetCoreDescr" xml:space="preserve">
+    <value>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</value>
+  </data>
 
 </root>

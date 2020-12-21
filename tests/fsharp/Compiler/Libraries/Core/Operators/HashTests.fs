@@ -20,7 +20,7 @@ module ``Hash Tests`` =
             """
 hash id |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 8)
             "The type '('a -> 'a)' does not support the 'equality' constraint because it is a function type"

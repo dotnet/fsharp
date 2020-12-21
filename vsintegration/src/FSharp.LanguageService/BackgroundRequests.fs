@@ -240,8 +240,10 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                                 let span = new TextSpan(iStartLine=error.StartLineAlternate-1,iStartIndex=error.StartColumn,iEndLine=error.EndLineAlternate-1,iEndIndex=error.EndColumn)                             
                                 let sev = 
                                     match error.Severity with 
-                                    | FSharpErrorSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
-                                    | FSharpErrorSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
+                                    | FSharpDiagnosticSeverity.Hidden -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
+                                    | FSharpDiagnosticSeverity.Info -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Hint
+                                    | FSharpDiagnosticSeverity.Warning -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning
+                                    | FSharpDiagnosticSeverity.Error -> Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error
                                 req.ResultSink.AddError(req.FileName, error.Subcategory, error.Message, span, sev)
                           
 
