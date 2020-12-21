@@ -120,14 +120,14 @@ let stringBufferAsBytes (buf: ByteBuffer) =
     Array.init (bytes.Length / 2) (fun i -> bytes.[i*2]) 
 
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> bool -> LexerContinuation -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> bool -> bool -> LexerContinuation -> token)
 
-    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart isVerbatim cont =
+    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart isVerbatim isTripleQuote cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isInterpolatedStringPart isVerbatim cont
+        f buf kind isInterpolatedStringPart isVerbatim isTripleQuote cont
 
     static member Default =
-        LexerStringFinisher (fun buf kind isPart isVerbatim cont ->
+        LexerStringFinisher (fun buf kind isPart isVerbatim isTripleQuote cont ->
             if kind.IsInterpolated then 
                 let s = stringBufferAsString buf
                 if kind.IsInterpolatedFirst then 
@@ -143,7 +143,7 @@ type LexerStringFinisher =
             elif kind.IsByteString then 
                 BYTEARRAY (stringBufferAsBytes buf, isVerbatim, cont)
             else
-                STRING (stringBufferAsString buf, isVerbatim, cont)
+                STRING (stringBufferAsString buf, isVerbatim, isTripleQuote, cont)
         ) 
 
 let addUnicodeString (buf: ByteBuffer) (x:string) =

@@ -136,7 +136,7 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
     let m = lexbuf.LexemeRange 
     let startp = lexbuf.StartPos 
     let fin =
-        LexerStringFinisher (fun buf kind isPart isVerbatim cont -> 
+        LexerStringFinisher (fun buf kind isPart isVerbatim isTripleQuote cont -> 
             // Adjust the start-of-token mark back to the true start of the token 
             lexbuf.StartPos <- startp
             if kind.IsByteString then            
@@ -162,7 +162,7 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                         INTERP_STRING_END (s, cont)
             else
                 let s = Lexhelp.stringBufferAsString buf
-                STRING (s, isVerbatim, cont))  
+                STRING (s, isVerbatim, isTripleQuote, cont))  
     buf,fin,m
            
              
@@ -1124,13 +1124,13 @@ and singleQuoteString sargs skip = parse
  |  '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false false cont
+      fin.Finish buf kind false false false cont
     }
 
  |  '"''B' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf { kind with IsByteString = true } false false cont
+      fin.Finish buf { kind with IsByteString = true } false false false cont
     }
 
  | ("{{" | "}}")
@@ -1147,7 +1147,7 @@ and singleQuoteString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.SingleQuote, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true false cont
+          fin.Finish buf kind true false false cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
@@ -1214,13 +1214,13 @@ and verbatimString sargs skip = parse
  |  '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false true cont
+      fin.Finish buf kind false true false cont
     }
 
  |  '"''B' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf { kind with IsByteString = true } false true cont
+      fin.Finish buf { kind with IsByteString = true } false true false cont
     }
 
  | newline 
@@ -1244,7 +1244,7 @@ and verbatimString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.Verbatim, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true true cont
+          fin.Finish buf kind true true false cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
@@ -1297,7 +1297,7 @@ and tripleQuoteString sargs skip = parse
  |  '"' '"' '"' 
     { let (buf, fin, _m, kind, args) = sargs 
       let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-      fin.Finish buf kind false false cont }
+      fin.Finish buf kind false false true cont }
 
  | newline 
     { let (buf, _fin, m, kind, args) = sargs 
@@ -1340,7 +1340,7 @@ and tripleQuoteString sargs skip = parse
           let m2 = lexbuf.LexemeRange
           args.stringNest <- (1, LexerStringStyle.TripleQuote, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind true false cont
+          fin.Finish buf kind true false true cont
       else
           addUnicodeString buf (lexeme lexbuf) 
           if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))

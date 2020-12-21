@@ -6672,6 +6672,8 @@ FSharp.Compiler.SyntaxTree+SynConst+String: System.String get_text()
 FSharp.Compiler.SyntaxTree+SynConst+String: System.String text
 FSharp.Compiler.SyntaxTree+SynConst+String: Boolean get_isVerbatim()
 FSharp.Compiler.SyntaxTree+SynConst+String: Boolean isVerbatim
+FSharp.Compiler.SyntaxTree+SynConst+String: Boolean isTripleQuote
+FSharp.Compiler.SyntaxTree+SynConst+String: Boolean get_isTripleQuote()
 FSharp.Compiler.SyntaxTree+SynConst+String: range Range(range)
 FSharp.Compiler.SyntaxTree+SynConst+String: range get_range()
 FSharp.Compiler.SyntaxTree+SynConst+String: range range
@@ -6789,7 +6791,7 @@ FSharp.Compiler.SyntaxTree+SynConst: SynConst NewIntPtr(Int64)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewMeasure(SynConst, SynMeasure)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewSByte(SByte)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewSingle(Single)
-FSharp.Compiler.SyntaxTree+SynConst: SynConst NewString(System.String, Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynConst: SynConst NewString(System.String, Boolean, Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt16(UInt16)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt16s(UInt16[])
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt32(UInt32)

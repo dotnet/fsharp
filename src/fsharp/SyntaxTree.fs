@@ -139,7 +139,7 @@ type SynConst =
     | UserNum of value: string * suffix: string
 
     /// F# syntax: verbatim or regular string, e.g. "abc"
-    | String of text: string * isVerbatim: bool * range: range
+    | String of text: string * isVerbatim: bool * isTripleQuote: bool * range: range
 
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
     ///
@@ -157,7 +157,7 @@ type SynConst =
     /// Gets the syntax range of this construct
     member c.Range dflt =
         match c with
-        | SynConst.String (_, _, m0) | SynConst.Bytes (_, _, m0) -> m0
+        | SynConst.String (_, _, _, m0) | SynConst.Bytes (_, _, m0) -> m0
         | _ -> dflt
 
 /// Represents an unchecked syntax tree of F# unit of measure annotations.
