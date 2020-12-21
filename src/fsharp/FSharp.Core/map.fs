@@ -2428,8 +2428,8 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
             x.ContainsKey key
 
         member x.Item
-            with get (key : 'Key) = x.TryFindV key |> ValueOption.get
-            and set _ _ = failwith "readonly"
+            with get (key : 'Key) = x.Find key
+            and set _ _ = raise <| NotSupportedException()
 
     new(comparer : IComparer<'Key>) = 
         Map<'Key, 'Value>(comparer, MapEmpty.Instance)
