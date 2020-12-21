@@ -349,10 +349,10 @@ module Strings =
     let ``SynConst.String tracks triple quotes`` (bindingName: string, isTripleQuote: bool) =
         let parseResults =
             getParseResults
-                """
- let string1 = "yo"
+                "
+ let string1 = \"yo\"
  let string2 = \"\"\"yo\"\"\"
- """
+ "
 
         match getBindingConstValue parseResults bindingName with
         | Some (SynConst.String (_, _, tripleQuote_, _)) -> tripleQuote_ |> should equal isTripleQuote
