@@ -6640,6 +6640,8 @@ FSharp.Compiler.SyntaxTree+SynConst+Byte: Byte Item
 FSharp.Compiler.SyntaxTree+SynConst+Byte: Byte get_Item()
 FSharp.Compiler.SyntaxTree+SynConst+Bytes: Byte[] bytes
 FSharp.Compiler.SyntaxTree+SynConst+Bytes: Byte[] get_bytes()
+FSharp.Compiler.SyntaxTree+SynConst+Bytes: Boolean get_isVerbatim()
+FSharp.Compiler.SyntaxTree+SynConst+Bytes: Boolean isVerbatim
 FSharp.Compiler.SyntaxTree+SynConst+Bytes: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynConst+Bytes: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynConst+Char: Char Item
@@ -6668,6 +6670,11 @@ FSharp.Compiler.SyntaxTree+SynConst+String: FSharp.Compiler.Text.Range get_range
 FSharp.Compiler.SyntaxTree+SynConst+String: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynConst+String: System.String get_text()
 FSharp.Compiler.SyntaxTree+SynConst+String: System.String text
+FSharp.Compiler.SyntaxTree+SynConst+String: Boolean get_isVerbatim()
+FSharp.Compiler.SyntaxTree+SynConst+String: Boolean isVerbatim
+FSharp.Compiler.SyntaxTree+SynConst+String: range Range(range)
+FSharp.Compiler.SyntaxTree+SynConst+String: range get_range()
+FSharp.Compiler.SyntaxTree+SynConst+String: range range
 FSharp.Compiler.SyntaxTree+SynConst+Tags: Int32 Bool
 FSharp.Compiler.SyntaxTree+SynConst+Tags: Int32 Byte
 FSharp.Compiler.SyntaxTree+SynConst+Tags: Int32 Bytes
@@ -6771,7 +6778,7 @@ FSharp.Compiler.SyntaxTree+SynConst: Int32 Tag
 FSharp.Compiler.SyntaxTree+SynConst: Int32 get_Tag()
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewBool(Boolean)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewByte(Byte)
-FSharp.Compiler.SyntaxTree+SynConst: SynConst NewBytes(Byte[], FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynConst: SynConst NewBytes(Byte[], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewChar(Char)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewDecimal(System.Decimal)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewDouble(Double)
@@ -6782,7 +6789,7 @@ FSharp.Compiler.SyntaxTree+SynConst: SynConst NewIntPtr(Int64)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewMeasure(SynConst, SynMeasure)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewSByte(SByte)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewSingle(Single)
-FSharp.Compiler.SyntaxTree+SynConst: SynConst NewString(System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynConst: SynConst NewString(System.String, Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt16(UInt16)
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt16s(UInt16[])
 FSharp.Compiler.SyntaxTree+SynConst: SynConst NewUInt32(UInt32)
