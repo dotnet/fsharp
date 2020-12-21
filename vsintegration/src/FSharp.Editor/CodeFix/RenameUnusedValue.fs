@@ -28,9 +28,9 @@ type internal FSharpRenameUnusedValueCodeFixProvider
     let fixableDiagnosticIds = set ["FS1182"]
     let checker = checkerProvider.Checker
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             // Don't show code fixes for unused values, even if they are compiler-generated.
             do! Option.guard context.Document.FSharpOptions.CodeFixes.UnusedDeclarations

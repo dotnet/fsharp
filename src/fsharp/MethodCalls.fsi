@@ -44,7 +44,7 @@ open FSharp.Compiler.ExtensionTyping
 ///
 /// The bool indicates if named using a '?', making the caller argument explicit-optional
 type CallerArg<'T> =
-    | CallerArg of ty: TType * range: range * isOpt: bool * exprInfo: 'T
+    | CallerArg of ty: TType * range: Range * isOpt: bool * exprInfo: 'T
 
     member CallerArgumentType: TType
 
@@ -52,7 +52,7 @@ type CallerArg<'T> =
 
     member IsExplicitOptional: bool
 
-    member Range: range
+    member Range: Range
   
 type CalledArg =
     { Position: struct (int * int)
@@ -143,8 +143,8 @@ type CalledMeth<'T> =
     new: infoReader:InfoReader *
          nameEnv:NameResolutionEnv option *
          isCheckingAttributeCall:bool *
-         freshenMethInfo:(range -> MethInfo -> TypeInst) *
-         m:range *
+         freshenMethInfo:(Range -> MethInfo -> TypeInst) *
+         m:Range *
          ad:AccessorDomain *
          minfo:MethInfo *
          calledTyArgs:TType list *
@@ -156,11 +156,11 @@ type CalledMeth<'T> =
          allowOutAndOptArgs:bool *
          tyargsOpt:TType option -> CalledMeth<'T>
     static member GetMethod: x:CalledMeth<'T> -> MethInfo
-    member CalledObjArgTys: m:range -> TType list
+    member CalledObjArgTys: m:Range -> TType list
     member GetParamArrayElementType: unit -> TType
-    member HasCorrectObjArgs: m:range -> bool
-    member IsAccessible: m:range * ad:AccessorDomain -> bool
-    member IsCandidate: m:range * ad:AccessorDomain -> bool
+    member HasCorrectObjArgs: m:Range -> bool
+    member IsAccessible: m:Range * ad:AccessorDomain -> bool
+    member IsCandidate: m:Range * ad:AccessorDomain -> bool
     member AllCalledArgs: CalledArg list list
     member AllUnnamedCalledArgs: CalledArg list
 
@@ -238,11 +238,11 @@ val ExamineMethodForLambdaPropagation: x:CalledMeth<SynExpr> -> (ArgumentAnalysi
 /// Is this a 'base' call
 val IsBaseCall: objArgs:Expr list -> bool
 
-val BuildILMethInfoCall: g:TcGlobals -> amap:ImportMap -> m:range -> isProp:bool -> minfo:ILMethInfo -> valUseFlags:ValUseFlag -> minst:TType list -> direct:bool -> args:Exprs -> Expr * TType
+val BuildILMethInfoCall: g:TcGlobals -> amap:ImportMap -> m:Range -> isProp:bool -> minfo:ILMethInfo -> valUseFlags:ValUseFlag -> minst:TType list -> direct:bool -> args:Exprs -> Expr * TType
 
 /// Make a call to a method info. Used by the optimizer and code generator to build 
 /// calls to the type-directed solutions to member constraints.
-val MakeMethInfoCall: amap:ImportMap -> m:range -> minfo:MethInfo -> minst:TType list -> args:Exprs -> Expr
+val MakeMethInfoCall: amap:ImportMap -> m:Range -> minfo:MethInfo -> minst:TType list -> args:Exprs -> Expr
 
 /// Build an expression that calls a given method info. 
 /// This is called after overload resolution, and also to call other 
@@ -253,11 +253,11 @@ val MakeMethInfoCall: amap:ImportMap -> m:range -> minfo:MethInfo -> minst:TType
 //   objArgs: the 'this' argument, if any 
 //   args: the arguments, if any 
 val BuildMethodCall: 
-    tcVal:(ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
+    tcVal:(ValRef -> ValUseFlag -> TType list -> Range -> Expr * TType) ->
     g:TcGlobals ->
     amap:ImportMap ->
     isMutable:TypedTreeOps.Mutates ->
-    m:range ->
+    m:Range ->
     isProp:bool ->
     minfo:MethInfo ->
     valUseFlags:ValUseFlag ->
@@ -267,45 +267,45 @@ val BuildMethodCall:
         -> Expr * TType
 
 /// Build a call to the System.Object constructor taking no arguments,
-val BuildObjCtorCall: g:TcGlobals -> m:range -> Expr
+val BuildObjCtorCall: g:TcGlobals -> m:Range -> Expr
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
-val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * delegateTy:TType * invokeMethInfo:MethInfo * delArgTys:TType list * f:Expr * fty:TType * m:range -> Expr
+val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * delegateTy:TType * invokeMethInfo:MethInfo * delArgTys:TType list * f:Expr * fty:TType * m:Range -> Expr
 
-val CoerceFromFSharpFuncToDelegate: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> delegateTy:TType -> Expr
+val CoerceFromFSharpFuncToDelegate: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> callerArgTy:TType -> m:Range -> callerArgExpr:Expr -> delegateTy:TType -> Expr
 
-val AdjustCallerArgExprForCoercions: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> isOutArg:bool -> calledArgTy:TType -> reflArgInfo:ReflectedArgInfo -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> 'a option * Expr
+val AdjustCallerArgExprForCoercions: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> isOutArg:bool -> calledArgTy:TType -> reflArgInfo:ReflectedArgInfo -> callerArgTy:TType -> m:Range -> callerArgExpr:Expr -> 'a option * Expr
 
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
 /// contents of the ref. Likewise lots of adjustments are made for optional arguments etc.
 val AdjustCallerArgs:
-    tcFieldInit:(range -> AbstractIL.IL.ILFieldInit -> Const) ->
+    tcFieldInit:(Range -> AbstractIL.IL.ILFieldInit -> Const) ->
     eCallerMemberName:string option ->
     infoReader:InfoReader ->
     ad:AccessorDomain ->
     calledMeth:CalledMeth<Expr> ->
     objArgs:Expr list ->
     lambdaVars:'a option ->
-    mItem:range ->
-    mMethExpr:range ->
+    mItem:Range ->
+    mMethExpr:Range ->
        (Expr -> Expr) * Expr list *
        'b option list * AssignedCalledArg<Expr> list *
        Expr list * (Expr -> Expr) *
        'c option list * Expr list *
        Binding list
 
-val RecdFieldInstanceChecks: g:TcGlobals -> amap:ImportMap -> ad:AccessorDomain -> m:range -> rfinfo:RecdFieldInfo -> unit
+val RecdFieldInstanceChecks: g:TcGlobals -> amap:ImportMap -> ad:AccessorDomain -> m:Range -> rfinfo:RecdFieldInfo -> unit
 
-val ILFieldStaticChecks: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> finfo:ILFieldInfo -> unit
+val ILFieldStaticChecks: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> m:Range -> finfo:ILFieldInfo -> unit
 
-val ILFieldInstanceChecks: g:TcGlobals -> amap:ImportMap -> ad:AccessorDomain -> m:range -> finfo:ILFieldInfo -> unit
+val ILFieldInstanceChecks: g:TcGlobals -> amap:ImportMap -> ad:AccessorDomain -> m:Range -> finfo:ILFieldInfo -> unit
 
-val MethInfoChecks: g:TcGlobals -> amap:ImportMap -> isInstance:bool -> tyargsOpt:'a option -> objArgs:Expr list -> ad:AccessorDomain -> m:range -> minfo:MethInfo -> unit
+val MethInfoChecks: g:TcGlobals -> amap:ImportMap -> isInstance:bool -> tyargsOpt:'a option -> objArgs:Expr list -> ad:AccessorDomain -> m:Range -> minfo:MethInfo -> unit
 
-exception FieldNotMutable of TypedTreeOps.DisplayEnv * RecdFieldRef * range
+exception FieldNotMutable of TypedTreeOps.DisplayEnv * RecdFieldRef * Range
 
-val CheckRecdFieldMutation: m:range -> denv:TypedTreeOps.DisplayEnv -> rfinfo:RecdFieldInfo -> unit
+val CheckRecdFieldMutation: m:Range -> denv:TypedTreeOps.DisplayEnv -> rfinfo:RecdFieldInfo -> unit
 
 /// Generate a witness for the given (solved) constraint.  Five possiblilities are taken
 /// into account.
@@ -320,18 +320,18 @@ val CheckRecdFieldMutation: m:range -> denv:TypedTreeOps.DisplayEnv -> rfinfo:Re
 /// 
 /// None is returned in the cases where the trait has not been solved (e.g. is part of generic code)
 /// or there is an unexpected mismatch of some kind.
-val GenWitnessExpr: amap:ImportMap -> g:TcGlobals -> m:range -> traitInfo:TraitConstraintInfo -> argExprs:Expr list -> Expr option
+val GenWitnessExpr: amap:ImportMap -> g:TcGlobals -> m:Range -> traitInfo:TraitConstraintInfo -> argExprs:Expr list -> Expr option
 
 /// Generate a lambda expression for the given solved trait.
-val GenWitnessExprLambda: amap:ImportMap -> g:TcGlobals -> m:range -> traitInfo:TraitConstraintInfo -> Choice<TraitConstraintInfo,Expr>
+val GenWitnessExprLambda: amap:ImportMap -> g:TcGlobals -> m:Range -> traitInfo:TraitConstraintInfo -> Choice<TraitConstraintInfo,Expr>
 
 /// Generate the arguments passed for a set of (solved) traits in non-generic code
-val GenWitnessArgs: amap:ImportMap -> g:TcGlobals -> m:range -> traitInfos:TraitConstraintInfo list -> Choice<TraitConstraintInfo,Expr> list
+val GenWitnessArgs: amap:ImportMap -> g:TcGlobals -> m:Range -> traitInfos:TraitConstraintInfo list -> Choice<TraitConstraintInfo,Expr> list
 
 #if !NO_EXTENSIONTYPING
 module ProvidedMethodCalls =
   val BuildInvokerExpressionForProvidedMethodCall:
-      tcVal:(ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
+      tcVal:(ValRef -> ValUseFlag -> TType list -> Range -> Expr * TType) ->
       g:TcGlobals *
       amap:ImportMap *
       mi:Tainted<ProvidedMethodBase> *
@@ -340,6 +340,6 @@ module ProvidedMethodCalls =
       isProp:bool *
       isSuperInit:ValUseFlag *
       allArgs:Exprs *
-      m:range ->
+      m:Range ->
           Tainted<ProvidedMethodInfo> option * Expr * TType
 #endif

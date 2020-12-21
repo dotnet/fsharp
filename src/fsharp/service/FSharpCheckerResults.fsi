@@ -45,7 +45,7 @@ type public FSharpFindDeclResult =
     | DeclNotFound of FSharpFindDeclFailureReason
 
     /// Indicates a declaration location was found
-    | DeclFound    of range
+    | DeclFound    of Range
 
     /// Indicates an external declaration was found
     | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
@@ -200,14 +200,14 @@ type public FSharpCheckFileResults =
     member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> FSharpSymbolUse option
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification : range option -> struct (range * SemanticClassificationType)[]
+    member GetSemanticClassification : Range option -> struct (Range * SemanticClassificationType)[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
-    member GetFormatSpecifierLocations : unit -> range[]
+    member GetFormatSpecifierLocations : unit -> Range[]
 
     /// <summary>Get the locations of and number of arguments associated with format specifiers</summary>
-    member GetFormatSpecifierLocationsAndArity : unit -> (range*int)[]
+    member GetFormatSpecifierLocationsAndArity : unit -> (Range*int)[]
 
     /// Get all textual usages of all symbols throughout the file
     member GetAllUsesOfAllSymbolsInFile : ?cancellationToken: CancellationToken -> seq<FSharpSymbolUse>
@@ -356,7 +356,7 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions *
         userOpName: string *
         suggestNamesForErrors: bool
-          -> (range * range)[]
+          -> (Range * Range)[]
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.

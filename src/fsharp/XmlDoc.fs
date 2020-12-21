@@ -11,7 +11,7 @@ open FSharp.Compiler.Range
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]
-type XmlDoc(unprocessedLines: string[], range: range) =
+type XmlDoc(unprocessedLines: string[], range: Range) =
     let rec processLines (lines: string list) =
         match lines with
         | [] -> []
@@ -139,7 +139,7 @@ and XmlDocStatics() =
 
 /// Used to collect XML documentation during lexing and parsing.
 type XmlDocCollector() =
-    let mutable savedLines = new ResizeArray<(string * range)>()
+    let mutable savedLines = new ResizeArray<(string * Range)>()
     let mutable savedGrabPoints = new ResizeArray<pos>()
     let posCompare p1 p2 = if posGeq p1 p2 then 1 else if posEq p1 p2 then 0 else -1
     let savedGrabPointsAsArray =
@@ -181,7 +181,7 @@ type XmlDocCollector() =
 
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 type PreXmlDoc =
-    | PreXmlDirect of unprocessedLines: string[] * range: range
+    | PreXmlDirect of unprocessedLines: string[] * range: Range
     | PreXmlMerge of PreXmlDoc * PreXmlDoc
     | PreXmlDoc of pos * XmlDocCollector
     | PreXmlDocEmpty

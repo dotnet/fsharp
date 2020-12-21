@@ -53,14 +53,14 @@ type internal FSharpCodeLensService
 
     let visit pos parseTree = 
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
-            member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+            member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 defaultTraverse(expr)
             
-            override __.VisitInheritSynMemberDefn (_, _, _, _, range) = Some range
+            override _.VisitInheritSynMemberDefn (_, _, _, _, range) = Some range
 
-            override __.VisitTypeAbbrev( _, range) = Some range
+            override _.VisitTypeAbbrev( _, range) = Some range
 
-            override __.VisitLetOrUse(_, _, bindings, range) =
+            override _.VisitLetOrUse(_, _, bindings, range) =
                 match bindings |> Seq.tryFind (fun b -> b.RangeOfHeadPat.StartLine = pos.Line) with
                 | Some entry ->
                     Some entry.RangeOfBindingAndRhs
@@ -70,7 +70,7 @@ type internal FSharpCodeLensService
                     // including implementation code.
                     Some range
 
-            override __.VisitBinding (fn, binding) =
+            override _.VisitBinding (fn, binding) =
                 Some binding.RangeOfBindingAndRhs
         })
 
@@ -404,7 +404,7 @@ type internal FSharpCodeLensService
            } |> Async.Start
         end
 
-    member __.BufferChanged ___ =
+    member _.BufferChanged ___ =
         bufferChangedCts.Cancel() // Stop all ongoing async workflow. 
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()

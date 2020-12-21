@@ -86,7 +86,7 @@ let PrependPathToInput x inp =
     | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs)) ->
         ParsedInput.SigFile (ParsedSigFileInput (b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs))
 
-let ComputeAnonModuleName check defaultNamespace filename (m: range) = 
+let ComputeAnonModuleName check defaultNamespace filename (m: Range) = 
     let modname = CanonicalizeFilename filename
     if check && not (modname |> String.forall (fun c -> System.Char.IsLetterOrDigit c || c = '_')) then
           if not (filename.EndsWith("fsx", StringComparison.OrdinalIgnoreCase) || filename.EndsWith("fsscript", StringComparison.OrdinalIgnoreCase)) then
@@ -394,9 +394,9 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompil
         None 
 
 let ProcessMetaCommandsFromInput
-     (nowarnF: 'state -> range * string -> 'state,
-      hashReferenceF: 'state -> range * string * Directive -> 'state,
-      loadSourceF: 'state -> range * string -> unit)
+     (nowarnF: 'state -> Range * string -> 'state,
+      hashReferenceF: 'state -> Range * string * Directive -> 'state,
+      loadSourceF: 'state -> Range * string -> unit)
      (tcConfig:TcConfigBuilder, 
       inp: ParsedInput, 
       pathOfMetaCommandSource, 
@@ -544,7 +544,7 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     TcConfig.Create(tcConfigB, validate=false)
 
 /// Build the initial type checking environment
-let GetInitialTcEnv (assemblyName: string, initm: range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =    
+let GetInitialTcEnv (assemblyName: string, initm: Range, tcConfig: TcConfig, tcImports: TcImports, tcGlobals) =    
     let initm = initm.StartRange
 
     let ccus = 
@@ -741,7 +741,7 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               // Typecheck the implementation file 
               let typeCheckOne = 
                   if skipImplIfSigExists && hadSig then
-                    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSigOpt.Value, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
+                    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSigOpt.Value, ModuleOrNamespaceExpr.TMDefs [], Range.Zero)
                     let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [])
 
                     (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)

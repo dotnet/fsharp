@@ -26,8 +26,8 @@ let GetQuickInfoText (project:FSharpProject) (fileName:string) (caretPosition:in
     | Some (quickInfo) ->
         let documentationBuilder =
             { new IDocumentationBuilder with
-                override __.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
-                override __.AppendDocumentation(_, _, _, _, _, _, _) = ()
+                override _.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
+                override _.AppendDocumentation(_, _, _, _, _, _, _) = ()
             }
         let mainDescription, docs = FSharpAsyncQuickInfoSource.BuildSingleQuickInfoItem documentationBuilder quickInfo
         let mainTextItems =

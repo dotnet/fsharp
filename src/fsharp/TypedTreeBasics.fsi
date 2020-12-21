@@ -222,7 +222,7 @@ val taccessInternal: Accessibility
 
 val combineAccess: Accessibility -> Accessibility -> Accessibility
 
-exception Duplicate of string * string * Range.range
+exception Duplicate of string * string * Range
 
-exception NameClash of string * string * string * Range.range * string * string * Range.range
+exception NameClash of string * string * string * Range * string * string * Range
 

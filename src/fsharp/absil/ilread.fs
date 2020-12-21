@@ -123,17 +123,17 @@ type BinaryFile =
 type RawMemoryFile(fileName: string, obj: obj, addr: nativeint, length: int) =
     do stats.rawMemoryFileCount <- stats.rawMemoryFileCount + 1
     let view = ByteMemory.FromUnsafePointer(addr, length, obj).AsReadOnly()
-    member __.HoldObj() = obj // make sure we capture 'obj'
-    member __.FileName = fileName
+    member _.HoldObj() = obj // make sure we capture 'obj'
+    member _.FileName = fileName
     interface BinaryFile with
-        override __.GetView() = view
+        override _.GetView() = view
 
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes: byte[]) = 
     let view = ByteMemory.FromArray(bytes).AsReadOnly()
     do stats.byteFileCount <- stats.byteFileCount + 1
-    member __.FileName = fileName
+    member _.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view
  
@@ -151,7 +151,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     /// The weak handle to the bytes for the file
     let weakBytes = new WeakReference<byte[]> (null)
 
-    member __.FileName = fileName
+    member _.FileName = fileName
 
     /// Get the bytes for the file
     interface BinaryFile with
@@ -4009,7 +4009,7 @@ module Shim =
     [<Sealed>]
     type DefaultAssemblyReader() =
         interface IAssemblyReader with
-            member __.GetILModuleReader(filename, readerOptions) =
+            member _.GetILModuleReader(filename, readerOptions) =
                 OpenILModuleReader filename readerOptions
 
     let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader

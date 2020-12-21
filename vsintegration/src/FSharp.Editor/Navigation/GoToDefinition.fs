@@ -115,7 +115,7 @@ type internal StatusBar(statusBar: IVsStatusbar) =
         statusBar.FreezeOutput 0 |> ignore  
         statusBar.Clear() |> ignore
         
-    member __.Message(_msg: string) =
+    member _.Message(_msg: string) =
         ()
         //let _, frozen = statusBar.IsFrozen()
         //// unfreeze the status bar
@@ -134,13 +134,13 @@ type internal StatusBar(statusBar: IVsStatusbar) =
         //    | _ -> clear()
         //}|> Async.Start
     
-    member __.Clear() = () //clear()
+    member _.Clear() = () //clear()
 
     /// Animated magnifying glass that displays on the status bar while a symbol search is in progress.
-    member __.Animate() : IDisposable = 
+    member _.Animate() : IDisposable = 
         //statusBar.Animation (1, &searchIcon) |> ignore
         { new IDisposable with
-            member __.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
+            member _.Dispose() = () } //statusBar.Animation(0, &searchIcon) |> ignore }
 
 type internal FSharpGoToDefinitionNavigableItem(document, sourceSpan) =
     inherit FSharpNavigableItem(Glyph.BasicFile, ImmutableArray.Empty, document, sourceSpan)
@@ -166,7 +166,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
         }
 
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
-    member private __.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
+    member private _.FindSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) =
         asyncMaybe {
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(originDocument, CancellationToken.None, userOpName)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -204,7 +204,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
     /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
     /// recursive type definitions, where the first its usage may not be the declaration.
-    member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, sourceText: SourceText, options: FSharpProjectOptions, fileVersion:int) = 
+    member _.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, sourceText: SourceText, options: FSharpProjectOptions, fileVersion:int) = 
         asyncMaybe {
             match targetSymbolUse.Symbol.DeclarationLocation with
             | Some decl when decl.FileName = filePath -> return decl
@@ -342,7 +342,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
 
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
-    member __.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
+    member _.TryNavigateToTextSpan(document: Document, textSpan: TextSpan, statusBar: StatusBar) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
@@ -352,7 +352,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
         if not navigationSucceeded then 
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
-    member __.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar) =
+    member _.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar) =
         use __ = statusBar.Animate()
 
         statusBar.Message (SR.NavigatingTo())

@@ -444,7 +444,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               // Only cache closed, monomorphic types (closed = all members for the type
               // have been processed). Generic type instantiations could be processed if we had 
               // a decent hash function for these.
-              canMemoize=(fun (_flags, (_: range), ty) -> 
+              canMemoize=(fun (_flags, (_: Range), ty) -> 
                                     match stripTyEqns g ty with 
                                     | TType_app(tcref, []) -> tcref.TypeContents.tcaug_closed 
                                     | _ -> false),

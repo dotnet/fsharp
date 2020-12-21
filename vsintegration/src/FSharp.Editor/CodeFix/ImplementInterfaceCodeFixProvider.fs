@@ -133,9 +133,9 @@ type internal FSharpImplementInterfaceCodeFixProvider
             else 
                 ()
             
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
             let cancellationToken = context.CancellationToken

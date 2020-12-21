@@ -99,7 +99,7 @@ let new_itbl n r = { itbl_name=n; itbl_rows=r }
 type NodeOutTable<'Data, 'Node> =
     { NodeStamp : ('Node -> Stamp)
       NodeName : ('Node -> string)
-      GetRange : ('Node -> range)
+      GetRange : ('Node -> Range)
       Deref: ('Node -> 'Data)
       Name: string
       Table: Table<Stamp> }
@@ -1340,11 +1340,11 @@ let u_namemap u = u_Map u_string u
 
 let p_pos (x: pos) st = p_tup2 p_int p_int (x.Line, x.Column) st
 
-let p_range (x: range) st =
+let p_range (x: Range) st =
     let fileName = PathMap.apply st.oglobals.pathMap x.FileName
     p_tup3 p_string p_pos p_pos (fileName, x.Start, x.End) st
 
-let p_dummy_range : range pickler   = fun _x _st -> ()
+let p_dummy_range : Range pickler   = fun _x _st -> ()
 let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText, x.idRange) st
 let p_xmldoc (doc: XmlDoc) st = p_array p_string doc.UnprocessedLines st
 
@@ -1352,7 +1352,7 @@ let u_pos st = let a = u_int st in let b = u_int st in mkPos a b
 let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in mkRange a b c
 
 // Most ranges (e.g. on optimization expressions) can be elided from stored data
-let u_dummy_range : range unpickler = fun _st -> range0
+let u_dummy_range : Range unpickler = fun _st -> range0
 let u_ident st = let a = u_string st in let b = u_range st in ident(a, b)
 let u_xmldoc st = XmlDoc (u_array u_string st, range0)
 

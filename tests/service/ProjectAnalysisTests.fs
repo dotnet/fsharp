@@ -854,11 +854,11 @@ type CBaseFoo() =
     abstract BaseClassMethod: methodArg:string -> string
     [<CLIEvent>]
     abstract BaseClassEvent: IEvent<int>
-    default __.BaseClassProperty = "dflt"
-    default __.BaseClassPropertySet with set (v:string) = ()
-    default __.BaseClassMethod(m) = m
+    default _.BaseClassProperty = "dflt"
+    default _.BaseClassPropertySet with set (v:string) = ()
+    default _.BaseClassMethod(m) = m
     [<CLIEvent>]
-    default __.BaseClassEvent = ev.Publish
+    default _.BaseClassEvent = ev.Publish
 
 type IFooImpl() =
     let ev = Event<_>()
@@ -2619,7 +2619,7 @@ let ``Test Project16 sym locations`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project16.options) |> Async.RunSynchronously
 
-    let fmtLoc (mOpt: Range.range option) = 
+    let fmtLoc (mOpt: Range option) = 
         match mOpt with 
         | None -> None
         | Some m -> 
@@ -3862,11 +3862,11 @@ module M
 
 type CFoo() =
     abstract AbstractMethod: int -> string
-    default __.AbstractMethod _ = "dflt"
+    default _.AbstractMethod _ = "dflt"
     
 type CFooImpl() =
     inherit CFoo()
-    override __.AbstractMethod _ = "v"
+    override _.AbstractMethod _ = "v"
 """
     File.WriteAllText(fileName1, fileSource1)
     
@@ -4068,7 +4068,7 @@ module Module
 open System
 type T() = 
     [<Obsolete("hello")>]
-    member __.Member = 0         
+    member _.Member = 0         
 """
     File.WriteAllText(fileName1, fileSource1)
 

@@ -337,7 +337,7 @@ type ReqdItemsForDefn =
     { 
         reqdTypars: Zset<Typar>
         reqdItems: Zset<ReqdItem>
-        m: Range.range
+        m: Range
     }
 
     member env.ReqdSubEnvs = [ for x in env.reqdItems do match x with | ReqdSubEnv f -> yield f | ReqdVal _ -> () ]
@@ -676,7 +676,7 @@ type PackedReqdItems =
 // step3: FlatEnvPacks
 //-------------------------------------------------------------------------
 
-exception AbortTLR of Range.range
+exception AbortTLR of Range
 
 /// A naive packing of environments.
 /// Chooses to pass all env values as explicit args (no tupling).

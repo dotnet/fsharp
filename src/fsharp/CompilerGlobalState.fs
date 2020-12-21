@@ -20,7 +20,7 @@ type NiceNameGenerator() =
     let lockObj = obj()
     let basicNameCounts = new Dictionary<string, int>(100)
 
-    member x.FreshCompilerGeneratedName (name, m: range) =
+    member x.FreshCompilerGeneratedName (name, m: Range) =
       lock lockObj (fun () ->
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let n =
@@ -49,7 +49,7 @@ type StableNiceNameGenerator() =
     let names = new Dictionary<(string * int64), string>(100)
     let basicNameCounts = new Dictionary<string, int>(100)
 
-    member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
+    member x.GetUniqueCompilerGeneratedName (name, m: Range, uniq) =
         lock lockObj (fun () ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
             let key = basicName, uniq
@@ -82,11 +82,11 @@ type internal CompilerGlobalState () =
     /// A name generator used by IlxGen for static fields, some generated arguments and other things.
     let ilxgenGlobalNng = NiceNameGenerator ()
 
-    member __.NiceNameGenerator = globalNng
+    member _.NiceNameGenerator = globalNng
 
-    member __.StableNameGenerator = globalStableNameGenerator
+    member _.StableNameGenerator = globalStableNameGenerator
 
-    member __.IlxGenNiceNameGenerator = ilxgenGlobalNng
+    member _.IlxGenNiceNameGenerator = ilxgenGlobalNng
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64

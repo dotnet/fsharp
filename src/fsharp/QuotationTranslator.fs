@@ -55,10 +55,10 @@ type QuotationGenerationScope =
       referencedTypeDefsTable: Dictionary<ILTypeRef, int>
 
       /// Accumulate the type splices (i.e. captured type parameters) into here
-      typeSplices: ResizeArray<Typar * range>
+      typeSplices: ResizeArray<Typar * Range>
 
       /// Accumulate the expression splices into here
-      exprSplices: ResizeArray<Expr * range>
+      exprSplices: ResizeArray<Expr * Range>
 
       isReflectedDefinition : IsReflectedDefinition
 
@@ -163,7 +163,7 @@ let BindFlatVals env vs = List.fold BindVal env vs // fold left-to-right because
 
 exception InvalidQuotedTerm of exn
 
-exception IgnoringPartOfQuotedTermWarning of string * Range.range
+exception IgnoringPartOfQuotedTermWarning of string * Range
 
 let wfail e = raise (InvalidQuotedTerm e)
 

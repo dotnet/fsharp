@@ -239,10 +239,10 @@ let parseSourceCodeAndGetModule (source: string) =
 
 
 /// Extract range info 
-let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
+let tups (m: Range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 
 /// Extract range info  and convert to zero-based line  - please don't use this one any more
-let tupsZ (m:Range.range) = (m.StartLine-1, m.StartColumn), (m.EndLine-1, m.EndColumn)
+let tupsZ (m: Range) = (m.StartLine-1, m.StartColumn), (m.EndLine-1, m.EndColumn)
 
 let attribsOfSymbolUse (s:FSharpSymbolUse) = 
     [ if s.IsFromDefinition then yield "defn" 

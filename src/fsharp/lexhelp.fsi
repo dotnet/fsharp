@@ -91,7 +91,7 @@ val unicodeGraphLong: string -> LongUnicodeLexResult
 
 val escape: char -> char
 
-exception ReservedKeyword of string * Range.range
+exception ReservedKeyword of string * Range
 
 module Keywords = 
 

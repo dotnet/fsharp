@@ -11,7 +11,7 @@ open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
+exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * Range
 
 exception ValueNotContained of DisplayEnv * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
@@ -21,7 +21,7 @@ exception ExnconstrNotContained of DisplayEnv * Tycon * Tycon * (string * string
 
 exception FieldNotContained of DisplayEnv * RecdField * RecdField * (string * string -> string)
 
-exception InterfaceNotRevealed of DisplayEnv * TType * range
+exception InterfaceNotRevealed of DisplayEnv * TType * Range
 
 type Checker =
 
@@ -29,7 +29,7 @@ type Checker =
 
       member CheckSignature: aenv:TypeEquivEnv -> implModRef:ModuleOrNamespaceRef -> signModType:ModuleOrNamespaceType -> bool
 
-      member CheckTypars: m:range -> aenv:TypeEquivEnv -> implTypars:Typars -> signTypars:Typars -> bool
+      member CheckTypars: m:Range -> aenv:TypeEquivEnv -> implTypars:Typars -> signTypars:Typars -> bool
   
 /// Check the names add up between a signature and its implementation. We check this first.
 val CheckNamesOfModuleOrNamespaceContents: denv:DisplayEnv -> implModRef:ModuleOrNamespaceRef -> signModType:ModuleOrNamespaceType -> bool

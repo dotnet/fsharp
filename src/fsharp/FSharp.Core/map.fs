@@ -489,15 +489,15 @@ module MapTree =
     let mkIEnumerator m = 
         let mutable i = mkIterator m 
         { new IEnumerator<_> with 
-              member __.Current = current i
+              member _.Current = current i
 
           interface System.Collections.IEnumerator with
-              member __.Current = box (current i)
-              member __.MoveNext() = moveNext i
-              member __.Reset() = i <- mkIterator m
+              member _.Current = box (current i)
+              member _.MoveNext() = moveNext i
+              member _.Reset() = i <- mkIterator m
 
           interface System.IDisposable with 
-              member __.Dispose() = ()}
+              member _.Dispose() = ()}
 
 [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_, _>>)>]
 [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
@@ -527,17 +527,17 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
         new Map<'Key, 'Value>(comparer, MapTree.empty)
 
     [<System.Runtime.Serialization.OnSerializingAttribute>]
-    member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
+    member _.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         serializedData <- MapTree.toArray tree |> Array.map (fun (k, v) -> KeyValuePair(k, v))
 
     // Do not set this to null, since concurrent threads may also be serializing the data
     //[<System.Runtime.Serialization.OnSerializedAttribute>]
-    //member __.OnSerialized(context: System.Runtime.Serialization.StreamingContext) =
+    //member _.OnSerialized(context: System.Runtime.Serialization.StreamingContext) =
     //    serializedData <- null
 
     [<System.Runtime.Serialization.OnDeserializedAttribute>]
-    member __.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
+    member _.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         comparer <- LanguagePrimitives.FastGenericComparer<'Key>
         tree <- serializedData |> Array.map (fun kvp -> kvp.Key, kvp.Value) |> MapTree.ofArray comparer
@@ -679,10 +679,10 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
     override this.GetHashCode() = this.ComputeHashCode()
 
     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
-        member __.GetEnumerator() = MapTree.mkIEnumerator tree
+        member _.GetEnumerator() = MapTree.mkIEnumerator tree
 
     interface System.Collections.IEnumerable with
-        member __.GetEnumerator() = (MapTree.mkIEnumerator tree :> System.Collections.IEnumerator)
+        member _.GetEnumerator() = (MapTree.mkIEnumerator tree :> System.Collections.IEnumerator)
 
     interface IDictionary<'Key, 'Value> with 
         member m.Item 
@@ -704,17 +704,17 @@ type Map<[<EqualityConditionalOn>]'Key, [<EqualityConditionalOn; ComparisonCondi
         member m.Remove(k : 'Key) = ignore k; (raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated))) : bool)
 
     interface ICollection<KeyValuePair<'Key, 'Value>> with 
-        member __.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Add x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member __.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Clear() = raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
-        member __.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
+        member _.Remove x = ignore x; raise (NotSupportedException(SR.GetString(SR.mapCannotBeMutated)))
 
         member m.Contains x = m.ContainsKey x.Key && Unchecked.equals m.[x.Key] x.Value
 
-        member __.CopyTo(arr, i) = MapTree.copyToArray tree arr i
+        member _.CopyTo(arr, i) = MapTree.copyToArray tree arr i
 
-        member __.IsReadOnly = true
+        member _.IsReadOnly = true
 
         member m.Count = m.Count
 

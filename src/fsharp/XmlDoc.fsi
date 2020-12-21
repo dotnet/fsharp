@@ -8,7 +8,7 @@ open FSharp.Compiler.Range
 [<Class>]
 type XmlDoc =
 
-    new: unprocessedLines:string [] * range:range -> XmlDoc
+    new: unprocessedLines:string [] * range:Range -> XmlDoc
 
     /// Merge two XML documentation
     static member Merge: doc1:XmlDoc -> doc2:XmlDoc -> XmlDoc
@@ -26,7 +26,7 @@ type XmlDoc =
 
     member NonEmpty: bool
 
-    member Range: range
+    member Range: Range
 
     /// Get the lines before insertion of implicit summary tags and encoding
     member UnprocessedLines: string []
@@ -40,9 +40,9 @@ type internal XmlDocCollector =
 
     member AddGrabPoint: pos:pos -> unit
 
-    member AddXmlDocLine: line:string * range:range -> unit
+    member AddXmlDocLine: line:string * range:Range -> unit
 
-    member LinesBefore: grabPointPos:pos -> (string * range) []
+    member LinesBefore: grabPointPos:pos -> (string * Range) []
   
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 [<Sealed>]
@@ -52,7 +52,7 @@ type public PreXmlDoc =
 
     static member Merge: a:PreXmlDoc -> b:PreXmlDoc -> PreXmlDoc
     
-    static member Create: unprocessedLines:string [] * range:range -> PreXmlDoc
+    static member Create: unprocessedLines:string [] * range:Range -> PreXmlDoc
 
     member ToXmlDoc: check:bool * paramNamesOpt:string list option -> XmlDoc
 

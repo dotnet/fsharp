@@ -23,7 +23,7 @@ let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
 /// Extract range info 
-let internal tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
+let internal tups (m:Range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 
 
 module internal Project1A = 

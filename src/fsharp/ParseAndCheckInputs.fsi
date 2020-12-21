@@ -19,7 +19,7 @@ open Microsoft.DotNet.DependencyManager
 
 val IsScript: string -> bool
 
-val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> QualifiedNameOfFile
+val ComputeQualifiedNameOfFileFromUniquePath: Range * string list -> QualifiedNameOfFile
 
 val PrependPathToInput: Ident list -> ParsedInput -> ParsedInput
 
@@ -34,9 +34,9 @@ val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLe
 
 /// A general routine to process hash directives
 val ProcessMetaCommandsFromInput : 
-    (('T -> range * string -> 'T) * 
-     ('T -> range * string * Directive -> 'T) *
-     ('T -> range * string -> unit))
+    (('T -> Range * string -> 'T) * 
+     ('T -> Range * string * Directive -> 'T) *
+     ('T -> Range * string -> unit))
       -> TcConfigBuilder * ParsedInput * string * 'T 
       -> 'T
 
@@ -51,7 +51,7 @@ val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * string list * str
 
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
-val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlobals -> TcEnv
+val GetInitialTcEnv: assemblyName: string * Range * TcConfig * TcImports * TcGlobals -> TcEnv
                 
 [<Sealed>]
 /// Represents the incremental type checking state for a set of inputs
@@ -77,7 +77,7 @@ type TcState =
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: 
-    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
+    Range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
 
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :

@@ -94,8 +94,8 @@ module internal RoslynHelpers =
     type VolatileBarrier() =
         [<VolatileField>]
         let mutable isStopped = false
-        member __.Proceed = not isStopped
-        member __.Stop() = isStopped <- true
+        member _.Proceed = not isStopped
+        member _.Stop() = isStopped <- true
 
     // This is like Async.StartAsTask, but
     //  1. if cancellation occurs we explicitly associate the cancellation with cancellationToken

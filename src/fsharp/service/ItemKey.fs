@@ -149,7 +149,7 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
                 if keyString1.SequenceEqual keyString2 then
                     results.Add m
 
-            results :> range seq
+            results :> Range seq
 
     interface IDisposable with
 
@@ -176,7 +176,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
     let writeString (str: string) =
         b.WriteUTF16 str
 
-    let writeRange (m: Range.range) =
+    let writeRange (m: Range) =
         b.WriteInt32(m.StartLine)
         b.WriteInt32(m.StartColumn)
         b.WriteInt32(m.EndLine)
@@ -287,7 +287,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
 
-    member _.Write (m: Range.range, item: Item) =
+    member _.Write (m: Range, item: Item) =
         writeRange m
 
         let fixup = b.ReserveBytes 4 |> BlobWriter

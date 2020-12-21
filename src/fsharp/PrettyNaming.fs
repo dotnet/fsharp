@@ -626,7 +626,7 @@ let IsActivePatternName (name: string) =
         isCoreActivePatternName name 1 false
 
 type ActivePatternInfo = 
-    | APInfo of bool * (string  * Range.range) list * Range.range
+    | APInfo of bool * (string  * Range) list * Range
 
     member x.IsTotal = let (APInfo(p, _, _)) = x in p
 
@@ -636,11 +636,11 @@ type ActivePatternInfo =
 
     member x.Range = let (APInfo(_, _, m)) = x in m
 
-let ActivePatternInfoOfValName nm (m: Range.range) = 
+let ActivePatternInfoOfValName nm (m: Range) = 
     // Note: The approximate range calculations in this code assume the name is of the form "(|A|B|)" not "(|  A   |   B   |)"
     // The ranges are used for IDE refactoring support etc.  If names of the second type are used,
     // renaming may be inaccurate/buggy. However names of the first form are dominant in F# code.
-    let rec loop (nm: string) (mp: Range.range) = 
+    let rec loop (nm: string) (mp: Range) = 
         let n = nm.IndexOf '|'
         if n > 0 then 
             let m1 = Range.mkRange mp.FileName mp.Start (Range.mkPos mp.StartLine (mp.StartColumn + n))

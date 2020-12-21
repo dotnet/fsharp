@@ -17,13 +17,13 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
 /// Create a type variable representing the use of a "_" in F# code
-val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
+val NewAnonTypar: TyparKind * Range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
 
 /// Create an inference type variable 
 val NewInferenceType: unit -> TType
 
 /// Create an inference type variable for the kind of a byref pointer
-val NewByRefKindInferenceType: TcGlobals -> range -> TType
+val NewByRefKindInferenceType: TcGlobals -> Range -> TType
 
 /// Create an inference type variable representing an error condition when checking an expression
 val NewErrorType: unit -> TType
@@ -36,13 +36,13 @@ val NewInferenceTypes: 'a list -> TType list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-val FreshenAndFixupTypars: range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
+val FreshenAndFixupTypars: Range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypeInst: range -> Typars -> Typars * TyparInst * TType list
+val FreshenTypeInst: Range -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypars: range -> Typars -> TType list
+val FreshenTypars: Range -> Typars -> TType list
 
-val FreshenMethInfo: range -> MethInfo -> TType list
+val FreshenMethInfo: Range -> MethInfo -> TType list
 
 [<RequireQualifiedAccess>] 
 /// Information about the context of a type equation.
@@ -52,13 +52,13 @@ type ContextInfo =
     | NoContext
 
     /// The type equation comes from an IF expression.
-    | IfExpression of range
+    | IfExpression of Range
 
     /// The type equation comes from an omitted else branch.
-    | OmittedElseBranch of range
+    | OmittedElseBranch of Range
 
     /// The type equation comes from a type check of the result of an else branch.
-    | ElseBranchResult of range
+    | ElseBranchResult of Range
 
     /// The type equation comes from the verification of record fields.
     | RecordFields
@@ -67,7 +67,7 @@ type ContextInfo =
     | TupleInRecordFields
 
     /// The type equation comes from a list or array constructor
-    | CollectionElement of bool * range
+    | CollectionElement of bool * Range
 
     /// The type equation comes from a return in a computation expression.
     | ReturnInComputationExpression
@@ -82,10 +82,10 @@ type ContextInfo =
     | DowncastUsedInsteadOfUpcast of bool
 
     /// The type equation comes from a return type of a pattern match clause (not the first clause).
-    | FollowingPatternMatchClause of range
+    | FollowingPatternMatchClause of Range
 
     /// The type equation comes from a pattern match guard.
-    | PatternMatchGuard of range
+    | PatternMatchGuard of Range
 
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
@@ -107,25 +107,25 @@ type OverloadResolutionFailure =
                         * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
                         * cx: TraitConstraintInfo option
 
-exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
-exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
-exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
-exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
-exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
-exception ConstraintSolverError                         of string * range * range
-exception ConstraintSolverRelatedInformation            of string option * range * exn
+exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * Range * Range
+exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * Range * Range
+exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * Range * Range * ContextInfo
+exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: Range * parameterRange: Range
+exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Typar * TyparConstraint * Range * Range
+exception ConstraintSolverError                         of string * Range * Range
+exception ConstraintSolverRelatedInformation            of string option * Range * exn
 
-exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
-exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
-exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * ContextInfo * parameterRange: range
-exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
-exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
-exception UnresolvedOverloading                 of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
-exception NonRigidTypar                         of displayEnv: DisplayEnv * string option * range * TType * TType * range
+exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * Range
+exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * Range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * ContextInfo * parameterRange: Range
+exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * Range
+exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * Range
+exception UnresolvedOverloading                 of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * Range
+exception NonRigidTypar                         of displayEnv: DisplayEnv * string option * Range * TType * TType * Range
 
 exception ArgDoesNotMatchError                  of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>
 /// A function that denotes captured tcVal, Used in constraint solver and elsewhere to get appropriate expressions for a ValRef.
-type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
+type TcValF = (ValRef -> ValUseFlag -> TType list -> Range -> Expr * TType)
 
 [<Sealed>]
 type ConstraintSolverState =
@@ -142,69 +142,69 @@ type OptionalTrace =
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
-val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: TType option -> CalledMeth<Expr> option * OperationResult<unit>
+val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> Range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: TType option -> CalledMeth<Expr> option * OperationResult<unit>
 
-val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
+val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> Range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
 
 /// Remove the global constraints where these type variables appear in the support of the constraint 
-val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typars -> unit 
+val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> Typars -> unit 
 
-val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
+val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> Range -> Typars -> Typars -> unit 
 
-val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
+val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> Range -> TType -> TType -> unit
 
-val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> Range -> TType -> TType -> bool
 
-val AddCxTypeEqualsTypeUndoIfFailedOrWarnings: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeEqualsTypeUndoIfFailedOrWarnings: DisplayEnv -> ConstraintSolverState -> Range -> TType -> TType -> bool
 
-val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> Range -> TType -> TType -> bool
 
-val AddCxTypeMustSubsumeType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
+val AddCxTypeMustSubsumeType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> TType -> unit
 
-val AddCxTypeMustSubsumeTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeMustSubsumeTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> Range -> TType -> TType -> bool
 
-val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> Range -> TType -> TType -> bool
 
-val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
+val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TraitConstraintInfo -> unit
 
-val AddCxTypeMustSupportNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeMustSupportNull: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeMustSupportEquality: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeMustSupportEquality: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeMustSupportDefaultCtor: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeMustSupportDefaultCtor: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsReferenceType: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeIsReferenceType: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsValueType: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeIsValueType: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsUnmanaged: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeIsUnmanaged: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> unit
 
-val AddCxTypeIsEnum: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
+val AddCxTypeIsEnum: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> TType -> unit
 
-val AddCxTypeIsDelegate: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> TType -> unit
+val AddCxTypeIsDelegate: DisplayEnv -> ConstraintSolverState -> Range -> OptionalTrace -> TType -> TType -> TType -> unit
 
-val AddCxTyparDefaultsTo:  DisplayEnv -> ConstraintSolverState -> range -> ContextInfo -> Typar -> int -> TType -> unit
+val AddCxTyparDefaultsTo:  DisplayEnv -> ConstraintSolverState -> Range -> ContextInfo -> Typar -> int -> TType -> unit
 
-val SolveTypeAsError: DisplayEnv -> ConstraintSolverState -> range -> TType -> unit
+val SolveTypeAsError: DisplayEnv -> ConstraintSolverState -> Range -> TType -> unit
 
 val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority: int -> Typar -> unit
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-val CodegenWitnessExprForTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+val CodegenWitnessExprForTraitConstraint : TcValF -> TcGlobals -> ImportMap -> Range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
 
 /// Generate the arguments passed when using a generic construct that accepts traits witnesses
-val CodegenWitnessesForTyparInst : TcValF -> TcGlobals -> ImportMap -> range -> Typars -> TType list -> OperationResult<Choice<TraitConstraintInfo, Expr> list>
+val CodegenWitnessesForTyparInst : TcValF -> TcGlobals -> ImportMap -> Range -> Typars -> TType list -> OperationResult<Choice<TraitConstraintInfo, Expr> list>
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-val CodegenWitnessArgForTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<Choice<TraitConstraintInfo, Expr>>
+val CodegenWitnessArgForTraitConstraint : TcValF -> TcGlobals -> ImportMap -> Range -> TraitConstraintInfo -> OperationResult<Choice<TraitConstraintInfo, Expr>>
 
 /// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
 /// for an interior type variable.  This chooses a solution for a type parameter subject
 /// to its constraints and applies that solution by using a constraint.
 val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
 
-val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
+val IsApplicableMethApprox: TcGlobals -> ImportMap -> Range -> MethInfo -> TType -> bool
 
-val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> Range -> Typars -> unit

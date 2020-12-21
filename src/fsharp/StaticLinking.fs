@@ -89,7 +89,7 @@ type TypeForwarding (tcImports: TcImports) =
         if scoref1 === scoref2 then tref
         else ILTypeRef.Create (scoref2, tref.Enclosing, tref.Name)
 
-    member __.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
+    member _.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
 
 let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
 

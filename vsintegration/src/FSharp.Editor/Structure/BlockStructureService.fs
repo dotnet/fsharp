@@ -150,7 +150,7 @@ type internal FSharpBlockStructureService [<ImportingConstructor>] (checkerProvi
 
     interface IFSharpBlockStructureService with
  
-        member __.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
+        member _.GetBlockStructureAsync(document, cancellationToken) : Task<FSharpBlockStructure> =
             asyncMaybe {
                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)

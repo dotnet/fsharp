@@ -109,55 +109,55 @@ type TcEnv =
 // use ErrorLogger.
 //------------------------------------------------------------------------- 
 
-exception BakedInMemberConstraintName of string * range
-exception FunctionExpected of DisplayEnv * TType * range
-exception NotAFunction of DisplayEnv * TType * range * range
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
-exception Recursion of DisplayEnv * Ident * TType * TType * range
-exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
-exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
-exception LetRecCheckedAtRuntime of range
-exception LetRecUnsound of DisplayEnv * ValRef list * range
-exception TyconBadArgs of DisplayEnv * TyconRef * int * range
-exception UnionCaseWrongArguments of DisplayEnv * int * int * range
-exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
-exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
-exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
-exception MissingFields of string list * range
-exception UnitTypeExpected of DisplayEnv * TType * range
-exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
-exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
-exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
-exception FunctionValueUnexpected of DisplayEnv * TType * range
-exception UnionPatternsBindDifferentNames of range
+exception BakedInMemberConstraintName of string * Range
+exception FunctionExpected of DisplayEnv * TType * Range
+exception NotAFunction of DisplayEnv * TType * Range * Range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * Range * Range
+exception Recursion of DisplayEnv * Ident * TType * TType * Range
+exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * Range
+exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * Range
+exception LetRecCheckedAtRuntime of Range
+exception LetRecUnsound of DisplayEnv * ValRef list * Range
+exception TyconBadArgs of DisplayEnv * TyconRef * int * Range
+exception UnionCaseWrongArguments of DisplayEnv * int * int * Range
+exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * Range
+exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * Range
+exception FieldGivenTwice of DisplayEnv * RecdFieldRef * Range
+exception MissingFields of string list * Range
+exception UnitTypeExpected of DisplayEnv * TType * Range
+exception UnitTypeExpectedWithEquality of DisplayEnv * TType * Range
+exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * Range
+exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * Range
+exception FunctionValueUnexpected of DisplayEnv * TType * Range
+exception UnionPatternsBindDifferentNames of Range
 exception VarBoundTwice of Ident
-exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
-exception ValNotMutable of DisplayEnv * ValRef * range
-exception ValNotLocal of DisplayEnv * ValRef * range
-exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
-exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
-exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
-exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
-exception RuntimeCoercionSourceSealed of DisplayEnv * TType * range
-exception CoercionTargetSealed of DisplayEnv * TType * range
-exception UpcastUnnecessary of range
-exception TypeTestUnnecessary of range
-exception SelfRefObjCtor of bool * range
-exception VirtualAugmentationOnNullValuedType of range
-exception NonVirtualAugmentationOnNullValuedType of range
-exception UseOfAddressOfOperator of range
-exception DeprecatedThreadStaticBindingWarning of range
-exception IntfImplInIntrinsicAugmentation of range
-exception IntfImplInExtrinsicAugmentation of range
-exception OverrideInIntrinsicAugmentation of range
-exception OverrideInExtrinsicAugmentation of range
-exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
-exception StandardOperatorRedefinitionWarning of string * range
+exception ValueRestriction of DisplayEnv * bool * Val * Typar * Range
+exception ValNotMutable of DisplayEnv * ValRef * Range
+exception ValNotLocal of DisplayEnv * ValRef * Range
+exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * Range
+exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * Range
+exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * Range
+exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * Range
+exception RuntimeCoercionSourceSealed of DisplayEnv * TType * Range
+exception CoercionTargetSealed of DisplayEnv * TType * Range
+exception UpcastUnnecessary of Range
+exception TypeTestUnnecessary of Range
+exception SelfRefObjCtor of bool * Range
+exception VirtualAugmentationOnNullValuedType of Range
+exception NonVirtualAugmentationOnNullValuedType of Range
+exception UseOfAddressOfOperator of Range
+exception DeprecatedThreadStaticBindingWarning of Range
+exception IntfImplInIntrinsicAugmentation of Range
+exception IntfImplInExtrinsicAugmentation of Range
+exception OverrideInIntrinsicAugmentation of Range
+exception OverrideInExtrinsicAugmentation of Range
+exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * Range
+exception StandardOperatorRedefinitionWarning of string * Range
 exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
-val TcFieldInit : range -> ILFieldInit -> Const
+val TcFieldInit : Range -> ILFieldInit -> Const
 
-val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType
+val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : Range -> Expr * TType
 
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)
@@ -175,7 +175,7 @@ type TcFileState =
       /// Push an entry every time a recursive value binding is used, 
       /// in order to be able to fix up recursive type applications as 
       /// we infer type parameters 
-      mutable recUses: ValMultiMap<(Expr ref * range * bool)>
+      mutable recUses: ValMultiMap<(Expr ref * Range * bool)>
       
       /// Checks to run after all inference is complete. 
       mutable postInferenceChecks: ResizeArray<unit -> unit>
@@ -224,11 +224,11 @@ type TcFileState =
             
       isInternalTestSpanStackReferring: bool
       // forward call 
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref *  SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref *  SynExpr -> Range -> Expr * UnscopedTyparEnv
       // forward call 
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> Range -> Expr * UnscopedTyparEnv
       // forward call 
-      TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
+      TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> Range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     } 
     static member Create: 
         g: TcGlobals *
@@ -243,11 +243,11 @@ type TcFileState =
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
         // forward call to CheckComputationExpressions.fs
-        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> Range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs 
-        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> Range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs
-        tcComputationExpression: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) 
+        tcComputationExpression: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> Range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) 
          -> TcFileState
 
 /// Represents information about the module or type in which a member or value is declared.
@@ -403,7 +403,7 @@ type NormalizedBinding =
       valSynData: SynValData * 
       pat: SynPat * 
       rhsExpr: NormalizedBindingRhs *
-      mBinding: range *
+      mBinding: Range *
       spBinding: DebugPointForBinding
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrec 
@@ -508,13 +508,13 @@ val unionGeneralizedTypars: typarSets:Typar list list -> Typar list
 val AddDeclaredTypars: check: CheckForDuplicateTyparFlag -> typars: Typar list -> env: TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment. Report to the sink.
-val AddLocalVal: NameResolution.TcResultsSink -> scopem: range -> v: Val -> TcEnv -> TcEnv
+val AddLocalVal: NameResolution.TcResultsSink -> scopem: Range -> v: Val -> TcEnv -> TcEnv
 
 /// Add a value to the environment, producing a new environment
 val AddLocalValPrimitive: v: Val -> TcEnv -> TcEnv
 
 /// Add a list of values to the environment, producing a new environment. Report to the sink.
-val AddLocalVals: tcSink: TcResultsSink -> scopem: range -> vals: Val list -> env: TcEnv -> TcEnv
+val AddLocalVals: tcSink: TcResultsSink -> scopem: Range -> vals: Val list -> env: TcEnv -> TcEnv
 
 /// Set the type of a 'Val' after it has been fully inferred.
 val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit
@@ -523,19 +523,19 @@ val AdjustRecType: vspec: Val -> vscheme: ValScheme -> unit
 val AnalyzeAndMakeAndPublishRecursiveValue: overridesOK:OverridesOK -> isGeneratedEventVal:bool -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv * recBindIdx:int -> NormalizedRecBindingDefn -> (PreCheckingRecursiveBinding list * Val list) * (UnscopedTyparEnv * int)
 
 /// Check that a member can be included in an interface
-val CheckForNonAbstractInterface: declKind:DeclKind -> tcref:TyconRef -> memberFlags:MemberFlags -> m:range -> unit    
+val CheckForNonAbstractInterface: declKind:DeclKind -> tcref:TyconRef -> memberFlags:MemberFlags -> m:Range -> unit    
 
 /// Check the flags on a member definition for consistency
-val CheckMemberFlags: optIntfSlotTy:'a option -> newslotsOK:NewSlotsOK -> overridesOK:OverridesOK -> memberFlags:MemberFlags -> m:range -> unit
+val CheckMemberFlags: optIntfSlotTy:'a option -> newslotsOK:NewSlotsOK -> overridesOK:OverridesOK -> memberFlags:MemberFlags -> m:Range -> unit
 
 /// Check a super type is valid
-val CheckSuperType: cenv:TcFileState -> ty:TType -> m:range -> unit    
+val CheckSuperType: cenv:TcFileState -> ty:TType -> m:Range -> unit    
 
 /// After inference, view a set of declared type parameters in a canonical way.
-val ChooseCanonicalDeclaredTyparsAfterInference: g: TcGlobals -> denv: DisplayEnv -> declaredTypars: Typar list -> m: range -> Typar list
+val ChooseCanonicalDeclaredTyparsAfterInference: g: TcGlobals -> denv: DisplayEnv -> declaredTypars: Typar list -> m: Range -> Typar list
 
 /// After inference, view a ValSchem in a canonical way.
-val ChooseCanonicalValSchemeAfterInference: g: TcGlobals -> denv: DisplayEnv -> vscheme: ValScheme -> m: range -> ValScheme
+val ChooseCanonicalValSchemeAfterInference: g: TcGlobals -> denv: DisplayEnv -> vscheme: ValScheme -> m: Range -> ValScheme
 
 /// Check if the type annotations and inferred type information in a value give a
 /// full and complete generic type for a value. If so, enable generic recursion.
@@ -545,13 +545,13 @@ val ComputeIsComplete: enclosingDeclaredTypars:Typar list -> declaredTypars:Typa
 val ComputeAccessRights: eAccessPath: CompilationPath -> eInternalsVisibleCompPaths: CompilationPath list -> eFamilyType: TyconRef option -> AccessorDomain
 
 /// Compute the available access rights and module/entity compilation path for a paricular location in code
-val ComputeAccessAndCompPath: env: TcEnv -> declKindOpt:DeclKind option -> m: range -> vis: SynAccess option -> overrideVis: Accessibility option -> actualParent: ParentRef -> Accessibility * CompilationPath option
+val ComputeAccessAndCompPath: env: TcEnv -> declKindOpt:DeclKind option -> m: Range -> vis: SynAccess option -> overrideVis: Accessibility option -> actualParent: ParentRef -> Accessibility * CompilationPath option
 
 /// Get the expression resulting from turning an expression into an enumerable value, e.g. at 'for' loops 
 val ConvertArbitraryExprToEnumerable: cenv:TcFileState -> ty:TType -> env:TcEnv -> expr:Expr -> Expr * TType    
 
 /// Invoke pattern match compilation
-val CompilePatternForMatchClauses: cenv:TcFileState -> env:TcEnv -> mExpr:range -> matchm:range -> warnOnUnused:bool -> actionOnFailure:ActionOnFailure -> inputExprOpt:Expr option -> inputTy:TType -> resultTy:TType -> tclauses:TypedMatchClause list -> Val * Expr
+val CompilePatternForMatchClauses: cenv:TcFileState -> env:TcEnv -> mExpr:Range -> matchm:Range -> warnOnUnused:bool -> actionOnFailure:ActionOnFailure -> inputExprOpt:Expr option -> inputTy:TType -> resultTy:TType -> tclauses:TypedMatchClause list -> Val * Expr
 
 /// Process recursive bindings so that initialization is through laziness and is checked.
 /// The bindings may be either plain 'let rec' bindings or mutually recursive nestings of modules and types.
@@ -564,7 +564,7 @@ val EliminateInitializationGraphs:
     -> iterBindings:((PreInitializationGraphEliminationBinding list -> unit) -> 'Binding list -> unit)
     -> buildLets: (Binding list -> 'Result)
     -> mapBindings: ((PreInitializationGraphEliminationBinding list -> Binding list) -> 'Binding list -> 'Result list)
-    -> bindsm: range
+    -> bindsm: Range
     -> 'Result list
 
 /// Adjust a recursive binding after generalization
@@ -572,7 +572,7 @@ val FixupLetrecBind: cenv:TcFileState -> denv:DisplayEnv -> generalizedTyparsFor
 
 /// Produce a fresh view of an object type, e.g. 'List<T>' becomes 'List<?>' for new
 /// inference variables with the given rigidity.
-val FreshenObjectArgType: cenv: TcFileState -> m: range -> rigid: TyparRigidity -> tcref: TyconRef -> isExtrinsic: bool -> declaredTyconTypars: Typar list -> TType * Typar list * TyparInst * TType * TType
+val FreshenObjectArgType: cenv: TcFileState -> m: Range -> rigid: TyparRigidity -> tcref: TyconRef -> isExtrinsic: bool -> declaredTyconTypars: Typar list -> TType * Typar list * TyparInst * TType * TType
 
 /// Get the accumulated module/namespace type for the current module/namespace being processed.
 val GetCurrAccumulatedModuleOrNamespaceType: env: TcEnv -> ModuleOrNamespaceType
@@ -630,7 +630,7 @@ val PublishTypeDefn: cenv: TcFileState -> env: TcEnv -> mspec: Tycon -> unit
 val PublishValueDefn: cenv: TcFileState -> env: TcEnv -> declKind: DeclKind -> vspec: Val -> unit
 
 /// Mark a typar as no longer being an inference type variable
-val SetTyparRigid: DisplayEnv -> range -> Typar -> unit
+val SetTyparRigid: DisplayEnv -> Range -> Typar -> unit
 
 /// Check and publish a value specification (in a signature or 'abstract' member) to the
 /// module/namespace type accumulator and return the resulting Val(s).  Normally only one
@@ -649,7 +649,7 @@ val TcAttributesCanFail: cenv:TcFileState -> env:TcEnv -> attrTgt:AttributeTarge
 val TcAttributesWithPossibleTargets: canFail: bool -> cenv: TcFileState -> env: TcEnv -> attrTgt: AttributeTargets -> synAttribs: SynAttribute list -> (AttributeTargets * Attrib) list * bool
 
 /// Check a constant value, e.g. a literal
-val TcConst: cenv: TcFileState -> ty: TType -> m: range -> env: TcEnv -> c: SynConst -> Const
+val TcConst: cenv: TcFileState -> ty: TType -> m: Range -> env: TcEnv -> c: SynConst -> Const
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr: cenv:TcFileState -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
@@ -681,26 +681,26 @@ val TcMatchPattern: cenv:TcFileState -> inputTy:TType -> env:TcEnv -> tpenv:Unsc
 val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) option
 
 /// Check a set of let bindings
-val TcLetBindings: cenv:TcFileState -> env:TcEnv -> containerInfo:ContainerInfo -> declKind:DeclKind -> tpenv:UnscopedTyparEnv -> binds:SynBinding list * bindsm:range * scopem:range -> ModuleOrNamespaceExpr list * TcEnv * UnscopedTyparEnv
+val TcLetBindings: cenv:TcFileState -> env:TcEnv -> containerInfo:ContainerInfo -> declKind:DeclKind -> tpenv:UnscopedTyparEnv -> binds:SynBinding list * bindsm:Range * scopem:Range -> ModuleOrNamespaceExpr list * TcEnv * UnscopedTyparEnv
 
 /// Check an individual `let rec` binding
-val TcLetrecBinding: cenv:TcFileState * envRec:TcEnv * scopem:range * extraGeneralizableTypars:Typars * reqdThisValTyOpt:TType option -> envNonRec:TcEnv * generalizedRecBinds:PostGeneralizationRecursiveBinding list * preGeneralizationRecBinds:PreGeneralizationRecursiveBinding list * tpenv:UnscopedTyparEnv * uncheckedRecBindsTable:Map<Stamp,PreCheckingRecursiveBinding> -> rbind:PreCheckingRecursiveBinding -> TcEnv * PostGeneralizationRecursiveBinding list * PreGeneralizationRecursiveBinding list * UnscopedTyparEnv * Map<Stamp,PreCheckingRecursiveBinding>
+val TcLetrecBinding: cenv:TcFileState * envRec:TcEnv * scopem:Range * extraGeneralizableTypars:Typars * reqdThisValTyOpt:TType option -> envNonRec:TcEnv * generalizedRecBinds:PostGeneralizationRecursiveBinding list * preGeneralizationRecBinds:PreGeneralizationRecursiveBinding list * tpenv:UnscopedTyparEnv * uncheckedRecBindsTable:Map<Stamp,PreCheckingRecursiveBinding> -> rbind:PreCheckingRecursiveBinding -> TcEnv * PostGeneralizationRecursiveBinding list * PreGeneralizationRecursiveBinding list * UnscopedTyparEnv * Map<Stamp,PreCheckingRecursiveBinding>
 
 /// Get the binding for the implicit safe initialziation check value if it is being used
 val TcLetrecComputeCtorSafeThisValBind: cenv:TcFileState -> safeThisValOpt:Val option -> Binding option    
 
 /// Check a collection of `let rec` bindings
-val TcLetrec: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:range * scopem:range -> Bindings * TcEnv * UnscopedTyparEnv
+val TcLetrec: overridesOK:OverridesOK -> cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> binds:RecDefnBindingInfo list * bindsm:Range * scopem:Range -> Bindings * TcEnv * UnscopedTyparEnv
 
 /// Part of check a collection of recursive bindings that might include members
 val TcLetrecAdjustMemberForSpecialVals: cenv: TcFileState -> pgrbind: PostGeneralizationRecursiveBinding -> PostSpecialValsRecursiveBinding
 
 /// Check an inheritance expression or other 'new XYZ()' expression
-val TcNewExpr: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> objTy:TType -> mObjTyOpt:range option -> superInit:bool -> arg:SynExpr -> mWholeExprOrObjTy:range -> Expr * UnscopedTyparEnv    
+val TcNewExpr: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> objTy:TType -> mObjTyOpt:Range option -> superInit:bool -> arg:SynExpr -> mWholeExprOrObjTy:Range -> Expr * UnscopedTyparEnv    
 
 #if !NO_EXTENSIONTYPING
 /// Check the application of a provided type to static args
-val TcProvidedTypeAppToStaticConstantArgs: cenv:TcFileState -> env:TcEnv -> optGeneratedTypePath:string list option -> tpenv:UnscopedTyparEnv -> tcref:TyconRef -> args:SynType list -> m:range -> bool * Tainted<ProvidedType> * (unit -> unit)
+val TcProvidedTypeAppToStaticConstantArgs: cenv:TcFileState -> env:TcEnv -> optGeneratedTypePath:string list option -> tpenv:UnscopedTyparEnv -> tcref:TyconRef -> args:SynType list -> m:Range -> bool * Tainted<ProvidedType> * (unit -> unit)
 #endif
 
 /// Check a set of simple patterns, e.g. the declarations of parameters for an implicit constructor.
@@ -727,14 +727,14 @@ val TcValSpec: cenv: TcFileState -> TcEnv -> DeclKind -> ImplicitlyBoundTyparsAl
 /// Given the declaration of a function or member, process it to produce the ValReprInfo
 /// giving the names and attributes relevant to arguments and return, but before type
 /// parameters have been fully inferred via generalization.
-val TranslateTopValSynInfo: range -> tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) -> synValInfo: SynValInfo -> PartialValReprInfo
+val TranslateTopValSynInfo: Range -> tcAttributes: (AttributeTargets -> SynAttribute list -> Attrib list) -> synValInfo: SynValInfo -> PartialValReprInfo
 
 /// Given the declaration of a function or member, complete the processing of its ValReprInfo
 /// once type parameters have been fully inferred via generalization.
 val TranslatePartialArity: tps: Typar list -> PartialValReprInfo -> ValReprInfo
 
 /// Constrain two types to be equal within this type checking context
-val UnifyTypes : cenv:TcFileState -> env:TcEnv -> m:range -> actualTy:TType -> expectedTy:TType -> unit    
+val UnifyTypes : cenv:TcFileState -> env:TcEnv -> m:Range -> actualTy:TType -> expectedTy:TType -> unit    
 
 module GeneralizationHelpers =
     

@@ -11,12 +11,12 @@ module ComputationExpressionTests =
         sprintf """
 module Code
 type ResultBuilder() =
-    member __.Return value = Ok value
-    member __.ReturnFrom (result: Result<_,_>) = result
+    member _.Return value = Ok value
+    member _.ReturnFrom (result: Result<_,_>) = result
     member x.Zero() = x.Return ()
-    member __.Bind(r: Result<'t,_>, binder: 't -> Result<_,_>) = match r with | Ok r' -> binder r' | Error e -> e
-    member __.Delay(gen: unit -> Result<_,_>) = gen
-    member __.Run(gen: unit -> Result<_,_>) = gen()
+    member _.Bind(r: Result<'t,_>, binder: 't -> Result<_,_>) = match r with | Ok r' -> binder r' | Error e -> e
+    member _.Delay(gen: unit -> Result<_,_>) = gen
+    member _.Run(gen: unit -> Result<_,_>) = gen()
     member _.BindReturn(x: Result<'t,_>, f) = Result.map f x
     member inline _.Source(result : Result<_,_>) : Result<_,_> = result
 
@@ -59,18 +59,18 @@ module AsyncResult =
 
 type AsyncResultBuilder() =
 
-    member __.Return (value: 'T) : Async<Result<'T, 'TError>> =
+    member _.Return (value: 'T) : Async<Result<'T, 'TError>> =
       async.Return <| result.Return value
 
-    member inline __.ReturnFrom
+    member inline _.ReturnFrom
         (asyncResult: Async<Result<'T, 'TError>>)
         : Async<Result<'T, 'TError>> =
       asyncResult
 
-    member __.Zero () : Async<Result<unit, 'TError>> =
+    member _.Zero () : Async<Result<unit, 'TError>> =
       async.Return <| result.Zero ()
 
-    member inline __.Bind
+    member inline _.Bind
         (asyncResult: Async<Result<'T, 'TError>>,
          binder: 'T -> Async<Result<'U, 'TError>>)
         : Async<Result<'U, 'TError>> =
@@ -81,7 +81,7 @@ type AsyncResultBuilder() =
         | Error x -> return Error x
       }
 
-    member __.Delay
+    member _.Delay
         (generator: unit -> Async<Result<'T, 'TError>>)
         : Async<Result<'T, 'TError>> =
       async.Delay generator
@@ -92,19 +92,19 @@ type AsyncResultBuilder() =
         : Async<Result<'U, 'TError>> =
       this.Bind(computation1, fun () -> computation2)
 
-    member __.TryWith
+    member _.TryWith
         (computation: Async<Result<'T, 'TError>>,
          handler: System.Exception -> Async<Result<'T, 'TError>>)
         : Async<Result<'T, 'TError>> =
       async.TryWith(computation, handler)
 
-    member __.TryFinally
+    member _.TryFinally
         (computation: Async<Result<'T, 'TError>>,
          compensation: unit -> unit)
         : Async<Result<'T, 'TError>> =
       async.TryFinally(computation, compensation)
 
-    member __.Using
+    member _.Using
         (resource: 'T when 'T :> System.IDisposable,
          binder: 'T -> Async<Result<'U, 'TError>>)
         : Async<Result<'U, 'TError>> =
@@ -123,8 +123,8 @@ type AsyncResultBuilder() =
         this.While(enum.MoveNext,
           this.Delay(fun () -> binder enum.Current)))
 
-    member inline __.BindReturn(x: Async<Result<'T,'U>>, f) = async.Bind(x, fun r -> Result.map f r |> async.Return)
-    member inline __.MergeSources(t1: Async<Result<'T,'U>>, t2: Async<Result<'T1,'U>>) =
+    member inline _.BindReturn(x: Async<Result<'T,'U>>, f) = async.Bind(x, fun r -> Result.map f r |> async.Return)
+    member inline _.MergeSources(t1: Async<Result<'T,'U>>, t2: Async<Result<'T1,'U>>) =
         AsyncResult.zip t1 t2
 
     member inline _.Source(result : Async<Result<_,_>>) : Async<Result<_,_>> = result
@@ -135,7 +135,7 @@ module ARExts =
         /// <summary>
         /// Needed to allow `for..in` and `for..do` functionality
         /// </summary>
-        member inline __.Source(s: #seq<_>) = s
+        member inline _.Source(s: #seq<_>) = s
 
         /// <summary>
         /// Method lets us transform data types into our internal representation.
@@ -153,7 +153,7 @@ module ARExts =
         /// <summary>
         /// Method lets us transform data types into our internal representation.
         /// </summary>
-        member inline __.Source(asyncComputation : Async<_>) : Async<Result<_,_>> = asyncComputation |> Async.map Ok
+        member inline _.Source(asyncComputation : Async<_>) : Async<Result<_,_>> = asyncComputation |> Async.map Ok
 
 let asyncResult = AsyncResultBuilder()
 

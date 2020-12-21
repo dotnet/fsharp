@@ -20,8 +20,8 @@ open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.DotNet.DependencyManager
 
-exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
-exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
+exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * Range
+exception LoadedSourceNotFoundIgnoring of (*filename*) string * Range
 
 /// Represents a reference to an F# assembly. May be backed by a real assembly on disk (read by Abstract IL), or a cross-project
 /// reference in FSharp.Compiler.Service.
@@ -42,10 +42,10 @@ type IRawFSharpAssemblyData =
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData: Range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
 
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpOptimizationData: Range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -81,9 +81,9 @@ and IProjectReference =
     abstract TryGetLogicalTimeStamp: TimeStampCache * CompilationThreadToken -> System.DateTime option
 
 type AssemblyReference = 
-    | AssemblyReference of range * string  * IProjectReference option
+    | AssemblyReference of Range * string  * IProjectReference option
     
-    member Range: range
+    member Range: Range
     
     member Text: string
     
@@ -124,9 +124,9 @@ type PackageManagerLine =
     { Directive: Directive
       LineStatus: LStatus
       Line: string
-      Range: range }
+      Range: Range }
 
-    static member AddLineWithKey: string -> Directive -> string -> range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
+    static member AddLineWithKey: string -> Directive -> string -> Range -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member RemoveUnprocessedLines: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member SetLinesAsProcessed: string -> Map<string, PackageManagerLine list> -> Map<string, PackageManagerLine list>
     static member StripDependencyManagerKey: string -> string -> string
@@ -151,7 +151,7 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
-      mutable loadedSources: (range * string * string) list
+      mutable loadedSources: (Range * string * string) list
       mutable compilerToolPaths: string  list
       mutable referencedDLLs: AssemblyReference  list
       mutable packageManagerLines: Map<string, PackageManagerLine list>
@@ -290,17 +290,17 @@ type TcConfigBuilder =
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
 
-    member TurnWarningOff: range * string -> unit
+    member TurnWarningOff: Range * string -> unit
 
-    member TurnWarningOn: range * string -> unit
+    member TurnWarningOn: Range * string -> unit
 
-    member AddIncludePath: range * string * string -> unit
+    member AddIncludePath: Range * string * string -> unit
 
     member AddCompilerToolsByPath: string -> unit
 
-    member AddReferencedAssemblyByPath: range * string -> unit
+    member AddReferencedAssemblyByPath: Range * string -> unit
 
-    member RemoveReferencedAssemblyByPath: range * string -> unit
+    member RemoveReferencedAssemblyByPath: Range * string -> unit
 
     member AddEmbeddedSourceFile: string -> unit
 
@@ -313,9 +313,9 @@ type TcConfigBuilder =
     // Directories to start probing in for native DLLs for FSI dynamic loading
     member GetNativeProbingRoots: unit -> seq<string>
 
-    member AddReferenceDirective: dependencyProvider: DependencyProvider * m: range * path: string * directive: Directive -> unit
+    member AddReferenceDirective: dependencyProvider: DependencyProvider * m: Range * path: string * directive: Directive -> unit
 
-    member AddLoadedSource: m: range * originalPath: string * pathLoadedFrom: string -> unit
+    member AddLoadedSource: m: Range * originalPath: string * pathLoadedFrom: string -> unit
 
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]
@@ -439,12 +439,12 @@ type TcConfig =
     member GetTargetFrameworkDirectories: unit -> string list
     
     /// Get the loaded sources that exist and issue a warning for the ones that don't
-    member GetAvailableLoadedSources: unit -> (range*string) list
+    member GetAvailableLoadedSources: unit -> (Range*string) list
     
     member ComputeCanContainEntryPoint: sourceFiles:string list -> bool list *bool 
 
     /// File system query based on TcConfig settings
-    member ResolveSourceFile: range * filename: string * pathLoadedFrom: string -> string
+    member ResolveSourceFile: Range * filename: string * pathLoadedFrom: string -> string
 
     /// File system query based on TcConfig settings
     member MakePathAbsolute: string -> string
@@ -475,7 +475,7 @@ type TcConfig =
 
     member packageManagerLines: Map<string, PackageManagerLine list>
 
-    member loadedSources: (range * string * string) list
+    member loadedSources: (Range * string * string) list
 
     /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
     member noConditionalErasure: bool
@@ -517,11 +517,11 @@ type TcConfigProvider =
     /// TcConfigBuilder rather than delivering snapshots.
     static member BasedOnMutableBuilder: TcConfigBuilder -> TcConfigProvider
 
-val TryResolveFileUsingPaths: paths: string list * m: range * name: string -> string option
+val TryResolveFileUsingPaths: paths: string list * m: Range * name: string -> string option
 
-val ResolveFileUsingPaths: paths: string list * m: range * name: string -> string
+val ResolveFileUsingPaths: paths: string list * m: Range * name: string -> string
 
-val GetWarningNumber: m: range * warningNumber: string -> int option
+val GetWarningNumber: m: Range * warningNumber: string -> int option
 
 /// Get the name used for FSharp.Core
 val GetFSharpCoreLibraryName: unit -> string

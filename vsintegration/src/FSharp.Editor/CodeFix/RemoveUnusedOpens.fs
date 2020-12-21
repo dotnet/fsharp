@@ -56,5 +56,5 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-    override __.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
+    override _.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
  

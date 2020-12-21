@@ -51,8 +51,8 @@ type cenv = TcFileState
 // Mutually recursive shapes
 //------------------------------------------------------------------------- 
 
-type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * range * appliedScope: range
-type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
+type MutRecDataForOpen = MutRecDataForOpen of SynOpenDeclTarget * Range * appliedScope: Range
+type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * Range
 
 /// Represents the shape of a mutually recursive group of declarations including nested modules
 [<RequireQualifiedAccess>]
@@ -186,15 +186,15 @@ let ModuleOrNamespaceContainerInfo modref = ContainerInfo(Parent modref, Some(Me
 /// Indicates a declaration is contained in the given type definition in the given module 
 let TyconContainerInfo (parent, tcref, declaredTyconTypars, safeInitInfo) = ContainerInfo(parent, Some(MemberOrValContainerInfo(tcref, None, None, safeInitInfo, declaredTyconTypars)))
 
-type TyconBindingDefn = TyconBindingDefn of ContainerInfo * NewSlotsOK * DeclKind * SynMemberDefn * range
+type TyconBindingDefn = TyconBindingDefn of ContainerInfo * NewSlotsOK * DeclKind * SynMemberDefn * Range
 
 type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo> list
 type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo> list
 
-type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
+type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * Range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
 type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo> list
 
-type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * ParentRef * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK * fixupFinalAttribs: (unit -> unit)
+type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * ParentRef * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * Range * NewSlotsOK * fixupFinalAttribs: (unit -> unit)
 type MutRecDefnsPhase2DataForModule = MutRecDefnsPhase2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
 type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv> list
 
@@ -373,7 +373,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
 // Bind elements of data definitions for exceptions and types (fields, etc.)
 //------------------------------------------------------------------------- 
 
-exception NotUpperCaseConstructor of range
+exception NotUpperCaseConstructor of Range
 
 let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
     // type names '[]' etc. are used in fslib
@@ -656,7 +656,7 @@ let TcOpenDecl cenv mOpenDecl scopem env target =
     | SynOpenDeclTarget.ModuleOrNamespace (longId, m) -> TcOpenModuleOrNamespaceDecl cenv.tcSink cenv.g cenv.amap scopem env (longId, m)
     | SynOpenDeclTarget.Type (synType, m) -> TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
         
-exception ParameterlessStructCtor of range
+exception ParameterlessStructCtor of Range
 
 let MakeSafeInitField (g: TcGlobals) env m isStatic = 
     let id =
@@ -1496,11 +1496,11 @@ module MutRecBindingChecking =
       /// An 'inherit' declaration in an incremental class
       ///
       /// Phase2AInherit (ty, arg, baseValOpt, m)
-      | Phase2AInherit of SynType * SynExpr * Val option * range
+      | Phase2AInherit of SynType * SynExpr * Val option * Range
       /// A set of value or function definitions in an incremental class
       ///
       /// Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)
-      | Phase2AIncrClassBindings of TyconRef * SynBinding list * bool * bool * range
+      | Phase2AIncrClassBindings of TyconRef * SynBinding list * bool * bool * Range
       /// A 'member' definition in a class
       | Phase2AMember of PreCheckingRecursiveBinding
 #if OPEN_IN_TYPE_DECLARATIONS
@@ -5213,7 +5213,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
 
 
 
-and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, defs, m: range, xml) =
+and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, defs, m: Range, xml) =
 
   eventually {
     let endm = m.EndRange // use end of range for errors 

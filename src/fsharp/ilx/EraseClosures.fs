@@ -125,7 +125,7 @@ type cenv =
       addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef
     }
 
-    override __.ToString() = "<cenv>"
+    override _.ToString() = "<cenv>"
 
   
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) = 

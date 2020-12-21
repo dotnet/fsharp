@@ -13,9 +13,9 @@ open Internal.Utilities.Text.Parsing
 /// information about the grammar at the point where the error occurred, e.g. what tokens
 /// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
-exception SyntaxError of obj * range: range
+exception SyntaxError of obj * range: Range
 
-exception IndentationProblem of string * range
+exception IndentationProblem of string * Range
 
 val warningStringOfCoords: line:int -> column:int -> string
 
@@ -23,16 +23,16 @@ val warningStringOfPos: p:pos -> string
 
 val posOfLexPosition: p:Position -> pos
 
-val mkSynRange: p1:Position -> p2:Position -> range
+val mkSynRange: p1:Position -> p2:Position -> Range
 
 type LexBuffer<'Char> with
-    member LexemeRange: range
+    member LexemeRange: Range
 
-val lhs: parseState:IParseState -> range
+val lhs: parseState:IParseState -> Range
 
-val rhs2: parseState:IParseState -> i:int -> j:int -> range
+val rhs2: parseState:IParseState -> i:int -> j:int -> Range
 
-val rhs: parseState:IParseState -> i:int -> range
+val rhs: parseState:IParseState -> i:int -> Range
 
 type IParseState with
     member SynArgNameGenerator: SyntaxTreeOps.SynArgNameGenerator
@@ -40,20 +40,20 @@ type IParseState with
 
 module LexbufLocalXmlDocStore =
     val ClearXmlDoc: lexbuf:UnicodeLexing.Lexbuf -> unit
-    val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:range -> unit
-    val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:range -> XmlDoc.PreXmlDoc
+    val SaveXmlDocLine: lexbuf:UnicodeLexing.Lexbuf * lineText:string * range:Range -> unit
+    val GrabXmlDocBeforeMarker: lexbuf:UnicodeLexing.Lexbuf * markerRange:Range -> XmlDoc.PreXmlDoc
   
 type LexerIfdefStackEntry =
     | IfDefIf
     | IfDefElse
 
-type LexerIfdefStackEntries = (LexerIfdefStackEntry * range) list
+type LexerIfdefStackEntries = (LexerIfdefStackEntry * Range) list
 
 type LexerIfdefStack = LexerIfdefStackEntries
 
 type LexerEndlineContinuation =
     | Token
-    | Skip of int * range: range
+    | Skip of int * range: Range
 
 type LexerIfdefExpression =
     | IfdefAnd of LexerIfdefExpression * LexerIfdefExpression
@@ -80,17 +80,17 @@ type LexerStringKind =
     static member String: LexerStringKind
     
 type LexerInterpolatedStringNesting =
-    (int * LexerStringStyle * range) list
+    (int * LexerStringStyle * Range) list
 
 [<RequireQualifiedAccess; NoComparison;NoEquality>]
 type LexerContinuation =
     | Token of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting
-    | IfDefSkip of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
-    | String of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * kind: LexerStringKind * range: range
-    | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
-    | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: range
-    | StringInComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * int * range: range
-    | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: range
+    | IfDefSkip of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: Range
+    | String of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * kind: LexerStringKind * range: Range
+    | Comment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: Range
+    | SingleLineComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * int * range: Range
+    | StringInComment of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * style: LexerStringStyle * int * range: Range
+    | MLOnly of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * range: Range
     | EndLine of ifdef: LexerIfdefStackEntries * nesting: LexerInterpolatedStringNesting * LexerEndlineContinuation
 
     member LexerIfdefStack: LexerIfdefStackEntries
@@ -101,6 +101,6 @@ type LexerContinuation =
     
 and LexCont = LexerContinuation
 
-val ParseAssemblyCodeInstructions: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILInstr[]
+val ParseAssemblyCodeInstructions: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:Range -> ILInstr[]
 
-val ParseAssemblyCodeType: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILType
+val ParseAssemblyCodeType: s:string -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:Range -> ILType

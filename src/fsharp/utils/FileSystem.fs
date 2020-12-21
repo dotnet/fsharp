@@ -58,25 +58,25 @@ module FileSystemAutoOpens =
     type DefaultFileSystem() =
         interface IFileSystem with
 
-            member __.AssemblyLoadFrom(fileName: string) = 
+            member _.AssemblyLoadFrom(fileName: string) = 
                 Assembly.UnsafeLoadFrom fileName
 
-            member __.AssemblyLoad(assemblyName: AssemblyName) = 
+            member _.AssemblyLoad(assemblyName: AssemblyName) = 
                 Assembly.Load assemblyName
 
-            member __.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
+            member _.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
 
-            member __.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
+            member _.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
 
-            member __.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
+            member _.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
 
-            member __.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
+            member _.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
 
-            member __.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
+            member _.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
 
-            member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
+            member _.IsPathRootedShim (path: string) = Path.IsPathRooted path
 
-            member __.IsInvalidPathShim(path: string) = 
+            member _.IsInvalidPathShim(path: string) = 
                 let isInvalidPath(p: string) = 
                     String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
@@ -91,15 +91,15 @@ module FileSystemAutoOpens =
                 let filename = Path.GetFileName path
                 isInvalidDirectory directory || isInvalidFilename filename
 
-            member __.GetTempPathShim() = Path.GetTempPath()
+            member _.GetTempPathShim() = Path.GetTempPath()
 
-            member __.GetLastWriteTimeShim (fileName: string) = File.GetLastWriteTimeUtc fileName
+            member _.GetLastWriteTimeShim (fileName: string) = File.GetLastWriteTimeUtc fileName
 
-            member __.SafeExists (fileName: string) = File.Exists fileName 
+            member _.SafeExists (fileName: string) = File.Exists fileName 
 
-            member __.FileDelete (fileName: string) = File.Delete fileName
+            member _.FileDelete (fileName: string) = File.Delete fileName
 
-            member __.IsStableFileHeuristic (fileName: string) = 
+            member _.IsStableFileHeuristic (fileName: string) = 
                 let directory = Path.GetDirectoryName fileName
                 directory.Contains("Reference Assemblies/") || 
                 directory.Contains("Reference Assemblies\\") || 

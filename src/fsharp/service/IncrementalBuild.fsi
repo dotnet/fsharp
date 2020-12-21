@@ -87,7 +87,7 @@ type internal TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) []
+      semanticClassification: struct (Range * SemanticClassificationType) []
     }
 
     member TcSymbolUses: TcSymbolUses list
@@ -116,7 +116,7 @@ type internal PartialCheckResults =
 
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetSemanticClassification: CompilationThreadToken -> struct(range * SemanticClassificationType) []
+    member GetSemanticClassification: CompilationThreadToken -> struct(Range * SemanticClassificationType) []
 
     member TimeStamp: DateTime 
 
@@ -220,7 +220,7 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
+      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:

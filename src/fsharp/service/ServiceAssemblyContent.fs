@@ -75,7 +75,7 @@ type Parent =
     member x.FixParentModuleSuffix (idents: Idents) =
         Parent.RewriteParentIdents x.WithModuleSuffix idents
 
-    member __.FormatEntityFullName (entity: FSharpEntity) =
+    member _.FormatEntityFullName (entity: FSharpEntity) =
         // remove number of arguments from generic types
         // e.g. System.Collections.Generic.Dictionary`2 -> System.Collections.Generic.Dictionary
         // and System.Data.Listeners`1.Func -> System.Data.Listeners.Func
@@ -308,13 +308,13 @@ module AssemblyContentProvider =
 type EntityCache() =
     let dic = Dictionary<AssemblyPath, AssemblyContentCacheEntry>()
     interface IAssemblyContentCache with
-        member __.TryGet assembly =
+        member _.TryGet assembly =
             match dic.TryGetValue assembly with
             | true, entry -> Some entry
             | _ -> None
-        member __.Set assembly entry = dic.[assembly] <- entry
+        member _.Set assembly entry = dic.[assembly] <- entry
 
-    member __.Clear() = dic.Clear()
+    member _.Clear() = dic.Clear()
     member x.Locking f = lock dic <| fun _ -> f (x :> IAssemblyContentCache)
 
 type StringLongIdent = string
@@ -416,7 +416,7 @@ type InsertContext =
 
 type Module =
     { Idents: Idents
-      Range: range }
+      Range: Range }
 
 type OpenStatementInsertionPoint =
     | TopLevel
@@ -803,7 +803,7 @@ module ParsedInput =
 
         let inline longIdentToIdents ident = ident |> Seq.map string |> Seq.toArray
         
-        let addModule (longIdent: LongIdent, range: range) =
+        let addModule (longIdent: LongIdent, range: Range) =
             modules.Add 
                 { Idents = longIdentToIdents longIdent
                   Range = range }

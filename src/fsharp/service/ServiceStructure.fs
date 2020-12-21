@@ -16,30 +16,30 @@ module Structure =
     module Range =
 
         /// Create a range starting at the end of r1 and finishing at the end of r2
-        let endToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End r2.End
+        let endToEnd (r1: Range) (r2: Range) = mkFileIndexRange r1.FileIndex r1.End r2.End
 
         /// Create a range starting at the end of r1 and finishing at the start of r2
-        let endToStart (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.End r2.Start
+        let endToStart (r1: Range) (r2: Range) = mkFileIndexRange r1.FileIndex r1.End r2.Start
 
         /// Create a range beginning at the start of r1 and finishing at the end of r2
-        let startToEnd (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.Start r2.End
+        let startToEnd (r1: Range) (r2: Range) = mkFileIndexRange r1.FileIndex r1.Start r2.End
 
         /// Create a range beginning at the start of r1 and finishing at the start of r2
-        let startToStart (r1: range) (r2: range) = mkFileIndexRange r1.FileIndex r1.Start r2.Start
+        let startToStart (r1: Range) (r2: Range) = mkFileIndexRange r1.FileIndex r1.Start r2.Start
 
         /// Create a new range from r by shifting the starting column by m
-        let modStart  (m:int) (r: range) =
+        let modStart  (m:int) (r: Range) =
             let modstart = mkPos r.StartLine (r.StartColumn+m)
             mkFileIndexRange r.FileIndex modstart r.End
 
         /// Create a new range from r by shifting the ending column by m
-        let modEnd (m:int) (r: range) =
+        let modEnd (m:int) (r: Range) =
             let modend = mkPos r.EndLine (r.EndColumn+m)
             mkFileIndexRange r.FileIndex r.Start modend
 
         /// Produce a new range by adding modStart to the StartColumn of `r`
         /// and subtracting modEnd from the EndColumn of `r`
-        let modBoth modStart modEnd (r:range) =
+        let modBoth modStart modEnd (r:Range) =
             let rStart = mkPos r.StartLine (r.StartColumn+modStart)
             let rEnd   = mkPos r.EndLine   (r.EndColumn - modEnd)
             mkFileIndexRange r.FileIndex rStart rEnd
@@ -187,9 +187,9 @@ module Structure =
         { Scope: Scope
           Collapse: Collapse
           /// HintSpan in BlockSpan
-          Range: range
+          Range: Range
           /// TextSpan in BlockSpan
-          CollapseRange: range }
+          CollapseRange: Range }
 
     type LineNumber = int
     type LineStr = string
@@ -208,7 +208,7 @@ module Structure =
         let acc = ResizeArray()
 
         /// Validation function to ensure that ranges yielded for outlining span 2 or more lines
-        let inline rcheck scope collapse (fullRange: range) (collapseRange: range) = 
+        let inline rcheck scope collapse (fullRange: Range) (collapseRange: Range) = 
             if fullRange.StartLine <> fullRange.EndLine then 
                 acc.Add { Scope = scope
                           Collapse = collapse
@@ -465,7 +465,7 @@ module Structure =
 
         and parseExprInterfaces (intfs: SynInterfaceImpl list) = List.iter parseExprInterface intfs
 
-        and parseSynMemberDefn (objectModelRange: range) d =
+        and parseSynMemberDefn (objectModelRange: Range) d =
             match d with
             | SynMemberDefn.Member(SynBinding.Binding (attributes=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding, _) ->
                match valData with
@@ -554,9 +554,9 @@ module Structure =
                List.iter (parseSynMemberDefn r) members
            | SynTypeDefnRepr.Exception _ -> ()
 
-        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecl list) =
+        let getConsecutiveModuleDecls (predicate: SynModuleDecl -> Range option) (scope: Scope) (decls: SynModuleDecl list) =
             let groupConsecutiveDecls input =
-                let rec loop (input: range list) (res: range list list) currentBulk =
+                let rec loop (input: Range list) (res: Range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
                     | [], _ -> List.rev (currentBulk :: res)
@@ -568,7 +568,7 @@ module Structure =
                     | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
-            let selectRanges (ranges: range list) =
+            let selectRanges (ranges: Range list) =
                 match ranges with
                 | [] -> None
                 | [r] when r.StartLine = r.EndLine -> None
@@ -782,9 +782,9 @@ module Structure =
                 parseSimpleRepr simpleRepr
             | SynTypeDefnSigRepr.Exception _ -> ()
 
-        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecl list) =
+        let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> Range option) (scope:Scope) (decls: SynModuleSigDecl list) =
             let groupConsecutiveSigDecls input =
-                let rec loop (input: range list) (res: range list list) currentBulk =
+                let rec loop (input: Range list) (res: Range list list) currentBulk =
                     match input, currentBulk with
                     | [], [] -> List.rev res
                     | [], _ -> List.rev (currentBulk :: res)
@@ -794,7 +794,7 @@ module Structure =
                     | r :: rest, _ -> loop rest (currentBulk :: res) [r]
                 loop input [] []
 
-            let selectSigRanges (ranges: range list) =
+            let selectSigRanges (ranges: Range list) =
                 match ranges with
                 | [] -> None
                 | [r] when r.StartLine = r.EndLine -> None

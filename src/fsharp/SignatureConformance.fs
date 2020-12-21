@@ -24,7 +24,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
+exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * Range
 
 exception ValueNotContained of DisplayEnv * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
@@ -34,7 +34,7 @@ exception ExnconstrNotContained of DisplayEnv * Tycon * Tycon * (string * string
 
 exception FieldNotContained of DisplayEnv * RecdField * RecdField * (string * string -> string)
 
-exception InterfaceNotRevealed of DisplayEnv * TType * range
+exception InterfaceNotRevealed of DisplayEnv * TType * Range
 
 // Use a type to capture the constant, common parameters 
 type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 
@@ -635,10 +635,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             checkModuleOrNamespaceContents implModRef.Range aenv implModRef sigModRef.ModuleOrNamespaceType &&
             checkAttribs aenv implModRef.Attribs sigModRef.Attribs implModRef.Deref.SetAttribs
 
-        member __.CheckSignature aenv (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
+        member _.CheckSignature aenv (implModRef: ModuleOrNamespaceRef) (signModType: ModuleOrNamespaceType) = 
             checkModuleOrNamespaceContents implModRef.Range aenv implModRef signModType
 
-        member __.CheckTypars m aenv (implTypars: Typars) (signTypars: Typars) = 
+        member _.CheckTypars m aenv (implTypars: Typars) (signTypars: Typars) = 
             checkTypars m aenv implTypars signTypars
 
 

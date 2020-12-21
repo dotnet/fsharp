@@ -22,33 +22,33 @@ module internal CodeGenerationUtils =
         let stringWriter = new StringWriter()
         let indentWriter = new IndentedTextWriter(stringWriter, " ")
 
-        member __.Write(s: string) =
+        member _.Write(s: string) =
             indentWriter.Write("{0}", s)
 
-        member __.Write(s: string, [<ParamArray>] objs: obj []) =
+        member _.Write(s: string, [<ParamArray>] objs: obj []) =
             indentWriter.Write(s, objs)
 
-        member __.WriteLine(s: string) =
+        member _.WriteLine(s: string) =
             indentWriter.WriteLine("{0}", s)
 
-        member __.WriteLine(s: string, [<ParamArray>] objs: obj []) =
+        member _.WriteLine(s: string, [<ParamArray>] objs: obj []) =
             indentWriter.WriteLine(s, objs)
 
         member x.WriteBlankLines count =
             for _ in 0 .. count - 1 do
                 x.WriteLine ""
 
-        member __.Indent i = 
+        member _.Indent i = 
             indentWriter.Indent <- indentWriter.Indent + i
 
-        member __.Unindent i = 
+        member _.Unindent i = 
             indentWriter.Indent <- max 0 (indentWriter.Indent - i)
 
-        member __.Dump() =
+        member _.Dump() =
             indentWriter.InnerWriter.ToString()
 
         interface IDisposable with
-            member __.Dispose() =
+            member _.Dispose() =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
 
@@ -549,7 +549,7 @@ module InterfaceStubGenerator =
     ///  (1) Crack ASTs to get member names and their associated ranges
     ///  (2) Check symbols of those members based on ranges
     ///  (3) If any symbol found, capture its member signature 
-    let getImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
+    let getImplementedMemberSignatures (getMemberByLocation: string * Range -> FSharpSymbolUse option) displayContext interfaceData = 
         let formatMemberSignature (symbolUse: FSharpSymbolUse) =            
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->

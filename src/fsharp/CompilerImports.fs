@@ -132,9 +132,9 @@ let WriteOptimizationData (tcGlobals, filename, inMem, ccu: CcuThunk, modulInfo)
     let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     PickleToResource inMem filename tcGlobals ccu (rName+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
-exception AssemblyNotResolved of (*originalName*) string * range
-exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
-exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * range
+exception AssemblyNotResolved of (*originalName*) string * Range
+exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * Range
+exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * Range
 
 let OpenILBinary(filename, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
     let opts: ILReaderOptions = 
@@ -290,7 +290,7 @@ type TcConfig with
                 // file is included in the search path. This should ideally already be one of the search paths, but
                 // during some global checks it won't be. We append to the end of the search list so that this is the last
                 // place that is checked.
-                let isPoundRReference (r: range) =
+                let isPoundRReference (r: Range) =
                     not (Range.equals r range0) &&
                     not (Range.equals r rangeStartup) &&
                     not (Range.equals r rangeCmdArgs) &&
@@ -393,7 +393,7 @@ type TcConfig with
     // NOTE!! if mode=ReportErrors then this method must not raise exceptions. It must just report the errors and recover
     static member TryResolveLibsUsingMSBuildRules (tcConfig: TcConfig, 
             originalReferences: AssemblyReference list,
-            errorAndWarningRange: range,
+            errorAndWarningRange: Range,
             mode: ResolveAssemblyReferenceMode) : AssemblyResolution list * UnresolvedAssemblyReference list =
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -630,13 +630,13 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
 
-         member __.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
+         member _.GetAutoOpenAttributes ilg = GetAutoOpenAttributes ilg ilModule 
 
-         member __.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
+         member _.GetInternalsVisibleToAttributes ilg = GetInternalsVisibleToAttributes ilg ilModule 
 
-         member __.TryGetILModuleDef() = Some ilModule 
+         member _.TryGetILModuleDef() = Some ilModule 
 
-         member __.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
+         member _.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
             let resources = ilModule.Resources.AsList
             let sigDataReaders = 
                 [ for iresource in resources do
@@ -654,7 +654,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     sigDataReaders
             sigDataReaders
 
-         member __.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
+         member _.GetRawFSharpOptimizationData(m, ilShortAssemName, filename) =             
             let optDataReaders = 
                 ilModule.Resources.AsList
                 |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r, (fun () -> r.GetBytes())) else None)
@@ -670,22 +670,22 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                     optDataReaders
             optDataReaders
 
-         member __.GetRawTypeForwarders() =
+         member _.GetRawTypeForwarders() =
             match ilModule.Manifest with 
             | Some manifest -> manifest.ExportedTypes
             | None -> mkILExportedTypes []
 
-         member __.ShortAssemblyName = GetNameOfILModule ilModule 
+         member _.ShortAssemblyName = GetNameOfILModule ilModule 
 
-         member __.ILScopeRef = MakeScopeRefForILModule ilModule
+         member _.ILScopeRef = MakeScopeRefForILModule ilModule
 
-         member __.ILAssemblyRefs = ilAssemblyRefs
+         member _.ILAssemblyRefs = ilAssemblyRefs
 
-         member __.HasAnyFSharpSignatureDataAttribute = 
+         member _.HasAnyFSharpSignatureDataAttribute = 
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists IsSignatureDataVersionAttr attrs
 
-         member __.HasMatchingFSharpSignatureDataAttribute ilg = 
+         member _.HasMatchingFSharpSignatureDataAttribute ilg = 
             let attrs = GetCustomAttributesOfILModule ilModule
             List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
@@ -730,10 +730,10 @@ type TcImportsDllInfoHack =
 and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
     let mutable dllInfos: TcImportsDllInfoHack list = []
 
-    member __.SetDllInfos (value: ImportedBinary list) =
+    member _.SetDllInfos (value: ImportedBinary list) =
         dllInfos <- value |> List.map (fun x -> { FileName = x.FileName })
 
-    member __.Base: TcImportsWeakHack option =
+    member _.Base: TcImportsWeakHack option =
         match tcImports.TryGetTarget() with
         | true, strong ->
             match strong.Base with
@@ -744,7 +744,7 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
         | _ -> 
             None
 
-    member __.SystemRuntimeContainsType typeName =
+    member _.SystemRuntimeContainsType typeName =
         match tcImports.TryGetTarget () with
         | true, strong -> strong.SystemRuntimeContainsType typeName
         | _ -> false

@@ -258,7 +258,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         match scope.ParseTree with
         | Some parseTree ->
             AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
-                member __.VisitExpr(_path, _, defaultTraverse, expr) =
+                member _.VisitExpr(_path, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.YieldOrReturn(_, expr, range)
                     | SynExpr.YieldOrReturnFrom(_, expr, range) when rangeContainsPos range pos ->
@@ -303,10 +303,10 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | Some input ->
             let result =
                 AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with 
-                    member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                    member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                         defaultTraverse(expr)
 
-                    override __.VisitBinding (_, binding) =
+                    override _.VisitBinding (_, binding) =
                         match binding with
                         | Binding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
                             let info = valData.SynValInfo.CurriedArgInfos
@@ -1415,7 +1415,7 @@ module UntypedParseImpl =
         let walker = 
             { 
                 new AstTraversal.AstVisitorBase<_>() with
-                    member __.VisitExpr(path, _, defaultTraverse, expr) = 
+                    member _.VisitExpr(path, _, defaultTraverse, expr) = 
 
                         if isInRhsOfRangeOp path then
                             match defaultTraverse expr with
@@ -1449,7 +1449,7 @@ module UntypedParseImpl =
                             
                             | _ -> defaultTraverse expr
 
-                    member __.VisitRecordField(path, copyOpt, field) = 
+                    member _.VisitRecordField(path, copyOpt, field) = 
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
@@ -1473,7 +1473,7 @@ module UntypedParseImpl =
                                 | None -> contextFromTreePath ([], None)
                             Some (CompletionContext.RecordField recordContext)
                                 
-                    member __.VisitInheritSynMemberDefn(componentInfo, typeDefnKind, synType, _members, _range) = 
+                    member _.VisitInheritSynMemberDefn(componentInfo, typeDefnKind, synType, _members, _range) = 
                         match synType with
                         | SynType.LongIdent lidwd ->                                 
                             match parseLid lidwd with
@@ -1482,7 +1482,7 @@ module UntypedParseImpl =
 
                         | _ -> None 
                         
-                    member __.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
+                    member _.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
                     
                         let visitParam = function
                             | SynPat.Named (range = range) when rangeContainsPos range pos -> 
@@ -1518,11 +1518,11 @@ module UntypedParseImpl =
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
                     
-                    member __.VisitHashDirective range = 
+                    member _.VisitHashDirective range = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
                         else None 
                         
-                    member __.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
+                    member _.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine && lastIdent.idRange.EndColumn >= 0 && pos.Column <= lineStr.Length ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
@@ -1531,16 +1531,16 @@ module UntypedParseImpl =
                             else None
                         | _ -> None 
 
-                    member __.VisitComponentInfo(ComponentInfo(range = range)) = 
+                    member _.VisitComponentInfo(ComponentInfo(range = range)) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid
                         else None
 
-                    member __.VisitLetOrUse(_, _, bindings, range) =
+                    member _.VisitLetOrUse(_, _, bindings, range) =
                         match bindings with
                         | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                         | _ -> None
 
-                    member __.VisitSimplePats pats =
+                    member _.VisitSimplePats pats =
                         pats |> List.tryPick (fun pat ->
                             match pat with
                             | SynSimplePat.Id(range = range)
@@ -1548,7 +1548,7 @@ module UntypedParseImpl =
                                 Some CompletionContext.Invalid
                             | _ -> None)
 
-                    member __.VisitModuleDecl(defaultTraverse, decl) =
+                    member _.VisitModuleDecl(defaultTraverse, decl) =
                         match decl with
                         | SynModuleDecl.Open(target, m) -> 
                             // in theory, this means we're "in an open"
@@ -1568,7 +1568,7 @@ module UntypedParseImpl =
                                 None
                         | _ -> defaultTraverse decl
 
-                    member __.VisitType(defaultTraverse, ty) =
+                    member _.VisitType(defaultTraverse, ty) =
                         match ty with
                         | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
                             Some CompletionContext.PatternType

@@ -226,7 +226,7 @@ let escape c =
 // Keyword table
 //-----------------------------------------------------------------------   
 
-exception ReservedKeyword of string * range
+exception ReservedKeyword of string * Range
 
 module Keywords = 
     type private compatibilityMode =

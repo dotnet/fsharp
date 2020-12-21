@@ -631,10 +631,10 @@ type env =
 
       prefix: string
 
-      m: Range.range
+      m: Range
     }
 
-    override __.ToString() = "<env>"
+    override _.ToString() = "<env>"
 
 let suffixE env s = {env with prefix = env.prefix + s}
 

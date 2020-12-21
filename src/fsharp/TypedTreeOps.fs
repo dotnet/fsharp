@@ -1097,18 +1097,18 @@ let rec getErasedTypes g ty =
 // Standard orderings, e.g. for order set/map keys
 //---------------------------------------------------------------------------
 
-let valOrder = { new IComparer<Val> with member __.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
-let tyconOrder = { new IComparer<Tycon> with member __.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
+let valOrder = { new IComparer<Val> with member _.Compare(v1, v2) = compare v1.Stamp v2.Stamp }
+let tyconOrder = { new IComparer<Tycon> with member _.Compare(tc1, tc2) = compare tc1.Stamp tc2.Stamp }
 let recdFieldRefOrder = 
     { new IComparer<RecdFieldRef> with 
-         member __.Compare(RecdFieldRef(tcref1, nm1), RecdFieldRef(tcref2, nm2)) = 
+         member _.Compare(RecdFieldRef(tcref1, nm1), RecdFieldRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
 
 let unionCaseRefOrder = 
     { new IComparer<UnionCaseRef> with 
-         member __.Compare(UnionCaseRef(tcref1, nm1), UnionCaseRef(tcref2, nm2)) = 
+         member _.Compare(UnionCaseRef(tcref1, nm1), UnionCaseRef(tcref2, nm2)) = 
             let c = tyconOrder.Compare (tcref1.Deref, tcref2.Deref) 
             if c <> 0 then c else 
             compare nm1 nm2 }
@@ -1201,7 +1201,7 @@ type Expr with
 
 let primMkMatch(spBind, exprm, tree, targets, matchm, ty) = Expr.Match (spBind, exprm, tree, targets, matchm, ty)
 
-type MatchBuilder(spBind, inpRange: Range.range) = 
+type MatchBuilder(spBind, inpRange: Range) = 
 
     let targets = new ResizeArray<_>(10) 
     member x.AddTarget tg = 
@@ -3084,7 +3084,7 @@ let TryFindILAttributeOpt attr attrs =
 /// provided attributes.
 //
 // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
-let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: (obj option list * (string * obj option) list -> 'a option)) : 'a option = 
+let TryBindTyconRefAttribute g (m: Range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: (obj option list * (string * obj option) list -> 'a option)) : 'a option = 
     ignore m; ignore f3
     match metadataOfTycon tcref.Deref with 
 #if !NO_EXTENSIONTYPING
@@ -6139,7 +6139,7 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets =
 //------------------------------------------------------------------------- 
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
-exception DefensiveCopyWarning of string * range
+exception DefensiveCopyWarning of string * Range
 
 let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tcref.CanDeref &&
@@ -9340,8 +9340,8 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 let EmptyTraitWitnessInfoHashMap g : TraitWitnessInfoHashMap<'T> =
     ImmutableDictionary.Create(
          { new IEqualityComparer<_> with 
-                member __.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
-                member __.GetHashCode(a) = hash a.MemberName
+                member _.Equals(a, b) = traitKeysAEquiv g TypeEquivEnv.Empty a b
+                member _.GetHashCode(a) = hash a.MemberName
          })
 
 let (|WhileExpr|_|) expr = 

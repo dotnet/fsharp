@@ -2360,9 +2360,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
     // Part VI. Publish the new lexer function.  
     //--------------------------------------------------------------------------
 
-    member __.LexBuffer = lexbuf
+    member _.LexBuffer = lexbuf
 
-    member __.GetToken() = 
+    member _.GetToken() = 
         if not initialized then 
             let _firstTokenTup = peekInitial()
             ()

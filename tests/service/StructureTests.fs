@@ -105,7 +105,7 @@ type Color =
     | Blue
 
     interface IDisposable with
-        member __.Dispose() =
+        member _.Dispose() =
             (docEventListener :> IDisposable).Dispose()
 """
     => [ (2, 5, 9, 55), (2, 11, 9, 55)
@@ -124,7 +124,7 @@ type Color =
           int }
 
     interface IDisposable with
-        member __.Dispose() =
+        member _.Dispose() =
             (docEventListener :> IDisposable).Dispose()
 """
     =>
@@ -166,7 +166,7 @@ module MyModule =       // 2
         }
 
         interface IDisposable with      // 13
-            member __.Dispose() =
+            member _.Dispose() =
                 (docEventListener :> IDisposable).Dispose()
 
     module MyInnerModule =              // 17
@@ -178,7 +178,7 @@ module MyModule =       // 2
             }
 
             interface IDisposable with  // 25
-                member __.Dispose() =
+                member _.Dispose() =
                     (docEventListener :> IDisposable).Dispose()
 """ 
     => [ (2, 0, 27, 63), (2, 15, 27, 63)
@@ -349,7 +349,7 @@ let ``object expressions``() =
     """
 let _ =
     { new System.IDisposable with
-        member __.Dispose() = () }
+        member _.Dispose() = () }
 """
     => [ (2, 0, 4, 34), (2, 5, 4, 34)
          (2, 4, 4, 34), (2, 5, 4, 34)

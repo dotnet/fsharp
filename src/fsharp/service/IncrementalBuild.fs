@@ -43,7 +43,7 @@ module internal IncrementalBuild =
     let mutable injectCancellationFault = false
     let LocallyInjectCancellationFault() = 
         injectCancellationFault <- true
-        { new IDisposable with member __.Dispose() =  injectCancellationFault <- false }
+        { new IDisposable with member _.Dispose() =  injectCancellationFault <- false }
 
 // Record the most recent IncrementalBuilder events, so we can more easily unit test/debug the 
 // 'incremental' behavior of the product.
@@ -95,7 +95,7 @@ module IncrementalBuildSyntaxTree =
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
-    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, filename: string, isLastCompiland) =
+    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: Range, filename: string, isLastCompiland) =
 
         let mutable weakCache: WeakReference<_> option = None
 
@@ -195,7 +195,7 @@ type TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (range * SemanticClassificationType) []
+      semanticClassification: struct (Range * SemanticClassificationType) []
     }
 
     member x.TcSymbolUses = 
@@ -537,13 +537,13 @@ type FrameworkImportsCache(size) =
     let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, (TcGlobals * TcImports)>(size, areSimilar=(fun (x, y) -> x = y)) 
 
     /// Reduce the size of the cache in low-memory scenarios
-    member __.Downsize ctok = frameworkTcImportsCache.Resize(ctok, newKeepStrongly=0)
+    member _.Downsize ctok = frameworkTcImportsCache.Resize(ctok, newKeepStrongly=0)
 
     /// Clear the cache
-    member __.Clear ctok = frameworkTcImportsCache.Clear ctok
+    member _.Clear ctok = frameworkTcImportsCache.Clear ctok
 
     /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
-    member __.Get(ctok, tcConfig: TcConfig) =
+    member _.Get(ctok, tcConfig: TcConfig) =
       cancellable {
         // Split into installed and not installed.
         let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
@@ -634,17 +634,17 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
     let ivtAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_InternalsVisibleToAttribute)
 
     interface IRawFSharpAssemblyData with 
-        member __.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
-        member __.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
-        member __.TryGetILModuleDef() = None
-        member __.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
-        member __.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
-        member __.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
-        member __.ShortAssemblyName = assemblyName
-        member __.ILScopeRef = IL.ILScopeRef.Assembly ilAssemRef
-        member __.ILAssemblyRefs = [] // These are not significant for service scenarios
-        member __.HasAnyFSharpSignatureDataAttribute =  true
-        member __.HasMatchingFSharpSignatureDataAttribute _ilg = true
+        member _.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
+        member _.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
+        member _.TryGetILModuleDef() = None
+        member _.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
+        member _.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
+        member _.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
+        member _.ShortAssemblyName = assemblyName
+        member _.ILScopeRef = IL.ILScopeRef.Assembly ilAssemRef
+        member _.ILAssemblyRefs = [] // These are not significant for service scenarios
+        member _.HasAnyFSharpSignatureDataAttribute =  true
+        member _.HasMatchingFSharpSignatureDataAttribute _ilg = true
 
 /// Manages an incremental build graph for the build of a single F# project
 type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInputs, nonFrameworkResolutions, unresolvedReferences, tcConfig: TcConfig, projectDirectory, outfile, 
@@ -704,11 +704,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // START OF BUILD TASK FUNCTIONS 
                 
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) _ctok (_m: range, filename: string, _isLastCompiland) =
+    let StampFileNameTask (cache: TimeStampCache) _ctok (_m: Range, filename: string, _isLastCompiland) =
         cache.GetFileTimeStamp filename
 
     /// Parse the given file and return the given input.
-    let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
+    let ParseTask ctok (sourceRange: Range, filename: string, isLastCompiland) =
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
         SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
         
@@ -1123,25 +1123,25 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
-    member __.TcConfig = tcConfig
+    member _.TcConfig = tcConfig
 
-    member __.FileParsed = fileParsed.Publish
+    member _.FileParsed = fileParsed.Publish
 
-    member __.BeforeFileChecked = beforeFileChecked.Publish
+    member _.BeforeFileChecked = beforeFileChecked.Publish
 
-    member __.FileChecked = fileChecked.Publish
+    member _.FileChecked = fileChecked.Publish
 
-    member __.ProjectChecked = projectChecked.Publish
+    member _.ProjectChecked = projectChecked.Publish
 
 #if !NO_EXTENSIONTYPING
-    member __.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
+    member _.ImportsInvalidatedByTypeProvider = importsInvalidatedByTypeProvider.Publish
 #endif
 
-    member __.TryGetCurrentTcImports () = currentTcImportsOpt
+    member _.TryGetCurrentTcImports () = currentTcImportsOpt
 
-    member __.AllDependenciesDeprecated = allDependencies
+    member _.AllDependenciesDeprecated = allDependencies
 
-    member __.Step (ctok: CompilationThreadToken) =  
+    member _.Step (ctok: CompilationThreadToken) =  
       cancellable {
         let cache = TimeStampCache defaultTimeStamp // One per step
         let! res = step cache ctok
@@ -1167,7 +1167,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         | Some _ -> true
         | _ -> false
         
-    member __.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
+    member _.GetCheckResultsBeforeSlotInProject (ctok: CompilationThreadToken, slotOfFile) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
         let! result = eval cache ctok (slotOfFile - 1)
@@ -1199,7 +1199,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
 
-    member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
+    member _.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
       cancellable {
         let cache = TimeStampCache defaultTimeStamp
 
@@ -1223,12 +1223,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 enablePartialTypeChecking <- defaultPartialTypeChecking
         }
         
-    member __.GetLogicalTimeStampForProject(cache, ctok: CompilationThreadToken) = 
+    member _.GetLogicalTimeStampForProject(cache, ctok: CompilationThreadToken) = 
         let t1 = MaxTimeStampInDependencies cache ctok getStampedReferencedAssemblies
         let t2 = MaxTimeStampInDependencies cache ctok getStampedFileNames
         max t1 t2
         
-    member __.TryGetSlotOfFileName(filename: string) =
+    member _.TryGetSlotOfFileName(filename: string) =
         // Get the slot of the given file and force it to build.
         let CompareFileNames (_, f2, _) = 
             let result = 
@@ -1244,7 +1244,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         | Some slot -> slot
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" filename)
         
-    member __.GetSlotsCount () = fileNames.Length
+    member _.GetSlotsCount () = fileNames.Length
 
     member this.ContainsFile(filename: string) =
         (this.TryGetSlotOfFileName filename).IsSome
@@ -1258,7 +1258,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         return syntaxTree.Parse None
       }
 
-    member __.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
+    member _.SourceFiles  = sourceFiles  |> List.map (fun (_, f, _) -> f)
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
@@ -1427,7 +1427,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpDiagnosticSeverity.Error)
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, isError) -> FSharpDiagnostic.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
+            |> Array.map (fun (d, isError) -> FSharpDiagnostic.CreateFromException(d, isError, Range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }

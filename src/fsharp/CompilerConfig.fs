@@ -54,8 +54,8 @@ let FSharpLightSyntaxFileSuffixes: string list = [ ".fs";".fsscript";".fsx";".fs
 // General file name resolver
 //--------------------------------------------------------------------------
 
-exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
-exception LoadedSourceNotFoundIgnoring of (*filename*) string * range
+exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * Range
+exception LoadedSourceNotFoundIgnoring of (*filename*) string * Range
 
 /// Will return None if the filename is not found.
 let TryResolveFileUsingPaths(paths, m, name) =
@@ -158,10 +158,10 @@ type IRawFSharpAssemblyData =
     abstract TryGetILModuleDef: unit -> ILModuleDef option
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData: Range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
 
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpOptimizationData: Range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -218,7 +218,7 @@ and IProjectReference =
     abstract TryGetLogicalTimeStamp: TimeStampCache * CompilationThreadToken -> System.DateTime option
 
 type AssemblyReference = 
-    | AssemblyReference of range * string * IProjectReference option
+    | AssemblyReference of Range * string * IProjectReference option
 
     member x.Range = (let (AssemblyReference(m, _, _)) = x in m)
 
@@ -271,9 +271,9 @@ type PackageManagerLine =
     { Directive: Directive
       LineStatus: LStatus
       Line: string
-      Range: range }
+      Range: Range }
 
-    static member AddLineWithKey (packageKey: string) (directive:Directive) (line: string) (m: range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
+    static member AddLineWithKey (packageKey: string) (directive:Directive) (line: string) (m: Range) (packageManagerLines: Map<string, PackageManagerLine list>): Map<string, PackageManagerLine list>  =
         let path = PackageManagerLine.StripDependencyManagerKey packageKey line
         let map =
             let mutable found = false
@@ -332,7 +332,7 @@ type TcConfigBuilder =
       mutable implicitlyResolveAssemblies: bool
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
-      mutable loadedSources: (range * string * string) list
+      mutable loadedSources: (Range * string * string) list
       mutable compilerToolPaths: string list
       mutable referencedDLLs: AssemblyReference list
       mutable packageManagerLines: Map<string, PackageManagerLine list>

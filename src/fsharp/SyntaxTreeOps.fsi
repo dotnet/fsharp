@@ -12,7 +12,7 @@ type SynArgNameGenerator =
     member New: unit -> string
     member Reset: unit -> unit
     
-val ident: s:string * r:range -> Ident
+val ident: s:string * r:Range -> Ident
 
 val textOfId: id:Ident -> string
 
@@ -24,24 +24,24 @@ val textOfPath: path:seq<string> -> string
 
 val textOfLid: lid:Ident list -> string
 
-val rangeOfLid: lid:Ident list -> range
+val rangeOfLid: lid:Ident list -> Range
 
-val mkSynId: m:range -> s:string -> Ident
+val mkSynId: m:Range -> s:string -> Ident
 
-val pathToSynLid: m:range -> p:string list -> Ident list
+val pathToSynLid: m:Range -> p:string list -> Ident list
 
-val mkSynIdGet: m:range -> n:string -> SynExpr
+val mkSynIdGet: m:Range -> n:string -> SynExpr
 
-val mkSynLidGet: m:range -> path:string list -> n:string -> SynExpr
+val mkSynLidGet: m:Range -> path:string list -> n:string -> SynExpr
 
-val mkSynIdGetWithAlt: m:range -> id:Ident -> altInfo:SynSimplePatAlternativeIdInfo ref option -> SynExpr
+val mkSynIdGetWithAlt: m:Range -> id:Ident -> altInfo:SynSimplePatAlternativeIdInfo ref option -> SynExpr
 
 val mkSynSimplePatVar: isOpt:bool -> id:Ident -> SynSimplePat
 
 val mkSynCompGenSimplePatVar: id:Ident -> SynSimplePat
 
 /// Match a long identifier, including the case for single identifiers which gets a more optimized node in the syntax tree.
-val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimplePatAlternativeIdInfo ref option * range) option
+val (|LongOrSingleIdent|_|): inp:SynExpr -> (bool * LongIdentWithDots * SynSimplePatAlternativeIdInfo ref option * Range) option
 
 val (|SingleIdent|_|): inp:SynExpr -> Ident option
 
@@ -50,13 +50,13 @@ val IsControlFlowExpression: e:SynExpr -> bool
 
 val mkAnonField: ty:SynType -> SynField
 
-val mkNamedField: ident:Ident * ty:SynType * m:range -> SynField
+val mkNamedField: ident:Ident * ty:SynType * m:Range -> SynField
 
 val mkSynPatVar: vis:SynAccess option -> id:Ident -> SynPat
 
 val mkSynThisPatVar: id:Ident -> SynPat
 
-val mkSynPatMaybeVar: lidwd:LongIdentWithDots -> vis:SynAccess option -> m:range -> SynPat
+val mkSynPatMaybeVar: lidwd:LongIdentWithDots -> vis:SynAccess option -> m:Range -> SynPat
 
 val ( |SynPatForConstructorDecl|_| ): x:SynPat -> SynPat option
 
@@ -65,7 +65,7 @@ val (|SynPatForNullaryArgs|_|): x:SynPat -> unit option
 
 val ( |SynExprErrorSkip| ): p:SynExpr -> SynExpr
 
-val ( |SynExprParen|_| ): e:SynExpr -> (SynExpr * range * range option * range) option
+val ( |SynExprParen|_| ): e:SynExpr -> (SynExpr * Range * Range option * Range) option
 
 val ( |SynPatErrorSkip| ): p:SynPat -> SynPat
 
@@ -87,73 +87,73 @@ val PushPatternToExpr: synArgNameGenerator:SynArgNameGenerator -> isMember:bool 
 ///        let (UnionCase x) = tmp1 in
 ///        let (UnionCase y) = tmp2 in
 ///        body"
-val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:range -> isMember:bool -> pats:SynPat list -> rhs:SynExpr -> SynSimplePats list * SynExpr
+val PushCurriedPatternsToExpr: synArgNameGenerator:SynArgNameGenerator -> wholem:Range -> isMember:bool -> pats:SynPat list -> rhs:SynExpr -> SynSimplePats list * SynExpr
 
 val opNameParenGet: string
 
 val opNameQMark: string
 
-val mkSynOperator: opm:range -> oper:string -> SynExpr
+val mkSynOperator: opm:Range -> oper:string -> SynExpr
 
-val mkSynInfix: opm:range -> l:SynExpr -> oper:string -> r:SynExpr -> SynExpr
+val mkSynInfix: opm:Range -> l:SynExpr -> oper:string -> r:SynExpr -> SynExpr
 
-val mkSynBifix: m:range -> oper:string -> x1:SynExpr -> x2:SynExpr -> SynExpr
+val mkSynBifix: m:Range -> oper:string -> x1:SynExpr -> x2:SynExpr -> SynExpr
 
-val mkSynTrifix: m:range -> oper:string -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> SynExpr
+val mkSynTrifix: m:Range -> oper:string -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> SynExpr
 
-val mkSynPrefixPrim: opm:range -> m:range -> oper:string -> x:SynExpr -> SynExpr
+val mkSynPrefixPrim: opm:Range -> m:Range -> oper:string -> x:SynExpr -> SynExpr
 
-val mkSynPrefix: opm:range -> m:range -> oper:string -> x:SynExpr -> SynExpr
+val mkSynPrefix: opm:Range -> m:Range -> oper:string -> x:SynExpr -> SynExpr
 
-val mkSynCaseName: m:range -> n:string -> Ident list
+val mkSynCaseName: m:Range -> n:string -> Ident list
 
-val mkSynApp1: f:SynExpr -> x1:SynExpr -> m:range -> SynExpr
+val mkSynApp1: f:SynExpr -> x1:SynExpr -> m:Range -> SynExpr
 
-val mkSynApp2: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> m:range -> SynExpr
+val mkSynApp2: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> m:Range -> SynExpr
 
-val mkSynApp3: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> m:range -> SynExpr
+val mkSynApp3: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> m:Range -> SynExpr
 
-val mkSynApp4: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr -> m:range -> SynExpr
+val mkSynApp4: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr -> m:Range -> SynExpr
 
-val mkSynApp5: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr -> x5:SynExpr -> m:range -> SynExpr
+val mkSynApp5: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr -> x5:SynExpr -> m:Range -> SynExpr
 
-val mkSynDotParenSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
+val mkSynDotParenSet: m:Range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> fromEnd:bool -> SynExpr
+val mkSynDotBrackGet: m:Range -> mDot:Range -> a:SynExpr -> b:SynExpr -> fromEnd:bool -> SynExpr
 
-val mkSynQMarkSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
+val mkSynQMarkSet: m:Range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
+val mkSynDotBrackSliceGet: m:Range -> mDot:Range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
 
-val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
+val mkSynDotBrackSeqSliceGet: m:Range -> mDot:Range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
-val mkSynDotParenGet: lhsm:range -> dotm:range -> a:SynExpr -> b:SynExpr -> SynExpr
+val mkSynDotParenGet: lhsm:Range -> dotm:Range -> a:SynExpr -> b:SynExpr -> SynExpr
 
-val mkSynUnit: m:range -> SynExpr
+val mkSynUnit: m:Range -> SynExpr
 
-val mkSynUnitPat: m:range -> SynPat
+val mkSynUnitPat: m:Range -> SynPat
 
-val mkSynDelay: m:range -> e:SynExpr -> SynExpr
+val mkSynDelay: m:Range -> e:SynExpr -> SynExpr
 
 val mkSynAssign: l:SynExpr -> r:SynExpr -> SynExpr
 
-val mkSynDot: dotm:range -> m:range -> l:SynExpr -> r:Ident -> SynExpr
+val mkSynDot: dotm:Range -> m:Range -> l:SynExpr -> r:Ident -> SynExpr
 
-val mkSynDotMissing: dotm:range -> m:range -> l:SynExpr -> SynExpr
+val mkSynDotMissing: dotm:Range -> m:Range -> l:SynExpr -> SynExpr
 
-val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:range -> ps:SynPat list -> e:SynExpr -> SynExpr
+val mkSynFunMatchLambdas: synArgNameGenerator:SynArgNameGenerator -> isMember:bool -> wholem:Range -> ps:SynPat list -> e:SynExpr -> SynExpr
 
-val arbExpr: debugStr:string * range:range -> SynExpr
+val arbExpr: debugStr:string * range:Range -> SynExpr
 
-val unionRangeWithListBy: projectRangeFromThing:('a -> range) -> m:range -> listOfThing:'a list -> range
+val unionRangeWithListBy: projectRangeFromThing:('a -> Range) -> m:Range -> listOfThing:'a list -> Range
 
-val mkAttributeList: attrs:SynAttribute list -> range:range -> SynAttributeList list
+val mkAttributeList: attrs:SynAttribute list -> range:Range -> SynAttributeList list
 
 val ConcatAttributesLists: attrsLists:SynAttributeList list -> SynAttribute list
 
 val ( |Attributes| ): synAttributes:SynAttributeList list -> SynAttribute list
 
-val rangeOfNonNilAttrs: attrs:SynAttributes -> range
+val rangeOfNonNilAttrs: attrs:SynAttributes -> Range
 
 val stripParenTypes: synType:SynType -> SynType
 
@@ -236,12 +236,12 @@ module SynInfo =
     /// in the case of 'let' definitions.
     val InferSynValData: memberFlagsOpt:MemberFlags option * pat:SynPat option * retInfo:SynReturnInfo option * origRhsExpr:SynExpr -> SynValData
   
-val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list -> rhsExpr:SynExpr -> mRhs:range -> retInfo:SynReturnInfo option -> SynExpr * SynBindingReturnInfo option
+val mkSynBindingRhs: staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list -> rhsExpr:SynExpr -> mRhs:Range -> retInfo:SynReturnInfo option -> SynExpr * SynBindingReturnInfo option
 
 val mkSynBinding:
     xmlDoc:XmlDoc.PreXmlDoc * headPat:SynPat ->
-      vis:SynAccess option * isInline:bool * isMutable:bool * mBind:range * 
-      spBind:DebugPointForBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:range *
+      vis:SynAccess option * isInline:bool * isMutable:bool * mBind:Range * 
+      spBind:DebugPointForBinding * retInfo:SynReturnInfo option * origRhsExpr:SynExpr * mRhs:Range *
       staticOptimizations:(SynStaticOptimizationConstraint list * SynExpr) list * attrs:SynAttributes * memberFlagsOpt:MemberFlags option 
         -> SynBinding
 

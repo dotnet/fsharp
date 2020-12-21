@@ -93,7 +93,7 @@ let private SimulatedMSBuildResolver =
             | Some fw -> fw
             | None -> "v4.5"
 
-        member __.DotNetFrameworkReferenceAssembliesRootDirectory =
+        member _.DotNetFrameworkReferenceAssembliesRootDirectory =
             if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
                 let PF =
                     match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
@@ -103,7 +103,7 @@ let private SimulatedMSBuildResolver =
             else
                 ""
 
-        member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,
+        member _.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,
                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
 
 #if !FX_NO_WIN_REGISTRY

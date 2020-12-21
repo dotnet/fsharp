@@ -78,9 +78,9 @@ module ExprTranslationImpl =
         member env.BindCurriedVals vsl = 
             (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
 
-    exception IgnoringPartOfQuotedTermWarning of string * Range.range
+    exception IgnoringPartOfQuotedTermWarning of string * Range
 
-    let wfail (msg, m: range) = failwith (msg + sprintf " at %s" (m.ToString()))
+    let wfail (msg, m: Range) = failwith (msg + sprintf " at %s" (m.ToString()))
 
 /// The core tree of data produced by converting F# compiler TAST expressions into the form which we make available through the compiler API
 /// through active patterns.
@@ -135,13 +135,13 @@ type E =
 
 /// Used to represent the information at an object expression member 
 and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSharpGenericParameter list, args: FSharpMemberOrFunctionOrValue list list, body: FSharpExpr) = 
-    member __.Signature = sgn
-    member __.GenericParameters = gps
-    member __.CurriedParameterGroups = args
-    member __.Body = body
+    member _.Signature = sgn
+    member _.GenericParameters = gps
+    member _.CurriedParameterGroups = args
+    member _.Body = body
 
 /// The type of expressions provided through the compiler API.
-and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range, ty) =
+and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: Range, ty) =
 
     let mutable e = match f with None -> e | Some _ -> Unchecked.defaultof<E>
     member x.Range = m
@@ -1311,7 +1311,7 @@ type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: TypedImplFile list) =
 
     new (tcGlobals, thisCcu, thisCcuType, tcImports, mimpls) = FSharpAssemblyContents(SymbolEnv(tcGlobals, thisCcu, thisCcuType, tcImports), mimpls)
 
-    member __.ImplementationFiles = 
+    member _.ImplementationFiles = 
         [ for mimpl in mimpls -> FSharpImplementationFileContents(cenv, mimpl)]
 
 and FSharpImplementationFileDeclaration = 
@@ -1357,11 +1357,11 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         | TMDefs mdefs -> 
             [ for mdef in mdefs do yield! getDecls mdef ]
 
-    member __.QualifiedName = qname.Text
-    member __.FileName = qname.Range.FileName
-    member __.Declarations = getDecls mdef 
-    member __.HasExplicitEntryPoint = hasExplicitEntryPoint
-    member __.IsScript = isScript
+    member _.QualifiedName = qname.Text
+    member _.FileName = qname.Range.FileName
+    member _.Declarations = getDecls mdef 
+    member _.HasExplicitEntryPoint = hasExplicitEntryPoint
+    member _.IsScript = isScript
 
 
 module BasicPatterns = 

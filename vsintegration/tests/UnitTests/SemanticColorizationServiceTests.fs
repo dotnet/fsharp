@@ -31,7 +31,7 @@ type SemanticClassificationServiceTests() =
     let checker = FSharpChecker.Create()
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
-    let getRanges (source: string) : struct (Range.range * SemanticClassificationType) list =
+    let getRanges (source: string) : struct (Range * SemanticClassificationType) list =
         asyncMaybe {
 
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")
@@ -65,7 +65,7 @@ type SemanticClassificationServiceTests() =
     [<TestCase("(*5*)", ClassificationTypeNames.StructName)>]
     [<TestCase("(*6*)", ClassificationTypeNames.StructName)>]
     [<TestCase("(*7*)", ClassificationTypeNames.ClassName)>]
-    member __.Measured_Types(marker: string, classificationType: string) =
+    member _.Measured_Types(marker: string, classificationType: string) =
         verifyClassificationAtEndOfMarker(
                 """#light (*Light*)
                 open System
@@ -99,7 +99,7 @@ type SemanticClassificationServiceTests() =
     [<TestCase("(*10*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*11*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*12*)", FSharpClassificationTypes.MutableVar)>]
-    member __.MutableValues(marker: string, classificationType: string) =
+    member _.MutableValues(marker: string, classificationType: string) =
         let sourceText ="""
 type R1 = { mutable (*1*)Doop: int}
 let r1 = { (*2*)Doop = 12 }
@@ -130,7 +130,7 @@ r.MutableField := 3
     [<TestCase("(*4*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*5*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
-    member __.NoInrefsExpected(marker: string, classificationType: string) =
+    member _.NoInrefsExpected(marker: string, classificationType: string) =
         let sourceText = """
 let f (item: (*1*)inref<int>) = printfn "%d" (*2*)item
 let g() =

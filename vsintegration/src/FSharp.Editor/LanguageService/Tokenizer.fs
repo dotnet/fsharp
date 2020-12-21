@@ -42,7 +42,7 @@ type internal LexerSymbol =
       Ident: Ident
       /// All parts of `LongIdent`
       FullIsland: string list }
-    member x.Range: Range.range = x.Ident.idRange
+    member x.Range: Range = x.Ident.idRange
 
 [<RequireQualifiedAccess>]
 type internal SymbolLookupKind =

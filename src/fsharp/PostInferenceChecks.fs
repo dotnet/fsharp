@@ -98,7 +98,7 @@ type env =
       isInAppExpr: bool
     } 
 
-    override __.ToString() = "<env>"
+    override _.ToString() = "<env>"
 
 let BindTypar env (tp: Typar) = 
     { env with 
@@ -191,7 +191,7 @@ type cenv =
 
       limitVals: Dictionary<Stamp, Limit>
 
-      mutable potentialUnboundUsesOfVals: StampMap<range> 
+      mutable potentialUnboundUsesOfVals: StampMap<Range> 
 
       mutable anonRecdTypes: StampMap<AnonRecdTypeInfo> 
 

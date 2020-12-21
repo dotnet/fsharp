@@ -40,7 +40,7 @@ open FSharp.Compiler.ExtensionTyping
 type NameResolver(g: TcGlobals,
                   amap: Import.ImportMap,
                   infoReader: InfoReader,
-                  instantiationGenerator: (range -> Typars -> TypeInst)) =
+                  instantiationGenerator: (Range -> Typars -> TypeInst)) =
 
     /// Used to transform typars into new inference typars
     // instantiationGenerator is a function to help us create the
@@ -154,7 +154,7 @@ type Item =
     | UnionCase of UnionCaseInfo * hasRequireQualifiedAccessAttr: bool
 
     /// Represents the resolution of a name to an F# active pattern result.
-    | ActivePatternResult of ActivePatternInfo * TType * int  * range
+    | ActivePatternResult of ActivePatternInfo * TType * int  * Range
 
     /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
     | ActivePatternCase of ActivePatternElemRef
@@ -169,7 +169,7 @@ type Item =
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
 
     /// Represents the resolution of a name to a field of an anonymous record type.
-    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
+    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * Range
 
     // The following are never in the items table but are valid results of binding
     // an identifier in different circumstances.
@@ -1595,13 +1595,13 @@ type ItemOccurence =
 
 type OpenDeclaration =
     { Target: SynOpenDeclTarget
-      Range: range option
+      Range: Range option
       Modules: ModuleOrNamespaceRef list
       Types: TType list
-      AppliedScope: range
+      AppliedScope: Range
       IsOwnNamespace: bool }
 
-    static member Create(target: SynOpenDeclTarget, modules: ModuleOrNamespaceRef list, types: TType list, appliedScope: range, isOwnNamespace: bool) =
+    static member Create(target: SynOpenDeclTarget, modules: ModuleOrNamespaceRef list, types: TType list, appliedScope: Range, isOwnNamespace: bool) =
         { Target = target
           Range =
             match target with 
@@ -1618,11 +1618,11 @@ type FormatStringCheckContext =
 
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
-    abstract NotifyEnvWithScope: range * NameResolutionEnv * AccessorDomain -> unit
-    abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * range -> unit
-    abstract NotifyNameResolution: pos * item: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
-    abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * replace: bool -> unit
-    abstract NotifyFormatSpecifierLocation: range * int -> unit
+    abstract NotifyEnvWithScope: Range * NameResolutionEnv * AccessorDomain -> unit
+    abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * Range -> unit
+    abstract NotifyNameResolution: pos * item: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * Range * replace: bool -> unit
+    abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * Range * replace: bool -> unit
+    abstract NotifyFormatSpecifierLocation: Range * int -> unit
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
     abstract CurrentSourceText: ISourceText option
     abstract FormatStringCheckContext: FormatStringCheckContext option
@@ -1832,7 +1832,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | _ -> 389329
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
-type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolutionEnv, ad: AccessorDomain, m: range) =
+type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolutionEnv, ad: AccessorDomain, m: Range) =
     member this.Pos = m.End
     member this.Item = i
     member this.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
@@ -1846,8 +1846,8 @@ type CapturedNameResolution(i: Item, tpinst, io: ItemOccurence, nre: NameResolut
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcResolutions
-    (capturedEnvs: ResizeArray<range * NameResolutionEnv * AccessorDomain>,
-     capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>,
+    (capturedEnvs: ResizeArray<Range * NameResolutionEnv * AccessorDomain>,
+     capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * Range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>) =
 
@@ -1865,14 +1865,14 @@ type TcSymbolUseData =
    { Item: Item
      ItemOccurence: ItemOccurence
      DisplayEnv: DisplayEnv
-     Range: range }
+     Range: Range }
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 ///
 /// This is a memory-critical data structure - allocations of this data structure and its immediate contents
 /// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
-type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) =
+type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (Range * int)[]) =
 
     // Make sure we only capture the information we really need to report symbol uses
     let allUsesOfSymbols =
@@ -1909,16 +1909,16 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedNameResolutionIdentifiers =
         new System.Collections.Generic.HashSet<pos * string>
             ( { new IEqualityComparer<_> with
-                    member __.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
-                    member __.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 } )
+                    member _.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
+                    member _.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 } )
 
     let capturedModulesAndNamespaces =
-        new System.Collections.Generic.HashSet<range * Item>
-            ( { new IEqualityComparer<range * Item> with
-                    member __.GetHashCode ((m, _)) = hash m
-                    member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 } )
+        new System.Collections.Generic.HashSet<Range * Item>
+            ( { new IEqualityComparer<Range * Item> with
+                    member _.GetHashCode ((m, _)) = hash m
+                    member _.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 } )
 
-    let allowedRange (m: range) =
+    let allowedRange (m: Range) =
         not m.IsSynthetic
 
     let isAlreadyDone endPos item m =
@@ -2034,23 +2034,23 @@ let CallEnvSink (sink: TcResultsSink) (scopem, nenv, ad) =
     | Some sink -> sink.NotifyEnvWithScope(scopem, nenv, ad)
 
 /// Report a specific name resolution at a source range
-let CallNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
+let CallNameResolutionSink (sink: TcResultsSink) (m: Range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, false)
 
-let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: range, nenv, item, itemMethodGroup, tpinst, occurenceType, ad) =
+let CallMethodGroupNameResolutionSink (sink: TcResultsSink) (m: Range, nenv, item, itemMethodGroup, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some sink -> sink.NotifyMethodGroupNameResolution(m.End, item, itemMethodGroup, tpinst, occurenceType, nenv, ad, m, false)
 
-let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: range, nenv, item, tpinst, occurenceType, ad) =
+let CallNameResolutionSinkReplacing (sink: TcResultsSink) (m: Range, nenv, item, tpinst, occurenceType, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some sink -> sink.NotifyNameResolution(m.End, item, tpinst, occurenceType, nenv, ad, m, true)
 
 /// Report a specific expression typing at a source range
-let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
+let CallExprHasTypeSink (sink: TcResultsSink) (m: Range, nenv, ty, ad) =
     match sink.CurrentSink with
     | None -> ()
     | Some sink -> sink.NotifyExprHasType(ty, nenv, ad, m)
@@ -2132,7 +2132,7 @@ let CheckAllTyparsInferrable amap m item =
 /// ultimately calls ResolutionInfo.Method to record it for
 /// later use by Visual Studio.
 type ResolutionInfo =
-    | ResolutionInfo of (*entityPath, reversed*)(range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit) * tinstEnclosing: EnclosingTypeInst
+    | ResolutionInfo of (*entityPath, reversed*)(Range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit) * tinstEnclosing: EnclosingTypeInst
 
     static member SendEntityPathToSink(sink, ncenv: NameResolver, nenv, occ, ad, ResolutionInfo(entityPath, warnings, _), typarChecker) =
         entityPath |> List.iter (fun (m, eref: EntityRef) ->
@@ -2369,7 +2369,7 @@ let ResolveObjectConstructor (ncenv: NameResolver) edenv m ad ty =
 //-------------------------------------------------------------------------
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
-exception IndeterminateType of range
+exception IndeterminateType of Range
 
 /// Indicates the kind of lookup being performed. Note, this type should be made private to nameres.fs.
 [<RequireQualifiedAccess>]
@@ -3047,7 +3047,7 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv nu
     | results -> AtMostOneResult id.idRange results
 
 /// Used to report a warning condition for the use of upper-case identifiers in patterns
-exception UpperCaseIdentifierInPattern of range
+exception UpperCaseIdentifierInPattern of Range
 
 /// Indicates if a warning should be given for the use of upper-case identifiers in patterns
 type WarnOnUpperFlag = WarnOnUpperCase | AllIdsOK
@@ -3755,7 +3755,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
 //-------------------------------------------------------------------------
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
-let FakeInstantiationGenerator (_m: range) gps = List.map mkTyparTy gps
+let FakeInstantiationGenerator (_m: Range) gps = List.map mkTyparTy gps
 
 // note: using local refs is ok since it is only used by VS
 let ItemForModuleOrNamespaceRef v = Item.ModuleOrNamespaces [v]

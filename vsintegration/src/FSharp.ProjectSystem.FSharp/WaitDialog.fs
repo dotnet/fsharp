@@ -38,7 +38,7 @@ module internal WaitDialog =
         |> Marshal.ThrowExceptionForHR
 
         { new IDisposable with
-            override __.Dispose () =
+            override _.Dispose () =
                 let cancelled = ref 0
                 waitDialog.Value.EndWaitDialog cancelled |> Marshal.ThrowExceptionForHR
         }

@@ -30,13 +30,13 @@ type LoadClosureInput =
 [<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
-      SourceFiles: (string * range list) list
+      SourceFiles: (string * Range list) list
 
       /// The resolved references along with the ranges of the #r positions in each file.
       References: (string * AssemblyResolution list) list
 
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
-      PackageReferences: (range * string list)[]
+      PackageReferences: (Range * string list)[]
 
       /// Whether we're decided to use .NET Framework analysis for this script
       UseDesktopFramework: bool
@@ -51,10 +51,10 @@ type LoadClosure =
       Inputs: LoadClosureInput list
 
       /// The original #load references, including those that didn't resolve
-      OriginalLoadReferences: (range * string * string) list
+      OriginalLoadReferences: (Range * string * string) list
 
       /// The #nowarns
-      NoWarns: (string * range list) list
+      NoWarns: (string * Range list) list
 
       /// Diagnostics seen while processing resolutions
       ResolutionDiagnostics: (PhasedDiagnostic * bool)  list
@@ -94,7 +94,7 @@ type LoadClosure =
     static member ComputeClosureOfScriptFiles: 
         CompilationThreadToken * 
         tcConfig:TcConfig * 
-        (string * range) list * 
+        (string * Range) list * 
         implicitDefines:CodeContext * 
         lexResourceManager: Lexhelp.LexResourceManager *
         dependencyProvider: DependencyProvider

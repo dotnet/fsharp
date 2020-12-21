@@ -37,7 +37,7 @@ type OverrideInfo =
     
     member LogicalName: string
     
-    member Range: range
+    member Range: Range
     
     member ReturnType: TType option
   
@@ -60,40 +60,40 @@ type RequiredSlot =
   
 type SlotImplSet = SlotImplSet of RequiredSlot list * NameMultiMap<RequiredSlot> * OverrideInfo list * PropInfo list
 
-exception TypeIsImplicitlyAbstract of range
+exception TypeIsImplicitlyAbstract of Range
 
-exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * ImportMap * range
+exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * ImportMap * Range
 
 module DispatchSlotChecking =
     /// Format the signature of an override as a string as part of an error message
     val FormatOverride: denv:DisplayEnv -> d:OverrideInfo -> string
 
     /// Format the signature of a MethInfo as a string as part of an error message
-    val FormatMethInfoSig: g:TcGlobals -> amap:ImportMap -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
+    val FormatMethInfoSig: g:TcGlobals -> amap:ImportMap -> m:Range -> denv:DisplayEnv -> d:MethInfo -> string
 
     /// Get the override information for an object expression method being used to implement dispatch slots
     val GetObjectExprOverrideInfo: g:TcGlobals -> amap:ImportMap -> implty:TType * id:Ident * memberFlags:MemberFlags * ty:TType * arityInfo:ValReprInfo * bindingAttribs:Attribs * rhsExpr:Expr -> OverrideInfo * (Val option * Val * Val list list * Attribs * Expr)
 
     /// Check if an override exactly matches the requirements for a dispatch slot.
-    val IsExactMatch: g:TcGlobals -> amap:ImportMap -> m:range -> dispatchSlot:MethInfo -> overrideBy:OverrideInfo -> bool
+    val IsExactMatch: g:TcGlobals -> amap:ImportMap -> m:Range -> dispatchSlot:MethInfo -> overrideBy:OverrideInfo -> bool
 
     /// Check all dispatch slots are implemented by some override.
-    val CheckDispatchSlotsAreImplemented: denv:DisplayEnv * infoReader:InfoReader * m:range * nenv:NameResolutionEnv * sink:TcResultsSink * isOverallTyAbstract:bool * reqdTy:TType * dispatchSlots:RequiredSlot list * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> bool
+    val CheckDispatchSlotsAreImplemented: denv:DisplayEnv * infoReader:InfoReader * m:Range * nenv:NameResolutionEnv * sink:TcResultsSink * isOverallTyAbstract:bool * reqdTy:TType * dispatchSlots:RequiredSlot list * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> bool
 
     /// Check all implementations implement some dispatch slot.
     val CheckOverridesAreAllUsedOnce: denv:DisplayEnv * g:TcGlobals * amap:ImportMap * isObjExpr:bool * reqdTy:TType * dispatchSlotsKeyed:NameMultiMap<RequiredSlot> * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> unit
 
     /// Get the slots of a type that can or must be implemented. 
-    val GetSlotImplSets: infoReader:InfoReader -> denv:DisplayEnv -> ad:AccessorDomain -> isObjExpr:bool -> allReqdTys:(TType * range) list -> SlotImplSet list
+    val GetSlotImplSets: infoReader:InfoReader -> denv:DisplayEnv -> ad:AccessorDomain -> isObjExpr:bool -> allReqdTys:(TType * Range) list -> SlotImplSet list
 
 /// "Type Completion" inference and a few other checks at the end of the inference scope
 val FinalTypeDefinitionChecksAtEndOfInferenceScope: infoReader:InfoReader * nenv:NameResolutionEnv * sink:TcResultsSink * isImplementation:bool * denv:DisplayEnv -> tycon:Tycon -> unit
 
 /// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-val GetAbstractMethInfosForSynMethodDecl: infoReader:InfoReader * ad:AccessorDomain * memberName:Ident * bindm:range * typToSearchForAbstractMembers:(TType * SlotImplSet option) * valSynData:SynValInfo -> MethInfo list * MethInfo list
+val GetAbstractMethInfosForSynMethodDecl: infoReader:InfoReader * ad:AccessorDomain * memberName:Ident * bindm:Range * typToSearchForAbstractMembers:(TType * SlotImplSet option) * valSynData:SynValInfo -> MethInfo list * MethInfo list
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-val GetAbstractPropInfosForSynPropertyDecl: infoReader:InfoReader * ad:AccessorDomain * memberName:Ident * bindm:range * typToSearchForAbstractMembers:(TType * SlotImplSet option) * _k:'a * _valSynData:'b -> PropInfo list
+val GetAbstractPropInfosForSynPropertyDecl: infoReader:InfoReader * ad:AccessorDomain * memberName:Ident * bindm:Range * typToSearchForAbstractMembers:(TType * SlotImplSet option) * _k:'a * _valSynData:'b -> PropInfo list
 

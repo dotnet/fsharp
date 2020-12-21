@@ -1156,7 +1156,7 @@ type FSharpTokenKind =
 type FSharpToken =
 
     val private tok: Parser.token
-    val private tokRange: range
+    val private tokRange: Range
 
     new (tok, tokRange) = { tok = tok; tokRange = tokRange }
 

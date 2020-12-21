@@ -48,34 +48,34 @@ module internal CompilerService =
 #endif // DEBUG
         
 /// This exception is an old-style way of reporting a diagnostic
-exception HashIncludeNotAllowedInNonScript of range
+exception HashIncludeNotAllowedInNonScript of Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashReferenceNotAllowedInNonScript of range
+exception HashReferenceNotAllowedInNonScript of Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * range
+exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashLoadedScriptConsideredSource of range
+exception HashLoadedScriptConsideredSource of Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashDirectiveNotAllowedInNonScript of range
+exception HashDirectiveNotAllowedInNonScript of Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionFull of string * range
+exception DeprecatedCommandLineOptionFull of string * Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionForHtmlDoc of string * range
+exception DeprecatedCommandLineOptionForHtmlDoc of string * Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionSuggestAlternative of string * string * range
+exception DeprecatedCommandLineOptionSuggestAlternative of string * string * Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionNoDescription of string * range
+exception DeprecatedCommandLineOptionNoDescription of string * Range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception InternalCommandLineOption of string * range
+exception InternalCommandLineOption of string * Range
 
 let GetRangeOfDiagnostic(err: PhasedDiagnostic) = 
   let rec RangeFromException = function
@@ -767,7 +767,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               
               let argRepr = 
                   callerArgs.ArgumentNamesAndTypes
-                  |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); ArgReprInfo.Attribs = []})
+                  |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, Range.Zero)); ArgReprInfo.Attribs = []})
                   
               let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
               
@@ -1692,7 +1692,7 @@ let SanitizeFileName fileName implicitIncludeDir =
 
 [<RequireQualifiedAccess>]
 type DiagnosticLocation =
-    { Range: range
+    { Range: Range
       File: string
       TextRepresentation: string
       IsEmpty: bool }

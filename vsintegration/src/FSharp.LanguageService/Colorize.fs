@@ -148,7 +148,7 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
         lineTokenizer <- makeLineTokenizer lineText
 
     /// Adjust the set of extra colorizations and return a sorted list of affected lines.
-    member __.SetExtraColorizations (tokens: struct (Range.range * SemanticClassificationType)[]) =
+    member _.SetExtraColorizations (tokens: struct (Range * SemanticClassificationType)[]) =
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else
@@ -352,7 +352,7 @@ type internal FSharpColorizer_DEPRECATED
 
     member c.Buffer = buffer
 
-    member __.SetExtraColorizations tokens = scanner.SetExtraColorizations tokens
+    member _.SetExtraColorizations tokens = scanner.SetExtraColorizations tokens
 
 
 /// Implements IVsColorableItem and IVsMergeableUIItem, for colored text items

@@ -51,7 +51,7 @@ module FSharpDiagnostic =
     let [<Literal>] ObsoleteMessage = "Use FSharpDiagnostic.Range. This API will be removed in a future update."
   
 
-type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int) =
+type FSharpDiagnostic(m: Range, severity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int) =
     member _.Range = m
     member _.Severity = severity
     member _.Message = message
@@ -85,7 +85,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(exn, isError, fallbackRange: range, suggestNames: bool) =
+    static member CreateFromException(exn, isError, fallbackRange: Range, suggestNames: bool) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
         let severity = if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false suggestNames)
@@ -93,7 +93,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         FSharpDiagnostic(m, severity, msg, exn.Subcategory(), errorNum)
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: range, (linesCount: int, lastLength: int), suggestNames: bool) =
+    static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange: Range, (linesCount: int, lastLength: int), suggestNames: bool) =
         let r = FSharpDiagnostic.CreateFromException(exn, isError, fallbackRange, suggestNames)
 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount
@@ -119,7 +119,7 @@ type ErrorScope()  =
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
                 member x.DiagnosticSink(exn, isError) = 
-                      let err = FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false)
+                      let err = FSharpDiagnostic.CreateFromException(exn, isError, Range.Zero, false)
                       errors <- err :: errors
                       if isError && firstError.IsNone then 
                           firstError <- Some err.Message
@@ -149,7 +149,7 @@ type ErrorScope()  =
     /// if there is a "missing assembly" error while formatting the text of the description of an
     /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
     /// Studio, or swallowing the exception completely)
-    static member Protect<'a> (m: range) (f: unit->'a) (err: string->'a): 'a = 
+    static member Protect<'a> (m: Range) (f: unit->'a) (err: string->'a): 'a = 
         use errorScope = new ErrorScope()
         let res = 
             try 
@@ -460,7 +460,7 @@ module internal SymbolHelpers =
         | _ -> None
 
     /// Work out the source file for an item and fix it up relative to the CCU if it is relative.
-    let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
+    let fileNameOfItem (g: TcGlobals) qualProjectDir (m: Range) h =
         let file = m.FileName 
         if verbose then dprintf "file stored in metadata is '%s'\n" file
         if not (FileSystem.IsPathRootedShim file) then 
@@ -679,7 +679,7 @@ module internal SymbolHelpers =
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader: InfoReader) m denv (item: ItemWithInst) minfos : FSharpStructuredToolTipElement = 
         ToolTipFault |> Option.iter (fun msg -> 
-           let exn = Error((0, msg), range.Zero)
+           let exn = Error((0, msg), Range.Zero)
            let ph = PhasedDiagnostic.Create(exn, BuildPhase.TypeCheck)
            simulateError ph)
         
@@ -1519,7 +1519,7 @@ module internal SymbolHelpers =
             (fun err -> FSharpStructuredToolTipElement.CompositionError err)
 
     /// Get rid of groups of overloads an replace them with single items.
-    let FlattenItems g (m: range) item =
+    let FlattenItems g (m: Range) item =
         ignore m
         match item with 
         | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig))  

@@ -133,10 +133,10 @@ type internal FSharpFindUsagesService
         } |> Async.Ignore
 
     interface IFSharpFindUsagesService with
-        member __.FindReferencesAsync(document, position, context) =
+        member _.FindReferencesAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, true, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
-        member __.FindImplementationsAsync(document, position, context) =
+        member _.FindImplementationsAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, false, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

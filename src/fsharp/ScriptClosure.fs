@@ -36,13 +36,13 @@ type LoadClosureInput =
 [<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
-      SourceFiles: (string * range list) list
+      SourceFiles: (string * Range list) list
 
       /// The resolved references along with the ranges of the #r positions in each file.
       References: (string * AssemblyResolution list) list
 
       /// The resolved pacakge references along with the ranges of the #r positions in each file.
-      PackageReferences: (range * string list)[]
+      PackageReferences: (Range * string list)[]
 
       /// Whether we're decided to use .NET Framework analysis for this script
       UseDesktopFramework: bool
@@ -57,10 +57,10 @@ type LoadClosure =
       Inputs: LoadClosureInput list
 
       /// The #load, including those that didn't resolve
-      OriginalLoadReferences: (range * string * string) list
+      OriginalLoadReferences: (Range * string * string) list
 
       /// The #nowarns
-      NoWarns: (string * range list) list
+      NoWarns: (string * Range list) list
 
       /// Diagnostics seen while processing resolutions
       ResolutionDiagnostics: (PhasedDiagnostic * bool) list
@@ -83,10 +83,10 @@ module ScriptPreprocessClosure =
     open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
-    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 
+    type ClosureSource = ClosureSource of filename: string * referenceRange: Range * sourceText: ISourceText * parseRequired: bool 
         
     /// Represents an output of the closure finding process
-    type ClosureFile = ClosureFile of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
+    type ClosureFile = ClosureFile of string * Range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * Range) list // filename, range, errors, warnings, nowarns
 
     type Observed() =
         let seen = System.Collections.Generic.Dictionary<_, bool>()
@@ -219,7 +219,7 @@ module ScriptPreprocessClosure =
 
         let observedSources = Observed()
         let loadScripts = HashSet<_>()
-        let packageReferences = Dictionary<range, string list>(HashIdentity.Structural)
+        let packageReferences = Dictionary<Range, string list>(HashIdentity.Structural)
 
         // Resolve the packages
         let rec resolveDependencyManagerSources scriptName =
@@ -448,7 +448,7 @@ module ScriptPreprocessClosure =
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
     let GetFullClosureOfScriptFiles
-            (ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, 
+            (ctok, tcConfig:TcConfig, files:(string*Range) list, codeContext, 
              lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
         let mainFile, mainFileRange = List.last files
@@ -477,7 +477,7 @@ type LoadClosure with
 
     /// Analyze a set of script files and find the closure of their references.
     static member ComputeClosureOfScriptFiles
-                     (ctok, tcConfig: TcConfig, files:(string*range) list, implicitDefines,
+                     (ctok, tcConfig: TcConfig, files:(string*Range) list, implicitDefines,
                       lexResourceManager: Lexhelp.LexResourceManager, dependencyProvider) =
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse

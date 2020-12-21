@@ -117,15 +117,15 @@ type AttributeDecoder(namedArgs) =
     let findConst x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.Const (c, _, _))) -> Some c | _ -> None
     let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_, Expr.App (_, _, [TType_app(tr, _)], _, _))) -> Some tr | _ -> None
 
-    member __.FindInt16 x dflt = match findConst x with | Some(Const.Int16 x) -> x | _ -> dflt
+    member _.FindInt16 x dflt = match findConst x with | Some(Const.Int16 x) -> x | _ -> dflt
 
-    member __.FindInt32 x dflt = match findConst x with | Some(Const.Int32 x) -> x | _ -> dflt
+    member _.FindInt32 x dflt = match findConst x with | Some(Const.Int32 x) -> x | _ -> dflt
 
-    member __.FindBool x dflt = match findConst x with | Some(Const.Bool x) -> x | _ -> dflt
+    member _.FindBool x dflt = match findConst x with | Some(Const.Bool x) -> x | _ -> dflt
 
-    member __.FindString x dflt = match findConst x with | Some(Const.String x) -> x | _ -> dflt
+    member _.FindString x dflt = match findConst x with | Some(Const.String x) -> x | _ -> dflt
 
-    member __.FindTypeName x dflt = match findAppTr x with | Some tr -> tr.DisplayName | _ -> dflt         
+    member _.FindTypeName x dflt = match findAppTr x with | Some tr -> tr.DisplayName | _ -> dflt         
 
 //--------------------------------------------------------------------------
 // Statistics
@@ -393,7 +393,7 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
 
     /// Lookup a type parameter
-    member __.Item (tp: Typar, m: range) =
+    member _.Item (tp: Typar, m: Range) =
         try reprs.[tp.Stamp]
         with :? KeyNotFoundException ->
           errorR(InternalError("Undefined or unsolved type variable: " + showL(typarL tp), m))
@@ -413,7 +413,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
         (tyenv, tps) ||> List.fold (fun tyenv tp -> tyenv.AddOne tp)
 
     /// Get the count of the non-erased type parameters in scope.
-    member __.Count = count
+    member _.Count = count
 
     /// Get the empty environment, where no type parameters are in scope.
     static member Empty =
@@ -757,7 +757,7 @@ type ValStorage =
 
     /// Indicates the value is represented as an IL method (in a "main" class for a F#
     /// compilation unit, or as a member) according to its inferred or specified arity.
-    | Method of ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * Range.range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
+    | Method of ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * Range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
 
     /// Indicates the value is stored at the given position in the closure environment accessed via "ldarg 0"
     | Env of ILType * ILFieldSpec * NamedLocalIlxClosureInfo ref option
@@ -781,7 +781,7 @@ and NamedLocalIlxClosureInfo =
     | NamedLocalIlxClosureInfoGenerator of (IlxGenEnv -> IlxClosureInfo)
     | NamedLocalIlxClosureInfoGenerated of IlxClosureInfo
 
-    override __.ToString() = "<NamedLocalIlxClosureInfo>"
+    override _.ToString() = "<NamedLocalIlxClosureInfo>"
 
 /// Indicates the overall representation decisions for all the elements of a namespace of module
 and ModuleStorage =
@@ -791,7 +791,7 @@ and ModuleStorage =
       SubModules: Lazy<NameMap<ModuleStorage>>
     }
 
-    override __.ToString() = "<ModuleStorage>"
+    override _.ToString() = "<ModuleStorage>"
 
 /// Indicate whether a call to the value can be implemented as
 /// a branch. At the moment these are only used for generating branch calls back to
@@ -815,7 +815,7 @@ and BranchCallItem =
         // num actual args in IL
         int
 
-    override __.ToString() = "<BranchCallItem>"
+    override _.ToString() = "<BranchCallItem>"
   
 /// Represents a place we can branch to
 and Mark =
@@ -900,7 +900,7 @@ and IlxGenEnv =
       isInLoop: bool
     }
 
-    override __.ToString() = "<IlxGenEnv>"
+    override _.ToString() = "<IlxGenEnv>"
 
 let discard = DiscardThen Continue
 let discardAndReturnVoid = DiscardThen ReturnVoid
@@ -1301,7 +1301,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
 //--------------------------------------------------------------------------
 
 /// Generate IL debugging information.
-let GenILSourceMarker (g: TcGlobals) (m: range) =
+let GenILSourceMarker (g: TcGlobals) (m: Range) =
     ILSourceMarker.Create(document=g.memoize_file m.FileIndex,
                           line=m.StartLine,
                           /// NOTE: .NET && VS measure first column as column 1
@@ -1347,7 +1347,7 @@ let MergePropertyPair m (pd: ILPropertyDef) (pdef: ILPropertyDef) =
 
 type PropKey = PropKey of string * ILTypes * ILThisConvention
 
-let AddPropertyDefToHash (m: range) (ht: Dictionary<PropKey, (int * ILPropertyDef)>) (pdef: ILPropertyDef) =
+let AddPropertyDefToHash (m: Range) (ht: Dictionary<PropKey, (int * ILPropertyDef)>) (pdef: ILPropertyDef) =
     let nm = PropKey(pdef.Name, pdef.Args, pdef.CallingConv)
     match ht.TryGetValue nm with
     | true, (idx, pd) ->
@@ -1450,7 +1450,7 @@ and TypeDefsBuilder() =
 type AnonTypeGenerationTable() =
     // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
     let dict = Dictionary<Stamp, (ILMethodRef * ILMethodRef[] * ILType)>(HashIdentity.Structural)
-    member __.Table = dict
+    member _.Table = dict
 
 /// Assembly generation buffers
 type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf =
@@ -1614,9 +1614,9 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
     /// static init fields on script modules.
-    let mutable scriptInitFspecs: (ILFieldSpec * range) list = []
+    let mutable scriptInitFspecs: (ILFieldSpec * Range) list = []
 
-    member __.AddScriptInitFieldSpec (fieldSpec, range) =
+    member _.AddScriptInitFieldSpec (fieldSpec, range) =
         scriptInitFspecs <- (fieldSpec, range) :: scriptInitFspecs
     
     /// This initializes the script in #load and fsc command-line order causing their
@@ -1630,14 +1630,14 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             scriptInitFspecs |> List.iter InitializeCompiledScript
         | None -> ()
 
-    member __.GenerateRawDataValueType (cloc, size) =
+    member _.GenerateRawDataValueType (cloc, size) =
         // Byte array literals require a ValueType of size the required number of bytes.
         // With fsi.exe, S.R.Emit TypeBuilder CreateType has restrictions when a ValueType VT is nested inside a type T, and T has a field of type VT.
         // To avoid this situation, these ValueTypes are generated under the private implementation rather than in the current cloc. [was bug 1532].
         let cloc = CompLocForPrivateImplementationDetails cloc
         rawDataValueTypeGenerator.Apply((cloc, size))
 
-    member __.GenerateAnonType (genToStringMethod, anonInfo: AnonRecdTypeInfo) =
+    member _.GenerateAnonType (genToStringMethod, anonInfo: AnonRecdTypeInfo) =
         let isStruct = evalAnonInfoIsStruct anonInfo
         let key = anonInfo.Stamp
         if not (anonTypeTable.Table.ContainsKey key) then
@@ -1653,33 +1653,33 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
            this.GenerateAnonType (genToStringMethod, anonInfo)
            anonTypeTable.Table.[anonInfo.Stamp]
 
-    member __.GrabExtraBindingsToGenerate () =
+    member _.GrabExtraBindingsToGenerate () =
         let result = extraBindingsToGenerate
         extraBindingsToGenerate <- []
         result
 
-    member __.AddTypeDef (tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
+    member _.AddTypeDef (tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         gtdefs.FindNestedTypeDefsBuilder(tref.Enclosing).AddTypeDef(tdef, eliminateIfEmpty, addAtEnd, tdefDiscards)
 
-    member __.GetCurrentFields (tref: ILTypeRef) =
+    member _.GetCurrentFields (tref: ILTypeRef) =
         gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
-    member __.AddReflectedDefinition (vspec: Val, expr) =
+    member _.AddReflectedDefinition (vspec: Val, expr) =
         // preserve order by storing index of item
         let n = reflectedDefinitions.Count
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, n, expr))
 
-    member __.ReplaceNameOfReflectedDefinition (vspec, newName) =
+    member _.ReplaceNameOfReflectedDefinition (vspec, newName) =
         match reflectedDefinitions.TryGetValue vspec with
         | true, (name, n, expr) when name <> newName -> reflectedDefinitions.[vspec] <- (newName, n, expr)
         | _ -> ()
 
-    member __.AddMethodDef (tref: ILTypeRef, ilMethodDef) =
+    member _.AddMethodDef (tref: ILTypeRef, ilMethodDef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddMethodDef(ilMethodDef)
         if ilMethodDef.IsEntryPoint then
             explicitEntryPointInfo <- Some tref
 
-    member __.AddExplicitInitToSpecificMethodDef (cond, tref, fspec, sourceOpt, feefee, seqpt) =
+    member _.AddExplicitInitToSpecificMethodDef (cond, tref, fspec, sourceOpt, feefee, seqpt) =
         // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
         // Doing both a store and load keeps FxCop happier because it thinks the field is useful
         let instrs =
@@ -1690,16 +1690,16 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
               yield AI_pop]
         gtdefs.FindNestedTypeDefBuilder(tref).PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt)
 
-    member __.AddEventDef (tref, edef) =
+    member _.AddEventDef (tref, edef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddEventDef(edef)
 
-    member __.AddFieldDef (tref, ilFieldDef) =
+    member _.AddFieldDef (tref, ilFieldDef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddFieldDef(ilFieldDef)
 
-    member __.AddOrMergePropertyDef (tref, pdef, m) =
+    member _.AddOrMergePropertyDef (tref, pdef, m) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddOrMergePropertyDef(pdef, m)
 
-    member __.Close() =
+    member _.Close() =
         // old implementation adds new element to the head of list so result was accumulated in reversed order
         let orderedReflectedDefinitions =
             [for (KeyValue(vspec, (name, n, expr))) in reflectedDefinitions -> n, ((name, vspec), expr)]
@@ -1707,9 +1707,9 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             |> List.map snd
         gtdefs.Close(), orderedReflectedDefinitions
 
-    member __.cenv = cenv
+    member _.cenv = cenv
 
-    member __.GetExplicitEntryPointInfo() = explicitEntryPointInfo
+    member _.GetExplicitEntryPointInfo() = explicitEntryPointInfo
 
 /// Record the types of the things on the evaluation stack.
 /// Used for the few times we have to flush the IL evaluation stack and to compute maxStack.
@@ -1726,7 +1726,7 @@ let FeeFeeInstr (cenv: cenv) doc =
                                         endColumn = 0))
 
 /// Buffers for IL code generation
-type CodeGenBuffer(m: range,
+type CodeGenBuffer(m: Range,
                    mgbuf: AssemblyBuilder,
                    methodName,
                    alreadyUsedArgs: int) =
@@ -1761,13 +1761,13 @@ type CodeGenBuffer(m: range,
           let i = FeeFeeInstr mgbuf.cenv doc
           codebuf.Add i // for the FeeFee or a better sequence point
 
-    member cgbuf.DoPushes (pushes: Pushes) =
+    member _.DoPushes (pushes: Pushes) =
         for ty in pushes do
            stack <- ty :: stack
            nstack <- nstack + 1
            maxStack <- Operators.max maxStack nstack
 
-    member cgbuf.DoPops (n: Pops) =
+    member _.DoPops (n: Pops) =
         for i = 0 to n - 1 do
            match stack with
            | [] ->
@@ -1778,8 +1778,8 @@ type CodeGenBuffer(m: range,
                stack <- t
                nstack <- nstack - 1
 
-    member cgbuf.GetCurrentStack() = stack
-    member cgbuf.AssertEmptyStack() =
+    member _.GetCurrentStack() = stack
+    member _.AssertEmptyStack() =
         if not (isNil stack) then
             let msg =
                 sprintf "stack flush didn't work, or extraneous expressions left on stack before stack restore, methodName = %s, stack = %+A, m = %s"
@@ -1798,10 +1798,10 @@ type CodeGenBuffer(m: range,
         cgbuf.DoPushes pushes
         is |> List.iter codebuf.Add
 
-    member cgbuf.GetLastDebugPoint() =
+    member _.GetLastDebugPoint() =
         lastSeqPoint
    
-    member private cgbuf.EnsureNopBetweenDebugPoints() =
+    member private _.EnsureNopBetweenDebugPoints() =
         // Always add a nop between sequence points to help .NET get the stepping right
         // Don't do this after a FeeFee marker for hidden code
         if (codebuf.Count > 0 &&
@@ -1844,14 +1844,14 @@ type CodeGenBuffer(m: range,
                 cgbuf.EnsureNopBetweenDebugPoints()
                 codebuf.Add i
 
-    member cgbuf.EmitExceptionClause clause =
+    member _.EmitExceptionClause clause =
          exnSpecs.Add clause
 
-    member cgbuf.GenerateDelayMark(_nm) =
+    member _.GenerateDelayMark(_nm) =
          let lab = IL.generateCodeLabel()
          Mark lab
 
-    member cgbuf.SetCodeLabelToCodeLabel(lab1, lab2) =
+    member _.SetCodeLabelToCodeLabel(lab1, lab2) =
 #if DEBUG
         if codeLabelToCodeLabel.ContainsKey lab1 then
             let msg = sprintf "two values given for label %s, methodName = %s, m = %s" (formatCodeLabel lab1) methodName (stringOfRange m)
@@ -1860,7 +1860,7 @@ type CodeGenBuffer(m: range,
 #endif
         codeLabelToCodeLabel.[lab1] <- lab2
 
-    member cgbuf.SetCodeLabelToPC(lab, pc) =
+    member _.SetCodeLabelToPC(lab, pc) =
 #if DEBUG
         if codeLabelToPC.ContainsKey lab then
             let msg = sprintf "two values given for label %s, methodName = %s, m = %s" (formatCodeLabel lab) methodName (stringOfRange m)
@@ -1884,13 +1884,13 @@ type CodeGenBuffer(m: range,
         cgbuf.SetMarkToHere res
         res
 
-    member cgbuf.mgbuf = mgbuf
+    member _.mgbuf = mgbuf
 
-    member cgbuf.MethodName = methodName
+    member _.MethodName = methodName
 
-    member cgbuf.PreallocatedArgCount = alreadyUsedArgs
+    member _.PreallocatedArgCount = alreadyUsedArgs
 
-    member cgbuf.AllocLocal(ranges, ty, isFixed) =
+    member _.AllocLocal(ranges, ty, isFixed) =
         let j = locals.Count
         locals.Add((ranges, ty, isFixed))
         j
@@ -1904,7 +1904,7 @@ type CodeGenBuffer(m: range,
         | None ->
             cgbuf.AllocLocal(ranges, ty, isFixed), false
 
-    member cgbuf.Close() =
+    member _.Close() =
 
         let instrs = codebuf.ToArray()
 
@@ -1935,8 +1935,6 @@ module CG =
     let SetMarkToHere (cgbuf: CodeGenBuffer) m1 = cgbuf.SetMarkToHere m1
     let SetStack (cgbuf: CodeGenBuffer) s = cgbuf.SetStack s
     let GenerateMark (cgbuf: CodeGenBuffer) s = cgbuf.Mark s
-
-
 
 //--------------------------------------------------------------------------
 // Compile constants
@@ -2950,13 +2948,13 @@ and GenSetExnField cenv cgbuf eenv (e, ecref, fieldNum, e2, m) sequel =
 
 and UnionCodeGen (cgbuf: CodeGenBuffer) =
     { new EraseUnions.ICodeGen<Mark> with
-        member __.CodeLabel m = m.CodeLabel
-        member __.GenerateDelayMark() = CG.GenerateDelayMark cgbuf "unionCodeGenMark"
-        member __.GenLocal ilty = cgbuf.AllocLocal([], ilty, false) |> uint16
-        member __.SetMarkToHere m = CG.SetMarkToHere cgbuf m
-        member __.MkInvalidCastExnNewobj () = mkInvalidCastExnNewobj cgbuf.mgbuf.cenv.g
-        member __.EmitInstr x = CG.EmitInstr cgbuf (pop 0) (Push []) x
-        member __.EmitInstrs xs = CG.EmitInstrs cgbuf (pop 0) (Push []) xs }
+        member _.CodeLabel m = m.CodeLabel
+        member _.GenerateDelayMark() = CG.GenerateDelayMark cgbuf "unionCodeGenMark"
+        member _.GenLocal ilty = cgbuf.AllocLocal([], ilty, false) |> uint16
+        member _.SetMarkToHere m = CG.SetMarkToHere cgbuf m
+        member _.MkInvalidCastExnNewobj () = mkInvalidCastExnNewobj cgbuf.mgbuf.cenv.g
+        member _.EmitInstr x = CG.EmitInstr cgbuf (pop 0) (Push []) x
+        member _.EmitInstrs xs = CG.EmitInstrs cgbuf (pop 0) (Push []) xs }
 
 and GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel =
     let g = cenv.g
@@ -8210,16 +8208,16 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
     let casApplied = new Dictionary<Stamp, bool>()
 
     /// Register a set of referenced assemblies with the ILX code generator
-    member __.AddExternalCcus ccus =
+    member _.AddExternalCcus ccus =
         ilxGenEnv <- AddExternalCcusToIlxGenEnv amap tcGlobals ilxGenEnv ccus
 
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
-    member __.AddIncrementalLocalAssemblyFragment (isIncrementalFragment, fragName, typedImplFiles) =
+    member _.AddIncrementalLocalAssemblyFragment (isIncrementalFragment, fragName, typedImplFiles) =
         ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedImplFiles)
 
     /// Generate ILX code for an assembly fragment
-    member __.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) =
+    member _.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) =
         let cenv: cenv =
             { g=tcGlobals
               tcVal = tcVal
@@ -8235,11 +8233,11 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value
-    member __.ClearGeneratedValue (ctxt, v) = ClearGeneratedValue ctxt tcGlobals ilxGenEnv v
+    member _.ClearGeneratedValue (ctxt, v) = ClearGeneratedValue ctxt tcGlobals ilxGenEnv v
 
     /// Invert the compilation of the given value and set the storage of the value, even if it is immutable
-    member __.ForceSetGeneratedValue (ctxt, v, value: obj) = SetGeneratedValue ctxt tcGlobals ilxGenEnv true v value
+    member _.ForceSetGeneratedValue (ctxt, v, value: obj) = SetGeneratedValue ctxt tcGlobals ilxGenEnv true v value
 
     /// Invert the compilation of the given value and return its current dynamic value and its compiled System.Type
-    member __.LookupGeneratedValue (ctxt, v) = LookupGeneratedValue amap ctxt ilxGenEnv v
+    member _.LookupGeneratedValue (ctxt, v) = LookupGeneratedValue amap ctxt ilxGenEnv v
 
