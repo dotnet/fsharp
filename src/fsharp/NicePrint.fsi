@@ -13,9 +13,9 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open Internal.Utilities.StructuredFormat
 
 module PrintUtilities =
     val layoutBuiltinAttribute: denv:DisplayEnv -> attrib:BuiltinAttribInfo -> Layout
@@ -26,7 +26,7 @@ val outputType: denv:DisplayEnv -> os:StringBuilder -> x:TType -> unit
 
 val layoutType: denv:DisplayEnv -> x:TType -> Layout
 
-val outputTypars: denv:DisplayEnv -> nm:Layout.TaggedText -> os:StringBuilder -> x:Typars -> unit
+val outputTypars: denv:DisplayEnv -> nm:TaggedText -> os:StringBuilder -> x:Typars -> unit
 
 val outputTyconRef: denv:DisplayEnv -> os:StringBuilder -> x:TyconRef -> unit
 

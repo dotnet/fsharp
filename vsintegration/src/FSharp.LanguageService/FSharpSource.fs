@@ -334,8 +334,8 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
         let iSource = new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile,recolorizeLine,(fun () -> VsTextLines.GetFilename textLines),(fun () -> source.IsClosed),vsFileWatch, depFileChange) :> IFSharpSource_DEPRECATED
 
-        override source.NormalizeErrorString(message) = ErrorLogger.NormalizeErrorString message
-        override source.NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString message
+        override source.NormalizeErrorString(message) = FSharpDiagnostic.NormalizeErrorString message
+        override source.NewlineifyErrorString(message) = FSharpDiagnostic.NewlineifyErrorString message
 
         override source.GetExpressionAtPosition(line, col) = 
             let upi = source.GetParseTree()

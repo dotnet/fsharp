@@ -13,10 +13,8 @@ open System.Text
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open Internal.Utilities
-open Internal.Utilities.StructuredFormat
-open Internal.Utilities.StructuredFormat.LayoutOps
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
 
 //------------------------------------------------------------------------
 // Operator name compilation
@@ -308,7 +306,7 @@ let DemangleOperatorName nm =
     
 let DemangleOperatorNameAsLayout nonOpTagged nm =
     let nm = DecompileOpName nm
-    if IsOperatorOrBacktickedName nm then wordL (TaggedTextOps.tagPunctuation "(") ^^ wordL (TaggedTextOps.tagOperator nm) ^^ wordL (TaggedTextOps.tagPunctuation ")")
+    if IsOperatorOrBacktickedName nm then wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
     else wordL (nonOpTagged nm)
 
 let opNameCons = CompileOpName "::"

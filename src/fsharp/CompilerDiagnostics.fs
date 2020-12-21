@@ -30,9 +30,13 @@ open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Range
 open FSharp.Compiler.SignatureConformance
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -814,16 +818,16 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
               
               match callerArgs.ArgumentNamesAndTypes with
-              | [] -> None, Layout.showL retTyL, Layout.showL genParamTysL
+              | [] -> None, LayoutRender.showL retTyL, LayoutRender.showL genParamTysL
               | items ->
-                  let args = Layout.showL argsL  
+                  let args = LayoutRender.showL argsL  
                   let prefixMessage =
                       match items with
                       | [_] -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
                       | _ -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixPlural
                   Some (prefixMessage args)
-                  , Layout.showL retTyL
-                  , Layout.showL genParamTysL
+                  , LayoutRender.showL retTyL
+                  , LayoutRender.showL genParamTysL
 
           let knownReturnType =
               match knownReturnType with

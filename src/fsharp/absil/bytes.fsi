@@ -5,11 +5,8 @@ namespace FSharp.Compiler.AbstractIL.Internal
 
 open System.IO
 open System.IO.MemoryMappedFiles
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
 
-module Utils =
+module internal Utils =
     val runningOnMono: bool
 
 module internal Bytes = 

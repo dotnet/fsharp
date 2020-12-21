@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.SymbolHelpers
-open FSharp.Compiler.SourceCodeServices.Keywords
+open FSharp.Compiler.SourceCodeServices.FSharpKeywords
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "FSharpRenameParamToMatchSignature"); Shared>]
 type internal FSharpRenameParamToMatchSignature

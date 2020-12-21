@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module LegacyMSBuildReferenceResolver
+module FSharp.Compiler.LegacyMSBuildReferenceResolver
 
     open System
     open System.IO
     open System.Reflection
     open FSharp.Compiler.AbstractIL.Internal.Library 
     open FSharp.Compiler.ReferenceResolver
+    open FSharp.Compiler.SourceCodeServices
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework

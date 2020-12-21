@@ -14,7 +14,6 @@ open System
 open System.IO
 open System.Text
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Service.Tests.Common
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
@@ -68,9 +67,9 @@ let B = File1.A + File1.A"""
         member __.AssemblyLoad(assemblyName) = defaultFileSystem.AssemblyLoad assemblyName 
 
 let UseMyFileSystem() = 
-    let myFileSystem = MyFileSystem(Shim.FileSystem)
-    Shim.FileSystem <- myFileSystem
-    { new IDisposable with member x.Dispose() = Shim.FileSystem <- myFileSystem }
+    let myFileSystem = MyFileSystem(FileSystemAutoOpens.FileSystem)
+    FileSystemAutoOpens.FileSystem <- myFileSystem
+    { new IDisposable with member x.Dispose() = FileSystemAutoOpens.FileSystem <- myFileSystem }
 
 
 [<Test>]

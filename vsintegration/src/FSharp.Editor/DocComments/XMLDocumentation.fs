@@ -8,8 +8,8 @@ open System.Text.RegularExpressions
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.TaggedText
 open System.Collections.Generic
 
 type internal ITaggedTextCollector =
@@ -57,8 +57,8 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             addTaggedTextEntry (tagText paragraph)
             if i < paragraphs.Length - 1 then
                 // insert two line breaks to separate paragraphs
-                addTaggedTextEntry Literals.lineBreak
-                addTaggedTextEntry Literals.lineBreak)
+                addTaggedTextEntry TaggedText.lineBreak
+                addTaggedTextEntry TaggedText.lineBreak)
 
     interface ITaggedTextCollector with
         member this.Add taggedText = 
@@ -101,7 +101,7 @@ module internal XmlDocumentation =
             else xml
 
     let AppendHardLine(collector: ITaggedTextCollector) =
-        collector.Add Literals.lineBreak
+        collector.Add TaggedText.lineBreak
        
     let EnsureHardLine(collector: ITaggedTextCollector) =
         if not collector.EndsWithLineBreak then AppendHardLine collector
@@ -109,7 +109,7 @@ module internal XmlDocumentation =
     let AppendOnNewLine (collector: ITaggedTextCollector) (line:string) =
         if line.Length > 0 then 
             EnsureHardLine collector
-            collector.Add(TaggedTextOps.tagText line)
+            collector.Add(TaggedText.tagText line)
 
     open System.Xml
     open System.Xml.Linq
@@ -149,7 +149,7 @@ module internal XmlDocumentation =
         let parts = typeName.Split([|'.'|])
         for i = 0 to parts.Length - 2 do
             collector.Add(tagNamespace parts.[i])
-            collector.Add(Literals.dot)
+            collector.Add(TaggedText.dot)
         collector.Add(tagClass parts.[parts.Length - 1])
 
     type XmlDocReader private (doc: XElement) = 
@@ -185,8 +185,8 @@ module internal XmlDocumentation =
                 | name ->
                     EnsureHardLine collector
                     collector.Add(tagParameter name.Value)
-                    collector.Add(Literals.colon)
-                    collector.Add(Literals.space)
+                    collector.Add(TaggedText.colon)
+                    collector.Add(TaggedText.space)
                     WriteNodes collector (p.Nodes())
 
         member this.CollectExceptions(collector: ITaggedTextCollector) =
@@ -203,9 +203,9 @@ module internal XmlDocumentation =
                     collector.Add(tagSpace "    ")
                     WriteTypeName collector exnType.Value
                     if not (Seq.isEmpty (p.Nodes())) then
-                        collector.Add Literals.space
-                        collector.Add Literals.minus
-                        collector.Add Literals.space
+                        collector.Add TaggedText.space
+                        collector.Add TaggedText.minus
+                        collector.Add TaggedText.space
                         WriteNodes collector (p.Nodes())
 
     type VsThreadToken() = class end
@@ -321,7 +321,7 @@ module internal XmlDocumentation =
                 for tp in tps do 
                     AppendHardLine typeParameterMapCollector
                     typeParameterMapCollector.Add(tagSpace "    ")
-                    renderL (taggedTextListR typeParameterMapCollector.Add) tp |> ignore
+                    LayoutRender.emitL typeParameterMapCollector.Add tp |> ignore
 
         let Process add (dataTipElement: FSharpStructuredToolTipElement) =
 
@@ -336,10 +336,10 @@ module internal XmlDocumentation =
                     addSeparatorIfNecessary add
                     if showText then 
                         let AppendOverload (item: FSharpToolTipElementData<_>) = 
-                            if not(isEmptyL item.MainDescription) then
+                            if not(Layout.isEmptyL item.MainDescription) then
                                 if not textCollector.IsEmpty then 
                                     AppendHardLine textCollector
-                                renderL (taggedTextListR textCollector.Add) item.MainDescription |> ignore
+                                LayoutRender.emitL textCollector.Add item.MainDescription |> ignore
 
                         AppendOverload(overloads.[0])
                         if len >= 2 then AppendOverload(overloads.[1])
@@ -353,9 +353,9 @@ module internal XmlDocumentation =
                     let item0 = overloads.[0]
 
                     item0.Remarks |> Option.iter (fun r -> 
-                        if not(isEmptyL r) then
+                        if not(Layout.isEmptyL r) then
                             AppendHardLine usageCollector
-                            renderL (taggedTextListR usageCollector.Add) r |> ignore)
+                            LayoutRender.emitL usageCollector.Add r |> ignore)
 
                     AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
 

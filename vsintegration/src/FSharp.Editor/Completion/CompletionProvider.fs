@@ -45,7 +45,7 @@ type internal FSharpCompletionProvider
     static let [<Literal>] KeywordDescription = "KeywordDescription"
 
     static let keywordCompletionItems =
-        Keywords.KeywordsWithDescription
+        FSharpKeywords.KeywordsWithDescription
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
         |> List.sortBy (fun (keyword, _) -> keyword)
         |> List.mapi (fun n (keyword, description) ->
@@ -166,7 +166,7 @@ type internal FSharpCompletionProvider
                         
                 let completionItem =
                     match declarationItem.Kind with
-                    | CompletionItemKind.Method (isExtension = true) ->
+                    | FSharpCompletionItemKind.Method (isExtension = true) ->
                             completionItem.AddProperty(IsExtensionMemberPropName, "")
                     | _ -> completionItem
                 

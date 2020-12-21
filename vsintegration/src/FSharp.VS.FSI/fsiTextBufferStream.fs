@@ -3,22 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
 open System
-open System.IO
-open System.Diagnostics
-open System.Globalization
-open System.Windows.Forms
-open System.Runtime.InteropServices
-open System.ComponentModel.Design
-open Microsoft.Win32
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.TextManager.Interop
-open Util
-open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Utilities
 
 // This type wraps the IVsTextLines which contains the FSI session (output and input).

@@ -72,7 +72,7 @@ module private ParamTypeSymbol =
         |> Option.ofOptionList
 
 module private ExternalSymbol =
-    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * ExternalSymbol) list =
+    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * FSharpExternalSymbol) list =
         let container = Symbol.fullName symbol.ContainingSymbol
 
         match symbol with
@@ -81,28 +81,28 @@ module private ExternalSymbol =
 
             let constructors =
                 typesym.InstanceConstructors
-                |> Seq.choose<_,ISymbol * ExternalSymbol> (fun methsym ->
+                |> Seq.choose<_,ISymbol * FSharpExternalSymbol> (fun methsym ->
                     ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
-                    |> Option.map (fun args -> upcast methsym, ExternalSymbol.Constructor(fullTypeName, args))
+                    |> Option.map (fun args -> upcast methsym, FSharpExternalSymbol.Constructor(fullTypeName, args))
                     )
                 |> List.ofSeq
                 
-            (symbol, ExternalSymbol.Type fullTypeName) :: constructors
+            (symbol, FSharpExternalSymbol.Type fullTypeName) :: constructors
 
         | :? IMethodSymbol as methsym ->
             ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
             |> Option.map (fun args ->
-                symbol, ExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
+                symbol, FSharpExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
             |> Option.toList
 
         | :? IPropertySymbol as propsym ->
-            [upcast propsym, ExternalSymbol.Property(container, propsym.MetadataName)]
+            [upcast propsym, FSharpExternalSymbol.Property(container, propsym.MetadataName)]
 
         | :? IFieldSymbol as fieldsym ->
-            [upcast fieldsym, ExternalSymbol.Field(container, fieldsym.MetadataName)]
+            [upcast fieldsym, FSharpExternalSymbol.Field(container, fieldsym.MetadataName)]
 
         | :? IEventSymbol as eventsym ->
-            [upcast eventsym, ExternalSymbol.Event(container, eventsym.MetadataName)]
+            [upcast eventsym, FSharpExternalSymbol.Event(container, eventsym.MetadataName)]
 
         | _ -> []
 

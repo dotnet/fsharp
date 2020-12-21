@@ -137,7 +137,7 @@ type CompilerService() =
         {
             SourceFiles = [|"CheckExpressions.fs"|]
             ConditionalCompilationDefines = []
-            ErrorSeverityOptions = FSharpErrorSeverityOptions.Default
+            ErrorSeverityOptions = FSharpDiagnosticSeverityOptions.Default
             IsInteractive = false
             LightSyntax = None
             CompilingFsLib = false

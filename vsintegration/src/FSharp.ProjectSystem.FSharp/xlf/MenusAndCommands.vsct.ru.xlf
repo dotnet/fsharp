@@ -247,6 +247,16 @@
         <target state="translated">&amp;Создать папку</target>
         <note />
       </trans-unit>
+      <trans-unit id="cmdidQuitProcess|ButtonText">
+        <source>Quit F# Interactive Process</source>
+        <target state="new">Quit F# Interactive Process</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cmdidQuitProcess|CommandName">
+        <source>FSharp.Interactive.QuitProcess</source>
+        <target state="new">FSharp.Interactive.QuitProcess</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

@@ -2,14 +2,6 @@
 
 module internal FSharp.Compiler.AbstractIL.Internal.Support
 
-open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.NativeRes
-open FSharp.Compiler.AbstractIL.Internal.Utils
-#if FX_NO_CORHOST_SIGNER
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-#endif
-
 open System
 open System.IO
 open System.Reflection
@@ -20,6 +12,14 @@ open System.Diagnostics.SymbolStore
 open System.Runtime.InteropServices
 open System.Runtime.CompilerServices
 
+open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.AbstractIL.Internal.NativeRes
+open FSharp.Compiler.AbstractIL.Internal.Utils
+open FSharp.Compiler.SourceCodeServices
+#if FX_NO_CORHOST_SIGNER
+open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
+#endif
 
 let DateTime1970Jan01 = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
 let absilWriteGetTimeStamp () = (DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int

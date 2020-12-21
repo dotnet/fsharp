@@ -3,7 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Collections.Generic
-open Internal.Utilities.StructuredFormat
+open FSharp.Compiler.TextLayout
 open Microsoft.CodeAnalysis.Classification
 open FSharp.Compiler
 open Microsoft.VisualStudio.Core.Imaging
@@ -14,50 +14,50 @@ module internal QuickInfoViewProvider =
 
     let layoutTagToClassificationTag (layoutTag:LayoutTag) =
         match layoutTag with
-        | ActivePatternCase
-        | ActivePatternResult
-        | UnionCase
-        | Enum -> ClassificationTypeNames.EnumName
-        | Struct -> ClassificationTypeNames.StructName
-        | TypeParameter -> ClassificationTypeNames.TypeParameterName
-        | Alias
-        | Class
-        | Record
-        | Union
-        | UnknownType // Default to class until/unless we use classification data
-        | Module -> ClassificationTypeNames.ClassName
-        | Interface -> ClassificationTypeNames.InterfaceName
-        | Keyword -> ClassificationTypeNames.Keyword
-        | Member
-        | Function
-        | Method -> ClassificationTypeNames.MethodName
-        | Property
-        | RecordField -> ClassificationTypeNames.PropertyName
-        | Parameter
-        | Local -> ClassificationTypeNames.LocalName
-        | ModuleBinding -> ClassificationTypeNames.Identifier
-        | Namespace -> ClassificationTypeNames.NamespaceName
-        | Delegate -> ClassificationTypeNames.DelegateName
-        | Event -> ClassificationTypeNames.EventName
-        | Field -> ClassificationTypeNames.FieldName
-        | LineBreak
-        | Space -> ClassificationTypeNames.WhiteSpace
-        | NumericLiteral -> ClassificationTypeNames.NumericLiteral
-        | Operator -> ClassificationTypeNames.Operator
-        | StringLiteral -> ClassificationTypeNames.StringLiteral
-        | Punctuation -> ClassificationTypeNames.Punctuation
-        | UnknownEntity
-        | Text -> ClassificationTypeNames.Text
+        | LayoutTag.ActivePatternCase
+        | LayoutTag.ActivePatternResult
+        | LayoutTag.UnionCase
+        | LayoutTag.Enum -> ClassificationTypeNames.EnumName
+        | LayoutTag.Struct -> ClassificationTypeNames.StructName
+        | LayoutTag.TypeParameter -> ClassificationTypeNames.TypeParameterName
+        | LayoutTag.Alias
+        | LayoutTag.Class
+        | LayoutTag.Record
+        | LayoutTag.Union
+        | LayoutTag.UnknownType // Default to class until/unless we use classification data
+        | LayoutTag.Module -> ClassificationTypeNames.ClassName
+        | LayoutTag.Interface -> ClassificationTypeNames.InterfaceName
+        | LayoutTag.Keyword -> ClassificationTypeNames.Keyword
+        | LayoutTag.Member
+        | LayoutTag.Function
+        | LayoutTag.Method -> ClassificationTypeNames.MethodName
+        | LayoutTag.Property
+        | LayoutTag.RecordField -> ClassificationTypeNames.PropertyName
+        | LayoutTag.Parameter
+        | LayoutTag.Local -> ClassificationTypeNames.LocalName
+        | LayoutTag.ModuleBinding -> ClassificationTypeNames.Identifier
+        | LayoutTag.Namespace -> ClassificationTypeNames.NamespaceName
+        | LayoutTag.Delegate -> ClassificationTypeNames.DelegateName
+        | LayoutTag.Event -> ClassificationTypeNames.EventName
+        | LayoutTag.Field -> ClassificationTypeNames.FieldName
+        | LayoutTag.LineBreak
+        | LayoutTag.Space -> ClassificationTypeNames.WhiteSpace
+        | LayoutTag.NumericLiteral -> ClassificationTypeNames.NumericLiteral
+        | LayoutTag.Operator -> ClassificationTypeNames.Operator
+        | LayoutTag.StringLiteral -> ClassificationTypeNames.StringLiteral
+        | LayoutTag.Punctuation -> ClassificationTypeNames.Punctuation
+        | LayoutTag.UnknownEntity
+        | LayoutTag.Text -> ClassificationTypeNames.Text
 
     let provideContent
         (
             imageId:ImageId option,
-            description:#seq<Layout.TaggedText>,
-            documentation:#seq<Layout.TaggedText>,
+            description: seq<TaggedText>,
+            documentation: seq<TaggedText>,
             navigation:QuickInfoNavigation
         ) =
 
-        let buildContainerElement (itemGroup:#seq<Layout.TaggedText>) =
+        let buildContainerElement (itemGroup: seq<TaggedText>) =
             let finalCollection = List<ContainerElement>()
             let currentContainerItems = List<obj>()
             let runsCollection = List<ClassifiedTextRun>()
@@ -74,11 +74,11 @@ module internal QuickInfoViewProvider =
             for item in itemGroup do
                 let classificationTag = layoutTagToClassificationTag item.Tag
                 match item with
-                | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
+                | :? NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
                     flushRuns()
                     let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateTo nav.Range)
                     currentContainerItems.Add(navigableTextRun :> obj)
-                | _ when item.Tag = LineBreak ->
+                | _ when item.Tag = LayoutTag.LineBreak ->
                     flushRuns()
                     // preserve succesive linebreaks
                     if currentContainerItems.Count = 0 then
