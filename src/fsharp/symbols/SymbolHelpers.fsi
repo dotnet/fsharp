@@ -13,18 +13,21 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.ErrorLogger
 
 [<RequireQualifiedAccess>]
-type public FSharpErrorSeverity = 
+type public FSharpDiagnosticSeverity = 
+    | Hidden
+    | Info
     | Warning 
     | Error
 
 /// Object model for diagnostics
 [<Class>]
-type public FSharpErrorInfo = 
+type public FSharpDiagnostic = 
     member FileName: string
     member Start: pos
     member End: pos
@@ -34,14 +37,20 @@ type public FSharpErrorInfo =
     member EndColumn: int
 
     member Range: range
-    member Severity: FSharpErrorSeverity
+    member Severity: FSharpDiagnosticSeverity
     member Message: string
     member Subcategory: string
     member ErrorNumber: int
 
-    static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpErrorInfo
-    static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpErrorInfo
+    static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
+    static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpDiagnostic
 
+    static member NewlineifyErrorString: message:string -> string
+
+    /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'), 
+    /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
+    static member NormalizeErrorString: text:string -> string
+  
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
@@ -59,8 +68,6 @@ type public FSharpXmlDoc =
 
     /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
-
-type public Layout = Internal.Utilities.StructuredFormat.Layout
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -113,7 +120,7 @@ type public FSharpToolTipText = FSharpToolTipText<string>
 type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
 [<RequireQualifiedAccess>]
-type public CompletionItemKind =
+type public FSharpCompletionItemKind =
     | Field
     | Property
     | Method of isExtension : bool
@@ -122,7 +129,7 @@ type public CompletionItemKind =
     | CustomOperation
     | Other
 
-type UnresolvedSymbol =
+type FSharpUnresolvedSymbol =
     {
       FullName: string
 
@@ -135,7 +142,7 @@ type internal CompletionItem =
     {
       ItemWithInst: ItemWithInst
 
-      Kind: CompletionItemKind
+      Kind: FSharpCompletionItemKind
 
       IsOwnMember: bool
 
@@ -143,11 +150,11 @@ type internal CompletionItem =
 
       Type: TyconRef option 
 
-      Unresolved: UnresolvedSymbol option
+      Unresolved: FSharpUnresolvedSymbol option
     }
     member Item : Item
 
-module public Tooltips =
+module public FSharpToolTip =
 
     val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
 
@@ -223,7 +230,7 @@ module internal SymbolHelpers =
 type internal ErrorScope = 
     interface IDisposable
     new : unit -> ErrorScope
-    member Diagnostics : FSharpErrorInfo list
+    member Diagnostics : FSharpDiagnostic list
     static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
@@ -231,10 +238,10 @@ type internal CompilationErrorLogger =
     inherit ErrorLogger
 
     /// Create the error logger
-    new: debugName:string * options: FSharpErrorSeverityOptions -> CompilationErrorLogger
+    new: debugName:string * options: FSharpDiagnosticOptions -> CompilationErrorLogger
             
     /// Get the captured errors
-    member GetErrors: unit -> (PhasedDiagnostic * FSharpErrorSeverity)[]
+    member GetErrors: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
 /// This represents the global state established as each task function runs as part of the build.
 ///
@@ -244,5 +251,5 @@ type internal CompilationGlobalsScope =
     interface IDisposable
 
 module internal ErrorHelpers = 
-    val ReportError: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpErrorSeverity) * suggestNames: bool -> FSharpErrorInfo list
-    val CreateErrorInfos: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpErrorSeverity)> * suggestNames: bool -> FSharpErrorInfo[]
+    val ReportError: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
+    val CreateErrorInfos: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]

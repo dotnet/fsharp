@@ -264,4 +264,7 @@
   <data name="UseFSharpLambda" xml:space="preserve">
     <value>Use F# lambda syntax</value>
   </data>
+  <data name="MakeOuterBindingRecursive" xml:space="preserve">
+    <value>Make '{0}' recursive</value>
+  </data>
 </root>

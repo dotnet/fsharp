@@ -27,7 +27,6 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
@@ -38,6 +37,8 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
@@ -91,7 +92,7 @@ type FSharpFindDeclResult =
     | DeclFound of range
 
     /// Indicates an external declaration was found
-    | ExternalDecl of assembly : string * externalSym : ExternalSymbol
+    | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
 
 /// This type is used to describe what was found during the name resolution.
 /// (Depending on the kind of the items, we may stop processing or continue to find better items)
@@ -549,21 +550,21 @@ type internal TypeCheckInfo
     let CompletionItem (ty: ValueOption<TyconRef>) (assemblySymbol: ValueOption<AssemblySymbol>) (item: ItemWithInst) =
         let kind = 
             match item.Item with
-            | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
+            | Item.MethodGroup (_, minfo :: _, _) -> FSharpCompletionItemKind.Method minfo.IsExtensionMember
             | Item.RecdField _
-            | Item.Property _ -> CompletionItemKind.Property
-            | Item.Event _ -> CompletionItemKind.Event
+            | Item.Property _ -> FSharpCompletionItemKind.Property
+            | Item.Event _ -> FSharpCompletionItemKind.Event
             | Item.ILField _ 
-            | Item.Value _ -> CompletionItemKind.Field
-            | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
-            | _ -> CompletionItemKind.Other
+            | Item.Value _ -> FSharpCompletionItemKind.Field
+            | Item.CustomOperation _ -> FSharpCompletionItemKind.CustomOperation
+            | _ -> FSharpCompletionItemKind.Other
 
         { ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = match ty with ValueSome x -> Some x | _ -> None
-          Unresolved = match assemblySymbol with ValueSome x -> Some x.UnresolvedSymbol | _ -> None }
+          Unresolved = match assemblySymbol with ValueSome x -> Some x.FSharpUnresolvedSymbol | _ -> None }
 
     let DefaultCompletionItem item = CompletionItem ValueNone ValueNone item
     
@@ -819,7 +820,7 @@ type internal TypeCheckInfo
                         |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
                         |> List.map (fun item -> 
                             { ItemWithInst = item
-                              Kind = CompletionItemKind.Argument
+                              Kind = FSharpCompletionItemKind.Argument
                               MinorPriority = 0
                               IsOwnMember = false
                               Type = None 
@@ -1040,7 +1041,7 @@ type internal TypeCheckInfo
             match matches with 
             | resolved::_ // Take the first seen
             | [resolved] -> 
-                let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
+                let tip = wordL (TaggedText.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
                 FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
             | [] -> 
@@ -1056,7 +1057,7 @@ type internal TypeCheckInfo
                     let lines = lines |> List.filter (fun line -> not (line.StartsWith("//")) && not (String.IsNullOrEmpty line))
                     FSharpStructuredToolTipText.FSharpToolTipText 
                        [ for line in lines -> 
-                            let tip = wordL (TaggedTextOps.tagStringLiteral line)
+                            let tip = wordL (TaggedText.tagStringLiteral line)
                             FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
                                     
         ErrorScope.Protect Range.range0 
@@ -1201,7 +1202,7 @@ type internal TypeCheckInfo
                             let typeVarNames = getTypeVarNames ilinfo
                             ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
-                                let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
+                                let externalSym = FSharpExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
                                 FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
@@ -1211,7 +1212,7 @@ type internal TypeCheckInfo
                             let typeVarNames = getTypeVarNames ilinfo
                             ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                             |> Option.map (fun args ->
-                                let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
+                                let externalSym = FSharpExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
                                 FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
@@ -1225,7 +1226,7 @@ type internal TypeCheckInfo
                         | Some methInfo ->
                             match methInfo.MetadataScope with
                             | ILScopeRef.Assembly assemblyRef ->
-                                let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
+                                let externalSym = FSharpExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
                                 Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                             | _ -> None
                         | None -> None
@@ -1233,14 +1234,14 @@ type internal TypeCheckInfo
                     | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                         match typeInfo.ILScopeRef with
                         | ILScopeRef.Assembly assemblyRef ->
-                            let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
+                            let externalSym = FSharpExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
                             Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
                   
                     | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                         match typeInfo.ILScopeRef with
                         | ILScopeRef.Assembly assemblyRef ->
-                            let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
+                            let externalSym = FSharpExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
                             Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, externalSym))
                         | _ -> None
 
@@ -1254,7 +1255,7 @@ type internal TypeCheckInfo
                         match tr.TypeReprInfo, tr.PublicPath with
                         | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assemblyRef, _, _)), Some (PubPath parts) ->
                             let fullName = parts |> String.concat "."
-                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, ExternalSymbol.Type fullName))
+                            Some (FSharpFindDeclResult.ExternalDecl (assemblyRef.Name, FSharpExternalSymbol.Type fullName))
                         | _ -> None
                     | _ -> None
                 match result with
@@ -1345,7 +1346,7 @@ type internal TypeCheckInfo
 type FSharpParsingOptions =
     { SourceFiles: string []
       ConditionalCompilationDefines: string list
-      ErrorSeverityOptions: FSharpErrorSeverityOptions
+      ErrorSeverityOptions: FSharpDiagnosticOptions
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -1358,7 +1359,7 @@ type FSharpParsingOptions =
     static member Default =
         { SourceFiles = Array.empty
           ConditionalCompilationDefines = []
-          ErrorSeverityOptions = FSharpErrorSeverityOptions.Default
+          ErrorSeverityOptions = FSharpDiagnosticOptions.Default
           IsInteractive = false
           LightSyntax = None
           CompilingFsLib = false
@@ -1387,7 +1388,7 @@ type FSharpParsingOptions =
 module internal ParseAndCheckFile = 
 
     /// Error handler for parsing & type checking while processing a single file
-    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpErrorSeverityOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
+    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpDiagnosticOptions, sourceText: ISourceText, suggestNamesForErrors: bool) =
         let mutable options = errorSeverityOptions
         let errorsAndWarningsCollector = new ResizeArray<_>()
         let mutable errorCount = 0
@@ -1409,7 +1410,7 @@ module internal ParseAndCheckFile =
                 let report exn =
                     for ei in ErrorHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev), suggestNamesForErrors) do
                         errorsAndWarningsCollector.Add ei
-                        if sev = FSharpErrorSeverity.Error then
+                        if sev = FSharpDiagnosticSeverity.Error then
                             errorCount <- errorCount + 1
 
                 match exn with
@@ -1420,7 +1421,7 @@ module internal ParseAndCheckFile =
 
         let errorLogger =
             { new ErrorLogger("ErrorHandler") with
-                member x.DiagnosticSink (exn, isError) = diagnosticSink (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) exn
+                member x.DiagnosticSink (exn, isError) = diagnosticSink (if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning) exn
                 member x.ErrorCount = errorCount }
 
         // Public members
@@ -1613,8 +1614,8 @@ module internal ParseAndCheckFile =
                     if sameFile file fileOfHashLoad then
                         for rangeOfHashLoad in rangesOfHashLoad do // Handle the case of two #loads of the same file
                             let diagnostics = errorGroupedByFileName |> Array.map(fun (_,(pe,f)) -> pe.Exception,f) // Strip the build phase here. It will be replaced, in total, with TypeCheck
-                            let errors = [ for err, sev in diagnostics do if sev = FSharpErrorSeverity.Error then yield err ]
-                            let warnings = [ for err, sev in diagnostics do if sev = FSharpErrorSeverity.Warning then yield err ]
+                            let errors = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Error then yield err ]
+                            let warnings = [ for err, sev in diagnostics do if sev = FSharpDiagnosticSeverity.Warning then yield err ]
                                     
                             let message = HashLoadedSourceHasIssues(warnings,errors,rangeOfHashLoad)
                             if isNil errors then 
@@ -1624,7 +1625,7 @@ module internal ParseAndCheckFile =
             
             // Replay other background errors.
             for phasedError, sev in otherBackgroundDiagnostics do
-                if sev = FSharpErrorSeverity.Warning then 
+                if sev = FSharpDiagnosticSeverity.Warning then 
                     warning phasedError.Exception 
                 else 
                     errorR phasedError.Exception
@@ -1646,7 +1647,7 @@ module internal ParseAndCheckFile =
            moduleNamesDict: ModuleNamesDict,
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedent 
-           backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
+           backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],    
            reactorOps: IReactorOperations,
            userOpName: string,
            suggestNamesForErrors: bool) = async {
@@ -1674,7 +1675,7 @@ module internal ParseAndCheckFile =
             
         // Play background errors and warnings for this file.
         for err, sev in backgroundDiagnostics do
-            diagnosticSink (err, (sev = FSharpErrorSeverity.Error))
+            diagnosticSink (err, (sev = FSharpDiagnosticSeverity.Error))
             
         // If additional references were brought in by the preprocessor then we need to process them
         ApplyLoadClosure(tcConfig, parsedMainInput, mainInputFileName, loadClosure, tcImports, backgroundDiagnostics)
@@ -1762,7 +1763,7 @@ type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad
 // the corresponding background builder to be alive. That is, they are simply plain-old-data through pre-formatting of all result text.
 type FSharpCheckFileResults
         (filename: string, 
-         errors: FSharpErrorInfo[], 
+         errors: FSharpDiagnostic[], 
          scopeOptX: TypeCheckInfo option, 
          dependencyFiles: string[], 
          builderX: IncrementalBuilder option, 
@@ -1811,7 +1812,7 @@ type FSharpCheckFileResults
 
     member info.GetToolTipText(line, colAtEndOfNames, lineText, names, tokenTag) = 
         info.GetStructuredToolTipText(line, colAtEndOfNames, lineText, names, tokenTag)
-        |> Tooltips.ToFSharpToolTipText
+        |> FSharpToolTip.ToFSharpToolTipText
 
     member __.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope -> 
@@ -1938,13 +1939,13 @@ type FSharpCheckFileResults
 
     override __.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
-    static member MakeEmpty(filename: string, creationErrors: FSharpErrorInfo[], keepAssemblyContents) = 
+    static member MakeEmpty(filename: string, creationErrors: FSharpDiagnostic[], keepAssemblyContents) = 
         FSharpCheckFileResults (filename, creationErrors, None, [| |], None, keepAssemblyContents)
 
     static member JoinErrors(isIncompleteTypeCheckEnvironment, 
-                             creationErrors: FSharpErrorInfo[], 
-                             parseErrors: FSharpErrorInfo[], 
-                             tcErrors: FSharpErrorInfo[]) =
+                             creationErrors: FSharpDiagnostic[], 
+                             parseErrors: FSharpDiagnostic[], 
+                             tcErrors: FSharpDiagnostic[]) =
         [| yield! creationErrors 
            yield! parseErrors
            if isIncompleteTypeCheckEnvironment then 
@@ -1959,9 +1960,9 @@ type FSharpCheckFileResults
          isIncompleteTypeCheckEnvironment: bool, 
          builder: IncrementalBuilder, 
          dependencyFiles, 
-         creationErrors: FSharpErrorInfo[], 
-         parseErrors: FSharpErrorInfo[], 
-         tcErrors: FSharpErrorInfo[], 
+         creationErrors: FSharpDiagnostic[], 
+         parseErrors: FSharpDiagnostic[], 
+         tcErrors: FSharpDiagnostic[], 
          keepAssemblyContents,
          ccuSigForFile, 
          thisCcu, tcImports, tcAccessRights, 
@@ -1990,14 +1991,14 @@ type FSharpCheckFileResults
          tcState: TcState,
          moduleNamesDict: ModuleNamesDict,
          loadClosure: LoadClosure option,
-         backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[],    
+         backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],    
          reactorOps: IReactorOperations,
          userOpName: string,
          isIncompleteTypeCheckEnvironment: bool, 
          builder: IncrementalBuilder, 
          dependencyFiles: string[], 
-         creationErrors: FSharpErrorInfo[], 
-         parseErrors: FSharpErrorInfo[], 
+         creationErrors: FSharpDiagnostic[], 
+         parseErrors: FSharpDiagnostic[], 
          keepAssemblyContents: bool,
          suggestNamesForErrors: bool) = 
         async {
@@ -2026,7 +2027,7 @@ type FSharpCheckProjectResults
          (projectFileName:string, 
           tcConfigOption: TcConfig option, 
           keepAssemblyContents: bool, 
-          errors: FSharpErrorInfo[], 
+          errors: FSharpDiagnostic[], 
           details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list *
                    TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
                    AccessorDomain * TypedImplFile list option * string[]) option) =
@@ -2155,7 +2156,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             
             let backgroundDiagnostics = [| |]
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
-            let assumeDotNetFramework = tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
+            let assumeDotNetFramework = (tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib)
 
             let applyCompilerOptions tcConfigB  = 
                 let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
@@ -2165,7 +2166,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir,
                     filename, sourceText, CodeContext.Editing,
                     tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib,
-                    tcConfig.useSdkRefs, new Lexhelp.LexResourceManager(),
+                    tcConfig.useSdkRefs, tcConfig.sdkDirOverride, new Lexhelp.LexResourceManager(),
                     applyCompilerOptions, assumeDotNetFramework,
                     tryGetMetadataSnapshot=(fun _ -> None),
                     reduceMemoryUsage=reduceMemoryUsage,

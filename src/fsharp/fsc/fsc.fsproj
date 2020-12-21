@@ -26,7 +26,7 @@
   <PropertyGroup>
     <TargetExt>.exe</TargetExt>
     <NGenBinary>true</NGenBinary>
-    <UseAppHost>false</UseAppHost>
+    <UseAppHost>true</UseAppHost>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">

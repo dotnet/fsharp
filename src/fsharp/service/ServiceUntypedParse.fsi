@@ -19,6 +19,9 @@ type public FSharpParseFileResults =
     /// The syntax tree resulting from the parse
     member ParseTree : ParsedInput option
 
+    /// Attempts to find the range of the name of the nearest outer binding that contains a given position.
+    member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: pos -> Option<range>
+
     /// Attempts to find the range of an attempted lambda expression or pattern, the argument range, and the expr range when writing a C#-style "lambda" (which is actually an operator application)
     member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: pos -> Option<range * range * range>
 
@@ -67,12 +70,12 @@ type public FSharpParseFileResults =
     member DependencyFiles : string[]
 
     /// Get the errors and warnings for the parse
-    member Errors : FSharpErrorInfo[]
+    member Errors : FSharpDiagnostic[]
 
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
-    internal new: errors: FSharpErrorInfo[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
+    internal new: errors: FSharpDiagnostic[] * input: ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
 
 /// Information about F# source file names
 module public SourceFile =

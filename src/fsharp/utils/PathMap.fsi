@@ -3,7 +3,7 @@
 /// Functions to map real paths to paths to be written to PDB/IL
 namespace Internal.Utilities
 
-type PathMap
+type internal PathMap
 
 [<RequireQualifiedAccess>]
 module internal PathMap =

@@ -6,6 +6,7 @@ namespace FSharp.Compiler
 open System
 open System.Collections.Generic
 open System.IO
+open System.Runtime.InteropServices
 open System.Threading
 
 open FSharp.Compiler
@@ -164,7 +165,7 @@ type TcInfo =
         latestCcuSigForFile: ModuleOrNamespaceType option
 
         /// Accumulated errors, last file first
-        tcErrorsRev:(PhasedDiagnostic * FSharpErrorSeverity)[] list
+        tcErrorsRev:(PhasedDiagnostic * FSharpDiagnosticSeverity)[] list
 
         tcDependencyFiles: string list
 
@@ -764,7 +765,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
              | Some loadClosure -> 
                 for inp in loadClosure.Inputs do
                     for (err, isError) in inp.MetaCommandDiagnostics do 
-                        yield err, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
+                        yield err, (if isError then FSharpDiagnosticSeverity.Error else FSharpDiagnosticSeverity.Warning) ]
 
         let initialErrors = Array.append (Array.ofList loadClosureErrors) (errorLogger.GetErrors())
         let tcInfo = 
@@ -1301,9 +1302,22 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
                     | _ -> None
 
+                let assumeDotNetFramework =
+                    match loadClosureOpt with 
+                    | None -> None
+                    | Some loadClosure -> Some loadClosure.UseDesktopFramework
+
+                let sdkDirOverride =
+                    match loadClosureOpt with 
+                    | None -> None
+                    | Some loadClosure -> loadClosure.SdkDirOverride
+
+                let fxResolver = FxResolver(assumeDotNetFramework, projectDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=sdkDirOverride)
+
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 
                     TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+                         fxResolver,
                          defaultFSharpBinariesDir, 
                          implicitIncludeDir=projectDirectory, 
                          reduceMemoryUsage=ReduceMemoryFlag.Yes, 
@@ -1330,6 +1344,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
                 tcConfigB, sourceFilesNew
 
+            // If this is a builder for a script, re-apply the settings inferred from the
+            // script and its load closure to the configuration.
+            //
+            // NOTE: it would probably be cleaner and more accurate to re-run the load closure at this point.
             match loadClosureOpt with
             | Some loadClosure ->
                 let dllReferences =
@@ -1341,6 +1359,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                 yield AssemblyReference(closureReference.originalReference.Range, resolved, None)
                         | None -> yield reference]
                 tcConfigB.referencedDLLs <- []
+                tcConfigB.primaryAssembly <- (if loadClosure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
                 // Add one by one to remove duplicates
                 dllReferences |> List.iter (fun dllReference ->
                     tcConfigB.AddReferencedAssemblyByPath(dllReference.Range, dllReference.Text))
@@ -1405,10 +1424,10 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 let errorSeverityOptions = builder.TcConfig.errorSeverityOptions
                 let errorLogger = CompilationErrorLogger("IncrementalBuilderCreation", errorSeverityOptions)
                 delayedLogger.CommitDelayedDiagnostics errorLogger
-                errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
+                errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpDiagnosticSeverity.Error)
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
+            |> Array.map (fun (d, isError) -> FSharpDiagnostic.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }
