@@ -195,8 +195,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %} 
 
 // Producing these changes the lex state, e.g. string --> token, or nesting level of braces in interpolated strings
-%token <byte[] * ParseHelpers.LexerContinuation> BYTEARRAY
-%token <string * ParseHelpers.LexerContinuation> STRING 
+%token <byte[] * bool * ParseHelpers.LexerContinuation> BYTEARRAY
+%token <string * bool * ParseHelpers.LexerContinuation> STRING 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_END
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_BEGIN_PART 
 %token <string * ParseHelpers.LexerContinuation> INTERP_STRING_PART 
@@ -647,7 +647,7 @@ hashDirectiveArgs:
 /* One argument to a #directive */
 hashDirectiveArg: 
   | stringOrKeywordString 
-      { $1 }
+      { fst $1 }
       
 
 /*--------------------------------------------------------------------------*/
@@ -2240,7 +2240,7 @@ inlineAssemblyTyconRepr:
   | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState)
        let lhsm = lhs parseState 
-       let ilType = ParseAssemblyCodeType $2 parseState.LexBuffer.SupportsFeature (rhs parseState 2)
+       let ilType = ParseAssemblyCodeType (fst $2) parseState.LexBuffer.SupportsFeature (rhs parseState 2)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm) }
 
 classOrInterfaceOrStruct: 
@@ -2665,7 +2665,7 @@ cPrototype:
         let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic,
                                   false,
                                   SynExpr.Ident (ident("failwith", rhs parseState 6)),
-                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", rhs parseState 8), rhs parseState 8),
+                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", false, rhs parseState 8), rhs parseState 8),
                                   mRhs)
         (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
@@ -2909,10 +2909,12 @@ rawConstant:
     { SynConst.UserNum $1 } 
 
   | stringOrKeywordString
-    { SynConst.String ($1, lhs parseState) } 
+    { let s, isVerbatim = $1
+      SynConst.String (s, isVerbatim, lhs parseState) } 
 
   | BYTEARRAY
-    { SynConst.Bytes (fst $1, lhs parseState) }
+    { let (v, isVerbatim, _) = $1
+      SynConst.Bytes (v, isVerbatim, lhs parseState) }
 
 rationalConstant:
   | INT32 INFIX_STAR_DIV_MOD_OP INT32
@@ -3851,7 +3853,7 @@ declExpr:
 
 dynamicArg:
   | IDENT
-      { let con = SynConst.String ($1, rhs parseState 1)
+      { let con = SynConst.String ($1, false, rhs parseState 1)
         let arg2 = SynExpr.Const (con, con.Range (rhs parseState 1)) 
         arg2 }
 
@@ -4491,7 +4493,7 @@ forLoopDirection:
 inlineAssemblyExpr:
   | HASH stringOrKeywordString opt_inlineAssemblyTypeArg optCurriedArgExprs  optInlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState)
-        let s, sm = $2, rhs parseState 2
+        let s, sm = fst $2, rhs parseState 2
         (fun m ->
             let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.SupportsFeature sm
             SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
@@ -5072,7 +5074,7 @@ atomType:
 
   | NULL
      { let m = rhs parseState 1
-       SynType.StaticConstant(SynConst.String (null, m), m) }
+       SynType.StaticConstant(SynConst.String (null, false, m), m) }
 
   | CONST atomicExpr
      {  let e, _ = $2
@@ -5528,8 +5530,9 @@ colonOrEquals:
 
 /* A literal string or a string from a keyword like __SOURCE_FILE__ */
 stringOrKeywordString:
-  | STRING { fst $1 }
-  | KEYWORD_STRING { $1 }
+  | STRING { let (s, isVerbatim, _) = $1
+             s, isVerbatim }
+  | KEYWORD_STRING { $1, false }
 
 interpolatedStringFill:
   | declExpr

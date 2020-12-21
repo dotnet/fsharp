@@ -55,9 +55,9 @@ val reusingLexbufForParsing: UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a
 val usingLexbufForParsing: UnicodeLexing.Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
 
 type LexerStringFinisher =
-    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
+    | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> bool -> LexerContinuation -> token)
     
-    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> isInterpolatedStringPart: bool -> cont: LexerContinuation -> token
+    member Finish: buf: ByteBuffer -> kind: LexerStringKind -> isInterpolatedStringPart: bool -> isVerbatim: bool -> cont: LexerContinuation -> token
 
     static member Default: LexerStringFinisher
 

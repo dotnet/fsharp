@@ -34,7 +34,7 @@ type Positions = Position * Position
 module FSharpTokenTag =
 
     let Identifier = tagOfToken (IDENT "a")
-    let String = tagOfToken (STRING ("a", LexCont.Default))
+    let String = tagOfToken (STRING ("a", false, LexCont.Default))
 
     let IDENT = tagOfToken (IDENT "a")
     let STRING = String
@@ -385,8 +385,8 @@ module internal LexerStateEncoding =
       | INTERP_STRING_END (_, cont)
       | LBRACE cont
       | RBRACE cont
-      | BYTEARRAY (_, cont)
-      | STRING (_, cont) -> cont
+      | BYTEARRAY (_, _, cont)
+      | STRING (_, _, cont) -> cont
       | _ -> prevLexcont
 
     // Note that this will discard all lexcont state, including the ifdefStack.

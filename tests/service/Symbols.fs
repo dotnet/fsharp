@@ -288,3 +288,44 @@ module SyntaxExpressions =
             assertRange 4 4 5 18 doBangRange
         | _ ->
             failwith "Could not find SynExpr.Do"
+module VerbatimStrings =
+     let getBindingConstValue (parseResults: ParsedInput option) bindingName =                                                                                                             
+         parseResults                                                                                                                                                                      
+         |> Option.bind (fun tree ->                                                                                                                                                       
+             match tree with                                                                                                                                                               
+             | ParsedInput.ImplFile (ParsedImplFileInput(modules = modules)) ->                                                                                                            
+                 modules                                                                                                                                                                   
+                 |> List.tryPick (function                                                                                                                                                 
+                     | SynModuleOrNamespace(decls = decls) ->                                                                                                                              
+                         decls                                                                                                                                                             
+                         |> List.tryPick (function                                                                                                                                         
+                             | SynModuleDecl.Let(bindings = bindings) ->                                                                                                                   
+                                 bindings                                                                                                                                                  
+                                 |> List.tryPick (function                                                                                                                                 
+                                     | SynBinding.Binding(_, _, _, _, _, _, _, SynPat.Named(ident = ident), _, SynExpr.Const (c, _), _, _) when ident.idText = bindingName -> Some c       
+                                     | _ -> None)                                                                                                                                          
+                             | _ -> None                                                                                                                                                   
+                         )                                                                                                                                                                 
+                 )                                                                                                                                                                         
+             | _ -> None                                                                                                                                                                   
+         )
+
+     [<TestCase("string1", false)>]                                                                                                                                                        
+     [<TestCase("string2", true)>]                                                                                                                                                         
+     [<TestCase("bytes1", false)>]                                                                                                                                                         
+     [<TestCase("bytes2", true)>]                                                                                                                                                          
+     [<Test>]                                                                                                                                                                              
+     let ``SynConst.String tracks verbatim-ness`` (bindingName: string, isVerbatim: bool) =                                                                                                
+         let parseResults = getParseResults """                                                                                                                                            
+ let string1 = "yo"                                                                                                                                                                        
+ let string2 = @"yo"                                                                                                                                                                       
+ let bytes1 = "yo"B                                                                                                                                                                        
+ let bytes2 = @"yo"B                                                                                                                                                                       
+ """                                                                                                                                                                                       
+         match getBindingConstValue parseResults bindingName with                                                                                                                          
+         | Some (SynConst.String(_, verbatim, _)) ->                                                                                                                                       
+             verbatim |> should equal isVerbatim                                                                                                                                           
+         | Some (SynConst.Bytes(_, verbatim, _)) ->                                                                                                                                        
+             verbatim |> should equal isVerbatim                                                                                                                                           
+         | _ ->                                                                                                                                                                            
+             failwithf "Couldn't find const named %s" bindingName
