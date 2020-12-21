@@ -55,6 +55,11 @@ type IFileSystem =
 
 [<AutoOpen>]
 module FileSystemAutoOpens =
+    #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
+    // Shim to match nullness checking library support in preview
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+    #endif
+
     type DefaultFileSystem() =
         interface IFileSystem with
 
@@ -79,7 +84,6 @@ module FileSystemAutoOpens =
             member __.IsInvalidPathShim(path: string) = 
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
                 let isInvalidPath(p: string) = 
-                    String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 #else
                 let isInvalidPath(p: string?) = 
 #endif
