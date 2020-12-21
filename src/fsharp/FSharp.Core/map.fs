@@ -2304,6 +2304,28 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
         | :? Map<'Key, 'Value> as o -> equals comparer root o.Root
         | _ -> false
 
+    override x.ToString() =
+        match List.ofSeq (Seq.truncate 4 x) with 
+        | [] -> "map []"
+        | [KeyValue h1] ->
+            let txt1 = LanguagePrimitives.anyToStringShowingNull h1
+            StringBuilder().Append("map [").Append(txt1).Append("]").ToString()
+        | [KeyValue h1; KeyValue h2] ->
+            let txt1 = LanguagePrimitives.anyToStringShowingNull h1
+            let txt2 = LanguagePrimitives.anyToStringShowingNull h2
+            StringBuilder().Append("map [").Append(txt1).Append("; ").Append(txt2).Append("]").ToString()
+        | [KeyValue h1; KeyValue h2; KeyValue h3] ->
+            let txt1 = LanguagePrimitives.anyToStringShowingNull h1
+            let txt2 = LanguagePrimitives.anyToStringShowingNull h2
+            let txt3 = LanguagePrimitives.anyToStringShowingNull h3
+            StringBuilder().Append("map [").Append(txt1).Append("; ").Append(txt2).Append("; ").Append(txt3).Append("]").ToString()
+        | KeyValue h1 :: KeyValue h2 :: KeyValue h3 :: _ ->
+            let txt1 = LanguagePrimitives.anyToStringShowingNull h1
+            let txt2 = LanguagePrimitives.anyToStringShowingNull h2
+            let txt3 = LanguagePrimitives.anyToStringShowingNull h3
+            StringBuilder().Append("map [").Append(txt1).Append("; ").Append(txt2).Append("; ").Append(txt3).Append("; ... ]").ToString() 
+
+
     member x.TryGetValue(key : 'Key, [<Out>] value : byref<'Value>) =
         match x.TryFindV key with
         | ValueSome v ->
@@ -2313,8 +2335,11 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
             false
 
     interface System.IComparable with
-        member x.CompareTo o = x.CompareTo (o :?> Map<_,_>)
-            
+        member x.CompareTo o = 
+            match o with
+            | :? Map<'Key, 'Value> as o -> x.CompareTo o
+            | _ -> raise <| ArgumentException()
+
     //interface System.IComparable<Map<'Key, 'Value>> with
     //    member x.CompareTo o = x.CompareTo o
 
@@ -2327,9 +2352,9 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
     interface System.Collections.Generic.ICollection<KeyValuePair<'Key, 'Value>> with
         member x.Count = x.Count
         member x.IsReadOnly = true
-        member x.Clear() = failwith "readonly"
-        member x.Add(_) = failwith "readonly"
-        member x.Remove(_) = failwith "readonly"
+        member x.Clear() = raise <| NotSupportedException()
+        member x.Add(_) = raise <| NotSupportedException()
+        member x.Remove(_) = raise <| NotSupportedException()
         member x.Contains(kvp : KeyValuePair<'Key, 'Value>) =
             match x.TryFindV kvp.Key with
             | ValueSome v -> Unchecked.equals v kvp.Value
@@ -2364,17 +2389,40 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
     interface System.Collections.Generic.IDictionary<'Key, 'Value> with
         member x.TryGetValue(key : 'Key,  [<Out>] value : byref<'Value>) = x.TryGetValue(key, &value)
 
-        member x.Add(_,_) =
-            failwith "readonly"
-
-        member x.Remove(_) =
-            failwith "readonly"
+        member x.Add(_,_) = raise <| NotSupportedException()
+        member x.Remove(_) = raise <| NotSupportedException()
 
         member x.Keys =
-            failwith "implement me"
+            let rec copyTo (arr : array<_>) (index : int) (n : MapNode<_,_>) =
+                match n with
+                | :? MapInner<'Key, 'Value> as n ->
+                    let i = copyTo arr index n.Left
+                    arr.[i] <- n.Key
+                    copyTo arr (i+1) n.Right
+                | :? MapLeaf<'Key, 'Value> as n ->
+                    arr.[index] <- n.Key
+                    index + 1
+                | _ ->
+                    index
+            let arr = Array.zeroCreate x.Count
+            copyTo arr 0 root |> ignore<int>
+            arr :> _
             
         member x.Values =
-            failwith "implement me"
+            let rec copyTo (arr : array<_>) (index : int) (n : MapNode<_,_>) =
+                match n with
+                | :? MapInner<'Key, 'Value> as n ->
+                    let i = copyTo arr index n.Left
+                    arr.[i] <- n.Value
+                    copyTo arr (i+1) n.Right
+                | :? MapLeaf<'Key, 'Value> as n ->
+                    arr.[index] <- n.Value
+                    index + 1
+                | _ ->
+                    index
+            let arr = Array.zeroCreate x.Count
+            copyTo arr 0 root |> ignore<int>
+            arr :> _
 
         member x.ContainsKey key =
             x.ContainsKey key
@@ -2396,18 +2444,23 @@ and [<NoComparison; NoEquality>]
         val mutable public Root : MapNode<'Key, 'Value>
         val mutable public Stack : list<struct(MapNode<'Key, 'Value> * bool)>
         val mutable public Value : KeyValuePair<'Key, 'Value>
+        val mutable public Valid : bool
 
-        member x.Current : KeyValuePair<'Key, 'Value> = x.Value
+        member x.Current : KeyValuePair<'Key, 'Value> = 
+            if x.Valid then x.Value
+            else raise <| InvalidOperationException()
 
         member x.Reset() =
             if x.Root.Height > 0 then
                 x.Stack <- [struct(x.Root, true)]
                 x.Value <- Unchecked.defaultof<_>
+            x.Valid <- false
 
         member x.Dispose() =
             x.Root <- MapEmpty.Instance
             x.Stack <- []
             x.Value <- Unchecked.defaultof<_>
+            x.Valid <- false
                 
         member inline private x.MoveNext(deep : bool, top : MapNode<'Key, 'Value>) =
             let mutable top = top
@@ -2442,8 +2495,10 @@ and [<NoComparison; NoEquality>]
             | struct(n, deep) :: rest ->
                 x.Stack <- rest
                 x.MoveNext(deep, n)
+                x.Valid <- true
                 true
             | [] ->
+                x.Valid <- false
                 false
                             
             
@@ -2460,13 +2515,15 @@ and [<NoComparison; NoEquality>]
 
         new(r : MapNode<'Key, 'Value>) =
             if r.Height = 0 then
-                { 
+                {
+                    Valid = false
                     Root = r
                     Stack = []
                     Value = Unchecked.defaultof<_>
                 }
             else       
                 { 
+                    Valid = false
                     Root = r
                     Stack = [struct(r, true)]
                     Value = Unchecked.defaultof<_>
