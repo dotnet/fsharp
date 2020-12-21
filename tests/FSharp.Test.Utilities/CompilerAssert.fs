@@ -457,7 +457,7 @@ let main argv = 0"""
 #endif
         let timeout = 30000
         let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
-        (exitCode, output |> String.concat Environment.NewLine, errors |> String.concat Environment.NewLine)
+        (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -496,7 +496,7 @@ let main argv = 0"""
                     executeBuiltApp outputFilePath deps))
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
-        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output)))
+        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
 
     /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
     static member CompileOfAst isExe source =
