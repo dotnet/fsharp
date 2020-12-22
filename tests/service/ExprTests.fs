@@ -423,8 +423,8 @@ type ClassWithImplicitConstructor(compiledAsArg: int) =
     static let compiledAsStaticMethod () = compiledAsStaticField + compiledAsStaticField
     static let compiledAsGenericStaticMethod x = x
 
-    member _.M1() = compiledAsField + compiledAsGenericInstanceMethod compiledAsField + compiledAsArg
-    member _.M2() = compiledAsInstanceMethod()
+    member __.M1() = compiledAsField + compiledAsGenericInstanceMethod compiledAsField + compiledAsArg
+    member __.M2() = compiledAsInstanceMethod()
     static member SM1() = compiledAsStaticField + compiledAsGenericStaticMethod compiledAsStaticField 
     static member SM2() = compiledAsStaticMethod()
     //override _.ToString() = base.ToString() + string 999

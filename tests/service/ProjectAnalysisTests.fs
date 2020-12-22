@@ -854,11 +854,11 @@ type CBaseFoo() =
     abstract BaseClassMethod: methodArg:string -> string
     [<CLIEvent>]
     abstract BaseClassEvent: IEvent<int>
-    default _.BaseClassProperty = "dflt"
-    default _.BaseClassPropertySet with set (v:string) = ()
-    default _.BaseClassMethod(m) = m
+    default __.BaseClassProperty = "dflt"
+    default __.BaseClassPropertySet with set (v:string) = ()
+    default __.BaseClassMethod(m) = m
     [<CLIEvent>]
-    default _.BaseClassEvent = ev.Publish
+    default __.BaseClassEvent = ev.Publish
 
 type IFooImpl() =
     let ev = Event<_>()
