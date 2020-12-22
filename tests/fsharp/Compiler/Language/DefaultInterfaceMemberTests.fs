@@ -1017,7 +1017,7 @@ type Test () =
 
     interface ITest with
 
-        member _.DefaultMethod () = ()
+        member __.DefaultMethod () = ()
             """
 
         let ilCmpl =
