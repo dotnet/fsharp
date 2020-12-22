@@ -5595,7 +5595,7 @@ let checkContentAsScript content =
     let scriptName = "test.fsx"
     let tempDir = Path.GetTempPath()
     let scriptFullPath = Path.Combine(tempDir, scriptName)
-    let sourceText = FSharp.Compiler.Text.SourceText.ofString content
+    let sourceText = SourceText.ofString content
     let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |> Async.RunSynchronously
     let parseOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
     let parseResults = checker.ParseFile(scriptFullPath, sourceText, parseOptions) |> Async.RunSynchronously
