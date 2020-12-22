@@ -66,6 +66,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
 ### FSharp Compiler Service 39.0.0
+
 * Renamings
 *     FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
 *     FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
@@ -78,6 +79,12 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 *     FSharp.Compiler.Layout.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
 *     FSharp.Compiler.Layout.TaggedTextOps  -> FSharp.Compiler.TextLayout.TaggedText
 *     FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
+*     FSharp.Compiler.Range.range --> FSharp.Compiler.SourceCodeServices.Range (with 'range' abbreviation)
+*     FSharp.Compiler.Range.pos --> FSharp.Compiler.SourceCodeServices.Pos (with 'pos' abbreviation)
+*
+*     module FSharp.Compiler.Range.Range --> (split)
+*          module FSharp.Compiler.Pos
+*          module FSharp.Compiler.Range
 *
 * Renamings in FSharp.Compiler.SourceCodeServices
 *   Lexer.* --> FSharp.Compiler.SourceCodeServices.*
@@ -90,10 +97,21 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 *   module Keywords     --> FSharpKeywords
 *   module Tooltips     --> FSharpTooltip
 *
+* Changes related to Range and Pos
+*   As background, the "intended" FCS API is currently the parts under the namespaces
+*      FSharp.Compiler.SourceCodeServices.*
+*      FSharp.Compiler.Text.*
+*      FSharp.Compiler.TextLayout.*
+* 
+* Because of this, some types moved from `FSharp.Compiler.XYZ` to `FSharp.Compiler.SourceCodeServices.XYZ`.
+* 
+* The `Range` and `Pos` modules stay in FSharp.Compiler since they aren't really intended 
+* for use externally though they currently remain public.
+*
 * Extension methods in `ServiceAssemblyContent.fsi` now intrinsic methods on symbol types
 * 
 * Internalizations:
-*   FSharp.Compiler.AbstractIL.* now internal
+*   FSharp.Compiler.AbstractIL.* now internal apart from hook for JetBrains Rider
 *   FSharp.Compiler.ErrorLogger.* now internal
 *
 * New functions in the SourceCodeServices API:
