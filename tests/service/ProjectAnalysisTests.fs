@@ -14,9 +14,7 @@ open FsUnit
 open System
 open System.IO
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-
 open FSharp.Compiler.Service.Tests.Common
 
 module internal Project1 = 
