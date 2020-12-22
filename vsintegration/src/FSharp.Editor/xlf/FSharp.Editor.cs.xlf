@@ -7,6 +7,11 @@
         <target state="translated">Přidejte do definice typu chybějící =.</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="new">Add missing 'fun' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Přidejte klíčové slovo new.</target>

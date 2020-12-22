@@ -7,6 +7,11 @@
         <target state="translated">Ajouter un '=' manquant à la définition de type</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="new">Add missing 'fun' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Ajouter le mot clé 'new'</target>

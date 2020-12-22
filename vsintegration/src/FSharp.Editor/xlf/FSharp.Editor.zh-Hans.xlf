@@ -7,6 +7,11 @@
         <target state="translated">将缺少的 "=" 添加到类型定义</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="new">Add missing 'fun' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">添加“新”关键字</target>
