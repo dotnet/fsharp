@@ -42,7 +42,7 @@ module X
 let x = @1
             """
             [|
-                FSharpErrorSeverity.Error, 10, (4,9,4,10), "Unexpected infix operator in binding"
+                FSharpDiagnosticSeverity.Error, 10, (4,9,4,10), "Unexpected infix operator in binding"
             |]
 
     [<Test>]
@@ -57,9 +57,9 @@ let (~^) (x: int) (y:int) = x + y
 Console.WriteLine(^1)
             """
             [|
-                FSharpErrorSeverity.Error, 1208, (5,6,5,8), "Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.";
-                FSharpErrorSeverity.Error, 10, (7,20,7,21), "Unexpected integer literal in expression. Expected ')' or other token.";
-                FSharpErrorSeverity.Error, 583, (7,18,7,19), "Unmatched '('";
+                FSharpDiagnosticSeverity.Error, 1208, (5,6,5,8), "Invalid operator definition. Prefix operator definitions must use a valid prefix operator name.";
+                FSharpDiagnosticSeverity.Error, 10, (7,20,7,21), "Unexpected integer literal in expression. Expected ')' or other token.";
+                FSharpDiagnosticSeverity.Error, 583, (7,18,7,19), "Unmatched '('";
             |]
 
     [<Test>]
@@ -73,7 +73,7 @@ let list = [1;2;3]
 Console.WriteLine(list.[@1..])
             """
             [|
-                FSharpErrorSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator"
+                FSharpDiagnosticSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator"
             |]
 
     [<Test>]
@@ -87,7 +87,7 @@ let list = [1;2;3]
 Console.WriteLine(list.[..@1])
             """
             [|
-                FSharpErrorSeverity.Error, 1208, (6,25,6,28), "Invalid prefix operator"
+                FSharpDiagnosticSeverity.Error, 1208, (6,25,6,28), "Invalid prefix operator"
             |]
 
     [<Test>]
@@ -101,8 +101,8 @@ let list = [1;2;3]
 Console.WriteLine(list.[@1..@1])
             """
             [|
-                FSharpErrorSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator";
-                FSharpErrorSeverity.Error, 1208, (6,29,6,30), "Invalid prefix operator"
+                FSharpDiagnosticSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator";
+                FSharpDiagnosticSeverity.Error, 1208, (6,29,6,30), "Invalid prefix operator"
             |]
 
     [<Test>]
@@ -116,5 +116,5 @@ let list = [1;2;3]
 Console.WriteLine(list.[@11])
             """
             [|
-                FSharpErrorSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator"
+                FSharpDiagnosticSeverity.Error, 1208, (6,25,6,26), "Invalid prefix operator"
             |]

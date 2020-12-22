@@ -57,7 +57,7 @@ module ProductVersionTest =
         productVersion (fun _ -> None) (ILVersionInfo(3us,2us,1us,0us)) |> Assert.shouldBe "3.2.1.0"
         productVersion (fun _ -> Some "") (ILVersionInfo(3us,2us,1us,0us)) |> Assert.shouldBe "3.2.1.0"
 
-    let validValues () =
+    let internal validValues () =
         let max = System.UInt16.MaxValue
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
           "1.0.3.4", ILVersionInfo(1us,0us,3us,4us)
@@ -71,7 +71,7 @@ module ProductVersionTest =
         for (v, expected) in validValues() do 
             v |> productVersionToILVersionInfo |> Assert.shouldBe expected
 
-    let invalidValues () =
+    let internal invalidValues () =
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
           "1.2.3.4a", ILVersionInfo(1us,2us,3us,4us)
           "1.2.c3.4", ILVersionInfo(1us,2us,0us,4us)

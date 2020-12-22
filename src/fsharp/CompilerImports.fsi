@@ -195,6 +195,3 @@ type TcImports =
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
 val RequireDLL: ctok: CompilationThreadToken * tcImports: TcImports * tcEnv: TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
-
-/// This list is the default set of references for "non-project" files. 
-val DefaultReferencesForScriptsAndOutOfProjectSources: bool -> string list

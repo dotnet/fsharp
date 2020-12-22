@@ -20,6 +20,7 @@ open System.Reflection.Emit
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open FSharp.Test.Utilities.Utilities
+open TestFramework
 
 [<Sealed>]
 type ILVerifier (dllFilePath: string) =
@@ -119,11 +120,11 @@ type CompilerAssert private () =
 
     static let directoryBuildProps = """
 <Project>
-  <PropertyGroup>
-    <DisableCompilerRedirection>true</DisableCompilerRedirection>
-  </PropertyGroup>
+</Project>
+"""
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+    static let directoryBuildTargets = """
+<Project>
 </Project>
 """
 
@@ -148,6 +149,7 @@ let main argv = 0"""
                 let projectFileName = Path.Combine(projectDirectory, "ProjectFile.fsproj")
                 let programFsFileName = Path.Combine(projectDirectory, "Program.fs")
                 let directoryBuildPropsFileName = Path.Combine(projectDirectory, "Directory.Build.props")
+                let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                 let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
                 File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "netcoreapp3.1").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
@@ -156,34 +158,17 @@ let main argv = 0"""
 #endif
                 File.WriteAllText(programFsFileName, programFs)
                 File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
+                File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
-                let pInfo = ProcessStartInfo ()
-                pInfo.FileName <- config.DotNetExe
-                pInfo.Arguments <- "build"
-                pInfo.WorkingDirectory <- projectDirectory
-                pInfo.RedirectStandardOutput <- true
-                pInfo.RedirectStandardError <- true
-                pInfo.UseShellExecute <- false
-
-                let p = Process.Start(pInfo)
                 let timeout = 30000
-                let succeeded = p.WaitForExit(timeout)
+                let exitCode, output, errors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
 
-                output <- p.StandardOutput.ReadToEnd ()
-                errors <- p.StandardError.ReadToEnd ()
-
-                if not (String.IsNullOrWhiteSpace errors) then
-                    printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" errors
-                    Assert.Fail errors
-                if p.ExitCode <> 0 then
-                    printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" errors
-                    Assert.Fail(sprintf "Program exited with exit code %d" p.ExitCode)
-                if not succeeded then
-                    printfn "Output:\n=======\n%s\n" output
-                    printfn "Errors:\n=======\n%s\n" errors
-                    Assert.Fail(sprintf "Program timed out after %d ms" timeout)
+                if exitCode <> 0 || errors.Length > 0 then
+                    printfn "Output:\n=======\n"
+                    output |> Seq.iter(fun line -> printfn "STDOUT:%s\n" line)
+                    printfn "Errors:\n=======\n"
+                    errors  |> Seq.iter(fun line -> printfn "STDERR:%s\n" line)
+                    Assert.True(false, "Errors produced generating References")
 
                 File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
             with | e ->
@@ -196,7 +181,7 @@ let main argv = 0"""
                 raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
         finally
             if cleanUp then
-                try Directory.Delete(projectDirectory) with | _ -> ()
+                try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
 
 #if FX_NO_APP_DOMAINS
     static let executeBuiltApp assembly deps =
@@ -254,7 +239,7 @@ let main argv = 0"""
         let args =
             options
             |> Array.append defaultProjectOptions.OtherOptions
-            |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
+            |> Array.append [| "fsc.dll"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
         let errors, _ = checker.Compile args |> Async.RunSynchronously
         errors, outputFilePath
 
@@ -289,10 +274,10 @@ let main argv = 0"""
             o.Dispose()
             reraise()
 
-    static let assertErrors libAdjust ignoreWarnings (errors: FSharpErrorInfo []) expectedErrors =
+    static let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errors =
             errors
-            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpErrorSeverity.Warning else true)
+            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning else true)
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLineAlternate, e.StartColumn, e.EndLineAlternate, e.EndColumn, e.Message)
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLineAlternate - libAdjust, info.StartColumn + 1, info.EndLineAlternate - libAdjust, info.EndColumn + 1), info.Message))
@@ -319,7 +304,7 @@ let main argv = 0"""
     static let compile isExe options source f =
         lock gate (fun _ -> compileAux isExe options source f)
 
-    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpErrorInfo[] * string) * string list =
+    static let rec compileCompilationAux outputPath (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
         let compilationRefs, deps =
             match cmpl with
             | Compilation(_, _, _, _, cmpls, _) ->
@@ -447,14 +432,12 @@ let main argv = 0"""
         (exitCode, stdout.ToString(), stderr.ToString())
 
     static let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
-        let mutable pinfo = ProcessStartInfo()
-        pinfo.RedirectStandardError <- true
-        pinfo.RedirectStandardOutput <- true
 #if !NETCOREAPP
-        pinfo.FileName <- outputFilePath
+        let filename = outputFilePath
+        let arguments = ""
 #else
-        pinfo.FileName <- "dotnet"
-        pinfo.Arguments <- outputFilePath
+        let filename = "dotnet"
+        let arguments = outputFilePath
 
         let runtimeconfig = """
 {
@@ -472,18 +455,9 @@ let main argv = 0"""
             { new IDisposable with
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
-        pinfo.UseShellExecute <- false
-        let p = Process.Start pinfo
-
-        let output = p.StandardOutput.ReadToEnd()
-        let errors = p.StandardError.ReadToEnd()
-
-        let exited = p.WaitForExit(120000)
-
-        let exitCode = if not exited then -2 else p.ExitCode
-
-        (exitCode, output, errors)
-
+        let timeout = 30000
+        let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -522,7 +496,7 @@ let main argv = 0"""
                     executeBuiltApp outputFilePath deps))
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
-        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output)))
+        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
 
     /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
     static member CompileOfAst isExe source =
@@ -704,10 +678,10 @@ let main argv = 0"""
     static member TypeCheckWithErrors (source: string) expectedTypeErrors =
         CompilerAssert.TypeCheckWithErrorsAndOptions [||] source expectedTypeErrors
 
-    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+    static member TypeCheckSingleErrorWithOptions options (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrorsAndOptions options source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
-    static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpErrorSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
+    static member TypeCheckSingleError (source: string) (expectedSeverity: FSharpDiagnosticSeverity) (expectedErrorNumber: int) (expectedErrorRange: int * int * int * int) (expectedErrorMsg: string) =
         CompilerAssert.TypeCheckWithErrors source [| expectedSeverity, expectedErrorNumber, expectedErrorRange, expectedErrorMsg |]
 
     static member CompileExeWithOptions options (source: string) =
@@ -733,7 +707,7 @@ let main argv = 0"""
     static member CompileLibraryAndVerifyILWithOptions options (source: string) (f: ILVerifier -> unit) =
         compile false options source (fun (errors, outputFilePath) ->
             let errors =
-                errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
+                errors |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had errors: %A" errors)
 
@@ -805,7 +779,7 @@ let main argv = 0"""
 
         Array.zip errors expectedParseErrors
         |> Array.iter (fun (info, expectedError) ->
-            let (expectedSeverity: FSharpErrorSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
+            let (expectedSeverity: FSharpDiagnosticSeverity, expectedErrorNumber: int, expectedErrorRange: int * int * int * int, expectedErrorMsg: string) = expectedError
             Assert.AreEqual(expectedSeverity, info.Severity)
             Assert.AreEqual(expectedErrorNumber, info.ErrorNumber, "expectedErrorNumber")
             Assert.AreEqual(expectedErrorRange, (info.StartLineAlternate, info.StartColumn + 1, info.EndLineAlternate, info.EndColumn + 1), "expectedErrorRange")

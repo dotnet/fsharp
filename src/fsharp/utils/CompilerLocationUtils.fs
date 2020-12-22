@@ -14,6 +14,8 @@ open Microsoft.FSharp.Core
 
 module internal FSharpEnvironment =
 
+    type private TypeInThisAssembly = class end
+
     /// The F# version reported in the banner
     let FSharpBannerVersion = UtilsStrings.SR.fSharpBannerVersion(FSharp.BuildProperties.fsProductVersion, FSharp.BuildProperties.fsLanguageVersion)
 
@@ -38,8 +40,7 @@ module internal FSharpEnvironment =
     let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
 
-#if FX_NO_WIN_REGISTRY
-#else
+#if !FX_NO_WIN_REGISTRY
     [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
     extern uint32 RegOpenKeyExW(UIntPtr _hKey, string _lpSubKey, uint32 _ulOptions, int _samDesired, UIntPtr & _phkResult);
 
@@ -60,8 +61,7 @@ module internal FSharpEnvironment =
     let maxPath = 260;
     let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
 
-#if FX_NO_WIN_REGISTRY
-#else
+#if !FX_NO_WIN_REGISTRY
     let KEY_WOW64_DEFAULT = 0x0000
     let KEY_WOW64_32KEY = 0x0200
     let HKEY_LOCAL_MACHINE = UIntPtr(0x80000002u)
@@ -342,3 +342,23 @@ module internal FSharpEnvironment =
 
     let getCompilerToolsDesignTimeAssemblyPaths compilerToolPaths = 
         searchToolPaths None compilerToolPaths
+
+    let getFSharpCoreLibraryName = "FSharp.Core"
+    let fsiLibraryName = "FSharp.Compiler.Interactive.Settings"
+
+    let getFSharpCompilerLocation() =
+        let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
+        match BinFolderOfDefaultFSharpCompiler (Some location) with
+        | Some path -> path
+        | None ->
+    #if DEBUG
+            Debug.Print(sprintf """FSharpEnvironment.BinFolderOfDefaultFSharpCompiler (Some '%s') returned None Location
+                customized incorrectly: algorithm here: https://github.com/dotnet/fsharp/blob/03f3f1c35f82af26593d025dabca57a6ef3ea9a1/src/utils/CompilerLocationUtils.fs#L171"""
+                location)
+    #endif
+            // Use the location of this dll
+            location
+
+    let getDefaultFSharpCoreLocation() = Path.Combine(getFSharpCompilerLocation(), getFSharpCoreLibraryName + ".dll")
+    let getDefaultFsiLibraryLocation() = Path.Combine(getFSharpCompilerLocation(), fsiLibraryName + ".dll")
+

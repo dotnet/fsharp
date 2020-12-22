@@ -7,6 +7,11 @@
         <target state="translated">Добавьте недостающий символ "=" к определению типа.</target>
         <note />
       </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="new">Add missing 'fun' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Добавить ключевое слово "new"</target>
@@ -62,7 +67,7 @@
         <target state="translated">Сделайте объявление "изменяемым"</target>
         <note />
       </trans-unit>
-      <trans-unit id="MakeFuncRecursive">
+      <trans-unit id="MakeOuterBindingRecursive">
         <source>Make '{0}' recursive</source>
         <target state="new">Make '{0}' recursive</target>
         <note />
@@ -88,8 +93,8 @@
         <note />
       </trans-unit>
       <trans-unit id="RemoveYieldBang">
-        <source>Remove yield!'</source>
-        <target state="new">Remove yield!'</target>
+        <source>Remove 'yield!'</source>
+        <target state="new">Remove 'yield!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">

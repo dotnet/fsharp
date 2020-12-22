@@ -68,7 +68,7 @@ type public AssemblySymbol =
       Kind: LookupType -> EntityKind
 
       /// Cache display name and namespace, used for completion.
-      UnresolvedSymbol: UnresolvedSymbol
+      FSharpUnresolvedSymbol: FSharpUnresolvedSymbol
     }
 
 /// `RawEntity` list retrieved from an assembly.
@@ -182,34 +182,3 @@ module public ParsedInput =
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos
 
-[<AutoOpen>]
-module public Extensions =
-    type FSharpEntity with
-        /// Safe version of `FullName`.
-        member TryGetFullName : unit -> string option
-
-        /// Safe version of `DisplayName`.
-        member TryGetFullDisplayName : unit -> string option
-
-        /// Safe version of `CompiledName`.
-        member TryGetFullCompiledName : unit -> string option
-
-        /// Public nested entities (methods, functions, values, nested modules).
-        member PublicNestedEntities : seq<FSharpEntity>
-
-        /// Safe version of `GetMembersFunctionsAndValues`.
-        member TryGetMembersFunctionsAndValues : IList<FSharpMemberOrFunctionOrValue>
-
-    type FSharpMemberOrFunctionOrValue with
-        /// Safe version of `FullType`.
-        member FullTypeSafe : FSharpType option
-
-        /// Full name with last part replaced with display name.
-        member TryGetFullDisplayName : unit -> string option
-
-        /// Full operator compiled name.
-        member TryGetFullCompiledOperatorNameIdents : unit -> Idents option 
-
-    type FSharpAssemblySignature with
-        /// Safe version of `Entities`.
-        member TryGetEntities : unit -> seq<FSharpEntity>

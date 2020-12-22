@@ -14,6 +14,7 @@ open System.Reflection.Emit
 open System.Runtime.InteropServices
 open System.Collections.Generic
 
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
@@ -22,6 +23,7 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Core.Printf
 
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
@@ -29,7 +31,6 @@ let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
 // Convert the output of convCustomAttr
 let wrapCustomAttr setCustomAttr (cinfo, bytes) =
     setCustomAttr(cinfo, bytes)
-
 
 //----------------------------------------------------------------------------
 // logging to enable debugging
@@ -317,6 +318,7 @@ let convAssemblyRef (aref: ILAssemblyRef) =
 /// The global environment.
 type cenv = 
     { ilg: ILGlobals
+      emitTailcalls: bool
       tryFindSysILTypeRef: string -> ILTypeRef option
       generatePdb: bool
       resolveAssemblyRef: (ILAssemblyRef -> Choice<string, System.Reflection.Assembly> option) }
@@ -621,27 +623,6 @@ let convReturnModifiers cenv emEnv (p: ILReturn) =
     splitModifiers mods
 
 //----------------------------------------------------------------------------
-// convFieldInit
-//----------------------------------------------------------------------------
-
-let convFieldInit x = 
-    match x with 
-    | ILFieldInit.String s -> box s
-    | ILFieldInit.Bool bool -> box bool   
-    | ILFieldInit.Char u16 -> box (char (int u16))  
-    | ILFieldInit.Int8 i8 -> box i8     
-    | ILFieldInit.Int16 i16 -> box i16    
-    | ILFieldInit.Int32 i32 -> box i32    
-    | ILFieldInit.Int64 i64 -> box i64    
-    | ILFieldInit.UInt8 u8 -> box u8     
-    | ILFieldInit.UInt16 u16 -> box u16    
-    | ILFieldInit.UInt32 u32 -> box u32    
-    | ILFieldInit.UInt64 u64 -> box u64    
-    | ILFieldInit.Single ieee32 -> box ieee32 
-    | ILFieldInit.Double ieee64 -> box ieee64 
-    | ILFieldInit.Null -> (null :> Object)
-
-//----------------------------------------------------------------------------
 // Some types require hard work...
 //----------------------------------------------------------------------------
 
@@ -913,10 +894,10 @@ let emitInstrAlign (ilG: ILGenerator) = function
     | Unaligned4 -> ilG.Emit(OpCodes.Unaligned, 3L)
 
 /// Emit the tail. prefix if necessary
-let emitInstrTail (ilG: ILGenerator) tail emitTheCall = 
+let emitInstrTail (cenv: cenv) (ilG: ILGenerator) tail emitTheCall = 
     match tail with
-    | Tailcall -> ilG.EmitAndLog OpCodes.Tailcall; emitTheCall(); ilG.EmitAndLog OpCodes.Ret
-    | Normalcall -> emitTheCall()
+    | Tailcall when cenv.emitTailcalls -> ilG.EmitAndLog OpCodes.Tailcall; emitTheCall(); ilG.EmitAndLog OpCodes.Ret
+    | _ -> emitTheCall()
 
 let emitInstrNewobj cenv emEnv (ilG: ILGenerator) mspec varargs =
     match varargs with
@@ -928,7 +909,7 @@ let emitSilverlightCheck (ilG: ILGenerator) =
     ()
 
 let emitInstrCall cenv emEnv (ilG: ILGenerator) opCall tail (mspec: ILMethodSpec) varargs =
-    emitInstrTail ilG tail (fun () ->
+    emitInstrTail cenv ilG tail (fun () ->
         if mspec.MethodRef.Name = ".ctor" || mspec.MethodRef.Name = ".cctor" then
             let cinfo = convConstructorSpec cenv emEnv mspec
             match varargs with
@@ -1117,7 +1098,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         emitInstrCall cenv emEnv ilG OpCodes.Callvirt tail mspec varargs                                                     
 
     | I_calli (tail, callsig, None) -> 
-        emitInstrTail ilG tail (fun () ->
+        emitInstrTail cenv ilG tail (fun () ->
         ilG.EmitCalli(OpCodes.Calli, 
                       convCallConv callsig.CallingConv, 
                       convType cenv emEnv callsig.ReturnType, 
@@ -1125,7 +1106,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                       Unchecked.defaultof<System.Type[]>))
 
     | I_calli (tail, callsig, Some varargTys) -> 
-        emitInstrTail ilG tail (fun () ->
+        emitInstrTail cenv ilG tail (fun () ->
         ilG.EmitCalli(OpCodes.Calli, 
                       convCallConv callsig.CallingConv, 
                       convType cenv emEnv callsig.ReturnType, 
@@ -1652,14 +1633,14 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
                 // it is ok to init fields with type = enum that are defined in other assemblies
                 || not fieldT.Assembly.IsDynamic  
             then 
-                fieldB.SetConstant(convFieldInit initial)
+                fieldB.SetConstant(initial.AsObject())
                 emEnv
             else
                 // if field type (enum) is defined in FSI dynamic assembly it is created as nested type 
                 // => its underlying type cannot be explicitly specified and will be inferred at the very moment of first field definition
                 // => here we cannot detect if underlying type is already set so as a conservative solution we delay initialization of fields
                 // to the end of pass2 (types and members are already created but method bodies are yet not emitted)
-                { emEnv with delayedFieldInits = (fun() -> fieldB.SetConstant(convFieldInit initial)) :: emEnv.delayedFieldInits }
+                { emEnv with delayedFieldInits = (fun() -> fieldB.SetConstant(initial.AsObject())) :: emEnv.delayedFieldInits }
     fdef.Offset |> Option.iter (fun offset -> fieldB.SetOffset offset)
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
@@ -1684,7 +1665,7 @@ let buildPropertyPass2 cenv tref (typB: TypeBuilder) emEnv (prop: ILPropertyDef)
     prop.SetMethod |> Option.iter (fun mref -> propB.SetSetMethod(envGetMethB emEnv mref))
     prop.GetMethod |> Option.iter (fun mref -> propB.SetGetMethod(envGetMethB emEnv mref))
     // set default value
-    prop.Init |> Option.iter (fun initial -> propB.SetConstant(convFieldInit initial))
+    prop.Init |> Option.iter (fun initial -> propB.SetConstant(initial.AsObject()))
     // custom attributes
     let pref = ILPropertyRef.Create (tref, prop.Name)    
     envBindPropRef emEnv pref propB
@@ -2101,7 +2082,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
         printfn "let assemblyBuilder%d = System.AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName(Name=\"%s\"), enum %d, %A)" (abs <| hash asmB) asmName.Name (LanguagePrimitives.EnumToValue flags) asmDir
     asmB
 
-let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
+let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collectible) =
     let filename = assemblyName + ".dll"
     let asmDir = "."
     let asmName = new AssemblyName()
@@ -2123,8 +2104,8 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) 
     let modB = asmB.DefineDynamicModuleAndLog (assemblyName, filename, debugInfo)
     asmB, modB
 
-let emitModuleFragment (ilg, emEnv, asmB: AssemblyBuilder, modB: ModuleBuilder, modul: IL.ILModuleDef, debugInfo: bool, resolveAssemblyRef, tryFindSysILTypeRef) =
-    let cenv = { ilg = ilg ; generatePdb = debugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tryFindSysILTypeRef }
+let emitModuleFragment (ilg, emitTailcalls, emEnv, asmB: AssemblyBuilder, modB: ModuleBuilder, modul: IL.ILModuleDef, debugInfo: bool, resolveAssemblyRef, tryFindSysILTypeRef) =
+    let cenv = { ilg = ilg ; emitTailcalls=emitTailcalls; generatePdb = debugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tryFindSysILTypeRef }
 
     let emEnv = buildModuleFragment cenv emEnv asmB modB modul
     match modul.Manifest with 

@@ -26,77 +26,6 @@ type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
 
 type IsAutoOpen = bool
 
-[<AutoOpen>]
-module Extensions =
-
-    type FSharpEntity with
-        member x.TryGetFullName() =
-            try x.TryFullName 
-            with _ -> 
-                try Some(String.Join(".", x.AccessPath, x.DisplayName))
-                with _ -> None
-
-        member x.TryGetFullDisplayName() =
-            let fullName = x.TryGetFullName() |> Option.map (fun fullName -> fullName.Split '.')
-            let res = 
-                match fullName with
-                | Some fullName ->
-                    match Option.attempt (fun _ -> x.DisplayName) with
-                    | Some shortDisplayName when not (shortDisplayName.Contains ".") ->
-                        Some (fullName |> Array.replace (fullName.Length - 1) shortDisplayName)
-                    | _ -> Some fullName
-                | None -> None 
-                |> Option.map (fun fullDisplayName -> String.Join (".", fullDisplayName))
-            //debug "GetFullDisplayName: FullName = %A, Result = %A" fullName res
-            res
-
-        member x.TryGetFullCompiledName() =
-            let fullName = x.TryGetFullName() |> Option.map (fun fullName -> fullName.Split '.')
-            let res = 
-                match fullName with
-                | Some fullName ->
-                    match Option.attempt (fun _ -> x.CompiledName) with
-                    | Some shortCompiledName when not (shortCompiledName.Contains ".") ->
-                        Some (fullName |> Array.replace (fullName.Length - 1) shortCompiledName)
-                    | _ -> Some fullName
-                | None -> None 
-                |> Option.map (fun fullDisplayName -> String.Join (".", fullDisplayName))
-            //debug "GetFullCompiledName: FullName = %A, Result = %A" fullName res
-            res
-
-        member x.PublicNestedEntities =
-            x.NestedEntities |> Seq.filter (fun entity -> entity.Accessibility.IsPublic)
-
-        member x.TryGetMembersFunctionsAndValues = 
-            try x.MembersFunctionsAndValues with _ -> [||] :> _
-
-    type FSharpMemberOrFunctionOrValue with
-        // FullType may raise exceptions (see https://github.com/fsharp/fsharp/issues/307). 
-        member x.FullTypeSafe = Option.attempt (fun _ -> x.FullType)
-
-        member x.TryGetFullDisplayName() =
-            let fullName = Option.attempt (fun _ -> x.FullName.Split '.')
-            match fullName with
-            | Some fullName ->
-                match Option.attempt (fun _ -> x.DisplayName) with
-                | Some shortDisplayName when not (shortDisplayName.Contains ".") ->
-                    Some (fullName |> Array.replace (fullName.Length - 1) shortDisplayName)
-                | _ -> Some fullName
-            | None -> None
-            |> Option.map (fun fullDisplayName -> String.Join (".", fullDisplayName))
-
-        member x.TryGetFullCompiledOperatorNameIdents() : Idents option =
-            // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
-            if PrettyNaming.IsOperatorName x.DisplayName && x.DisplayName <> x.CompiledName then
-                x.DeclaringEntity
-                |> Option.bind (fun e -> e.TryGetFullName())
-                |> Option.map (fun enclosingEntityFullName -> 
-                     Array.append (enclosingEntityFullName.Split '.') [| x.CompiledName |])
-            else None
-
-    type FSharpAssemblySignature with
-        member x.TryGetEntities() = try x.Entities :> _ seq with _ -> Seq.empty
-
 [<RequireQualifiedAccess>]
 type LookupType =
     | Fuzzy
@@ -112,7 +41,7 @@ type AssemblySymbol =
       AutoOpenParent: Idents option
       Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind
-      UnresolvedSymbol: UnresolvedSymbol }
+      FSharpUnresolvedSymbol: FSharpUnresolvedSymbol }
 
     override x.ToString() = sprintf "%A" x  
 
@@ -190,7 +119,7 @@ type IAssemblyContentCache =
 module AssemblyContentProvider =
     open System.IO
 
-    let unresolvedSymbol (topRequireQualifiedAccessParent: Idents option) (cleanedIdents: Idents) (fullName: string) =
+    let FSharpUnresolvedSymbol (topRequireQualifiedAccessParent: Idents option) (cleanedIdents: Idents) (fullName: string) =
         let getNamespace (idents: Idents) = 
             if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
 
@@ -231,7 +160,7 @@ module AssemblyContentProvider =
                     match entity with
                     | Symbol.Attribute -> EntityKind.Attribute 
                     | _ -> EntityKind.Type
-              UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
+              FSharpUnresolvedSymbol = FSharpUnresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
@@ -250,7 +179,7 @@ module AssemblyContentProvider =
                   AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
+                  FSharpUnresolvedSymbol = FSharpUnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))
@@ -310,7 +239,7 @@ module AssemblyContentProvider =
                           Namespace = ns
                           IsModule = entity.IsFSharpModule }
 
-                    match entity.TryGetMembersFunctionsAndValues with
+                    match entity.TryGetMembersFunctionsAndValues() with
                     | xs when xs.Count > 0 ->
                         yield! traverseMemberFunctionAndValues ns currentParent xs
                     | _ -> ()

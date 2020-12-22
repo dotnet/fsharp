@@ -464,7 +464,6 @@ type ILAssemblyRef(data) =
                 add ", Retargetable=Yes"
         b.ToString()
 
-
 [<StructuralEquality; StructuralComparison>]
 type ILModuleRef =
     { name: string
@@ -1300,6 +1299,23 @@ type ILFieldInit =
     | Single of single
     | Double of double
     | Null
+
+    member x.AsObject() =
+        match x with 
+        | ILFieldInit.String s -> box s
+        | ILFieldInit.Bool bool -> box bool   
+        | ILFieldInit.Char u16 -> box (char (int u16))  
+        | ILFieldInit.Int8 i8 -> box i8     
+        | ILFieldInit.Int16 i16 -> box i16    
+        | ILFieldInit.Int32 i32 -> box i32    
+        | ILFieldInit.Int64 i64 -> box i64    
+        | ILFieldInit.UInt8 u8 -> box u8     
+        | ILFieldInit.UInt16 u16 -> box u16    
+        | ILFieldInit.UInt32 u32 -> box u32    
+        | ILFieldInit.UInt64 u64 -> box u64    
+        | ILFieldInit.Single ieee32 -> box ieee32 
+        | ILFieldInit.Double ieee64 -> box ieee64 
+        | ILFieldInit.Null -> (null :> Object)
 
 // --------------------------------------------------------------------
 // Native Types, for marshalling to the native C interface.

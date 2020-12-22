@@ -12,6 +12,7 @@ open System.IO
 
 open Internal.Utilities
 open Internal.Utilities.Collections
+open Internal.Utilities.FSharpEnvironment
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
@@ -24,11 +25,11 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.DotNetFrameworkDependencies
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
 open FSharp.Compiler.ReferenceResolver
@@ -554,7 +555,8 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                     if found then yield asm
 
             if tcConfig.framework then
-                for s in defaultReferencesForScriptsAndOutOfProjectSources tcConfig.useFsiAuxLib assumeDotNetFramework tcConfig.useSdkRefs do
+                let references, _useDotNetFramework = tcConfig.FxResolver.GetDefaultReferences(tcConfig.useFsiAuxLib, assumeDotNetFramework)
+                for s in references do
                     yield AssemblyReference(rangeStartup, (if s.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then s else s+".dll"), None)
 
             yield! tcConfig.referencedDLLs
@@ -692,12 +694,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 //--------------------------------------------------------------------------
 
 [<Sealed>]
-type TcImportsSafeDisposal
-    (disposeActions: ResizeArray<unit -> unit>,
-#if !NO_EXTENSIONTYPING
-     disposeTypeProviderActions: ResizeArray<unit -> unit>
-#endif
-    ) =
+type TcImportsSafeDisposal(disposeActions: ResizeArray<unit -> unit>,disposeTypeProviderActions: ResizeArray<unit -> unit>) =
 
     let mutable isDisposed = false
 
@@ -706,9 +703,7 @@ type TcImportsSafeDisposal
         isDisposed <- true        
         if verbose then 
             dprintf "disposing of TcImports, %d binaries\n" disposeActions.Count
-#if !NO_EXTENSIONTYPING
         for action in disposeTypeProviderActions do action()
-#endif
         for action in disposeActions do action()
 
     override _.Finalize() =
@@ -758,7 +753,11 @@ and TcImportsWeakHack (tcImports: WeakReference<TcImports>) =
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
 and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, importsBase: TcImports option,
-                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option) as this = 
+                         ilGlobalsOpt, dependencyProviderOpt: DependencyProvider option) 
+#if !NO_EXTENSIONTYPING
+                         as this  
+#endif
+       =
 
     let mutable resolutions = initialResolutions
     let mutable importsBase: TcImports option = importsBase
@@ -777,8 +776,8 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
-#if !NO_EXTENSIONTYPING
     let disposeTypeProviderActions = ResizeArray()
+#if !NO_EXTENSIONTYPING
     let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
     let mutable tcImportsWeak = TcImportsWeakHack (WeakReference<_> this)
 #endif
@@ -1837,7 +1836,3 @@ let RequireDLL (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, referenceRa
         AddCcuToTcEnv(g, amap, referenceRange, tcEnv, thisAssemblyName, asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm.AssemblyInternalsVisibleToAttributes)
     let tcEnv = (tcEnv, asms) ||> List.fold buildTcEnv
     tcEnv, (dllinfos, asms)
-
-// Existing public APIs delegate to newer implementations
-let DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework =
-    defaultReferencesForScriptsAndOutOfProjectSources (*useFsiAuxLib*)false assumeDotNetFramework (*useSdkRefs*)false

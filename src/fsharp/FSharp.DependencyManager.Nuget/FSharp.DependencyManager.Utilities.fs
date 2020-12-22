@@ -5,6 +5,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Reflection
+open FSDependencyManager
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
@@ -153,20 +154,21 @@ module internal Utilities =
         else
             None
 
-    let drainStreamToMemory (stream: StreamReader) =
-        let mutable list = ResizeArray()
-        let rec copyLines () =
-            match stream.ReadLine() with
-            | null -> ()
-            | line ->
-                list.Add line
-                copyLines ()
-        copyLines ()
-        list.ToArray()
-
-    let executeBuild pathToExe arguments workingDir =
+    let executeBuild pathToExe arguments workingDir timeout =
         match pathToExe with
         | Some path ->
+            let errorsList = ResizeArray()
+            let outputList = ResizeArray()
+            let mutable errorslock = obj
+            let mutable outputlock = obj
+            let outputDataReceived (message: string) =
+                if not (isNull message) then
+                    lock outputlock (fun () -> outputList.Add(message))
+
+            let errorDataReceived (message: string) =
+                if not (isNull message) then
+                    lock errorslock (fun () -> errorsList.Add(message))
+
             let psi = ProcessStartInfo()
             psi.FileName <- path
             psi.WorkingDirectory <- workingDir
@@ -179,23 +181,28 @@ module internal Utilities =
 
             use p = new Process()
             p.StartInfo <- psi
-            p.Start() |> ignore
 
-            let stdOut = drainStreamToMemory p.StandardOutput
-            let stdErr = drainStreamToMemory p.StandardError
+            p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
+            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+
+            if p.Start() then
+                p.BeginOutputReadLine()
+                p.BeginErrorReadLine()
+                if not(p.WaitForExit(timeout)) then
+                    // Timed out resolving throw a diagnostic.
+                    raise (new TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
+                else
+                    ()
 
 #if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), stdOut)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), stdErr)
+            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
+            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
 #endif
-
-            p.WaitForExit()
-
-            p.ExitCode = 0, stdOut, stdErr
+            p.ExitCode = 0, outputList.ToArray(), errorsList.ToArray()
 
         | None -> false, Array.empty, Array.empty
 
-    let buildProject projectPath binLogPath =
+    let buildProject projectPath binLogPath timeout =
         let binLoggingArguments =
             match binLogPath with
             | Some(path) ->
@@ -205,6 +212,11 @@ module internal Utilities =
                 sprintf "/bl:\"%s\"" path
             | None -> ""
 
+        let timeout =
+            match timeout with
+            | Some(timeout) -> timeout
+            | None -> -1
+
         let arguments prefix =
             sprintf "%s -restore %s %c%s%c /nologo /t:InteractivePackageManagement" prefix binLoggingArguments '\"' projectPath '\"'
 
@@ -213,10 +225,10 @@ module internal Utilities =
         let success, stdOut, stdErr =
             if not (isRunningOnCoreClr) then
                 // The Desktop build uses "msbuild" to build
-                executeBuild msbuildExePath (arguments "-v:quiet") workingDir
+                executeBuild msbuildExePath (arguments "-v:quiet") workingDir timeout
             else
                 // The coreclr uses "dotnet msbuild" to build
-                executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir
+                executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir timeout
 
         let outputFile = projectPath + ".resolvedReferences.paths"
         let resolutionsFile = if success && File.Exists(outputFile) then Some outputFile else None

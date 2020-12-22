@@ -9,9 +9,11 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Lib
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

@@ -17,14 +17,16 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
@@ -2737,6 +2739,11 @@ module SimplifyTypes =
 // Print Signatures/Types
 //-------------------------------------------------------------------------- 
 
+type GenericParameterStyle =
+    | Implicit
+    | Prefix
+    | Suffix
+
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
     { includeStaticParametersInTypeNames: bool
@@ -2763,7 +2770,8 @@ type DisplayEnv =
       printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout : (Val -> layout option) }
+      generatedValueLayout : (Val -> Layout option)
+      genericParameterStyle: GenericParameterStyle }
 
     member x.SetOpenPaths paths = 
         { x with 
@@ -2796,7 +2804,8 @@ type DisplayEnv =
         printVerboseSignatures = false
         g = tcGlobals
         contextAccessibility = taccessPublic
-        generatedValueLayout = (fun _ -> None) }
+        generatedValueLayout = (fun _ -> None)
+        genericParameterStyle = GenericParameterStyle.Implicit }
 
 
     member denv.AddOpenPath path = 
@@ -2807,6 +2816,9 @@ type DisplayEnv =
 
     member denv.AddAccessibility access =
         { denv with contextAccessibility = combineAccess denv.contextAccessibility access }
+
+    member denv.UseGenericParameterStyle style =
+        { denv with genericParameterStyle = style }
 
 let (+.+) s1 s2 = if s1 = "" then s2 else s1+"."+s2
 
@@ -3072,7 +3084,7 @@ let TryFindILAttributeOpt attr attrs =
 /// provided attributes.
 //
 // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
-let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 f3 = 
+let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: (obj option list * (string * obj option) list -> 'a option)) : 'a option = 
     ignore m; ignore f3
     match metadataOfTycon tcref.Deref with 
 #if !NO_EXTENSIONTYPING
@@ -3414,11 +3426,11 @@ module DebugPrint =
 
     let squareAngleL x = LeftL.leftBracketAngle ^^ x ^^ RightL.rightBracketAngle
 
-    let angleL x = sepL Literals.leftAngle ^^ x ^^ rightL Literals.rightAngle
+    let angleL x = sepL TaggedText.leftAngle ^^ x ^^ rightL TaggedText.rightAngle
 
-    let braceL x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
+    let braceL x = leftL TaggedText.leftBrace ^^ x ^^ rightL TaggedText.rightBrace
 
-    let braceBarL x = leftL Literals.leftBraceBar ^^ x ^^ rightL Literals.rightBraceBar
+    let braceBarL x = leftL TaggedText.leftBraceBar ^^ x ^^ rightL TaggedText.rightBraceBar
 
     let boolL = function true -> WordL.keywordTrue | false -> WordL.keywordFalse
 
@@ -4083,9 +4095,9 @@ module DebugPrint =
 
     and iimplL g (ty, tmeths) = wordL(tagText "impl") ^^ aboveListL (typeL ty :: List.map (tmethodL g) tmeths) 
 
-    let showType x = Layout.showL (typeL x)
+    let showType x = LayoutRender.showL (typeL x)
 
-    let showExpr g x = Layout.showL (exprL g x)
+    let showExpr g x = LayoutRender.showL (exprL g x)
 
     let traitL x = auxTraitL SimplifyTypes.typeSimplificationInfo0 x
 

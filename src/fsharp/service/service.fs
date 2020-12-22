@@ -33,8 +33,6 @@ open Microsoft.DotNet.DependencyManager
 open Internal.Utilities
 open Internal.Utilities.Collections
 
-type internal Layout = StructuredFormat.Layout
-
 [<AutoOpen>]
 module EnvMisc =
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5
@@ -46,7 +44,7 @@ module EnvMisc =
     let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
     //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
-type UnresolvedReferencesSet = UnresolvedReferencesSet of UnresolvedAssemblyReference list
+type FSharpUnresolvedReferencesSet = FSharpUnresolvedReferencesSet of UnresolvedAssemblyReference list
 
 // NOTE: may be better just to move to optional arguments here
 type FSharpProjectOptions =
@@ -59,7 +57,7 @@ type FSharpProjectOptions =
       IsIncompleteTypeCheckEnvironment : bool
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
-      UnresolvedReferences : UnresolvedReferencesSet option
+      UnresolvedReferences : FSharpUnresolvedReferencesSet option
       OriginalLoadReferences: (range * string * string) list
       ExtraProjectInfo : obj option
       Stamp : int64 option
@@ -141,14 +139,14 @@ module CompileHelpers =
 
         let errorSink isError exn = 
             let mainError, relatedErrors = SplitRelatedDiagnostics exn
-            let oneError e = errors.Add(FSharpErrorInfo.CreateFromException (e, isError, Range.range0, true)) // Suggest names for errors
+            let oneError e = errors.Add(FSharpDiagnostic.CreateFromException (e, isError, Range.range0, true)) // Suggest names for errors
             oneError mainError
             List.iter oneError relatedErrors
 
         let errorLogger = 
             { new ErrorLogger("CompileAPI") with 
                 member x.DiagnosticSink(exn, isError) = errorSink isError exn
-                member x.ErrorCount = errors |> Seq.filter (fun e -> e.Severity = FSharpErrorSeverity.Error) |> Seq.length }
+                member x.ErrorCount = errors |> Seq.filter (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> Seq.length }
 
         let loggerProvider = 
             { new ErrorLoggerProvider() with 
@@ -189,7 +187,7 @@ module CompileHelpers =
 
         errors.ToArray(), result
 
-    let createDynamicAssembly (ctok, debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcGlobals:TcGlobals, outfile, ilxMainModule) =
+    let createDynamicAssembly (ctok, debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcConfig: TcConfig, tcGlobals:TcGlobals, outfile, ilxMainModule) =
 
         // Create an assembly builder
         let assemblyName = System.Reflection.AssemblyName(System.IO.Path.GetFileNameWithoutExtension outfile)
@@ -217,7 +215,7 @@ module CompileHelpers =
             | None -> None
 
         // Emit the code
-        let _emEnv,execs = ILRuntimeWriter.emitModuleFragment(tcGlobals.ilg, ILRuntimeWriter.emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
+        let _emEnv,execs = ILRuntimeWriter.emitModuleFragment(tcGlobals.ilg, tcConfig.emitTailcalls, ILRuntimeWriter.emEnv0, assemblyBuilder, moduleBuilder, ilxMainModule, debugInfo, assemblyResolver, tcGlobals.TryFindSysILTypeRef)
 
         // Execute the top-level initialization, if requested
         if execute then 
@@ -354,7 +352,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     // 
     /// Cache of builds keyed by options.        
     let incrementalBuildersCache = 
-        MruCache<AnyCallerThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[])>
+        MruCache<AnyCallerThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpDiagnostic[])>
                 (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
                  areSimilar =  FSharpProjectOptions.UseSameProject)
@@ -523,7 +521,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
          prevTcState,
          prevModuleNamesDict,
          prevTcErrors,
-         creationErrors: FSharpErrorInfo[],
+         creationErrors: FSharpDiagnostic[],
          userOpName: string) = 
     
         async {
@@ -856,7 +854,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.ParseAndCheckProject(options, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckProject", options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok, userOpName))
 
-    member __.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, assumeDotNetFramework: bool option, extraProjectInfo: obj option, optionsStamp: int64 option, userOpName) = 
+    member __.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, extraProjectInfo: obj option, optionsStamp: int64 option, userOpName) = 
+
         reactor.EnqueueAndAwaitOpAsync (userOpName, "GetProjectOptionsFromScript", filename, fun ctok -> 
           cancellable {
             use errors = new ErrorScope()
@@ -889,12 +888,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let loadClosure = 
                 LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
-                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, new Lexhelp.LexResourceManager(), 
+                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
                     applyCompilerOptions, assumeDotNetFramework, 
                     tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
 
             let otherFlags = 
-                [| yield "--noframework"; yield "--warn:3"; 
+                [| yield "--noframework"; yield "--warn:3";
                    yield! otherFlags 
                    for r in loadClosure.References do yield "-r:" + fst r
                    for (code,_) in loadClosure.NoWarns do yield "--nowarn:" + code
@@ -910,13 +909,14 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     IsIncompleteTypeCheckEnvironment = false
                     UseScriptResolutionRules = true 
                     LoadTime = loadedTimeStamp
-                    UnresolvedReferences = Some (UnresolvedReferencesSet(loadClosure.UnresolvedReferences))
+                    UnresolvedReferences = Some (FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
                     OriginalLoadReferences = loadClosure.OriginalLoadReferences
                     ExtraProjectInfo=extraProjectInfo
                     Stamp = optionsStamp
                 }
             scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
-            return options, errors.Diagnostics
+            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
+            return options, (diags @ errors.Diagnostics)
           })
             
     member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompileIfAlreadySeen, userOpName) =
@@ -1236,6 +1236,7 @@ type FSharpChecker(legacyReferenceResolver,
         System.GC.Collect()
         System.GC.WaitForPendingFinalizers() 
         backgroundCompiler.CompleteAllQueuedOps() // flush AsyncOp
+        FxResolver.ClearStaticCaches()
             
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
@@ -1290,9 +1291,9 @@ type FSharpChecker(legacyReferenceResolver,
         backgroundCompiler.GetSemanticClassificationForFile(filename, options, userOpName)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
-    member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
+    member __.GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?extraProjectInfo: obj, ?optionsStamp: int64, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, assumeDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
+        backgroundCompiler.GetProjectOptionsFromScript(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, extraProjectInfo, optionsStamp, userOpName)
 
     member __.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
@@ -1396,9 +1397,13 @@ type CompilerEnvironment =
 /// Information about the compilation environment
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CompilerEnvironment =
-    /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
-    /// are not associated with a project
-    let DefaultReferencesForOrphanSources assumeDotNetFramework = DefaultReferencesForScriptsAndOutOfProjectSources assumeDotNetFramework
+
+    // Legacy entry point, no longer used by FSharp.Editor
+    let DefaultReferencesForOrphanSources assumeDotNetFramework =
+        let currentDirectory = Directory.GetCurrentDirectory()
+        let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+        let references, _ = fxResolver.GetDefaultReferences (useFsiAuxLib=false, assumeDotNetFramework=assumeDotNetFramework)
+        references
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
     let GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =
