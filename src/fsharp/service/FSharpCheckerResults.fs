@@ -22,7 +22,6 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
@@ -31,19 +30,19 @@ open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 open Internal.Utilities
@@ -1720,7 +1719,7 @@ module internal ParseAndCheckFile =
                     return result
                 with e ->
                     errorR e
-                    let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
+                    let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
                     return Some((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
             }
                 

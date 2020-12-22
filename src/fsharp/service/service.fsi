@@ -10,8 +10,7 @@ open System.IO
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.SourceCodeServices.Range
-open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet

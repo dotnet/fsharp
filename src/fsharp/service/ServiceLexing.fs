@@ -20,10 +20,9 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Pos
 open FSharp.Compiler.SourceCodeServices.Range
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
 
 open Internal.Utilities
 

@@ -21,11 +21,11 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.Text
 
 open Microsoft.DotNet.DependencyManager
 

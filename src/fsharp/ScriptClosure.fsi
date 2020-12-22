@@ -11,7 +11,6 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Text
 open Microsoft.DotNet.DependencyManager
 
 [<RequireQualifiedAccess>]

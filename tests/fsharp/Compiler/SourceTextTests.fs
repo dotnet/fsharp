@@ -5,7 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open NUnit.Framework
 
-open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>]
 module SourceTextTests =

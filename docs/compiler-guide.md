@@ -563,9 +563,10 @@ The second can be interrupted via having `isResultObsolete` to the F# Compiler S
 
 The "intended" FCS API is the parts under the namespaces
 
-* FSharp.Compiler.SourceCodeServices.*
-* FSharp.Compiler.Text.*
-* FSharp.Compiler.TextLayout.*
+* FSharp.Compiler.SourceCodeServices.* (analysis, compilation, tooling, lexing)
+* FSharp.Compiler.Interactive.Shell.*  (scripting support)
+* FSharp.Compiler.AbstractIL.*  (for ILAssemblyReader hook for Rider)
+* FSharp.Compiler.SyntaxTree.*  (direct access to full untyped tree)
 
 These sections are generally designed with F#/.NET design conventions (e.g. types in namespaces, not modules, no nesting of modules etc.)
 and we will continue to iterate to make this so.

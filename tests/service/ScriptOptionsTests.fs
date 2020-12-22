@@ -10,7 +10,7 @@ module Tests.Service.ScriptOptions
 open NUnit.Framework
 open System.IO
 open FSharp.Compiler.Service.Tests.Common
-open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Range
 
 // Add additional imports/constructs into this script text to verify that common scenarios

@@ -68,45 +68,47 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 ### FSharp Compiler Service 39.0.0
 
 * Renamings
-*     FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
+*     type FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
 * 
-*     FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
+*     module FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
 * 
-*     FSharp.Compiler.AbstractIL.Internal.Layout  -> FSharp.Compiler.TextLayout.Layout
+*     type FSharp.Compiler.AbstractIL.Internal.Layout  -> FSharp.Compiler.TextLayout.Layout
 * 
-*     FSharp.Compiler.AbstractIL.Internal.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+*     type FSharp.Compiler.AbstractIL.Internal.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
 * 
-*     FSharp.Compiler.Layout.layout -> FSharp.Compiler.TextLayout.Layout
+*     type FSharp.Compiler.Layout.layout -> FSharp.Compiler.TextLayout.Layout
 * 
-*     FSharp.Compiler.Layout.Layout -> FSharp.Compiler.TextLayout.Layout
+*     type FSharp.Compiler.Layout.Layout -> FSharp.Compiler.TextLayout.Layout
 * 
-*     FSharp.Compiler.Layout -> FSharp.Compiler.TextLayout.LayoutRender
+*     module FSharp.Compiler.Layout -> FSharp.Compiler.TextLayout.LayoutRender
 * 
-*     FSharp.Compiler.LayoutOps -> FSharp.Compiler.TextLayout.Layout
+*     module FSharp.Compiler.LayoutOps -> FSharp.Compiler.TextLayout.Layout
 * 
-*     FSharp.Compiler.Layout.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+*     module FSharp.Compiler.Layout.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
 * 
-*     FSharp.Compiler.Layout.TaggedTextOps  -> FSharp.Compiler.TextLayout.TaggedText
+*     module FSharp.Compiler.Layout.TaggedTextOps  -> FSharp.Compiler.TextLayout.TaggedText
 * 
-*     FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
+*     module FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
 * 
-*     FSharp.Compiler.Range.range --> FSharp.Compiler.SourceCodeServices.Range (with 'range' abbreviation)
+*     type FSharp.Compiler.Range.range --> FSharp.Compiler.SourceCodeServices.Range (with 'range' abbreviation)
 * 
-*     FSharp.Compiler.Range.pos --> FSharp.Compiler.SourceCodeServices.Pos (with 'pos' abbreviation)
+*     type FSharp.Compiler.Range.pos --> FSharp.Compiler.SourceCodeServices.Pos (with 'pos' abbreviation)
 * 
-*     FSharp.Compiler.Range.Range --> (split)
-*          module FSharp.Compiler.Pos
-*          module FSharp.Compiler.Range
+*     module FSharp.Compiler.Range.Range --> (split)
+*          module FSharp.Compiler.SourceCodeServices.Pos
+*          module FSharp.Compiler.SourceCodeServices.Range
 *
-*     FSharp.Compiler.QuickParse --> FSharp.Compiler.SourceCodeServices.QuickParse
+*     module FSharp.Compiler.QuickParse --> FSharp.Compiler.SourceCodeServices.QuickParse
 *
-*     FSharp.Compiler.PrettyNaming --> FSharp.Compiler.SourceCodeServices.PrettyNaming
+*     module FSharp.Compiler.PrettyNaming --> FSharp.Compiler.SourceCodeServices.PrettyNaming
 * 
-*     FSharpKeywords.PrettyNaming.KeywordNames  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.KeywordNames
+*     val FSharpKeywords.PrettyNaming.KeywordNames  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.KeywordNames
 *
-*     FSharpKeywords.PrettyNaming.QuoteIdentifierIfNeeded  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.QuoteIdentifierIfNeeded
+*     val FSharpKeywords.PrettyNaming.QuoteIdentifierIfNeeded  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.QuoteIdentifierIfNeeded
 *
-*     FSharpKeywords.PrettyNaming.FormatAndOtherOverloadsString  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.FormatAndOtherOverloadsString
+*     val FSharpKeywords.PrettyNaming.FormatAndOtherOverloadsString  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.FormatAndOtherOverloadsString
+*
+*     type FSharp.Compiler.Text.ISourceText --> FSharp.Compiler.SourceCodeServices.ISourceText
 *
 * Renamings in FSharp.Compiler.SourceCodeServices
 *   Lexer.* --> FSharp.Compiler.SourceCodeServices.*
@@ -118,17 +120,6 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 *   CompletionKind      --> FSharpCompletionKind
 *   module Keywords     --> FSharpKeywords
 *   module Tooltips     --> FSharpTooltip
-*
-* Changes related to Range and Pos
-*   As background, the "intended" FCS API is currently the parts under the namespaces
-*      FSharp.Compiler.SourceCodeServices.*
-*      FSharp.Compiler.Text.*
-*      FSharp.Compiler.TextLayout.*
-* 
-* Because of this, some types moved from `FSharp.Compiler.XYZ` to `FSharp.Compiler.SourceCodeServices.XYZ`.
-* 
-* The `Range` and `Pos` modules stay in FSharp.Compiler since they aren't really intended 
-* for use externally though they currently remain public.
 *
 * Extension methods in `ServiceAssemblyContent.fsi` now intrinsic methods on symbol types
 * 
@@ -176,7 +167,7 @@ The most notable change for FSharp.Compiler.Service is that it is now built and 
 * Improvements to the F# syntax tree represtation by [Eugene Auduchinok](https://github.com/auduchinok)
 * Support for `const` in keyword completion info by [Alex Berezhnykh](https://github.com/DedSec256)
 * Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
-* Support for `ToString` in `FSharp.Compiler.Text.StringText` by [Asti](https://github.com/deviousasti)
+* Support for `ToString` in `FSharp.Compiler.SourceCodeServices.StringText` by [Asti](https://github.com/deviousasti)
 * Fix an issue with equality comparisons for `StringText` by [Asti](https://github.com/deviousasti)
 
 Significant changes for consumers:

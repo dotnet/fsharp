@@ -19,9 +19,8 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SourceCodeServices.Range
-open FSharp.Compiler.Text
+open FSharp.Compiler.SyntaxTree
 
 open Microsoft.DotNet.DependencyManager
 

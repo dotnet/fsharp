@@ -4,7 +4,7 @@ module internal FSharp.Compiler.UnicodeLexing
 
 open System.IO
 open FSharp.Compiler.Features
-open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
 open Internal.Utilities.Text.Lexing
 
 type Lexbuf =  LexBuffer<char>
