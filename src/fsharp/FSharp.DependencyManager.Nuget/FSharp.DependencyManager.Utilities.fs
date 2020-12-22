@@ -192,7 +192,7 @@ module internal Utilities =
                     // Timed out resolving throw a diagnostic.
                     raise (new TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
                 else
-                    ()
+                    p.WaitForExit()
 
 #if DEBUG
             File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
