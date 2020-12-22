@@ -66,7 +66,7 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider
                 |> Seq.filter (fun x -> fixableDiagnosticIds |> Set.contains x.Id)
                 |> Seq.toImmutableArray
 
-            createCodeFix(context, funcName, SR.MakeFuncRecursive(), TextChange(TextSpan(context.Span.End, 0), " rec"), diagnostics)
+            createCodeFix(context, funcName, SR.MakeOuterBindingRecursive(), TextChange(TextSpan(context.Span.End, 0), " rec"), diagnostics)
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken) 
