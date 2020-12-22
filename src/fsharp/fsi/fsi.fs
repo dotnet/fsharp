@@ -1503,6 +1503,8 @@ type internal FsiDynamicCompiler
                             tcConfigB.packageManagerLines <- PackageManagerLine.SetLinesAsProcessed packageManagerKey tcConfigB.packageManagerLines
                             for folder in result.Roots do
                                 tcConfigB.AddIncludePath(m, folder, "")
+                            for resolution in result.Resolutions do
+                                tcConfigB.AddReferencedAssemblyByPath(m, resolution)
                             let scripts = result.SourceFiles |> Seq.toList
                             if not (isNil scripts) then
                                 fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, scripts, lexResourceManager, errorLogger)
