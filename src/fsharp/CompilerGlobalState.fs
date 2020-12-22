@@ -20,7 +20,7 @@ type NiceNameGenerator() =
     let lockObj = obj()
     let basicNameCounts = new Dictionary<string, int>(100)
 
-    member x.FreshCompilerGeneratedName (name, m: Range) =
+    member x.FreshCompilerGeneratedName (name, m: range) =
       lock lockObj (fun () ->
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let n =
@@ -49,7 +49,7 @@ type StableNiceNameGenerator() =
     let names = new Dictionary<(string * int64), string>(100)
     let basicNameCounts = new Dictionary<string, int>(100)
 
-    member x.GetUniqueCompilerGeneratedName (name, m: Range, uniq) =
+    member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
         lock lockObj (fun () ->
             let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
             let key = basicName, uniq

@@ -44,7 +44,7 @@ type public FSharpFindDeclResult =
     | DeclNotFound of FSharpFindDeclFailureReason
 
     /// Indicates a declaration location was found
-    | DeclFound    of Range
+    | DeclFound    of range
 
     /// Indicates an external declaration was found
     | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
@@ -199,14 +199,14 @@ type public FSharpCheckFileResults =
     member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> FSharpSymbolUse option
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
-    member GetSemanticClassification : Range option -> struct (Range * SemanticClassificationType)[]
+    member GetSemanticClassification : range option -> struct (range * SemanticClassificationType)[]
 
     /// <summary>Get the locations of format specifiers</summary>
     [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
-    member GetFormatSpecifierLocations : unit -> Range[]
+    member GetFormatSpecifierLocations : unit -> range[]
 
     /// <summary>Get the locations of and number of arguments associated with format specifiers</summary>
-    member GetFormatSpecifierLocationsAndArity : unit -> (Range*int)[]
+    member GetFormatSpecifierLocationsAndArity : unit -> (range*int)[]
 
     /// Get all textual usages of all symbols throughout the file
     member GetAllUsesOfAllSymbolsInFile : ?cancellationToken: CancellationToken -> seq<FSharpSymbolUse>
@@ -214,16 +214,16 @@ type public FSharpCheckFileResults =
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
-    member internal GetVisibleNamespacesAndModulesAtPoint : Pos -> ModuleOrNamespaceRef[]
+    member internal GetVisibleNamespacesAndModulesAtPoint : pos -> ModuleOrNamespaceRef[]
 
     /// Find the most precise display environment for the given line and column.
-    member GetDisplayContextForPos : cursorPos : Pos -> FSharpDisplayContext option
+    member GetDisplayContextForPos : cursorPos : pos -> FSharpDisplayContext option
 
     /// Determines if a long ident is resolvable at a specific point.
-    member internal IsRelativeNameResolvable: cursorPos : Pos * plid : string list * item: Item -> bool
+    member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> bool
 
     /// Determines if a long ident is resolvable at a specific point.
-    member IsRelativeNameResolvableFromSymbol: cursorPos : Pos * plid : string list * symbol: FSharpSymbol -> bool
+    member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol -> bool
 
     /// Represents complete typechecked implementation file, including its typechecked signatures if any.
     member ImplementationFile: FSharpImplementationFileContents option
@@ -355,7 +355,7 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions *
         userOpName: string *
         suggestNamesForErrors: bool
-          -> (Range * Range)[]
+          -> (range * range)[]
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.

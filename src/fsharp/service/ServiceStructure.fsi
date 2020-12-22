@@ -73,9 +73,9 @@ module public Structure =
         Scope: Scope
         Collapse: Collapse
         /// HintSpan in BlockSpan
-        Range: Range
+        Range: range
         /// TextSpan in BlockSpan
-        CollapseRange: Range
+        CollapseRange: range
     }
 
     /// Returns outlining ranges for given parsed input.

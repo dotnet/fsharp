@@ -54,13 +54,13 @@ val outputQualifiedValSpec: denv:DisplayEnv -> os:StringBuilder -> v:Val -> unit
 
 val stringOfQualifiedValOrMember: denv:DisplayEnv -> v:Val -> string
 
-val formatMethInfoToBufferFreeStyle: amap:ImportMap -> m:Range -> denv:DisplayEnv -> buf:StringBuilder -> d:MethInfo -> unit
+val formatMethInfoToBufferFreeStyle: amap:ImportMap -> m:range -> denv:DisplayEnv -> buf:StringBuilder -> d:MethInfo -> unit
 
-val prettyLayoutOfMethInfoFreeStyle: amap:ImportMap -> m:Range -> denv:DisplayEnv -> typarInst:TyparInst -> minfo:MethInfo -> TyparInst * Layout
+val prettyLayoutOfMethInfoFreeStyle: amap:ImportMap -> m:range -> denv:DisplayEnv -> typarInst:TyparInst -> minfo:MethInfo -> TyparInst * Layout
 
-val prettyLayoutOfPropInfoFreeStyle: g:TcGlobals -> amap:ImportMap -> m:Range -> denv:DisplayEnv -> d:PropInfo -> Layout
+val prettyLayoutOfPropInfoFreeStyle: g:TcGlobals -> amap:ImportMap -> m:range -> denv:DisplayEnv -> d:PropInfo -> Layout
 
-val stringOfMethInfo: amap:ImportMap -> m:Range -> denv:DisplayEnv -> d:MethInfo -> string
+val stringOfMethInfo: amap:ImportMap -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
 
 val stringOfParamData: denv:DisplayEnv -> paramData:ParamData -> string
 
@@ -70,7 +70,7 @@ val layoutExnDef: denv:DisplayEnv -> x:Entity -> Layout
 
 val stringOfTyparConstraints: denv:DisplayEnv -> x:(Typar * TyparConstraint) list -> string
 
-val layoutTycon: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:Range -> x:Tycon -> Layout
+val layoutTycon: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Tycon -> Layout
 
 val layoutUnionCases: denv:DisplayEnv -> x:RecdField list -> Layout
 
@@ -100,7 +100,7 @@ val stringOfFSAttrib: denv:DisplayEnv -> x:Attrib -> string
 
 val stringOfILAttrib: denv:DisplayEnv -> ILType * ILAttribElem list -> string
 
-val layoutInferredSigOfModuleExpr: showHeader:bool -> denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:Range -> expr:ModuleOrNamespaceExprWithSig -> Layout
+val layoutInferredSigOfModuleExpr: showHeader:bool -> denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> expr:ModuleOrNamespaceExprWithSig -> Layout
 
 val prettyLayoutOfValOrMember: denv:DisplayEnv -> typarInst:TyparInst -> v:Val -> TyparInst * Layout
 

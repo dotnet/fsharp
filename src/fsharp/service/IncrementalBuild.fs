@@ -95,7 +95,7 @@ module IncrementalBuildSyntaxTree =
 
     /// Information needed to lazily parse a file to get a ParsedInput. Internally uses a weak cache.
     [<Sealed>]
-    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: Range, filename: string, isLastCompiland) =
+    type SyntaxTree (tcConfig: TcConfig, fileParsed: Event<string>, lexResourceManager, sourceRange: range, filename: string, isLastCompiland) =
 
         let mutable weakCache: WeakReference<_> option = None
 
@@ -195,7 +195,7 @@ type TcInfoOptional =
       itemKeyStore: ItemKeyStore option
       
       /// If enabled, holds semantic classification information for Item(symbol)s in a file.
-      semanticClassification: struct (Range * SemanticClassificationType) []
+      semanticClassification: struct (range * SemanticClassificationType) []
     }
 
     member x.TcSymbolUses = 
@@ -455,8 +455,8 @@ type SemanticModel private (tcConfig: TcConfig,
                                             Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                             let sResolutions = sink.GetResolutions()
                                             let builder = ItemKeyStoreBuilder()
-                                            let preventDuplicates = HashSet({ new IEqualityComparer<struct(Pos * Pos)> with 
-                                                                                member _.Equals((s1, e1): struct(Pos * Pos), (s2, e2): struct(Pos * Pos)) = Pos.posEq s1 s2 && Pos.posEq e1 e2
+                                            let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
+                                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Pos.posEq s1 s2 && Pos.posEq e1 e2
                                                                                 member _.GetHashCode o = o.GetHashCode() })
                                             sResolutions.CapturedNameResolutions
                                             |> Seq.iter (fun cnr ->
@@ -704,11 +704,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     // START OF BUILD TASK FUNCTIONS 
                 
     /// Get the timestamp of the given file name.
-    let StampFileNameTask (cache: TimeStampCache) _ctok (_m: Range, filename: string, _isLastCompiland) =
+    let StampFileNameTask (cache: TimeStampCache) _ctok (_m: range, filename: string, _isLastCompiland) =
         cache.GetFileTimeStamp filename
 
     /// Parse the given file and return the given input.
-    let ParseTask ctok (sourceRange: Range, filename: string, isLastCompiland) =
+    let ParseTask ctok (sourceRange: range, filename: string, isLastCompiland) =
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
         SyntaxTree(tcConfig, fileParsed, lexResourceManager, sourceRange, filename, isLastCompiland)
         
@@ -1427,7 +1427,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 errorLogger.GetErrors() |> Array.map (fun (d, severity) -> d, severity = FSharpDiagnosticSeverity.Error)
             | _ ->
                 Array.ofList delayedLogger.Diagnostics
-            |> Array.map (fun (d, isError) -> FSharpDiagnostic.CreateFromException(d, isError, Range.Zero, suggestNamesForErrors))
+            |> Array.map (fun (d, isError) -> FSharpDiagnostic.CreateFromException(d, isError, range.Zero, suggestNamesForErrors))
 
         return builderOpt, diagnostics
       }

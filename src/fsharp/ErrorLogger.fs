@@ -21,7 +21,7 @@ type ErrorStyle =
     | GccErrors
 
 /// Thrown when we want to add some range information to a .NET exception
-exception WrappedError of exn * Range with
+exception WrappedError of exn * range with
     override this.Message =
         match this :> exn with
         | WrappedError (exn, _) -> "WrappedError(" + exn.Message + ")"
@@ -64,44 +64,44 @@ exception StopProcessingExn of exn option with
 let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _ -> None
 let StopProcessing<'T> = StopProcessingExn None
 
-exception NumberedError of (int * string) * Range with   // int is e.g. 191 in FS0191
+exception NumberedError of (int * string) * range with   // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
         | NumberedError((_, msg), _) -> msg
         | _ -> "impossible"
 
-exception Error of (int * string) * Range with   // int is e.g. 191 in FS0191  // eventually remove this type, it is a transitional artifact of the old unnumbered error style
+exception Error of (int * string) * range with   // int is e.g. 191 in FS0191  // eventually remove this type, it is a transitional artifact of the old unnumbered error style
     override this.Message =
         match this :> exn with
         | Error((_, msg), _) -> msg
         | _ -> "impossible"
 
 
-exception InternalError of msg: string * Range with 
+exception InternalError of msg: string * range with 
     override this.Message = 
         match this :> exn with 
         | InternalError(msg, m) -> msg + m.ToString()
         | _ -> "impossible"
 
-exception UserCompilerMessage of string * int * Range
-exception LibraryUseOnly of Range
-exception Deprecated of string * Range
-exception Experimental of string * Range
-exception PossibleUnverifiableCode of Range
+exception UserCompilerMessage of string * int * range
+exception LibraryUseOnly of range
+exception Deprecated of string * range
+exception Experimental of string * range
+exception PossibleUnverifiableCode of range
 
 exception UnresolvedReferenceNoRange of (*assemblyName*) string 
-exception UnresolvedReferenceError of (*assemblyName*) string * Range
+exception UnresolvedReferenceError of (*assemblyName*) string * range
 exception UnresolvedPathReferenceNoRange of (*assemblyName*) string * (*path*) string with
     override this.Message =
         match this :> exn with
         | UnresolvedPathReferenceNoRange(assemblyName, path) -> sprintf "Assembly: %s, full path: %s" assemblyName path
         | _ -> "impossible"
 
-exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * Range
+exception UnresolvedPathReference of (*assemblyName*) string * (*path*) string * range
 
 
 
-exception ErrorWithSuggestions of (int * string) * Range * string * Suggestions with   // int is e.g. 191 in FS0191 
+exception ErrorWithSuggestions of (int * string) * range * string * Suggestions with   // int is e.g. 191 in FS0191 
     override this.Message =
         match this :> exn with
         | ErrorWithSuggestions((_, msg), _, _, _) -> msg
@@ -400,7 +400,7 @@ module ErrorLoggerExtensions =
             x.DiagnosticSink (ph, true)
             raise (ReportedError (Some ph.Exception))
 
-        member x.ErrorRecovery (exn: exn) (m: Range) =
+        member x.ErrorRecovery (exn: exn) (m: range) =
             // Never throws ReportedError.
             // Throws StopProcessing and exceptions raised by the DiagnosticSink(exn) handler.
             match exn with
@@ -417,7 +417,7 @@ module ErrorLoggerExtensions =
                 with
                 | ReportedError _ | WrappedError(ReportedError _, _)  -> ()
 
-        member x.StopProcessingRecovery (exn:exn) (m:Range) =
+        member x.StopProcessingRecovery (exn:exn) (m:range) =
             // Do standard error recovery.
             // Additionally ignore/catch StopProcessing. [This is the only catch handler for StopProcessing].
             // Additionally ignore/catch ReportedError.
@@ -658,7 +658,7 @@ let NormalizeErrorString (text : string) =
         i <- i + delta
     buf.ToString()
 
-let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: Range) =
+let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
         let featureStr = langVersion.GetFeatureString langFeature
         let currentVersionStr = langVersion.SpecifiedVersionString
@@ -680,7 +680,7 @@ let internal checkLanguageFeatureErrorRecover langVersion langFeature m =
 let internal tryLanguageFeatureErrorOption langVersion langFeature m =
     tryLanguageFeatureErrorAux langVersion langFeature m
 
-let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: Range) =
+let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     let featureStr = langVersion.GetFeatureString langFeature
     let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary(featureStr, suggestedVersionStr), m))

@@ -16,7 +16,7 @@ type ErrorStyle =
     | GccErrors
 
 /// Thrown when we want to add some range information to a .NET exception
-exception WrappedError of exn * Range
+exception WrappedError of exn * range
 
 /// Thrown when immediate, local error recovery is not possible. This indicates
 /// we've reported an error but need to make a non-local transfer of control.
@@ -40,31 +40,31 @@ val ( |StopProcessing|_| ): exn:exn -> unit option
 
 val StopProcessing<'T> : exn
 
-exception NumberedError of (int * string) * Range
+exception NumberedError of (int * string) * range
 
-exception Error of (int * string) * Range
+exception Error of (int * string) * range
 
-exception InternalError of msg: string * Range
+exception InternalError of msg: string * range
 
-exception UserCompilerMessage of string * int * Range
+exception UserCompilerMessage of string * int * range
 
-exception LibraryUseOnly of Range
+exception LibraryUseOnly of range
 
-exception Deprecated of string * Range
+exception Deprecated of string * range
 
-exception Experimental of string * Range
+exception Experimental of string * range
 
-exception PossibleUnverifiableCode of Range
+exception PossibleUnverifiableCode of range
 
 exception UnresolvedReferenceNoRange of string
 
-exception UnresolvedReferenceError of string * Range
+exception UnresolvedReferenceError of string * range
 
 exception UnresolvedPathReferenceNoRange of string * string
 
-exception UnresolvedPathReference of string * string * Range
+exception UnresolvedPathReference of string * string * range
 
-exception ErrorWithSuggestions of (int * string) * Range * string * Suggestions
+exception ErrorWithSuggestions of (int * string) * range * string * Suggestions
 
 val inline protectAssemblyExploration: dflt:'a -> f:(unit -> 'a) -> 'a
 
@@ -72,7 +72,7 @@ val inline protectAssemblyExplorationF: dflt:(string * string -> 'a) -> f:(unit 
 
 val inline protectAssemblyExplorationNoReraise: dflt1:'a -> dflt2:'a -> f:(unit -> 'a) -> 'a
 
-val AttachRange: m:Range -> exn:exn -> exn
+val AttachRange: m:range -> exn:exn -> exn
 
 type Exiter =
       abstract member Exit: int -> 'T
@@ -185,8 +185,8 @@ module ErrorLoggerExtensions =
         member Warning: exn:exn -> unit
         member Error: exn:exn -> 'b
         member SimulateError: ph:PhasedDiagnostic -> 'a
-        member ErrorRecovery: exn:exn -> m:Range -> unit
-        member StopProcessingRecovery: exn:exn -> m:Range -> unit
+        member ErrorRecovery: exn:exn -> m:range -> unit
+        member StopProcessingRecovery: exn:exn -> m:range -> unit
         member ErrorRecoveryNoRange: exn:exn -> unit
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
@@ -213,25 +213,25 @@ val errorSink: pe:PhasedDiagnostic -> unit
 
 val warnSink: pe:PhasedDiagnostic -> unit
 
-val errorRecovery: exn:exn -> m:Range -> unit
+val errorRecovery: exn:exn -> m:range -> unit
 
-val stopProcessingRecovery: exn:exn -> m:Range -> unit
+val stopProcessingRecovery: exn:exn -> m:range -> unit
 
 val errorRecoveryNoRange: exn:exn -> unit
 
 val report: f:(unit -> 'a) -> 'a
 
-val deprecatedWithError: s:string -> m:Range -> unit
+val deprecatedWithError: s:string -> m:range -> unit
 
 val mutable reportLibraryOnlyFeatures: bool
 
-val libraryOnlyError: m:Range -> unit
+val libraryOnlyError: m:range -> unit
 
-val libraryOnlyWarning: m:Range -> unit
+val libraryOnlyWarning: m:range -> unit
 
-val deprecatedOperator: m:Range -> unit
+val deprecatedOperator: m:range -> unit
 
-val mlCompatWarning: s:System.String -> m:Range -> unit
+val mlCompatWarning: s:System.String -> m:range -> unit
 
 val suppressErrorReporting: f:(unit -> 'a) -> 'a
 
@@ -320,10 +320,10 @@ val NewlineifyErrorString: message:string -> string
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text:string -> string
   
-val checkLanguageFeatureError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:Range -> unit
+val checkLanguageFeatureError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
 
-val checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:Range -> unit
+val checkLanguageFeatureErrorRecover: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> unit
 
-val tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:Range -> exn option
+val tryLanguageFeatureErrorOption: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> exn option
 
-val languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:Range -> 'a
+val languageFeatureNotSupportedInLibraryError: langVersion:LanguageVersion -> langFeature:LanguageFeature -> m:range -> 'a

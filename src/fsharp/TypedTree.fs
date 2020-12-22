@@ -527,7 +527,7 @@ type EntityOptionalData =
       // MUTABILITY: the signature is adjusted when it is checked
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
-      mutable entity_other_range: (Range * bool) option
+      mutable entity_other_range: (range * bool) option
 
       // MUTABILITY; used only when establishing tycons. 
       mutable entity_kind: TyparKind
@@ -568,7 +568,7 @@ type Entity =
     {
       /// The declared type parameters of the type  
       // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_typars: LazyWithContext<Typars, Range>        
+      mutable entity_typars: LazyWithContext<Typars, range>        
       
       mutable entity_flags: EntityFlags
       
@@ -581,7 +581,7 @@ type Entity =
       mutable entity_logical_name: string
 
       /// The declaration location for the type constructor 
-      mutable entity_range: Range
+      mutable entity_range: range
       
       /// The declared attributes for the type 
       // MUTABILITY; used during creation and remapping of tycons 
@@ -1325,7 +1325,7 @@ type TyconAugmentation =
       mutable tcaug_adhoc: NameMultiMap<ValRef>
       
       /// Interface implementations - boolean indicates compiler-generated 
-      mutable tcaug_interfaces: (TType * bool * Range) list  
+      mutable tcaug_interfaces: (TType * bool * range) list  
       
       /// Super type, if any 
       mutable tcaug_super: TType option                 
@@ -1440,7 +1440,7 @@ type TProvidedTypeInfo =
 
       /// The base type of the type. We use it to compute the compiled representation of the type for erased types.
       /// Reading is delayed, since it does an import on the underlying type
-      LazyBaseType: LazyWithContext<TType, Range * TType> 
+      LazyBaseType: LazyWithContext<TType, range * TType> 
 
       /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
       IsClass: bool 
@@ -1629,7 +1629,7 @@ type UnionCase =
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
       // MUTABILITY: used when propagating signature attributes into the implementation.
-      mutable OtherRangeOpt: (Range * bool) option
+      mutable OtherRangeOpt: (range * bool) option
 
       ///  Indicates the declared visibility of the union constructor, not taking signatures into account 
       Accessibility: Accessibility 
@@ -1732,7 +1732,7 @@ type RecdField =
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
       // MUTABILITY: used when propagating signature attributes into the implementation.
-      mutable rfield_other_range: (Range * bool) option }
+      mutable rfield_other_range: (range * bool) option }
 
     ///  Indicates the declared visibility of the field, not taking signatures into account 
     member v.Accessibility = v.rfield_access
@@ -2252,45 +2252,45 @@ type Typar =
 type TyparConstraint = 
 
     /// A constraint that a type is a subtype of the given type 
-    | CoercesTo of TType * Range
+    | CoercesTo of TType * range
 
     /// A constraint for a default value for an inference type variable should it be neither generalized nor solved 
-    | DefaultsTo of int * TType * Range 
+    | DefaultsTo of int * TType * range 
     
     /// A constraint that a type has a 'null' value 
-    | SupportsNull of Range 
+    | SupportsNull of range 
     
     /// A constraint that a type has a member with the given signature 
-    | MayResolveMember of TraitConstraintInfo * Range
+    | MayResolveMember of TraitConstraintInfo * range
     
     /// A constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 
     /// generate verifiable code we must attach them to F# generalized type variables as well. 
-    | IsNonNullableStruct of Range 
+    | IsNonNullableStruct of range 
     
     /// A constraint that a type is a reference type 
-    | IsReferenceType of Range 
+    | IsReferenceType of range 
 
     /// A constraint that a type is a simple choice between one of the given ground types. Only arises from 'printf' format strings. See format.fs 
-    | SimpleChoice of TTypes * Range 
+    | SimpleChoice of TTypes * range 
 
     /// A constraint that a type has a parameterless constructor 
-    | RequiresDefaultConstructor of Range 
+    | RequiresDefaultConstructor of range 
 
     /// A constraint that a type is an enum with the given underlying 
-    | IsEnum of TType * Range 
+    | IsEnum of TType * range 
     
     /// A constraint that a type implements IComparable, with special rules for some known structural container types
-    | SupportsComparison of Range 
+    | SupportsComparison of range 
     
     /// A constraint that a type does not have the Equality(false) attribute, or is not a structural type with this attribute, with special rules for some known structural container types
-    | SupportsEquality of Range 
+    | SupportsEquality of range 
     
     /// A constraint that a type is a delegate from the given tuple of args to the given return type
-    | IsDelegate of TType * TType * Range 
+    | IsDelegate of TType * TType * range 
     
     /// A constraint that a type is .NET unmanaged type
-    | IsUnmanaged of Range
+    | IsUnmanaged of range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2439,7 +2439,7 @@ type ValOptionalData =
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
-      mutable val_other_range: (Range * bool) option 
+      mutable val_other_range: (range * bool) option 
 
       mutable val_const: Const option
       
@@ -2497,7 +2497,7 @@ type Val =
       mutable val_logical_name: string
 
       /// Mutable for unpickle linkage
-      mutable val_range: Range
+      mutable val_range: range
 
       mutable val_type: TType
 
@@ -4108,7 +4108,7 @@ type AttribKind =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Attrib = 
 
-    | Attrib of TyconRef * AttribKind * AttribExpr list * AttribNamedArg list * bool * AttributeTargets option * Range
+    | Attrib of TyconRef * AttribKind * AttribExpr list * AttribNamedArg list * bool * AttributeTargets option * range
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4203,7 +4203,7 @@ type DecisionTree =
     ///    cases -- The list of tests and their subsequent decision trees
     ///    default -- The default decision tree, if any
     ///    range -- (precise documentation needed)
-    | TDSwitch of Expr * DecisionTreeCase list * DecisionTree option * Range
+    | TDSwitch of Expr * DecisionTreeCase list * DecisionTree option * range
 
     /// TDSuccess(results, targets)
     ///
@@ -4274,7 +4274,7 @@ type DecisionTreeTest =
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
     /// Used in error recovery
-    | Error of Range
+    | Error of range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4417,7 +4417,7 @@ type Expr =
     /// A constant expression. 
     | Const of
         value: Const *
-        range: Range *
+        range: range *
         constType: TType
 
     /// Reference a value. The flag is only relevant if the value is an object model member 
@@ -4425,7 +4425,7 @@ type Expr =
     | Val of
         valRef: ValRef *
         flags: ValUseFlag *
-        range: Range
+        range: range
 
     /// Sequence expressions, used for "a;b", "let a = e in b;a" and "a then b" (the last an OO constructor). 
     | Sequential of
@@ -4433,7 +4433,7 @@ type Expr =
         expr2: Expr *
         kind: SequentialOpKind *
         debugPoint: DebugPointAtSequential *
-        range: Range
+        range: range
 
     /// Lambda expressions. 
     
@@ -4446,7 +4446,7 @@ type Expr =
         baseValOpt: Val option *
         valParams: Val list *
         bodyExpr: Expr * 
-        range: Range *
+        range: range *
         overallType: TType
 
     /// Type lambdas. These are used for the r.h.s. of polymorphic 'let' bindings and 
@@ -4455,7 +4455,7 @@ type Expr =
         unique: Unique *
         typeParams: Typars *
         bodyExpr: Expr *
-        range: Range *
+        range: range *
         overallType: TType
 
     /// Applications.
@@ -4468,20 +4468,20 @@ type Expr =
         formalType: TType *
         typeArgs: TypeInst *
         args: Exprs *
-        range: Range 
+        range: range 
 
     /// Bind a recursive set of values. 
     | LetRec of
         bindings: Bindings *
         bodyExpr: Expr *
-        range: Range *
+        range: range *
         frees: FreeVarsCache
 
     /// Bind a value. 
     | Let of
         binding: Binding *
         bodyExpr: Expr *
-        range: Range *
+        range: range *
         frees: FreeVarsCache
 
     // Object expressions: A closure that implements an interface or a base type. 
@@ -4493,7 +4493,7 @@ type Expr =
         ctorCall:  Expr * 
         overrides: ObjExprMethod list * 
         interfaceImpls: (TType * ObjExprMethod list) list *                   
-        range: Range
+        range: range
 
     /// Matches are a more complicated form of "let" with multiple possible destinations 
     /// and possibly multiple ways to get to each destination.  
@@ -4502,10 +4502,10 @@ type Expr =
     /// execution.
     | Match of
         debugPoint: DebugPointForBinding *
-        inputRange: Range *
+        inputRange: range *
         decision: DecisionTree *
         targets: DecisionTreeTarget array *
-        fullRange: Range *
+        fullRange: range *
         exprType: TType
 
     /// If we statically know some information then in many cases we can use a more optimized expression 
@@ -4515,7 +4515,7 @@ type Expr =
         conditions: StaticOptimization list *
         expr: Expr *
         alternativeExpr: Expr *
-        range: Range
+        range: range
 
     /// An intrinsic applied to some (strictly evaluated) arguments 
     /// A few of intrinsics (TOp_try, TOp.While, TOp.For) expect arguments kept in a normal form involving lambdas 
@@ -4523,7 +4523,7 @@ type Expr =
         op: TOp *
         typeArgs: TypeInst *
         args: Exprs *
-        range: Range
+        range: range
 
     /// Indicates the expression is a quoted expression tree. 
     ///
@@ -4532,7 +4532,7 @@ type Expr =
         quotedExpr: Expr *
         quotationInfo: ((ILTypeRef list * TTypes * Exprs * ExprData) * (ILTypeRef list * TTypes * Exprs * ExprData)) option ref *
         isFromQueryExpression: bool *
-        range: Range *
+        range: range *
         quotedType: TType  
     
     /// Used in quotation generation to indicate a witness argument, spliced into a quotation literal.
@@ -4553,7 +4553,7 @@ type Expr =
     /// 
     | WitnessArg of
         traitInfo: TraitConstraintInfo *
-        range: Range
+        range: range
 
     /// Indicates a free choice of typars that arises due to 
     /// minimization of polymorphism at let-rec bindings. These are 
@@ -4561,7 +4561,7 @@ type Expr =
     | TyChoose of
         typeParams: Typars *
         bodyExpr: Expr *
-        range: Range
+        range: range
 
     /// An instance of a link node occurs for every use of a recursively bound variable. When type-checking 
     /// the recursive bindings a dummy expression is stored in the mutable reference cell. 
@@ -4852,7 +4852,7 @@ type StaticOptimization =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ObjExprMethod = 
 
-    | TObjExprMethod of SlotSig * Attribs * Typars * Val list list * Expr * Range
+    | TObjExprMethod of SlotSig * Attribs * Typars * Val list list * Expr * range
 
     member x.Id = let (TObjExprMethod(slotsig, _, _, _, _, m)) = x in mkSynId m slotsig.Name
 
@@ -4925,7 +4925,7 @@ type ModuleOrNamespaceExprWithSig =
     | ModuleOrNamespaceExprWithSig of 
          moduleType: ModuleOrNamespaceType *
          contents: ModuleOrNamespaceExpr *
-         range: Range
+         range: range
 
     member x.Type = let (ModuleOrNamespaceExprWithSig(mtyp, _, _)) = x in mtyp
 
@@ -4944,13 +4944,13 @@ type ModuleOrNamespaceExpr =
     | TMDefs of ModuleOrNamespaceExpr list  
 
     /// Indicates the module fragment is a 'let' definition 
-    | TMDefLet of Binding * Range
+    | TMDefLet of Binding * range
 
     /// Indicates the module fragment is an evaluation of expression for side-effects
-    | TMDefDo of Expr * Range
+    | TMDefDo of Expr * range
 
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
-    | TMDefRec of isRec: bool * Tycon list * ModuleOrNamespaceBinding list * Range
+    | TMDefRec of isRec: bool * Tycon list * ModuleOrNamespaceBinding list * range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -5573,7 +5573,7 @@ type Construct() =
 
     /// Create a new Val node
     static member NewVal 
-           (logicalName: string, m: Range, compiledName, ty, isMutable, isCompGen, arity, access,
+           (logicalName: string, m: range, compiledName, ty, isMutable, isCompGen, arity, access,
             recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc: XmlDoc, isModuleOrMemberBinding,
             isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal,
             konst, actualParent) : Val =
@@ -5637,7 +5637,7 @@ type Construct() =
 
 #if !NO_EXTENSIONTYPING
     /// Compute the definition location of a provided item
-    static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : Range option =
+    static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : range option =
         let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))
         match attrs with
         | None | Some (null, _, _) -> None

@@ -51,7 +51,7 @@ open FSharp.Compiler.ExtensionTyping
 /// The bool indicates if named using a '?', making the caller argument explicit-optional
 type CallerArg<'T> = 
     /// CallerArg(ty, range, isOpt, exprInfo)
-    | CallerArg of ty: TType * range: Range * isOpt: bool * exprInfo: 'T  
+    | CallerArg of ty: TType * range: range * isOpt: bool * exprInfo: 'T  
 
     member x.CallerArgumentType = (let (CallerArg(ty, _, _, _)) = x in ty)
 
@@ -851,7 +851,7 @@ let MakeMethInfoCall amap m minfo minst args =
 
 #if !NO_EXTENSIONTYPING
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
-let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: Range, mbase: Tainted<ProvidedMethodBase>) = 
+let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name), m)
     let declaringType = Import.ImportProvidedType amap m (mbase.PApply((fun x -> x.DeclaringType), m))
     match tryTcrefOfAppTy amap.g declaringType with
@@ -1114,7 +1114,7 @@ let rec GetDefaultExpressionForCallerSideOptionalArg tcFieldInit g (calledArg: C
 /// Get the expression that must be inserted on the caller side for a CalleeSide optional arg where
 /// no caller argument has been provided. Normally this is 'None', however CallerMemberName and friends
 /// can be used with 'CalleeSide' optional arguments
-let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: Range) =
+let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCallerMemberName (mMethExpr: range) =
     let calledArgTy = calledArg.CalledArgumentType
     let calledNonOptTy = 
         if isOptionTy g calledArgTy then 
@@ -1138,7 +1138,7 @@ let GetDefaultExpressionForCalleeSideOptionalArg g (calledArg: CalledArg) eCalle
 
 /// Get the expression that must be inserted on the caller side for an optional arg where
 /// no caller argument has been provided. 
-let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCallerMemberName mItem (mMethExpr: Range) =
+let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCallerMemberName mItem (mMethExpr: range) =
     let calledArgTy = calledArg.CalledArgumentType
     let preBinder, expr = 
         match calledArg.OptArgInfo with 
@@ -1800,7 +1800,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
 
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
 
-exception FieldNotMutable of DisplayEnv * RecdFieldRef * Range
+exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 
 let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) = 
     if not rfinfo.RecdField.IsMutable then

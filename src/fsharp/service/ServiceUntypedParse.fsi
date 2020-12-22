@@ -20,42 +20,42 @@ type public FSharpParseFileResults =
     member ParseTree : ParsedInput option
 
     /// Attempts to find the range of the name of the nearest outer binding that contains a given position.
-    member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: Pos -> Range option
+    member TryRangeOfNameOfNearestOuterBindingContainingPos: pos: pos -> range option
 
     /// Attempts to find the range of an attempted lambda expression or pattern, the argument range, and the expr range when writing a C#-style "lambda" (which is actually an operator application)
-    member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: Pos -> (Range * Range * Range) option
+    member TryRangeOfParenEnclosingOpEqualsGreaterUsage: opGreaterEqualPos: pos -> (range * range * range) option
 
     /// Attempts to find the range of an expression `expr` contained in a `yield expr`  or `return expr` expression (and bang-variants).
-    member TryRangeOfExprInYieldOrReturn: pos: Pos -> Range option
+    member TryRangeOfExprInYieldOrReturn: pos: pos -> range option
 
     /// Attempts to find the range of a record expression containing the given position.
-    member TryRangeOfRecordExpressionContainingPos: pos: Pos -> Range option
+    member TryRangeOfRecordExpressionContainingPos: pos: pos -> range option
 
     /// Attempts to find an Ident of a pipeline containing the given position, and the number of args already applied in that pipeline.
     /// For example, '[1..10] |> List.map ' would give back the ident of '|>' and 1, because it applied 1 arg (the list) to 'List.map'.
-    member TryIdentOfPipelineContainingPosAndNumArgsApplied: pos: Pos -> (Ident * int) option
+    member TryIdentOfPipelineContainingPosAndNumArgsApplied: pos: pos -> (Ident * int) option
 
     /// Determines if the given position is inside a function or method application.
-    member IsPosContainedInApplication: pos: Pos -> bool
+    member IsPosContainedInApplication: pos: pos -> bool
 
     /// Attempts to find the range of a function or method that is being applied. Also accounts for functions in pipelines.
-    member TryRangeOfFunctionOrMethodBeingApplied: pos: Pos -> Range option
+    member TryRangeOfFunctionOrMethodBeingApplied: pos: pos -> range option
 
     /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
-    member GetAllArgumentsForFunctionApplicationAtPostion: pos: Pos -> Range list option
+    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
 
     /// <summary>
     /// Given the position of an expression, attempts to find the range of the
     /// '!' in a derefence operation of that expression, like:
     /// '!expr', '!(expr)', etc.
     /// </summary>
-    member TryRangeOfRefCellDereferenceContainingPos: expressionPos: Pos -> Range option
+    member TryRangeOfRefCellDereferenceContainingPos: expressionPos: pos -> range option
 
     /// Notable parse info for ParameterInfo at a given location
-    member FindNoteworthyParamInfoLocations : pos:Pos -> FSharpNoteworthyParamInfoLocations option
+    member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
 
     /// Determines if the given position is contained within a curried parameter in a binding.
-    member IsPositionContainedInACurriedParameter: pos: Pos -> bool
+    member IsPositionContainedInACurriedParameter: pos: pos -> bool
 
     /// Name of the file for which this information were created
     member FileName                       : string
@@ -64,7 +64,7 @@ type public FSharpParseFileResults =
     member GetNavigationItems             : unit -> FSharpNavigationItems
 
     /// Return the inner-most range associated with a possible breakpoint location
-    member ValidateBreakpointLocation : pos:Pos -> Range option
+    member ValidateBreakpointLocation : pos:pos -> range option
 
     /// When these files change then the build is invalid
     member DependencyFiles : string[]
@@ -96,7 +96,7 @@ type public InheritanceContext =
 
 [<RequireQualifiedAccess>]
 type public RecordContext =
-    | CopyOnUpdate of Range * CompletionPath // range
+    | CopyOnUpdate of range * CompletionPath // range
     | Constructor of string // typename
     | New of CompletionPath
 
@@ -116,7 +116,7 @@ type public CompletionContext =
 
     /// completing named parameters\setters in parameter list of constructor\method calls
     /// end of name ast node * list of properties\parameters that were already set
-    | ParameterList of Pos * HashSet<string>
+    | ParameterList of pos * HashSet<string>
 
     | AttributeApplication
 
@@ -136,17 +136,17 @@ type public EntityKind =
 
 // implementation details used by other code in the compiler    
 module public UntypedParseImpl =
-    val TryFindExpressionASTLeftOfDotLeftOfCursor : Pos * ParsedInput option -> (Pos * bool) option
+    val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
 
-    val GetRangeOfExprLeftOfDot : Pos  * ParsedInput option -> Range option
+    val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
 
-    val TryFindExpressionIslandInPosition : Pos * ParsedInput option -> string option
+    val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
 
-    val TryGetCompletionContext : Pos * ParsedInput * lineStr: string -> CompletionContext option
+    val TryGetCompletionContext : pos * ParsedInput * lineStr: string -> CompletionContext option
 
-    val GetEntityKind: Pos * ParsedInput -> EntityKind option
+    val GetEntityKind: pos * ParsedInput -> EntityKind option
 
-    val GetFullNameOfSmallestModuleOrNamespaceAtPoint : ParsedInput * Pos -> string[]
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint : ParsedInput * pos -> string[]
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =

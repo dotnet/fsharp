@@ -29,21 +29,21 @@ type public FSharpDiagnosticSeverity =
 [<Class>]
 type public FSharpDiagnostic = 
     member FileName: string
-    member Start: Pos
-    member End: Pos
+    member Start: pos
+    member End: pos
     member StartLineAlternate: int
     member EndLineAlternate: int
     member StartColumn: int
     member EndColumn: int
 
-    member Range: Range
+    member Range: range
     member Severity: FSharpDiagnosticSeverity
     member Message: string
     member Subcategory: string
     member ErrorNumber: int
 
-    static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * Range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
-    static member internal CreateFromException: PhasedDiagnostic * isError: bool * Range * suggestNames: bool -> FSharpDiagnostic
+    static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
+    static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpDiagnostic
 
     static member NewlineifyErrorString: message:string -> string
 
@@ -164,27 +164,27 @@ module public FSharpToolTip =
 module internal SymbolHelpers =
     val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
 
-    val GetXmlDocSigOfEntityRef : InfoReader -> Range -> EntityRef -> (string option * string) option
+    val GetXmlDocSigOfEntityRef : InfoReader -> range -> EntityRef -> (string option * string) option
 
     val GetXmlDocSigOfScopedValRef : TcGlobals -> TyconRef -> ValRef -> (string option * string) option
 
-    val GetXmlDocSigOfILFieldInfo : InfoReader -> Range -> ILFieldInfo -> (string option * string) option
+    val GetXmlDocSigOfILFieldInfo : InfoReader -> range -> ILFieldInfo -> (string option * string) option
 
     val GetXmlDocSigOfRecdFieldInfo : RecdFieldInfo -> (string option * string) option
 
     val GetXmlDocSigOfUnionCaseInfo : UnionCaseInfo -> (string option * string) option
 
-    val GetXmlDocSigOfMethInfo : InfoReader -> Range -> MethInfo -> (string option * string) option
+    val GetXmlDocSigOfMethInfo : InfoReader -> range -> MethInfo -> (string option * string) option
 
     val GetXmlDocSigOfValRef : TcGlobals -> ValRef -> (string option * string) option
 
-    val GetXmlDocSigOfProp : InfoReader -> Range -> PropInfo -> (string option * string) option
+    val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
 
-    val GetXmlDocSigOfEvent : InfoReader -> Range -> EventInfo -> (string option * string) option
+    val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
 
-    val GetXmlCommentForItem : InfoReader -> Range -> Item -> FSharpXmlDoc
+    val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
 
-    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> Range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
+    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
 
     val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
 
@@ -196,9 +196,9 @@ module internal SymbolHelpers =
 
     val GetF1Keyword : TcGlobals -> Item -> string option
 
-    val rangeOfItem : TcGlobals -> bool option -> Item -> Range option
+    val rangeOfItem : TcGlobals -> bool option -> Item -> range option
 
-    val fileNameOfItem : TcGlobals -> string option -> Range -> Item -> string
+    val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
 
     val FullNameOfItem : TcGlobals -> Item -> string
 
@@ -210,14 +210,14 @@ module internal SymbolHelpers =
 
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
 
-    val FlattenItems : TcGlobals -> Range -> Item -> Item list
+    val FlattenItems : TcGlobals -> range -> Item -> Item list
 
 #if !NO_EXTENSIONTYPING
     val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
 
-    val (|ItemIsWithStaticArguments|_|): Range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+    val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
 
-    val (|ItemIsProvidedTypeWithStaticArguments|_|): Range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+    val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
 #endif
 
     val SimplerDisplayEnv : DisplayEnv -> DisplayEnv
@@ -231,7 +231,7 @@ type internal ErrorScope =
     interface IDisposable
     new : unit -> ErrorScope
     member Diagnostics : FSharpDiagnostic list
-    static member Protect<'a> : Range -> (unit->'a) -> (string->'a) -> 'a
+    static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
 type internal CompilationErrorLogger = 

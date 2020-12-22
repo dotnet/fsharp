@@ -2619,7 +2619,7 @@ let ``Test Project16 sym locations`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project16.options) |> Async.RunSynchronously
 
-    let fmtLoc (mOpt: Range option) = 
+    let fmtLoc (mOpt: range option) = 
         match mOpt with 
         | None -> None
         | Some m -> 

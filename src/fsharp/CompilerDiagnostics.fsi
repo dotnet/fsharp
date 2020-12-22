@@ -18,37 +18,37 @@ val mutable showParserStackOnParseError: bool
 #endif // DEBUG
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashIncludeNotAllowedInNonScript of Range
+exception HashIncludeNotAllowedInNonScript of range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashReferenceNotAllowedInNonScript of Range
+exception HashReferenceNotAllowedInNonScript of range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * Range
+exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashLoadedScriptConsideredSource of Range
+exception HashLoadedScriptConsideredSource of range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception HashDirectiveNotAllowedInNonScript of Range
+exception HashDirectiveNotAllowedInNonScript of range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionFull of string * Range
+exception DeprecatedCommandLineOptionFull of string * range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionForHtmlDoc of string * Range
+exception DeprecatedCommandLineOptionForHtmlDoc of string * range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionSuggestAlternative of string * string * Range
+exception DeprecatedCommandLineOptionSuggestAlternative of string * string * range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception DeprecatedCommandLineOptionNoDescription of string * Range
+exception DeprecatedCommandLineOptionNoDescription of string * range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception InternalCommandLineOption of string * Range
+exception InternalCommandLineOption of string * range
 
 /// Get the location associated with an error
-val GetRangeOfDiagnostic: PhasedDiagnostic -> Range option
+val GetRangeOfDiagnostic: PhasedDiagnostic -> range option
 
 /// Get the number associated with an error
 val GetDiagnosticNumber: PhasedDiagnostic -> int
@@ -68,7 +68,7 @@ val OutputDiagnosticContext: prefix:string -> fileLineFunction:(string -> int ->
 /// Part of LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]
 type DiagnosticLocation =
-    { Range: Range
+    { Range: range
       File: string
       TextRepresentation: string
       IsEmpty: bool }

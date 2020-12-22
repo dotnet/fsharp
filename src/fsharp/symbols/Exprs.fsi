@@ -55,7 +55,7 @@ and public FSharpImplementationFileDeclaration =
 [<Sealed>] 
 type public FSharpExpr =
     /// The range of the expression
-    member Range : Range
+    member Range : range
 
     /// The type of the expression
     member Type : FSharpType

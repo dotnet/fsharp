@@ -1201,7 +1201,7 @@ type Expr with
 
 let primMkMatch(spBind, exprm, tree, targets, matchm, ty) = Expr.Match (spBind, exprm, tree, targets, matchm, ty)
 
-type MatchBuilder(spBind, inpRange: Range) = 
+type MatchBuilder(spBind, inpRange: range) = 
 
     let targets = new ResizeArray<_>(10) 
     member x.AddTarget tg = 
@@ -3084,7 +3084,7 @@ let TryFindILAttributeOpt attr attrs =
 /// provided attributes.
 //
 // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
-let TryBindTyconRefAttribute g (m: Range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: (obj option list * (string * obj option) list -> 'a option)) : 'a option = 
+let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref: TyconRef) f1 f2 (f3: (obj option list * (string * obj option) list -> 'a option)) : 'a option = 
     ignore m; ignore f3
     match metadataOfTycon tcref.Deref with 
 #if !NO_EXTENSIONTYPING
@@ -6139,7 +6139,7 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets =
 //------------------------------------------------------------------------- 
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
-exception DefensiveCopyWarning of string * Range
+exception DefensiveCopyWarning of string * range
 
 let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tcref.CanDeref &&

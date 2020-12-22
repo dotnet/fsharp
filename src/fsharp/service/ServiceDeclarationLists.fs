@@ -514,7 +514,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
     member _.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m: Range, denv, getAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
+    static member Create(infoReader:InfoReader, m: range, denv, getAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> SymbolHelpers.RemoveExplicitlySuppressedCompletionItems g

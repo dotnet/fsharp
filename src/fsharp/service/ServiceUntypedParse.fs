@@ -68,7 +68,7 @@ type InheritanceContext =
 
 [<RequireQualifiedAccess>]
 type RecordContext =
-    | CopyOnUpdate of Range * CompletionPath // range of copy-expr + current field
+    | CopyOnUpdate of range * CompletionPath // range of copy-expr + current field
     | Constructor of string // typename
     | New of CompletionPath
 
@@ -83,7 +83,7 @@ type CompletionContext =
     | RangeOperator
     // completing named parameters\setters in parameter list of constructor\method calls
     // end of name ast node * list of properties\parameters that were already set
-    | ParameterList of Pos * HashSet<string>
+    | ParameterList of pos * HashSet<string>
     | AttributeApplication
     | OpenDeclaration of isOpenType: bool
     /// completing pattern type (e.g. foo (x: |))
@@ -683,7 +683,7 @@ module UntypedParseImpl =
     
     let emptyStringSet = HashSet<string>()
 
-    let GetRangeOfExprLeftOfDot(pos: Pos, parseTreeOpt) =
+    let GetRangeOfExprLeftOfDot(pos: pos, parseTreeOpt) =
         match parseTreeOpt with 
         | None -> None 
         | Some parseTree ->
@@ -780,7 +780,7 @@ module UntypedParseImpl =
         })
     
     /// searches for the expression island suitable for the evaluation by the debugger
-    let TryFindExpressionIslandInPosition(pos: Pos, parseTreeOpt) = 
+    let TryFindExpressionIslandInPosition(pos: pos, parseTreeOpt) = 
         match parseTreeOpt with 
         | None -> None 
         | Some parseTree ->
@@ -933,7 +933,7 @@ module UntypedParseImpl =
                         | _ -> defaultTraverse expr }
         AstTraversal.Traverse(pos, parseTree, walker)
     
-    let GetEntityKind (pos: Pos, input: ParsedInput) : EntityKind option =
+    let GetEntityKind (pos: pos, input: ParsedInput) : EntityKind option =
         let (|ConstructorPats|) = function
             | Pats ps -> ps
             | NamePatPairs(xs, _) -> List.map snd xs
@@ -1235,7 +1235,7 @@ module UntypedParseImpl =
         | _ ->
         
         let parseLid (LongIdentWithDots(lid, dots)) =            
-            let rec collect plid (parts : Ident list) (dots : Range list) = 
+            let rec collect plid (parts : Ident list) (dots : range list) = 
                 match parts, dots with
                 | [], _ -> Some (plid, None)
                 | x :: xs, ds ->
@@ -1353,12 +1353,12 @@ module UntypedParseImpl =
             let last = List.last lid.Lid
             last.idRange.End
 
-        let endOfClosingTokenOrLastIdent (mClosing: Range option) (lid : LongIdentWithDots) =
+        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : LongIdentWithDots) =
             match mClosing with
             | Some m -> m.End
             | None -> endOfLastIdent lid
 
-        let endOfClosingTokenOrIdent (mClosing: Range option) (id : Ident) =
+        let endOfClosingTokenOrIdent (mClosing: range option) (id : Ident) =
             match mClosing with
             | Some m -> m.End
             | None -> id.idRange.End
@@ -1385,8 +1385,8 @@ module UntypedParseImpl =
                 Some (endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters arg)
             | _ -> None
         
-        let isOnTheRightOfComma (elements: SynExpr list) (commas: Range list) current = 
-            let rec loop elements (commas: Range list) = 
+        let isOnTheRightOfComma (elements: SynExpr list) (commas: range list) current = 
+            let rec loop elements (commas: range list) = 
                 match elements with
                 | x :: xs ->
                     match commas with
@@ -1621,7 +1621,7 @@ module UntypedParseImpl =
                 | _ -> None)
 
     /// Check if we are at an "open" declaration
-    let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: Pos) = 
+    let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
         let mutable path = []
         let visitor = 
             { new AstTraversal.AstVisitorBase<bool>() with

@@ -12,7 +12,7 @@ open FSharp.Compiler.NameResolution
 type internal ItemKeyStore =
     interface IDisposable
 
-    member FindAll: Item -> Range seq
+    member FindAll: Item -> range seq
 
 /// A builder that will build an item key store based on the written Item and its associated range.
 [<Sealed>]
@@ -20,6 +20,6 @@ type internal ItemKeyStoreBuilder =
 
     new: unit -> ItemKeyStoreBuilder
 
-    member Write: Range * Item -> unit
+    member Write: range * Item -> unit
 
     member TryBuildAndReset: unit -> ItemKeyStore option

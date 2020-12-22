@@ -24,7 +24,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.ExtensionTyping
 #endif
 
-exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * Range
+exception RequiredButNotSpecified of DisplayEnv * ModuleOrNamespaceRef * string * (StringBuilder -> unit) * range
 
 exception ValueNotContained of DisplayEnv * ModuleOrNamespaceRef * Val * Val * (string * string * string -> string)
 
@@ -34,7 +34,7 @@ exception ExnconstrNotContained of DisplayEnv * Tycon * Tycon * (string * string
 
 exception FieldNotContained of DisplayEnv * RecdField * RecdField * (string * string -> string)
 
-exception InterfaceNotRevealed of DisplayEnv * TType * Range
+exception InterfaceNotRevealed of DisplayEnv * TType * range
 
 // Use a type to capture the constant, common parameters 
 type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) = 

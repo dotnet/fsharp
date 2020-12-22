@@ -55,50 +55,50 @@ let mkConsListPat (g: TcGlobals) ty ph pt = TPat_unioncase(g.cons_ucref, [ty], [
 // Errors.
 //------------------------------------------------------------------------- 
 
-exception BakedInMemberConstraintName of string * Range
-exception FunctionExpected of DisplayEnv * TType * Range
-exception NotAFunction of DisplayEnv * TType * Range * Range
-exception NotAFunctionButIndexer of DisplayEnv * TType * string option * Range * Range
-exception Recursion of DisplayEnv * Ident * TType * TType * Range
-exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * Range
-exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * Range
-exception LetRecCheckedAtRuntime of Range
-exception LetRecUnsound of DisplayEnv * ValRef list * Range
-exception TyconBadArgs of DisplayEnv * TyconRef * int * Range
-exception UnionCaseWrongArguments of DisplayEnv * int * int * Range
-exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * Range
-exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * Range
-exception FieldGivenTwice of DisplayEnv * RecdFieldRef * Range
-exception MissingFields of string list * Range
-exception FunctionValueUnexpected of DisplayEnv * TType * Range
-exception UnitTypeExpected of DisplayEnv * TType * Range
-exception UnitTypeExpectedWithEquality of DisplayEnv * TType * Range
-exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * Range
-exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * Range
-exception UnionPatternsBindDifferentNames of Range
+exception BakedInMemberConstraintName of string * range
+exception FunctionExpected of DisplayEnv * TType * range
+exception NotAFunction of DisplayEnv * TType * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
+exception Recursion of DisplayEnv * Ident * TType * TType * range
+exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
+exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
+exception LetRecCheckedAtRuntime of range
+exception LetRecUnsound of DisplayEnv * ValRef list * range
+exception TyconBadArgs of DisplayEnv * TyconRef * int * range
+exception UnionCaseWrongArguments of DisplayEnv * int * int * range
+exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
+exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
+exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
+exception MissingFields of string list * range
+exception FunctionValueUnexpected of DisplayEnv * TType * range
+exception UnitTypeExpected of DisplayEnv * TType * range
+exception UnitTypeExpectedWithEquality of DisplayEnv * TType * range
+exception UnitTypeExpectedWithPossibleAssignment of DisplayEnv * TType * bool * string * range
+exception UnitTypeExpectedWithPossiblePropertySetter of DisplayEnv * TType * string * string * range
+exception UnionPatternsBindDifferentNames of range
 exception VarBoundTwice of Ident
-exception ValueRestriction of DisplayEnv * bool * Val * Typar * Range
-exception ValNotMutable of DisplayEnv * ValRef * Range
-exception ValNotLocal of DisplayEnv * ValRef * Range
-exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * Range
-exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * Range
-exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * Range
-exception RuntimeCoercionSourceSealed of DisplayEnv * TType * Range
-exception CoercionTargetSealed of DisplayEnv * TType * Range
-exception UpcastUnnecessary of Range
-exception TypeTestUnnecessary of Range
-exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * Range
-exception SelfRefObjCtor of bool * Range
-exception VirtualAugmentationOnNullValuedType of Range
-exception NonVirtualAugmentationOnNullValuedType of Range
-exception UseOfAddressOfOperator of Range
-exception DeprecatedThreadStaticBindingWarning of Range
-exception IntfImplInIntrinsicAugmentation of Range
-exception IntfImplInExtrinsicAugmentation of Range
-exception OverrideInIntrinsicAugmentation of Range
-exception OverrideInExtrinsicAugmentation of Range
-exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * Range
-exception StandardOperatorRedefinitionWarning of string * Range
+exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
+exception ValNotMutable of DisplayEnv * ValRef * range
+exception ValNotLocal of DisplayEnv * ValRef * range
+exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
+exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
+exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
+exception RuntimeCoercionSourceSealed of DisplayEnv * TType * range
+exception CoercionTargetSealed of DisplayEnv * TType * range
+exception UpcastUnnecessary of range
+exception TypeTestUnnecessary of range
+exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
+exception SelfRefObjCtor of bool * range
+exception VirtualAugmentationOnNullValuedType of range
+exception NonVirtualAugmentationOnNullValuedType of range
+exception UseOfAddressOfOperator of range
+exception DeprecatedThreadStaticBindingWarning of range
+exception IntfImplInIntrinsicAugmentation of range
+exception IntfImplInExtrinsicAugmentation of range
+exception OverrideInIntrinsicAugmentation of range
+exception OverrideInExtrinsicAugmentation of range
+exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
+exception StandardOperatorRedefinitionWarning of string * range
 exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
 /// Represents information about the initialization field used to check that object constructors
@@ -353,7 +353,7 @@ type TcFileState =
       /// Push an entry every time a recursive value binding is used, 
       /// in order to be able to fix up recursive type applications as 
       /// we infer type parameters 
-      mutable recUses: ValMultiMap<(Expr ref * Range * bool)>
+      mutable recUses: ValMultiMap<(Expr ref * range * bool)>
       
       /// Checks to run after all inference is complete. 
       mutable postInferenceChecks: ResizeArray<unit -> unit>
@@ -402,11 +402,11 @@ type TcFileState =
             
       isInternalTestSpanStackReferring: bool
       // forward call 
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> Range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call 
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> Range -> Expr * UnscopedTyparEnv
+      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call 
-      TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> Range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
+      TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     } 
 
     /// Create a new compilation environment
@@ -815,7 +815,7 @@ let TcConst cenv ty m env c =
     | SynConst.Bytes _ -> error (InternalError(FSComp.SR.tcUnexpectedConstByteArray(), m))
  
 /// Convert an Abstract IL ILFieldInit value read from .NET metadata to a TAST constant
-let TcFieldInit (_m: Range) lit = PatternMatchCompilation.ilFieldToTastConst lit
+let TcFieldInit (_m: range) lit = PatternMatchCompilation.ilFieldToTastConst lit
 
 //-------------------------------------------------------------------------
 // Arities. These serve two roles in the system: 
@@ -1149,7 +1149,7 @@ type CheckedBindingInfo =
        rhsExprChecked: Expr * 
        argAndRetAttribs: ArgAndRetAttribs * 
        overallPatTy: TType * 
-       mBinding: Range *
+       mBinding: range *
        spBind: DebugPointForBinding * 
        isCompilerGenerated: bool *
        literalValue: Const option *
@@ -1260,7 +1260,7 @@ let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent =
     let cpath = if accessModPermitted then Some env.eCompPath else None
     vis, cpath 
 
-let CheckForAbnormalOperatorNames cenv (idRange: Range) coreDisplayName (memberInfoOpt: ValMemberInfo option) =
+let CheckForAbnormalOperatorNames cenv (idRange: range) coreDisplayName (memberInfoOpt: ValMemberInfo option) =
     if (idRange.EndColumn - idRange.StartColumn <= 5) &&
         not cenv.g.compilingFslib
     then
@@ -1510,7 +1510,7 @@ let RecordUseOfRecValue cenv vrec (vrefTgt: ValRef) vexp m =
     | ValNotInRecScope -> 
         vexp
 
-type RecursiveUseFixupPoints = RecursiveUseFixupPoints of (Expr ref * Range) list
+type RecursiveUseFixupPoints = RecursiveUseFixupPoints of (Expr ref * range) list
 
 /// Get all recursive references, for fixing up delayed recursion using laziness 
 let GetAllUsesOfRecValue cenv vrefTgt = 
@@ -1723,7 +1723,7 @@ let MakeAndPublishSimpleValsForMergedScope cenv env m (names: NameMap<_>) =
         else
             let nameResolutions = ResizeArray()
 
-            let notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, (m: Range), replacing) =
+            let notifyNameResolution (pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, (m: range), replacing) =
                 if not m.IsSynthetic then
                     nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, nenv, ad, m, replacing)
 
@@ -2303,7 +2303,7 @@ type NormalizedBinding =
       valSynData: SynValData * 
       pat: SynPat * 
       rhsExpr: NormalizedBindingRhs *
-      mBinding: Range *
+      mBinding: range *
       spBinding: DebugPointForBinding
 
 type IsObjExprBinding = 
@@ -3671,21 +3671,21 @@ type DelayedItem =
   /// DelayedTypeApp (typeArgs, mTypeArgs, mExprAndTypeArgs)
   ///
   /// Represents the <tyargs> in "item<tyargs>"
-  | DelayedTypeApp of SynType list * Range * Range
+  | DelayedTypeApp of SynType list * range * range
 
   /// DelayedApp (isAtomic, argExpr, mFuncAndArg) 
   ///
   /// Represents the args in "item args", or "item.[args]".
-  | DelayedApp of ExprAtomicFlag * SynExpr * Range
+  | DelayedApp of ExprAtomicFlag * SynExpr * range
 
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
-  | DelayedDotLookup of Ident list * Range
+  | DelayedDotLookup of Ident list * range
 
   /// Represents an incomplete "item."
   | DelayedDot
  
   /// Represents the valueExpr in "item <- valueExpr", also "item.[indexerArgs] <- valueExpr" etc.
-  | DelayedSet of SynExpr * Range
+  | DelayedSet of SynExpr * range
 
 let MakeDelayedSet(e: SynExpr, m) = 
     // We have longId <- e. Wrap 'e' in another pair of parentheses to ensure it's never interpreted as 
@@ -5877,7 +5877,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges 
 
     // xs.GetReverseIndex rank offset - 1
-    let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: Range) = 
+    let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) = 
         let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
         let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
         let xsId = e1
@@ -5887,7 +5887,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             sliceArgs
             range
 
-    let rewriteReverseOption (app: SynExpr) (rank: int) (range: Range) = 
+    let rewriteReverseOption (app: SynExpr) (rank: int) (range: range) = 
        match app with
        | SynExpr.App(atomicFlag, isInfix, funcExpr, e1, outerRange) -> SynExpr.App(atomicFlag, isInfix, funcExpr, rewriteReverseExpr rank e1 range, outerRange)
        | _ -> app
@@ -6831,7 +6831,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
 //------------------------------------------------------------------------- 
 
 // Check an 'assert x' expression. 
-and TcAssertExpr cenv overallTy env (m: Range) tpenv x =
+and TcAssertExpr cenv overallTy env (m: range) tpenv x =
     let synm = m.MakeSynthetic() // Mark as synthetic so the language service won't pick it up.
     let callDiagnosticsExpr = SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet synm ["System";"Diagnostics";"Debug"] "Assert", 
                                            // wrap an extra parentheses so 'assert(x=1) isn't considered a named argument to a method call 

@@ -1441,7 +1441,7 @@ type internal FsiDynamicCompiler
         [defA (* ; defB *) ]
 
     // construct an invisible call to Debugger.Break(), in the specified range
-    member _.CreateDebuggerBreak (m : Range) =
+    member _.CreateDebuggerBreak (m : range) =
         let breakPath = ["System";"Diagnostics";"Debugger";"Break"]
         let dots = List.replicate (breakPath.Length - 1) m
         let methCall = SynExpr.LongIdent (false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)

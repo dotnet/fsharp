@@ -43,58 +43,58 @@ type AccessorDomain =
 val IsAccessible: ad:AccessorDomain -> taccess:TypedTree.Accessibility -> bool
 
 /// Indicates if an entity is accessible
-val IsEntityAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val IsEntityAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
 
 /// Check that an entity is accessible
-val CheckTyconAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val CheckTyconAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
 
 /// Indicates if a type definition and its representation contents are accessible
-val IsTyconReprAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val IsTyconReprAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
 
 /// Check that a type definition and its representation contents are accessible
-val CheckTyconReprAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
+val CheckTyconReprAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> tcref:TypedTree.TyconRef -> bool
 
 /// Indicates if a type is accessible (both definition and instantiation)
-val IsTypeAccessible: g:TcGlobals -> amap:ImportMap -> m:Range -> ad:AccessorDomain -> ty:TypedTree.TType -> bool
+val IsTypeAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> ty:TypedTree.TType -> bool
 
-val IsTypeInstAccessible: g:TcGlobals -> amap:ImportMap -> m:Range -> ad:AccessorDomain -> tinst:TypedTree.TypeInst -> bool
+val IsTypeInstAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> tinst:TypedTree.TypeInst -> bool
 
 /// Indicate if a provided member is accessible
-val IsProvidedMemberAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> ty:TypedTree.TType -> access:ILMemberAccess -> bool
+val IsProvidedMemberAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> ty:TypedTree.TType -> access:ILMemberAccess -> bool
 
 /// Compute the accessibility of a provided member
 val ComputeILAccess: isPublic:bool -> isFamily:bool -> isFamilyOrAssembly:bool -> isFamilyAndAssembly:bool -> ILMemberAccess
 
-val IsILFieldInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:Range -> ad:AccessorDomain -> x:ILFieldInfo -> bool
+val IsILFieldInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> x:ILFieldInfo -> bool
 
 val GetILAccessOfILEventInfo: ILEventInfo -> ILMemberAccess 
 
-val IsILEventInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:Range -> ad:AccessorDomain -> einfo:ILEventInfo -> bool
+val IsILEventInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> einfo:ILEventInfo -> bool
 
 val GetILAccessOfILPropInfo: ILPropInfo -> ILMemberAccess
 
-val IsILPropInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:Range -> ad:AccessorDomain -> pinfo:ILPropInfo -> bool
+val IsILPropInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> pinfo:ILPropInfo -> bool
 
 val IsValAccessible: ad:AccessorDomain -> vref:TypedTree.ValRef -> bool
 
-val CheckValAccessible: m:Range -> ad:AccessorDomain -> vref:TypedTree.ValRef -> unit
+val CheckValAccessible: m:range -> ad:AccessorDomain -> vref:TypedTree.ValRef -> unit
 
-val IsUnionCaseAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> ucref:TypedTree.UnionCaseRef -> bool
+val IsUnionCaseAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> ucref:TypedTree.UnionCaseRef -> bool
 
-val CheckUnionCaseAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> ucref:TypedTree.UnionCaseRef -> bool
+val CheckUnionCaseAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> ucref:TypedTree.UnionCaseRef -> bool
 
-val IsRecdFieldAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> rfref:TypedTree.RecdFieldRef -> bool
+val IsRecdFieldAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> rfref:TypedTree.RecdFieldRef -> bool
 
-val CheckRecdFieldAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> rfref:TypedTree.RecdFieldRef -> bool
+val CheckRecdFieldAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> rfref:TypedTree.RecdFieldRef -> bool
 
-val CheckRecdFieldInfoAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> rfinfo:RecdFieldInfo -> unit
+val CheckRecdFieldInfoAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> rfinfo:RecdFieldInfo -> unit
 
-val CheckILFieldInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:Range -> ad:AccessorDomain -> finfo:ILFieldInfo -> unit
+val CheckILFieldInfoAccessible: g:TcGlobals -> amap:ImportMap -> m:range -> ad:AccessorDomain -> finfo:ILFieldInfo -> unit
 
-val IsTypeAndMethInfoAccessible: amap:ImportMap -> m:Range -> accessDomainTy:AccessorDomain -> ad:AccessorDomain -> _arg1:MethInfo -> bool
+val IsTypeAndMethInfoAccessible: amap:ImportMap -> m:range -> accessDomainTy:AccessorDomain -> ad:AccessorDomain -> _arg1:MethInfo -> bool
 
-val IsMethInfoAccessible: amap:ImportMap -> m:Range -> ad:AccessorDomain -> minfo:MethInfo -> bool
+val IsMethInfoAccessible: amap:ImportMap -> m:range -> ad:AccessorDomain -> minfo:MethInfo -> bool
 
-val IsPropInfoAccessible: g:TcGlobals ->amap:ImportMap -> m:Range -> ad:AccessorDomain -> _arg1:PropInfo -> bool
+val IsPropInfoAccessible: g:TcGlobals ->amap:ImportMap -> m:range -> ad:AccessorDomain -> _arg1:PropInfo -> bool
 
 val IsFieldInfoAccessible: ad:AccessorDomain -> rfref:RecdFieldInfo -> bool

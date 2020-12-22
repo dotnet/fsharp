@@ -25,14 +25,14 @@ type internal TypeProviderError =
     inherit System.Exception
     
     /// creates new instance of TypeProviderError that represents one error
-    new : (int * string) * string * Range -> TypeProviderError
+    new : (int * string) * string * range -> TypeProviderError
 
     /// creates new instance of TypeProviderError that represents collection of errors
-    new : int * string * Range * seq<string> -> TypeProviderError
+    new : int * string * range * seq<string> -> TypeProviderError
 
     member Number : int
 
-    member Range : Range
+    member Range : range
 
     member ContextualErrorMessage : string
 
@@ -40,7 +40,7 @@ type internal TypeProviderError =
     member WithContext : string * string -> TypeProviderError
 
     /// creates new instance of TypeProviderError based on current instance information(message)
-    member MapText : (string -> int * string) * string * Range -> TypeProviderError
+    member MapText : (string -> int * string) * string * range -> TypeProviderError
 
     /// provides uniform way to process aggregated errors
     member Iter : (TypeProviderError -> unit) -> unit
@@ -63,31 +63,31 @@ type internal Tainted<'T> =
     member TypeProviderAssemblyRef : ILScopeRef
 
     /// Apply an operation. Any exception will be attributed to the type provider with an error located at the given range
-    member PApply : ('T -> 'U) * range:Range -> Tainted<'U>
+    member PApply : ('T -> 'U) * range:range -> Tainted<'U>
 
     /// Apply an operation. Any exception will be attributed to the type provider with an error located at the given range
-    member PApply2 : ('T -> 'U1 * 'U2) * range:Range -> Tainted<'U1> * Tainted<'U2> 
+    member PApply2 : ('T -> 'U1 * 'U2) * range:range -> Tainted<'U1> * Tainted<'U2> 
 
     /// Apply an operation. Any exception will be attributed to the type provider with an error located at the given range
-    member PApply3 : ('T -> 'U1 * 'U2 * 'U3) * range:Range -> Tainted<'U1> * Tainted<'U2>  * Tainted<'U3>
+    member PApply3 : ('T -> 'U1 * 'U2 * 'U3) * range:range -> Tainted<'U1> * Tainted<'U2>  * Tainted<'U3>
 
     /// Apply an operation. Any exception will be attributed to the type provider with an error located at the given range
-    member PApply4 : ('T -> 'U1 * 'U2 * 'U3 * 'U4) * range:Range -> Tainted<'U1> * Tainted<'U2>  * Tainted<'U3> * Tainted<'U4>
+    member PApply4 : ('T -> 'U1 * 'U2 * 'U3 * 'U4) * range:range -> Tainted<'U1> * Tainted<'U2>  * Tainted<'U3> * Tainted<'U4>
 
     /// Apply an operation. No exception may be raised by 'f'
     member PApplyNoFailure : f: ('T -> 'U) -> Tainted<'U>
 
     /// Apply an operation. Any exception will be attributed to the type provider with an error located at the given range
-    member PApplyWithProvider : ('T * ITypeProvider -> 'U) * range:Range -> Tainted<'U>
+    member PApplyWithProvider : ('T * ITypeProvider -> 'U) * range:range -> Tainted<'U>
 
     /// Apply an operation that returns an array. Unwrap array. Any exception will be attributed to the type provider with an error located at the given range.  String is method name of thing-returning-array, to diagnostically attribute if it is null
-    member PApplyArray : ('T -> 'U[]) * string * range:Range -> Tainted<'U>[]
+    member PApplyArray : ('T -> 'U[]) * string * range:range -> Tainted<'U>[]
 
     /// Apply an operation that returns an option. Unwrap option. Any exception will be attributed to the type provider with an error located at the given range
-    member PApplyOption : ('T -> 'U option) * range:Range -> Tainted<'U> option
+    member PApplyOption : ('T -> 'U option) * range:range -> Tainted<'U> option
 
     /// Apply an operation and 'untaint' the result. The result must be marshallable. Any exception will be attributed to the type provider with an error located at the given range
-    member PUntaint : ('T -> 'U) * range:Range -> 'U
+    member PUntaint : ('T -> 'U) * range:range -> 'U
 
     /// Apply an operation and 'untaint' the result. This can be used if the return type 
     /// is guaranteed not to be implemented by a type provider
@@ -98,7 +98,7 @@ type internal Tainted<'T> =
 
     /// Assert that the value is of 'U and coerce the value.
     /// If coercion fails, the failure will be blamed on a type provider
-    member Coerce<'U> : range:Range -> Tainted<'U>
+    member Coerce<'U> : range:range -> Tainted<'U>
 
 
 [<RequireQualifiedAccess>]

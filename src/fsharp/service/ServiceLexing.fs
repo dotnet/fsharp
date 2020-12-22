@@ -445,7 +445,7 @@ module internal LexerStateEncoding =
         | 2 -> LexerStringStyle.TripleQuote
         | _ -> assert false; LexerStringStyle.SingleQuote
 
-    let encodeLexCont (colorState: FSharpTokenizerColorState, numComments, b: Pos, ifdefStack, light, stringKind: LexerStringKind, stringNest) =
+    let encodeLexCont (colorState: FSharpTokenizerColorState, numComments, b: pos, ifdefStack, light, stringKind: LexerStringKind, stringNest) =
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
         for ifOrElse in ifdefStack do
@@ -495,7 +495,7 @@ module internal LexerStateEncoding =
 
         let colorState = colorStateOfLexState state
         let ncomments = int32 ((bits &&& ncommentsMask) >>> ncommentsStart)
-        let pos = Pos.Decode state.PosBits
+        let pos = pos.Decode state.PosBits
 
         let ifdefStackCount = int32 ((bits &&& ifdefstackCountMask) >>> ifdefstackCountStart)
         if ifdefStackCount>0 then
@@ -1157,7 +1157,7 @@ type FSharpTokenKind =
 type FSharpToken =
 
     val private tok: Parser.token
-    val private tokRange: Range
+    val private tokRange: range
 
     new (tok, tokRange) = { tok = tok; tokRange = tokRange }
 

@@ -904,7 +904,7 @@ type MethInfo =
 
 #if !NO_EXTENSIONTYPING
     /// Describes a use of a method backed by provided metadata
-    | ProvidedMeth of amap: Import.ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: Range
+    | ProvidedMeth of amap: Import.ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
 #endif
 
     /// Get the enclosing type of the method info.
@@ -1643,7 +1643,7 @@ type ILFieldInfo =
     | ILFieldInfo of ilTypeInfo: ILTypeInfo * ilFieldDef: ILFieldDef
 #if !NO_EXTENSIONTYPING
      /// Represents a single use of a field backed by provided metadata
-    | ProvidedField of amap: Import.ImportMap * providedField: Tainted<ProvidedFieldInfo> * range: Range
+    | ProvidedField of amap: Import.ImportMap * providedField: Tainted<ProvidedFieldInfo> * range: range
 #endif
 
     /// Get the enclosing ("parent"/"declaring") type of the field.
@@ -1927,7 +1927,7 @@ type PropInfo =
 
 #if !NO_EXTENSIONTYPING
     /// An F# use of a property backed by provided metadata
-    | ProvidedProp of amap: Import.ImportMap * providedProp: Tainted<ProvidedPropertyInfo> * range: Range
+    | ProvidedProp of amap: Import.ImportMap * providedProp: Tainted<ProvidedPropertyInfo> * range: range
 #endif
 
     /// Get the enclosing type of the property.
@@ -2304,7 +2304,7 @@ type ILEventInfo =
 /// An exception type used to raise an error using the old error system.
 ///
 /// Error text: "A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events."
-exception BadEventTransformation of Range
+exception BadEventTransformation of range
 
 /// Properties compatible with type IDelegateEvent and attributed with CLIEvent are special:
 /// we generate metadata and add/remove methods
@@ -2342,7 +2342,7 @@ type EventInfo =
 
 #if !NO_EXTENSIONTYPING
     /// An F# use of an event backed by provided metadata
-    | ProvidedEvent of amap: Import.ImportMap * providedEvent: Tainted<ProvidedEventInfo> * range: Range
+    | ProvidedEvent of amap: Import.ImportMap * providedEvent: Tainted<ProvidedEventInfo> * range: range
 #endif
 
     /// Get the enclosing type of the event.

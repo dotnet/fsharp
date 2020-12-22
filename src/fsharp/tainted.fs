@@ -21,7 +21,7 @@ type internal TypeProviderError
     (
         errNum : int,
         tpDesignation : string,
-        m:FSharp.Compiler.Range,
+        m:FSharp.Compiler.range,
         errors : string list,
         typeNameContext : string option,
         methodNameContext : string option
@@ -93,7 +93,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
     member this.TypeProviderAssemblyRef = 
         context.TypeProviderAssemblyRef
 
-    member this.Protect f  (range:Range) =
+    member this.Protect f  (range:range) =
         try 
             context.Lock.AcquireLock(fun _ -> f value)
         with
@@ -108,42 +108,42 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
 
     member this.TypeProvider = Tainted<_>(context, context.TypeProvider)
 
-    member this.PApply(f,range:Range) = 
+    member this.PApply(f,range:range) = 
         let u = this.Protect f range
         Tainted(context, u)
 
-    member this.PApply2(f,range:Range) = 
+    member this.PApply2(f,range:range) = 
         let u1,u2 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2)
 
-    member this.PApply3(f,range:Range) = 
+    member this.PApply3(f,range:range) = 
         let u1,u2,u3 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2), Tainted(context, u3)
 
-    member this.PApply4(f,range:Range) = 
+    member this.PApply4(f,range:range) = 
         let u1,u2,u3,u4 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2), Tainted(context, u3), Tainted(context, u4)
 
     member this.PApplyNoFailure f = this.PApply (f, range0)
 
-    member this.PApplyWithProvider(f,range:Range) = 
+    member this.PApplyWithProvider(f,range:range) = 
         let u = this.Protect (fun x -> f (x,context.TypeProvider)) range
         Tainted(context, u)
 
-    member this.PApplyArray(f,methodName,range:Range) =        
+    member this.PApplyArray(f,methodName,range:range) =        
         let a = this.Protect f range
         match a with 
         |   null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
         |   _ -> a |> Array.map (fun u -> Tainted(context,u))
 
 
-    member this.PApplyOption(f,range:Range) =        
+    member this.PApplyOption(f,range:range) =        
         let a = this.Protect f range
         match a with 
         | None ->  None
         | Some x -> Some (Tainted(context,x))
 
-    member this.PUntaint(f,range:Range) = this.Protect f range
+    member this.PUntaint(f,range:range) = this.Protect f range
     member this.PUntaintNoFailure f = this.PUntaint(f, range0)
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
@@ -157,7 +157,7 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
         |   :? 'U as u -> Some (Tainted(context,u))
         |   _ -> None
 
-    member this.Coerce<'U> (range:Range) =
+    member this.Coerce<'U> (range:range) =
         Tainted(context, this.Protect(fun value -> box value :?> 'U) range)
 
 module internal Tainted =

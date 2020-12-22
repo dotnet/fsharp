@@ -191,7 +191,7 @@ type cenv =
 
       limitVals: Dictionary<Stamp, Limit>
 
-      mutable potentialUnboundUsesOfVals: StampMap<Range> 
+      mutable potentialUnboundUsesOfVals: StampMap<range> 
 
       mutable anonRecdTypes: StampMap<AnonRecdTypeInfo> 
 

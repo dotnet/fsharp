@@ -16,7 +16,7 @@ open FSharp.Compiler.SyntaxTreeOps
 /// A range of utility functions to assist with traversing an AST
 module public AstTraversal =
     // treat ranges as though they are half-open: [,)
-    let rangeContainsPosLeftEdgeInclusive (m1:Range) p =
+    let rangeContainsPosLeftEdgeInclusive (m1:range) p =
         if posEq m1.Start m1.End then
             // the parser doesn't produce zero-width ranges, except in one case, for e.g. a block of lets that lacks a body
             // we treat the range [n,n) as containing position n
@@ -27,9 +27,9 @@ module public AstTraversal =
             posGt m1.End p         // )
 
     // treat ranges as though they are fully open: (,)
-    let rangeContainsPosEdgesExclusive (m1:Range) p = posGt p m1.Start && posGt m1.End p
+    let rangeContainsPosEdgesExclusive (m1:range) p = posGt p m1.Start && posGt m1.End p
 
-    let rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive (m1:Range) p = posGt p m1.Start && posGeq m1.End p
+    let rangeContainsPosLeftEdgeExclusiveAndRightEdgeInclusive (m1:range) p = posGt p m1.Start && posGeq m1.End p
 
     /// used to track route during traversal AST
     [<RequireQualifiedAccess>]
@@ -55,11 +55,11 @@ module public AstTraversal =
         abstract VisitExpr : TraversePath * (SynExpr -> 'T option) * (SynExpr -> 'T option) * SynExpr -> 'T option
 
         /// VisitTypeAbbrev(ty,m), defaults to ignoring this leaf of the AST
-        abstract VisitTypeAbbrev : SynType * Range -> 'T option
+        abstract VisitTypeAbbrev : SynType * range -> 'T option
         default this.VisitTypeAbbrev(_ty,_m) = None
 
         /// VisitImplicitInherit(defaultTraverse,ty,expr,m), defaults to just visiting expr
-        abstract VisitImplicitInherit : (SynExpr -> 'T option) * SynType * SynExpr * Range -> 'T option
+        abstract VisitImplicitInherit : (SynExpr -> 'T option) * SynType * SynExpr * range -> 'T option
         default this.VisitImplicitInherit(defaultTraverse, _ty, expr, _m) = defaultTraverse expr
 
         /// VisitModuleDecl allows overriding module declaration behavior
@@ -75,7 +75,7 @@ module public AstTraversal =
         default this.VisitMatchClause(defaultTraverse, mc) = defaultTraverse mc
 
         /// VisitInheritSynMemberDefn allows overriding inherit behavior (by default do nothing)
-        abstract VisitInheritSynMemberDefn : SynComponentInfo * SynTypeDefnKind * SynType  * SynMemberDefns * Range -> 'T option
+        abstract VisitInheritSynMemberDefn : SynComponentInfo * SynTypeDefnKind * SynType  * SynMemberDefns * range -> 'T option
         default this.VisitInheritSynMemberDefn(_componentInfo, _typeDefnKind, _synType, _members, _range) = None
 
         /// VisitInterfaceSynMemberDefnType allows overriding behavior for visiting interface member in types (by default - do nothing)
@@ -87,7 +87,7 @@ module public AstTraversal =
         default this.VisitRecordField (_path, _copyOpt, _recordField) = None
 
         /// VisitHashDirective allows overriding behavior when visiting hash directives in FSX scripts, like #r, #load and #I.
-        abstract VisitHashDirective : Range -> 'T option
+        abstract VisitHashDirective : range -> 'T option
         default this.VisitHashDirective (_) = None
 
         /// VisitModuleOrNamespace allows overriding behavior when visiting module or namespaces
@@ -99,7 +99,7 @@ module public AstTraversal =
         default this.VisitComponentInfo (_) = None
 
         /// VisitLetOrUse allows overriding behavior when visiting module or local let or use bindings
-        abstract VisitLetOrUse : TraversePath * (SynBinding -> 'T option) * SynBinding list * Range -> 'T option
+        abstract VisitLetOrUse : TraversePath * (SynBinding -> 'T option) * SynBinding list * range -> 'T option
         default this.VisitLetOrUse (_, _, _, _) = None
 
         /// VisitType allows overriding behavior when visiting simple pats
@@ -117,7 +117,7 @@ module public AstTraversal =
     let dive node range project =
         range,(fun() -> project node)
 
-    let pick pos (outerRange:Range) (_debugObj:obj) (diveResults:list<Range*_>) =
+    let pick pos (outerRange:range) (_debugObj:obj) (diveResults:list<range*_>) =
         match diveResults with
         | [] -> None
         | _ ->
@@ -145,7 +145,7 @@ module public AstTraversal =
             let s = sprintf "ServiceParseTreeWalk: not outerContainsInner: %A : %A" (outerRange.ToShortString()) (diveResults |> List.map (fun (r,_) -> r.ToShortString()))
             ignore s
             //System.Diagnostics.Debug.Assert(false, s)
-        let isZeroWidth(r:Range) =
+        let isZeroWidth(r:range) =
             posEq r.Start r.End // the parser inserts some zero-width elements to represent the completions of incomplete constructs, but we should never 'dive' into them, since they don't represent actual user code
         match List.choose (fun (r,f) -> if rangeContainsPosLeftEdgeInclusive r pos && not(isZeroWidth r) then Some(f) else None) diveResults with 
         | [] -> 
@@ -167,7 +167,7 @@ module public AstTraversal =
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
-    let Traverse(pos:Pos, parseTree, visitor:AstVisitorBase<'T>) =
+    let Traverse(pos:pos, parseTree, visitor:AstVisitorBase<'T>) =
         let pick x = pick pos x
         let rec traverseSynModuleDecl path (decl:SynModuleDecl) =
             let pick = pick decl.Range
@@ -666,7 +666,7 @@ module public AstTraversal =
                     () 
                 | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->
                     // traverse inherit function is used to capture type specific data required for processing Inherit part
-                    let traverseInherit (synType : SynType, range : Range) = 
+                    let traverseInherit (synType : SynType, range : range) = 
                         visitor.VisitInheritSynMemberDefn(synComponentInfo, synTypeDefnKind, synType, synMemberDefns, range)
                     yield! synMemberDefns |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path traverseInherit
                 | SynTypeDefnRepr.Simple(synTypeDefnSimpleRepr, _range) -> 

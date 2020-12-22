@@ -20,7 +20,7 @@ module internal ExtensionTyping =
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
-    exception ProvidedTypeResolution of Range * System.Exception
+    exception ProvidedTypeResolution of range * System.Exception
     exception ProvidedTypeResolutionNoRange of System.Exception
 
     let toolingCompatiblePaths() = toolingCompatiblePaths ()
@@ -35,7 +35,7 @@ module internal ExtensionTyping =
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
-    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:Range, compilerToolPaths:string list) =
+    let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range, compilerToolPaths:string list) =
 
         // Report an error, blaming the particular type provider component
         let raiseError designTimeAssemblyPathOpt (e: exn) =
@@ -133,7 +133,7 @@ module internal ExtensionTyping =
              systemRuntimeContainsType : string -> bool, 
              systemRuntimeAssemblyVersion : System.Version, 
              compilerToolPaths: string list,
-             m:Range) =
+             m:range) =
 
         let providerSpecs = 
                 try
@@ -215,7 +215,7 @@ module internal ExtensionTyping =
             mi.PApplyNoFailure(fun _ -> recover)
 
     /// Get the string to show for the name of a type provider
-    let DisplayNameOfTypeProvider(resolver: Tainted<ITypeProvider>, m: Range) =
+    let DisplayNameOfTypeProvider(resolver: Tainted<ITypeProvider>, m: range) =
         resolver.PUntaint((fun tp -> tp.GetType().Name), m)
 
     /// Validate a provided namespace name
@@ -990,7 +990,7 @@ module internal ExtensionTyping =
         PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
     /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
-    let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: Range) =
+    let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: range) =
         if staticArgs.Length = 0 then 
             Some methBeforeArgs
         else
@@ -1010,7 +1010,7 @@ module internal ExtensionTyping =
 
 
     /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-    let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: obj[], m: Range) =
+    let TryApplyProvidedType(typeBeforeArguments: Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs: obj[], m: range) =
         if staticArgs.Length = 0 then 
             Some (typeBeforeArguments, (fun () -> ()))
         else 
@@ -1039,7 +1039,7 @@ module internal ExtensionTyping =
 
     /// Given a mangled name reference to a non-nested provided type, resolve it.
     /// If necessary, demangle its static arguments before applying them.
-    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: string[], typeLogicalName: string, range: Range) =
+    let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: string[], typeLogicalName: string, range: range) =
         
         // Demangle the static parameters
         let typeName, argNamesAndValues = 

@@ -150,13 +150,13 @@ type ContextInfo =
     | NoContext
 
     /// The type equation comes from an IF expression.
-    | IfExpression of Range
+    | IfExpression of range
 
     /// The type equation comes from an omitted else branch.
-    | OmittedElseBranch of Range
+    | OmittedElseBranch of range
 
     /// The type equation comes from a type check of the result of an else branch.
-    | ElseBranchResult of Range
+    | ElseBranchResult of range
 
     /// The type equation comes from the verification of record fields.
     | RecordFields
@@ -165,7 +165,7 @@ type ContextInfo =
     | TupleInRecordFields
 
     /// The type equation comes from a list or array constructor
-    | CollectionElement of bool * Range
+    | CollectionElement of bool * range
 
     /// The type equation comes from a return in a computation expression.
 
@@ -181,10 +181,10 @@ type ContextInfo =
     | DowncastUsedInsteadOfUpcast of bool
 
     /// The type equation comes from a return type of a pattern match clause (not the first clause).
-    | FollowingPatternMatchClause of Range
+    | FollowingPatternMatchClause of range
 
     /// The type equation comes from a pattern match guard.
-    | PatternMatchGuard of Range
+    | PatternMatchGuard of range
 
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
@@ -206,33 +206,33 @@ type OverloadResolutionFailure =
                         * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
                         * cx: TraitConstraintInfo option
 
-exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * Range * Range
+exception ConstraintSolverTupleDiffLengths of displayEnv: DisplayEnv * TType list * TType list * range * range
 
-exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * Range * Range
+exception ConstraintSolverInfiniteTypes of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 
-exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * TType * TType * Range * Range * ContextInfo
+exception ConstraintSolverTypesNotInEqualityRelation of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
 
-exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: Range * parameterRange: Range
+exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
 
-exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * Range  * Range 
+exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range  * range 
 
-exception ConstraintSolverError of string * Range * Range
+exception ConstraintSolverError of string * range * range
 
-exception ConstraintSolverRelatedInformation of string option * Range * exn 
+exception ConstraintSolverRelatedInformation of string option * range * exn 
 
-exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * Range
+exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
 
-exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * Range
+exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
 
-exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * ContextInfo * parameterRange: Range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * ContextInfo * parameterRange: range
 
-exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * Range
+exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
 
-exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * Range
+exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
 
-exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * Range
+exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
-type TcValF = (ValRef -> ValUseFlag -> TType list -> Range -> Expr * TType)
+type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
 type ConstraintSolverState = 
     { 
@@ -249,7 +249,7 @@ type ConstraintSolverState =
       /// That is, there will be one entry in this table for each free type variable in 
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved 
       /// each time a solution to an index variable is found. 
-      mutable ExtraCxs: HashMultiMap<Stamp, (TraitConstraintInfo * Range)>
+      mutable ExtraCxs: HashMultiMap<Stamp, (TraitConstraintInfo * range)>
     }
 
     static member New(g, amap, infoReader, tcVal) = 
@@ -267,7 +267,7 @@ type ConstraintSolverEnv =
 
       MatchingOnly: bool
 
-      m: Range
+      m: range
 
       EquivEnv: TypeEquivEnv
 
@@ -485,7 +485,7 @@ let ShowAccessDomain ad =
 //-------------------------------------------------------------------------
 // Solve
 
-exception NonRigidTypar of displayEnv: DisplayEnv * string option * Range * TType * TType * Range
+exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
 /// Signal that there is still an unresolved overload in the constraint problem. The
 /// unresolved overload constraint remains in the constraint state, and we skip any

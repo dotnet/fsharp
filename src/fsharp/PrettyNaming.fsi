@@ -126,13 +126,13 @@ val IllegalCharactersInTypeAndNamespaceNames: char []
 val IsActivePatternName: name:string -> bool
 
 type ActivePatternInfo =
-    | APInfo of bool * (string * Range) list * Range
+    | APInfo of bool * (string * range) list * range
     member ActiveTags: string list
-    member ActiveTagsWithRanges: (string * Range) list
+    member ActiveTagsWithRanges: (string * range) list
     member IsTotal: bool
-    member Range: Range
+    member Range: range
   
-val ActivePatternInfoOfValName: nm:string -> m:Range -> ActivePatternInfo option
+val ActivePatternInfoOfValName: nm:string -> m:range -> ActivePatternInfo option
 
 exception InvalidMangledStaticArg of string
 

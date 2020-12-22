@@ -132,9 +132,9 @@ let WriteOptimizationData (tcGlobals, filename, inMem, ccu: CcuThunk, modulInfo)
     let rName = if ccu.AssemblyName = getFSharpCoreLibraryName then FSharpOptimizationDataResourceName2 else FSharpOptimizationDataResourceName 
     PickleToResource inMem filename tcGlobals ccu (rName+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
-exception AssemblyNotResolved of (*originalName*) string * Range
-exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * Range
-exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * Range
+exception AssemblyNotResolved of (*originalName*) string * range
+exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
+exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * range
 
 let OpenILBinary(filename, reduceMemoryUsage, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
     let opts: ILReaderOptions = 
@@ -290,7 +290,7 @@ type TcConfig with
                 // file is included in the search path. This should ideally already be one of the search paths, but
                 // during some global checks it won't be. We append to the end of the search list so that this is the last
                 // place that is checked.
-                let isPoundRReference (r: Range) =
+                let isPoundRReference (r: range) =
                     not (Range.equals r range0) &&
                     not (Range.equals r rangeStartup) &&
                     not (Range.equals r rangeCmdArgs) &&
@@ -393,7 +393,7 @@ type TcConfig with
     // NOTE!! if mode=ReportErrors then this method must not raise exceptions. It must just report the errors and recover
     static member TryResolveLibsUsingMSBuildRules (tcConfig: TcConfig, 
             originalReferences: AssemblyReference list,
-            errorAndWarningRange: Range,
+            errorAndWarningRange: range,
             mode: ResolveAssemblyReferenceMode) : AssemblyResolution list * UnresolvedAssemblyReference list =
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

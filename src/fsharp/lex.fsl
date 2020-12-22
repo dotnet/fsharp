@@ -166,25 +166,25 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
              
 // Utility functions for processing XML documentation 
 
-let trySaveXmlDoc (lexbuf: LexBuffer<char>) (buff: (Range * StringBuilder) option) =
+let trySaveXmlDoc (lexbuf: LexBuffer<char>) (buff: (range * StringBuilder) option) =
     match buff with 
     | None -> () 
     | Some (start, sb) ->
         let xmlCommentLineRange = mkFileIndexRange start.FileIndex start.Start (posOfLexPosition lexbuf.StartPos)
         LexbufLocalXmlDocStore.SaveXmlDocLine (lexbuf, sb.ToString(), xmlCommentLineRange)
   
-let tryAppendXmlDoc (buff: (Range * StringBuilder) option) (s:string) =
+let tryAppendXmlDoc (buff: (range * StringBuilder) option) (s:string) =
     match buff with 
     | None -> ()
     | Some (_, sb) -> ignore(sb.Append s)
 
 // Utilities for parsing #if/#else/#endif 
 
-let shouldStartLine args lexbuf (m:Range) err tok = 
+let shouldStartLine args lexbuf (m:range) err tok = 
     if (m.StartColumn <> 0) then fail args lexbuf err tok
     else tok
 
-let shouldStartFile args lexbuf (m:Range) err tok = 
+let shouldStartFile args lexbuf (m:range) err tok = 
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
 

@@ -155,7 +155,7 @@ type public InsertContext =
       ScopeKind: ScopeKind
 
       /// Current position (F# compiler line number).
-      Pos: Pos
+      Pos: pos
     }
 
 /// Where open statements should be added.
@@ -177,8 +177,8 @@ module public ParsedInput =
     val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
 
     /// Returns long identifier at position.
-    val getLongIdentAt : ast: ParsedInput -> pos: Pos -> LongIdent option
+    val getLongIdentAt : ast: ParsedInput -> pos: pos -> LongIdent option
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
-    val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> Pos
+    val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos
 

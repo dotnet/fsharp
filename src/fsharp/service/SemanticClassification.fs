@@ -63,7 +63,7 @@ module TcResolutionsExtensions =
         (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
     type TcResolutions with
-        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: Import.ImportMap, formatSpecifierLocations: (Range * int) [], range: Range option) : struct(Range * SemanticClassificationType) [] =
+        member sResolutions.GetSemanticClassification(g: TcGlobals, amap: Import.ImportMap, formatSpecifierLocations: (range * int) [], range: range option) : struct(range * SemanticClassificationType) [] =
             ErrorScope.Protect Range.range0 (fun () ->
                 let (|LegitTypeOccurence|_|) = function
                     | ItemOccurence.UseInType
@@ -145,7 +145,7 @@ module TcResolutionsExtensions =
                     (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
                     || isRefCellTy g rfinfo.RecdField.FormalType
 
-                let duplicates = HashSet<Range>(Range.comparer)
+                let duplicates = HashSet<range>(Range.comparer)
 
                 let results = ImmutableArray.CreateBuilder()
                 let inline add m typ =

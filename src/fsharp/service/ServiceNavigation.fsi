@@ -41,8 +41,8 @@ type public FSharpNavigationDeclarationItem =
     member UniqueName : string
     member Glyph : FSharpGlyph
     member Kind : FSharpNavigationDeclarationItemKind
-    member Range : Range
-    member BodyRange : Range
+    member Range : range
+    member BodyRange : range
     member IsSingleTopLevel : bool
     member EnclosingEntityKind: FSharpEnclosingEntityKind
     member IsAbstract: bool
@@ -96,7 +96,7 @@ module public NavigateTo =
     
     type NavigableItem = 
         { Name: string
-          Range: Range
+          Range: range
           IsSignature: bool
           Kind: NavigableItemKind
           Container: Container }

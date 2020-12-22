@@ -13,9 +13,9 @@ open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
-val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> Range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
-val CreateInitialTcEnv : TcGlobals * ImportMap * Range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
-val AddCcuToTcEnv: TcGlobals * ImportMap * Range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
+val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
+val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
+val AddCcuToTcEnv: TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 
 type TopAttribs =
     { mainMethodAttrs: Attribs
@@ -27,9 +27,9 @@ type ConditionalDefines = string list
 val EmptyTopAttrs : TopAttribs
 val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 
-val TcOpenModuleOrNamespaceDecl: TcResultsSink  -> TcGlobals -> ImportMap -> Range -> TcEnv -> (LongIdent * Range) -> TcEnv
+val TcOpenModuleOrNamespaceDecl: TcResultsSink  -> TcGlobals -> ImportMap -> range -> TcEnv -> (LongIdent * range) -> TcEnv
 
-val AddLocalSubModule: g: TcGlobals -> amap: ImportMap -> m: Range -> env: TcEnv -> modul: ModuleOrNamespace -> TcEnv
+val AddLocalSubModule: g: TcGlobals -> amap: ImportMap -> m: range -> env: TcEnv -> modul: ModuleOrNamespace -> TcEnv
 
 val TypeCheckOneImplFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * NameResolution.TcResultsSink * bool
@@ -44,5 +44,5 @@ val TypeCheckOneSigFile :
       -> ParsedSigFileInput
       -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
 
-exception ParameterlessStructCtor of Range
-exception NotUpperCaseConstructor of Range
+exception ParameterlessStructCtor of range
+exception NotUpperCaseConstructor of range

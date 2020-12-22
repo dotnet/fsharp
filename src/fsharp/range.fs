@@ -38,7 +38,7 @@ type Pos(code:int64) =
         let c = max 0 c 
         let p = (int64 c &&& posColumnMask)
                 ||| ((int64 l <<< columnBitCount) &&& lineColumnMask)
-        Pos p
+        pos p
 
     member p.Line = int32 (uint64 code >>> columnBitCount)
 
@@ -48,13 +48,15 @@ type Pos(code:int64) =
 
     static member EncodingSize = posBitCount
 
-    static member Decode (code:int64) : Pos = Pos code
+    static member Decode (code:int64) : pos = pos code
 
-    override p.Equals(obj) = match obj with :? Pos as p2 -> code = p2.Encoding | _ -> false
+    override p.Equals(obj) = match obj with :? pos as p2 -> code = p2.Encoding | _ -> false
 
     override p.GetHashCode() = hash code
 
     override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
+
+and pos = Pos
 
 [<AutoOpen>]
 module RangeImpl =
@@ -213,7 +215,7 @@ module FileIndex =
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
 type Range(code1:int64, code2: int64) =
-    static member Zero = Range(0L, 0L)
+    static member Zero = range(0L, 0L)
     new (fIdx, bl, bc, el, ec) = 
         let code1 = ((int64 fIdx) &&& fileIndexMask)
                 ||| ((int64 bc        <<< startColumnShift) &&& startColumnMask)
@@ -221,9 +223,9 @@ type Range(code1:int64, code2: int64) =
         let code2 = 
                     ((int64 bl        <<< startLineShift)  &&& startLineMask)
                 ||| ((int64 (el-bl)   <<< heightShift) &&& heightMask)
-        Range(code1, code2)
+        range(code1, code2)
 
-    new (fIdx, b:Pos, e:Pos) = Range(fIdx, b.Line, b.Column, e.Line, e.Column)
+    new (fIdx, b:pos, e:pos) = range(fIdx, b.Line, b.Column, e.Line, e.Column)
 
     member r.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
 
@@ -235,21 +237,21 @@ type Range(code1:int64, code2: int64) =
 
     member r.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0 
 
-    member r.Start = Pos (r.StartLine, r.StartColumn)
+    member r.Start = pos (r.StartLine, r.StartColumn)
 
-    member r.End = Pos (r.EndLine, r.EndColumn)
+    member r.End = pos (r.EndLine, r.EndColumn)
 
     member r.FileIndex = int32(code1 &&& fileIndexMask)
 
-    member m.StartRange = Range (m.FileIndex, m.Start, m.Start)
+    member m.StartRange = range (m.FileIndex, m.Start, m.Start)
 
-    member m.EndRange = Range (m.FileIndex, m.End, m.End)
+    member m.EndRange = range (m.FileIndex, m.End, m.End)
 
     member r.FileName = fileOfFileIndex r.FileIndex
 
     member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
 
-    member r.MakeSynthetic() = Range(code1, code2 ||| isSyntheticMask)
+    member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
 
     member r.Code1 = code1
 
@@ -275,11 +277,13 @@ type Range(code1:int64, code2: int64) =
 
     member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
 
-    override r.Equals(obj) = match obj with :? Range as r2 -> code1 = r2.Code1 && code2 = r2.Code2 | _ -> false
+    override r.Equals(obj) = match obj with :? range as r2 -> code1 = r2.Code1 && code2 = r2.Code2 | _ -> false
 
     override r.GetHashCode() = hash code1 + hash code2
 
     override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
+
+and range = Range
 
 #if CHECK_LINE0_TYPES // turn on to check that we correctly transform zero-based line counts to one-based line counts
 // Visual Studio uses line counts starting at 0, F# uses them starting at 1 
@@ -302,16 +306,16 @@ module Line =
 [<AutoOpen>]
 module Pos =
 
-    let mkPos line column = Pos (line, column)
+    let mkPos line column = pos (line, column)
 
-    let outputPos   (os:TextWriter) (m:Pos)   = fprintf os "(%d,%d)" m.Line m.Column
+    let outputPos   (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
 
-    let posGt (p1: Pos) (p2: Pos) =
+    let posGt (p1: pos) (p2: pos) =
         let p1Line = p1.Line
         let p2Line = p2.Line
         p1Line > p2Line || p1Line = p2Line && p1.Column > p2.Column
 
-    let posEq (p1: Pos) (p2: Pos) = p1.Encoding = p2.Encoding
+    let posEq (p1: pos) (p2: pos) = p1.Encoding = p2.Encoding
 
     let posGeq p1 p2 = posEq p1 p2 || posGt p1 p2
 
@@ -319,30 +323,30 @@ module Pos =
 
     let fromZ (line:Line0) column = mkPos (Line.fromZ line) column 
 
-    let toZ (p:Pos) = (Line.toZ p.Line, p.Column)
+    let toZ (p:pos) = (Line.toZ p.Line, p.Column)
 
     (* For Diagnostics *)
-    let stringOfPos (pos:Pos) = sprintf "(%d,%d)" pos.Line pos.Column
+    let stringOfPos (pos:pos) = sprintf "(%d,%d)" pos.Line pos.Column
 
     let pos0 = mkPos 1 0
 
 module Range =
-    let mkRange filePath startPos endPos = Range (fileIndexOfFileAux true filePath, startPos, endPos)
+    let mkRange filePath startPos endPos = range (fileIndexOfFileAux true filePath, startPos, endPos)
 
-    let equals (r1: Range) (r2: Range) =
+    let equals (r1: range) (r2: range) =
         r1.Code1 = r2.Code1 && r1.Code2 = r2.Code2
 
-    let mkFileIndexRange fileIndex startPos endPos = Range (fileIndex, startPos, endPos)
+    let mkFileIndexRange fileIndex startPos endPos = range (fileIndex, startPos, endPos)
 
-    let posOrder   = Order.orderOn (fun (p:Pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
+    let posOrder   = Order.orderOn (fun (p:pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
 
     /// rangeOrder: not a total order, but enough to sort on ranges
-    let rangeOrder = Order.orderOn (fun (r:Range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
+    let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
 
-    let outputRange (os:TextWriter) (m:Range) = fprintf os "%s%a-%a" m.FileName Pos.outputPos m.Start Pos.outputPos m.End
+    let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Pos.outputPos m.Start Pos.outputPos m.End
     
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
-    let unionRanges (m1:Range) (m2:Range) = 
+    let unionRanges (m1:range) (m2:range) = 
         if m1.FileIndex <> m2.FileIndex then m2 else
         let b = 
           if (m1.StartLine > m2.StartLine || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then m2
@@ -350,18 +354,18 @@ module Range =
         let e = 
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
-        Range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
 
-    let rangeContainsRange (m1:Range) (m2:Range) =
+    let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&
         Pos.posGeq m2.Start m1.Start &&
         Pos.posGeq m1.End m2.End
 
-    let rangeContainsPos (m1:Range) p =
+    let rangeContainsPos (m1:range) p =
         Pos.posGeq p m1.Start &&
         Pos.posGeq m1.End p
 
-    let rangeBeforePos (m1:Range) p =
+    let rangeBeforePos (m1:range) p =
         Pos.posGeq p m1.End
 
     let rangeN filename line = mkRange filename (mkPos line 0) (mkPos line 0)
@@ -372,23 +376,23 @@ module Range =
 
     let rangeCmdArgs = rangeN commandLineArgsFileName 0
 
-    let trimRangeToLine (r:Range) =
+    let trimRangeToLine (r:range) =
         let startL, startC = r.StartLine, r.StartColumn
         let endL, _endC   = r.EndLine, r.EndColumn
         if endL <= startL then
           r
         else
           let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
-          Range (r.FileIndex, startL, startC, endL, endC)
+          range (r.FileIndex, startL, startC, endL, endC)
 
-    let stringOfRange (r:Range) = sprintf "%s%s-%s" r.FileName (Pos.stringOfPos r.Start) (Pos.stringOfPos r.End)
+    let stringOfRange (r:range) = sprintf "%s%s-%s" r.FileName (Pos.stringOfPos r.Start) (Pos.stringOfPos r.End)
 
-    let toZ (m:Range) = Pos.toZ m.Start, Pos.toZ m.End
+    let toZ (m:range) = Pos.toZ m.Start, Pos.toZ m.End
 
-    let toFileZ (m:Range) = m.FileName, toZ m
+    let toFileZ (m:range) = m.FileName, toZ m
 
     let comparer = 
-        { new IEqualityComparer<Range> with 
+        { new IEqualityComparer<range> with 
             member _.Equals(x1, x2) = equals x1 x2 
             member _.GetHashCode o = o.GetHashCode() }
 

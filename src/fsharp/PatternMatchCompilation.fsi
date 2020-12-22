@@ -21,29 +21,29 @@ type ActionOnFailure =
 /// Represents the typechecked, elaborated form of a pattern, prior to pattern-match compilation.
 [<NoEquality; NoComparison>]
 type Pattern =
-    | TPat_const of Const * Range
-    | TPat_wild of Range
-    | TPat_as of Pattern * PatternValBinding * Range
-    | TPat_disjs of Pattern list * Range
-    | TPat_conjs of Pattern list * Range
-    | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * PrettyNaming.ActivePatternInfo) * Pattern * Range
-    | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * Range
-    | TPat_exnconstr of TyconRef * Pattern list * Range
-    | TPat_tuple of TupInfo * Pattern list * TType list * Range
-    | TPat_array of Pattern list * TType * Range
-    | TPat_recd of TyconRef * TypeInst * Pattern list * Range
-    | TPat_range of char * char * Range
-    | TPat_null of Range
-    | TPat_isinst of TType * TType * PatternValBinding option * Range
-    | TPat_error of Range
+    | TPat_const of Const * range
+    | TPat_wild of range
+    | TPat_as of Pattern * PatternValBinding * range
+    | TPat_disjs of Pattern list * range
+    | TPat_conjs of Pattern list * range
+    | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * PrettyNaming.ActivePatternInfo) * Pattern * range
+    | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
+    | TPat_exnconstr of TyconRef * Pattern list * range
+    | TPat_tuple of TupInfo * Pattern list * TType list * range
+    | TPat_array of Pattern list * TType * range
+    | TPat_recd of TyconRef * TypeInst * Pattern list * range
+    | TPat_range of char * char * range
+    | TPat_null of range
+    | TPat_isinst of TType * TType * PatternValBinding option * range
+    | TPat_error of range
 
-    member Range: Range
+    member Range: range
 
 and PatternValBinding = 
     | PBind of Val * TypeScheme
 
 and TypedMatchClause =  
-    | TClause of Pattern * Expr option * DecisionTreeTarget * Range
+    | TClause of Pattern * Expr option * DecisionTreeTarget * range
 
 val ilFieldToTastConst: ILFieldInit -> Const
 
@@ -53,12 +53,12 @@ val internal CompilePattern:
     DisplayEnv ->
     Import.ImportMap ->
     // tcVal
-    (ValRef -> ValUseFlag -> TTypes -> Range -> Expr * TType) ->
+    (ValRef -> ValUseFlag -> TTypes -> range -> Expr * TType) ->
     InfoReader ->
     // range of the expression we are matching on 
-    Range ->  
+    range ->  
     // range to report "incomplete match" on
-    Range ->  
+    range ->  
     // warn on unused? 
     bool ->   
     ActionOnFailure -> 
@@ -74,8 +74,8 @@ val internal CompilePattern:
         // produce TAST nodes
         DecisionTree * DecisionTreeTarget list
 
-exception internal MatchIncomplete of bool * (string * bool) option * Range
+exception internal MatchIncomplete of bool * (string * bool) option * range
 
-exception internal RuleNeverMatched of Range
+exception internal RuleNeverMatched of range
 
-exception internal EnumMatchIncomplete of bool * (string * bool) option * Range
+exception internal EnumMatchIncomplete of bool * (string * bool) option * range

@@ -18,13 +18,13 @@ open FSharp.Compiler.ExtensionTyping
 type AssemblyLoader = 
 
     /// Resolve an Abstract IL assembly reference to a Ccu
-    abstract FindCcuFromAssemblyRef : CompilationThreadToken * Range * ILAssemblyRef -> CcuResolutionResult
+    abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 
 #if !NO_EXTENSIONTYPING
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : CompilationThreadToken * Range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
@@ -47,36 +47,36 @@ type ImportMap =
     member g : TcGlobals
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
-val internal ImportILTypeRef : ImportMap -> Range -> ILTypeRef -> TyconRef
+val internal ImportILTypeRef : ImportMap -> range -> ILTypeRef -> TyconRef
 
 /// Pre-check for ability to import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
-val internal CanImportILTypeRef : ImportMap -> Range -> ILTypeRef -> bool
+val internal CanImportILTypeRef : ImportMap -> range -> ILTypeRef -> bool
 
 /// Import an IL type as an F# type.
-val internal ImportILType : ImportMap -> Range -> TType list -> ILType -> TType
+val internal ImportILType : ImportMap -> range -> TType list -> ILType -> TType
 
 /// Pre-check for ability to import an IL type as an F# type.
-val internal CanImportILType : ImportMap -> Range -> ILType -> bool
+val internal CanImportILType : ImportMap -> range -> ILType -> bool
 
 #if !NO_EXTENSIONTYPING
 /// Import a provided type as an F# type.
-val internal ImportProvidedType : ImportMap -> Range -> (* TType list -> *) Tainted<ProvidedType> -> TType
+val internal ImportProvidedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TType
 
 /// Import a provided type reference as an F# type TyconRef
-val internal ImportProvidedNamedType : ImportMap -> Range -> (* TType list -> *) Tainted<ProvidedType> -> TyconRef
+val internal ImportProvidedNamedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TyconRef
 
 /// Import a provided type as an AbstractIL type
-val internal ImportProvidedTypeAsILType : ImportMap -> Range -> Tainted<ProvidedType> -> ILType
+val internal ImportProvidedTypeAsILType : ImportMap -> range -> Tainted<ProvidedType> -> ILType
 
 /// Import a provided method reference as an Abstract IL method reference
-val internal ImportProvidedMethodBaseAsILMethodRef : ImportMap -> Range -> Tainted<ProvidedMethodBase> -> ILMethodRef
+val internal ImportProvidedMethodBaseAsILMethodRef : ImportMap -> range -> Tainted<ProvidedMethodBase> -> ILMethodRef
 #endif
 
 /// Import a set of Abstract IL generic parameter specifications as a list of new F# generic parameters.  
-val internal ImportILGenericParameters : (unit -> ImportMap) -> Range -> ILScopeRef -> TType list -> ILGenericParameterDef list -> Typar list
+val internal ImportILGenericParameters : (unit -> ImportMap) -> range -> ILScopeRef -> TType list -> ILGenericParameterDef list -> Typar list
 
 /// Import an IL assembly as a new TAST CCU
-val internal ImportILAssembly : (unit -> ImportMap) * Range * (ILScopeRef -> ILModuleDef) * ILScopeRef * sourceDir:string * filename: string option * ILModuleDef * IEvent<string> -> CcuThunk
+val internal ImportILAssembly : (unit -> ImportMap) * range * (ILScopeRef -> ILModuleDef) * ILScopeRef * sourceDir:string * filename: string option * ILModuleDef * IEvent<string> -> CcuThunk
 
 /// Import the type forwarder table for an IL assembly
-val internal ImportILAssemblyTypeForwarders : (unit -> ImportMap) * Range * ILExportedTypesAndForwarders -> Map<(string array * string), Lazy<EntityRef>>
+val internal ImportILAssemblyTypeForwarders : (unit -> ImportMap) * range * ILExportedTypesAndForwarders -> Map<(string array * string), Lazy<EntityRef>>

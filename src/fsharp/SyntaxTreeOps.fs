@@ -377,7 +377,7 @@ let mkSynFunMatchLambdas synArgNameGenerator isMember wholem ps e =
     let _, e =  PushCurriedPatternsToExpr synArgNameGenerator wholem isMember ps e
     e
 
-let arbExpr (debugStr, range: Range) = SynExpr.ArbitraryAfterError (debugStr, range.MakeSynthetic())
+let arbExpr (debugStr, range: range) = SynExpr.ArbitraryAfterError (debugStr, range.MakeSynthetic())
 
 let unionRangeWithListBy projectRangeFromThing m listOfThing = 
     (m, listOfThing) ||> List.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))

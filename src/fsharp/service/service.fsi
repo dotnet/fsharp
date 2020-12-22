@@ -52,7 +52,7 @@ type public FSharpProjectOptions =
       UnresolvedReferences : FSharpUnresolvedReferencesSet option
 
       /// Unused in this API and should be '[]' when used as user-specified input
-      OriginalLoadReferences: (Range * string * string) list
+      OriginalLoadReferences: (range * string * string) list
 
       /// Extra information passed back on event trigger
       ExtraProjectInfo : obj option
@@ -94,7 +94,7 @@ type public FSharpChecker =
     /// <param name="sourceText">The full source for the file.</param>
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member MatchBraces: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<(Range * Range)[]>
+    member MatchBraces: filename: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string -> Async<(range * range)[]>
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -106,7 +106,7 @@ type public FSharpChecker =
     /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     [<Obsolete("Please pass FSharpParsingOptions to MatchBraces. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
-    member MatchBraces: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(Range * Range)[]>
+    member MatchBraces: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(range * range)[]>
 
     /// <summary>
     /// Parses a source code for a file and caches the results. Returns an AST that can be traversed for various features.
@@ -301,7 +301,7 @@ type public FSharpChecker =
     /// <param name="symbol">The symbol to find all uses in the file.</param>
     /// <param name="canInvalidateProject">Default: true. If true, this call can invalidate the current state of project if the options have changed. If false, the current state of the project will be used.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member FindBackgroundReferencesInFile : filename : string * options : FSharpProjectOptions * symbol: FSharpSymbol * ?canInvalidateProject: bool * ?userOpName: string -> Async<Range seq>
+    member FindBackgroundReferencesInFile : filename : string * options : FSharpProjectOptions * symbol: FSharpSymbol * ?canInvalidateProject: bool * ?userOpName: string -> Async<range seq>
 
     /// <summary>
     /// <para>Get semantic classification for a file.</para>
@@ -312,7 +312,7 @@ type public FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetBackgroundSemanticClassificationForFile : filename : string * options : FSharpProjectOptions * ?userOpName: string -> Async<struct(Range * SemanticClassificationType) []>
+    member GetBackgroundSemanticClassificationForFile : filename : string * options : FSharpProjectOptions * ?userOpName: string -> Async<struct(range * SemanticClassificationType) []>
 
     /// <summary>
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API.

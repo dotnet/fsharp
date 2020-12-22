@@ -25,7 +25,7 @@ open FSharp.Compiler.Range
 ///   - out-of-project sources editing
 ///   - default references for fsc.exe
 ///   - default references for fsi.exe
-type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: Range, sdkDirOverride: string option) =
+type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
 
     static let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 

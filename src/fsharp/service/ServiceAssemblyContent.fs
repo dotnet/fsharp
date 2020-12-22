@@ -413,11 +413,11 @@ type ScopeKind =
 
 type InsertContext =
     { ScopeKind: ScopeKind
-      Pos: Pos }
+      Pos: pos }
 
 type Module =
     { Idents: Idents
-      Range: Range }
+      Range: range }
 
 type OpenStatementInsertionPoint =
     | TopLevel
@@ -438,8 +438,8 @@ module ParsedInput =
         | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
-    let getLongIdents (input: ParsedInput option) : IDictionary<Pos, LongIdent> =
-        let identsByEndPos = Dictionary<Pos, LongIdent>()
+    let getLongIdents (input: ParsedInput option) : IDictionary<pos, LongIdent> =
+        let identsByEndPos = Dictionary<pos, LongIdent>()
     
         let addLongIdent (longIdent: LongIdent) =
             for ident in longIdent do
@@ -804,7 +804,7 @@ module ParsedInput =
 
         let inline longIdentToIdents ident = ident |> Seq.map string |> Seq.toArray
         
-        let addModule (longIdent: LongIdent, range: Range) =
+        let addModule (longIdent: LongIdent, range: range) =
             modules.Add 
                 { Idents = longIdentToIdents longIdent
                   Range = range }

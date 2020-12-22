@@ -393,7 +393,7 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
 
     /// Lookup a type parameter
-    member _.Item (tp: Typar, m: Range) =
+    member _.Item (tp: Typar, m: range) =
         try reprs.[tp.Stamp]
         with :? KeyNotFoundException ->
           errorR(InternalError("Undefined or unsolved type variable: " + showL(typarL tp), m))
@@ -757,7 +757,7 @@ type ValStorage =
 
     /// Indicates the value is represented as an IL method (in a "main" class for a F#
     /// compilation unit, or as a member) according to its inferred or specified arity.
-    | Method of ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * Range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
+    | Method of ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
 
     /// Indicates the value is stored at the given position in the closure environment accessed via "ldarg 0"
     | Env of ILType * ILFieldSpec * NamedLocalIlxClosureInfo ref option
@@ -1301,7 +1301,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap: ImportMap, isIncrement
 //--------------------------------------------------------------------------
 
 /// Generate IL debugging information.
-let GenILSourceMarker (g: TcGlobals) (m: Range) =
+let GenILSourceMarker (g: TcGlobals) (m: range) =
     ILSourceMarker.Create(document=g.memoize_file m.FileIndex,
                           line=m.StartLine,
                           /// NOTE: .NET && VS measure first column as column 1
@@ -1347,7 +1347,7 @@ let MergePropertyPair m (pd: ILPropertyDef) (pdef: ILPropertyDef) =
 
 type PropKey = PropKey of string * ILTypes * ILThisConvention
 
-let AddPropertyDefToHash (m: Range) (ht: Dictionary<PropKey, (int * ILPropertyDef)>) (pdef: ILPropertyDef) =
+let AddPropertyDefToHash (m: range) (ht: Dictionary<PropKey, (int * ILPropertyDef)>) (pdef: ILPropertyDef) =
     let nm = PropKey(pdef.Name, pdef.Args, pdef.CallingConv)
     match ht.TryGetValue nm with
     | true, (idx, pd) ->
@@ -1614,7 +1614,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
     /// static init fields on script modules.
-    let mutable scriptInitFspecs: (ILFieldSpec * Range) list = []
+    let mutable scriptInitFspecs: (ILFieldSpec * range) list = []
 
     member _.AddScriptInitFieldSpec (fieldSpec, range) =
         scriptInitFspecs <- (fieldSpec, range) :: scriptInitFspecs
@@ -1726,7 +1726,7 @@ let FeeFeeInstr (cenv: cenv) doc =
                                         endColumn = 0))
 
 /// Buffers for IL code generation
-type CodeGenBuffer(m: Range,
+type CodeGenBuffer(m: range,
                    mgbuf: AssemblyBuilder,
                    methodName,
                    alreadyUsedArgs: int) =

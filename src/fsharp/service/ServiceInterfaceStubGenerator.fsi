@@ -12,7 +12,7 @@ open FSharp.Compiler.SyntaxTree
 type InterfaceData =
     | Interface of SynType * SynMemberDefns option
     | ObjExpr of SynType * SynBinding list
-    member Range : Range
+    member Range : range
     member TypeParameters : string[]
 
 module InterfaceStubGenerator =
@@ -26,9 +26,9 @@ module InterfaceStubGenerator =
     /// Get associated member names and ranges
     /// In case of properties, intrinsic ranges might not be correct for the purpose of getting
     /// positions of 'member', which indicate the indentation for generating new members
-    val getMemberNameAndRanges : InterfaceData -> (string * Range) list
+    val getMemberNameAndRanges : InterfaceData -> (string * range) list
 
-    val getImplementedMemberSignatures : getMemberByLocation: (string * Range -> FSharpSymbolUse option) -> FSharpDisplayContext -> InterfaceData -> Async<Set<string>>
+    val getImplementedMemberSignatures : getMemberByLocation: (string * range -> FSharpSymbolUse option) -> FSharpDisplayContext -> InterfaceData -> Async<Set<string>>
 
     /// Check whether an entity is an interface or type abbreviation of an interface
     val isInterface : FSharpEntity -> bool
@@ -37,5 +37,5 @@ module InterfaceStubGenerator =
     val formatInterface : startColumn: int  -> indentation: int -> typeInstances: string [] ->  objectIdent: string -> methodBody: string -> displayContext: FSharpDisplayContext ->  excludedMemberSignatures : Set<string> -> FSharpEntity -> verboseMode : bool -> string
 
     /// Find corresponding interface declaration at a given position
-    val tryFindInterfaceDeclaration: Pos -> parsedInput: ParsedInput -> InterfaceData option
+    val tryFindInterfaceDeclaration: pos -> parsedInput: ParsedInput -> InterfaceData option
 #endif

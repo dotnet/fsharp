@@ -74,10 +74,10 @@ module UnusedOpens =
           OpenedGroups: OpenedModuleGroup list
 
           /// The range of open statement itself
-          Range: Range
+          Range: range
 
           /// The scope on which this open declaration is applied
-          AppliedScope: Range }
+          AppliedScope: range }
 
     /// Gets the open statements, their scopes and their resolutions
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration[]) : OpenStatement[] = 
@@ -152,8 +152,8 @@ module UnusedOpens =
     /// in the scope of the 'open' is from that module.
     ///
     /// Performance will be roughly NumberOfOpenStatements x NumberOfSymbolUses
-    let isOpenStatementUsed (symbolUses2: FSharpSymbolUse[]) (symbolUsesRangesByDeclaringEntity: Dictionary<FSharpEntity, Range list>) 
-                            (usedModules: Dictionary<FSharpEntity, Range list>) (openStatement: OpenStatement) =
+    let isOpenStatementUsed (symbolUses2: FSharpSymbolUse[]) (symbolUsesRangesByDeclaringEntity: Dictionary<FSharpEntity, range list>) 
+                            (usedModules: Dictionary<FSharpEntity, range list>) (openStatement: OpenStatement) =
 
         // Don't re-check modules whose symbols are already known to have been used
         let openedGroupsToExamine =
@@ -193,8 +193,8 @@ module UnusedOpens =
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
-    let rec filterOpenStatementsIncremental symbolUses2 (symbolUsesRangesByDeclaringEntity: Dictionary<FSharpEntity, Range list>) (openStatements: OpenStatement list)
-                                            (usedModules: Dictionary<FSharpEntity, Range list>) acc = 
+    let rec filterOpenStatementsIncremental symbolUses2 (symbolUsesRangesByDeclaringEntity: Dictionary<FSharpEntity, range list>) (openStatements: OpenStatement list)
+                                            (usedModules: Dictionary<FSharpEntity, range list>) acc = 
         async { 
             match openStatements with
             | openStatement :: rest ->
@@ -214,7 +214,7 @@ module UnusedOpens =
         async {
             // the key is a namespace or module, the value is a list of FSharpSymbolUse range of symbols defined in the 
             // namespace or module. So, it's just symbol uses ranges grouped by namespace or module where they are _defined_. 
-            let symbolUsesRangesByDeclaringEntity = Dictionary<FSharpEntity, Range list>(entityHash)
+            let symbolUsesRangesByDeclaringEntity = Dictionary<FSharpEntity, range list>(entityHash)
             for symbolUse in symbolUses1 do
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as f ->
@@ -230,7 +230,7 @@ module UnusedOpens =
 
     /// Get the open statements whose contents are not referred to anywhere in the symbol uses.
     /// Async to allow cancellation.
-    let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<Range list> =
+    let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         async {
             let! ct = Async.CancellationToken
             let symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile(ct)
@@ -243,7 +243,7 @@ module UnusedOpens =
 module SimplifyNames = 
     type SimplifiableRange =
         {
-          Range: Range
+          Range: range
           RelativeName: string
         }
 

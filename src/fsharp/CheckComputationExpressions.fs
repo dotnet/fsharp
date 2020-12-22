@@ -233,7 +233,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | _ -> false
 
     /// Make a builder.Method(...) call
-    let mkSynCall nm (m: Range) args = 
+    let mkSynCall nm (m: range) args = 
         let m = m.MakeSynthetic() // Mark as synthetic so the language service won't pick it up.
         let args = 
             match args with 
@@ -503,7 +503,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | _ -> 
             None
 
-    let arbPat (m: Range) = mkSynPatVar None (mkSynId (m.MakeSynthetic()) "_missingVar")
+    let arbPat (m: range) = mkSynPatVar None (mkSynId (m.MakeSynthetic()) "_missingVar")
 
     let MatchIntoSuffixOrRecover alreadyGivenError (nm: Ident) (e: SynExpr) = 
         match e with 
@@ -710,7 +710,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | _ ->  
             false
                     
-    let addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, Range>) f = 
+    let addVarsToVarSpace (varSpace: LazyWithContext<Val list * TcEnv, range>) f = 
         LazyWithContext.Create
             ((fun m ->
                   let (patvs: Val list, env) = varSpace.Force m 

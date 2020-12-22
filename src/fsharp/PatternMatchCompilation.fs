@@ -24,9 +24,9 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 
-exception MatchIncomplete of bool * (string * bool) option * Range
-exception RuleNeverMatched of Range
-exception EnumMatchIncomplete of bool * (string * bool) option * Range
+exception MatchIncomplete of bool * (string * bool) option * range
+exception RuleNeverMatched of range
+exception EnumMatchIncomplete of bool * (string * bool) option * range
 
 type ActionOnFailure =
     | ThrowIncompleteMatchException
@@ -37,21 +37,21 @@ type ActionOnFailure =
 
 [<NoEquality; NoComparison>]
 type Pattern =
-    | TPat_const of Const * Range
-    | TPat_wild of Range  (* note = TPat_disjs([], m), but we haven't yet removed that duplication *)
-    | TPat_as of  Pattern * PatternValBinding * Range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
-    | TPat_disjs of  Pattern list * Range
-    | TPat_conjs of  Pattern list * Range
-    | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * Range
-    | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * Range
-    | TPat_exnconstr of TyconRef * Pattern list * Range
-    | TPat_tuple of  TupInfo * Pattern list * TType list * Range
-    | TPat_array of  Pattern list * TType * Range
-    | TPat_recd of TyconRef * TypeInst * Pattern list * Range
-    | TPat_range of char * char * Range
-    | TPat_null of Range
-    | TPat_isinst of TType * TType * PatternValBinding option * Range
-    | TPat_error of Range
+    | TPat_const of Const * range
+    | TPat_wild of range  (* note = TPat_disjs([], m), but we haven't yet removed that duplication *)
+    | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
+    | TPat_disjs of  Pattern list * range
+    | TPat_conjs of  Pattern list * range
+    | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
+    | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
+    | TPat_exnconstr of TyconRef * Pattern list * range
+    | TPat_tuple of  TupInfo * Pattern list * TType list * range
+    | TPat_array of  Pattern list * TType * range
+    | TPat_recd of TyconRef * TypeInst * Pattern list * range
+    | TPat_range of char * char * range
+    | TPat_null of range
+    | TPat_isinst of TType * TType * PatternValBinding option * range
+    | TPat_error of range
 
     member this.Range =
         match this with
@@ -74,7 +74,7 @@ type Pattern =
 and PatternValBinding = PBind of Val * TypeScheme
 
 and TypedMatchClause =
-    | TClause of Pattern * Expr option * DecisionTreeTarget * Range
+    | TClause of Pattern * Expr option * DecisionTreeTarget * range
     member c.GuardExpr = let (TClause(_, whenOpt, _, _)) = c in whenOpt
     member c.Pattern = let (TClause(p, _, _, _)) = c in p
     member c.Range = let (TClause(_, _, _, m)) = c in m
@@ -745,7 +745,7 @@ and erasePartials inps =
 // The algorithm
 //---------------------------------------------------------------------------
 
-type EdgeDiscrim = EdgeDiscrim of int * DecisionTreeTest * Range
+type EdgeDiscrim = EdgeDiscrim of int * DecisionTreeTest * range
 let getDiscrim (EdgeDiscrim(_, discrim, _)) = discrim
 
 

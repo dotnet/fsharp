@@ -21,12 +21,15 @@ type Pos =
     member Encoding: int64
 
     /// Decode a position fro a 64-bit integer
-    static member Decode: int64 -> Pos
+    static member Decode: int64 -> pos
 
     /// The maximum number of bits needed to store an encoded position 
     static member EncodingSize: int
-  
-/// Represents a range within a known file
+
+/// Represents a position in a file
+and pos = Pos
+
+/// Represents a range within a file
 [<Struct; CustomEquality; NoComparison>]
 type Range =
 
@@ -43,16 +46,16 @@ type Range =
     member EndColumn: int
 
     /// The start position of the range
-    member Start: Pos
+    member Start: pos
 
     /// The end position of the range
-    member End: Pos
+    member End: pos
 
     /// The empty range that is located at the start position of the range
-    member StartRange: Range
+    member StartRange: range
 
     /// The empty range that is located at the end position of the range
-    member EndRange: Range
+    member EndRange: range
 
     /// The file index for the range
     member FileIndex: int
@@ -66,14 +69,17 @@ type Range =
     member IsSynthetic: bool 
 
     /// Convert a range to be synthetic
-    member MakeSynthetic: unit -> Range
+    member MakeSynthetic: unit -> range
 
     /// Convert a range to string
     member ToShortString: unit -> string
 
     /// The range where all values are zero
-    static member Zero: Range
+    static member Zero: range
   
+/// Represents a range within a file
+and range = Range
+
 /// Represents a line number when using zero-based line counting (used by Visual Studio)
 #if CHECK_LINE0_TYPES
 // Visual Studio uses line counts starting at 0, F# uses them starting at 1 
@@ -92,34 +98,34 @@ type Range01 = Pos01 * Pos01
 
 module Pos =
     /// Create a position for the given line and column
-    val mkPos: line:int -> column:int -> Pos
+    val mkPos: line:int -> column:int -> pos
 
     /// Compare positions for less-than
-    val posLt: Pos -> Pos -> bool
+    val posLt: pos -> pos -> bool
 
     /// Compare positions for greater-than
-    val posGt: Pos -> Pos -> bool
+    val posGt: pos -> pos -> bool
 
     /// Compare positions for equality
-    val posEq: Pos -> Pos -> bool
+    val posEq: pos -> pos -> bool
 
     /// Compare positions for greater-than-or-equal-to
-    val posGeq: Pos -> Pos -> bool
+    val posGeq: pos -> pos -> bool
 
     /// Convert a position from zero-based line counting (used by Visual Studio) to one-based line counting (used internally in the F# compiler and in F# error messages) 
-    val fromZ: line:Line0 -> column:int -> Pos
+    val fromZ: line:Line0 -> column:int -> pos
 
     /// Convert a position from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
-    val toZ: Pos -> Pos01
+    val toZ: pos -> Pos01
 
     /// Output a position
-    val outputPos: System.IO.TextWriter -> Pos -> unit
+    val outputPos: System.IO.TextWriter -> pos -> unit
 
     /// Convert a position to a string
-    val stringOfPos: Pos   -> string
+    val stringOfPos: pos   -> string
 
     /// The zero position
-    val pos0: Pos
+    val pos0: pos
 
 module FileIndex =
 
@@ -134,64 +140,64 @@ module FileIndex =
 module Range =
 
     /// Ordering on positions
-    val posOrder: IComparer<Pos>
+    val posOrder: IComparer<pos>
 
     /// This view of range marks uses file indexes explicitly 
-    val mkFileIndexRange: FileIndex -> Pos -> Pos -> Range
+    val mkFileIndexRange: FileIndex -> pos -> pos -> range
 
     /// This view hides the use of file indexes and just uses filenames 
-    val mkRange: string -> Pos -> Pos -> Range
+    val mkRange: string -> pos -> pos -> range
 
     /// Make a range for the first non-whitespace line of the file if any. Otherwise use line 1 chars 0-80.
     /// This involves reading the file.
-    val mkFirstLineOfFile: string -> Range
+    val mkFirstLineOfFile: string -> range
 
-    val equals: Range -> Range -> bool
+    val equals: range -> range -> bool
 
     /// Reduce a range so it only covers a line
-    val trimRangeToLine: Range -> Range
+    val trimRangeToLine: range -> range
 
     /// not a total order, but enough to sort on ranges 
-    val rangeOrder: IComparer<Range>
+    val rangeOrder: IComparer<range>
 
     /// Output a range
-    val outputRange: System.IO.TextWriter -> Range -> unit
+    val outputRange: System.IO.TextWriter -> range -> unit
 
     /// Union two ranges, taking their first occurring start position and last occurring end position
-    val unionRanges: Range -> Range -> Range
+    val unionRanges: range -> range -> range
 
     /// Test to see if one range contains another range
-    val rangeContainsRange: Range -> Range -> bool
+    val rangeContainsRange: range -> range -> bool
 
     /// Test to see if a range contains a position
-    val rangeContainsPos: Range -> Pos -> bool
+    val rangeContainsPos: range -> pos -> bool
 
     /// Test to see if a range occurs fully before a position
-    val rangeBeforePos: Range -> Pos -> bool
+    val rangeBeforePos: range -> pos -> bool
 
     /// Make a dummy range for a file
-    val rangeN: string -> int -> Range
+    val rangeN: string -> int -> range
 
     /// The zero range
-    val range0: Range
+    val range0: range
 
     /// A range associated with a dummy file called "startup"
-    val rangeStartup: Range
+    val rangeStartup: range
 
     /// A range associated with a dummy file for the command line arguments
-    val rangeCmdArgs: Range
+    val rangeCmdArgs: range
  
     /// Convert a range to a string
-    val stringOfRange: Range -> string
+    val stringOfRange: range -> string
 
     /// Convert a range from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
-    val toZ: Range -> Range01
+    val toZ: range -> Range01
 
     /// Convert a range from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
-    val toFileZ: Range -> string * Range01
+    val toFileZ: range -> string * Range01
 
     /// Equality comparer for range.
-    val comparer: IEqualityComparer<Range>
+    val comparer: IEqualityComparer<range>
 
 module Line =
 

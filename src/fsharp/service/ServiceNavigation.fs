@@ -38,8 +38,8 @@ type FSharpEnclosingEntityKind =
 
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
-type FSharpNavigationDeclarationItem(uniqueName: string, name: string, kind: FSharpNavigationDeclarationItemKind, glyph: FSharpGlyph, range: Range, 
-                                     bodyRange: Range, singleTopLevel: bool, enclosingEntityKind: FSharpEnclosingEntityKind, isAbstract: bool, access: SynAccess option) = 
+type FSharpNavigationDeclarationItem(uniqueName: string, name: string, kind: FSharpNavigationDeclarationItemKind, glyph: FSharpGlyph, range: range, 
+                                     bodyRange: range, singleTopLevel: bool, enclosingEntityKind: FSharpEnclosingEntityKind, isAbstract: bool, access: SynAccess option) = 
     
     member x.bodyRange = bodyRange
     member x.UniqueName = uniqueName
@@ -56,7 +56,7 @@ type FSharpNavigationDeclarationItem(uniqueName: string, name: string, kind: FSh
     
     member x.WithUniqueName(uniqueName: string) =
       FSharpNavigationDeclarationItem(uniqueName, name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access)
-    static member Create(name: string, kind, glyph: FSharpGlyph, range: Range, bodyRange: Range, singleTopLevel: bool, enclosingEntityKind, isAbstract, access: SynAccess option) = 
+    static member Create(name: string, kind, glyph: FSharpGlyph, range: range, bodyRange: range, singleTopLevel: bool, enclosingEntityKind, isAbstract, access: SynAccess option) = 
       FSharpNavigationDeclarationItem("", name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access)
 
 /// Represents top-level declarations (that should be in the type drop-down)
@@ -75,23 +75,23 @@ type FSharpNavigationItems(declarations:FSharpNavigationTopLevelDeclaration[]) =
 
 module NavigationImpl =
     let unionRangesChecked r1 r2 =
-        if FSharp.Compiler.Range.equals r1 Range.Zero then r2
-        elif FSharp.Compiler.Range.equals r2 Range.Zero then r1
+        if FSharp.Compiler.Range.equals r1 range.Zero then r2
+        elif FSharp.Compiler.Range.equals r2 range.Zero then r1
         else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 
         match decls |> List.map (f >> (fun (d:FSharpNavigationDeclarationItem) -> d.bodyRange)) with 
         | hd :: tl -> tl |> List.fold unionRangesChecked hd
-        | [] -> Range.Zero
+        | [] -> range.Zero
     
     let rangeOfDecls = rangeOfDecls2 fst
 
-    let moduleRange (idm:Range) others = 
+    let moduleRange (idm:range) others = 
       unionRangesChecked idm.EndRange (rangeOfDecls2 (fun (a, _, _) -> a) others)
     
     let fldspecRange fldspec =
       match fldspec with
-      | UnionCaseFields(flds) -> flds |> List.fold (fun st (Field(_, _, _, _, _, _, _, m)) -> unionRangesChecked m st) Range.Zero
+      | UnionCaseFields(flds) -> flds |> List.fold (fun st (Field(_, _, _, _, _, _, _, m)) -> unionRangesChecked m st) range.Zero
       | UnionCaseFullType(ty, _) -> ty.Range
       
     let bodyRange mb decls =
@@ -216,7 +216,7 @@ module NavigationImpl =
                 | _ -> [] 
                   
         // Returns class-members for the right dropdown                  
-        and processMembers members enclosingEntityKind : (Range * list<FSharpNavigationDeclarationItem * int>) = 
+        and processMembers members enclosingEntityKind : (range * list<FSharpNavigationDeclarationItem * int>) = 
             let members = 
                 members 
                 |> List.groupBy (fun x -> x.Range)
@@ -251,7 +251,7 @@ module NavigationImpl =
                          | x -> x
                      | _ -> [])) 
             
-            (members |> Seq.map fst |> Seq.fold unionRangesChecked Range.Zero),
+            (members |> Seq.map fst |> Seq.fold unionRangesChecked range.Zero),
             (members |> List.collect snd)
 
         // Process declarations in a module that belong to the right drop-down (let bindings)
@@ -497,7 +497,7 @@ module NavigateTo =
 
     type NavigableItem = 
         { Name: string
-          Range: Range
+          Range: range
           IsSignature: bool
           Kind: NavigableItemKind
           Container: Container }

@@ -75,8 +75,8 @@ type RequiredSlot =
 
 type SlotImplSet = SlotImplSet of RequiredSlot list * NameMultiMap<RequiredSlot> * OverrideInfo list * PropInfo list
 
-exception TypeIsImplicitlyAbstract of Range
-exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * Import.ImportMap * Range
+exception TypeIsImplicitlyAbstract of range
+exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option * TcGlobals * Import.ImportMap * range
 
 module DispatchSlotChecking =
 

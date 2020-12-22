@@ -25,13 +25,13 @@ open FSharp.Compiler.ExtensionTyping
 open Microsoft.DotNet.DependencyManager
 
 /// This exception is an old-style way of reporting a diagnostic
-exception AssemblyNotResolved of (*originalName*) string * Range
+exception AssemblyNotResolved of (*originalName*) string * range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * Range
+exception MSBuildReferenceResolutionWarning of (*MSBuild warning code*)string * (*Message*)string * range
 
 /// This exception is an old-style way of reporting a diagnostic
-exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * Range
+exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*Message*)string * range
 
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
@@ -131,11 +131,11 @@ type TcImports =
     /// This excludes any framework imports (which may be shared between multiple builds)
     member GetCcusExcludingBase: unit -> CcuThunk list 
 
-    member FindDllInfo: CompilationThreadToken * Range * string -> ImportedBinary
+    member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
 
-    member TryFindDllInfo: CompilationThreadToken * Range * string * lookupOnly: bool -> option<ImportedBinary>
+    member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> option<ImportedBinary>
 
-    member FindCcuFromAssemblyRef: CompilationThreadToken * Range * ILAssemblyRef -> CcuResolutionResult
+    member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 
 #if !NO_EXTENSIONTYPING
     member ProviderGeneratedTypeRoots: ProviderGeneratedType list
@@ -194,4 +194,4 @@ type TcImports =
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL: ctok: CompilationThreadToken * tcImports: TcImports * tcEnv: TcEnv * thisAssemblyName: string * referenceRange: Range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
+val RequireDLL: ctok: CompilationThreadToken * tcImports: TcImports * tcEnv: TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)

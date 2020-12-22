@@ -64,7 +64,7 @@ type public FSharpDeclarationListInfo =
     member IsError : bool
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:Range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * currentNamespace:string[] option * isAttributeApplicationContext:bool -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * currentNamespace:string[] option * isAttributeApplicationContext:bool -> FSharpDeclarationListInfo
 
     static member internal Error : message:string -> FSharpDeclarationListInfo
 
@@ -135,5 +135,5 @@ type public FSharpMethodGroup =
     /// The methods (or other items) in the group
     member Methods: FSharpMethodGroupItem[] 
 
-    static member internal Create : InfoReader * Range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
+    static member internal Create : InfoReader * range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
 

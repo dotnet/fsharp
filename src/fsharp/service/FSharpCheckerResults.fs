@@ -90,7 +90,7 @@ type FSharpFindDeclResult =
     | DeclNotFound of FSharpFindDeclFailureReason
 
     /// found declaration
-    | DeclFound of Range
+    | DeclFound of range
 
     /// Indicates an external declaration was found
     | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
@@ -99,8 +99,8 @@ type FSharpFindDeclResult =
 /// (Depending on the kind of the items, we may stop processing or continue to find better items)
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal NameResResult = 
-    | Members of (ItemWithInst list * DisplayEnv * Range)
-    | Cancel of DisplayEnv * Range
+    | Members of (ItemWithInst list * DisplayEnv * range)
+    | Cancel of DisplayEnv * range
     | Empty
 
 [<RequireQualifiedAccess>]
@@ -113,7 +113,7 @@ type GetPreciseCompletionListFromExprTypingsResult =
     | NoneBecauseTypecheckIsStaleAndTextChanged
     | NoneBecauseThereWereTypeErrors
     | None
-    | Some of (ItemWithInst list * DisplayEnv * Range) * TType
+    | Some of (ItemWithInst list * DisplayEnv * range) * TType
 
 type Names = string list 
     
@@ -188,7 +188,7 @@ type internal TypeCheckInfo
                 
                 if contained then 
                     match bestAlmostIncludedSoFar with 
-                    | Some (rightm:Range,_,_) -> 
+                    | Some (rightm:range,_,_) -> 
                         if posGt possm.End rightm.End || 
                           (posEq possm.End rightm.End && posGt possm.Start rightm.Start) then
                             bestAlmostIncludedSoFar <- Some (possm,env,ad)
@@ -219,7 +219,7 @@ type internal TypeCheckInfo
         items
         
     // Filter items to show only valid & return Some if there are any
-    let ReturnItemsOfType (items: ItemWithInst list) g denv (m:Range) filterCtors =
+    let ReturnItemsOfType (items: ItemWithInst list) g denv (m:range) filterCtors =
         let items = 
             items 
             |> RemoveDuplicateItems g
@@ -231,8 +231,8 @@ type internal TypeCheckInfo
         else 
             NameResResult.Empty
 
-    let GetCapturedNameResolutions (endOfNamesPos: Pos) resolveOverloads =
-        let filter (endPos: Pos) items =
+    let GetCapturedNameResolutions (endOfNamesPos: pos) resolveOverloads =
+        let filter (endPos: pos) items =
             items |> ResizeArray.filter (fun (cnr: CapturedNameResolution) ->
                 let range = cnr.Range
                 range.EndLine = endPos.Line && range.EndColumn = endPos.Column)
@@ -386,7 +386,7 @@ type internal TypeCheckInfo
     
     /// obtains captured typing for the given position
     /// if type of captured typing is record - returns list of record fields
-    let GetRecdFieldsForExpr(r : Range) = 
+    let GetRecdFieldsForExpr(r : range) = 
         let _, quals = GetExprTypingForPosition(r.End)
         let bestQual = 
             match quals with
@@ -735,14 +735,14 @@ type internal TypeCheckInfo
                        | ValueNone, ValueNone -> None
 
 
-    let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: Range ) =
+    let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
         items |> List.map DefaultCompletionItem, denv, m
 
     /// Get the auto-complete items at a particular location.
     let GetDeclItemsForNamesAtPosition(parseResultsOpt: FSharpParseFileResults option, origLongIdentOpt: string list option, 
                                        residueOpt:string option, lastDotPos: int option, line:int, lineStr:string, colAtEndOfNamesAndResidue, filterCtors, resolveOverloads, 
                                        getAllSymbols: unit -> AssemblySymbol list) 
-                                       : (CompletionItem list * DisplayEnv * CompletionContext option * Range) option = 
+                                       : (CompletionItem list * DisplayEnv * CompletionContext option * range) option = 
 
         let loc = 
             match colAtEndOfNamesAndResidue with
@@ -891,12 +891,12 @@ type internal TypeCheckInfo
     /// Find the most precise display context for the given line and column.
     member _.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
 
-    member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: Pos) : ModuleOrNamespaceRef list =
+    member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
     /// Determines if a long ident is resolvable at a specific point.
-    member _.IsRelativeNameResolvable(cursorPos: Pos, plid: string list, item: Item) : bool =
+    member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
         ErrorScope.Protect
             Range.range0
             (fun () ->
@@ -908,7 +908,7 @@ type internal TypeCheckInfo
                 false)
 
     /// Determines if a long ident is resolvable at a specific point.
-    member scope.IsRelativeNameResolvableFromSymbol(cursorPos: Pos, plid: string list, symbol: FSharpSymbol) : bool =
+    member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
@@ -1317,7 +1317,7 @@ type internal TypeCheckInfo
     member _.GetFormatSpecifierLocationsAndArity() = 
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
-    member _.GetSemanticClassification(range: Range option) : struct (Range * SemanticClassificationType) [] =
+    member _.GetSemanticClassification(range: range option) : struct (range * SemanticClassificationType) [] =
         sResolutions.GetSemanticClassification(g, amap, sSymbolUses.GetFormatSpecifierLocationsAndArity(), range)
 
     /// The resolutions in the file
@@ -1857,7 +1857,7 @@ type FSharpCheckFileResults
                 // This operation is not asynchronous - GetFormatSpecifierLocationsAndArity can be run on the calling thread
                 scope.GetFormatSpecifierLocationsAndArity())
 
-    member _.GetSemanticClassification(range: Range option) =
+    member _.GetSemanticClassification(range: range option) =
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
@@ -1903,20 +1903,20 @@ type FSharpCheckFileResults
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                         yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
 
-    member _.GetVisibleNamespacesAndModulesAtPoint(pos: Pos) = 
+    member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member _.IsRelativeNameResolvable(cursorPos: Pos, plid: string list, item: Item) = 
+    member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) = 
         threadSafeOp (fun () -> true) (fun scope -> 
             scope.IsRelativeNameResolvable(cursorPos, plid, item))
 
-    member _.IsRelativeNameResolvableFromSymbol(cursorPos: Pos, plid: string list, symbol: FSharpSymbol) = 
+    member _.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) = 
         threadSafeOp (fun () -> true) (fun scope -> 
             scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol))
     
-    member _.GetDisplayContextForPos(cursorPos: Pos) =
+    member _.GetDisplayContextForPos(cursorPos: pos) =
         threadSafeOp (fun () -> None) (fun scope -> 
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))

@@ -549,7 +549,7 @@ module InterfaceStubGenerator =
     ///  (1) Crack ASTs to get member names and their associated ranges
     ///  (2) Check symbols of those members based on ranges
     ///  (3) If any symbol found, capture its member signature 
-    let getImplementedMemberSignatures (getMemberByLocation: string * Range -> FSharpSymbolUse option) displayContext interfaceData = 
+    let getImplementedMemberSignatures (getMemberByLocation: string * range -> FSharpSymbolUse option) displayContext interfaceData = 
         let formatMemberSignature (symbolUse: FSharpSymbolUse) =            
             match symbolUse.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->
@@ -668,7 +668,7 @@ module InterfaceStubGenerator =
             writer.Dump()
 
     /// Find corresponding interface declaration at a given position
-    let tryFindInterfaceDeclaration (pos: Pos) (parsedInput: ParsedInput) =
+    let tryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
 

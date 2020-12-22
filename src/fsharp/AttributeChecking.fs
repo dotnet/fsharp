@@ -22,8 +22,8 @@ open FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
-exception ObsoleteWarning of string * Range
-exception ObsoleteError of string * Range
+exception ObsoleteWarning of string * range
+exception ObsoleteError of string * range
 
 let fail() = failwith "This custom attribute has an argument that can not yet be converted using this API"
 
@@ -77,7 +77,7 @@ let rec private evalFSharpAttribArg g e =
 
 type AttribInfo = 
     | FSAttribInfo of TcGlobals * Attrib
-    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * Range
+    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
 
     member x.Range = 
          match x with 
@@ -193,7 +193,7 @@ let BindMethInfoAttributes m minfo f1 f2 f3 =
 
 /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
-let TryBindMethInfoAttribute g (m: Range) (AttribInfo(atref, _) as attribSpec) minfo f1 f2 f3 = 
+let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) minfo f1 f2 f3 = 
 #if NO_EXTENSIONTYPING
     // to prevent unused parameter warning
     ignore f3
@@ -213,7 +213,7 @@ let TryBindMethInfoAttribute g (m: Range) (AttribInfo(atref, _) as attribSpec) m
 /// Try to find a specific attribute on a method, where the attribute accepts a string argument.
 ///
 /// This is just used for the 'ConditionalAttribute' attribute
-let TryFindMethInfoStringAttribute g (m: Range) attribSpec minfo  =
+let TryFindMethInfoStringAttribute g (m: range) attribSpec minfo  =
     TryBindMethInfoAttribute g m attribSpec minfo 
                     (function ([ILAttribElem.String (Some msg) ], _) -> Some msg | _ -> None) 
                     (function (Attrib(_, _, [ AttribStringArg msg ], _, _, _, _)) -> Some msg | _ -> None)
@@ -414,7 +414,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g (m: Range) (ty: TType) minfo = 
+let MethInfoIsUnseen g (m: range) (ty: TType) minfo = 
     let isUnseenByObsoleteAttrib () = 
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 

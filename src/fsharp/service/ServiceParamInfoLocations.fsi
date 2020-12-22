@@ -19,16 +19,16 @@ type public FSharpNoteworthyParamInfoLocations =
     member LongId : string list
 
     /// The start location of long identifier prior to the open-parentheses
-    member LongIdStartLocation : Pos
+    member LongIdStartLocation : pos
 
     /// The end location of long identifier prior to the open-parentheses
-    member LongIdEndLocation : Pos
+    member LongIdEndLocation : pos
 
     /// The location of the open-parentheses
-    member OpenParenLocation : Pos
+    member OpenParenLocation : pos
 
     /// The locations of commas and close parenthesis (or, last char of last arg, if no final close parenthesis)
-    member TupleEndLocations : Pos[]  
+    member TupleEndLocations : pos[]  
 
     /// Is false if either this is a call without parens "f x" or the parser recovered as in "f(x,y"
     member IsThereACloseParen : bool   
@@ -37,7 +37,7 @@ type public FSharpNoteworthyParamInfoLocations =
     member NamedParamNames : string option []  
 
     /// Find the information about parameter info locations at a particular source location
-    static member Find : Pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option
+    static member Find : pos * ParsedInput -> FSharpNoteworthyParamInfoLocations option
 
 module internal SynExprAppLocationsImpl =
-    val getAllCurriedArgsAtPosition: pos: Pos -> parseTree: ParsedInput -> Range list option
+    val getAllCurriedArgsAtPosition: pos: pos -> parseTree: ParsedInput -> range list option

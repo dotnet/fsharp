@@ -29,13 +29,13 @@ open FSharp.Compiler.ExtensionTyping
 type AssemblyLoader = 
 
     /// Resolve an Abstract IL assembly reference to a Ccu
-    abstract FindCcuFromAssemblyRef : CompilationThreadToken * Range * ILAssemblyRef -> CcuResolutionResult
+    abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 #if !NO_EXTENSIONTYPING
 
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
-    abstract GetProvidedAssemblyInfo : CompilationThreadToken * Range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
+    abstract GetProvidedAssemblyInfo : CompilationThreadToken * range * Tainted<ProvidedAssembly> -> bool * ProvidedAssemblyStaticLinkingMap option
 
     /// Record a root for a [<Generate>] type to help guide static linking & type relocation
     abstract RecordGeneratedTypeRoot : ProviderGeneratedType -> unit
@@ -205,7 +205,7 @@ let rec CanImportILType (env: ImportMap) m ty =
 #if !NO_EXTENSIONTYPING
 
 /// Import a provided type reference as an F# type TyconRef
-let ImportProvidedNamedType (env: ImportMap) (m: Range) (st: Tainted<ProvidedType>) = 
+let ImportProvidedNamedType (env: ImportMap) (m: range) (st: Tainted<ProvidedType>) = 
     // See if a reverse-mapping exists for a generated/relocated System.Type
     match st.PUntaint((fun st -> st.TryGetTyconRef()), m) with 
     | Some x -> (x :?> TyconRef)
@@ -214,7 +214,7 @@ let ImportProvidedNamedType (env: ImportMap) (m: Range) (st: Tainted<ProvidedTyp
         ImportILTypeRef env m tref
 
 /// Import a provided type as an AbstractIL type
-let rec ImportProvidedTypeAsILType (env: ImportMap) (m: Range) (st: Tainted<ProvidedType>) = 
+let rec ImportProvidedTypeAsILType (env: ImportMap) (m: range) (st: Tainted<ProvidedType>) = 
     if st.PUntaint ((fun x -> x.IsVoid), m) then ILType.Void
     elif st.PUntaint((fun st -> st.IsGenericParameter), m) then
         mkILTyvarTy (uint16 (st.PUntaint((fun st -> st.GenericParameterPosition), m)))
@@ -250,7 +250,7 @@ let rec ImportProvidedTypeAsILType (env: ImportMap) (m: Range) (st: Tainted<Prov
             mkILBoxedType tspec
 
 /// Import a provided type as an F# type.
-let rec ImportProvidedType (env: ImportMap) (m: Range) (* (tinst: TypeInst) *) (st: Tainted<ProvidedType>) = 
+let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (st: Tainted<ProvidedType>) = 
 
     // Explanation: The two calls below represent am unchecked invariant of the hosted compiler: 
     // that type providers are only activated on the CompilationThread. This invariant is not currently checked 
@@ -340,7 +340,7 @@ let rec ImportProvidedType (env: ImportMap) (m: Range) (* (tinst: TypeInst) *) (
 
 
 /// Import a provided method reference as an Abstract IL method reference
-let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: Range) (mbase: Tainted<ProvidedMethodBase>) = 
+let ImportProvidedMethodBaseAsILMethodRef (env: ImportMap) (m: range) (mbase: Tainted<ProvidedMethodBase>) = 
      let tref = ExtensionTyping.GetILTypeRefOfProvidedType (mbase.PApply((fun mbase -> mbase.DeclaringType), m), m)
 
      let mbase = 

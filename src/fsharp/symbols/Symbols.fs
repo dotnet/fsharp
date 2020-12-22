@@ -701,7 +701,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
     
         if entity.IsILEnumTycon then
             let (TILObjectReprData(_scoref, _enc, tdef)) = entity.ILTyconInfo
-            let formalTypars = entity.Typars(Range.Zero)
+            let formalTypars = entity.Typars(range.Zero)
             let formalTypeInst = generalizeTypars formalTypars
             let ty = TType_app(entity, formalTypeInst)
             let formalTypeInfo = ILTypeInfo.FromType cenv.g ty
@@ -901,7 +901,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
     override x.ToString() = x.CompiledName
 
 type FSharpFieldData = 
-    | AnonField of AnonRecdTypeInfo * TTypes * int * Range
+    | AnonField of AnonRecdTypeInfo * TTypes * int * range
     | ILField of ILFieldInfo
     | RecdOrClass of RecdFieldRef
     | Union of UnionCaseRef * int
@@ -2649,7 +2649,7 @@ type FSharpAssembly internal (cenv, ccu: CcuThunk) =
 
 /// Represents open declaration in F# code.
 [<Sealed>]
-type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: Range option, modules: FSharpEntity list, types: FSharpType list, appliedScope: Range, isOwnNamespace: bool) =
+type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modules: FSharpEntity list, types: FSharpType list, appliedScope: range, isOwnNamespace: bool) =
 
     member _.Target = target
 
@@ -2677,7 +2677,7 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: Range option, modul
     member _.IsOwnNamespace = isOwnNamespace
 
 [<Sealed>]
-type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: Range) = 
+type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
 
     member _.Symbol  = symbol
 

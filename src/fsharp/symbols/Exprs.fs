@@ -78,9 +78,9 @@ module ExprTranslationImpl =
         member env.BindCurriedVals vsl = 
             (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
 
-    exception IgnoringPartOfQuotedTermWarning of string * Range
+    exception IgnoringPartOfQuotedTermWarning of string * range
 
-    let wfail (msg, m: Range) = failwith (msg + sprintf " at %s" (m.ToString()))
+    let wfail (msg, m: range) = failwith (msg + sprintf " at %s" (m.ToString()))
 
 /// The core tree of data produced by converting F# compiler TAST expressions into the form which we make available through the compiler API
 /// through active patterns.
@@ -141,7 +141,7 @@ and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSha
     member _.Body = body
 
 /// The type of expressions provided through the compiler API.
-and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: Range, ty) =
+and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range, ty) =
 
     let mutable e = match f with None -> e | Some _ -> Unchecked.defaultof<E>
     member x.Range = m

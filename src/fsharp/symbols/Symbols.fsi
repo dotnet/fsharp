@@ -88,16 +88,16 @@ type FSharpSymbol =
     member FullName: string
 
     /// Get the declaration location for the symbol
-    member DeclarationLocation: Range option
+    member DeclarationLocation: range option
 
     /// Gets the short display name for the symbol
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
-    member ImplementationLocation: Range option
+    member ImplementationLocation: range option
 
     /// Get the signature location for the symbol if it was declared in an implementation
-    member SignatureLocation: Range option
+    member SignatureLocation: range option
 
     /// Return true if two symbols are effectively the same when referred to in F# source code text.  
     /// This sees through signatures (a symbol in a signature will be considered effectively the same as 
@@ -193,7 +193,7 @@ type FSharpEntity =
     member TryFullName: string option
 
     /// Get the declaration location for the type constructor 
-    member DeclarationLocation: Range 
+    member DeclarationLocation: range 
 
     /// Indicates if the entity is a measure, type or exception abbreviation
     member IsFSharpAbbreviation: bool
@@ -422,7 +422,7 @@ type FSharpUnionCase =
     member Name: string 
 
     /// Get the range of the name of the case 
-    member DeclarationLocation: Range
+    member DeclarationLocation: range
 
     /// Indicates if the union case has field definitions
     member HasFields: bool
@@ -530,7 +530,7 @@ type FSharpField =
     member FieldType: FSharpType
 
     /// Get the declaration location of the field 
-    member DeclarationLocation: Range
+    member DeclarationLocation: range
 
     /// Get the attributes attached to generated property 
     member PropertyAttributes: IList<FSharpAttribute> 
@@ -567,7 +567,7 @@ type FSharpGenericParameter =
     member Name: string
 
     /// Get the range of the generic parameter 
-    member DeclarationLocation: Range 
+    member DeclarationLocation: range 
        
     /// Indicates if this is a measure variable
     member IsMeasure: bool
@@ -603,7 +603,7 @@ type FSharpStaticParameter =
     member Name: string
 
     /// Get the declaration location of the static parameter 
-    member DeclarationLocation: Range 
+    member DeclarationLocation: range 
        
     /// Get the kind of the static parameter
     member Kind: FSharpType
@@ -619,7 +619,7 @@ type FSharpStaticParameter =
 #endif
 
     /// Get the range of the construct
-    member Range: Range
+    member Range: range
 
 /// Represents further information about a member constraint on a generic type parameter
 [<Class; NoEquality; NoComparison>]
@@ -757,7 +757,7 @@ type FSharpMemberOrFunctionOrValue =
     member ApparentEnclosingEntity: FSharpEntity
 
     /// Get the declaration location of the member, function or value
-    member DeclarationLocation: Range
+    member DeclarationLocation: range
     
     /// Get the typars of the member, function or value
     member GenericParameters: IList<FSharpGenericParameter>
@@ -956,7 +956,7 @@ type FSharpParameter =
     member Name: string option
 
     /// The declaration location of the parameter 
-    member DeclarationLocation: Range 
+    member DeclarationLocation: range 
 
     /// The declared or inferred type of the parameter 
     member Type: FSharpType 
@@ -990,7 +990,7 @@ type FSharpActivePatternCase =
     member Index: int
 
     /// The location of declaration of the active pattern case 
-    member DeclarationLocation: Range 
+    member DeclarationLocation: range 
 
     /// The group of active pattern cases this belongs to
     member Group: FSharpActivePatternGroup
@@ -1138,13 +1138,13 @@ type FSharpAttribute =
     member Format: context: FSharpDisplayContext -> string
 
     /// Get the range of the name of the attribute
-    member Range: Range
+    member Range: range
 
 /// Represents open declaration in F# code.
 [<Sealed>]
 type FSharpOpenDeclaration =
 
-    internal new: target: SynOpenDeclTarget * range: Range option * modules: FSharpEntity list * types: FSharpType list * appliedScope: Range * isOwnNamespace: bool -> FSharpOpenDeclaration
+    internal new: target: SynOpenDeclTarget * range: range option * modules: FSharpEntity list * types: FSharpType list * appliedScope: range * isOwnNamespace: bool -> FSharpOpenDeclaration
 
     /// The syntactic target of the declaration
     member LongId: Ident list
@@ -1153,7 +1153,7 @@ type FSharpOpenDeclaration =
     member Target: SynOpenDeclTarget
       
     /// Range of the open declaration.
-    member Range: Range option
+    member Range: range option
 
     /// Modules or namespaces which is opened with this declaration.
     member Modules: FSharpEntity list 
@@ -1162,7 +1162,7 @@ type FSharpOpenDeclaration =
     member Types: FSharpType list 
       
     /// Scope in which open declaration is visible.
-    member AppliedScope: Range 
+    member AppliedScope: range 
       
     /// If it's `namespace Xxx.Yyy` declaration.
     member IsOwnNamespace: bool
@@ -1172,7 +1172,7 @@ type FSharpOpenDeclaration =
 type FSharpSymbolUse = 
 
     // For internal use only
-    internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: Range -> FSharpSymbolUse
+    internal new: g:TcGlobals * denv: DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
     /// The symbol referenced
     member Symbol: FSharpSymbol 
@@ -1206,7 +1206,7 @@ type FSharpSymbolUse =
     member FileName: string 
 
     /// The range of text representing the reference to the symbol
-    member RangeAlternate: Range
+    member RangeAlternate: range
 
     /// Indicates if the FSharpSymbolUse is declared as private
     member IsPrivateToFile: bool 

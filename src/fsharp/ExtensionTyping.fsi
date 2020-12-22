@@ -19,7 +19,7 @@ module internal ExtensionTyping =
     type TypeProviderDesignation = TypeProviderDesignation of string
 
     /// Raised when a type provider has thrown an exception.    
-    exception ProvidedTypeResolution of Range * exn
+    exception ProvidedTypeResolution of range * exn
 
     /// Raised when an type provider has thrown an exception.    
     exception ProvidedTypeResolutionNoRange of exn
@@ -55,10 +55,10 @@ module internal ExtensionTyping =
           systemRuntimeContainsType : (string -> bool) *
           systemRuntimeAssemblyVersion : System.Version *
           compilerToolPaths : string list * 
-          Range -> Tainted<ITypeProvider> list
+          range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
-    val DisplayNameOfTypeProvider : Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> * Range -> string
+    val DisplayNameOfTypeProvider : Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> * range -> string
 
      /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
      /// info objects coming from the type provider.
@@ -288,36 +288,36 @@ module internal ExtensionTyping =
     val GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr
 
     /// Validate that the given provided type meets some of the rules for F# provided types
-    val ValidateProvidedTypeAfterStaticInstantiation : Range * Tainted<ProvidedType> * expectedPath : string[] * expectedName : string-> unit
+    val ValidateProvidedTypeAfterStaticInstantiation : range * Tainted<ProvidedType> * expectedPath : string[] * expectedName : string-> unit
 
     /// Try to apply a provided type to the given static arguments. If successful also return a function 
     /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
     /// after other checks are made).
-    val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:obj[]  * Range -> (Tainted<ProvidedType> * (unit -> unit)) option
+    val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:obj[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
 
     /// Try to apply a provided method to the given static arguments. 
-    val TryApplyProvidedMethod : methBeforeArgs:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * Range -> Tainted<ProvidedMethodBase> option
+    val TryApplyProvidedMethod : methBeforeArgs:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * range -> Tainted<ProvidedMethodBase> option
 
     /// Try to resolve a type in the given extension type resolver
-    val TryResolveProvidedType : Tainted<ITypeProvider> * Range * string[] * typeName: string -> Tainted<ProvidedType> option
+    val TryResolveProvidedType : Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option
 
     /// Try to resolve a type in the given extension type resolver
-    val TryLinkProvidedType : Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: Range -> Tainted<ProvidedType> option
+    val TryLinkProvidedType : Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-    val GetProvidedNamespaceAsPath : Range * Tainted<ITypeProvider> * string -> string list
+    val GetProvidedNamespaceAsPath : range * Tainted<ITypeProvider> * string -> string list
 
     /// Decompose the enclosing name of a type (including any class nestings) into a list of parts.
     /// e.g. System.Object -> ["System"; "Object"]
-    val GetFSharpPathToProvidedType : Tainted<ProvidedType> * range:Range-> string list
+    val GetFSharpPathToProvidedType : Tainted<ProvidedType> * range:range-> string list
     
     /// Get the ILTypeRef for the provided type (including for nested types). Take into account
     /// any type relocations or static linking for generated types.
-    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:Range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
     /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
     /// any type relocations or static linking for generated types.
-    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:Range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
+    val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
 
     /// Represents the remapping information for a generated provided type and its nested types.
@@ -337,6 +337,6 @@ module internal ExtensionTyping =
 
     /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
     /// We check by seeing if the type is absent from the remapping context.
-    val IsGeneratedTypeDirectReference         : Tainted<ProvidedType> * Range -> bool
+    val IsGeneratedTypeDirectReference         : Tainted<ProvidedType> * range -> bool
 
 #endif

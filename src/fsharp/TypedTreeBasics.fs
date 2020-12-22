@@ -462,6 +462,6 @@ let compPathInternal = CompPath(ILScopeRef.Local, [])
 let taccessInternal = TAccess [compPathInternal]
 let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
 
-exception Duplicate of string * string * Range
-exception NameClash of string * string * string * Range * string * string * Range
+exception Duplicate of string * string * range
+exception NameClash of string * string * string * range * string * string * range
 

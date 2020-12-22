@@ -58,7 +58,7 @@ type FSharpProjectOptions =
       UseScriptResolutionRules : bool      
       LoadTime : System.DateTime
       UnresolvedReferences : FSharpUnresolvedReferencesSet option
-      OriginalLoadReferences: (Range * string * string) list
+      OriginalLoadReferences: (range * string * string) list
       ExtraProjectInfo : obj option
       Stamp : int64 option
     }
@@ -915,7 +915,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     Stamp = optionsStamp
                 }
             scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
-            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, Range.Zero, false))
+            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
             return options, (diags @ errors.Diagnostics)
           })
             

@@ -52,10 +52,10 @@ val ( +-> ) : Typars -> TType -> TType
 val mkIteratedFunTy : TTypes -> TType -> TType
 
 /// Get the natural type of a single argument amongst a set of curried arguments
-val typeOfLambdaArg : Range -> Val list -> TType
+val typeOfLambdaArg : range -> Val list -> TType
 
 /// Get the curried type corresponding to a lambda 
-val mkMultiLambdaTy : Range -> Val list -> TType -> TType
+val mkMultiLambdaTy : range -> Val list -> TType -> TType
 
 /// Get the curried type corresponding to a lambda 
 val mkLambdaTy : Typars -> TTypes -> TType -> TType
@@ -70,13 +70,13 @@ val stripExpr : Expr -> Expr
 val valsOfBinds : Bindings -> Vals 
 
 /// Look for a use of an F# value, possibly including application of a generic thing to a set of type arguments
-val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * Range) option
+val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
 /// Build decision trees imperatively
 type MatchBuilder =
 
     /// Create a new builder
-    new : DebugPointForBinding * Range -> MatchBuilder
+    new : DebugPointForBinding * range -> MatchBuilder
 
     /// Add a new destination target
     member AddTarget : DecisionTreeTarget -> int
@@ -88,102 +88,102 @@ type MatchBuilder =
     member CloseTargets : unit -> DecisionTreeTarget list
 
     /// Build the overall expression
-    member Close : DecisionTree * Range * TType -> Expr
+    member Close : DecisionTree * range * TType -> Expr
 
 /// Add an if-then-else boolean conditional node into a decision tree
-val mkBoolSwitch : Range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+val mkBoolSwitch : range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
-val primMkCond : DebugPointForBinding -> DebugPointForTarget -> DebugPointForTarget -> Range -> TType -> Expr -> Expr -> Expr -> Expr
+val primMkCond : DebugPointForBinding -> DebugPointForTarget -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression
-val mkCond : DebugPointForBinding -> DebugPointForTarget -> Range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCond : DebugPointForBinding -> DebugPointForTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression that checks for non-nullness
-val mkNonNullCond : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkNonNullCond : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build an if-then statement
-val mkIfThen : TcGlobals -> Range -> Expr -> Expr -> Expr 
+val mkIfThen : TcGlobals -> range -> Expr -> Expr -> Expr 
 
 /// Build an expression corresponding to the use of a value
 /// Note: try to use exprForValRef or the expression returned from mkLocal instead of this. 
-val exprForVal : Range -> Val -> Expr
+val exprForVal : range -> Val -> Expr
 
 /// Build an expression corresponding to the use of a reference to a value
-val exprForValRef : Range -> ValRef -> Expr
+val exprForValRef : range -> ValRef -> Expr
 
 /// Make a new local value and build an expression to reference it
-val mkLocal : Range -> string -> TType -> Val * Expr
+val mkLocal : range -> string -> TType -> Val * Expr
 
 /// Make a new compiler-generated local value and build an expression to reference it
-val mkCompGenLocal : Range -> string -> TType -> Val * Expr
+val mkCompGenLocal : range -> string -> TType -> Val * Expr
 
 /// Make a new mutable compiler-generated local value and build an expression to reference it
-val mkMutableCompGenLocal : Range -> string -> TType -> Val * Expr
+val mkMutableCompGenLocal : range -> string -> TType -> Val * Expr
 
 /// Make a new mutable compiler-generated local value, 'let' bind it to an expression 
 /// 'invisibly' (no sequence point etc.), and build an expression to reference it
-val mkCompGenLocalAndInvisibleBind : TcGlobals -> string -> Range -> Expr -> Val * Expr * Binding 
+val mkCompGenLocalAndInvisibleBind : TcGlobals -> string -> range -> Expr -> Val * Expr * Binding 
 
 /// Build a lambda expression taking multiple values
-val mkMultiLambda : Range -> Val list -> Expr * TType -> Expr
+val mkMultiLambda : range -> Val list -> Expr * TType -> Expr
 
 /// Rebuild a lambda during an expression tree traversal
-val rebuildLambda : Range -> Val option -> Val option -> Val list -> Expr * TType -> Expr
+val rebuildLambda : range -> Val option -> Val option -> Val list -> Expr * TType -> Expr
 
 /// Build a lambda expression taking a single value 
-val mkLambda : Range -> Val -> Expr * TType -> Expr
+val mkLambda : range -> Val -> Expr * TType -> Expr
 
 /// Build a generic lambda expression (type abstraction)
-val mkTypeLambda : Range -> Typars -> Expr * TType -> Expr
+val mkTypeLambda : range -> Typars -> Expr * TType -> Expr
 
 /// Build an object expression
-val mkObjExpr : TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * Range -> Expr
+val mkObjExpr : TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * range -> Expr
 
 /// Build an type-chose expression, indicating that a local free choice of a type variable
-val mkTypeChoose : Range -> Typars -> Expr -> Expr
+val mkTypeChoose : range -> Typars -> Expr -> Expr
 
 /// Build an iterated (curried) lambda expression
-val mkLambdas : Range -> Typars -> Val list -> Expr * TType -> Expr
+val mkLambdas : range -> Typars -> Val list -> Expr * TType -> Expr
 
 /// Build an iterated (tupled+curried) lambda expression
-val mkMultiLambdasCore : Range -> Val list list -> Expr * TType -> Expr * TType
+val mkMultiLambdasCore : range -> Val list list -> Expr * TType -> Expr * TType
 
 /// Build an iterated generic (type abstraction + tupled+curried) lambda expression
-val mkMultiLambdas : Range -> Typars -> Val list list -> Expr * TType -> Expr
+val mkMultiLambdas : range -> Typars -> Val list list -> Expr * TType -> Expr
 
 /// Build a lambda expression that corresponds to the implementation of a member
-val mkMemberLambdas : Range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
+val mkMemberLambdas : range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
 /// Build a 'while' loop expression
-val mkWhile      : TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * Range                          -> Expr
+val mkWhile      : TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range                          -> Expr
 
 /// Build a 'for' loop expression
-val mkFor        : TcGlobals -> DebugPointAtFor * Val * Expr * ForLoopStyle * Expr * Expr * Range -> Expr
+val mkFor        : TcGlobals -> DebugPointAtFor * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
 
 /// Build a 'try/with' expression
-val mkTryWith  : TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * Range * TType * DebugPointAtTry * DebugPointAtWith -> Expr
+val mkTryWith  : TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * DebugPointAtTry * DebugPointAtWith -> Expr
 
 /// Build a 'try/finally' expression
-val mkTryFinally: TcGlobals -> Expr * Expr * Range * TType * DebugPointAtTry * DebugPointAtFinally -> Expr
+val mkTryFinally: TcGlobals -> Expr * Expr * range * TType * DebugPointAtTry * DebugPointAtFinally -> Expr
 
 /// Build a user-level value binding
 val mkBind : DebugPointForBinding -> Val -> Expr -> Binding
 
 /// Build a user-level let-binding
-val mkLetBind : Range -> Binding -> Expr -> Expr
+val mkLetBind : range -> Binding -> Expr -> Expr
 
 /// Build a user-level value sequence of let bindings
-val mkLetsBind : Range -> Binding list -> Expr -> Expr
+val mkLetsBind : range -> Binding list -> Expr -> Expr
 
 /// Build a user-level value sequence of let bindings
-val mkLetsFromBindings : Range -> Bindings -> Expr -> Expr
+val mkLetsFromBindings : range -> Bindings -> Expr -> Expr
 
 /// Build a user-level let expression
-val mkLet : DebugPointForBinding -> Range -> Val -> Expr -> Expr -> Expr
+val mkLet : DebugPointForBinding -> range -> Val -> Expr -> Expr -> Expr
 
 /// Make a binding that binds a function value to a lambda taking multiple arguments
-val mkMultiLambdaBind : Val -> DebugPointForBinding -> Range -> Typars -> Val list list -> Expr * TType -> Binding
+val mkMultiLambdaBind : Val -> DebugPointForBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
 // Compiler generated bindings may give rise to a sequence point if they are part of
@@ -196,15 +196,15 @@ val mkCompGenBinds : Val list -> Exprs -> Bindings
 
 /// Make a let-expression that locally binds a compiler-generated value to an expression.
 /// Compiler-generated bindings do not give rise to a sequence point in debugging.
-val mkCompGenLet : Range -> Val -> Expr -> Expr -> Expr
+val mkCompGenLet : range -> Val -> Expr -> Expr -> Expr
 
 /// Make a let-expression that locally binds a compiler-generated value to an expression, where the expression
 /// is returned by the given continuation. Compiler-generated bindings do not give rise to a sequence point in debugging.
-val mkCompGenLetIn: Range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
+val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
 /// Make a let-expression that locally binds a value to an expression in an "invisible" way.
 /// Invisible bindings are not given a sequence point and should not have side effects.
-val mkInvisibleLet : Range -> Val -> Expr -> Expr -> Expr
+val mkInvisibleLet : range -> Val -> Expr -> Expr -> Expr
 
 /// Make a binding that binds a value to an expression in an "invisible" way.
 /// Invisible bindings are not given a sequence point and should not have side effects.
@@ -215,7 +215,7 @@ val mkInvisibleBind : Val -> Expr -> Binding
 val mkInvisibleBinds : Vals -> Exprs -> Bindings
 
 /// Make a let-rec expression that locally binds values to expressions where self-reference back to the values is possible.
-val mkLetRecBinds : Range -> Bindings -> Expr -> Expr
+val mkLetRecBinds : range -> Bindings -> Expr -> Expr
  
 /// TypeScheme (generalizedTypars, tauTy)
 ///
@@ -225,16 +225,16 @@ type TypeScheme = TypeScheme of Typars  * TType
 
 /// Make the right-hand side of a generalized binding, incorporating the generalized generic parameters from the type
 /// scheme into the right-hand side as type generalizations.
-val mkGenericBindRhs : TcGlobals -> Range -> Typars -> TypeScheme -> Expr -> Expr
+val mkGenericBindRhs : TcGlobals -> range -> Typars -> TypeScheme -> Expr -> Expr
 
 /// Test if the type parameter is one of those being generalized by a type scheme.
 val isBeingGeneralized : Typar -> TypeScheme -> bool
 
 /// Make the expression corresponding to 'expr1 && expr2'
-val mkLazyAnd  : TcGlobals -> Range -> Expr -> Expr -> Expr
+val mkLazyAnd  : TcGlobals -> range -> Expr -> Expr -> Expr
 
 /// Make the expression corresponding to 'expr1 || expr2'
-val mkLazyOr   : TcGlobals -> Range -> Expr -> Expr -> Expr
+val mkLazyOr   : TcGlobals -> range -> Expr -> Expr -> Expr
 
 /// Make a byref type 
 val mkByrefTy  : TcGlobals -> TType -> TType
@@ -249,87 +249,87 @@ val mkInByrefTy  : TcGlobals -> TType -> TType
 val mkOutByrefTy  : TcGlobals -> TType -> TType
 
 /// Make an expression that constructs a union case, e.g. 'Some(expr)'
-val mkUnionCaseExpr : UnionCaseRef * TypeInst * Exprs * Range -> Expr
+val mkUnionCaseExpr : UnionCaseRef * TypeInst * Exprs * range -> Expr
 
 /// Make an expression that constructs an exception value
-val mkExnExpr : TyconRef * Exprs * Range -> Expr
+val mkExnExpr : TyconRef * Exprs * range -> Expr
 
 /// Make an expression that is IL assembly code
-val mkAsmExpr : ILInstr list * TypeInst * Exprs * TTypes * Range -> Expr
+val mkAsmExpr : ILInstr list * TypeInst * Exprs * TTypes * range -> Expr
 
 /// Make an expression that coerces one expression to another type
-val mkCoerceExpr : Expr * TType * Range * TType -> Expr
+val mkCoerceExpr : Expr * TType * range * TType -> Expr
 
 /// Make an expression that re-raises an exception
-val mkReraise : Range -> TType -> Expr
+val mkReraise : range -> TType -> Expr
 
 /// Make an expression that re-raises an exception via a library call
-val mkReraiseLibCall : TcGlobals -> TType -> Range -> Expr
+val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
  
 /// Make an expression that gets an item from a tuple
-val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * Range -> Expr
+val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
 
 /// Make an expression that gets an item from an anonymous record
-val mkAnonRecdFieldGet             : TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * Range -> Expr
+val mkAnonRecdFieldGet             : TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
 
 /// Make an expression that gets an item from an anonymous record (via the address of the value if it is a struct)
-val mkAnonRecdFieldGetViaExprAddr  : AnonRecdTypeInfo * Expr * TypeInst * int * Range -> Expr
+val mkAnonRecdFieldGetViaExprAddr  : AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
 
 /// Make an expression that gets an instance field from a record or class (via the address of the value if it is a struct)
-val mkRecdFieldGetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst               * Range -> Expr
+val mkRecdFieldGetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst               * range -> Expr
 
 /// Make an expression that gets the address of an instance field from a record or class (via the address of the value if it is a struct)
-val mkRecdFieldGetAddrViaExprAddr  : readonly: bool * Expr * RecdFieldRef   * TypeInst               * Range -> Expr
+val mkRecdFieldGetAddrViaExprAddr  : readonly: bool * Expr * RecdFieldRef   * TypeInst               * range -> Expr
 
 /// Make an expression that gets a static field from a record or class 
-val mkStaticRecdFieldGet           :                         RecdFieldRef   * TypeInst               * Range -> Expr
+val mkStaticRecdFieldGet           :                         RecdFieldRef   * TypeInst               * range -> Expr
 
 /// Make an expression that sets a static field in a record or class 
-val mkStaticRecdFieldSet           :                         RecdFieldRef   * TypeInst * Expr        * Range -> Expr
+val mkStaticRecdFieldSet           :                         RecdFieldRef   * TypeInst * Expr        * range -> Expr
 
 /// Make an expression that gets the address of a static field in a record or class 
-val mkStaticRecdFieldGetAddr       : readonly: bool *        RecdFieldRef   * TypeInst               * Range -> Expr
+val mkStaticRecdFieldGetAddr       : readonly: bool *        RecdFieldRef   * TypeInst               * range -> Expr
 
 /// Make an expression that sets an instance the field of a record or class (via the address of the value if it is a struct)
-val mkRecdFieldSetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst * Expr        * Range -> Expr
+val mkRecdFieldSetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst * Expr        * range -> Expr
 
 /// Make an expression that gets the tag of a union value (via the address of the value if it is a struct)
-val mkUnionCaseTagGetViaExprAddr   : Expr * TyconRef       * TypeInst               * Range -> Expr
+val mkUnionCaseTagGetViaExprAddr   : Expr * TyconRef       * TypeInst               * range -> Expr
 
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
-val mkUnionCaseProof               : Expr * UnionCaseRef   * TypeInst               * Range -> Expr
+val mkUnionCaseProof               : Expr * UnionCaseRef   * TypeInst               * range -> Expr
 
 /// Build a 'TOp.UnionCaseFieldGet' expression for something we've already determined to be a particular union case. For ref-unions,
 /// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
 /// the input should be the address of the expression.
-val mkUnionCaseFieldGetProvenViaExprAddr : Expr * UnionCaseRef   * TypeInst * int         * Range -> Expr
+val mkUnionCaseFieldGetProvenViaExprAddr : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
 
 /// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
 /// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
 /// the input should be the address of the expression.
-val mkUnionCaseFieldGetAddrProvenViaExprAddr  : readonly: bool * Expr * UnionCaseRef   * TypeInst * int         * Range -> Expr
+val mkUnionCaseFieldGetAddrProvenViaExprAddr  : readonly: bool * Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
 
 /// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
 /// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
 /// the input should be the address of the expression.
-val mkUnionCaseFieldGetUnprovenViaExprAddr : Expr * UnionCaseRef   * TypeInst * int         * Range -> Expr
+val mkUnionCaseFieldGetUnprovenViaExprAddr : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
 
 /// Build a 'TOp.UnionCaseFieldSet' expression. For ref-unions, the input expression has 'TType_ucase', which is 
 /// an F# compiler internal "type" corresponding to the union case. For struct-unions,
 /// the input should be the address of the expression.
-val mkUnionCaseFieldSet            : Expr * UnionCaseRef   * TypeInst * int  * Expr * Range -> Expr
+val mkUnionCaseFieldSet            : Expr * UnionCaseRef   * TypeInst * int  * Expr * range -> Expr
 
 /// Like mkUnionCaseFieldGetUnprovenViaExprAddr, but for struct-unions, the input should be a copy of the expression.
-val mkUnionCaseFieldGetUnproven    : TcGlobals -> Expr * UnionCaseRef   * TypeInst * int         * Range -> Expr
+val mkUnionCaseFieldGetUnproven    : TcGlobals -> Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
 
 /// Make an expression that gets an instance field from an F# exception value 
-val mkExnCaseFieldGet              : Expr * TyconRef               * int         * Range -> Expr
+val mkExnCaseFieldGet              : Expr * TyconRef               * int         * range -> Expr
 
 /// Make an expression that sets an instance field in an F# exception value 
-val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * Range -> Expr
+val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * range -> Expr
 
 /// Make an expression that gets the address of an element in an array
-val mkArrayElemAddress : TcGlobals -> readonly: bool * ILReadonly * bool * ILArrayShape * TType * Expr list * Range -> Expr
+val mkArrayElemAddress : TcGlobals -> readonly: bool * ILReadonly * bool * ILArrayShape * TType * Expr list * range -> Expr
 
 /// The largest tuple before we start encoding, i.e. 7
 val maxTuple : int
@@ -348,10 +348,10 @@ val mkCompiledTupleTyconRef : TcGlobals -> bool -> int -> TyconRef
 val mkCompiledTupleTy : TcGlobals -> bool -> TTypes -> TType
 
 /// Convert from F# tuple creation expression to .NET tuple creation expressions
-val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * Range -> TyconRef * TTypes * Exprs * Range
+val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 
 /// Make a TAST expression representing getting an item fromm a tuple
-val mkGetTupleItemN : TcGlobals -> Range -> int -> ILType -> bool -> Expr -> TType -> Expr
+val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
 /// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
 /// but TupInfo may later be used carry variables that infer structness.
@@ -364,21 +364,21 @@ val evalAnonInfoIsStruct : AnonRecdTypeInfo -> bool
 val convertToTypeWithMetadataIfPossible : TcGlobals -> TType -> TType
 
 /// An exception representing a warning for a defensive copy of an immutable struct
-exception DefensiveCopyWarning of string * Range 
+exception DefensiveCopyWarning of string * range 
 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 
 /// Helper to create an expression that dereferences an address.
-val mkDerefAddrExpr: mAddrGet: Range -> expr: Expr -> mExpr: Range -> exprTy: TType -> Expr
+val mkDerefAddrExpr: mAddrGet: range -> expr: Expr -> mExpr: range -> exprTy: TType -> Expr
 
 /// Helper to take the address of an expression
-val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> Range -> (Val * Expr) option * Expr * bool * bool
+val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
 
 /// Take the address of an expression, or force it into a mutable local. Any allocated
 /// mutable local may need to be kept alive over a larger expression, hence we return
 /// a wrapping function that wraps "let mutable loc = Expr in ..." around a larger
 /// expression.
-val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> Range -> (Expr -> Expr) * Expr * bool * bool
+val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr * bool * bool
 
 /// Maps Val to T, based on stamps
 [<Struct;NoEquality; NoComparison>]
@@ -722,15 +722,15 @@ type TraitWitnessInfos = TraitWitnessInfo list
 
 val destTopForallTy : TcGlobals -> ValReprInfo -> TType -> Typars * TType 
 
-val GetTopTauTypeInFSharpForm     : TcGlobals -> ArgReprInfo list list -> TType -> Range -> CurriedArgInfos * TType
+val GetTopTauTypeInFSharpForm     : TcGlobals -> ArgReprInfo list list -> TType -> range -> CurriedArgInfos * TType
 
-val GetTopValTypeInFSharpForm     : TcGlobals -> ValReprInfo -> TType -> Range -> Typars * CurriedArgInfos * TType * ArgReprInfo
+val GetTopValTypeInFSharpForm     : TcGlobals -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType * ArgReprInfo
 
 val IsCompiledAsStaticProperty    : TcGlobals -> Val -> bool
 
 val IsCompiledAsStaticPropertyWithField : TcGlobals -> Val -> bool
 
-val GetTopValTypeInCompiledForm   : TcGlobals -> ValReprInfo -> int -> TType -> Range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
+val GetTopValTypeInCompiledForm   : TcGlobals -> ValReprInfo -> int -> TType -> range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
 val GetFSharpViewOfReturnType     : TcGlobals -> TType option -> TType
 
@@ -895,7 +895,7 @@ val GetTypeOfMemberInMemberForm : TcGlobals -> ValRef -> Typars * TraitWitnessIn
 
 val GetTypeOfIntrinsicMemberInCompiledForm : TcGlobals -> ValRef -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
-val GetMemberTypeInMemberForm : TcGlobals -> MemberFlags -> ValReprInfo -> int -> TType -> Range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
+val GetMemberTypeInMemberForm : TcGlobals -> MemberFlags -> ValReprInfo -> int -> TType -> range -> Typars * TraitWitnessInfos * CurriedArgInfos * TType option * ArgReprInfo
 
 /// Returns (parentTypars,memberParentTypars,memberMethodTypars,memberToParentInst,tinst)
 val PartitionValTyparsForApparentEnclosingType : TcGlobals -> Val -> (Typars * Typars * Typars * TyparInst * TType list) option
@@ -1097,7 +1097,7 @@ val freeVarsAllPublic     : FreeVars -> bool
 
 /// Get the mark/range/position information from an expression
 type Expr with 
-    member Range : Range
+    member Range : range
 
 /// Compute the type of an expression from the expression itself
 val tyOfExpr : TcGlobals -> Expr -> TType 
@@ -1251,48 +1251,48 @@ val IsHiddenRecdField: (Remap * SignatureHidingInfo) list -> RecdFieldRef -> boo
 
 /// Adjust marks in expressions, replacing all marks by the given mark.
 /// Used when inlining.
-val remarkExpr : Range -> Expr -> Expr
+val remarkExpr : range -> Expr -> Expr
  
 /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments
-val primMkApp : (Expr * TType) -> TypeInst -> Exprs -> Range -> Expr
+val primMkApp : (Expr * TType) -> TypeInst -> Exprs -> range -> Expr
 
 /// Build the application of a (possibly generic, possibly curried) function value to a set of type and expression arguments.
 /// Reduce the application via let-bindings if the function value is a lambda expression.
-val mkApps : TcGlobals -> (Expr * TType) * TType list list * Exprs * Range -> Expr
+val mkApps : TcGlobals -> (Expr * TType) * TType list list * Exprs * range -> Expr
 
 /// Build the application of a generic construct to a set of type arguments.
 /// Reduce the application via substitution if the function value is a typed lambda expression.
-val mkTyAppExpr : Range -> Expr * TType -> TType list -> Expr
+val mkTyAppExpr : range -> Expr * TType -> TType list -> Expr
 
 /// Build an expression to mutate a local
 ///   localv <- e      
-val mkValSet   : Range -> ValRef -> Expr -> Expr
+val mkValSet   : range -> ValRef -> Expr -> Expr
 
 /// Build an expression to mutate the contents of a local pointer
 ///  *localv_ptr = e   
-val mkAddrSet  : Range -> ValRef -> Expr -> Expr
+val mkAddrSet  : range -> ValRef -> Expr -> Expr
 
 /// Build an expression to dereference a local pointer
 /// *localv_ptr        
-val mkAddrGet  : Range -> ValRef -> Expr
+val mkAddrGet  : range -> ValRef -> Expr
 
 /// Build an expression to take the address of a local 
 /// &localv           
-val mkValAddr  : Range -> readonly: bool -> ValRef -> Expr
+val mkValAddr  : range -> readonly: bool -> ValRef -> Expr
 
 /// Build an expression representing the read of an instance class or record field.
 /// First take the address of the record expression if it is a struct.
-val mkRecdFieldGet : TcGlobals -> Expr * RecdFieldRef * TypeInst * Range -> Expr
+val mkRecdFieldGet : TcGlobals -> Expr * RecdFieldRef * TypeInst * range -> Expr
 
 ///  Accumulate the targets actually used in a decision graph (for reporting warnings)
 val accTargetsOfDecisionTree : DecisionTree -> int list -> int list
 
 /// Make a 'match' expression applying some peep-hole optimizations along the way, e.g to 
 /// pre-decide the branch taken at compile-time.
-val mkAndSimplifyMatch : DebugPointForBinding  -> Range -> Range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
+val mkAndSimplifyMatch : DebugPointForBinding  -> range -> range -> TType -> DecisionTree -> DecisionTreeTarget list -> Expr
 
 /// Make a 'match' expression without applying any peep-hole optimizations.
-val primMkMatch : DebugPointForBinding * Range * DecisionTree * DecisionTreeTarget array * Range * TType -> Expr
+val primMkMatch : DebugPointForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
 
 ///  Work out what things on the right-han-side of a 'let rec' recursive binding need to be fixed up
 val IterateRecursiveFixups : 
@@ -1308,7 +1308,7 @@ val MultiLambdaToTupledLambda : TcGlobals -> Val list -> Expr -> Val * Expr
 val AdjustArityOfLambdaBody : TcGlobals -> int -> Val list -> Expr -> Val list * Expr
 
 /// Make an application expression, doing beta reduction by introducing let-bindings
-val MakeApplicationAndBetaReduce : TcGlobals -> Expr * TType * TypeInst list * Exprs * Range -> Expr
+val MakeApplicationAndBetaReduce : TcGlobals -> Expr * TType * TypeInst list * Exprs * range -> Expr
 
 /// Combine two static-resolution requirements on a type parameter
 val JoinTyparStaticReq : TyparStaticReq -> TyparStaticReq -> TyparStaticReq
@@ -1509,7 +1509,7 @@ val destArrayTy : TcGlobals -> TType -> TType
 val destListTy : TcGlobals -> TType -> TType
 
 /// Build an array type of the given rank
-val mkArrayTy : TcGlobals -> int -> TType -> Range -> TType
+val mkArrayTy : TcGlobals -> int -> TType -> range -> TType
 
 /// Check if a type definition is one of the artificial type definitions used for array types of different ranks 
 val isArrayTyconRef : TcGlobals -> TyconRef -> bool
@@ -1626,17 +1626,17 @@ val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
 
 val CompileAsEvent : TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue : TcGlobals -> Range -> TType -> bool
+val TypeNullIsExtraValue : TcGlobals -> range -> TType -> bool
 
 val TypeNullIsTrueValue : TcGlobals -> TType -> bool
 
-val TypeNullNotLiked : TcGlobals -> Range -> TType -> bool
+val TypeNullNotLiked : TcGlobals -> range -> TType -> bool
 
 val TypeNullNever : TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint : TcGlobals -> Range -> TType -> bool
+val TypeSatisfiesNullConstraint : TcGlobals -> range -> TType -> bool
 
-val TypeHasDefaultValue : TcGlobals -> Range -> TType -> bool
+val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
@@ -1650,11 +1650,11 @@ val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 
 val isExnFieldMutable : TyconRef -> int -> bool
 
-val isRecdOrStructTyconRefReadOnly: TcGlobals -> Range -> TyconRef -> bool
+val isRecdOrStructTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
 
 val isRecdOrStructTyconRefAssumedImmutable: TcGlobals -> TyconRef -> bool
 
-val isRecdOrStructTyReadOnly: TcGlobals -> Range -> TType -> bool
+val isRecdOrStructTyReadOnly: TcGlobals -> range -> TType -> bool
 
 val useGenuineField : Tycon -> RecdField -> bool 
 
@@ -1674,15 +1674,15 @@ val returnTyOfMethod : TcGlobals -> ObjExprMethod -> TType option
 // Primitives associated with initialization graphs
 //------------------------------------------------------------------------- 
 
-val mkRefCell              : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkRefCell              : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkRefCellGet          : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkRefCellGet          : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkRefCellSet          : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkRefCellSet          : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkLazyDelayed         : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkLazyDelayed         : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkLazyForce           : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkLazyForce           : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkRefCellContentsRef : TcGlobals -> RecdFieldRef
 
@@ -1717,83 +1717,83 @@ val mkNoneCase  : TcGlobals -> UnionCaseRef
 val mkSomeCase: TcGlobals -> UnionCaseRef
 
 /// Create the expression '[]' for a list type
-val mkNil  : TcGlobals -> Range -> TType -> Expr
+val mkNil  : TcGlobals -> range -> TType -> Expr
 
 /// Create the expression 'headExpr :: tailExpr'
 val mkCons : TcGlobals -> TType -> Expr -> Expr -> Expr
 
 /// Create the expression 'Some(expr)'
-val mkSome : TcGlobals -> TType -> Expr -> Range -> Expr
+val mkSome : TcGlobals -> TType -> Expr -> range -> Expr
 
 /// Create the expression 'None' for an option-type
-val mkNone: TcGlobals -> TType -> Range -> Expr
+val mkNone: TcGlobals -> TType -> range -> Expr
 
 /// Create the expression 'expr.Value' for an option-typed expression
-val mkOptionGetValueUnprovenViaAddr: TcGlobals -> Expr -> TType -> Range -> Expr
+val mkOptionGetValueUnprovenViaAddr: TcGlobals -> Expr -> TType -> range -> Expr
 
-val mkOptionToNullable : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkOptionToNullable : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkOptionDefaultValue: TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 //-------------------------------------------------------------------------
 // Make a few more expressions
 //------------------------------------------------------------------------- 
 
-val mkSequential  : DebugPointAtSequential -> Range -> Expr -> Expr -> Expr
+val mkSequential  : DebugPointAtSequential -> range -> Expr -> Expr -> Expr
 
-val mkCompGenSequential  : Range -> Expr -> Expr -> Expr
+val mkCompGenSequential  : range -> Expr -> Expr -> Expr
 
-val mkSequentials : DebugPointAtSequential -> TcGlobals -> Range -> Exprs -> Expr   
+val mkSequentials : DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
 
-val mkRecordExpr : TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * Range -> Expr
+val mkRecordExpr : TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
 
-val mkUnbox : TType -> Expr -> Range -> Expr
+val mkUnbox : TType -> Expr -> range -> Expr
 
-val mkBox : TType -> Expr -> Range -> Expr
+val mkBox : TType -> Expr -> range -> Expr
 
-val mkIsInst : TType -> Expr -> Range -> Expr
+val mkIsInst : TType -> Expr -> range -> Expr
 
-val mkNull : Range -> TType -> Expr
+val mkNull : range -> TType -> Expr
 
-val mkNullTest : TcGlobals -> Range -> Expr -> Expr -> Expr -> Expr
+val mkNullTest : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
 
-val mkNonNullTest : TcGlobals -> Range -> Expr -> Expr
+val mkNonNullTest : TcGlobals -> range -> Expr -> Expr
 
-val mkIsInstConditional : TcGlobals -> Range -> TType -> Expr -> Val -> Expr -> Expr -> Expr
+val mkIsInstConditional : TcGlobals -> range -> TType -> Expr -> Val -> Expr -> Expr -> Expr
 
-val mkThrow   : Range -> TType -> Expr -> Expr
+val mkThrow   : range -> TType -> Expr -> Expr
 
-val mkGetArg0 : Range -> TType -> Expr
+val mkGetArg0 : range -> TType -> Expr
 
-val mkDefault : Range * TType -> Expr
+val mkDefault : range * TType -> Expr
 
 val isThrow : Expr -> bool
 
-val mkString    : TcGlobals -> Range -> string -> Expr
+val mkString    : TcGlobals -> range -> string -> Expr
 
-val mkBool      : TcGlobals -> Range -> bool -> Expr
+val mkBool      : TcGlobals -> range -> bool -> Expr
 
-val mkByte      : TcGlobals -> Range -> byte -> Expr
+val mkByte      : TcGlobals -> range -> byte -> Expr
 
-val mkUInt16    : TcGlobals -> Range -> uint16 -> Expr
+val mkUInt16    : TcGlobals -> range -> uint16 -> Expr
 
-val mkTrue      : TcGlobals -> Range -> Expr
+val mkTrue      : TcGlobals -> range -> Expr
 
-val mkFalse     : TcGlobals -> Range -> Expr
+val mkFalse     : TcGlobals -> range -> Expr
 
-val mkUnit      : TcGlobals -> Range -> Expr
+val mkUnit      : TcGlobals -> range -> Expr
 
-val mkInt32     : TcGlobals -> Range -> int32 -> Expr
+val mkInt32     : TcGlobals -> range -> int32 -> Expr
 
-val mkInt       : TcGlobals -> Range -> int -> Expr
+val mkInt       : TcGlobals -> range -> int -> Expr
 
-val mkZero      : TcGlobals -> Range -> Expr
+val mkZero      : TcGlobals -> range -> Expr
 
-val mkOne       : TcGlobals -> Range -> Expr
+val mkOne       : TcGlobals -> range -> Expr
 
-val mkTwo       : TcGlobals -> Range -> Expr
+val mkTwo       : TcGlobals -> range -> Expr
 
-val mkMinusOne : TcGlobals -> Range -> Expr
+val mkMinusOne : TcGlobals -> range -> Expr
 
 val destInt32 : Expr -> int32 option
 
@@ -1828,255 +1828,255 @@ val mkInvalidCastExnNewobj: TcGlobals -> ILInstr
 // Construct calls to some intrinsic functions
 //------------------------------------------------------------------------- 
 
-val mkCallNewFormat: TcGlobals -> Range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
+val mkCallNewFormat: TcGlobals -> range -> TType -> TType -> TType -> TType -> TType -> formatStringExpr: Expr -> Expr
 
-val mkCallUnbox       : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallUnbox       : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallGetGenericComparer : TcGlobals -> Range -> Expr
+val mkCallGetGenericComparer : TcGlobals -> range -> Expr
 
-val mkCallGetGenericEREqualityComparer : TcGlobals -> Range -> Expr
+val mkCallGetGenericEREqualityComparer : TcGlobals -> range -> Expr
 
-val mkCallGetGenericPEREqualityComparer : TcGlobals -> Range -> Expr
+val mkCallGetGenericPEREqualityComparer : TcGlobals -> range -> Expr
 
-val mkCallUnboxFast  : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallUnboxFast  : TcGlobals -> range -> TType -> Expr -> Expr
 
-val canUseUnboxFast  : TcGlobals -> Range -> TType -> bool
+val canUseUnboxFast  : TcGlobals -> range -> TType -> bool
 
-val mkCallDispose     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallDispose     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallSeq         : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallSeq         : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallTypeTest      : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallTypeTest      : TcGlobals -> range -> TType -> Expr -> Expr
 
 val canUseTypeTestFast : TcGlobals -> TType -> bool
 
-val mkCallTypeOf      : TcGlobals -> Range -> TType -> Expr
+val mkCallTypeOf      : TcGlobals -> range -> TType -> Expr
 
-val mkCallTypeDefOf   : TcGlobals -> Range -> TType -> Expr 
+val mkCallTypeDefOf   : TcGlobals -> range -> TType -> Expr 
 
-val mkCallCreateInstance     : TcGlobals -> Range -> TType -> Expr
+val mkCallCreateInstance     : TcGlobals -> range -> TType -> Expr
 
-val mkCallCreateEvent        : TcGlobals -> Range -> TType -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCallCreateEvent        : TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr -> Expr
 
-val mkCallArrayLength        : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallArrayLength        : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallArrayGet           : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallArrayGet           : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallArray2DGet         : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr 
+val mkCallArray2DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr 
 
-val mkCallArray3DGet         : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArray3DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkCallArray4DGet         : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArray4DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkCallArraySet           : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCallArraySet           : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
-val mkCallArray2DSet         : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArray2DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkCallArray3DSet         : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArray3DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkCallArray4DSet         : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArray4DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkCallHash               : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallHash               : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallBox                : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallBox                : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallIsNull             : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallIsNull             : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallIsNotNull          : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallIsNotNull          : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallRaise              : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallRaise              : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallGenericComparisonWithComparerOuter : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCallGenericComparisonWithComparerOuter : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
-val mkCallGenericEqualityEROuter             : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallGenericEqualityEROuter             : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallGenericEqualityWithComparerOuter   : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCallGenericEqualityWithComparerOuter   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
-val mkCallGenericHashWithComparerOuter       : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallGenericHashWithComparerOuter       : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallEqualsOperator                     : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallEqualsOperator                     : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallNotEqualsOperator                  : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallNotEqualsOperator                  : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallLessThanOperator                   : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallLessThanOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallLessThanOrEqualsOperator           : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallLessThanOrEqualsOperator           : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallGreaterThanOperator                : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallGreaterThanOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallGreaterThanOrEqualsOperator        : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallGreaterThanOrEqualsOperator        : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallAdditionOperator                   : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallAdditionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallSubtractionOperator                : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallSubtractionOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyOperator                   : TcGlobals -> Range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyOperator                   : TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
 
-val mkCallDivisionOperator                   : TcGlobals -> Range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator                   : TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
 
-val mkCallModulusOperator                    : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallModulusOperator                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallDefaultOf                          : TcGlobals -> Range -> TType -> Expr
+val mkCallDefaultOf                          : TcGlobals -> range -> TType -> Expr
 
-val mkCallBitwiseAndOperator                 : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallBitwiseAndOperator                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallBitwiseOrOperator                  : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallBitwiseOrOperator                  : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallBitwiseXorOperator                 : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallBitwiseXorOperator                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallShiftLeftOperator                  : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallShiftLeftOperator                  : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallShiftRightOperator                 : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallShiftRightOperator                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallUnaryNegOperator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallUnaryNegOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallUnaryNotOperator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallUnaryNotOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallAdditionChecked                    : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallAdditionChecked                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallSubtractionChecked                 : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallSubtractionChecked                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallMultiplyChecked                    : TcGlobals -> Range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
+val mkCallMultiplyChecked                    : TcGlobals -> range -> ty1: TType -> ty2: TType -> rty: TType -> Expr -> Expr -> Expr
 
-val mkCallUnaryNegChecked                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallUnaryNegChecked                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToByteChecked                      : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToByteChecked                      : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToSByteChecked                     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToSByteChecked                     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToInt16Checked                     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToInt16Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUInt16Checked                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUInt16Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToIntChecked                       : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToIntChecked                       : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToInt32Checked                     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToInt32Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUInt32Checked                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUInt32Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToInt64Checked                     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToInt64Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUInt64Checked                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUInt64Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToIntPtrChecked                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToIntPtrChecked                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUIntPtrChecked                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUIntPtrChecked                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToByteOperator                     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToByteOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToSByteOperator                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToSByteOperator                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToInt16Operator                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToInt16Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUInt16Operator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUInt16Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToIntOperator                      : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToIntOperator                      : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToInt32Operator                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToInt32Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUInt32Operator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUInt32Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToInt64Operator                    : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToInt64Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUInt64Operator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUInt64Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToSingleOperator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToSingleOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToDoubleOperator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToDoubleOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToIntPtrOperator                   : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToIntPtrOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToUIntPtrOperator                  : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToUIntPtrOperator                  : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToCharOperator                     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToCharOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToEnumOperator                     : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallToEnumOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallDeserializeQuotationFSharp20Plus  : TcGlobals -> Range -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallDeserializeQuotationFSharp20Plus  : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkCallDeserializeQuotationFSharp40Plus : TcGlobals -> Range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallDeserializeQuotationFSharp40Plus : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkCallCastQuotation      : TcGlobals -> Range -> TType -> Expr -> Expr 
+val mkCallCastQuotation      : TcGlobals -> range -> TType -> Expr -> Expr 
 
-val mkCallLiftValueWithName          : TcGlobals -> Range -> TType -> string -> Expr -> Expr
+val mkCallLiftValueWithName          : TcGlobals -> range -> TType -> string -> Expr -> Expr
 
-val mkCallLiftValue: TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallLiftValue: TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallLiftValueWithDefn          : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallLiftValueWithDefn          : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallSeqCollect         : TcGlobals -> Range -> TType  -> TType -> Expr -> Expr -> Expr
+val mkCallSeqCollect         : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr
 
-val mkCallSeqUsing           : TcGlobals -> Range -> TType  -> TType -> Expr -> Expr -> Expr
+val mkCallSeqUsing           : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr
 
-val mkCallSeqDelay           : TcGlobals -> Range -> TType  -> Expr -> Expr
+val mkCallSeqDelay           : TcGlobals -> range -> TType  -> Expr -> Expr
 
-val mkCallSeqAppend          : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallSeqAppend          : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallSeqFinally         : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallSeqFinally         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallSeqGenerated       : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkCallSeqGenerated       : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallSeqOfFunctions    : TcGlobals -> Range -> TType  -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCallSeqOfFunctions    : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr -> Expr
 
-val mkCallSeqToArray        : TcGlobals -> Range -> TType  -> Expr -> Expr 
+val mkCallSeqToArray        : TcGlobals -> range -> TType  -> Expr -> Expr 
 
-val mkCallSeqToList         : TcGlobals -> Range -> TType  -> Expr -> Expr 
+val mkCallSeqToList         : TcGlobals -> range -> TType  -> Expr -> Expr 
 
-val mkCallSeqMap             : TcGlobals -> Range -> TType  -> TType -> Expr -> Expr -> Expr
+val mkCallSeqMap             : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr
 
-val mkCallSeqSingleton       : TcGlobals -> Range -> TType  -> Expr -> Expr
+val mkCallSeqSingleton       : TcGlobals -> range -> TType  -> Expr -> Expr
 
-val mkCallSeqEmpty           : TcGlobals -> Range -> TType  -> Expr
+val mkCallSeqEmpty           : TcGlobals -> range -> TType  -> Expr
 
 /// Make a call to the 'isprintf' function for string interpolation
-val mkCall_sprintf: g: TcGlobals -> m: Range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
+val mkCall_sprintf: g: TcGlobals -> m: range -> funcTy: TType -> fmtExpr: Expr -> fillExprs: Expr list -> Expr
 
-val mkILAsmCeq                   : TcGlobals -> Range -> Expr -> Expr -> Expr
+val mkILAsmCeq                   : TcGlobals -> range -> Expr -> Expr -> Expr
 
-val mkILAsmClt                   : TcGlobals -> Range -> Expr -> Expr -> Expr
+val mkILAsmClt                   : TcGlobals -> range -> Expr -> Expr -> Expr
 
-val mkCallFailInit           : TcGlobals -> Range -> Expr 
+val mkCallFailInit           : TcGlobals -> range -> Expr 
 
-val mkCallFailStaticInit    : TcGlobals -> Range -> Expr 
+val mkCallFailStaticInit    : TcGlobals -> range -> Expr 
 
-val mkCallCheckThis          : TcGlobals -> Range -> TType -> Expr -> Expr 
+val mkCallCheckThis          : TcGlobals -> range -> TType -> Expr -> Expr 
 
 val mkCase : DecisionTreeTest * DecisionTree -> DecisionTreeCase
 
-val mkCallQuoteToLinqLambdaExpression : TcGlobals -> Range -> TType -> Expr -> Expr
+val mkCallQuoteToLinqLambdaExpression : TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallGetQuerySourceAsEnumerable : TcGlobals -> Range -> TType -> TType -> Expr -> Expr
+val mkCallGetQuerySourceAsEnumerable : TcGlobals -> range -> TType -> TType -> Expr -> Expr
 
-val mkCallNewQuerySource : TcGlobals -> Range -> TType -> TType -> Expr -> Expr
+val mkCallNewQuerySource : TcGlobals -> range -> TType -> TType -> Expr -> Expr
 
-val mkArray : TType * Exprs * Range -> Expr
+val mkArray : TType * Exprs * range -> Expr
 
-val mkStaticCall_String_Concat2 : TcGlobals -> Range -> Expr -> Expr -> Expr
+val mkStaticCall_String_Concat2 : TcGlobals -> range -> Expr -> Expr -> Expr
 
-val mkStaticCall_String_Concat3 : TcGlobals -> Range -> Expr -> Expr -> Expr -> Expr
+val mkStaticCall_String_Concat3 : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
 
-val mkStaticCall_String_Concat4 : TcGlobals -> Range -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkStaticCall_String_Concat4 : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 
-val mkStaticCall_String_Concat_Array : TcGlobals -> Range -> Expr -> Expr
+val mkStaticCall_String_Concat_Array : TcGlobals -> range -> Expr -> Expr
 
 /// Use a witness in BuiltInWitnesses
-val tryMkCallBuiltInWitness : TcGlobals -> TraitConstraintInfo -> Expr list -> Range -> Expr option
+val tryMkCallBuiltInWitness : TcGlobals -> TraitConstraintInfo -> Expr list -> range -> Expr option
 
 /// Use an operator as a witness 
-val tryMkCallCoreFunctionAsBuiltInWitness : TcGlobals -> IntrinsicValRef -> TType list -> Expr list -> Range -> Expr option
+val tryMkCallCoreFunctionAsBuiltInWitness : TcGlobals -> IntrinsicValRef -> TType list -> Expr list -> range -> Expr option
 
 //-------------------------------------------------------------------------
 // operations primarily associated with the optimization to fix
 // up loops to generate .NET code that does not include array bound checks
 //------------------------------------------------------------------------- 
 
-val mkDecr   : TcGlobals -> Range -> Expr -> Expr
+val mkDecr   : TcGlobals -> range -> Expr -> Expr
 
-val mkIncr   : TcGlobals -> Range -> Expr -> Expr
+val mkIncr   : TcGlobals -> range -> Expr -> Expr
 
-val mkLdlen  : TcGlobals -> Range -> Expr -> Expr
+val mkLdlen  : TcGlobals -> range -> Expr -> Expr
 
-val mkLdelem : TcGlobals -> Range -> TType -> Expr -> Expr -> Expr
+val mkLdelem : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
 //-------------------------------------------------------------------------
 // Analyze attribute sets 
@@ -2111,16 +2111,16 @@ val TryFindFSharpInt32Attribute    : TcGlobals -> BuiltinAttribInfo -> Attribs -
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///
 /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
-val TryFindTyconRefStringAttribute : TcGlobals -> Range -> BuiltinAttribInfo -> TyconRef -> string option
+val TryFindTyconRefStringAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> string option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a bool argument.
-val TryFindTyconRefBoolAttribute : TcGlobals -> Range -> BuiltinAttribInfo -> TyconRef -> bool option
+val TryFindTyconRefBoolAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool option
 
 /// Try to find a specific attribute on a type definition
-val TyconRefHasAttribute : TcGlobals -> Range -> BuiltinAttribInfo -> TyconRef -> bool
+val TyconRefHasAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool
 
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
-val TryFindAttributeUsageAttribute : TcGlobals -> Range -> TyconRef -> bool option
+val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool option
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
@@ -2169,26 +2169,26 @@ val destNativePtrTy : TcGlobals -> TType -> TType
 
 val isByrefTyconRef : TcGlobals -> TyconRef -> bool
 
-val isByrefLikeTyconRef : TcGlobals -> Range -> TyconRef -> bool
+val isByrefLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
 
-val isSpanLikeTyconRef : TcGlobals -> Range -> TyconRef -> bool
+val isSpanLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
 
-val isByrefLikeTy : TcGlobals -> Range -> TType -> bool
+val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 
 /// Check if the type is a byref-like but not a byref.
-val isSpanLikeTy : TcGlobals -> Range -> TType -> bool
+val isSpanLikeTy : TcGlobals -> range -> TType -> bool
 
-val isSpanTy : TcGlobals -> Range -> TType -> bool
+val isSpanTy : TcGlobals -> range -> TType -> bool
 
-val tryDestSpanTy : TcGlobals -> Range -> TType -> struct(TyconRef * TType) voption
+val tryDestSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
 
-val destSpanTy : TcGlobals -> Range -> TType -> struct(TyconRef * TType)
+val destSpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
 
-val isReadOnlySpanTy : TcGlobals -> Range -> TType -> bool
+val isReadOnlySpanTy : TcGlobals -> range -> TType -> bool
 
-val tryDestReadOnlySpanTy : TcGlobals -> Range -> TType -> struct(TyconRef * TType) voption
+val tryDestReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType) voption
 
-val destReadOnlySpanTy : TcGlobals -> Range -> TType -> struct(TyconRef * TType)
+val destReadOnlySpanTy : TcGlobals -> range -> TType -> struct(TyconRef * TType)
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
@@ -2200,25 +2200,25 @@ val tryDestRefTupleExpr : Expr -> Exprs
 
 val mkAnyTupledTy : TcGlobals -> TupInfo -> TType list -> TType
 
-val mkAnyTupled : TcGlobals -> Range -> TupInfo -> Exprs -> TType list -> Expr 
+val mkAnyTupled : TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr 
 
-val mkRefTupled : TcGlobals -> Range -> Exprs -> TType list -> Expr 
+val mkRefTupled : TcGlobals -> range -> Exprs -> TType list -> Expr 
 
-val mkRefTupledNoTypes : TcGlobals -> Range -> Exprs -> Expr 
+val mkRefTupledNoTypes : TcGlobals -> range -> Exprs -> Expr 
 
 val mkRefTupledTy : TcGlobals -> TType list -> TType
 
 val mkRefTupledVarsTy : TcGlobals -> Val list -> TType
 
-val mkRefTupledVars : TcGlobals -> Range -> Val list -> Expr 
+val mkRefTupledVars : TcGlobals -> range -> Val list -> Expr 
 
 val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
 
 val mkAnyAnonRecdTy : TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
-val mkAnonRecd : TcGlobals -> Range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr 
+val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr 
 
-val AdjustValForExpectedArity : TcGlobals -> Range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
+val AdjustValForExpectedArity : TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 
 val AdjustValToTopVal : Val -> ParentRef -> ValReprInfo -> unit
 
@@ -2261,10 +2261,10 @@ type StaticOptimizationAnswer =
 
 val DecideStaticOptimizations : TcGlobals -> StaticOptimization list -> haveWitnesses: bool -> StaticOptimizationAnswer
 
-val mkStaticOptimizationExpr     : TcGlobals -> StaticOptimization list * Expr * Expr * Range -> Expr
+val mkStaticOptimizationExpr     : TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 
 /// Build for loops
-val mkFastForLoop : TcGlobals -> DebugPointAtFor * Range * Val * Expr * bool * Expr * Expr -> Expr
+val mkFastForLoop : TcGlobals -> DebugPointAtFor * range * Val * Expr * bool * Expr * Expr -> Expr
 
 //---------------------------------------------------------------------------
 // Active pattern helpers
@@ -2275,15 +2275,15 @@ type ActivePatternElemRef with
 
 val TryGetActivePatternInfo  : ValRef -> PrettyNaming.ActivePatternInfo option
 
-val mkChoiceCaseRef : TcGlobals -> Range -> int -> int -> UnionCaseRef
+val mkChoiceCaseRef : TcGlobals -> range -> int -> int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
 
     member Names : string list 
 
-    member ResultType : TcGlobals -> Range -> TType list -> TType
+    member ResultType : TcGlobals -> range -> TType list -> TType
 
-    member OverallType : TcGlobals -> Range -> TType -> TType list -> TType
+    member OverallType : TcGlobals -> range -> TType -> TType list -> TType
 
 val doesActivePatternHaveFreeTypars : TcGlobals -> ValRef -> bool
 
@@ -2367,7 +2367,7 @@ type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpres
 
 val DetectAndOptimizeForExpression : TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
 
-val TryEliminateDesugaredConstants : TcGlobals -> Range -> Const -> Expr option
+val TryEliminateDesugaredConstants : TcGlobals -> range -> Const -> Expr option
 
 val MemberIsExplicitImpl : TcGlobals -> ValMemberInfo -> bool
 
@@ -2375,13 +2375,13 @@ val ValIsExplicitImpl : TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl : TcGlobals -> ValRef -> bool
 
-val (|LinearMatchExpr|_|) : Expr -> (DebugPointForBinding * Range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * Range * TType) option
+val (|LinearMatchExpr|_|) : Expr -> (DebugPointForBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) option
 
-val rebuildLinearMatchExpr : (DebugPointForBinding * Range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * Range * TType) -> Expr
+val rebuildLinearMatchExpr : (DebugPointForBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointForTarget * range * TType) -> Expr
 
-val (|LinearOpExpr|_|) : Expr -> (TOp * TypeInst * Expr list * Expr * Range) option
+val (|LinearOpExpr|_|) : Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 
-val rebuildLinearOpExpr : (TOp * TypeInst * Expr list * Expr * Range) -> Expr
+val rebuildLinearOpExpr : (TOp * TypeInst * Expr list * Expr * range) -> Expr
 
 val mkCoerceIfNeeded : TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
@@ -2393,7 +2393,7 @@ val BindUnitVars : TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list
 
 val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
 
-val mkUnitDelayLambda: TcGlobals -> Range -> Expr -> Expr
+val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
 
 val GenWitnessArgTys: TcGlobals -> TraitWitnessInfo -> TType list list
 
@@ -2414,29 +2414,29 @@ type TraitWitnessInfoHashMap<'T> = ImmutableDictionary<TraitWitnessInfo, 'T>
 val EmptyTraitWitnessInfoHashMap: TcGlobals -> TraitWitnessInfoHashMap<'T>
 
 /// Match expressions that are an application of a particular F# function value
-val (|ValApp|_|) : TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * Range) option
+val (|ValApp|_|) : TcGlobals -> ValRef -> Expr -> (TypeInst * Exprs * range) option
 
-val CombineCcuContentFragments: Range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
+val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
 /// Recognise a while expression
-val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * Range) option
+val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) option
 
 /// Recognise a for-loop expression
-val (|ForLoopExpr|_|): Expr -> (DebugPointAtFor * ForLoopStyle * Expr * Expr * Val * Expr * Range) option
+val (|ForLoopExpr|_|): Expr -> (DebugPointAtFor * ForLoopStyle * Expr * Expr * Val * Expr * range) option
 
 /// Recognise a try-with expression
-val (|TryWithExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * Range) option
+val (|TryWithExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) option
 
 /// Recognise a try-finally expression
-val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * Range) option
+val (|TryFinallyExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtFinally * TType * Expr * Expr * range) option
 
 /// Add a label to use as the target for a goto
-val mkLabelled: Range -> ILCodeLabel -> Expr -> Expr 
+val mkLabelled: range -> ILCodeLabel -> Expr -> Expr 
 
 /// Shared helper for binding attributes
 val TryBindTyconRefAttribute:
     g:TcGlobals ->
-    m:Range -> 
+    m:range -> 
     BuiltinAttribInfo ->
     tcref:TyconRef ->
     f1:(ILAttribElem list * ILAttributeNamedArg list -> 'a option) ->

@@ -496,9 +496,9 @@ type public FSharpTokenKind =
 type public FSharpToken =
 
     val private tok: Parser.token
-    val private tokRange: Range
+    val private tokRange: range
 
-    member Range: Range
+    member Range: range
 
     member Kind: FSharpTokenKind
 

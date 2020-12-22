@@ -49,7 +49,7 @@ let newInfo () =
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m: Range) (fragRanges: Range list) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt printerArgTy printerResidueTy = 
+let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals) isInterpolated isFormattableString (context: FormatStringCheckContext option) fmt printerArgTy printerResidueTy = 
 
     // As background: the F# compiler tokenizes strings on the assumption that the only thing you need from
     // them is the actual corresponding text, e.g. of a string literal.  This means many different textual input strings
@@ -189,7 +189,7 @@ let parseFormatStringInternal (m: Range) (fragRanges: Range list) (g: TcGlobals)
        // the first step, i.e. when i=0
        let (struct (fragLine, fragCol, fragments)) =
            match fragments with 
-           | (idx, fragOffset, fragRange: Range)::rest when i >= idx  ->
+           | (idx, fragOffset, fragRange: range)::rest when i >= idx  ->
                //printfn "i = %d, idx = %d, moving into next fragment at %A plus fragOffset %d" i idx fragRange fragOffset
                struct (fragRange.StartLine, fragRange.StartColumn + fragOffset, rest)
 
