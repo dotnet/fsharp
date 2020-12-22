@@ -222,7 +222,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.4.0"  />
     <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryableVersion)" />
     <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
