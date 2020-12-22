@@ -5,6 +5,7 @@ namespace FSharp.Compiler.Scripting
 open System
 open System.Threading
 open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
 
 [<RequireQualifiedAccess>]

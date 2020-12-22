@@ -1690,13 +1690,6 @@ FSharp.Compiler.PrettyNaming: System.String qmark
 FSharp.Compiler.PrettyNaming: System.String qmarkSet
 FSharp.Compiler.PrettyNaming: System.String unassignedTyparName
 FSharp.Compiler.PrettyNaming: System.Tuple`2[System.String,System.Tuple`2[System.String,System.String][]] demangleProvidedTypeName(System.String)
-FSharp.Compiler.QuickParse: Boolean TestMemberOrOverrideDeclaration(FSharp.Compiler.SourceCodeServices.FSharpTokenInfo[])
-FSharp.Compiler.QuickParse: FSharp.Compiler.PartialLongName GetPartialLongNameEx(System.String, Int32)
-FSharp.Compiler.QuickParse: Int32 CorrectIdentifierToken(System.String, Int32)
-FSharp.Compiler.QuickParse: Int32 MagicalAdjustmentConstant
-FSharp.Compiler.QuickParse: Int32 get_MagicalAdjustmentConstant()
-FSharp.Compiler.QuickParse: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.String,System.Int32,System.Boolean]] GetCompleteIdentifierIsland(Boolean, System.String, Int32)
-FSharp.Compiler.QuickParse: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],System.String] GetPartialLongName(System.String, Int32)
 FSharp.Compiler.Range: Boolean equals(FSharp.Compiler.SourceCodeServices.Range, FSharp.Compiler.SourceCodeServices.Range)
 FSharp.Compiler.Range: Boolean rangeBeforePos(FSharp.Compiler.SourceCodeServices.Range, FSharp.Compiler.SourceCodeServices.Pos)
 FSharp.Compiler.Range: Boolean rangeContainsPos(FSharp.Compiler.SourceCodeServices.Range, FSharp.Compiler.SourceCodeServices.Pos)
@@ -1762,6 +1755,13 @@ FSharp.Compiler.ReferenceResolver+Resolver: System.String get_DotNetFrameworkRef
 FSharp.Compiler.ReferenceResolver: FSharp.Compiler.ReferenceResolver+ResolutionEnvironment
 FSharp.Compiler.ReferenceResolver: FSharp.Compiler.ReferenceResolver+ResolvedFile
 FSharp.Compiler.ReferenceResolver: FSharp.Compiler.ReferenceResolver+Resolver
+FSharp.Compiler.SourceCodeServices.QuickParse: Boolean TestMemberOrOverrideDeclaration(FSharp.Compiler.SourceCodeServices.FSharpTokenInfo[])
+FSharp.Compiler.SourceCodeServices.QuickParse: FSharp.Compiler.PartialLongName GetPartialLongNameEx(System.String, Int32)
+FSharp.Compiler.SourceCodeServices.QuickParse: Int32 CorrectIdentifierToken(System.String, Int32)
+FSharp.Compiler.SourceCodeServices.QuickParse: Int32 MagicalAdjustmentConstant
+FSharp.Compiler.SourceCodeServices.QuickParse: Int32 get_MagicalAdjustmentConstant()
+FSharp.Compiler.SourceCodeServices.QuickParse: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.String,System.Int32,System.Boolean]] GetCompleteIdentifierIsland(Boolean, System.String, Int32)
+FSharp.Compiler.SourceCodeServices.QuickParse: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],System.String] GetPartialLongName(System.String, Int32)
 FSharp.Compiler.SourceCodeServices.AssemblyContentProvider: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol] getAssemblyContent(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.SourceCodeServices.IAssemblyContentCache,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]],Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol]], FSharp.Compiler.SourceCodeServices.AssemblyContentType, Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.FSharpAssembly])
 FSharp.Compiler.SourceCodeServices.AssemblyContentProvider: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SourceCodeServices.AssemblySymbol] getAssemblySignatureContent(FSharp.Compiler.SourceCodeServices.AssemblyContentType, FSharp.Compiler.SourceCodeServices.FSharpAssemblySignature)
 FSharp.Compiler.SourceCodeServices.AssemblyContentType+Tags: Int32 Full

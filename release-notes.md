@@ -69,22 +69,36 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 
 * Renamings
 *     FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
+* 
 *     FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
+* 
 *     FSharp.Compiler.AbstractIL.Internal.Layout  -> FSharp.Compiler.TextLayout.Layout
+* 
 *     FSharp.Compiler.AbstractIL.Internal.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
-*     type FSharp.Compiler.Layout.layout -> FSharp.Compiler.TextLayout.Layout
-*     type FSharp.Compiler.Layout.Layout -> FSharp.Compiler.TextLayout.Layout
-*     module FSharp.Compiler.Layout -> FSharp.Compiler.TextLayout.LayoutRender
+* 
+*     FSharp.Compiler.Layout.layout -> FSharp.Compiler.TextLayout.Layout
+* 
+*     FSharp.Compiler.Layout.Layout -> FSharp.Compiler.TextLayout.Layout
+* 
+*     FSharp.Compiler.Layout -> FSharp.Compiler.TextLayout.LayoutRender
+* 
 *     FSharp.Compiler.LayoutOps -> FSharp.Compiler.TextLayout.Layout
+* 
 *     FSharp.Compiler.Layout.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+* 
 *     FSharp.Compiler.Layout.TaggedTextOps  -> FSharp.Compiler.TextLayout.TaggedText
+* 
 *     FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
+* 
 *     FSharp.Compiler.Range.range --> FSharp.Compiler.SourceCodeServices.Range (with 'range' abbreviation)
+* 
 *     FSharp.Compiler.Range.pos --> FSharp.Compiler.SourceCodeServices.Pos (with 'pos' abbreviation)
-*
-*     module FSharp.Compiler.Range.Range --> (split)
+* 
+*     FSharp.Compiler.Range.Range --> (split)
 *          module FSharp.Compiler.Pos
 *          module FSharp.Compiler.Range
+*
+*     FSharp.Compiler.QuickParse --> FSharp.Compiler.SourceCodeServices.QuickParse
 *
 * Renamings in FSharp.Compiler.SourceCodeServices
 *   Lexer.* --> FSharp.Compiler.SourceCodeServices.*
