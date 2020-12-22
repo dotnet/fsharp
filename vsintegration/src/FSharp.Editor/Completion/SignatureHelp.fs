@@ -383,12 +383,12 @@ type internal FSharpSignatureHelpProvider
                             |> ResizeArray
 
                         if argument.Type.IsFunctionType then
-                            display.Add(TaggedText(TextTags.Punctuation, "("))
+                            display.Add(RoslynTaggedText(TextTags.Punctuation, "("))
 
                         display.AddRange(tt)
 
                         if argument.Type.IsFunctionType then
-                            display.Add(TaggedText(TextTags.Punctuation, ")"))
+                            display.Add(RoslynTaggedText(TextTags.Punctuation, ")"))
 
                         let info =
                             { ParameterName = name
