@@ -99,7 +99,7 @@ type IOverload =
 
 type Overload =
     interface IOverload with
-        override _.Bar _ = 1
+        override __.Bar _ = 1
         """
         |> typecheck
         |> shouldFail
