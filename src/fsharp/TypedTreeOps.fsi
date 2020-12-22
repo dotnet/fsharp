@@ -11,10 +11,10 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
@@ -995,7 +995,7 @@ type DisplayEnv =
       printVerboseSignatures : bool
       g: TcGlobals
       contextAccessibility: Accessibility
-      generatedValueLayout: (Val -> layout option)
+      generatedValueLayout: (Val -> Layout option)
       genericParameterStyle: GenericParameterStyle }
 
     member SetOpenPaths: string list list -> DisplayEnv
@@ -1010,7 +1010,7 @@ type DisplayEnv =
 
     member UseGenericParameterStyle : GenericParameterStyle -> DisplayEnv
 
-val tagEntityRefName: xref: EntityRef -> name: string -> StructuredFormat.TaggedText
+val tagEntityRefName: xref: EntityRef -> name: string -> TaggedText
 
 /// Return the full text for an item as we want it displayed to the user as a fully qualified entity
 val fullDisplayTextOfModRef : ModuleOrNamespaceRef -> string
@@ -1019,15 +1019,15 @@ val fullDisplayTextOfParentOfModRef : ModuleOrNamespaceRef -> ValueOption<string
 
 val fullDisplayTextOfValRef   : ValRef -> string
 
-val fullDisplayTextOfValRefAsLayout   : ValRef -> StructuredFormat.Layout
+val fullDisplayTextOfValRefAsLayout   : ValRef -> Layout
 
 val fullDisplayTextOfTyconRef  : TyconRef -> string
 
-val fullDisplayTextOfTyconRefAsLayout  : TyconRef -> StructuredFormat.Layout
+val fullDisplayTextOfTyconRefAsLayout  : TyconRef -> Layout
 
 val fullDisplayTextOfExnRef  : TyconRef -> string
 
-val fullDisplayTextOfExnRefAsLayout  : TyconRef -> StructuredFormat.Layout
+val fullDisplayTextOfExnRefAsLayout  : TyconRef -> Layout
 
 val fullDisplayTextOfUnionCaseRef  : UnionCaseRef -> string
 
@@ -1326,67 +1326,67 @@ module DebugPrint =
     val showExpr : TcGlobals -> Expr -> string
 
     /// Debug layout for a reference to a value
-    val valRefL : ValRef -> layout
+    val valRefL : ValRef -> Layout
 
     /// Debug layout for a reference to a union case
-    val unionCaseRefL : UnionCaseRef -> layout
+    val unionCaseRefL : UnionCaseRef -> Layout
 
     /// Debug layout for an value definition at its binding site
-    val valAtBindL : TcGlobals -> Val -> layout
+    val valAtBindL : TcGlobals -> Val -> Layout
 
     /// Debug layout for an integer
-    val intL : int -> layout
+    val intL : int -> Layout
 
     /// Debug layout for a value definition
-    val valL : Val -> layout
+    val valL : Val -> Layout
 
     /// Debug layout for a type parameter definition
-    val typarDeclL : Typar -> layout
+    val typarDeclL : Typar -> Layout
 
     /// Debug layout for a trait constraint
-    val traitL : TraitConstraintInfo -> layout
+    val traitL : TraitConstraintInfo -> Layout
 
     /// Debug layout for a type parameter
-    val typarL : Typar -> layout
+    val typarL : Typar -> Layout
 
     /// Debug layout for a set of type parameters
-    val typarsL : Typars -> layout
+    val typarsL : Typars -> Layout
 
     /// Debug layout for a type
-    val typeL : TType -> layout
+    val typeL : TType -> Layout
 
     /// Debug layout for a method slot signature
-    val slotSigL : SlotSig -> layout
+    val slotSigL : SlotSig -> Layout
 
     /// Debug layout for the type signature of a module or namespace definition
-    val entityTypeL : TcGlobals -> ModuleOrNamespaceType -> layout
+    val entityTypeL : TcGlobals -> ModuleOrNamespaceType -> Layout
 
     /// Debug layout for a module or namespace definition
-    val entityL : TcGlobals -> ModuleOrNamespace -> layout
+    val entityL : TcGlobals -> ModuleOrNamespace -> Layout
 
     /// Debug layout for the type of a value
-    val typeOfValL : Val -> layout
+    val typeOfValL : Val -> Layout
 
     /// Debug layout for a binding of an expression to a value
-    val bindingL : TcGlobals -> Binding -> layout
+    val bindingL : TcGlobals -> Binding -> Layout
 
     /// Debug layout for an expression
-    val exprL : TcGlobals -> Expr -> layout
+    val exprL : TcGlobals -> Expr -> Layout
 
     /// Debug layout for a type definition
-    val tyconL : TcGlobals -> Tycon -> layout
+    val tyconL : TcGlobals -> Tycon -> Layout
 
     /// Debug layout for a decision tree
-    val decisionTreeL : TcGlobals -> DecisionTree -> layout
+    val decisionTreeL : TcGlobals -> DecisionTree -> Layout
 
     /// Debug layout for an implementation file
-    val implFileL : TcGlobals -> TypedImplFile -> layout
+    val implFileL : TcGlobals -> TypedImplFile -> Layout
 
     /// Debug layout for a list of implementation files
-    val implFilesL : TcGlobals -> TypedImplFile list -> layout
+    val implFilesL : TcGlobals -> TypedImplFile list -> Layout
 
     /// Debug layout for class and record fields
-    val recdFieldRefL : RecdFieldRef -> layout
+    val recdFieldRefL : RecdFieldRef -> Layout
 
 /// A set of function parameters (visitor) for folding over expressions
 type ExprFolder<'State> =

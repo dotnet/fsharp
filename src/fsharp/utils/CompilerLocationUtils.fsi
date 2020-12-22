@@ -39,4 +39,14 @@ module internal FSharpEnvironment =
       raiseError:(string option -> exn -> System.Reflection.Assembly option)
            -> System.Reflection.Assembly option
 
+    val getFSharpCompilerLocation: unit -> string
+
+    val getDefaultFSharpCoreLocation: unit -> string
+
+    val getDefaultFsiLibraryLocation: unit -> string
+
     val getCompilerToolsDesignTimeAssemblyPaths: compilerToolPaths:seq<string> -> seq<string>
+
+    val fsiLibraryName: string
+
+    val getFSharpCoreLibraryName: string

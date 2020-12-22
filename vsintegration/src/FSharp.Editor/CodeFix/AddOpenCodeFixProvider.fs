@@ -15,7 +15,6 @@ open Microsoft.CodeAnalysis.CodeActions
 open FSharp.Compiler
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.Internal.Library 
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddOpen"); Shared>]
 type internal FSharpAddOpenCodeFixProvider

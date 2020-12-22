@@ -87,31 +87,31 @@ let f5 () =
             """
             [|
                 (
-                    FSharpErrorSeverity.Error,
+                    FSharpDiagnosticSeverity.Error,
                     3228,
                     (12, 6, 12, 25),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (
-                    FSharpErrorSeverity.Error,
+                    FSharpDiagnosticSeverity.Error,
                     3228,
                     (17, 10, 17, 19),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (
-                    FSharpErrorSeverity.Error,
+                    FSharpDiagnosticSeverity.Error,
                     3228,
                     (21, 5, 21, 50),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (
-                    FSharpErrorSeverity.Error,
+                    FSharpDiagnosticSeverity.Error,
                     3228,
                     (25, 6, 25, 26),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
                 )
                 (
-                    FSharpErrorSeverity.Error,
+                    FSharpDiagnosticSeverity.Error,
                     3228,
                     (28, 6, 28, 51),
                     "The address of a value returned from the expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope."
@@ -176,25 +176,25 @@ let test1 () =
             """
             [|
                 (
-                    FSharpErrorSeverity.Warning,
+                    FSharpDiagnosticSeverity.Warning,
                     52,
                     (3, 30, 3, 45),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
-                    FSharpErrorSeverity.Warning,
+                    FSharpDiagnosticSeverity.Warning,
                     52,
                     (7, 5, 7, 20),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
-                    FSharpErrorSeverity.Warning,
+                    FSharpDiagnosticSeverity.Warning,
                     52,
                     (10, 5, 10, 26),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
                 )
                 (
-                    FSharpErrorSeverity.Warning,
+                    FSharpDiagnosticSeverity.Warning,
                     52,
                     (20, 5, 20, 29),
                     "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
@@ -265,7 +265,7 @@ let test () =
     let y = &&x
     ()
             """ [|
-                    (FSharpErrorSeverity.Error, 256, (6, 13, 6, 16), "A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'")
+                    (FSharpDiagnosticSeverity.Error, 256, (6, 13, 6, 16), "A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'")
                 |]
 
     [<Test>]

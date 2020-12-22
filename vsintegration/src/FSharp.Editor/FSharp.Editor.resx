@@ -253,13 +253,16 @@
     <value>Remove 'yield'</value>
   </data>
   <data name="RemoveYieldBang" xml:space="preserve">
-    <value>Remove yield!'</value>
+    <value>Remove 'yield!'</value>
   </data>
   <data name="ConvertToAnonymousRecord" xml:space="preserve">
     <value>Convert to Anonymous Record</value>
   </data>
   <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
     <value>Use '&lt;-' to mutate value</value>
+  </data>
+  <data name="AddMissingFunKeyword" xml:space="preserve">
+    <value>Add missing 'fun' keyword</value>
   </data>
   <data name="UseFSharpLambda" xml:space="preserve">
     <value>Use F# lambda syntax</value>

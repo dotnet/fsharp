@@ -37,7 +37,7 @@ module ParamTypeSymbol =
 
 /// Represents a symbol in an external (non F#) assembly
 [<RequireQualifiedAccess>]
-type ExternalSymbol =
+type FSharpExternalSymbol =
     | Type of fullName: string
     | Constructor of typeName: string * args: ParamTypeSymbol list
     | Method of typeName: string * name: string * paramSyms: ParamTypeSymbol list * genericArity: int 

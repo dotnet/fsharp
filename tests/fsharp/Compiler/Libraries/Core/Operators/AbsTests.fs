@@ -26,7 +26,7 @@ module ``Abs Tests`` =
             """
 abs -1uy |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'byte' does not support the operator 'Abs'"
@@ -37,7 +37,7 @@ abs -1uy |> ignore
             """
 abs -1us |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'uint16' does not support the operator 'Abs'"
@@ -48,7 +48,7 @@ abs -1us |> ignore
             """
 abs -1ul |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'uint32' does not support the operator 'Abs'"
@@ -57,7 +57,7 @@ abs -1ul |> ignore
             """
 abs -1u |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 8)
             "The type 'uint32' does not support the operator 'Abs'"
@@ -68,7 +68,7 @@ abs -1u |> ignore
             """
 abs -1un |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'unativeint' does not support the operator 'Abs'"
@@ -79,7 +79,7 @@ abs -1un |> ignore
             """
 abs -1uL |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'uint64' does not support the operator 'Abs'"
@@ -88,7 +88,7 @@ abs -1uL |> ignore
             """
 abs -1UL |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'uint64' does not support the operator 'Abs'"

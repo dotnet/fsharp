@@ -5161,7 +5161,7 @@ let ``add files with same name from different folders`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
     let errors =
         wholeProjectResults.Errors
-        |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
+        |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
     if errors.Length > 0 then
         printfn "add files with same name from different folders"
         for err in errors do
@@ -5309,7 +5309,7 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
     let fileName, options = mkTestFileAndOptions source args
 
     let _, checkResults = parseAndCheckFile fileName source options
-    checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpErrorSeverity.Error) |> shouldEqual errorSeverities 
+    checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual errorSeverities 
 
 
 //------------------------------------------------------

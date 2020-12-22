@@ -48,7 +48,7 @@ type public FSharpFindDeclResult =
     | DeclFound    of range
 
     /// Indicates an external declaration was found
-    | ExternalDecl of assembly : string * externalSym : ExternalSymbol
+    | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
@@ -65,7 +65,7 @@ type public FSharpParsingOptions =
     { 
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
-      ErrorSeverityOptions: FSharpErrorSeverityOptions
+      ErrorSeverityOptions: FSharpDiagnosticOptions
       IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
@@ -81,7 +81,7 @@ type public FSharpParsingOptions =
 [<Sealed>]
 type public FSharpCheckFileResults =
     /// The errors returned by parsing a source file.
-    member Errors : FSharpErrorInfo[]
+    member Errors : FSharpDiagnostic[]
 
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature : FSharpAssemblySignature
@@ -235,7 +235,7 @@ type public FSharpCheckFileResults =
     /// Internal constructor
     static member internal MakeEmpty : 
         filename: string *
-        creationErrors: FSharpErrorInfo[] *
+        creationErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool 
           -> FSharpCheckFileResults
         
@@ -248,9 +248,9 @@ type public FSharpCheckFileResults =
         isIncompleteTypeCheckEnvironment: bool *
         builder: IncrementalBuilder * 
         dependencyFiles: string[] * 
-        creationErrors: FSharpErrorInfo[] *
-        parseErrors: FSharpErrorInfo[] *
-        tcErrors: FSharpErrorInfo[] *
+        creationErrors: FSharpDiagnostic[] *
+        parseErrors: FSharpDiagnostic[] *
+        tcErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool *
         ccuSigForFile: ModuleOrNamespaceType *
         thisCcu: CcuThunk *
@@ -276,14 +276,14 @@ type public FSharpCheckFileResults =
          tcState: TcState *
          moduleNamesDict: ModuleNamesDict *
          loadClosure: LoadClosure option *
-         backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity)[] *    
+         backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *    
          reactorOps: IReactorOperations *
          userOpName: string *
          isIncompleteTypeCheckEnvironment: bool * 
          builder: IncrementalBuilder * 
          dependencyFiles: string[] * 
-         creationErrors:FSharpErrorInfo[] * 
-         parseErrors:FSharpErrorInfo[] * 
+         creationErrors:FSharpDiagnostic[] * 
+         parseErrors:FSharpDiagnostic[] * 
          keepAssemblyContents: bool *
          suggestNamesForErrors: bool
           ->  Async<FSharpCheckFileAnswer>
@@ -301,7 +301,7 @@ and [<RequireQualifiedAccess>] public FSharpCheckFileAnswer =
 type public FSharpCheckProjectResults =
 
     /// The errors returned by processing the project
-    member Errors: FSharpErrorInfo[]
+    member Errors: FSharpDiagnostic[]
 
     /// Get a view of the overall signature of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblySignature: FSharpAssemblySignature
@@ -336,7 +336,7 @@ type public FSharpCheckProjectResults =
         projectFileName:string *
         tcConfigOption: TcConfig option *
         keepAssemblyContents: bool *
-        errors: FSharpErrorInfo[] * 
+        errors: FSharpDiagnostic[] * 
         details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * TcSymbolUses list * TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef * AccessorDomain * TypedImplFile list option * string[]) option 
            -> FSharpCheckProjectResults
 
@@ -348,7 +348,7 @@ module internal ParseAndCheckFile =
         options: FSharpParsingOptions * 
         userOpName: string *
         suggestNamesForErrors: bool
-          -> FSharpErrorInfo[] * ParsedInput option * bool
+          -> FSharpDiagnostic[] * ParsedInput option * bool
 
     val matchBraces: 
         sourceText: ISourceText *

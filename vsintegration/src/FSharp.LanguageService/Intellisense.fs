@@ -14,12 +14,12 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
-
 module internal TaggedText =
-    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Text |> ignore 
+    let appendTo (sb: System.Text.StringBuilder) (t: TaggedText) = sb.Append t.Text |> ignore 
  
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //
@@ -224,7 +224,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
         // We intercept this call only to get the initial extent
         // of what was committed to the source buffer.
         let result = decl.GetName(filterText, index)
-        Keywords.QuoteIdentifierIfNeeded result
+        FSharpKeywords.QuoteIdentifierIfNeeded result
 
     override decl.IsCommitChar(commitCharacter) =
         // Usual language identifier rules...
