@@ -261,9 +261,6 @@
   <data name="UseMutationWhenValueIsMutable" xml:space="preserve">
     <value>Use '&lt;-' to mutate value</value>
   </data>
-  <data name="MakeOuterBindingRecursive" xml:space="preserve">
-    <value>Make '{0}' recursive</value>
-  </data>
   <data name="AddMissingFunKeyword" xml:space="preserve">
     <value>Add missing 'fun' keyword</value>
   </data>
