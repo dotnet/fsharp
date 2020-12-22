@@ -4,12 +4,21 @@
     <!-- during a regular build `dotnet(.exe)` is expected to be on the path -->
     <DotNetExe Condition="'$(OS)' == 'Unix'">dotnet</DotNetExe>
     <DotNetExe Condition="'$(OS)' != 'Unix'">dotnet.exe</DotNetExe>
-    <!-- if already running under dotnet, use that instance -->
-    <DotNetExe Condition="'$(DOTNET_HOST_PATH)' != ''">$(DOTNET_HOST_PATH)</DotNetExe>
-    <DotNetExePath>$(DotNetExe)</DotNetExePath>
 
     <!-- this is usually set by Arcade, but non-arcade builds won't have it -->
-    <DotNetTool Condition="'$(DotNetTool)' == ''">$(DotNetExePath)</DotNetTool>
+    <DotNetToolPath Condition="'$(DotNetTool)' != '' and Exists('$(DotNetTool)')">$(DotNetTool)</DotNetToolPath>
+
+    <!-- if dotnet_host_path set then use it -->
+    <DotNetToolPath Condition="'$(DotNetToolPath)' == '' and '$(DOTNET_HOST_PATH)' != '' and Exists('$(DOTNET_HOST_PATH)')">$(DOTNET_HOST_PATH)</DotNetToolPath>
+
+    <!-- Use Program files\dotnet\dotnet.exe  -->
+    <DotNetToolPath Condition="'$(DotNetToolPath)' == '' and '$(ProgramW6432)' != '' and Exists('$(ProgramW6432)/dotnet/dotnet.exe')">$(ProgramW6432)/dotnet/dotnet.exe</DotNetToolPath>
+
+    <!-- Use Program files(x86)\dotnet\dotnet.exe  -->
+    <DotNetToolPath Condition="'$(DotNetToolPath)' == '' and '$(MsBuildProgramFiles32)' != '' and Exists('$(MsBuildProgramFiles32)/dotnet/dotnet.exe')">$(MsBuildProgramFiles32)/dotnet/dotnet.exe</DotNetToolPath>
+
+    <!-- Fallback to requiring it being on the path -->
+    <DotNetToolPath Condition="'$(DotNetToolPath)' == ''">$(DotNetExe)</DotNetToolPath>
   </PropertyGroup>
 
   <!-- Build FsLex files. -->
@@ -27,7 +36,7 @@
     <MakeDir Directories="$(FsLexOutputFolder)"/>
 
     <!-- Run the tool -->
-    <Exec Command="&quot;$(DotNetTool)&quot; &quot;$(FsLexPath)&quot; -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" />
+    <Exec Command="&quot;$(DotNetToolPath)&quot; &quot;$(FsLexPath)&quot; -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" />
 
     <!-- Make sure it will get cleaned -->
     <CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
@@ -51,7 +60,7 @@
     <MakeDir Directories="$(FsYaccOutputFolder)" />
 
     <!-- Run the tool -->
-    <Exec Command="&quot;$(DotNetTool)&quot; &quot;$(FsYaccPath)&quot; -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
+    <Exec Command="&quot;$(DotNetToolPath)&quot; &quot;$(FsYaccPath)&quot; -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
 
     <!-- Make sure it will get cleaned -->
     <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
