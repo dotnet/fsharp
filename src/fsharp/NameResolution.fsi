@@ -6,9 +6,9 @@ open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Range
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals

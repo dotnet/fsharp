@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.ErrorLogger
 
 open System
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Features
 
 /// Represents the style being used to format errors

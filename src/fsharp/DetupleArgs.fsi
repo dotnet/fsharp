@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.Detuple 
 
 open FSharp.Compiler.AbstractIL.Internal 
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 

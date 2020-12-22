@@ -7,7 +7,7 @@ open FSharp.Compiler
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.InfoReader
 
 /// What should the decision tree contain for any incomplete match? 

@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.Optimizer
 
 open FSharp.Compiler 
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
@@ -17,7 +18,7 @@ type OptimizationSettings =
       bigTargetSize: int
       veryBigExprSize: int 
       lambdaInlineThreshold: int
-      reportingPhase: bool;
+      reportingPhase: bool
       reportNoNeedToTailcall: bool
       reportFunctionSizes: bool
       reportHasEffect: bool

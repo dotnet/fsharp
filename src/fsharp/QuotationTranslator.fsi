@@ -6,7 +6,7 @@ module internal FSharp.Compiler.QuotationTranslator
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Import
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 

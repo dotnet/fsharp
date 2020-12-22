@@ -3,8 +3,9 @@
 module public FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
 open FSharp.Compiler.Features
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Range
 open System
 
 //------------------------------------------------------------------------

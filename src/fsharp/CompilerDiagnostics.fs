@@ -35,6 +35,7 @@ open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SignatureConformance
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.TaggedText

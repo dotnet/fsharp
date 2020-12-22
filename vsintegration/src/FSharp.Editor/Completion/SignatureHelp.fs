@@ -13,6 +13,7 @@ open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler
 open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
@@ -325,7 +326,7 @@ type internal FSharpSignatureHelpProvider
                         | None ->
                             let possibleNextIndex =
                                 curriedArgsInSource
-                                |> Array.tryFindIndex(fun argRange -> Range.posGeq argRange.Start caretPos)
+                                |> Array.tryFindIndex(fun argRange -> Pos.posGeq argRange.Start caretPos)
 
                             match possibleNextIndex with
                             | Some index -> Some index

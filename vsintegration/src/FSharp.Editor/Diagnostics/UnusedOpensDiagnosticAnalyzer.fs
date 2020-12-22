@@ -10,7 +10,7 @@ open System.Threading
 
 open Microsoft.CodeAnalysis
 
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics

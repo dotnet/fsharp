@@ -7,6 +7,7 @@ module internal FSharp.Compiler.TypeRelations
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

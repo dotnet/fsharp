@@ -1,15 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Anything to do with special names of identifiers and other lexical rules 
-namespace FSharp.Compiler
+namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open System.IO
-open System.Collections.Generic
 open System.Collections.Concurrent
 open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
 open FSharp.Compiler.SourceCodeServices
 
@@ -194,7 +192,7 @@ type FileIndexTable() =
         indexToFileTable.[n]
 
 [<AutoOpen>]
-module FileIndex =
+module FileIndexImpl =
     let maxFileIndex = pown32 fileIndexBitCount
 
     // ++GLOBAL MUTABLE STATE
@@ -285,6 +283,17 @@ type Range(code1:int64, code2: int64) =
 
 and range = Range
 
+
+namespace FSharp.Compiler 
+
+open System
+open System.IO
+open System.Collections.Generic
+open Microsoft.FSharp.Core.Printf
+open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Lib
+open FSharp.Compiler.SourceCodeServices
+
 #if CHECK_LINE0_TYPES // turn on to check that we correctly transform zero-based line counts to one-based line counts
 // Visual Studio uses line counts starting at 0, F# uses them starting at 1 
 [<Measure>] type ZeroBasedLineAnnotation
@@ -329,6 +338,13 @@ module Pos =
     let stringOfPos (pos:pos) = sprintf "(%d,%d)" pos.Line pos.Column
 
     let pos0 = mkPos 1 0
+
+[<AutoOpen>]
+module FileIndex =
+
+    let fileIndexOfFile filePath = FileIndexImpl.fileIndexOfFile filePath 
+    let fileOfFileIndex idx = FileIndexImpl.fileOfFileIndex idx
+    let startupFileName = FileIndexImpl.startupFileName
 
 module Range =
     let mkRange filePath startPos endPos = range (fileIndexOfFileAux true filePath, startPos, endPos)

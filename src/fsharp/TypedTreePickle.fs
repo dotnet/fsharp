@@ -19,6 +19,7 @@ open FSharp.Compiler.Lib.Bits
 open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TypedTree

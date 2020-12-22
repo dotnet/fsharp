@@ -30,8 +30,8 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Lib
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Range
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
@@ -44,7 +44,7 @@ open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
 #endif
 
 let (++) x s = x @ [s]

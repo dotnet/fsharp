@@ -7,9 +7,8 @@
 
 module internal FSharp.Compiler.CheckFormatStrings
 
-open FSharp.Compiler 
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TcGlobals
 

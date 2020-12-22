@@ -5,7 +5,7 @@
 module internal FSharp.Compiler.TypeRelations
 
 open FSharp.Compiler.Import
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 

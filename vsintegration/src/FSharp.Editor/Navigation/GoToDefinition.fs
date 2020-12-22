@@ -18,7 +18,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio.Shell.Interop
 
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 module private Symbol =

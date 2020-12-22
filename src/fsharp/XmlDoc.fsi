@@ -2,7 +2,7 @@
 
 module public FSharp.Compiler.XmlDoc
 
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 /// Represents collected XmlDoc lines
 [<Class>]

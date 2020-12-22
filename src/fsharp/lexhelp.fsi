@@ -10,7 +10,7 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 val stdinMockFilename: string
 

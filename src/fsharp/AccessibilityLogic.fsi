@@ -7,8 +7,8 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler 
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.Range
 open FSharp.Compiler.TcGlobals
 
 /// Represents the 'keys' a particular piece of code can use to access other constructs?.

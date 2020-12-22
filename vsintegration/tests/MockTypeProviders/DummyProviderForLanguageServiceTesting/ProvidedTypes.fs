@@ -7275,7 +7275,7 @@ namespace ProviderImplementation.ProvidedTypes
                 override _.GetCustomAttributesData() = inp.CustomAttrs |> txCustomAttributesData
                 override _.GetGenericArguments() = gps2
                 override _.IsGenericMethod = (gps2.Length <> 0)
-                override _.IsGenericMethodDefinition = _.IsGenericMethod
+                override t.IsGenericMethodDefinition = t.IsGenericMethod
 
                 override _.GetHashCode() = inp.Token
 

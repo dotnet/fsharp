@@ -8,7 +8,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open FSharp.Compiler 
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution

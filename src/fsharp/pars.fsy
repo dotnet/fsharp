@@ -20,6 +20,7 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.XmlDoc

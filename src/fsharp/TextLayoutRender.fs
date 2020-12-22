@@ -4,7 +4,7 @@ namespace FSharp.Compiler.TextLayout
 
 open System
 open System.IO
-open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Core.Printf

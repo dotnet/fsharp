@@ -17,6 +17,11 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
+open Microsoft.CodeAnalysis
+open FSharp.Compiler
+open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
+
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
 // is internal to Microsoft.CodeAnalysis.Workspaces which we don't have internals visible to. Rather than add yet another
 // IVT, we'll maintain the status quo.
@@ -24,11 +29,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 #nowarn "57"
 
-open Microsoft.CodeAnalysis
-open FSharp.Compiler.Range
-open FSharp.Compiler.SourceCodeServices
-
-type SemanticClassificationData = (struct(FSharp.Compiler.Range * SemanticClassificationType)[])
+type SemanticClassificationData = (struct(Range * SemanticClassificationType)[])
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<struct(range * SemanticClassificationType)>>
 
 [<Sealed>]
@@ -118,7 +119,7 @@ type internal FSharpClassificationService
             | _ -> ()
 
     static let toSemanticClassificationLookup (data: SemanticClassificationData) =
-        let lookup = System.Collections.Generic.Dictionary<int, ResizeArray<struct(FSharp.Compiler.Range * SemanticClassificationType)>>()
+        let lookup = System.Collections.Generic.Dictionary<int, ResizeArray<struct(Range * SemanticClassificationType)>>()
         for i = 0 to data.Length - 1 do
             let (struct(r, _) as dataItem) = data.[i]
             let items =

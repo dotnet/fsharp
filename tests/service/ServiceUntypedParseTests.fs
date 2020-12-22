@@ -9,6 +9,8 @@ module Tests.Service.ServiceUntypedParseTests
 
 open System.IO
 open FsUnit
+open FSharp.Compiler
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common

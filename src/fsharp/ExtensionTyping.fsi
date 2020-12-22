@@ -11,10 +11,10 @@ module internal ExtensionTyping =
     open System
     open System.IO
     open System.Collections.Generic
-    open Microsoft.FSharp.Core.CompilerServices
+    open FSharp.Core.CompilerServices
     open FSharp.Compiler.AbstractIL.IL
     open FSharp.Compiler.AbstractIL.Internal.Library
-    open FSharp.Compiler.Range
+    open FSharp.Compiler.SourceCodeServices
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 

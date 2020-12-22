@@ -9,6 +9,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]

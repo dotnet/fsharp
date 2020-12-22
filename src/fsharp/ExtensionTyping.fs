@@ -11,11 +11,12 @@ module internal ExtensionTyping =
     open System.IO
     open System.Collections.Generic
     open System.Reflection
-    open Microsoft.FSharp.Core.CompilerServices
-    open FSharp.Compiler.ErrorLogger
-    open FSharp.Compiler.Range
+    open FSharp.Core.CompilerServices
     open FSharp.Compiler.AbstractIL.IL
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
+    open FSharp.Compiler.ErrorLogger
+    open FSharp.Compiler.Range
+    open FSharp.Compiler.SourceCodeServices
     open Internal.Utilities.FSharpEnvironment  
 
     type TypeProviderDesignation = TypeProviderDesignation of string
@@ -27,11 +28,11 @@ module internal ExtensionTyping =
 
     /// Represents some of the configuration parameters passed to type provider components 
     type ResolutionEnvironment =
-        { resolutionFolder          : string
-          outputFile                : string option
-          showResolutionMessages    : bool
-          referencedAssemblies      : string[]
-          temporaryFolder           : string }
+        { resolutionFolder: string
+          outputFile: string option
+          showResolutionMessages: bool
+          referencedAssemblies: string[]
+          temporaryFolder: string }
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
@@ -130,8 +131,8 @@ module internal ExtensionTyping =
              resolutionEnvironment: ResolutionEnvironment, 
              isInvalidationSupported: bool, 
              isInteractive: bool, 
-             systemRuntimeContainsType : string -> bool, 
-             systemRuntimeAssemblyVersion : System.Version, 
+             systemRuntimeContainsType: string -> bool, 
+             systemRuntimeAssemblyVersion: System.Version, 
              compilerToolPaths: string list,
              m:range) =
 
@@ -401,13 +402,13 @@ module internal ExtensionTyping =
 
     and [<AllowNullLiteral>] 
         IProvidedCustomAttributeProvider =
-        abstract GetDefinitionLocationAttribute : provider: ITypeProvider -> (string * int * int) option 
-        abstract GetXmlDocAttributes : provider: ITypeProvider -> string[]
-        abstract GetHasTypeProviderEditorHideMethodsAttribute : provider: ITypeProvider -> bool
+        abstract GetDefinitionLocationAttribute: provider: ITypeProvider -> (string * int * int) option 
+        abstract GetXmlDocAttributes: provider: ITypeProvider -> string[]
+        abstract GetHasTypeProviderEditorHideMethodsAttribute: provider: ITypeProvider -> bool
         abstract GetAttributeConstructorArgs: provider: ITypeProvider * attribName: string -> (obj option list * (string * obj option) list) option
 
     and ProvidedCustomAttributeProvider =
-        static member Create (attributes :(ITypeProvider -> seq<CustomAttributeData>)) : IProvidedCustomAttributeProvider = 
+        static member Create (attributes :(ITypeProvider -> seq<CustomAttributeData>)): IProvidedCustomAttributeProvider = 
             let (|Member|_|) (s: string) (x: CustomAttributeNamedArgument) = if x.MemberName = s then Some x.TypedValue else None
             let (|Arg|_|) (x: CustomAttributeTypedArgument) = match x.Value with null -> None | v -> Some v
             let findAttribByName tyFullName (a: CustomAttributeData) = (a.Constructor.DeclaringType.FullName = tyFullName)  
@@ -563,8 +564,8 @@ module internal ExtensionTyping =
                     | :? System.Reflection.MethodBase as mb -> mb
                     | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
             match mb with 
-            | :? System.Reflection.MethodInfo as mi -> (mi |> ProvidedMethodInfo.Create ctxt : ProvidedMethodInfo) :> ProvidedMethodBase
-            | :? System.Reflection.ConstructorInfo as ci -> (ci |> ProvidedConstructorInfo.Create ctxt : ProvidedConstructorInfo) :> ProvidedMethodBase
+            | :? System.Reflection.MethodInfo as mi -> (mi |> ProvidedMethodInfo.Create ctxt: ProvidedMethodInfo) :> ProvidedMethodBase
+            | :? System.Reflection.ConstructorInfo as ci -> (ci |> ProvidedConstructorInfo.Create ctxt: ProvidedConstructorInfo) :> ProvidedMethodBase
             | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
 
 
@@ -774,7 +775,7 @@ module internal ExtensionTyping =
 
 
     /// Verify that a provided type has the expected name
-    let ValidateExpectedName m expectedPath expectedName (st : Tainted<ProvidedType>) =
+    let ValidateExpectedName m expectedPath expectedName (st: Tainted<ProvidedType>) =
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
         if name <> expectedName then
             raise (TypeProviderError(FSComp.SR.etProvidedTypeHasUnexpectedName(expectedName, name), st.TypeProviderDesignation, m))
@@ -796,7 +797,7 @@ module internal ExtensionTyping =
             errorR(Error(FSComp.SR.etProvidedTypeHasUnexpectedPath(expectedPath, path), m))
 
     /// Eagerly validate a range of conditions on a provided type, after static instantiation (if any) has occurred
-    let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
+    let ValidateProvidedTypeAfterStaticInstantiation(m, st: Tainted<ProvidedType>, expectedPath: string[], expectedName: string) = 
         // Do all the calling into st up front with recovery
         let fullName, namespaceName, usedMembers =
             let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
@@ -804,7 +805,7 @@ module internal ExtensionTyping =
             let fullName = TryTypeMemberNonNull(st, name, "FullName", m, FSComp.SR.invalidFullNameForProvidedType(), fun st -> st.FullName) |> unmarshal
             ValidateExpectedName m expectedPath expectedName st
             // Must be able to call (GetMethods|GetEvents|GetProperties|GetNestedTypes|GetConstructors)(bindingFlags).
-            let usedMembers : Tainted<ProvidedMemberInfo>[] = 
+            let usedMembers: Tainted<ProvidedMemberInfo>[] = 
                 // These are the members the compiler will actually use
                 [| for x in TryTypeMemberArray(st, fullName, "GetMethods", m, fun st -> st.GetMethods()) -> x.Coerce m
                    for x in TryTypeMemberArray(st, fullName, "GetEvents", m, fun st -> st.GetEvents()) -> x.Coerce m
@@ -901,7 +902,7 @@ module internal ExtensionTyping =
                     | None ->
                         errorR(Error(FSComp.SR.etUnsupportedMemberKind(memberName, fullName), m))   
 
-    let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
+    let ValidateProvidedTypeDefinition(m, st: Tainted<ProvidedType>, expectedPath: string[], expectedName: string) = 
 
         // Validate the Name, Namespace and FullName properties
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")

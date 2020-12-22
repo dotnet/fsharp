@@ -13,6 +13,7 @@ open System.Text
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 
