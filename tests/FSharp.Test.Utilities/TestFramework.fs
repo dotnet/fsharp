@@ -53,7 +53,7 @@ module Commands =
                     // Timed out resolving throw a diagnostic.
                     raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
                 else
-                    ()
+                    p.WaitForExit()
     #if DEBUG
             File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
             File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
