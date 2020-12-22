@@ -42,7 +42,6 @@
 #r "FSharp.Compiler.Service.dll"
 open System
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Text
 (**
 
 ### 型無しパースの実行

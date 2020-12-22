@@ -21,9 +21,9 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Text
-open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
-let defaultFileSystem = Shim.FileSystem
+let defaultFileSystem = FileSystem
 
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn't exist
 let fileName2 = @"c:\mycode\test2.fs" // note, the path doesn't exist
@@ -91,7 +91,7 @@ let B = File1.A + File1.A"""
             defaultFileSystem.AssemblyLoad assemblyName 
 
 let myFileSystem = MyFileSystem()
-Shim.FileSystem <- MyFileSystem() 
+FileSystem <- MyFileSystem() 
 
 (**
 
@@ -99,7 +99,6 @@ Doing a compilation with the FileSystem
 ---------------------------------------
 
 *)
-open FSharp.Compiler.SourceCodeServices
 
 let checker = FSharpChecker.Create()
 
