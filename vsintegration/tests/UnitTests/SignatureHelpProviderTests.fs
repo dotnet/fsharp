@@ -30,7 +30,7 @@ open VisualFSharp.UnitTests.Roslyn
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open Microsoft.CodeAnalysis
 
 let filePath = "C:\\test.fs"

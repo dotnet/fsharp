@@ -4,9 +4,8 @@ module Tests.ServiceAnalysis.UnusedOpens
 
 open System
 open NUnit.Framework
+open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
-
 
 /// like "should equal", but validates same-type
 let shouldEqual (x: 'a) (y: 'a) = Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)

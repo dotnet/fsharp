@@ -29,7 +29,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]
