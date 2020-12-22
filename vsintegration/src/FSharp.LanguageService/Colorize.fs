@@ -152,7 +152,7 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else
-            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun struct (r, _) -> Range.Line.toZ r.StartLine))
+            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun struct (r, _) -> Line.toZ r.StartLine))
             let oldExtraColorizationsKeyedOpt = extraColorizations
             extraColorizations <- Some newExtraColorizationsKeyed
             let changedLines =
