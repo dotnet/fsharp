@@ -12,6 +12,7 @@ open System.Collections.Generic
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library 
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
@@ -412,7 +413,7 @@ type ScopeKind =
 
 type InsertContext =
     { ScopeKind: ScopeKind
-      Pos: pos }
+      Pos: Pos }
 
 type Module =
     { Idents: Idents
@@ -437,8 +438,8 @@ module ParsedInput =
         | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
-    let getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
-        let identsByEndPos = Dictionary<Range.pos, LongIdent>()
+    let getLongIdents (input: ParsedInput option) : IDictionary<Pos, LongIdent> =
+        let identsByEndPos = Dictionary<Pos, LongIdent>()
     
         let addLongIdent (longIdent: LongIdent) =
             for ident in longIdent do
@@ -450,7 +451,7 @@ module ParsedInput =
             | [_] as idents -> identsByEndPos.[value.Range.End] <- idents
             | idents ->
                 for dotRange in lids do
-                    identsByEndPos.[Range.mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
+                    identsByEndPos.[Pos.mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
                 identsByEndPos.[value.Range.End] <- idents
     
         let addIdent (ident: Ident) =

@@ -18,6 +18,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
@@ -35,7 +36,7 @@ let exprFromParseError (e:SynExpr) = SynExpr.FromParseError (e, e.Range)
 
 let patFromParseError (e:SynPat) = SynPat.FromParseError(e, e.Range)
 
-let mkSynOptionalExpr (m: range) xopt = 
+let mkSynOptionalExpr (m: Range) xopt = 
     let m = m.MakeSynthetic()
     match xopt with 
     | None -> mkSynLidGet m FSharpLib.CorePath "None"
@@ -82,7 +83,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 
 let reportParseErrorAt m s = errorR(Error(s, m))
 
-let unionRangeWithPos (r:range) p =
+let unionRangeWithPos (r:Range) p =
     let r2 = mkRange r.FileName p p
     unionRanges r r2
 
@@ -145,7 +146,7 @@ let checkEndOfFileError t =
       | [] -> ()
       | (_, _, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill())
 
-type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
+type BindingSet = BindingSetPreAttrs of Range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * Range
 
 let mkClassMemberLocalBindings(isStatic, initialRangeOpt, attrs, vis, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, bindingSetRange)) = 
    let ignoredFreeAttrs, decls = declsPreAttrs attrs vis
@@ -304,7 +305,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 /* These are artificial */
 %token <string> LEX_FAILURE
 %token <ParseHelpers.LexerContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
-%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
+%token <Range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
 
 %start signatureFile implementationFile interaction typedSeqExprEOF typEOF
 %type <SyntaxTree.SynExpr> typedSeqExprEOF
@@ -333,9 +334,9 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SyntaxTree.LongIdentWithDots> path
 %type <SyntaxTree.LongIdentWithDots> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
-%type <range * range option * bool     * SyntaxTree.SynType list * range list * range> typeArgsActual
+%type <Range * Range option * bool     * SyntaxTree.SynType list * Range list * Range> typeArgsActual
 /*     LESS    GREATER        typeArgs           m for each   mWhole  */
-%type <range * range option * SyntaxTree.SynType list * range list * range> typeArgsNoHpaDeprecated
+%type <Range * Range option * SyntaxTree.SynType list * Range list * Range> typeArgsNoHpaDeprecated
 %type <SyntaxTree.SynTypar> typar
 
 /* About precedence rules: 

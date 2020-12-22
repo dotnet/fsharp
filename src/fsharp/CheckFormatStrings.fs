@@ -356,8 +356,8 @@ let parseFormatStringInternal (m: Range) (fragRanges: Range list) (g: TcGlobals)
                         numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
                       specifierLocations.Add(
                           (Range.mkFileIndexRange m.FileIndex 
-                              (Range.mkPos fragLine startFragCol) 
-                              (Range.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
+                              (Pos.mkPos fragLine startFragCol) 
+                              (Pos.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
                   | None -> ()
 
               let ch = fmt.[i]

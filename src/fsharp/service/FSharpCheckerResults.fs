@@ -30,11 +30,12 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
+open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.OptimizeInputs
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.TextLayout
@@ -230,8 +231,8 @@ type internal TypeCheckInfo
         else 
             NameResResult.Empty
 
-    let GetCapturedNameResolutions (endOfNamesPos: pos) resolveOverloads =
-        let filter (endPos: pos) items =
+    let GetCapturedNameResolutions (endOfNamesPos: Pos) resolveOverloads =
+        let filter (endPos: Pos) items =
             items |> ResizeArray.filter (fun (cnr: CapturedNameResolution) ->
                 let range = cnr.Range
                 range.EndLine = endPos.Line && range.EndColumn = endPos.Column)
@@ -890,12 +891,12 @@ type internal TypeCheckInfo
     /// Find the most precise display context for the given line and column.
     member _.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
 
-    member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: pos) : ModuleOrNamespaceRef list =
+    member _.GetVisibleNamespacesAndModulesAtPosition(cursorPos: Pos) : ModuleOrNamespaceRef list =
         let (nenv, ad), m = GetBestEnvForPos cursorPos
         NameResolution.GetVisibleNamespacesAndModulesAtPoint ncenv nenv m ad
 
     /// Determines if a long ident is resolvable at a specific point.
-    member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
+    member _.IsRelativeNameResolvable(cursorPos: Pos, plid: string list, item: Item) : bool =
         ErrorScope.Protect
             Range.range0
             (fun () ->
@@ -907,7 +908,7 @@ type internal TypeCheckInfo
                 false)
 
     /// Determines if a long ident is resolvable at a specific point.
-    member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
+    member scope.IsRelativeNameResolvableFromSymbol(cursorPos: Pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
@@ -1902,20 +1903,20 @@ type FSharpCheckFileResults
                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
                         yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
 
-    member _.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
+    member _.GetVisibleNamespacesAndModulesAtPoint(pos: Pos) = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> scope.GetVisibleNamespacesAndModulesAtPosition(pos) |> List.toArray)
 
-    member _.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) = 
+    member _.IsRelativeNameResolvable(cursorPos: Pos, plid: string list, item: Item) = 
         threadSafeOp (fun () -> true) (fun scope -> 
             scope.IsRelativeNameResolvable(cursorPos, plid, item))
 
-    member _.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) = 
+    member _.IsRelativeNameResolvableFromSymbol(cursorPos: Pos, plid: string list, symbol: FSharpSymbol) = 
         threadSafeOp (fun () -> true) (fun scope -> 
             scope.IsRelativeNameResolvableFromSymbol(cursorPos, plid, symbol))
     
-    member _.GetDisplayContextForPos(cursorPos: pos) =
+    member _.GetDisplayContextForPos(cursorPos: Pos) =
         threadSafeOp (fun () -> None) (fun scope -> 
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv)))

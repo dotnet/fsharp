@@ -29,8 +29,8 @@ type public FSharpDiagnosticSeverity =
 [<Class>]
 type public FSharpDiagnostic = 
     member FileName: string
-    member Start: pos
-    member End: pos
+    member Start: Pos
+    member End: Pos
     member StartLineAlternate: int
     member EndLineAlternate: int
     member StartColumn: int

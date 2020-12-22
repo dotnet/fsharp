@@ -28,6 +28,7 @@ open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SyntaxTree

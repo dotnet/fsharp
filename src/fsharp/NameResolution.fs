@@ -22,6 +22,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
+open FSharp.Compiler.Pos
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
@@ -1620,8 +1621,8 @@ type FormatStringCheckContext =
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope: Range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType: TType * NameResolutionEnv * AccessorDomain * Range -> unit
-    abstract NotifyNameResolution: pos * item: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * Range * replace: bool -> unit
-    abstract NotifyMethodGroupNameResolution : pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * Range * replace: bool -> unit
+    abstract NotifyNameResolution: Pos * item: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * Range * replace: bool -> unit
+    abstract NotifyMethodGroupNameResolution : Pos * item: Item * itemMethodGroup: Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * Range * replace: bool -> unit
     abstract NotifyFormatSpecifierLocation: Range * int -> unit
     abstract NotifyOpenDeclaration: OpenDeclaration -> unit
     abstract CurrentSourceText: ISourceText option
@@ -1907,9 +1908,9 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
     let capturedNameResolutionIdentifiers =
-        new System.Collections.Generic.HashSet<pos * string>
+        new System.Collections.Generic.HashSet<Pos * string>
             ( { new IEqualityComparer<_> with
-                    member _.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
+                    member _.GetHashCode((p: Pos, i)) = p.Line + 101 * p.Column + hash i
                     member _.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 } )
 
     let capturedModulesAndNamespaces =

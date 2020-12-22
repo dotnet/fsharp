@@ -1785,8 +1785,6 @@ FSharp.Compiler.Range: System.String get_unknownFileName()
 FSharp.Compiler.Range: System.String startupFileName
 FSharp.Compiler.Range: System.String stringOfPos(pos)
 FSharp.Compiler.Range: System.String stringOfRange(range)
-FSharp.Compiler.Range: System.String unknownFileName
-FSharp.Compiler.Range: Void outputPos(System.IO.TextWriter, pos)
 FSharp.Compiler.Range: Void outputRange(System.IO.TextWriter, range)
 FSharp.Compiler.Range: pos get_pos0()
 FSharp.Compiler.Range: pos mkPos(Int32, Int32)

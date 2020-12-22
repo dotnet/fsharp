@@ -314,7 +314,7 @@ type SeqExprOnly =
 
 /// Represents the location of the separator block + optional position
 /// of the semicolon (used for tooling support)
-type BlockSeparator = Range * pos option
+type BlockSeparator = Range * Pos option
 
 /// Represents a record field name plus a flag indicating if given record field name is syntactically
 /// correct and can be used in name resolution.

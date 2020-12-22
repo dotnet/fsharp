@@ -14,7 +14,7 @@ open FSharp.Compiler.Range
 
 type Position = int * int
 
-type Range = Position * Position
+type Positions = Position * Position
 
 /// Represents encoded information for the end-of-line continuation of lexing
 [<Struct; CustomEquality; NoComparison>]

@@ -455,8 +455,8 @@ type SemanticModel private (tcConfig: TcConfig,
                                             Logger.LogBlockMessageStart filename LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                             let sResolutions = sink.GetResolutions()
                                             let builder = ItemKeyStoreBuilder()
-                                            let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with 
-                                                                                member _.Equals((s1, e1): struct(pos * pos), (s2, e2): struct(pos * pos)) = Range.posEq s1 s2 && Range.posEq e1 e2
+                                            let preventDuplicates = HashSet({ new IEqualityComparer<struct(Pos * Pos)> with 
+                                                                                member _.Equals((s1, e1): struct(Pos * Pos), (s2, e2): struct(Pos * Pos)) = Pos.posEq s1 s2 && Pos.posEq e1 e2
                                                                                 member _.GetHashCode o = o.GetHashCode() })
                                             sResolutions.CapturedNameResolutions
                                             |> Seq.iter (fun cnr ->

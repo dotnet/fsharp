@@ -16,6 +16,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SyntaxTree
@@ -25,7 +26,6 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.XmlDoc
-
 
 let verbose = false
 
@@ -1338,7 +1338,7 @@ let u_Map uk uv st =
 let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 
-let p_pos (x: pos) st = p_tup2 p_int p_int (x.Line, x.Column) st
+let p_pos (x: Pos) st = p_tup2 p_int p_int (x.Line, x.Column) st
 
 let p_range (x: Range) st =
     let fileName = PathMap.apply st.oglobals.pathMap x.FileName

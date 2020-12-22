@@ -5,6 +5,7 @@ module FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.UnicodeLexing
@@ -28,7 +29,7 @@ exception IndentationProblem of string * Range
 let warningStringOfCoords line column =
     sprintf "(%d:%d)" line (column + 1)
 
-let warningStringOfPos (p: pos) =
+let warningStringOfPos (p: Pos) =
     warningStringOfCoords p.Line p.Column
 
 //------------------------------------------------------------------------

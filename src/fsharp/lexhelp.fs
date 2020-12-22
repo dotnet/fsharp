@@ -87,7 +87,7 @@ let reusingLexbufForParsing lexbuf f =
       raise (WrappedError(e, (try lexbuf.LexemeRange with _ -> range0)))
 
 let resetLexbufPos filename (lexbuf: UnicodeLexing.Lexbuf) = 
-    lexbuf.EndPos <- Position.FirstLine (fileIndexOfFile filename)
+    lexbuf.EndPos <- Position.FirstLine (FileIndex.fileIndexOfFile filename)
 
 /// Reset the lexbuf, configure the initial position with the given filename and call the given function
 let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf, filename) f =
@@ -359,7 +359,7 @@ module Keywords =
         | _ ->
             match s with 
             | "__SOURCE_DIRECTORY__" ->
-                let filename = fileOfFileIndex lexbuf.StartPos.FileIndex
+                let filename = FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex
                 let dirname =
                     if String.IsNullOrWhiteSpace(filename) then
                         String.Empty
@@ -374,7 +374,7 @@ module Keywords =
                 else PathMap.applyDir args.pathMap dirname
                 |> KEYWORD_STRING
             | "__SOURCE_FILE__" -> 
-                KEYWORD_STRING (System.IO.Path.GetFileName((fileOfFileIndex lexbuf.StartPos.FileIndex))) 
+                KEYWORD_STRING (System.IO.Path.GetFileName((FileIndex.fileOfFileIndex lexbuf.StartPos.FileIndex))) 
             | "__LINE__" -> 
                 KEYWORD_STRING (string lexbuf.StartPos.Line)
             | _ -> 

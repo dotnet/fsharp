@@ -2,6 +2,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Import
 open FSharp.Compiler.NameResolution
@@ -53,7 +54,7 @@ type SemanticClassificationType =
 /// Extension methods for the TcResolutions type.
 [<AutoOpen>]
 module internal TcResolutionsExtensions =
-    val (|CNR|) : cnr: CapturedNameResolution -> (Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range)
+    val (|CNR|) : cnr: CapturedNameResolution -> (Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * Range)
 
     type TcResolutions with
-        member GetSemanticClassification: g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (range * int) [] * range: range option -> struct(range * SemanticClassificationType) []
+        member GetSemanticClassification: g: TcGlobals * amap: ImportMap * formatSpecifierLocations: (Range * int) [] * range: Range option -> struct(Range * SemanticClassificationType) []

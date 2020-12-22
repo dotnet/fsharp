@@ -4,6 +4,7 @@ module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
@@ -19,9 +20,9 @@ exception IndentationProblem of string * Range
 
 val warningStringOfCoords: line:int -> column:int -> string
 
-val warningStringOfPos: p:pos -> string
+val warningStringOfPos: p:Pos -> string
 
-val posOfLexPosition: p:Position -> pos
+val posOfLexPosition: p:Position -> Pos
 
 val mkSynRange: p1:Position -> p2:Position -> Range
 

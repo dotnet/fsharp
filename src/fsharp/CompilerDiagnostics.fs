@@ -32,6 +32,7 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SignatureConformance
 open FSharp.Compiler.TextLayout
@@ -1898,7 +1899,7 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
                     | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) -> 
                         warningNum = warningNumFromPragma && 
                         (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        Range.posGeq m.Start pragmaRange.Start))  
+                        Pos.posGeq m.Start pragmaRange.Start))  
             | None -> true
           if report then errorLogger.DiagnosticSink(phasedError, false)
 

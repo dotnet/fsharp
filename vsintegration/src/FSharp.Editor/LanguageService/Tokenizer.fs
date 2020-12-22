@@ -723,8 +723,8 @@ module internal Tokenizer =
                     Ident(identStr, 
                         Range.mkRange 
                             fileName 
-                            (Range.mkPos (linePos.Line + 1) token.LeftColumn)
-                            (Range.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
+                            (Pos.mkPos (linePos.Line + 1) token.LeftColumn)
+                            (Pos.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
                 FullIsland = partialName.QualifyingIdents @ [identStr] })
 
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 

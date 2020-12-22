@@ -2,8 +2,8 @@
 
 namespace rec FSharp.Compiler.SourceCodeServices
 
+open FSharp.Compiler
 open FSharp.Compiler.CompilerImports
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -55,7 +55,7 @@ and public FSharpImplementationFileDeclaration =
 [<Sealed>] 
 type public FSharpExpr =
     /// The range of the expression
-    member Range : range
+    member Range : Range
 
     /// The type of the expression
     member Type : FSharpType

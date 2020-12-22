@@ -94,7 +94,6 @@ module Pos =
     /// Create a position for the given line and column
     val mkPos: line:int -> column:int -> Pos
 
-    
     /// Compare positions for less-than
     val posLt: Pos -> Pos -> bool
 
@@ -113,6 +112,15 @@ module Pos =
     /// Convert a position from one-based line counting (used internally in the F# compiler and in F# error messages) to zero-based line counting (used by Visual Studio)
     val toZ: Pos -> Pos01
 
+    /// Output a position
+    val outputPos: System.IO.TextWriter -> Pos -> unit
+
+    /// Convert a position to a string
+    val stringOfPos: Pos   -> string
+
+    /// The zero position
+    val pos0: Pos
+
 module FileIndex =
 
     /// Convert a file path to an index
@@ -121,17 +129,12 @@ module FileIndex =
     /// Convert an index into a file path
     val fileOfFileIndex: FileIndex -> string
 
-    /// The zero position
-    val pos0: Pos
+    val startupFileName: string
 
 module Range =
 
     /// Ordering on positions
     val posOrder: IComparer<Pos>
-
-    val unknownFileName: string
-    val startupFileName: string
-    val commandLineArgsFileName: string
 
     /// This view of range marks uses file indexes explicitly 
     val mkFileIndexRange: FileIndex -> Pos -> Pos -> Range
@@ -150,9 +153,6 @@ module Range =
 
     /// not a total order, but enough to sort on ranges 
     val rangeOrder: IComparer<Range>
-
-    /// Output a position
-    val outputPos: System.IO.TextWriter -> Pos -> unit
 
     /// Output a range
     val outputRange: System.IO.TextWriter -> Range -> unit
@@ -181,9 +181,6 @@ module Range =
     /// A range associated with a dummy file for the command line arguments
     val rangeCmdArgs: Range
  
-    /// Convert a position to a string
-    val stringOfPos  : Pos   -> string
-
     /// Convert a range to a string
     val stringOfRange: Range -> string
 

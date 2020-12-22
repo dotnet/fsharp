@@ -7,6 +7,7 @@ open System.Xml.Linq
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 
 /// Represents collected XmlDoc lines
@@ -140,7 +141,7 @@ and XmlDocStatics() =
 /// Used to collect XML documentation during lexing and parsing.
 type XmlDocCollector() =
     let mutable savedLines = new ResizeArray<(string * Range)>()
-    let mutable savedGrabPoints = new ResizeArray<pos>()
+    let mutable savedGrabPoints = new ResizeArray<Pos>()
     let posCompare p1 p2 = if posGeq p1 p2 then 1 else if posEq p1 p2 then 0 else -1
     let savedGrabPointsAsArray =
         lazy (savedGrabPoints.ToArray() |> Array.sortWith posCompare)
@@ -183,7 +184,7 @@ type XmlDocCollector() =
 type PreXmlDoc =
     | PreXmlDirect of unprocessedLines: string[] * range: Range
     | PreXmlMerge of PreXmlDoc * PreXmlDoc
-    | PreXmlDoc of pos * XmlDocCollector
+    | PreXmlDoc of Pos * XmlDocCollector
     | PreXmlDocEmpty
 
     member x.ToXmlDoc(check: bool, paramNamesOpt: string list option) =

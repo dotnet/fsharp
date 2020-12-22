@@ -4,6 +4,7 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps

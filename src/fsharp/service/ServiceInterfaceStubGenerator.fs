@@ -668,7 +668,7 @@ module InterfaceStubGenerator =
             writer.Dump()
 
     /// Find corresponding interface declaration at a given position
-    let tryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
+    let tryFindInterfaceDeclaration (pos: Pos) (parsedInput: ParsedInput) =
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) = 
             List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
 

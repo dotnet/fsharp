@@ -2,7 +2,7 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open FSharp.Compiler.SyntaxTree
 
 module public Structure =
@@ -73,9 +73,9 @@ module public Structure =
         Scope: Scope
         Collapse: Collapse
         /// HintSpan in BlockSpan
-        Range: range
+        Range: Range
         /// TextSpan in BlockSpan
-        CollapseRange:range
+        CollapseRange: Range
     }
 
     /// Returns outlining ranges for given parsed input.

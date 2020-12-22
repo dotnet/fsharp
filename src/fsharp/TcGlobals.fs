@@ -20,6 +20,7 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Features
 open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.FileIndex
 open FSharp.Compiler.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics

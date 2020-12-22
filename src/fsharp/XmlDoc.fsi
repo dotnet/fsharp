@@ -38,17 +38,17 @@ type internal XmlDocCollector =
 
     new: unit -> XmlDocCollector
 
-    member AddGrabPoint: pos:pos -> unit
+    member AddGrabPoint: pos: Pos -> unit
 
     member AddXmlDocLine: line:string * range:Range -> unit
 
-    member LinesBefore: grabPointPos:pos -> (string * Range) []
+    member LinesBefore: grabPointPos: Pos -> (string * Range) []
   
 /// Represents the XmlDoc fragments as collected from the lexer during parsing
 [<Sealed>]
 type public PreXmlDoc =
 
-    static member internal CreateFromGrabPoint: collector:XmlDocCollector * grabPointPos:pos -> PreXmlDoc
+    static member internal CreateFromGrabPoint: collector:XmlDocCollector * grabPointPos: Pos -> PreXmlDoc
 
     static member Merge: a:PreXmlDoc -> b:PreXmlDoc -> PreXmlDoc
     

@@ -2,12 +2,14 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
+open FSharp.Compiler
+open FSharp.Compiler.Pos
+open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.Range
 
 [<Sealed>]
-type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: range, openParenLocation: pos,  tupleEndLocations: pos list, isThereACloseParen: bool, namedParamNames: string option list) =
+type FSharpNoteworthyParamInfoLocations(longId: string list, longIdRange: Range, openParenLocation: Pos,  tupleEndLocations: Pos list, isThereACloseParen: bool, namedParamNames: string option list) =
 
     let tupleEndLocations = Array.ofList tupleEndLocations
     let namedParamNames = Array.ofList namedParamNames
@@ -50,7 +52,7 @@ module internal NoteworthyParamInfoLocationsImpl =
         | _ -> None
 
     type FindResult = 
-        | Found of openParen: pos * commasAndCloseParen: (pos * string option) list * hasClosedParen: bool
+        | Found of openParen: Pos * commasAndCloseParen: (Pos * string option) list * hasClosedParen: bool
         | NotFound
 
     let digOutIdentFromStaticArg (StripParenTypes synType) =

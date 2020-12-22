@@ -20,6 +20,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
+open FSharp.Compiler.Pos
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
@@ -28,7 +29,7 @@ open Internal.Utilities
 
 type Position = int * int
 
-type Range = Position * Position
+type Positions = Position * Position
 
 module FSharpTokenTag =
 
@@ -444,7 +445,7 @@ module internal LexerStateEncoding =
         | 2 -> LexerStringStyle.TripleQuote
         | _ -> assert false; LexerStringStyle.SingleQuote
 
-    let encodeLexCont (colorState: FSharpTokenizerColorState, numComments, b: pos, ifdefStack, light, stringKind: LexerStringKind, stringNest) =
+    let encodeLexCont (colorState: FSharpTokenizerColorState, numComments, b: Pos, ifdefStack, light, stringKind: LexerStringKind, stringNest) =
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
         for ifOrElse in ifdefStack do
@@ -494,7 +495,7 @@ module internal LexerStateEncoding =
 
         let colorState = colorStateOfLexState state
         let ncomments = int32 ((bits &&& ncommentsMask) >>> ncommentsStart)
-        let pos = pos.Decode state.PosBits
+        let pos = Pos.Decode state.PosBits
 
         let ifdefStackCount = int32 ((bits &&& ifdefstackCountMask) >>> ifdefstackCountStart)
         if ifdefStackCount>0 then
@@ -1563,8 +1564,7 @@ type FSharpLexer =
             (PathMap.empty, pathMap)
             ||> Seq.fold (fun state pair -> state |> PathMap.addMapping pair.Key pair.Value)
 
-        let onToken =
-            fun tok m ->
+        let onToken tok m =
                 let fsTok = FSharpToken(tok, m)
                 match fsTok.Kind with
                 | FSharpTokenKind.None -> ()

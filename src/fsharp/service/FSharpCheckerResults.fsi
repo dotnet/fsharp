@@ -13,7 +13,6 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
@@ -215,16 +214,16 @@ type public FSharpCheckFileResults =
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol * ?cancellationToken: CancellationToken -> FSharpSymbolUse[]
 
-    member internal GetVisibleNamespacesAndModulesAtPoint : pos -> ModuleOrNamespaceRef[]
+    member internal GetVisibleNamespacesAndModulesAtPoint : Pos -> ModuleOrNamespaceRef[]
 
     /// Find the most precise display environment for the given line and column.
-    member GetDisplayContextForPos : cursorPos : pos -> FSharpDisplayContext option
+    member GetDisplayContextForPos : cursorPos : Pos -> FSharpDisplayContext option
 
     /// Determines if a long ident is resolvable at a specific point.
-    member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> bool
+    member internal IsRelativeNameResolvable: cursorPos : Pos * plid : string list * item: Item -> bool
 
     /// Determines if a long ident is resolvable at a specific point.
-    member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol -> bool
+    member IsRelativeNameResolvableFromSymbol: cursorPos : Pos * plid : string list * symbol: FSharpSymbol -> bool
 
     /// Represents complete typechecked implementation file, including its typechecked signatures if any.
     member ImplementationFile: FSharpImplementationFileContents option

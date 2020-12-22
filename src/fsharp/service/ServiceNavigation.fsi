@@ -7,7 +7,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range 
+open FSharp.Compiler
+open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 
 /// Indicates a kind of item to show in an F# navigation bar
@@ -40,8 +41,8 @@ type public FSharpNavigationDeclarationItem =
     member UniqueName : string
     member Glyph : FSharpGlyph
     member Kind : FSharpNavigationDeclarationItemKind
-    member Range : range
-    member BodyRange : range
+    member Range : Range
+    member BodyRange : Range
     member IsSingleTopLevel : bool
     member EnclosingEntityKind: FSharpEnclosingEntityKind
     member IsAbstract: bool
@@ -95,7 +96,7 @@ module public NavigateTo =
     
     type NavigableItem = 
         { Name: string
-          Range: range
+          Range: Range
           IsSignature: bool
           Kind: NavigableItemKind
           Container: Container }
