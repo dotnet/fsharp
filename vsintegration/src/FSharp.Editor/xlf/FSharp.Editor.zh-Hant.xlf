@@ -88,8 +88,8 @@
         <note />
       </trans-unit>
       <trans-unit id="RemoveYieldBang">
-        <source>Remove yield!'</source>
-        <target state="new">Remove yield!'</target>
+        <source>Remove 'yield!'</source>
+        <target state="new">Remove 'yield!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
