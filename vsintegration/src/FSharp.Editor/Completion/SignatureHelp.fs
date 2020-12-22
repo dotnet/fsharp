@@ -376,7 +376,13 @@ type internal FSharpSignatureHelpProvider
                             |]
                             |> ResizeArray
 
+                        if argument.Type.IsFunctionType then
+                            display.Add(TaggedText(TextTags.Punctuation, "("))
+
                         display.AddRange(tt)
+
+                        if argument.Type.IsFunctionType then
+                            display.Add(TaggedText(TextTags.Punctuation, ")"))
 
                         let info =
                             { ParameterName = argument.DisplayName
