@@ -16,7 +16,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open Symbols
 

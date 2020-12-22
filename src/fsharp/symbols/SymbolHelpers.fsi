@@ -67,7 +67,7 @@ type public FSharpXmlDoc =
     | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
 
     /// Indicates that the XML for the documentation can be found in a .xml documentation file, using the given signature key
-    | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
+    | XmlDocFileSignature of file: string * xmlSig: string
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -95,10 +95,11 @@ type public FSharpToolTipElement<'T> =
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
-    | Group of FSharpToolTipElementData<'T> list
+    | Group of elements: FSharpToolTipElementData<'T> list
 
     /// An error occurred formatting this element
-    | CompositionError of string
+    | CompositionError of errorText: string
+
     static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
 
 /// A single data tip display element with where text is expressed as string

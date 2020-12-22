@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 open FSharp.Compiler
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddOpen"); Shared>]

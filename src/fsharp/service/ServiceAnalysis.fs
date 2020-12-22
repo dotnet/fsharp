@@ -5,9 +5,9 @@ namespace FSharp.Compiler.SourceCodeServices
 open System.Threading
 
 open FSharp.Compiler
-open FSharp.Compiler.Pos
-open FSharp.Compiler.Range
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 open FSharp.Compiler.AbstractIL.Internal.Library

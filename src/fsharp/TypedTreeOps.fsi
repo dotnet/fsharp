@@ -11,7 +11,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree

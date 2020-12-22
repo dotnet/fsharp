@@ -17,7 +17,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Completion
 open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 
 module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger

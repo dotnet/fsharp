@@ -18,8 +18,8 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree

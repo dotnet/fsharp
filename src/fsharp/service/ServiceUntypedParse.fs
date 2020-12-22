@@ -17,9 +17,9 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Lib
-open FSharp.Compiler.Pos
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 
@@ -68,25 +68,32 @@ type InheritanceContext =
 
 [<RequireQualifiedAccess>]
 type RecordContext =
-    | CopyOnUpdate of range * CompletionPath // range of copy-expr + current field
-    | Constructor of string // typename
-    | New of CompletionPath
+    | CopyOnUpdate of range: range * path: CompletionPath
+    | Constructor of typeName: string
+    | New of path: CompletionPath
 
 [<RequireQualifiedAccess>]
 type CompletionContext = 
-    // completion context cannot be determined due to errors
+    /// Completion context cannot be determined due to errors
     | Invalid
-    // completing something after the inherit keyword
-    | Inherit of InheritanceContext * CompletionPath
-    // completing records field
-    | RecordField of RecordContext
+
+    /// Completing something after the inherit keyword
+    | Inherit of context: InheritanceContext * path: CompletionPath
+
+    /// Completing records field
+    | RecordField of context: RecordContext
+
     | RangeOperator
-    // completing named parameters\setters in parameter list of constructor\method calls
-    // end of name ast node * list of properties\parameters that were already set
+
+    /// Completing named parameters\setters in parameter list of constructor\method calls
+    /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
+
     | AttributeApplication
+
     | OpenDeclaration of isOpenType: bool
-    /// completing pattern type (e.g. foo (x: |))
+
+    /// Completing pattern type (e.g. foo (x: |))
     | PatternType
 
 //----------------------------------------------------------------------------
@@ -96,11 +103,11 @@ type CompletionContext =
 [<Sealed>]
 type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput option, parseHadErrors: bool, dependencyFiles: string[]) = 
 
-    member scope.Errors = errors
+    member _.Errors = errors
 
-    member scope.ParseHadErrors = parseHadErrors
+    member _.ParseHadErrors = parseHadErrors
 
-    member scope.ParseTree = input
+    member _.ParseTree = input
 
     member scope.TryRangeOfNameOfNearestOuterBindingContainingPos pos =
         let tryGetIdentRangeFromBinding binding =
@@ -280,7 +287,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | None ->
             None
 
-    member scope.TryRangeOfRefCellDereferenceContainingPos expressionPos =
+    member _.TryRangeOfRefCellDereferenceContainingPos expressionPos =
         match input with
         | Some input ->
             AstTraversal.Traverse(expressionPos, input, { new AstTraversal.AstVisitorBase<_>() with 
@@ -295,12 +302,12 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | None ->
             None
 
-    member scope.FindNoteworthyParamInfoLocations pos = 
+    member _.FindNoteworthyParamInfoLocations pos = 
         match input with
         | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)
         | _ -> None
 
-    member scope.IsPositionContainedInACurriedParameter pos =
+    member _.IsPositionContainedInACurriedParameter pos =
         match input with
         | Some input ->
             let result =
@@ -327,7 +334,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | _ -> false
     
     /// Get declared items and the selected item at the specified location
-    member private scope.GetNavigationItemsImpl() =
+    member _.GetNavigationItemsImpl() =
        ErrorScope.Protect range0 
             (fun () -> 
                 match input with
@@ -341,7 +348,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
                 FSharpNavigation.empty)
             
-    member private scope.ValidateBreakpointLocationImpl pos =
+    member _.ValidateBreakpointLocationImpl pos =
         let isMatchRange m = rangeContainsPos m pos || m.StartLine = pos.Line
 
         // Process let-binding
@@ -652,9 +659,9 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 None)
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
-    member scope.DependencyFiles = dependencyFiles
+    member _.DependencyFiles = dependencyFiles
 
-    member scope.FileName =
+    member _.FileName =
       match input with
       | Some (ParsedInput.ImplFile (ParsedImplFileInput (fileName = modname))) 
       | Some (ParsedInput.SigFile (ParsedSigFileInput (fileName = modname))) -> modname
@@ -698,7 +705,7 @@ module UntypedParseImpl =
             couldBeBeforeFront, r
 
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
-        member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+        member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
             | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _), _altNameRefCell, _range) -> 

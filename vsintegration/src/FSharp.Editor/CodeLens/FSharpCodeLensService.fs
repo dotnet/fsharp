@@ -18,7 +18,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.TextLayout
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging

@@ -4,8 +4,8 @@ module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.Pos
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing

@@ -100,6 +100,14 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 *
 *     FSharp.Compiler.QuickParse --> FSharp.Compiler.SourceCodeServices.QuickParse
 *
+*     FSharp.Compiler.PrettyNaming --> FSharp.Compiler.SourceCodeServices.PrettyNaming
+* 
+*     FSharpKeywords.PrettyNaming.KeywordNames  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.KeywordNames
+*
+*     FSharpKeywords.PrettyNaming.QuoteIdentifierIfNeeded  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.QuoteIdentifierIfNeeded
+*
+*     FSharpKeywords.PrettyNaming.FormatAndOtherOverloadsString  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.FormatAndOtherOverloadsString
+*
 * Renamings in FSharp.Compiler.SourceCodeServices
 *   Lexer.* --> FSharp.Compiler.SourceCodeServices.*
 *   FSharpSyntaxToken*  --> FSharpToken*

@@ -7,7 +7,7 @@ open System.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
@@ -70,7 +70,7 @@ module internal CodeGenerationUtils =
     /// Represent environment where a captured identifier should be renamed
     type NamesWithIndices = Map<string, Set<int>>
 
-    let keywordSet = set PrettyNaming.KeywordNames
+    let keywordSet = set FSharpKeywords.KeywordNames
 
     /// Rename a given argument if the identifier has been used
     let normalizeArgName (namesWithIndices: NamesWithIndices) nm =

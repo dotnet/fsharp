@@ -11,7 +11,6 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis.Text
 
@@ -90,7 +89,7 @@ type internal FSharpFindUsagesService
                 fun (doc: Document) (textSpan: TextSpan) (symbolUse: range) ->
                     async {
                         match declarationRange with
-                        | Some declRange when FSharp.Compiler.Range.equals declRange symbolUse -> ()
+                        | Some declRange when Range.equals declRange symbolUse -> ()
                         | _ ->
                             if allReferences then
                                 let definitionItem =

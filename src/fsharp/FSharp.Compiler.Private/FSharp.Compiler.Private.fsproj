@@ -811,6 +811,9 @@
     <Compile Include="..\service\ServiceLexing.fs">
       <Link>Service/ServiceLexing.fs</Link>
     </Compile>
+    <Compile Include="..\service\ServiceParseTreeWalk.fsi">
+      <Link>Service/ServiceParseTreeWalk.fsi</Link>
+    </Compile>
     <Compile Include="..\service\ServiceParseTreeWalk.fs">
       <Link>Service/ServiceParseTreeWalk.fs</Link>
     </Compile>

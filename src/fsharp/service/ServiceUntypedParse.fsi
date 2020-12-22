@@ -96,25 +96,24 @@ type public InheritanceContext =
 
 [<RequireQualifiedAccess>]
 type public RecordContext =
-    | CopyOnUpdate of range * CompletionPath // range
-    | Constructor of string // typename
-    | New of CompletionPath
+    | CopyOnUpdate of range: range * path: CompletionPath
+    | Constructor of typeName: string
+    | New of path: CompletionPath
 
 [<RequireQualifiedAccess>]
 type public CompletionContext = 
-
-    /// completion context cannot be determined due to errors
+    /// Completion context cannot be determined due to errors
     | Invalid
 
-    /// completing something after the inherit keyword
-    | Inherit of InheritanceContext * CompletionPath
+    /// Completing something after the inherit keyword
+    | Inherit of context: InheritanceContext * path: CompletionPath
 
-    /// completing records field
-    | RecordField of RecordContext
+    /// Completing records field
+    | RecordField of context: RecordContext
 
     | RangeOperator
 
-    /// completing named parameters\setters in parameter list of constructor\method calls
+    /// Completing named parameters\setters in parameter list of constructor\method calls
     /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
 
@@ -122,8 +121,9 @@ type public CompletionContext =
 
     | OpenDeclaration of isOpenType: bool
 
-    /// completing pattern type (e.g. foo (x: |))
+    /// Completing pattern type (e.g. foo (x: |))
     | PatternType
+
 
 type public ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 

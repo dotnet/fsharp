@@ -13,8 +13,8 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Pos
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeBasics

@@ -30,8 +30,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Internal.Support
 open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Range
 open System.Reflection
 
 #nowarn "9"

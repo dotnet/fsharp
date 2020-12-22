@@ -6,7 +6,7 @@ open System
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.Text
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 
 
 // Prevents warnings of experimental APIs within the signature file itself.
@@ -289,6 +289,12 @@ module FSharpKeywords =
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription : (string * string) list
+
+    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
+    val QuoteIdentifierIfNeeded: string -> string
+
+    /// All the keywords in the F# language
+    val KeywordNames: string list
 
 [<Flags;Experimental("This FCS API is experimental and subject to change.")>]
 type public FSharpLexerFlags =

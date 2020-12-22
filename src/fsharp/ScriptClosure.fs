@@ -20,8 +20,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Range
-open FSharp.Compiler.ReferenceResolver
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.Text
 
 open Microsoft.DotNet.DependencyManager
@@ -162,9 +161,9 @@ module ScriptPreprocessClosure =
 
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
-            | CodeContext.Editing -> ResolutionEnvironment.EditingOrCompilation true
-            | CodeContext.Compilation -> ResolutionEnvironment.EditingOrCompilation false
-            | CodeContext.CompilationAndEvaluation -> ResolutionEnvironment.CompilationAndEvaluation
+            | CodeContext.Editing -> LegacyResolutionEnvironment.EditingOrCompilation true
+            | CodeContext.Compilation -> LegacyResolutionEnvironment.EditingOrCompilation false
+            | CodeContext.CompilationAndEvaluation -> LegacyResolutionEnvironment.CompilationAndEvaluation
         tcConfigB.framework <- false 
         tcConfigB.useSimpleResolution <- useSimpleResolution
         // Indicates that there are some references not in basicReferencesForScriptLoadClosure which should

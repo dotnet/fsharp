@@ -19,7 +19,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 
 open Microsoft.CodeAnalysis
 open FSharp.Compiler
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 
 // IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)

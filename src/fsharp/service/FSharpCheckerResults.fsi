@@ -31,10 +31,10 @@ type public FSharpFindDeclFailureReason =
     | NoSourceCode
 
     /// Trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
-    | ProvidedType of string
+    | ProvidedType of typeName: string
 
     /// Trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
-    | ProvidedMember of string
+    | ProvidedMember of memberName: string
 
 /// Represents the result of the GetDeclarationLocation operation.
 [<RequireQualifiedAccess>]
@@ -44,10 +44,10 @@ type public FSharpFindDeclResult =
     | DeclNotFound of FSharpFindDeclFailureReason
 
     /// Indicates a declaration location was found
-    | DeclFound    of range
+    | DeclFound of location: range
 
     /// Indicates an external declaration was found
-    | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
+    | ExternalDecl of assembly: string * externalSym : FSharpExternalSymbol
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
@@ -361,7 +361,7 @@ module internal ParseAndCheckFile =
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
     internal new: 
-        ReferenceResolver.Resolver *
+        LegacyReferenceResolver *
         ops: IReactorOperations *
         tcConfig: TcConfig * 
         tcGlobals: TcGlobals * 

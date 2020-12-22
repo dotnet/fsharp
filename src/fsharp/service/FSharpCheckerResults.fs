@@ -31,12 +31,12 @@ open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Pos
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
@@ -78,10 +78,10 @@ type FSharpFindDeclFailureReason =
     | NoSourceCode
 
     // trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
-    | ProvidedType of string
+    | ProvidedType of typeName: string
 
     // trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
-    | ProvidedMember of string
+    | ProvidedMember of memberName: string
 
 [<RequireQualifiedAccess>]
 type FSharpFindDeclResult = 
@@ -90,7 +90,7 @@ type FSharpFindDeclResult =
     | DeclNotFound of FSharpFindDeclFailureReason
 
     /// found declaration
-    | DeclFound of range
+    | DeclFound of location: range
 
     /// Indicates an external declaration was found
     | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol

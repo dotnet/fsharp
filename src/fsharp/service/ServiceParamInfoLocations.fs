@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
-open FSharp.Compiler.Pos
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 

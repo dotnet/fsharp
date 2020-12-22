@@ -21,8 +21,7 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
-open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals 
@@ -1422,14 +1421,5 @@ module DebuggerEnvironment =
     let GetLanguageID() =
         System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
         
-module PrettyNaming =
-    let IsIdentifierPartCharacter     x = FSharp.Compiler.PrettyNaming.IsIdentifierPartCharacter x
-    let IsLongIdentifierPartCharacter x = FSharp.Compiler.PrettyNaming.IsLongIdentifierPartCharacter x
-    let IsOperatorName                x = FSharp.Compiler.PrettyNaming.IsOperatorName x
-    let GetLongNameFromString         x = FSharp.Compiler.PrettyNaming.SplitNamesForILPath x
-    let FormatAndOtherOverloadsString remainingOverloads = FSComp.SR.typeInfoOtherOverloads(remainingOverloads)
-    let QuoteIdentifierIfNeeded id = Lexhelp.Keywords.QuoteIdentifierIfNeeded id
-    let KeywordNames = Lexhelp.Keywords.keywordNames
-
 module FSharpFileUtilities =
     let isScriptFile (fileName: string) = ParseAndCheckInputs.IsScript fileName

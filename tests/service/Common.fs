@@ -6,7 +6,7 @@ open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 open FSharp.Compiler
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FsUnit

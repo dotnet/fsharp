@@ -13,8 +13,8 @@ open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler
 open FSharp.Compiler.TextLayout
-open FSharp.Compiler.Pos
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 
 type SignatureHelpParameterInfo =

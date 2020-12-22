@@ -13,7 +13,7 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
@@ -225,7 +225,7 @@ type internal IncrementalBuilder =
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
           CompilationThreadToken *
-          ReferenceResolver.Resolver *
+          LegacyReferenceResolver *
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *
           loadClosureOpt:LoadClosure option *

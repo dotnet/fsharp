@@ -19,7 +19,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTreeOps 

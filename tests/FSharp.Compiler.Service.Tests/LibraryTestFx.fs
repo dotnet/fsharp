@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module FSharp.Core.UnitTests.LibraryTestFx
+module Tests.Service.SurfaceArea.LibraryTestFx
 
 open System
 open System.Collections.Generic
@@ -47,8 +47,11 @@ module SurfaceArea =
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
                 } |> Array.ofSeq
 
-            getMembers t
-            |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
+            [| for (ty,m) in getMembers t do
+                  yield sprintf "%s: %s" (ty.ToString()) (m.ToString())
+               if not t.IsNested then
+                   yield t.ToString()
+            |]
 
         let actual =
             types |> Array.collect getTypeMemberStrings
@@ -102,8 +105,11 @@ module SurfaceArea =
                 Printf.bprintf sb "    windiff %s %s" baseline logFile
                 newLine sb
                 newLine sb
-                sb.AppendLine "To update the baseline run:" |> ignore
-                Printf.bprintf sb "    copy /y %s %s" logFile baseline
+                sb.AppendLine "To update the baseline copy the contents of this:" |> ignore
+                Printf.bprintf sb "    %s" logFile
+                newLine sb
+                sb.AppendLine "into this:" |> ignore
+                Printf.bprintf sb "    %s" baseline
                 newLine sb
                 newLine sb
                 sb.Append "Unexpectedly missing (expected, not actual):" |> ignore

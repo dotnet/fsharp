@@ -5,7 +5,7 @@ module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 

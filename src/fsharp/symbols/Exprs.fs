@@ -10,7 +10,7 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.QuotationTranslator
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -1316,9 +1316,9 @@ type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: TypedImplFile list) =
         [ for mimpl in mimpls -> FSharpImplementationFileContents(cenv, mimpl)]
 
 and FSharpImplementationFileDeclaration = 
-    | Entity of FSharpEntity * FSharpImplementationFileDeclaration list
-    | MemberOrFunctionOrValue  of FSharpMemberOrFunctionOrValue * FSharpMemberOrFunctionOrValue list list * FSharpExpr
-    | InitAction of FSharpExpr
+    | Entity of entity: FSharpEntity * declarations: FSharpImplementationFileDeclaration list
+    | MemberOrFunctionOrValue of value: FSharpMemberOrFunctionOrValue * curriedArgs: FSharpMemberOrFunctionOrValue list list * body: FSharpExpr
+    | InitAction of action: FSharpExpr
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
     let (TImplFile (qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes)) = mimpl 

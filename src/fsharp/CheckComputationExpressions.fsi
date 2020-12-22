@@ -4,7 +4,7 @@ module internal FSharp.Compiler.CheckComputationExpressions
 
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
 

@@ -41,7 +41,7 @@ val EncodeSignatureData:
 val mainCompile: 
     ctok: CompilationThreadToken *
     argv: string[] * 
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     bannerAlreadyPrinted: bool * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     defaultCopyFSharpCore: CopyFSharpCoreFlag * 
@@ -54,7 +54,7 @@ val mainCompile:
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
 val compileOfAst: 
     ctok: CompilationThreadToken *
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     assemblyName:string * 
     target:CompilerTarget * 

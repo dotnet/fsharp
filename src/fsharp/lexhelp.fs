@@ -14,8 +14,8 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
@@ -324,9 +324,6 @@ module Keywords =
           "fori";  "include";  "mixin"
           "parallel"; "params";  "process"; "protected"; "pure"
           "sealed"; "trait";  "tailcall"; "virtual" ]
-
-    let private unreserveWords = 
-        keywordList |> List.choose (function (mode, keyword, _) -> if mode = FSHARP then Some keyword else None) 
 
     //------------------------------------------------------------------------
     // Keywords

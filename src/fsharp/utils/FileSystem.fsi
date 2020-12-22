@@ -6,6 +6,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 
+/// Represents a shim for the file system
 type public IFileSystem =
 
     /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
@@ -49,15 +50,21 @@ type public IFileSystem =
 
     /// A shim over File.Exists
     abstract member SafeExists: fileName:string -> bool
-    
+
+/// Represents a default implementation of the file system
+type DefaultFileSystem =
+    /// Create a default implementation of the file system
+    new: unit -> DefaultFileSystem
+    interface IFileSystem
+
 [<AutoOpen>]
 module public FileSystemAutoOpens =
     /// The global hook into the file system
     val mutable FileSystem: IFileSystem
 
     type System.IO.File with
-        static member ReadBinaryChunk: fileName:string * start:int * len:int -> byte []
+        static member internal ReadBinaryChunk: fileName:string * start:int * len:int -> byte []
 
-        static member OpenReaderAndRetry: filename:string * codepage:int option * retryLocked:bool -> System.IO.StreamReader
+        static member internal OpenReaderAndRetry: filename:string * codepage:int option * retryLocked:bool -> System.IO.StreamReader
 
 

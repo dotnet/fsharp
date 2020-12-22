@@ -9,7 +9,7 @@ module Tests.Service.StructureTests
 
 open System.IO
 open NUnit.Framework
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Structure
 open FSharp.Compiler.Service.Tests.Common

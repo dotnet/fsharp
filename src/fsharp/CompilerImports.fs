@@ -28,11 +28,10 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.TypedTreePickle
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -373,7 +372,7 @@ type TcConfig with
             | Some IA64 -> "ia64"
  
         try 
-            tcConfig.legacyReferenceResolver.Resolve
+            tcConfig.legacyReferenceResolver.Impl.Resolve
                (tcConfig.resolutionEnvironment, 
                 references, 
                 tcConfig.targetFrameworkVersion, 
@@ -384,7 +383,7 @@ type TcConfig with
                 tcConfig.implicitIncludeDir, // Implicit include directory (likely the project directory)
                 logMessage showMessages, logDiagnostic showMessages)
         with 
-            ReferenceResolver.ResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
+            LegacyResolutionFailure -> error(Error(FSComp.SR.buildAssemblyResolutionFailed(), errorAndWarningRange))
 
 
     // NOTE!! if mode=Speculative then this method must not report ANY warnings or errors through 'warning' or 'error'. Instead

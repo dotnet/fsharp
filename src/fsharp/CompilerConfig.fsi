@@ -15,8 +15,8 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.Range
 
 open Microsoft.DotNet.DependencyManager
 
@@ -145,7 +145,7 @@ type TcConfigBuilder =
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
       mutable framework: bool
-      mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+      mutable resolutionEnvironment: LegacyResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
       /// Set if the user has explicitly turned indentation-aware syntax on/off
       mutable light: bool option
@@ -213,7 +213,7 @@ type TcConfigBuilder =
       mutable win32manifest: string
       mutable includewin32manifest: bool
       mutable linkResources: string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: LegacyReferenceResolver
       mutable fxResolver: FxResolver
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
@@ -277,7 +277,7 @@ type TcConfigBuilder =
     static member Initial: TcConfigBuilder
 
     static member CreateNew: 
-        legacyReferenceResolver: ReferenceResolver.Resolver *
+        legacyReferenceResolver: LegacyReferenceResolver *
         fxResolver: FxResolver *
         defaultFSharpBinariesDir: string * 
         reduceMemoryUsage: ReduceMemoryFlag * 
@@ -449,7 +449,7 @@ type TcConfig =
     /// File system query based on TcConfig settings
     member MakePathAbsolute: string -> string
 
-    member resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+    member resolutionEnvironment: LegacyResolutionEnvironment
 
     member copyFSharpCore: CopyFSharpCoreFlag
 
@@ -459,7 +459,7 @@ type TcConfig =
 
     member sdkDirOverride: string option
 
-    member legacyReferenceResolver: ReferenceResolver.Resolver
+    member legacyReferenceResolver: LegacyReferenceResolver
 
     member emitDebugInfoInQuotations: bool
 

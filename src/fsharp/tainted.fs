@@ -5,7 +5,7 @@ namespace FSharp.Compiler
 #if !NO_EXTENSIONTYPING
 
 open System
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.AbstractIL.IL

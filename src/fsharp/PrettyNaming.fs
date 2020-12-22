@@ -2,7 +2,7 @@
 
 /// Some general F# utilities for mangling / unmangling / manipulating names.
 /// Anything to do with special names of identifiers and other lexical rules 
-module public FSharp.Compiler.PrettyNaming
+module public FSharp.Compiler.SourceCodeServices.PrettyNaming
 
 open System
 open System.Collections.Generic
@@ -191,18 +191,17 @@ let private compileCustomOpName =
             // Cache the compiled name so it can be reused.
             opName)
 
+/// Maps the built-in F# operators to their mangled operator names.
+let standardOpNames =
+    let opNames = Dictionary<_,  _> (opNameTable.Length, StringComparer.Ordinal)
+    for x, y in opNameTable do
+        opNames.Add (x, y)
+    opNames
+
 /// Compiles an operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
 /// This function accepts both built-in and custom operators.
-let CompileOpName =
-    /// Maps the built-in F# operators to their mangled operator names.
-    let standardOpNames =
-        let opNames = Dictionary<_,  _> (opNameTable.Length, StringComparer.Ordinal)
-        for x, y in opNameTable do
-            opNames.Add (x, y)
-        opNames
-
-    fun op ->
+let CompileOpName op =
         match standardOpNames.TryGetValue op with
         | true, x -> x
         | false, _ ->
@@ -280,19 +279,18 @@ let private decompileCustomOpName =
             decompile sb opNamePrefixLen
 
     
+/// Maps the mangled operator names of built-in F# operators back to the operators.
+let standardOpsDecompile =
+    let ops = Dictionary<string, string> (opNameTable.Length, StringComparer.Ordinal)
+    for x, y in opNameTable do
+        ops.Add(y, x)
+    ops
+
 /// Decompiles a mangled operator name back into an operator.
 /// For example, "op_DereferencePercent" becomes "!%".
 /// This function accepts mangled names for both built-in and custom operators.
-let DecompileOpName =
-    /// Maps the mangled operator names of built-in F# operators back to the operators.
-    let standardOps =
-        let ops = Dictionary<string, string> (opNameTable.Length, StringComparer.Ordinal)
-        for x, y in opNameTable do
-            ops.Add(y, x)
-        ops
-
-    fun opName ->
-        match standardOps.TryGetValue opName with
+let DecompileOpName opName =
+        match standardOpsDecompile.TryGetValue opName with
         | true, res -> res
         | false, _ ->
             if IsMangledOpName opName then
@@ -413,31 +411,29 @@ let IsPunctuation s =
 let IsTernaryOperator s = 
     (DecompileOpName s = qmarkSet)
 
-let IsInfixOperator =
+/// EQUALS, INFIX_COMPARE_OP, LESS, GREATER
+let relational = [| "=";"!=";"<";">";"$"|]
 
-    /// EQUALS, INFIX_COMPARE_OP, LESS, GREATER
-    let relational = [| "=";"!=";"<";">";"$"|]
+/// INFIX_AT_HAT_OP
+let concat = [| "@";"^" |]
 
-    /// INFIX_AT_HAT_OP
-    let concat = [| "@";"^" |]
+/// PLUS_MINUS_OP, MINUS
+let plusMinus = [| "+"; "-" |]
 
-    /// PLUS_MINUS_OP, MINUS
-    let plusMinus = [| "+"; "-" |]
+/// PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
+let otherMath = [| "*";"/";"%" |]
 
-    /// PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
-    let otherMath = [| "*";"/";"%" |]
+/// Characters ignored at the start of the operator name
+/// when determining whether an operator is an infix operator.
+let ignoredChars = [| '.'; '?' |]
 
-    /// Characters ignored at the start of the operator name
-    /// when determining whether an operator is an infix operator.
-    let ignoredChars = [| '.'; '?' |]
-
-    fun s (* where s is assumed to be a compiled name *) ->
-    // Certain operator idents are parsed as infix expression operators.
-    // The parsing as infix operators is hardwired in the grammar [see declExpr productions]
-    // where certain operator tokens are accepted in infix forms, i.e. <expr> <op> <expr>.
-    // The lexer defines the strings that lead to those tokens.
-    //------
-    // This function recognises these "infix operator" names.
+// Certain operator idents are parsed as infix expression operators.
+// The parsing as infix operators is hardwired in the grammar [see declExpr productions]
+// where certain operator tokens are accepted in infix forms, i.e. <expr> <op> <expr>.
+// The lexer defines the strings that lead to those tokens.
+//------
+// This function recognises these "infix operator" names.
+let IsInfixOperator s = (* where s is assumed to be a compiled name *) 
     let s = DecompileOpName s
     let skipIgnoredChars = s.TrimStart(ignoredChars)
     let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWithOrdinal(prefix)
@@ -753,6 +749,10 @@ module CustomOperations =
     let Into = "into"
 
 let unassignedTyparName = "?"
+
+let FormatAndOtherOverloadsString remainingOverloads = FSComp.SR.typeInfoOtherOverloads(remainingOverloads)
+
+let GetLongNameFromString x = SplitNamesForILPath x
 
 //--------------------------------------------------------------------------
 // Resource format for pickled data

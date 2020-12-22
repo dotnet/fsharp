@@ -20,8 +20,8 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Pos
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.Pos
+open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 
@@ -946,10 +946,14 @@ module FSharpKeywords =
     open FSharp.Compiler.Lexhelp.Keywords
 
     let DoesIdentifierNeedQuotation s = DoesIdentifierNeedQuotation s
+    
     let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    
     let KeywordsWithDescription = keywordsWithDescription
 
+    let KeywordNames = Lexhelp.Keywords.keywordNames
 
 [<Flags>]
 type FSharpLexerFlags =

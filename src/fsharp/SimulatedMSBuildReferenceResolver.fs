@@ -7,7 +7,6 @@ open System.IO
 open System.Reflection
 open Microsoft.Win32
 open Microsoft.Build.Utilities
-open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.SourceCodeServices
 
@@ -84,7 +83,7 @@ let private SimulatedMSBuildResolver =
         | x -> [x]
 #endif
 
-    { new Resolver with
+    { new ILegacyReferenceResolver with
         member x.HighestInstalledNetFrameworkVersion() =
 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
@@ -236,6 +235,7 @@ let private SimulatedMSBuildResolver =
                 with e -> logWarningOrError false "SR001" (e.ToString())
 
             results.ToArray() }
+    |> LegacyReferenceResolver
 
 let internal getResolver () = SimulatedMSBuildResolver
 

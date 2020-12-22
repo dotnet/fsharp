@@ -72,7 +72,7 @@ type LoadClosure =
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText:
         CompilationThreadToken * 
-        legacyReferenceResolver: ReferenceResolver.Resolver * 
+        legacyReferenceResolver: LegacyReferenceResolver * 
         defaultFSharpBinariesDir: string * 
         filename: string * 
         sourceText: ISourceText * 

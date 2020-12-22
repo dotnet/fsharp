@@ -15,7 +15,7 @@ module internal ExtensionTyping =
     open FSharp.Compiler.AbstractIL.IL
     open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
     open FSharp.Compiler.ErrorLogger
-    open FSharp.Compiler.Range
+    open FSharp.Compiler.SourceCodeServices.Range
     open FSharp.Compiler.SourceCodeServices
     open Internal.Utilities.FSharpEnvironment  
 
