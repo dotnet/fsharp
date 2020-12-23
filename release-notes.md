@@ -122,10 +122,14 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Disable partial type checking when getting full results for a file [#10448](https://github.com/dotnet/fsharp/pull/10448)
 * Fix unused open type declaration detection [#10510](https://github.com/dotnet/fsharp/pull/10510), by [André Slupik](https://github.com/asik)
 
+### FSharp Compiler Service 38.0.2
+
+* Add FSharp.DependencyManager.Nuget as a project reference and ensure it is in the package, allowing other editors to consume `#r "nuget:..."` references at design-time [#10784](https://github.com/dotnet/fsharp/pull/10784)
+
 ### FSharp Compiler Service 38.0.1
-* add check for system assemblies completion [#10575](https://github.com/dotnet/fsharp/pull/10575)
+* Add check for system assemblies completion [#10575](https://github.com/dotnet/fsharp/pull/10575)
 * Fix net sdk references discovery [#10569](https://github.com/dotnet/fsharp/pull/10569)
-* Fix FSC nuget package dependencies. [#10588](https://github.com/dotnet/fsharp/pull/10588)
+* Fix FSC nuget package dependencies [#10588](https://github.com/dotnet/fsharp/pull/10588)
 
 ### FSharp Compiler Service 38.0.0
 
