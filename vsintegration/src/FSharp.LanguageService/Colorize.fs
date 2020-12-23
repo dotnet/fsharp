@@ -13,9 +13,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Text
-open FSharp.Compiler
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -148,11 +147,11 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
         lineTokenizer <- makeLineTokenizer lineText
 
     /// Adjust the set of extra colorizations and return a sorted list of affected lines.
-    member __.SetExtraColorizations (tokens: struct (Range.range * SemanticClassificationType)[]) =
+    member _.SetExtraColorizations (tokens: struct (range * SemanticClassificationType)[]) =
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else
-            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun struct (r, _) -> Range.Line.toZ r.StartLine))
+            let newExtraColorizationsKeyed = dict (tokens |> Array.groupBy (fun struct (r, _) -> Line.toZ r.StartLine))
             let oldExtraColorizationsKeyedOpt = extraColorizations
             extraColorizations <- Some newExtraColorizationsKeyed
             let changedLines =
@@ -352,7 +351,7 @@ type internal FSharpColorizer_DEPRECATED
 
     member c.Buffer = buffer
 
-    member __.SetExtraColorizations tokens = scanner.SetExtraColorizations tokens
+    member _.SetExtraColorizations tokens = scanner.SetExtraColorizations tokens
 
 
 /// Implements IVsColorableItem and IVsMergeableUIItem, for colored text items

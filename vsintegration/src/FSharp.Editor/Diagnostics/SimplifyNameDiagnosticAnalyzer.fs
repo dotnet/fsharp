@@ -9,10 +9,10 @@ open System.Diagnostics
 open System.Threading
 
 open Microsoft.CodeAnalysis
-open FSharp.Compiler.Range
 open System.Runtime.Caching
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
 

@@ -11,10 +11,11 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
 open Microsoft.VisualStudio.Shell
 
-open FSharp.Compiler
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TextLayout
 
 type SignatureHelpParameterInfo =
     { ParameterName: string
@@ -325,7 +326,7 @@ type internal FSharpSignatureHelpProvider
                         | None ->
                             let possibleNextIndex =
                                 curriedArgsInSource
-                                |> Array.tryFindIndex(fun argRange -> Range.posGeq argRange.Start caretPos)
+                                |> Array.tryFindIndex(fun argRange -> Pos.posGeq argRange.Start caretPos)
 
                             match possibleNextIndex with
                             | Some index -> Some index

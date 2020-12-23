@@ -1330,8 +1330,8 @@ module Display =
 
     let asTaggedTextWriter (writer: TextWriter) =
         { new TaggedTextWriter with
-            member __.Write(t) = writer.Write t.Text
-            member __.WriteLine() = writer.WriteLine() }
+            member _.Write(t) = writer.Write t.Text
+            member _.WriteLine() = writer.WriteLine() }
 
     let output_layout_tagged options writer layout = 
         layout |> squash_layout options 

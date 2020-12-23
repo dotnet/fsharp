@@ -10,8 +10,8 @@ open System.Threading
 
 open Microsoft.CodeAnalysis
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 

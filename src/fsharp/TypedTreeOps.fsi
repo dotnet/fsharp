@@ -11,9 +11,11 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Rational
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
@@ -138,7 +140,7 @@ val mkLambda : range -> Val -> Expr * TType -> Expr
 val mkTypeLambda : range -> Typars -> Expr * TType -> Expr
 
 /// Build an object expression
-val mkObjExpr : TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * Range.range -> Expr
+val mkObjExpr : TType * Val option * Expr * ObjExprMethod list * (TType * ObjExprMethod list) list * range -> Expr
 
 /// Build an type-chose expression, indicating that a local free choice of a type variable
 val mkTypeChoose : range -> Typars -> Expr -> Expr

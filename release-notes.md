@@ -66,18 +66,47 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Compiler message improvements (especially for overload resolution) by [Gauthier Segay](https://github.com/smoothdeveloper), [Vladimir Shchur](https://github.com/Lanayx), and Microsoft
 
 ### FSharp Compiler Service 39.0.0
+
 * Renamings
-*     FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
-*     FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
-*     FSharp.Compiler.AbstractIL.Internal.Layout  -> FSharp.Compiler.TextLayout.Layout
-*     FSharp.Compiler.AbstractIL.Internal.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+*     type FSharp.Compiler.AbstractIL.Internal.Library.IFileSystem -> FSharp.Compiler.SourceCodeServices.IFileSystem
+* 
+*     module FSharp.Compiler.AbstractIL.Internal.Library.Shim -> FSharp.Compiler.SourceCodeServices.FileSystemAutoOpens
+* 
+*     type FSharp.Compiler.AbstractIL.Internal.Layout  -> FSharp.Compiler.TextLayout.Layout
+* 
+*     type FSharp.Compiler.AbstractIL.Internal.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+* 
 *     type FSharp.Compiler.Layout.layout -> FSharp.Compiler.TextLayout.Layout
+* 
 *     type FSharp.Compiler.Layout.Layout -> FSharp.Compiler.TextLayout.Layout
+* 
 *     module FSharp.Compiler.Layout -> FSharp.Compiler.TextLayout.LayoutRender
-*     FSharp.Compiler.LayoutOps -> FSharp.Compiler.TextLayout.Layout
-*     FSharp.Compiler.Layout.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
-*     FSharp.Compiler.Layout.TaggedTextOps  -> FSharp.Compiler.TextLayout.TaggedText
-*     FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
+* 
+*     module FSharp.Compiler.LayoutOps -> FSharp.Compiler.TextLayout.Layout
+* 
+*     module FSharp.Compiler.Layout.TaggedText  -> FSharp.Compiler.TextLayout.TaggedText
+* 
+*     module FSharp.Compiler.Layout.TaggedTextOps  -> FSharp.Compiler.TextLayout.TaggedText
+* 
+*     module FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
+* 
+*     type FSharp.Compiler.Range.range --> FSharp.Compiler.Text.Range (with 'range' abbreviation)
+* 
+*     type FSharp.Compiler.Range.pos --> FSharp.Compiler.Text.Pos (with 'pos' abbreviation)
+* 
+*     module FSharp.Compiler.Range.Range --> (split)
+*          module FSharp.Compiler.Text.Pos
+*          module FSharp.Compiler.Text.Range
+*
+*     module FSharp.Compiler.QuickParse --> FSharp.Compiler.SourceCodeServices.QuickParse
+*
+*     module FSharp.Compiler.PrettyNaming --> FSharp.Compiler.SourceCodeServices.PrettyNaming
+* 
+*     val FSharpKeywords.PrettyNaming.KeywordNames  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.KeywordNames
+*
+*     val FSharpKeywords.PrettyNaming.QuoteIdentifierIfNeeded  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.QuoteIdentifierIfNeeded
+*
+*     val FSharpKeywords.PrettyNaming.FormatAndOtherOverloadsString  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.FormatAndOtherOverloadsString
 *
 * Renamings in FSharp.Compiler.SourceCodeServices
 *   Lexer.* --> FSharp.Compiler.SourceCodeServices.*
@@ -93,7 +122,7 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * Extension methods in `ServiceAssemblyContent.fsi` now intrinsic methods on symbol types
 * 
 * Internalizations:
-*   FSharp.Compiler.AbstractIL.* now internal
+*   FSharp.Compiler.AbstractIL.* now internal apart from hook for JetBrains Rider
 *   FSharp.Compiler.ErrorLogger.* now internal
 *
 * New functions in the SourceCodeServices API:
@@ -140,7 +169,7 @@ The most notable change for FSharp.Compiler.Service is that it is now built and 
 * Improvements to the F# syntax tree represtation by [Eugene Auduchinok](https://github.com/auduchinok)
 * Support for `const` in keyword completion info by [Alex Berezhnykh](https://github.com/DedSec256)
 * Support for passing in a `PrimaryAssembly` for AST compilation routines by [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
-* Support for `ToString` in `FSharp.Compiler.Text.StringText` by [Asti](https://github.com/deviousasti)
+* Support for `ToString` in `FSharp.Compiler.SourceCodeServices.StringText` by [Asti](https://github.com/deviousasti)
 * Fix an issue with equality comparisons for `StringText` by [Asti](https://github.com/deviousasti)
 
 Significant changes for consumers:

@@ -3,4 +3,4 @@ module public FSharp.Compiler.LegacyMSBuildReferenceResolver
 
 open FSharp.Compiler
 
-val getResolver: unit -> ReferenceResolver.Resolver
+val getResolver: unit -> LegacyReferenceResolver

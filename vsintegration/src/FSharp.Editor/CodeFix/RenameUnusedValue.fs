@@ -4,15 +4,11 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Threading
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CodeActions
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RenameUnusedValue"); Shared>]
@@ -28,9 +24,9 @@ type internal FSharpRenameUnusedValueCodeFixProvider
     let fixableDiagnosticIds = set ["FS1182"]
     let checker = checkerProvider.Checker
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             // Don't show code fixes for unused values, even if they are compiler-generated.
             do! Option.guard context.Document.FSharpOptions.CodeFixes.UnusedDeclarations

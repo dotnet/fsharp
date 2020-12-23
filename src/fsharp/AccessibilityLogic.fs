@@ -7,10 +7,10 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

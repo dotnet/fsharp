@@ -7,7 +7,7 @@ module internal FSharp.Compiler.SignatureConformance
 open System.Text
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 

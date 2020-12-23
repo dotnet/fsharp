@@ -5,9 +5,10 @@ module public FSharp.Compiler.XmlDoc
 open System
 open System.Xml.Linq
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]

@@ -19,19 +19,19 @@ namespace Microsoft.FSharp.Collections
               
         let Reference<'T when 'T : not struct > : IEqualityComparer<'T> = 
             { new IEqualityComparer<'T> with
-                  member __.GetHashCode(x) = LanguagePrimitives.PhysicalHash(x) 
-                  member __.Equals(x,y) = LanguagePrimitives.PhysicalEquality x y }
+                  member _.GetHashCode(x) = LanguagePrimitives.PhysicalHash(x) 
+                  member _.Equals(x,y) = LanguagePrimitives.PhysicalEquality x y }
 
         let inline NonStructural< 'T when 'T : equality and 'T  : (static member ( = ) : 'T * 'T    -> bool) > = 
             { new IEqualityComparer<'T> with
-                  member __.GetHashCode(x) = NonStructuralComparison.hash x 
-                  member __.Equals(x, y) = NonStructuralComparison.(=) x y  }
+                  member _.GetHashCode(x) = NonStructuralComparison.hash x 
+                  member _.Equals(x, y) = NonStructuralComparison.(=) x y  }
 
         let inline FromFunctions hasher equality : IEqualityComparer<'T> = 
             let eq = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(equality)
             { new IEqualityComparer<'T> with 
-                member __.GetHashCode(x) = hasher x
-                member __.Equals(x,y) = eq.Invoke(x,y)  }
+                member _.GetHashCode(x) = hasher x
+                member _.Equals(x,y) = eq.Invoke(x,y)  }
 
 
     module ComparisonIdentity = 
@@ -41,10 +41,10 @@ namespace Microsoft.FSharp.Collections
 
         let inline NonStructural< 'T when 'T : (static member ( < ) : 'T * 'T    -> bool) and 'T : (static member ( > ) : 'T * 'T    -> bool) > : IComparer<'T> = 
             { new IComparer<'T> with
-                  member __.Compare(x,y) = NonStructuralComparison.compare x y } 
+                  member _.Compare(x,y) = NonStructuralComparison.compare x y } 
 
         let FromFunction comparer = 
             let comparer = OptimizedClosures.FSharpFunc<'T,'T,int>.Adapt(comparer)
             { new IComparer<'T> with
-                  member __.Compare(x,y) = comparer.Invoke(x,y) } 
+                  member _.Compare(x,y) = comparer.Invoke(x,y) } 
 

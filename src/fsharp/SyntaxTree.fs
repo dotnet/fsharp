@@ -4,17 +4,17 @@ module public rec FSharp.Compiler.SyntaxTree
 
 open System.Diagnostics
 
-open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.XmlDoc
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
 type Ident (text: string, range: range) =
-     member x.idText = text
-     member x.idRange = range
-     override x.ToString() = text
+     member _.idText = text
+     member _.idRange = range
+     override _.ToString() = text
 
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list

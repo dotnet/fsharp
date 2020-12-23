@@ -10,7 +10,7 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 
 val stdinMockFilename: string
 
@@ -91,7 +91,7 @@ val unicodeGraphLong: string -> LongUnicodeLexResult
 
 val escape: char -> char
 
-exception ReservedKeyword of string * Range.range
+exception ReservedKeyword of string * range
 
 module Keywords = 
 

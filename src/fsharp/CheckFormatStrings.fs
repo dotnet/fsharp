@@ -8,9 +8,9 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -356,8 +356,8 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                         numStdArgs + (if widthArg then 1 else 0) + (if precisionArg then 1 else 0)
                       specifierLocations.Add(
                           (Range.mkFileIndexRange m.FileIndex 
-                              (Range.mkPos fragLine startFragCol) 
-                              (Range.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
+                              (Pos.mkPos fragLine startFragCol) 
+                              (Pos.mkPos fragLine (fragCol + 1))), numArgsForSpecifier)
                   | None -> ()
 
               let ch = fmt.[i]

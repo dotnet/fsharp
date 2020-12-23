@@ -1457,7 +1457,7 @@ module internal Salsa =
 
             let sp2 = 
                { new System.IServiceProvider with 
-                   member __.GetService(serviceType:Type) : obj = 
+                   member _.GetService(serviceType:Type) : obj = 
                         if serviceType = typeof<SVsRunningDocumentTable> then rdt
                         else if serviceType = typeof<SVsTextManager> then tm
                         else raise (new Exception(sprintf "Salsa did not create service %A"  serviceType)) }

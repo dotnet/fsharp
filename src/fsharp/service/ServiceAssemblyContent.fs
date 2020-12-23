@@ -12,9 +12,11 @@ open System.Collections.Generic
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 type ShortIdent = string
 
@@ -75,7 +77,7 @@ type Parent =
     member x.FixParentModuleSuffix (idents: Idents) =
         Parent.RewriteParentIdents x.WithModuleSuffix idents
 
-    member __.FormatEntityFullName (entity: FSharpEntity) =
+    member _.FormatEntityFullName (entity: FSharpEntity) =
         // remove number of arguments from generic types
         // e.g. System.Collections.Generic.Dictionary`2 -> System.Collections.Generic.Dictionary
         // and System.Data.Listeners`1.Func -> System.Data.Listeners.Func
@@ -308,13 +310,13 @@ module AssemblyContentProvider =
 type EntityCache() =
     let dic = Dictionary<AssemblyPath, AssemblyContentCacheEntry>()
     interface IAssemblyContentCache with
-        member __.TryGet assembly =
+        member _.TryGet assembly =
             match dic.TryGetValue assembly with
             | true, entry -> Some entry
             | _ -> None
-        member __.Set assembly entry = dic.[assembly] <- entry
+        member _.Set assembly entry = dic.[assembly] <- entry
 
-    member __.Clear() = dic.Clear()
+    member _.Clear() = dic.Clear()
     member x.Locking f = lock dic <| fun _ -> f (x :> IAssemblyContentCache)
 
 type StringLongIdent = string
@@ -437,8 +439,8 @@ module ParsedInput =
         | SynArgPats.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
-    let getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
-        let identsByEndPos = Dictionary<Range.pos, LongIdent>()
+    let getLongIdents (input: ParsedInput option) : IDictionary<pos, LongIdent> =
+        let identsByEndPos = Dictionary<pos, LongIdent>()
     
         let addLongIdent (longIdent: LongIdent) =
             for ident in longIdent do
@@ -450,7 +452,7 @@ module ParsedInput =
             | [_] as idents -> identsByEndPos.[value.Range.End] <- idents
             | idents ->
                 for dotRange in lids do
-                    identsByEndPos.[Range.mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
+                    identsByEndPos.[Pos.mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
                 identsByEndPos.[value.Range.End] <- idents
     
         let addIdent (ident: Ident) =

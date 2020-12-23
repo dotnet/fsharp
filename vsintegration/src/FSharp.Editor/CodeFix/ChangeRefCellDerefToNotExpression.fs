@@ -20,7 +20,7 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
     static let userOpName = "FSharpChangeRefCellDerefToNotExpressionCodeFix"
     let fixableDiagnosticIds = set ["FS0001"]
 
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {

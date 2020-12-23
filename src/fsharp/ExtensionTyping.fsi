@@ -6,15 +6,13 @@ namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
-module internal ExtensionTyping =
+open System
+open System.Collections.Generic
+open FSharp.Core.CompilerServices
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.Text
 
-    open System
-    open System.IO
-    open System.Collections.Generic
-    open Microsoft.FSharp.Core.CompilerServices
-    open FSharp.Compiler.AbstractIL.IL
-    open FSharp.Compiler.AbstractIL.Internal.Library
-    open FSharp.Compiler.Range
+module internal ExtensionTyping =
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 

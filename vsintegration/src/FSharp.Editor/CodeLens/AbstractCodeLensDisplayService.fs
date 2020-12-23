@@ -64,11 +64,11 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
     member val CurrentBufferSnapshot = null with get, set
 
     /// Helper method which returns the start line number of a tracking span
-    member __.GetTrackingSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
+    member _.GetTrackingSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
         snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
 
     /// Helper method which returns the start line number of a tracking span
-    member __.TryGetTSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
+    member _.TryGetTSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
         let pos = trackingSpan.GetStartPoint(snapshot).Position
         if snapshot.Length - 1 < pos then None
         else pos |> snapshot.GetLineNumberFromPosition |> Some
@@ -110,7 +110,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                                 let mutable element = self.UiElements.[trackingSpan]
                                 element.Visibility <- Visibility.Hidden
 
-    member __.CreateDefaultStackPanel () = 
+    member _.CreateDefaultStackPanel () = 
         let grid = Grid(Visibility = Visibility.Hidden)
         Canvas.SetLeft(grid, 0.)
         Canvas.SetTop(grid, 0.)

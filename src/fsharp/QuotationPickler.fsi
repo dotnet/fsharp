@@ -4,13 +4,6 @@
 module internal FSharp.Compiler.QuotationPickler
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL 
-open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.AbstractIL.Internal.Bytes
-open FSharp.Compiler 
-open FSharp.Compiler.Lib
-
 type TypeData 
 type TypeVarData =  { tvName: string }
 
@@ -31,19 +24,19 @@ type ExprData
 type VarData 
 
 type CtorData = 
-    { ctorParent: NamedTypeData; 
-      ctorArgTypes: TypeData list; }
+    { ctorParent: NamedTypeData 
+      ctorArgTypes: TypeData list }
 
 type MethodData = 
-    { methParent: NamedTypeData;
-      methName: string;
-      methArgTypes: TypeData list;
-      methRetType: TypeData; 
+    { methParent: NamedTypeData
+      methName: string
+      methArgTypes: TypeData list
+      methRetType: TypeData 
       numGenericArgs: int }
 
 type ModuleDefnData = 
-    { Module: NamedTypeData;
-      Name: string;
+    { Module: NamedTypeData
+      Name: string
       IsProperty: bool }
 
 type MethodBaseData = 

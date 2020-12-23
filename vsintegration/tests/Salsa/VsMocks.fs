@@ -1642,7 +1642,7 @@ module internal VsActual =
         static let jtc = new JoinableTaskContext()
 
         [<System.ComponentModel.Composition.Export(typeof<JoinableTaskContext>)>]
-        member public __.JoinableTaskContext : JoinableTaskContext = jtc
+        member public _.JoinableTaskContext : JoinableTaskContext = jtc
 
     let vsInstallDir =
         // use the environment variable to find the VS installdir

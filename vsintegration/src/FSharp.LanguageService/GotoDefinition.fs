@@ -8,7 +8,6 @@ open System
 open System.Diagnostics
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =

@@ -14,8 +14,8 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
 module internal TaggedText =
@@ -314,7 +314,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
           if provideMethodList then 
             try
                 // go ahead and compute this now, on this background thread, so will have info ready when UI thread asks
-                let noteworthyParamInfoLocations = untypedResults.FindNoteworthyParamInfoLocations(Range.Pos.fromZ brLine brCol)
+                let noteworthyParamInfoLocations = untypedResults.FindNoteworthyParamInfoLocations(Pos.fromZ brLine brCol)
 
                 // we need some typecheck info, even if stale, in order to look up e.g. method overload types/xmldocs
                 if typedResults.HasFullTypeCheckInfo then 
@@ -418,7 +418,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetStructuredToolTipText(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
+                            let dataTip = typedResults.GetStructuredToolTipText(Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag)
 
                             match dataTip with
                             | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
@@ -496,7 +496,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                             let pname = QuickParse.GetPartialLongNameEx(lineText, col-1) 
                             let _x = 1 // for breakpoint
 
-                            let decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, lineText, pname, (fun() -> [])) 
+                            let decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Line.fromZ line, lineText, pname, (fun() -> [])) 
                             return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
                     else
                         // no TypeCheckInfo in ParseResult.
@@ -556,7 +556,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                     |   Some(s,colAtEndOfNames, _) ->
                                             if typedResults.HasFullTypeCheckInfo then 
                                                 let qualId = PrettyNaming.GetLongNameFromString s
-                                                match typedResults.GetF1Keyword(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) with
+                                                match typedResults.GetF1Keyword(Line.fromZ line,colAtEndOfNames, lineText, qualId) with
                                                 | Some s -> Some s
                                                 | None -> None 
                                             else None                           

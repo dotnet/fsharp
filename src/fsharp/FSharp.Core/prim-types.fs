@@ -2140,7 +2140,7 @@ namespace Microsoft.FSharp.Core
 
         let inline MakeGenericComparer<'T>()  = 
             { new System.Collections.Generic.IComparer<'T> with 
-                 member __.Compare(x,y) = GenericComparison x y }
+                 member _.Compare(x,y) = GenericComparison x y }
 
         let CharComparer    = MakeGenericComparer<char>()
         let StringComparer  = MakeGenericComparer<string>()
@@ -5313,20 +5313,20 @@ namespace Microsoft.FSharp.Core
                             state.Current
 
                     { new IEnumerator<'T> with
-                        member __.Current = current ()
+                        member _.Current = current ()
 
                       interface System.IDisposable with
-                        member __.Dispose () = ()
+                        member _.Dispose () = ()
 
                       interface IEnumerator with 
-                        member __.Current = box (current ())
+                        member _.Current = box (current ())
 
-                        member __.Reset () =
+                        member _.Reset () =
                             state.Started <- false
                             state.Complete <- false
                             state.Current <- Unchecked.defaultof<_> 
 
-                        member __.MoveNext () =
+                        member _.MoveNext () =
                             if not state.Started then
                                 state.Started <- true
                                 state.Current <- n
@@ -5344,7 +5344,7 @@ namespace Microsoft.FSharp.Core
                             not state.Complete}
 
                 { new IEnumerable<'T> with
-                    member __.GetEnumerator () = variableStepRangeEnumerator ()
+                    member _.GetEnumerator () = variableStepRangeEnumerator ()
 
                   interface IEnumerable with
                     member this.GetEnumerator () = (variableStepRangeEnumerator ()) :> IEnumerator }
@@ -5371,15 +5371,15 @@ namespace Microsoft.FSharp.Core
                                 derefValue
 
                         { new IEnumerator<'T> with
-                            member __.Current = current ()
+                            member _.Current = current ()
 
                           interface System.IDisposable with
-                            member __.Dispose () = ()
+                            member _.Dispose () = ()
 
                           interface IEnumerator with
-                            member __.Current = box (current ())
-                            member __.Reset () = value <- n - LanguagePrimitives.GenericOne
-                            member __.MoveNext () =
+                            member _.Current = box (current ())
+                            member _.Reset () = value <- n - LanguagePrimitives.GenericOne
+                            member _.MoveNext () =
                                 let derefValue = value
                                 if derefValue < m then
                                     value <- derefValue + LanguagePrimitives.GenericOne
@@ -5390,10 +5390,10 @@ namespace Microsoft.FSharp.Core
                                 else false }
 
                     { new IEnumerable<'T> with
-                        member __.GetEnumerator () = singleStepRangeEnumerator ()
+                        member _.GetEnumerator () = singleStepRangeEnumerator ()
 
                       interface IEnumerable with
-                        member __.GetEnumerator () = (singleStepRangeEnumerator ()) :> IEnumerator }
+                        member _.GetEnumerator () = (singleStepRangeEnumerator ()) :> IEnumerator }
 
             // For RangeStepGeneric, zero and add are functions representing the static resolution of GenericZero and (+)
             // for the particular static type. 

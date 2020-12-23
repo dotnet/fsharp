@@ -164,7 +164,7 @@ module internal XmlDocumentation =
         static member TryCreate (xml: string) =
             try Some (XmlDocReader(XElement.Parse(ProcessXml xml))) with _ -> None
 
-        member __.CollectSummary(collector: ITaggedTextCollector) = 
+        member _.CollectSummary(collector: ITaggedTextCollector) = 
             match Seq.tryHead (doc.Descendants(XName.op_Implicit "summary")) with
             | None -> ()
             | Some el ->
@@ -244,7 +244,7 @@ module internal XmlDocumentation =
 
         interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
-            override __.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName) =
+            override _.AppendDocumentationFromProcessedXML(xmlCollector, exnCollector, processedXml, showExceptions, showParameters, paramName) =
                 match XmlDocReader.TryCreate processedXml with
                 | Some xmlDocReader ->
                     match paramName with

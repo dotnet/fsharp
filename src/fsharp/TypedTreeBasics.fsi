@@ -7,7 +7,7 @@
 module internal FSharp.Compiler.TypedTreeBasics
 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val getNameOfScopeRef: sref:ILScopeRef -> string
@@ -222,7 +222,7 @@ val taccessInternal: Accessibility
 
 val combineAccess: Accessibility -> Accessibility -> Accessibility
 
-exception Duplicate of string * string * Range.range
+exception Duplicate of string * string * range
 
-exception NameClash of string * string * string * Range.range * string * string * Range.range
+exception NameClash of string * string * string * range * string * string * range
 

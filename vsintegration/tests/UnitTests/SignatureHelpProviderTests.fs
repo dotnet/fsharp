@@ -28,9 +28,10 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis.Text
 open VisualFSharp.UnitTests.Roslyn
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
-open FSharp.Compiler.Range
+open FSharp.Compiler
+open FSharp.Compiler.Text
+open FSharp.Compiler.SourceCodeServices
 open Microsoft.CodeAnalysis
 
 let filePath = "C:\\test.fs"

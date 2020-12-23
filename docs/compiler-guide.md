@@ -72,7 +72,10 @@ The following are the key phases and high-level logical operations of the F# com
 
 * _Parsing_. Accepts a token stream and produces an AST per the grammar in the F# Language Specification.
 
-* _Resolving references_. See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler. See [Microsoft.DotNet.DependencyManager](https://github.com/dotnet/fsharp/tree/master/src/fsharp/Microsoft.DotNet.DependencyManager) for reference resolution and package management used in `fsi`.
+* _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling. 
+   There is a legacy aspect to this if references use old .NET Framework references including for
+   scripting.  See [ReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/ReferenceResolver.fs) for the abstract definition of compiler reference resolution. See [LegacyMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/LegacyMSBuildReferenceResolver.fs) for reference resolution used by the .NET Framework F# compiler when running on .NET Framework. See [SimulatedMSBuildReferenceResolver.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/SimulatedMSBuildReferenceResolver.fs) when not using the .NET Framework F# compiler. 
+   See [Microsoft.DotNet.DependencyManager](https://github.com/dotnet/fsharp/tree/master/src/fsharp/Microsoft.DotNet.DependencyManager) for reference resolution and package management used in `fsi`.
 
 * _Importing referenced .NET binaries_, see [import.fsi](https://github.com/dotnet/fsharp/blob/master/src/fsharp/import.fsi)/[import.fs](https://github.com/dotnet/fsharp/blob/master/src/fsharp/import.fs). Accepts file references and produces a Typed Tree node for each referenced assembly, including information about its type definitions (and type forwarders if any).
 
@@ -555,6 +558,24 @@ The first can be interrupted by having the incremental builder dependency graph
 decide not to bother continuing with the computation (it drops it on the floor)
 
 The second can be interrupted via having `isResultObsolete` to the F# Compiler Service API return true.
+
+### The F# Compiler Service Public Surface Area
+
+The "intended" FCS API is the parts under the namespaces
+
+* FSharp.Compiler.SourceCodeServices.* (analysis, compilation, tooling, lexing)
+* FSharp.Compiler.Interactive.Shell.*  (scripting support)
+* FSharp.Compiler.AbstractIL.*  (for ILAssemblyReader hook for Rider)
+* FSharp.Compiler.SyntaxTree.*  (direct access to full untyped tree)
+
+These sections are generally designed with F#/.NET design conventions (e.g. types in namespaces, not modules, no nesting of modules etc.)
+and we will continue to iterate to make this so.
+
+In contrast, the public parts of the compiler directly under `FSharp.Compiler.*` and `FSharp.AbstractIL.*` are
+"incidental" and not really designed for public use apart from the hook for Jet Brains Rider
+(Aside: In theory all these other parts could be renamed to FSharp.Compiler.Internal though there's no need to do that right now).  
+These internal parts tend to be implemented with the "module containing lots of stuff in one big file" approach for layers of the compiler.
+
 
 ### The F# Compiler Service Operations Queue
 

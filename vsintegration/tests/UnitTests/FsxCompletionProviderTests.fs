@@ -106,7 +106,7 @@ type Worker () =
 
             Assert.Fail(msg)
 
-    member __.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
+    member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
 
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let expected = expected |> Seq.toList

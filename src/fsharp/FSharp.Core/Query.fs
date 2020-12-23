@@ -18,7 +18,7 @@ open Microsoft.FSharp.Linq.RuntimeHelpers
 
 [<NoComparison; NoEquality; Sealed>]
 type QuerySource<'T, 'Q> (source: seq<'T>) =
-     member __.Source = source
+     member _.Source = source
 
 [<AutoOpen>]
 module Helpers =
@@ -50,98 +50,98 @@ module ForwardDeclarations =
         }
 
 type QueryBuilder() =
-    member __.For (source: QuerySource<'T, 'Q>, body: 'T -> QuerySource<'Result, 'Q2>) : QuerySource<'Result, 'Q> =
+    member _.For (source: QuerySource<'T, 'Q>, body: 'T -> QuerySource<'Result, 'Q2>) : QuerySource<'Result, 'Q> =
         QuerySource (Seq.collect (fun x -> (body x).Source) source.Source)
 
-    member __.Zero () =
+    member _.Zero () =
         QuerySource Seq.empty
 
-    member __.Yield value =
+    member _.Yield value =
         QuerySource (Seq.singleton value)
 
-    member __.YieldFrom (computation: QuerySource<'T, 'Q>) : QuerySource<'T, 'Q> =
+    member _.YieldFrom (computation: QuerySource<'T, 'Q>) : QuerySource<'T, 'Q> =
         computation
 
     // Indicates to the F# compiler that an implicit quotation is added to use of 'query'
-    member __.Quote  (quotation: Quotations.Expr<'T>) =
+    member _.Quote  (quotation: Quotations.Expr<'T>) =
         quotation
 
-    member __.Source (source: IQueryable<'T>) =
+    member _.Source (source: IQueryable<'T>) =
         QuerySource source
 
-    member __.Source (source: IEnumerable<'T>) : QuerySource<'T, System.Collections.IEnumerable> =
+    member _.Source (source: IEnumerable<'T>) : QuerySource<'T, System.Collections.IEnumerable> =
         QuerySource source
 
-    member __.Contains (source: QuerySource<'T, 'Q>, key) =
+    member _.Contains (source: QuerySource<'T, 'Q>, key) =
         Enumerable.Contains(source.Source, key)
 
-    member __.Select (source: QuerySource<'T, 'Q>, projection) : QuerySource<'U, 'Q> =
+    member _.Select (source: QuerySource<'T, 'Q>, projection) : QuerySource<'U, 'Q> =
         QuerySource (Seq.map projection source.Source)
 
-    member __.Where (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
+    member _.Where (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.Where (source.Source, Func<_, _>(predicate)) )
 
-    member __.Last (source: QuerySource<'T, 'Q>) =
+    member _.Last (source: QuerySource<'T, 'Q>) =
         Enumerable.Last source.Source
 
-    member __.LastOrDefault (source: QuerySource<'T, 'Q>) =
+    member _.LastOrDefault (source: QuerySource<'T, 'Q>) =
         Enumerable.LastOrDefault source.Source
 
-    member __.ExactlyOne (source: QuerySource<'T, 'Q>) =
+    member _.ExactlyOne (source: QuerySource<'T, 'Q>) =
         Enumerable.Single source.Source
 
-    member __.ExactlyOneOrDefault (source: QuerySource<'T, 'Q>) =
+    member _.ExactlyOneOrDefault (source: QuerySource<'T, 'Q>) =
         Enumerable.SingleOrDefault source.Source
 
-    member __.Count (source: QuerySource<'T, 'Q>) =
+    member _.Count (source: QuerySource<'T, 'Q>) =
         Enumerable.Count source.Source
 
-    member __.Distinct (source: QuerySource<'T, 'Q> when 'T : equality) : QuerySource<'T, 'Q> =
+    member _.Distinct (source: QuerySource<'T, 'Q> when 'T : equality) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.Distinct source.Source)
 
-    member __.Exists(source: QuerySource<'T, 'Q>, predicate) =
+    member _.Exists(source: QuerySource<'T, 'Q>, predicate) =
         Enumerable.Any (source.Source, Func<_, _>(predicate))
 
-    member __.All (source: QuerySource<'T, 'Q>, predicate) =
+    member _.All (source: QuerySource<'T, 'Q>, predicate) =
         Enumerable.All (source.Source, Func<_, _>(predicate))
 
-    member __.Head (source: QuerySource<'T, 'Q>) =
+    member _.Head (source: QuerySource<'T, 'Q>) =
         Enumerable.First source.Source
 
-    member __.Nth (source: QuerySource<'T, 'Q>, index) =
+    member _.Nth (source: QuerySource<'T, 'Q>, index) =
         Enumerable.ElementAt (source.Source, index)
 
-    member __.Skip (source: QuerySource<'T, 'Q>, count) : QuerySource<'T, 'Q> =
+    member _.Skip (source: QuerySource<'T, 'Q>, count) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.Skip (source.Source, count))
 
-    member __.SkipWhile (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
+    member _.SkipWhile (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.SkipWhile (source.Source, Func<_, _>(predicate)))
 
-    member __.Take (source: QuerySource<'T, 'Q>, count) : QuerySource<'T, 'Q> =
+    member _.Take (source: QuerySource<'T, 'Q>, count) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.Take (source.Source, count))
 
-    member __.TakeWhile (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
+    member _.TakeWhile (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.TakeWhile (source.Source, Func<_, _>(predicate)))
 
-    member __.Find (source: QuerySource<'T, 'Q>, predicate) =
+    member _.Find (source: QuerySource<'T, 'Q>, predicate) =
         Enumerable.First (source.Source, Func<_, _>(predicate))
 
-    member __.HeadOrDefault (source: QuerySource<'T, 'Q>) =
+    member _.HeadOrDefault (source: QuerySource<'T, 'Q>) =
         Enumerable.FirstOrDefault source.Source
 
-    member __.MinBy<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> 'Key) =
+    member _.MinBy<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> 'Key) =
         Enumerable.Min(source.Source, Func<'T, 'Key>(valueSelector))
 
-    member __.MaxBy<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> 'Key) =
+    member _.MaxBy<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> 'Key) =
         Enumerable.Max(source.Source, Func<'T, 'Key>(valueSelector))
 
-    member __.MinByNullable<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison and 'Key: (new: unit -> 'Key) and 'Key: struct and 'Key:> ValueType> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> Nullable<'Key>) =
+    member _.MinByNullable<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison and 'Key: (new: unit -> 'Key) and 'Key: struct and 'Key:> ValueType> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> Nullable<'Key>) =
         Enumerable.Min(source.Source, Func<'T, Nullable<'Key>>(valueSelector))
 
-    member __.MaxByNullable<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison and 'Key: (new: unit -> 'Key) and 'Key: struct and 'Key:> ValueType> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> Nullable<'Key>) =
+    member _.MaxByNullable<'T, 'Q, 'Key when 'Key: equality and 'Key: comparison and 'Key: (new: unit -> 'Key) and 'Key: struct and 'Key:> ValueType> (source: QuerySource<'T, 'Q>, valueSelector: 'T -> Nullable<'Key>) =
         Enumerable.Max(source.Source, Func<'T, Nullable<'Key>>(valueSelector))
 
-    member inline __.SumByNullable<'T, 'Q, ^Value
+    member inline _.SumByNullable<'T, 'Q, ^Value
                                       when ^Value :> ValueType
                                       and ^Value : struct
                                       and ^Value : (new : unit -> ^Value)
@@ -160,7 +160,7 @@ type QueryBuilder() =
                 acc <- plus acc (v.Value : ^Value)
         Nullable acc
 
-    member inline __.AverageByNullable< 'T, 'Q, ^Value
+    member inline _.AverageByNullable< 'T, 'Q, ^Value
                                           when ^Value :> ValueType
                                           and ^Value : struct
                                           and ^Value : (new : unit -> ^Value)
@@ -183,7 +183,7 @@ type QueryBuilder() =
             count <- count + 1
         if count = 0 then Nullable() else Nullable(LanguagePrimitives.DivideByInt< (^Value) > acc count)
 
-    member inline __.AverageBy< 'T, 'Q, ^Value
+    member inline _.AverageBy< 'T, 'Q, ^Value
                                   when ^Value : (static member ( + ) : ^Value * ^Value -> ^Value)
                                   and  ^Value : (static member DivideByInt : ^Value * int -> ^Value)
                                   and  ^Value : (static member Zero : ^Value)
@@ -202,7 +202,7 @@ type QueryBuilder() =
             invalidOp "source"
         LanguagePrimitives.DivideByInt< (^U) > acc count
 
-    member inline __.SumBy< 'T, 'Q, ^Value
+    member inline _.SumBy< 'T, 'Q, ^Value
                                   when ^Value : (static member ( + ) : ^Value * ^Value -> ^Value)
                                   and  ^Value : (static member Zero : ^Value)
                                   and default ^Value : int >
@@ -210,54 +210,54 @@ type QueryBuilder() =
 
         Seq.sumBy projection source.Source
 
-    member __.GroupBy (source: QuerySource<'T, 'Q>, keySelector: _ -> 'Key) : QuerySource<_, 'Q> when 'Key : equality =
+    member _.GroupBy (source: QuerySource<'T, 'Q>, keySelector: _ -> 'Key) : QuerySource<_, 'Q> when 'Key : equality =
         QuerySource (Enumerable.GroupBy(source.Source, Func<_, _>(keySelector)))
 
-    member __.SortBy (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.SortBy (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.OrderBy(source.Source, Func<_, _>(keySelector)))
 
-    member __.SortByDescending (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.SortByDescending (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.OrderByDescending(source.Source, Func<_, _>(keySelector)))
 
-    member __.ThenBy (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.ThenBy (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.ThenBy(checkThenBySource source.Source, Func<_, _>(keySelector)))
 
-    member __.ThenByDescending (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.ThenByDescending (source: QuerySource<'T, 'Q>, keySelector: 'T -> 'Key) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.ThenByDescending(checkThenBySource source.Source, Func<_, _>(keySelector)))
 
-    member __.SortByNullable (source: QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.SortByNullable (source: QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.OrderBy(source.Source, Func<_, _>(keySelector)))
 
-    member __.SortByNullableDescending (source: QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.SortByNullableDescending (source: QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.OrderByDescending(source.Source, Func<_, _>(keySelector)))
 
-    member __.ThenByNullable (source: QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.ThenByNullable (source: QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.ThenBy(checkThenBySource source.Source, Func<_, _>(keySelector)))
 
-    member __.ThenByNullableDescending (source:  QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
+    member _.ThenByNullableDescending (source:  QuerySource<'T, 'Q>, keySelector: 'T -> Nullable<'Key>) : QuerySource<'T, 'Q> when 'Key : equality and 'Key : comparison =
         QuerySource (Enumerable.ThenByDescending(checkThenBySource source.Source, Func<_, _>(keySelector)))
 
-    member __.GroupValBy<'T, 'Key, 'Result, 'Q when 'Key : equality > (source: QuerySource<'T, 'Q>, resultSelector: 'T -> 'Result, keySelector: 'T -> 'Key) : QuerySource<IGrouping<'Key, 'Result>, 'Q> =
+    member _.GroupValBy<'T, 'Key, 'Result, 'Q when 'Key : equality > (source: QuerySource<'T, 'Q>, resultSelector: 'T -> 'Result, keySelector: 'T -> 'Key) : QuerySource<IGrouping<'Key, 'Result>, 'Q> =
         QuerySource (Enumerable.GroupBy(source.Source, Func<'T, 'Key>(keySelector), Func<'T, 'Result>(resultSelector)))
 
-    member __.Join  (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector) : QuerySource<_, 'Q> =
+    member _.Join  (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector) : QuerySource<_, 'Q> =
         QuerySource (Enumerable.Join(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(resultSelector)))
 
-    member __.GroupJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
+    member _.GroupJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
         QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x g)))
 
-    member __.LeftOuterJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
+    member _.LeftOuterJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
         QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x (g.DefaultIfEmpty()))))
 
-    member __.RunQueryAsValue  (q: Quotations.Expr<'T>) : 'T =
+    member _.RunQueryAsValue  (q: Quotations.Expr<'T>) : 'T =
         ForwardDeclarations.Query.Execute q
 
-    member __.RunQueryAsEnumerable (q: Quotations.Expr<QuerySource<'T, IEnumerable>>) : IEnumerable<'T> =
+    member _.RunQueryAsEnumerable (q: Quotations.Expr<QuerySource<'T, IEnumerable>>) : IEnumerable<'T> =
         let queryAfterEliminatingNestedQueries = ForwardDeclarations.Query.EliminateNestedQueries q
         let queryAfterCleanup = Microsoft.FSharp.Linq.RuntimeHelpers.Adapters.CleanupLeaf queryAfterEliminatingNestedQueries
         (LeafExpressionConverter.EvaluateQuotation queryAfterCleanup :?> QuerySource<'T, IEnumerable>).Source
 
-    member __.RunQueryAsQueryable (q: Quotations.Expr<QuerySource<'T, IQueryable>>) : IQueryable<'T> =
+    member _.RunQueryAsQueryable (q: Quotations.Expr<QuerySource<'T, IQueryable>>) : IQueryable<'T> =
         ForwardDeclarations.Query.Execute q
 
     member this.Run q = this.RunQueryAsQueryable q

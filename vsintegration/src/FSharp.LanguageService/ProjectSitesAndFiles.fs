@@ -141,7 +141,7 @@ type internal FSharpProjectOptionsTable () =
                   projectTable.[otherProjectId] <- (refresh true, refresh)
 
     /// Add or update a project in the project table
-    member __.AddOrUpdateProject(projectId:ProjectId, refresh) =
+    member _.AddOrUpdateProject(projectId:ProjectId, refresh) =
         projectTable.[projectId] <- (refresh false, refresh)
         refreshInfoForProjectsThatReferenceThisProject(projectId)
 
@@ -157,7 +157,7 @@ type internal FSharpProjectOptionsTable () =
         | _ -> None
 
     /// Given a projectId return the most recent set of command line options for it
-    member __.GetCommandLineOptionsWithProjectId(projectId:ProjectId) =
+    member _.GetCommandLineOptionsWithProjectId(projectId:ProjectId) =
         match commandLineOptions.TryGetValue projectId with
         | true, (sources, references, options) -> sources, references, options
         | _ -> [||], [||], [||]
@@ -184,45 +184,45 @@ let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, pro
 
                 {
                     new IProjectSite with
-                        member __.Description = project.Name
-                        member __.CompilationSourceFiles = getCommandLineOptionsWithProjectId(project.Id) |> fst
-                        member __.CompilationOptions =
+                        member _.Description = project.Name
+                        member _.CompilationSourceFiles = getCommandLineOptionsWithProjectId(project.Id) |> fst
+                        member _.CompilationOptions =
                             let _,references,options = getCommandLineOptionsWithProjectId(project.Id)
                             Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                        member __.CompilationReferences = getCommandLineOptionsWithProjectId(project.Id) |> snd
+                        member _.CompilationReferences = getCommandLineOptionsWithProjectId(project.Id) |> snd
                         member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
-                        member __.ProjectFileName = project.FilePath
-                        member __.AdviseProjectSiteChanges(_,_) = ()
-                        member __.AdviseProjectSiteCleaned(_,_) = ()
-                        member __.AdviseProjectSiteClosed(_,_) = ()
-                        member __.IsIncompleteTypeCheckEnvironment = false
-                        member __.TargetFrameworkMoniker = ""
-                        member __.ProjectGuid =  project.Id.Id.ToString()
-                        member __.LoadTime = System.DateTime.Now
-                        member __.ProjectProvider = Some (x)
-                        member __.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
+                        member _.ProjectFileName = project.FilePath
+                        member _.AdviseProjectSiteChanges(_,_) = ()
+                        member _.AdviseProjectSiteCleaned(_,_) = ()
+                        member _.AdviseProjectSiteClosed(_,_) = ()
+                        member _.IsIncompleteTypeCheckEnvironment = false
+                        member _.TargetFrameworkMoniker = ""
+                        member _.ProjectGuid =  project.Id.Id.ToString()
+                        member _.LoadTime = System.DateTime.Now
+                        member _.ProjectProvider = Some (x)
+                        member _.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
                 }
         interface IVsHierarchy with
-            member __.SetSite(psp)                                    = hier.SetSite(psp)
-            member __.GetSite(psp)                                    = hier.GetSite(ref psp)
-            member __.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
-            member __.Close()                                         = hier.Close()
-            member __.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
-            member __.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
-            member __.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
-            member __.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
-            member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = 
+            member _.SetSite(psp)                                    = hier.SetSite(psp)
+            member _.GetSite(psp)                                    = hier.GetSite(ref psp)
+            member _.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
+            member _.Close()                                         = hier.Close()
+            member _.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
+            member _.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
+            member _.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
+            member _.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
+            member _.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = 
                                                                         hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, 
                                                                                                 ref ppHierarchyNested, ref pitemidNested)
-            member __.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
-            member __.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
-            member __.Unused0()                                       = hier.Unused0()
-            member __.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-            member __.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
-            member __.Unused1()                                       = hier.Unused1()
-            member __.Unused2()                                       = hier.Unused2()
-            member __.Unused3()                                       = hier.Unused3()
-            member __.Unused4()                                       = hier.Unused4()
+            member _.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
+            member _.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
+            member _.Unused0()                                       = hier.Unused0()
+            member _.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
+            member _.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
+            member _.Unused1()                                       = hier.Unused1()
+            member _.Unused2()                                       = hier.Unused2()
+            member _.Unused3()                                       = hier.Unused3()
+            member _.Unused4()                                       = hier.Unused4()
     }
 
 /// Information about projects, open files and other active artifacts in visual studio.
