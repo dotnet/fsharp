@@ -9,20 +9,20 @@ open FSharp.Compiler.Lib
 
 let mkRLinear mk (vs, body) = List.foldBack (fun v acc -> mk (v, acc)) vs body 
 
-type TypeVarData = { tvName: string; }
+type TypeVarData = { tvName: string }
 
 type NamedTypeData = 
     | Idx of int
     | Named of (* tcName: *) string *  (* tcAssembly:  *) string 
 
 type TypeCombOp = 
-    | ArrayTyOp  of int (* rank *) 
+    | ArrayTyOp of int (* rank *) 
     | FunTyOp
     | NamedTyOp of NamedTypeData
 
 type TypeData =
-    | VarType   of int
-    | AppType   of TypeCombOp * TypeData list
+    | VarType of int
+    | AppType of TypeCombOp * TypeData list
 
 let mkVarTy v = VarType v 
 let mkFunTy (x1, x2) = AppType(FunTyOp, [x1; x2])  
@@ -55,27 +55,27 @@ type CombOp =
     | LetRecOp  
     | LetRecCombOp  
     | LetOp  
-    | RecdMkOp  of NamedTypeData
-    | RecdGetOp  of NamedTypeData * string
-    | RecdSetOp  of NamedTypeData * string
-    | SumMkOp  of NamedTypeData * string
-    | SumFieldGetOp  of NamedTypeData * string * int
+    | RecdMkOp of NamedTypeData
+    | RecdGetOp of NamedTypeData * string
+    | RecdSetOp of NamedTypeData * string
+    | SumMkOp of NamedTypeData * string
+    | SumFieldGetOp of NamedTypeData * string * int
     | SumTagTestOp of NamedTypeData * string
     | TupleMkOp  
     | TupleGetOp of int
     | UnitOp   
-    | BoolOp   of bool   
+    | BoolOp of bool   
     | StringOp of string 
     | SingleOp of float32 
     | DoubleOp of float  
-    | CharOp   of char   
-    | SByteOp  of sbyte
-    | ByteOp   of byte   
-    | Int16Op  of int16  
+    | CharOp of char   
+    | SByteOp of sbyte
+    | ByteOp of byte   
+    | Int16Op of int16  
     | UInt16Op of uint16 
-    | Int32Op  of int32  
+    | Int32Op of int32  
     | UInt32Op of uint32 
-    | Int64Op  of int64  
+    | Int64Op of int64  
     | UInt64Op of uint64 
     | PropGetOp of PropInfoData
     | FieldGetOp of NamedTypeData * string
@@ -91,7 +91,7 @@ type CombOp =
     | NullOp   
     | DefaultValueOp 
     | PropSetOp of PropInfoData
-    | FieldSetOp  of NamedTypeData * string
+    | FieldSetOp of NamedTypeData * string
     | AddressOfOp
     | ExprSetOp
     | AddressSetOp
@@ -101,14 +101,14 @@ type CombOp =
 
 /// Represents specifications of a subset of F# expressions 
 type ExprData =
-    | AttrExpr   of ExprData * ExprData list
-    | CombExpr   of CombOp * TypeData list * ExprData list
-    | VarExpr    of int
-    | QuoteExpr  of ExprData 
+    | AttrExpr of ExprData * ExprData list
+    | CombExpr of CombOp * TypeData list * ExprData list
+    | VarExpr of int
+    | QuoteExpr of ExprData 
     | LambdaExpr of VarData * ExprData
-    | HoleExpr   of TypeData * int
-    | ThisVarExpr  of TypeData 
-    | QuoteRawExpr  of ExprData 
+    | HoleExpr of TypeData * int
+    | ThisVarExpr of TypeData 
+    | QuoteRawExpr of ExprData 
   
 let mkVar v = VarExpr v 
 
@@ -496,8 +496,8 @@ type ModuleDefnData =
 
 type MethodBaseData = 
     | ModuleDefn of ModuleDefnData * (string * int) option
-    | Method     of MethodData
-    | Ctor       of CtorData
+    | Method of MethodData
+    | Ctor of CtorData
 
 let pickle = pickle_obj p_expr
 

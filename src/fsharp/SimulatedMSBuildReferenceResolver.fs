@@ -7,7 +7,6 @@ open System.IO
 open System.Reflection
 open Microsoft.Win32
 open Microsoft.Build.Utilities
-open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.SourceCodeServices
 
@@ -84,7 +83,7 @@ let private SimulatedMSBuildResolver =
         | x -> [x]
 #endif
 
-    { new Resolver with
+    { new ILegacyReferenceResolver with
         member x.HighestInstalledNetFrameworkVersion() =
 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
@@ -93,7 +92,7 @@ let private SimulatedMSBuildResolver =
             | Some fw -> fw
             | None -> "v4.5"
 
-        member __.DotNetFrameworkReferenceAssembliesRootDirectory =
+        member _.DotNetFrameworkReferenceAssembliesRootDirectory =
             if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
                 let PF =
                     match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
@@ -103,7 +102,7 @@ let private SimulatedMSBuildResolver =
             else
                 ""
 
-        member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,
+        member _.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,
                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
 
 #if !FX_NO_WIN_REGISTRY
@@ -236,6 +235,7 @@ let private SimulatedMSBuildResolver =
                 with e -> logWarningOrError false "SR001" (e.ToString())
 
             results.ToArray() }
+    |> LegacyReferenceResolver
 
 let internal getResolver () = SimulatedMSBuildResolver
 

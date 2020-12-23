@@ -10,8 +10,8 @@ open Microsoft.VisualStudio.Shell
 type internal ProvideBraceCompletionAttribute(languageName: string) =
     inherit RegistrationAttribute()
 
-    override __.Register(context) =
+    override _.Register(context) =
         use key = context.CreateKey(@"Languages\Language Services\" + languageName)
         key.SetValue("ShowBraceCompletion", 1)
 
-    override __.Unregister(_) = ()
+    override _.Unregister(_) = ()

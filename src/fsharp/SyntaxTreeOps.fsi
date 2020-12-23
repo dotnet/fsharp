@@ -3,7 +3,8 @@
 module internal FSharp.Compiler.SyntaxTreeOps
 
 open FSharp.Compiler
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SyntaxTree
 
 [<Class>]

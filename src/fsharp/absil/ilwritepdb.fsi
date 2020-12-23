@@ -5,9 +5,6 @@ module internal FSharp.Compiler.AbstractIL.ILPdbWriter
 
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
-open System.Collections.Generic 
 open System.IO
 open System.Reflection.Metadata
 
@@ -20,7 +17,7 @@ type PdbLocalVar =
       Index: int32  }
 
 type PdbMethodScope = 
-    { Children: PdbMethodScope array
+    { Children: PdbMethodScope[]
       StartOffset: int
       EndOffset: int
       Locals: PdbLocalVar array
@@ -57,7 +54,6 @@ type PdbData =
       Documents: PdbDocumentData[]
       Methods: PdbMethodData[] 
       TableRowCounts: int[] }
-
 
 /// Takes the output file name and returns debug file name.
 val getDebugFileName: string -> bool -> string

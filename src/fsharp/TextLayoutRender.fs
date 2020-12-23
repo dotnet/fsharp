@@ -4,14 +4,14 @@ namespace FSharp.Compiler.TextLayout
 
 open System
 open System.IO
-open FSharp.Compiler
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Core.Printf
 
 #nowarn "62" // This construct is for ML compatibility.
 
-type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
+type NavigableTaggedText(taggedText: TaggedText, range: range) =
     inherit TaggedText(taggedText.Tag, taggedText.Text)
     member val Range = range
 

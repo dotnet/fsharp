@@ -13,11 +13,11 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 open Microsoft.DotNet.DependencyManager
@@ -220,12 +220,12 @@ type internal IncrementalBuilder =
       /// Await the untyped parse results for a particular slot in the vector of parse results.
       ///
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
-      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
+      member GetParseResultsForFile: CompilationThreadToken * filename:string -> Cancellable<ParsedInput option * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]>
 
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
           CompilationThreadToken *
-          ReferenceResolver.Resolver *
+          LegacyReferenceResolver *
           defaultFSharpBinariesDir: string * 
           FrameworkImportsCache *
           loadClosureOpt:LoadClosure option *

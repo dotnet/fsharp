@@ -25,7 +25,7 @@ open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Lib
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals

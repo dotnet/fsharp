@@ -1545,13 +1545,6 @@ type ILMethodVirtualInfo =
       IsCheckAccessOnOverride: bool
       IsAbstract: bool }
 
-type MethodKind =
-    | Static
-    | Cctor
-    | Ctor
-    | NonVirtual
-    | Virtual of ILMethodVirtualInfo
-
 [<RequireQualifiedAccess>]
 type MethodBody =
     | IL of ILMethodBody
@@ -1564,6 +1557,7 @@ type ILLazyMethodBody =
     | ILLazyMethodBody of Lazy<MethodBody >
 
     member x.Contents = let (ILLazyMethodBody mb) = x in mb.Force()
+    static member NotAvailable = ILLazyMethodBody (notlazy MethodBody.NotAvailable)
 
 [<RequireQualifiedAccess>]
 type MethodCodeKind =
@@ -1638,29 +1632,29 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
                     storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
     // The captured data - remember the object will be as large as the data captured by these members
-    member __.Name = name
+    member _.Name = name
 
-    member __.Attributes = attributes
+    member _.Attributes = attributes
 
-    member __.ImplAttributes = implAttributes
+    member _.ImplAttributes = implAttributes
 
-    member __.CallingConv = callingConv
+    member _.CallingConv = callingConv
 
-    member __.Parameters = parameters
+    member _.Parameters = parameters
 
-    member __.Return = ret
+    member _.Return = ret
 
-    member __.Body = body
+    member _.Body = body
 
-    member __.SecurityDeclsStored = securityDeclsStored
+    member _.SecurityDeclsStored = securityDeclsStored
 
-    member __.IsEntryPoint = isEntryPoint
+    member _.IsEntryPoint = isEntryPoint
 
-    member __.GenericParams = genericParams
+    member _.GenericParams = genericParams
 
-    member __.CustomAttrsStored = customAttrsStored
+    member _.CustomAttrsStored = customAttrsStored
 
-    member __.MetadataIndex = metadataIndex
+    member _.MetadataIndex = metadataIndex
 
     member x.With (?name: string, ?attributes: MethodAttributes, ?implAttributes: MethodImplAttributes,
                    ?callingConv: ILCallingConv, ?parameters: ILParameters, ?ret: ILReturn,
@@ -1795,15 +1789,15 @@ type ILEventDef(eventType: ILType option, name: string, attributes: EventAttribu
     new (eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, customAttrs) =
         ILEventDef(eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
-    member __.EventType = eventType
-    member __.Name = name
-    member __.Attributes = attributes
-    member __.AddMethod = addMethod
-    member __.RemoveMethod = removeMethod
-    member __.FireMethod = fireMethod
-    member __.OtherMethods = otherMethods
-    member __.CustomAttrsStored = customAttrsStored
-    member __.MetadataIndex = metadataIndex
+    member _.EventType = eventType
+    member _.Name = name
+    member _.Attributes = attributes
+    member _.AddMethod = addMethod
+    member _.RemoveMethod = removeMethod
+    member _.FireMethod = fireMethod
+    member _.OtherMethods = otherMethods
+    member _.CustomAttrsStored = customAttrsStored
+    member _.MetadataIndex = metadataIndex
     member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
 
     member x.With(?eventType, ?name, ?attributes, ?addMethod, ?removeMethod, ?fireMethod, ?otherMethods, ?customAttrs) =
@@ -1898,13 +1892,13 @@ type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, da
 
     new (name, fieldType, attributes, data, literalValue, offset, marshal, customAttrs) =
         ILFieldDef(name, fieldType, attributes, data, literalValue, offset, marshal, storeILCustomAttrs customAttrs, NoMetadataIdx)
-    member __.Name=name
-    member __.FieldType = fieldType
-    member __.Attributes=attributes
-    member __.Data=data
-    member __.LiteralValue=literalValue
-    member __.Offset=offset
-    member __.Marshal=marshal
+    member _.Name=name
+    member _.FieldType = fieldType
+    member _.Attributes=attributes
+    member _.Data=data
+    member _.LiteralValue=literalValue
+    member _.Offset=offset
+    member _.Marshal=marshal
     member x.CustomAttrsStored = customAttrsStored
     member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
     member x.MetadataIndex = metadataIndex
@@ -2072,21 +2066,21 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =
        ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
-    member __.Name = name
-    member __.Attributes = attributes
-    member __.GenericParams = genericParams
-    member __.Layout = layout
-    member __.NestedTypes = nestedTypes
-    member __.Implements = implements
-    member __.Extends = extends
-    member __.Methods = methods
-    member __.SecurityDeclsStored = securityDeclsStored
-    member __.Fields = fields
-    member __.MethodImpls = methodImpls
-    member __.Events = events
-    member __.Properties = properties
-    member __.CustomAttrsStored = customAttrsStored
-    member __.MetadataIndex = metadataIndex
+    member _.Name = name
+    member _.Attributes = attributes
+    member _.GenericParams = genericParams
+    member _.Layout = layout
+    member _.NestedTypes = nestedTypes
+    member _.Implements = implements
+    member _.Extends = extends
+    member _.Methods = methods
+    member _.SecurityDeclsStored = securityDeclsStored
+    member _.Fields = fields
+    member _.MethodImpls = methodImpls
+    member _.Events = events
+    member _.Properties = properties
+    member _.CustomAttrsStored = customAttrsStored
+    member _.MetadataIndex = metadataIndex
 
     member x.With(?name, ?attributes, ?layout, ?implements, ?genericParams, ?extends, ?methods, ?nestedTypes, ?fields, ?methodImpls, ?events, ?properties, ?customAttrs, ?securityDecls) =
         ILTypeDef(name=defaultArg name x.Name,
@@ -2183,8 +2177,8 @@ and [<Sealed>] ILPreTypeDefImpl(nameSpace: string list, name: string, metadataIn
     let mutable store : ILTypeDef = Unchecked.defaultof<_>
 
     interface ILPreTypeDef with
-        member __.Namespace = nameSpace
-        member __.Name = name
+        member _.Namespace = nameSpace
+        member _.Name = name
 
         member x.GetTypeDef() =
             match box store with
@@ -2288,6 +2282,7 @@ type ILAssemblyLongevity =
     | PlatformProcess
     | PlatformSystem
 
+    static member Default = Unspecified
 
 type ILAssemblyManifest =
     { Name: string
@@ -3221,6 +3216,7 @@ let mkILNestedExportedTypesLazy (l: Lazy<_>) =
     ILNestedExportedTypes (lazy (List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
 
 let mkILResources l = ILResources l
+let emptyILResources = ILResources []
 
 let addMethodImplToTable y tab =
     let key = (y.Overrides.MethodRef.Name, y.Overrides.MethodRef.ArgTypes.Length)

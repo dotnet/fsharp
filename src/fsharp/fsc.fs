@@ -42,15 +42,14 @@ open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -101,10 +100,10 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
 let ConsoleErrorLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter : Exiter) = 
     { new ErrorLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleErrorLoggerUpToMaxErrors") with
             
-            member __.HandleTooManyErrors(text : string) = 
+            member _.HandleTooManyErrors(text : string) = 
                 DoWithErrorColor false (fun () -> Printf.eprintfn "%s" text)
 
-            member __.HandleIssue(tcConfigB, err, isError) =
+            member _.HandleIssue(tcConfigB, err, isError) =
                 DoWithErrorColor isError (fun () -> 
                     let diag = OutputDiagnostic (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths, tcConfigB.flatErrors, tcConfigB.errorStyle, isError)
                     writeViaBuffer stderr diag err
@@ -135,7 +134,7 @@ type InProcErrorLoggerProvider() =
     let errors = ResizeArray()
     let warnings = ResizeArray()
 
-    member __.Provider = 
+    member _.Provider = 
         { new ErrorLoggerProvider() with
 
             member log.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
@@ -154,9 +153,9 @@ type InProcErrorLoggerProvider() =
                         container.AddRange(errs) }
                 :> ErrorLogger }
 
-    member __.CapturedErrors = errors.ToArray()
+    member _.CapturedErrors = errors.ToArray()
 
-    member __.CapturedWarnings = warnings.ToArray()
+    member _.CapturedWarnings = warnings.ToArray()
 
 /// The default ErrorLogger implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider() = 
@@ -969,7 +968,7 @@ let mainCompile
     let savedOut = System.Console.Out
     use __ =
         { new IDisposable with
-            member __.Dispose() = 
+            member _.Dispose() = 
                 try 
                     System.Console.SetOut(savedOut)
                 with _ -> ()}

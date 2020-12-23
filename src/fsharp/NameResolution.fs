@@ -22,15 +22,17 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Text
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
@@ -1909,14 +1911,14 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedNameResolutionIdentifiers =
         new System.Collections.Generic.HashSet<pos * string>
             ( { new IEqualityComparer<_> with
-                    member __.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
-                    member __.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 } )
+                    member _.GetHashCode((p: pos, i)) = p.Line + 101 * p.Column + hash i
+                    member _.Equals((p1, i1), (p2, i2)) = posEq p1 p2 && i1 =  i2 } )
 
     let capturedModulesAndNamespaces =
         new System.Collections.Generic.HashSet<range * Item>
             ( { new IEqualityComparer<range * Item> with
-                    member __.GetHashCode ((m, _)) = hash m
-                    member __.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 } )
+                    member _.GetHashCode ((m, _)) = hash m
+                    member _.Equals ((m1, item1), (m2, item2)) = Range.equals m1 m2 && ItemsAreEffectivelyEqual tcGlobals item1 item2 } )
 
     let allowedRange (m: range) =
         not m.IsSynthetic

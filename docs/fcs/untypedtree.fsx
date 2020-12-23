@@ -84,7 +84,7 @@ code](https://github.com/fsharp/fsharp/blob/master/src/fsharp/ast.fs#L464).
 
 The relevant parts are in the following namespace:
 *)
-open FSharp.Compiler.Ast
+open FSharp.Compiler.SyntaxTree
 (**
 
 When processing the AST, you will typically write a number of mutually recursive functions
@@ -126,7 +126,8 @@ options). In the following, we only show how to handle `if .. then ..` and `let 
 /// Walk over an expression - if expression contains two or three 
 /// sub-expressions (two if the 'else' branch is missing), let expression
 /// contains pattern and two sub-expressions
-let rec visitExpression = function
+let rec visitExpression e = 
+  match e with
   | SynExpr.IfThenElse(cond, trueBranch, falseBranchOpt, _, _, _, _) ->
       // Visit all sub-expressions
       printfn "Conditional:"

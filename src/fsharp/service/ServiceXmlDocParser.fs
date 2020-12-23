@@ -3,9 +3,9 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.XmlDoc
 
 /// Represent an Xml documentation block in source code

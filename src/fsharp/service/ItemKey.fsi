@@ -4,15 +4,16 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System
 
+open FSharp.Compiler
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 
 /// Stores a list of item key strings and their ranges in a memory mapped file.
 [<Sealed>]
 type internal ItemKeyStore =
     interface IDisposable
 
-    member FindAll: Item -> range seq
+    member FindAll: Item -> seq<range>
 
 /// A builder that will build an item key store based on the written Item and its associated range.
 [<Sealed>]

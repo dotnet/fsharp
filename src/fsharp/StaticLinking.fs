@@ -15,7 +15,8 @@ open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -89,7 +90,7 @@ type TypeForwarding (tcImports: TcImports) =
         if scoref1 === scoref2 then tref
         else ILTypeRef.Create (scoref2, tref.Enclosing, tref.Name)
 
-    member __.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
+    member _.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
 
 let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
 

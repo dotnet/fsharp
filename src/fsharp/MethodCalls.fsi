@@ -6,27 +6,15 @@ module internal FSharp.Compiler.MethodCalls
 open Internal.Utilities
 
 open FSharp.Compiler 
-open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Internal.Library 
 open FSharp.Compiler.AccessibilityLogic
-open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TypedTreeOps.DebugPrint
-open FSharp.Compiler.TypeRelations
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

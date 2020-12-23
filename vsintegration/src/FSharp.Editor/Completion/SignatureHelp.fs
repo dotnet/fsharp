@@ -11,10 +11,11 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 
 open Microsoft.VisualStudio.Shell
 
-open FSharp.Compiler
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TextLayout
 
 type SignatureHelpParameterInfo =
     { ParameterName: string
@@ -325,7 +326,7 @@ type internal FSharpSignatureHelpProvider
                         | None ->
                             let possibleNextIndex =
                                 curriedArgsInSource
-                                |> Array.tryFindIndex(fun argRange -> Range.posGeq argRange.Start caretPos)
+                                |> Array.tryFindIndex(fun argRange -> Pos.posGeq argRange.Start caretPos)
 
                             match possibleNextIndex with
                             | Some index -> Some index
@@ -360,32 +361,45 @@ type internal FSharpSignatureHelpProvider
                     let displayArgs = ResizeArray()
 
                     // Offset by 1 here until we support reverse indexes in this codebase
-                    for argument in definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] do
+                    definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] |> Array.iteri (fun index argument ->
                         let taggedText = ResizeArray()
                         let tt = ResizeArray()
                         let layout = argument.Type.FormatLayout symbolUse.DisplayContext
                         LayoutRender.emitL taggedText.Add layout |> ignore
                         for part in taggedText do
                             RoslynHelpers.CollectTaggedText tt part
+                            
+                        let name =
+                            if String.IsNullOrWhiteSpace(argument.DisplayName) then
+                                "arg" + string index
+                            else
+                                argument.DisplayName
 
                         let display =
                             [|
-                                RoslynTaggedText(TextTags.Local, argument.DisplayName)
+                                RoslynTaggedText(TextTags.Local, name)
                                 RoslynTaggedText(TextTags.Punctuation, ":")
                                 RoslynTaggedText(TextTags.Space, " ")
                             |]
                             |> ResizeArray
 
+                        if argument.Type.IsFunctionType then
+                            display.Add(RoslynTaggedText(TextTags.Punctuation, "("))
+
                         display.AddRange(tt)
 
+                        if argument.Type.IsFunctionType then
+                            display.Add(RoslynTaggedText(TextTags.Punctuation, ")"))
+
                         let info =
-                            { ParameterName = argument.DisplayName
+                            { ParameterName = name
                               IsOptional = false
-                              CanonicalTypeTextForSorting = argument.FullName
+                              // No need to do anything different here, as this field is only relevant for overloaded parameter names in methods.
+                              CanonicalTypeTextForSorting = name
                               Documentation = ResizeArray()
                               DisplayParts = display }
 
-                        displayArgs.Add(info)
+                        displayArgs.Add(info))
 
                     do! Option.guard (displayArgs.Count > 0)
 

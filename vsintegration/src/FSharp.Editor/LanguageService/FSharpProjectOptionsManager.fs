@@ -33,22 +33,22 @@ module private FSharpProjectOptionsHelpers =
         let mutable errorReporter = Unchecked.defaultof<_>
         {
             new IProjectSite with
-                member __.Description = project.Name
-                member __.CompilationSourceFiles = sourcePaths
-                member __.CompilationOptions =
+                member _.Description = project.Name
+                member _.CompilationSourceFiles = sourcePaths
+                member _.CompilationOptions =
                     Array.concat [options; referencePaths |> Array.map(fun r -> "-r:" + r)]
-                member __.CompilationReferences = referencePaths
+                member _.CompilationReferences = referencePaths
                 member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
-                member __.ProjectFileName = project.FilePath
-                member __.AdviseProjectSiteChanges(_,_) = ()
-                member __.AdviseProjectSiteCleaned(_,_) = ()
-                member __.AdviseProjectSiteClosed(_,_) = ()
-                member __.IsIncompleteTypeCheckEnvironment = false
-                member __.TargetFrameworkMoniker = ""
-                member __.ProjectGuid =  project.Id.Id.ToString()
-                member __.LoadTime = System.DateTime.Now
-                member __.ProjectProvider = None
-                member __.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
+                member _.ProjectFileName = project.FilePath
+                member _.AdviseProjectSiteChanges(_,_) = ()
+                member _.AdviseProjectSiteCleaned(_,_) = ()
+                member _.AdviseProjectSiteClosed(_,_) = ()
+                member _.IsIncompleteTypeCheckEnvironment = false
+                member _.TargetFrameworkMoniker = ""
+                member _.ProjectGuid =  project.Id.Id.ToString()
+                member _.LoadTime = System.DateTime.Now
+                member _.ProjectProvider = None
+                member _.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
         }
 
     let hasProjectVersionChanged (oldProject: Project) (newProject: Project) =
@@ -304,31 +304,31 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
     let agent = MailboxProcessor.Start((fun agent -> loop agent), cancellationToken = cancellationTokenSource.Token)
 
-    member __.TryGetOptionsByProjectAsync(project, ct) =
+    member _.TryGetOptionsByProjectAsync(project, ct) =
         agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByProject(project, reply, ct))
 
-    member __.TryGetOptionsByDocumentAsync(document, ct, userOpName) =
+    member _.TryGetOptionsByDocumentAsync(document, ct, userOpName) =
         agent.PostAndAsyncReply(fun reply -> FSharpProjectOptionsMessage.TryGetOptionsByDocument(document, reply, ct, userOpName))
 
-    member __.ClearOptionsByProjectId(projectId) =
+    member _.ClearOptionsByProjectId(projectId) =
         agent.Post(FSharpProjectOptionsMessage.ClearOptions(projectId))
 
-    member __.ClearSingleFileOptionsCache(documentId) =
+    member _.ClearSingleFileOptionsCache(documentId) =
         agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
 
-    member __.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
+    member _.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
         cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
 
-    member __.SetLegacyProjectSite (projectId, projectSite) =
+    member _.SetLegacyProjectSite (projectId, projectSite) =
         legacyProjectSites.[projectId] <- projectSite
 
-    member __.TryGetCachedOptionsByProjectId(projectId) =
+    member _.TryGetCachedOptionsByProjectId(projectId) =
         match cache.TryGetValue(projectId) with
         | true, result -> Some(result)
         | _ -> None
 
     interface IDisposable with
-        member __.Dispose() = 
+        member _.Dispose() = 
             cancellationTokenSource.Cancel()
             cancellationTokenSource.Dispose() 
             (agent :> IDisposable).Dispose()
@@ -362,7 +362,7 @@ type internal FSharpProjectOptionsManager
             | _ -> ()
         )
 
-    member __.SetLegacyProjectSite (projectId, projectSite) =
+    member _.SetLegacyProjectSite (projectId, projectSite) =
         reactor.SetLegacyProjectSite (projectId, projectSite)
 
     /// Clear a project from the project table
@@ -413,7 +413,7 @@ type internal FSharpProjectOptionsManager
     /// This handles commandline change notifications from the Dotnet Project-system
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
-    member __.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
@@ -432,4 +432,4 @@ type internal FSharpProjectOptionsManager
 
         reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
-    member __.Checker = checkerProvider.Checker
+    member _.Checker = checkerProvider.Checker

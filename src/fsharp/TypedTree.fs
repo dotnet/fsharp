@@ -19,12 +19,14 @@ open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.QuotationPickler
-open FSharp.Compiler.Range
 open FSharp.Compiler.Rational
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.XmlDoc
 open FSharp.Core.Printf
 
@@ -2049,7 +2051,7 @@ type TyparOptionalData =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override __.ToString() = sprintf "TyparOptionalData(...)"
+    override _.ToString() = sprintf "TyparOptionalData(...)"
 
 type TyparData = Typar
 
@@ -3040,7 +3042,7 @@ type ValPublicPath =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override __.ToString() = sprintf "ValPubPath(...)"
+    override _.ToString() = sprintf "ValPubPath(...)"
 
 /// Represents an index into the namespace/module structure of an assembly
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -4332,7 +4334,7 @@ type ActivePatternElemRef =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override __.ToString() = "ActivePatternElemRef(...)"
+    override _.ToString() = "ActivePatternElemRef(...)"
 
 /// Records the "extra information" for a value compiled as a method (rather
 /// than a closure or a local), including argument names, attributes etc.
@@ -4378,7 +4380,7 @@ type ValReprInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override __.ToString() = "ValReprInfo(...)"
+    override _.ToString() = "ValReprInfo(...)"
 
 /// Records the "extra information" for an argument compiled as a real
 /// method argument, specifically the argument name and attributes.
@@ -4397,7 +4399,7 @@ type ArgReprInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override __.ToString() = "ArgReprInfo(...)"
+    override _.ToString() = "ArgReprInfo(...)"
 
 /// Records the extra metadata stored about typars for type parameters
 /// compiled as "real" IL type parameters, specifically for values with 
@@ -4974,7 +4976,7 @@ type ModuleOrNamespaceBinding =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override __.ToString() = "ModuleOrNamespaceBinding(...)"
+    override _.ToString() = "ModuleOrNamespaceBinding(...)"
 
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
@@ -5234,7 +5236,7 @@ type PickledCcuInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override __.ToString() = "PickledCcuInfo(...)"
+    override _.ToString() = "PickledCcuInfo(...)"
 
 
 /// Represents a set of free local values. Computed and cached by later phases
@@ -5644,7 +5646,7 @@ type Construct() =
         | Some (filePath, line, column) -> 
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
-            let pos = Range.mkPos line (max 0 (column - 1)) 
+            let pos = Pos.mkPos line (max 0 (column - 1)) 
             Range.mkRange filePath pos pos |> Some
 #endif
 

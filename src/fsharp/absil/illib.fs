@@ -86,10 +86,10 @@ let notFound() = raise (KeyNotFoundException())
 
 module Order = 
     let orderBy (p : 'T -> 'U) = 
-        { new IComparer<'T> with member __.Compare(x, xx) = compare (p x) (p xx) }
+        { new IComparer<'T> with member _.Compare(x, xx) = compare (p x) (p xx) }
 
     let orderOn p (pxOrder: IComparer<'U>) = 
-        { new IComparer<'T> with member __.Compare(x, xx) = pxOrder.Compare (p x, p xx) }
+        { new IComparer<'T> with member _.Compare(x, xx) = pxOrder.Compare (p x, p xx) }
 
     let toFunction (pxOrder: IComparer<'U>) x y = pxOrder.Compare(x, y)
 
@@ -118,7 +118,7 @@ module Array =
 
     let order (eltOrder: IComparer<'T>) = 
         { new IComparer<array<'T>> with 
-              member __.Compare(xs, ys) = 
+              member _.Compare(xs, ys) = 
                   let c = compare xs.Length ys.Length 
                   if c <> 0 then c else
                   let rec loop i = 
@@ -349,7 +349,7 @@ module List =
 
     let order (eltOrder: IComparer<'T>) =
         { new IComparer<list<'T>> with 
-              member __.Compare(xs, ys) = 
+              member _.Compare(xs, ys) = 
                   let rec loop xs ys = 
                       match xs, ys with
                       | [], [] -> 0
@@ -648,7 +648,7 @@ let AssumeLockWithoutEvidence<'LockTokenType when 'LockTokenType :> LockToken> (
 /// Encapsulates a lock associated with a particular token-type representing the acquisition of that lock.
 type Lock<'LockTokenType when 'LockTokenType :> LockToken>() = 
     let lockObj = obj()
-    member __.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
+    member _.AcquireLock f = lock lockObj (fun () -> f (AssumeLockWithoutEvidence<'LockTokenType>()))
 
 //---------------------------------------------------
 // Misc
@@ -1087,9 +1087,9 @@ module IPartialEqualityComparer =
 
     let On f (c: IPartialEqualityComparer<_>) = 
           { new IPartialEqualityComparer<_> with 
-                member __.InEqualityRelation x = c.InEqualityRelation (f x)
-                member __.Equals(x, y) = c.Equals(f x, f y)
-                member __.GetHashCode x = c.GetHashCode(f x) }
+                member _.InEqualityRelation x = c.InEqualityRelation (f x)
+                member _.Equals(x, y) = c.Equals(f x, f y)
+                member _.GetHashCode x = c.GetHashCode(f x) }
     
     // Wrapper type for use by the 'partialDistinctBy' function
     [<StructuralEquality; NoComparison>]
@@ -1099,9 +1099,9 @@ module IPartialEqualityComparer =
     let partialDistinctBy (per: IPartialEqualityComparer<'T>) seq =
         let wper = 
             { new IPartialEqualityComparer<WrapType<'T>> with
-                member __.InEqualityRelation (Wrap x) = per.InEqualityRelation x
-                member __.Equals(Wrap x, Wrap y) = per.Equals(x, y)
-                member __.GetHashCode (Wrap x) = per.GetHashCode x }
+                member _.InEqualityRelation (Wrap x) = per.InEqualityRelation x
+                member _.Equals(Wrap x, Wrap y) = per.Equals(x, y)
+                member _.GetHashCode (Wrap x) = per.GetHashCode x }
         // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
         let dict = Dictionary<WrapType<'T>, obj>(wper)
         seq |> List.filter (fun v -> 

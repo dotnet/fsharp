@@ -5,8 +5,7 @@ module Tests.ServiceAnalysis.UnusedOpens
 open System
 open NUnit.Framework
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
-
+open FSharp.Compiler.Text
 
 /// like "should equal", but validates same-type
 let shouldEqual (x: 'a) (y: 'a) = Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
@@ -221,7 +220,7 @@ let ``open declaration is not marked as unused if an extension property is used`
     """
 module Module =
     type System.String with
-        member __.ExtensionProperty = ()
+        member _.ExtensionProperty = ()
 open Module
 let _ = "a long string".ExtensionProperty
 """
@@ -232,7 +231,7 @@ let ``open declaration is marked as unused if an extension property is not used`
     """
 module Module =
     type System.String with
-        member __.ExtensionProperty = ()
+        member _.ExtensionProperty = ()
 open Module
 let _ = "a long string".Trim()
 """
@@ -244,7 +243,7 @@ let ``open declaration is not marked as unused if an extension method is used``(
 type Class() = class end
 module Module =
     type Class with
-        member __.ExtensionMethod() = ()
+        member _.ExtensionMethod() = ()
 open Module
 let x = Class()
 let _ = x.ExtensionMethod()
@@ -257,7 +256,7 @@ let ``open declaration is marked as unused if an extension method is not used``(
 type Class() = class end
 module Module =
     type Class with
-        member __.ExtensionMethod() = ()
+        member _.ExtensionMethod() = ()
 open Module
 let x = Class()
 """
@@ -582,7 +581,7 @@ let ``open declaration is not marked as unused if a related type extension is us
 module Module =
     open System
     type String with
-        member __.Method() = ()
+        member _.Method() = ()
 """
     => []
 
@@ -593,7 +592,7 @@ open System.IO.Compression
 
 type OutliningHint() as self =
     do self.E.Add (fun (e: GZipStream) -> ()) 
-    member __.E: IEvent<_> = Unchecked.defaultof<_> 
+    member _.E: IEvent<_> = Unchecked.defaultof<_> 
 """
     => []
 
@@ -636,7 +635,7 @@ type IInterface =
 
 type IClass() =
     interface IInterface with
-        member __.Property = 0
+        member _.Property = 0
 
 let f (x: IClass) = (x :> IInterface).Property
 """

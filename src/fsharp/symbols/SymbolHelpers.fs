@@ -22,8 +22,11 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender
@@ -233,7 +236,7 @@ module ErrorHelpers =
 type FSharpXmlDoc =
     | None
     | Text of unprocessedLines: string[] * elaboratedXmlLines: string[]
-    | XmlDocFileSignature of (*File and Signature*) string * string
+    | XmlDocFileSignature of file: string * xmlSig: string
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
@@ -244,6 +247,7 @@ type FSharpToolTipElementData<'T> =
       TypeMapping: 'T list
       Remarks: 'T option
       ParamName : string option }
+
     static member Create(layout:'T, xml, ?typeMapping, ?paramName, ?remarks) = 
         { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks }
 
@@ -253,17 +257,16 @@ type FSharpToolTipElement<'T> =
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
-    | Group of FSharpToolTipElementData<'T> list
+    | Group of elements: FSharpToolTipElementData<'T> list
 
     /// An error occurred formatting this element
-    | CompositionError of string
+    | CompositionError of errorText: string
 
     static member Single(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
         Group [ FSharpToolTipElementData<'T>.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks) ]
 
 /// A single data tip display element with where text is expressed as string
 type public FSharpToolTipElement = FSharpToolTipElement<string>
-
 
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
 type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
@@ -281,6 +284,7 @@ module FSharpToolTip =
         match tooltip with
         | FSharpStructuredToolTipElement.None -> 
             FSharpToolTipElement.None
+
         | FSharpStructuredToolTipElement.Group l -> 
             FSharpToolTipElement.Group(l |> List.map(fun x -> 
                 { MainDescription=showL x.MainDescription
@@ -288,6 +292,7 @@ module FSharpToolTip =
                   TypeMapping=List.map showL x.TypeMapping
                   ParamName=x.ParamName
                   Remarks= Option.map showL x.Remarks }))
+
         | FSharpStructuredToolTipElement.CompositionError text -> 
             FSharpToolTipElement.CompositionError text
 
@@ -318,7 +323,6 @@ type CompletionItem =
       Type: TyconRef option
       Unresolved: FSharpUnresolvedSymbol option }
     member x.Item = x.ItemWithInst.Item
-      
 
 [<AutoOpen>]
 module internal SymbolHelpers = 
@@ -341,7 +345,6 @@ module internal SymbolHelpers =
         | None -> eref.Range 
         | Some false -> eref.DefinitionRange 
         | Some true -> eref.SigRange
-
    
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
@@ -423,7 +426,6 @@ module internal SymbolHelpers =
             minfo.ArbitraryValRef 
             |> Option.bind ccuOfValRef 
             |> Option.orElseWith (fun () -> minfo.DeclaringTyconRef |> computeCcuOfTyconRef)
-
 
     let rec ccuOfItem (g: TcGlobals) d = 
         match d with

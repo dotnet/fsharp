@@ -9,9 +9,9 @@ open System.Text
 open System.Diagnostics
 open System.Collections.Generic
 open System.Reflection
-open FSharp.Compiler.Text
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 #if FX_NO_APP_DOMAINS
 open System.Runtime.Loader
 #endif
@@ -239,7 +239,7 @@ let main argv = 0"""
         let args =
             options
             |> Array.append defaultProjectOptions.OtherOptions
-            |> Array.append [| "fsc.exe"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
+            |> Array.append [| "fsc.dll"; inputFilePath; "-o:" + outputFilePath; (if isExe then "--target:exe" else "--target:library"); "--nowin32manifest" |]
         let errors, _ = checker.Compile args |> Async.RunSynchronously
         errors, outputFilePath
 
