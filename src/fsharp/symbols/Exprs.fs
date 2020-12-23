@@ -6,11 +6,11 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.QuotationTranslator
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -78,7 +78,7 @@ module ExprTranslationImpl =
         member env.BindCurriedVals vsl = 
             (env, vsl) ||> List.fold (fun env vs -> env.BindVals vs) 
 
-    exception IgnoringPartOfQuotedTermWarning of string * Range.range
+    exception IgnoringPartOfQuotedTermWarning of string * range
 
     let wfail (msg, m: range) = failwith (msg + sprintf " at %s" (m.ToString()))
 
@@ -135,10 +135,10 @@ type E =
 
 /// Used to represent the information at an object expression member 
 and [<Sealed>]  FSharpObjectExprOverride(sgn: FSharpAbstractSignature, gps: FSharpGenericParameter list, args: FSharpMemberOrFunctionOrValue list list, body: FSharpExpr) = 
-    member __.Signature = sgn
-    member __.GenericParameters = gps
-    member __.CurriedParameterGroups = args
-    member __.Body = body
+    member _.Signature = sgn
+    member _.GenericParameters = gps
+    member _.CurriedParameterGroups = args
+    member _.Body = body
 
 /// The type of expressions provided through the compiler API.
 and [<Sealed>] FSharpExpr (cenv, f: (unit -> FSharpExpr) option, e: E, m: range, ty) =
@@ -1311,13 +1311,13 @@ type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: TypedImplFile list) =
 
     new (tcGlobals, thisCcu, thisCcuType, tcImports, mimpls) = FSharpAssemblyContents(SymbolEnv(tcGlobals, thisCcu, thisCcuType, tcImports), mimpls)
 
-    member __.ImplementationFiles = 
+    member _.ImplementationFiles = 
         [ for mimpl in mimpls -> FSharpImplementationFileContents(cenv, mimpl)]
 
 and FSharpImplementationFileDeclaration = 
-    | Entity of FSharpEntity * FSharpImplementationFileDeclaration list
-    | MemberOrFunctionOrValue  of FSharpMemberOrFunctionOrValue * FSharpMemberOrFunctionOrValue list list * FSharpExpr
-    | InitAction of FSharpExpr
+    | Entity of entity: FSharpEntity * declarations: FSharpImplementationFileDeclaration list
+    | MemberOrFunctionOrValue of value: FSharpMemberOrFunctionOrValue * curriedArgs: FSharpMemberOrFunctionOrValue list list * body: FSharpExpr
+    | InitAction of action: FSharpExpr
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
     let (TImplFile (qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes)) = mimpl 
@@ -1357,11 +1357,11 @@ and FSharpImplementationFileContents(cenv, mimpl) =
         | TMDefs mdefs -> 
             [ for mdef in mdefs do yield! getDecls mdef ]
 
-    member __.QualifiedName = qname.Text
-    member __.FileName = qname.Range.FileName
-    member __.Declarations = getDecls mdef 
-    member __.HasExplicitEntryPoint = hasExplicitEntryPoint
-    member __.IsScript = isScript
+    member _.QualifiedName = qname.Text
+    member _.FileName = qname.Range.FileName
+    member _.Declarations = getDecls mdef 
+    member _.HasExplicitEntryPoint = hasExplicitEntryPoint
+    member _.IsScript = isScript
 
 
 module BasicPatterns = 

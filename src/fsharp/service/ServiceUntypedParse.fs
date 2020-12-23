@@ -13,13 +13,16 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Text.RegularExpressions
  
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 /// Methods for dealing with F# sources files.
 module SourceFile =
@@ -66,25 +69,32 @@ type InheritanceContext =
 
 [<RequireQualifiedAccess>]
 type RecordContext =
-    | CopyOnUpdate of range * CompletionPath // range of copy-expr + current field
-    | Constructor of string // typename
-    | New of CompletionPath
+    | CopyOnUpdate of range: range * path: CompletionPath
+    | Constructor of typeName: string
+    | New of path: CompletionPath
 
 [<RequireQualifiedAccess>]
 type CompletionContext = 
-    // completion context cannot be determined due to errors
+    /// Completion context cannot be determined due to errors
     | Invalid
-    // completing something after the inherit keyword
-    | Inherit of InheritanceContext * CompletionPath
-    // completing records field
-    | RecordField of RecordContext
+
+    /// Completing something after the inherit keyword
+    | Inherit of context: InheritanceContext * path: CompletionPath
+
+    /// Completing records field
+    | RecordField of context: RecordContext
+
     | RangeOperator
-    // completing named parameters\setters in parameter list of constructor\method calls
-    // end of name ast node * list of properties\parameters that were already set
+
+    /// Completing named parameters\setters in parameter list of constructor\method calls
+    /// end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
+
     | AttributeApplication
+
     | OpenDeclaration of isOpenType: bool
-    /// completing pattern type (e.g. foo (x: |))
+
+    /// Completing pattern type (e.g. foo (x: |))
     | PatternType
 
 //----------------------------------------------------------------------------
@@ -94,11 +104,11 @@ type CompletionContext =
 [<Sealed>]
 type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput option, parseHadErrors: bool, dependencyFiles: string[]) = 
 
-    member scope.Errors = errors
+    member _.Errors = errors
 
-    member scope.ParseHadErrors = parseHadErrors
+    member _.ParseHadErrors = parseHadErrors
 
-    member scope.ParseTree = input
+    member _.ParseTree = input
 
     member scope.TryRangeOfNameOfNearestOuterBindingContainingPos pos =
         let tryGetIdentRangeFromBinding binding =
@@ -258,7 +268,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         match scope.ParseTree with
         | Some parseTree ->
             AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
-                member __.VisitExpr(_path, _, defaultTraverse, expr) =
+                member _.VisitExpr(_path, _, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.YieldOrReturn(_, expr, range)
                     | SynExpr.YieldOrReturnFrom(_, expr, range) when rangeContainsPos range pos ->
@@ -278,7 +288,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | None ->
             None
 
-    member scope.TryRangeOfRefCellDereferenceContainingPos expressionPos =
+    member _.TryRangeOfRefCellDereferenceContainingPos expressionPos =
         match input with
         | Some input ->
             AstTraversal.Traverse(expressionPos, input, { new AstTraversal.AstVisitorBase<_>() with 
@@ -293,20 +303,20 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | None ->
             None
 
-    member scope.FindNoteworthyParamInfoLocations pos = 
+    member _.FindNoteworthyParamInfoLocations pos = 
         match input with
         | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)
         | _ -> None
 
-    member scope.IsPositionContainedInACurriedParameter pos =
+    member _.IsPositionContainedInACurriedParameter pos =
         match input with
         | Some input ->
             let result =
                 AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with 
-                    member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                    member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                         defaultTraverse(expr)
 
-                    override __.VisitBinding (_, binding) =
+                    override _.VisitBinding (_, binding) =
                         match binding with
                         | Binding(_, _, _, _, _, _, valData, _, _, _, range, _) when rangeContainsPos range pos ->
                             let info = valData.SynValInfo.CurriedArgInfos
@@ -325,7 +335,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | _ -> false
     
     /// Get declared items and the selected item at the specified location
-    member private scope.GetNavigationItemsImpl() =
+    member _.GetNavigationItemsImpl() =
        ErrorScope.Protect range0 
             (fun () -> 
                 match input with
@@ -339,7 +349,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
                 FSharpNavigation.empty)
             
-    member private scope.ValidateBreakpointLocationImpl pos =
+    member _.ValidateBreakpointLocationImpl pos =
         let isMatchRange m = rangeContainsPos m pos || m.StartLine = pos.Line
 
         // Process let-binding
@@ -650,9 +660,9 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                 None)
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
-    member scope.DependencyFiles = dependencyFiles
+    member _.DependencyFiles = dependencyFiles
 
-    member scope.FileName =
+    member _.FileName =
       match input with
       | Some (ParsedInput.ImplFile (ParsedImplFileInput (fileName = modname))) 
       | Some (ParsedInput.SigFile (ParsedSigFileInput (fileName = modname))) -> modname
@@ -696,7 +706,7 @@ module UntypedParseImpl =
             couldBeBeforeFront, r
 
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
-        member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+        member _.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
             let expr = expr // fix debugger locals
             match expr with
             | SynExpr.LongIdent (_, LongIdentWithDots(longIdent, _), _altNameRefCell, _range) -> 
@@ -1415,7 +1425,7 @@ module UntypedParseImpl =
         let walker = 
             { 
                 new AstTraversal.AstVisitorBase<_>() with
-                    member __.VisitExpr(path, _, defaultTraverse, expr) = 
+                    member _.VisitExpr(path, _, defaultTraverse, expr) = 
 
                         if isInRhsOfRangeOp path then
                             match defaultTraverse expr with
@@ -1449,7 +1459,7 @@ module UntypedParseImpl =
                             
                             | _ -> defaultTraverse expr
 
-                    member __.VisitRecordField(path, copyOpt, field) = 
+                    member _.VisitRecordField(path, copyOpt, field) = 
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
@@ -1473,7 +1483,7 @@ module UntypedParseImpl =
                                 | None -> contextFromTreePath ([], None)
                             Some (CompletionContext.RecordField recordContext)
                                 
-                    member __.VisitInheritSynMemberDefn(componentInfo, typeDefnKind, synType, _members, _range) = 
+                    member _.VisitInheritSynMemberDefn(componentInfo, typeDefnKind, synType, _members, _range) = 
                         match synType with
                         | SynType.LongIdent lidwd ->                                 
                             match parseLid lidwd with
@@ -1482,7 +1492,7 @@ module UntypedParseImpl =
 
                         | _ -> None 
                         
-                    member __.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
+                    member _.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
                     
                         let visitParam = function
                             | SynPat.Named (range = range) when rangeContainsPos range pos -> 
@@ -1518,11 +1528,11 @@ module UntypedParseImpl =
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
                     
-                    member __.VisitHashDirective range = 
+                    member _.VisitHashDirective range = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
                         else None 
                         
-                    member __.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
+                    member _.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine && lastIdent.idRange.EndColumn >= 0 && pos.Column <= lineStr.Length ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
@@ -1531,16 +1541,16 @@ module UntypedParseImpl =
                             else None
                         | _ -> None 
 
-                    member __.VisitComponentInfo(ComponentInfo(range = range)) = 
+                    member _.VisitComponentInfo(ComponentInfo(range = range)) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid
                         else None
 
-                    member __.VisitLetOrUse(_, _, bindings, range) =
+                    member _.VisitLetOrUse(_, _, bindings, range) =
                         match bindings with
                         | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                         | _ -> None
 
-                    member __.VisitSimplePats pats =
+                    member _.VisitSimplePats pats =
                         pats |> List.tryPick (fun pat ->
                             match pat with
                             | SynSimplePat.Id(range = range)
@@ -1548,7 +1558,7 @@ module UntypedParseImpl =
                                 Some CompletionContext.Invalid
                             | _ -> None)
 
-                    member __.VisitModuleDecl(defaultTraverse, decl) =
+                    member _.VisitModuleDecl(defaultTraverse, decl) =
                         match decl with
                         | SynModuleDecl.Open(target, m) -> 
                             // in theory, this means we're "in an open"
@@ -1568,7 +1578,7 @@ module UntypedParseImpl =
                                 None
                         | _ -> defaultTraverse decl
 
-                    member __.VisitType(defaultTraverse, ty) =
+                    member _.VisitType(defaultTraverse, ty) =
                         match ty with
                         | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
                             Some CompletionContext.PatternType

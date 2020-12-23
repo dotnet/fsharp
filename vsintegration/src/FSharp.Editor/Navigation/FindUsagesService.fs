@@ -11,8 +11,8 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 
 [<Export(typeof<IFSharpFindUsagesService>)>]
@@ -90,7 +90,7 @@ type internal FSharpFindUsagesService
                 fun (doc: Document) (textSpan: TextSpan) (symbolUse: range) ->
                     async {
                         match declarationRange with
-                        | Some declRange when FSharp.Compiler.Range.equals declRange symbolUse -> ()
+                        | Some declRange when Range.equals declRange symbolUse -> ()
                         | _ ->
                             if allReferences then
                                 let definitionItem =
@@ -133,10 +133,10 @@ type internal FSharpFindUsagesService
         } |> Async.Ignore
 
     interface IFSharpFindUsagesService with
-        member __.FindReferencesAsync(document, position, context) =
+        member _.FindReferencesAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, true, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
-        member __.FindImplementationsAsync(document, position, context) =
+        member _.FindImplementationsAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, false, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

@@ -5,8 +5,7 @@ open System
 open System.Text
 open Xunit
 open FSharp.Test.Utilities
-open FSharp.Compiler
-
+open FSharp.Compiler.SourceCodeServices
 
 type ManglingNamesOfProvidedTypesWithSingleParameter() = 
     

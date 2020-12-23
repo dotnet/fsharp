@@ -9,8 +9,7 @@ module internal FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
 

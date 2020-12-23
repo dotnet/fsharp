@@ -2,14 +2,13 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open System.Threading
-
-open FSharp.Compiler
-open FSharp.Compiler.Range
-open FSharp.Compiler.PrettyNaming
 open System.Collections.Generic
 open System.Runtime.CompilerServices
+
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Text
 
 module UnusedOpens =
 
@@ -51,9 +50,9 @@ module UnusedOpens =
 
             HashSet<_>(symbols, symbolHash)
 
-        member __.Entity = entity
-        member __.IsNestedAutoOpen = isNestedAutoOpen
-        member __.RevealedSymbolsContains(symbol) = revealedSymbols.Force().Contains symbol
+        member _.Entity = entity
+        member _.IsNestedAutoOpen = isNestedAutoOpen
+        member _.RevealedSymbolsContains(symbol) = revealedSymbols.Force().Contains symbol
 
     type OpenedModuleGroup = 
         { OpenedModules: OpenedModule [] }
@@ -173,11 +172,11 @@ module UnusedOpens =
                 openedGroup.OpenedModules |> Array.exists (fun openedEntity ->
                     symbolUsesRangesByDeclaringEntity.BagExistsValueForKey(openedEntity.Entity, fun symbolUseRange ->
                         rangeContainsRange openStatement.AppliedScope symbolUseRange &&
-                        Range.posGt symbolUseRange.Start openStatement.Range.End) || 
+                        Pos.posGt symbolUseRange.Start openStatement.Range.End) || 
                     
                     symbolUses2 |> Array.exists (fun symbolUse ->
                         rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate &&
-                        Range.posGt symbolUse.RangeAlternate.Start openStatement.Range.End &&
+                        Pos.posGt symbolUse.RangeAlternate.Start openStatement.Range.End &&
                         openedEntity.RevealedSymbolsContains symbolUse.Symbol)))
 
         // Return them as interim used entities
@@ -274,7 +273,7 @@ module SimplifyNames =
             for symbolUse, plid, plidStartCol, name in symbolUses do
                 let posAtStartOfName =
                     let r = symbolUse.RangeAlternate
-                    if r.StartLine = r.EndLine then Range.mkPos r.StartLine (r.EndColumn - name.Length)
+                    if r.StartLine = r.EndLine then Pos.mkPos r.StartLine (r.EndColumn - name.Length)
                     else r.Start   
 
                 let getNecessaryPlid (plid: string list) : string list =
@@ -296,7 +295,7 @@ module SimplifyNames =
                     let necessaryPlidStartCol = r.EndColumn - name.Length - (getPlidLength necessaryPlid)
                     
                     let unnecessaryRange = 
-                        Range.mkRange r.FileName (Range.mkPos r.StartLine plidStartCol) (Range.mkPos r.EndLine necessaryPlidStartCol)
+                        Range.mkRange r.FileName (Pos.mkPos r.StartLine plidStartCol) (Pos.mkPos r.EndLine necessaryPlidStartCol)
                     
                     let relativeName = (String.concat "." plid) + "." + name
                     result.Add({Range = unnecessaryRange; RelativeName = relativeName})

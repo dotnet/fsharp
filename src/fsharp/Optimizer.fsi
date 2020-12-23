@@ -17,11 +17,12 @@ type OptimizationSettings =
       bigTargetSize: int
       veryBigExprSize: int 
       lambdaInlineThreshold: int
-      reportingPhase: bool;
+      reportingPhase: bool
       reportNoNeedToTailcall: bool
       reportFunctionSizes: bool
       reportHasEffect: bool
-      reportTotalSizes: bool }
+      reportTotalSizes: bool
+    }
 
     member jitOpt: unit -> bool 
     member localOpt: unit -> bool 

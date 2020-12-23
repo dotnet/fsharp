@@ -7,11 +7,10 @@
 
 module internal FSharp.Compiler.CheckFormatStrings
 
-open FSharp.Compiler 
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
-open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.TypedTree 
 
 val ParseFormatString : m: range -> fragmentRanges: range list -> g: TcGlobals -> isInterpolated: bool -> isFormattableString: bool -> formatStringCheckContext: FormatStringCheckContext option -> fmt: string -> printerArgTy: TType -> printerResidueTy: TType -> printerResultTy: TType -> TType list * TType * TType * TType[] * (range * int) list * string
 

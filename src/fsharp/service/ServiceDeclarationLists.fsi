@@ -4,9 +4,10 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
+open FSharp.Compiler
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTreeOps
 

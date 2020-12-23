@@ -9,9 +9,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.LanguageServices.Implementation.F1Help
 open Microsoft.CodeAnalysis.Host.Mef
-open FSharp.Compiler
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]

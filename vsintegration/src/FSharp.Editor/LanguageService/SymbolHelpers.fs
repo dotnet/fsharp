@@ -10,8 +10,9 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
 module internal SymbolHelpers =

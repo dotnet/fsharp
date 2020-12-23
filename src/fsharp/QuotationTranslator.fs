@@ -10,15 +10,14 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
 open System.Collections.Generic
-open System.Collections.Immutable
 
 module QP = FSharp.Compiler.QuotationPickler
 
@@ -163,7 +162,7 @@ let BindFlatVals env vs = List.fold BindVal env vs // fold left-to-right because
 
 exception InvalidQuotedTerm of exn
 
-exception IgnoringPartOfQuotedTermWarning of string * Range.range
+exception IgnoringPartOfQuotedTermWarning of string * range
 
 let wfail e = raise (InvalidQuotedTerm e)
 

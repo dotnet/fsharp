@@ -16,7 +16,7 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
 
     let fixableDiagnosticIds = set ["FS0597"]
         
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
     
     override this.RegisterCodeFixesAsync context : Task =
         async {

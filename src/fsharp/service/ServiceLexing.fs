@@ -20,15 +20,16 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 open Internal.Utilities
 
 type Position = int * int
 
-type Range = Position * Position
+type Positions = Position * Position
 
 module FSharpTokenTag =
 
@@ -945,10 +946,14 @@ module FSharpKeywords =
     open FSharp.Compiler.Lexhelp.Keywords
 
     let DoesIdentifierNeedQuotation s = DoesIdentifierNeedQuotation s
+    
     let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    
     let KeywordsWithDescription = keywordsWithDescription
 
+    let KeywordNames = Lexhelp.Keywords.keywordNames
 
 [<Flags>]
 type FSharpLexerFlags =
@@ -1563,8 +1568,7 @@ type FSharpLexer =
             (PathMap.empty, pathMap)
             ||> Seq.fold (fun state pair -> state |> PathMap.addMapping pair.Key pair.Value)
 
-        let onToken =
-            fun tok m ->
+        let onToken tok m =
                 let fsTok = FSharpToken(tok, m)
                 match fsTok.Kind with
                 | FSharpTokenKind.None -> ()

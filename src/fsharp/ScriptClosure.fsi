@@ -9,7 +9,6 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.Text
 open Microsoft.DotNet.DependencyManager
@@ -72,7 +71,7 @@ type LoadClosure =
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText:
         CompilationThreadToken * 
-        legacyReferenceResolver: ReferenceResolver.Resolver * 
+        legacyReferenceResolver: LegacyReferenceResolver * 
         defaultFSharpBinariesDir: string * 
         filename: string * 
         sourceText: ISourceText * 

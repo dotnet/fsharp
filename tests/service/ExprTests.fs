@@ -427,7 +427,7 @@ type ClassWithImplicitConstructor(compiledAsArg: int) =
     member __.M2() = compiledAsInstanceMethod()
     static member SM1() = compiledAsStaticField + compiledAsGenericStaticMethod compiledAsStaticField 
     static member SM2() = compiledAsStaticMethod()
-    //override __.ToString() = base.ToString() + string 999
+    //override _.ToString() = base.ToString() + string 999
     member this.TestCallinToString() = this.ToString()
 
 exception Error of int * int

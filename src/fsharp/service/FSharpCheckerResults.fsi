@@ -8,18 +8,18 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Range
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
-open FSharp.Compiler.CheckDeclarations
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
@@ -32,10 +32,10 @@ type public FSharpFindDeclFailureReason =
     | NoSourceCode
 
     /// Trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
-    | ProvidedType of string
+    | ProvidedType of typeName: string
 
     /// Trying to find declaration of ProvidedMember without TypeProviderDefinitionLocationAttribute
-    | ProvidedMember of string
+    | ProvidedMember of memberName: string
 
 /// Represents the result of the GetDeclarationLocation operation.
 [<RequireQualifiedAccess>]
@@ -45,10 +45,10 @@ type public FSharpFindDeclResult =
     | DeclNotFound of FSharpFindDeclFailureReason
 
     /// Indicates a declaration location was found
-    | DeclFound    of range
+    | DeclFound of location: range
 
     /// Indicates an external declaration was found
-    | ExternalDecl of assembly : string * externalSym : FSharpExternalSymbol
+    | ExternalDecl of assembly: string * externalSym : FSharpExternalSymbol
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
@@ -362,7 +362,7 @@ module internal ParseAndCheckFile =
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
     internal new: 
-        ReferenceResolver.Resolver *
+        LegacyReferenceResolver *
         ops: IReactorOperations *
         tcConfig: TcConfig * 
         tcGlobals: TcGlobals * 

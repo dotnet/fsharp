@@ -12,11 +12,11 @@ open System.IO
 open System.Reflection
 open System.Runtime.InteropServices
 open System.Text
-open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 /// Resolves the references for a chosen or currently-executing framework, for
 ///   - script execution

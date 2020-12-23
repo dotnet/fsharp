@@ -50,7 +50,7 @@ type [<Export>] Logger [<ImportingConstructor>]
         with get () = globalServiceProvider |> Option.defaultValue (ServiceProvider.GlobalProvider :> IServiceProvider)
         and  set v = globalServiceProvider <- Some v
 
-    member __.FSharpLoggingPane
+    member _.FSharpLoggingPane
         with get () = 
             getPane () 
             |> function

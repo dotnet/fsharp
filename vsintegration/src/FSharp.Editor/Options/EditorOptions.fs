@@ -121,19 +121,19 @@ type EditorOptions
         store.Register CodeLensOptions.Default
         store.Register FormattingOptions.Default
 
-    member __.IntelliSense : IntelliSenseOptions = store.Get()
-    member __.QuickInfo : QuickInfoOptions = store.Get()
-    member __.CodeFixes : CodeFixesOptions = store.Get()
-    member __.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
-    member __.Advanced: AdvancedOptions = store.Get()
-    member __.CodeLens: CodeLensOptions = store.Get()
-    member __.Formatting : FormattingOptions = store.Get()
+    member _.IntelliSense : IntelliSenseOptions = store.Get()
+    member _.QuickInfo : QuickInfoOptions = store.Get()
+    member _.CodeFixes : CodeFixesOptions = store.Get()
+    member _.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
+    member _.Advanced: AdvancedOptions = store.Get()
+    member _.CodeLens: CodeLensOptions = store.Get()
+    member _.Formatting : FormattingOptions = store.Get()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
 
     interface IPersistSettings with
-        member __.LoadSettings() = store.LoadSettings()
-        member __.SaveSettings(settings) = store.SaveSettings(settings)
+        member _.LoadSettings() = store.LoadSettings()
+        member _.SaveSettings(settings) = store.SaveSettings(settings)
 
 
 [<AutoOpen>]
@@ -193,11 +193,11 @@ module internal OptionsUI =
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =
         inherit AbstractOptionPage<AdvancedOptions>()
-        override __.CreateView() =
+        override _.CreateView() =
             upcast AdvancedOptionsControl()
 
     [<Guid(Guids.formattingOptionPageIdString)>]
     type internal FormattingOptionPage() =
         inherit AbstractOptionPage<FormattingOptions>()
-        override __.CreateView() =
+        override _.CreateView() =
             upcast FormattingOptionsControl()

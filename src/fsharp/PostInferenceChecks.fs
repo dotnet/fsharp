@@ -17,11 +17,12 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Lib
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -98,7 +99,7 @@ type env =
       isInAppExpr: bool
     } 
 
-    override __.ToString() = "<env>"
+    override _.ToString() = "<env>"
 
 let BindTypar env (tp: Typar) = 
     { env with 

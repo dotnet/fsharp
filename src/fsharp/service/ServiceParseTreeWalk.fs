@@ -7,9 +7,12 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range
+open FSharp.Compiler
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 /// A range of utility functions to assist with traversing an AST
 module public AstTraversal =

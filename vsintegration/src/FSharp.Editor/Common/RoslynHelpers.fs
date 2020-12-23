@@ -8,10 +8,10 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open FSharp.Compiler
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
@@ -94,8 +94,8 @@ module internal RoslynHelpers =
     type VolatileBarrier() =
         [<VolatileField>]
         let mutable isStopped = false
-        member __.Proceed = not isStopped
-        member __.Stop() = isStopped <- true
+        member _.Proceed = not isStopped
+        member _.Stop() = isStopped <- true
 
     // This is like Async.StartAsTask, but
     //  1. if cancellation occurs we explicitly associate the cancellation with cancellationToken

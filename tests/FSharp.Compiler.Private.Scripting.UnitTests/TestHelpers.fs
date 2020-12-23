@@ -25,8 +25,8 @@ module TestHelpers =
         let fullDirName = Path.Combine(sysTempDir, customTempDirName)
         let dirInfo = Directory.CreateDirectory(fullDirName)
         { new Object() with
-            member __.ToString() = dirInfo.FullName
+            member _.ToString() = dirInfo.FullName
           interface IDisposable with
-            member __.Dispose() =
+            member _.Dispose() =
                 dirInfo.Delete(true)
         }

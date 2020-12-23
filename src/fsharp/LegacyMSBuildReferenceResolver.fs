@@ -6,12 +6,11 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
     open System.IO
     open System.Reflection
     open FSharp.Compiler.AbstractIL.Internal.Library 
-    open FSharp.Compiler.ReferenceResolver
-    open FSharp.Compiler.SourceCodeServices
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
     open Microsoft.Build.Framework
     open FSharp.Compiler
+    open FSharp.Compiler.SourceCodeServices
 
     // Reflection wrapper for properties
     type System.Object with
@@ -28,13 +27,11 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
             | s -> s 
         PF + @"\Reference Assemblies\Microsoft\Framework\.NETFramework"
 
-
     /// When targeting .NET 2.0-3.5 on Windows, we expand the {WindowsFramework} and {ReferenceAssemblies} paths manually
     let internal ReplaceVariablesForLegacyFxOnWindows(dirs: string list) =
         let windowsFramework = Environment.GetEnvironmentVariable("windir")+ @"\Microsoft.NET\Framework"
         let referenceAssemblies = DotNetFrameworkReferenceAssembliesRootDirectory
         dirs |> List.map(fun d -> d.Replace("{WindowsFramework}",windowsFramework).Replace("{ReferenceAssemblies}",referenceAssemblies))
-
     
     // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
     // 1. List of frameworks
@@ -228,7 +225,7 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
             + lineIfExists fusionName  
 
     /// Perform assembly resolution by instantiating the ResolveAssembly task directly from the MSBuild SDK.
-    let ResolveCore(resolutionEnvironment: ResolutionEnvironment,
+    let ResolveCore(resolutionEnvironment: LegacyResolutionEnvironment,
                     references:(string*(*baggage*)string)[], 
                     targetFrameworkVersion: string, 
                     targetFrameworkDirectories: string list,
@@ -253,15 +250,15 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
 
         let engine = 
             { new IBuildEngine with 
-              member __.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
-              member __.LogCustomEvent(e) =  protect (fun () -> logMessage e.Message)
-              member __.LogErrorEvent(e) =   protect (fun () -> logDiagnostic true e.Code e.Message)
-              member __.LogMessageEvent(e) = protect (fun () -> logMessage e.Message)
-              member __.LogWarningEvent(e) = protect (fun () -> logDiagnostic false e.Code e.Message)
-              member __.ColumnNumberOfTaskNode with get() = 1 
-              member __.LineNumberOfTaskNode with get() = 1 
-              member __.ContinueOnError with get() = true 
-              member __.ProjectFileOfTaskNode with get() = "" } 
+              member _.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
+              member _.LogCustomEvent(e) =  protect (fun () -> logMessage e.Message)
+              member _.LogErrorEvent(e) =   protect (fun () -> logDiagnostic true e.Code e.Message)
+              member _.LogMessageEvent(e) = protect (fun () -> logMessage e.Message)
+              member _.LogWarningEvent(e) = protect (fun () -> logDiagnostic false e.Code e.Message)
+              member _.ColumnNumberOfTaskNode with get() = 1 
+              member _.LineNumberOfTaskNode with get() = 1 
+              member _.ContinueOnError with get() = true 
+              member _.ProjectFileOfTaskNode with get() = "" } 
 
         // Derive the target framework directory if none was supplied.
         let targetFrameworkDirectories =
@@ -282,9 +279,9 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
             [|  // When compiling scripts using fsc.exe, for some reason we have always historically put TargetFrameworkDirectory first
                 // It is unclear why.  This is the only place we look at the 'isdifference between ResolutionEnvironment.EditingOrCompilation and ResolutionEnvironment.EditingTime.
                 match resolutionEnvironment with
-                | ResolutionEnvironment.EditingOrCompilation false -> yield "{TargetFrameworkDirectory}"
-                | ResolutionEnvironment.EditingOrCompilation true
-                | ResolutionEnvironment.CompilationAndEvaluation -> ()
+                | LegacyResolutionEnvironment.EditingOrCompilation false -> yield "{TargetFrameworkDirectory}"
+                | LegacyResolutionEnvironment.EditingOrCompilation true
+                | LegacyResolutionEnvironment.CompilationAndEvaluation -> ()
 
                 // Quick-resolve straight to filename first 
                 if allowRawFileName then 
@@ -294,9 +291,9 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
                 yield implicitIncludeDir   // Usually the project directory
 
                 match resolutionEnvironment with
-                | ResolutionEnvironment.EditingOrCompilation true
-                | ResolutionEnvironment.CompilationAndEvaluation -> yield "{TargetFrameworkDirectory}"
-                | ResolutionEnvironment.EditingOrCompilation false -> ()
+                | LegacyResolutionEnvironment.EditingOrCompilation true
+                | LegacyResolutionEnvironment.CompilationAndEvaluation -> yield "{TargetFrameworkDirectory}"
+                | LegacyResolutionEnvironment.EditingOrCompilation false -> ()
 
                 yield registry
                 yield "{AssemblyFolders}"
@@ -332,7 +329,7 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
         let succeeded = rar.Execute()
         
         if not succeeded then 
-            raise ResolutionFailure
+            raise LegacyResolutionFailure
 
         let resolvedFiles = 
             [| for p in rar.ResolvedFiles -> 
@@ -346,12 +343,12 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
         resolvedFiles
 
     let getResolver () =
-       { new ReferenceResolver.Resolver with 
-           member __.HighestInstalledNetFrameworkVersion() = HighestInstalledRefAssembliesOrDotNETFramework()
-           member __.DotNetFrameworkReferenceAssembliesRootDirectory =  DotNetFrameworkReferenceAssembliesRootDirectory
+       { new ILegacyReferenceResolver with 
+           member _.HighestInstalledNetFrameworkVersion() = HighestInstalledRefAssembliesOrDotNETFramework()
+           member _.DotNetFrameworkReferenceAssembliesRootDirectory =  DotNetFrameworkReferenceAssembliesRootDirectory
 
            /// Perform the resolution on rooted and unrooted paths, and then combine the results.
-           member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
+           member _.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
                              fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logDiagnostic) =
 
                 // The {RawFileName} target is 'dangerous', in the sense that is uses <c>Directory.GetCurrentDirectory()</c> to resolve unrooted file paths.
@@ -391,3 +388,4 @@ module FSharp.Compiler.LegacyMSBuildReferenceResolver
                 // now unify the two sets of results
                 Array.concat [| rootedResults; unrootedResults |]
        } 
+       |> LegacyReferenceResolver

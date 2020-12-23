@@ -3,8 +3,10 @@
 module public FSharp.Compiler.ErrorLogger
 
 open FSharp.Compiler 
-open FSharp.Compiler.Range
 open FSharp.Compiler.Features
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open System
 
 //------------------------------------------------------------------------
@@ -152,7 +154,7 @@ type Exiter =
 
 let QuitProcessExiter =  
     { new Exiter with  
-        member __.Exit n =                     
+        member _.Exit n =                     
             try  
                 System.Environment.Exit n 
             with _ ->  
@@ -278,7 +280,7 @@ type ErrorLogger(nameForDebugging:string) =
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl 
     // code just below and get a breakpoint for all error logger implementations.
     abstract DiagnosticSink: phasedError: PhasedDiagnostic * isError: bool -> unit
-    member __.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
+    member _.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
 
 let DiscardErrorsLogger = 
     { new ErrorLogger("DiscardErrorsLogger") with 
@@ -450,13 +452,13 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     let mutable newInstalled = true
     let newIsInstalled() = if newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
-                             member __.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
-                             member __.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
+                             member _.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
+                             member _.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
 
     CompileThreadStatic.ErrorLogger <- chkErrorLogger
 
     { new System.IDisposable with 
-         member __.Dispose() =
+         member _.Dispose() =
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
             newInstalled <- false }
 
@@ -502,8 +504,8 @@ let suppressErrorReporting f =
     try
         let errorLogger = 
             { new ErrorLogger("suppressErrorReporting") with 
-                member __.DiagnosticSink(_phasedError, _isError) = ()
-                member __.ErrorCount = 0 }
+                member _.DiagnosticSink(_phasedError, _isError) = ()
+                member _.ErrorCount = 0 }
         SetThreadErrorLoggerNoUnwind errorLogger
         f()
     finally

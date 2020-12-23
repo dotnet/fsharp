@@ -29,12 +29,12 @@ type internal FSharpGoToDefinitionService
    
     interface IFSharpGoToDefinitionService with
         /// Invoked with Peek Definition.
-        member __.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
+        member _.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
             gtd.FindDefinitionsForPeekTask(document, position, cancellationToken)
 
         /// Invoked with Go to Definition.
         /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
-        member __.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
+        member _.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             statusBar.Message(SR.LocatingSymbol())
             use __ = statusBar.Animate()
 

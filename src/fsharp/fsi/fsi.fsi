@@ -143,16 +143,16 @@ type FsiEvaluationSession =
 
     interface System.IDisposable
 
-    /// Create an FsiEvaluationSession, reading from the given text input, writing to the given text output and error writers.
-    /// 
     /// <summary>Create an FsiEvaluationSession, reading from the given text input, writing to the given text output and error writers</summary>
     /// 
     /// <param name="fsiConfig">The dynamic configuration of the evaluation session</param>
     /// <param name="argv">The command line arguments for the evaluation session</param>
     /// <param name="inReader">Read input from the given reader</param>
+    /// <param name="errorWriter">Write errors to the given writer</param>
     /// <param name="outWriter">Write output to the given writer</param>
     /// <param name="collectible">Optionally make the dynamic assembly for the session collectible</param>
-    static member Create : fsiConfig: FsiEvaluationSessionHostConfig * argv:string[] * inReader:TextReader * outWriter:TextWriter * errorWriter: TextWriter * ?collectible: bool * ?legacyReferenceResolver: ReferenceResolver.Resolver -> FsiEvaluationSession
+    /// <param name="legacyReferenceResolver">An optional resolver for legacy MSBuild references</param>
+    static member Create : fsiConfig: FsiEvaluationSessionHostConfig * argv:string[] * inReader:TextReader * outWriter:TextWriter * errorWriter: TextWriter * ?collectible: bool * ?legacyReferenceResolver: LegacyReferenceResolver -> FsiEvaluationSession
 
     /// A host calls this to request an interrupt on the evaluation thread.
     member Interrupt : unit -> unit

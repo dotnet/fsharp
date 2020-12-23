@@ -5,11 +5,10 @@ module internal FSharp.Compiler.XmlDocFileWriter
 open System.IO
 open System.Reflection
 open Internal.Utilities
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.XmlDoc

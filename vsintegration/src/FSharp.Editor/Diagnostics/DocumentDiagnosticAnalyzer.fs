@@ -32,7 +32,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
 
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with 
-            member __.Equals (x, y) =
+            member _.Equals (x, y) =
                 x.FileName = y.FileName &&
                 x.StartLineAlternate = y.StartLineAlternate &&
                 x.EndLineAlternate = y.EndLineAlternate &&
@@ -42,7 +42,7 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 x.Message = y.Message &&
                 x.Subcategory = y.Subcategory &&
                 x.ErrorNumber = y.ErrorNumber
-            member __.GetHashCode x =
+            member _.GetHashCode x =
                 let mutable hash = 17
                 hash <- hash * 23 + x.StartLineAlternate.GetHashCode()
                 hash <- hash * 23 + x.EndLineAlternate.GetHashCode()

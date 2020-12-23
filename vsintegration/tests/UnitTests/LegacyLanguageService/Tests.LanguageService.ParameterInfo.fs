@@ -1153,7 +1153,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]
     member public this.``LocationOfParams.InsideObjectExpression``() =        
         this.TestParameterInfoLocationOfParams("""
-                let _ = { new ^System.Object^(^$^) with member __.GetHashCode() = 2}""")
+                let _ = { new ^System.Object^(^$^) with member _.GetHashCode() = 2}""")
 
     [<Test>]
     member public this.``LocationOfParams.Nested1``() =        
@@ -1653,7 +1653,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
 
     [<Test>]
     member public this.``Multi.Constructor.WithinObjectExpression``() = 
-        let fileContents = "let _ = { new System.Object((*Mark*)) with member __.GetHashCode() = 2}"
+        let fileContents = "let _ = { new System.Object((*Mark*)) with member _.GetHashCode() = 2}"
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",[])
 
     [<Test>]

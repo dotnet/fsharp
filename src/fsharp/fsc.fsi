@@ -5,9 +5,6 @@ module internal FSharp.Compiler.Driver
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-open FSharp.Compiler.CheckExpressions
-open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -41,7 +38,7 @@ val EncodeSignatureData:
 val mainCompile: 
     ctok: CompilationThreadToken *
     argv: string[] * 
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     bannerAlreadyPrinted: bool * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     defaultCopyFSharpCore: CopyFSharpCoreFlag * 
@@ -54,7 +51,7 @@ val mainCompile:
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
 val compileOfAst: 
     ctok: CompilationThreadToken *
-    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: LegacyReferenceResolver * 
     reduceMemoryUsage: ReduceMemoryFlag * 
     assemblyName:string * 
     target:CompilerTarget * 

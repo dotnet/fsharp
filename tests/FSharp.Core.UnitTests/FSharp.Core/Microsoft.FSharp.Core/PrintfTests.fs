@@ -46,7 +46,7 @@ type PrintfTests() =
         test "%-10c" 'a'   "a         "
     
     [<Fact>]
-    member __.``union case formatting`` () =
+    member _.``union case formatting`` () =
         Assert.AreEqual("CaseOne", sprintf "%A" CaseOne)
         Assert.AreEqual("CaseTwo \"hello\"", sprintf "%A" (CaseTwo "hello"))
         Assert.AreEqual("CaseTwoOpt None", sprintf "%A" (CaseTwoOpt None))
@@ -54,7 +54,7 @@ type PrintfTests() =
         Assert.AreEqual("CaseThree (5, \"hello\")", sprintf "%A" (CaseThree (5, "hello")))
 
     [<Fact>]
-    member __.``union case formatting with RequireQualifiedAccess`` () =
+    member _.``union case formatting with RequireQualifiedAccess`` () =
         Assert.AreEqual("Case1", sprintf "%A" SecondUnionType.Case1)
         Assert.AreEqual("Case2 \"hello\"", sprintf "%A" (SecondUnionType.Case2 "hello"))
         Assert.AreEqual("Case2Opt None", sprintf "%A" (SecondUnionType.Case2Opt None))
@@ -62,31 +62,31 @@ type PrintfTests() =
         Assert.AreEqual("Case3 (5, \"hello\")", sprintf "%A" (SecondUnionType.Case3 (5, "hello")))
 
     [<Fact>]
-    member __.``union case formatting with UseNullAsTrueValue`` () =
+    member _.``union case formatting with UseNullAsTrueValue`` () =
         Assert.AreEqual("NullCase", sprintf "%A" NullCase)
         Assert.AreEqual("NullCase", sprintf "%A" RQANullAsTrueUnionType.NullCase)
 
     [<Fact>]
-    member __.``F# option formatting`` () =
+    member _.``F# option formatting`` () =
         Assert.AreEqual("None", sprintf "%A" None)
         Assert.AreEqual("Some 15", sprintf "%A" (Some 15))
 
     [<Fact>]
-    member __.``null formatting`` () =
+    member _.``null formatting`` () =
         Assert.AreEqual("<null>", sprintf "%A" null)
         Assert.AreEqual("CaseTwo null", sprintf "%A" (CaseTwo null))
 
     [<Fact>]
-    member __.``tuple formatting`` () =
+    member _.``tuple formatting`` () =
         Assert.AreEqual("""(1, "two", 3.4)""", sprintf "%A" (1,"two",3.4))
         Assert.AreEqual("""(1, "two", 3.4, 5, 6, 7, 8, 9, "ten", 11.12)""", sprintf "%A" (1,"two",3.4,5,6,7,8,9,"ten",11.12))
 
     [<Fact>]
-    member __.``value tuple formatting`` () =
+    member _.``value tuple formatting`` () =
         Assert.AreEqual("""struct (1, "two", 3.4)""", sprintf "%A" (struct (1,"two",3.4)))
         Assert.AreEqual("""struct (1, "two", 3.4, 5, 6, 7, 8, 9, "ten", 11.12)""", sprintf "%A" (struct (1,"two",3.4,5,6,7,8,9,"ten",11.12)))
 
     [<Fact>]
-    member __.``list types`` () =
+    member _.``list types`` () =
         Assert.AreEqual("""[CaseTwo "hello"; CaseTwo "hi there!"]""", [CaseTwo "hello"; CaseTwo "hi there!"] |> sprintf "%A")
         Assert.AreEqual("""[CaseTwoOpt (Some "hello"); CaseTwoOpt (Some "hi there!")]""", [CaseTwoOpt (Some "hello"); CaseTwoOpt (Some "hi there!")] |> sprintf "%A")

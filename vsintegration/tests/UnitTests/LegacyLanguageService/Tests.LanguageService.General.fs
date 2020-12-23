@@ -262,7 +262,7 @@ type UsingMSBuild() =
             [ "type C() = "
               "    member this.F() = ()"
               "    interface System.IComparable with "
-              "        member __.CompareTo(v:obj) = 1" ]
+              "        member _.CompareTo(v:obj) = 1" ]
             )
 
     [<Test; Category("Expensive")>]

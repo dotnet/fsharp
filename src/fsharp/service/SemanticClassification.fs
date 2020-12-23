@@ -11,8 +11,9 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Infos
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.PrettyNaming
-open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
