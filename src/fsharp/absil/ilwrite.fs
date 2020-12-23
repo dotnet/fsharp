@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
+open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.Internal
@@ -17,6 +18,7 @@ open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Range
+open FSharp.Compiler.SourceCodeServices
 
 #if DEBUG
 let showEntryLookups = false

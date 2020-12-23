@@ -86,7 +86,7 @@ module ParamTypeSymbol =
     
 [<RequireQualifiedAccess>]
 [<DebuggerDisplay "{ToDebuggerDisplay(),nq}">]
-type ExternalSymbol =
+type FSharpExternalSymbol =
     | Type of fullName: string
     | Constructor of typeName: string * args: ParamTypeSymbol list
     | Method of typeName: string * name: string * paramSyms: ParamTypeSymbol list * genericArity: int
@@ -117,5 +117,5 @@ type ExternalSymbol =
             sprintf "%s.%s" typeName name
 
     member internal this.ToDebuggerDisplay () =
-        let caseInfo, _ = FSharpValue.GetUnionFields(this, typeof<ExternalSymbol>)
+        let caseInfo, _ = FSharpValue.GetUnionFields(this, typeof<FSharpExternalSymbol>)
         sprintf "%s %O" caseInfo.Name this

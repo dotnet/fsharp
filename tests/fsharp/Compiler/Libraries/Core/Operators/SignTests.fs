@@ -42,7 +42,7 @@ module ``Sign Tests`` =
             """
 sign 0uy |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'byte' does not support the operator 'get_Sign'"
@@ -53,7 +53,7 @@ sign 0uy |> ignore
             """
 sign 0us |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'uint16' does not support the operator 'get_Sign'"
@@ -64,7 +64,7 @@ sign 0us |> ignore
             """
 sign 0u |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 8)
             "The type 'uint32' does not support the operator 'get_Sign'"
@@ -75,7 +75,7 @@ sign 0u |> ignore
             """
 sign 0uL |> ignore
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (2, 6, 2, 9)
             "The type 'uint64' does not support the operator 'get_Sign'"

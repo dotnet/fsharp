@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler
-open FSharp.Compiler.Layout
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
 
@@ -20,17 +20,17 @@ type SignatureHelpParameterInfo =
     { ParameterName: string
       IsOptional: bool
       CanonicalTypeTextForSorting: string
-      Documentation: ResizeArray<Microsoft.CodeAnalysis.TaggedText>
-      DisplayParts: ResizeArray<Microsoft.CodeAnalysis.TaggedText> }
+      Documentation: ResizeArray<RoslynTaggedText>
+      DisplayParts: ResizeArray<RoslynTaggedText> }
 
 type SignatureHelpItem =
     { HasParamArrayArg: bool
-      Documentation: ResizeArray<Microsoft.CodeAnalysis.TaggedText>
-      PrefixParts: Microsoft.CodeAnalysis.TaggedText[]
-      SeparatorParts: Microsoft.CodeAnalysis.TaggedText[]
-      SuffixParts: Microsoft.CodeAnalysis.TaggedText[]
+      Documentation: ResizeArray<RoslynTaggedText>
+      PrefixParts: RoslynTaggedText[]
+      SeparatorParts: RoslynTaggedText[]
+      SuffixParts: RoslynTaggedText[]
       Parameters: SignatureHelpParameterInfo[]
-      MainDescription: ResizeArray<Microsoft.CodeAnalysis.TaggedText> }
+      MainDescription: ResizeArray<RoslynTaggedText> }
 
 type SignatureHelpData =
     { SignatureHelpItems: SignatureHelpItem[]
@@ -182,7 +182,7 @@ type internal FSharpSignatureHelpProvider
                                         let doc = ResizeArray()
                                         let parts = ResizeArray()
                                         XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName)
-                                        renderL (taggedTextListR (RoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
+                                        LayoutRender.emitL (RoslynHelpers.CollectTaggedText parts) p.StructuredDisplay |> ignore
                                         { ParameterName = p.ParameterName
                                           IsOptional = p.IsOptional
                                           CanonicalTypeTextForSorting = p.CanonicalTypeTextForSorting
@@ -191,11 +191,11 @@ type internal FSharpSignatureHelpProvider
                                 |]
 
                             let prefixParts = 
-                                [| TaggedText(TextTags.Method, methodGroup.MethodName);  
-                                   TaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
+                                [| RoslynTaggedText(TextTags.Method, methodGroup.MethodName);  
+                                   RoslynTaggedText(TextTags.Punctuation, (if isStaticArgTip then "<" else "(")) |]
 
-                            let separatorParts = [| TaggedText(TextTags.Punctuation, ","); TaggedText(TextTags.Space, " ") |]
-                            let suffixParts = [| TaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
+                            let separatorParts = [| RoslynTaggedText(TextTags.Punctuation, ","); RoslynTaggedText(TextTags.Space, " ") |]
+                            let suffixParts = [| RoslynTaggedText(TextTags.Punctuation, (if isStaticArgTip then ">" else ")")) |]
 
                             { HasParamArrayArg = method.HasParamArrayArg
                               Documentation = documentation
@@ -360,52 +360,65 @@ type internal FSharpSignatureHelpProvider
                     let displayArgs = ResizeArray()
 
                     // Offset by 1 here until we support reverse indexes in this codebase
-                    for argument in definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] do
+                    definedArgs.[.. definedArgs.Length - 1 - numArgsAlreadyApplied] |> Array.iteri (fun index argument ->
                         let taggedText = ResizeArray()
                         let tt = ResizeArray()
                         let layout = argument.Type.FormatLayout symbolUse.DisplayContext
-                        Layout.renderL (Layout.taggedTextListR taggedText.Add) layout |> ignore
+                        LayoutRender.emitL taggedText.Add layout |> ignore
                         for part in taggedText do
                             RoslynHelpers.CollectTaggedText tt part
+                            
+                        let name =
+                            if String.IsNullOrWhiteSpace(argument.DisplayName) then
+                                "arg" + string index
+                            else
+                                argument.DisplayName
 
                         let display =
                             [|
-                                TaggedText(TextTags.Local, argument.DisplayName)
-                                TaggedText(TextTags.Punctuation, ":")
-                                TaggedText(TextTags.Space, " ")
+                                RoslynTaggedText(TextTags.Local, name)
+                                RoslynTaggedText(TextTags.Punctuation, ":")
+                                RoslynTaggedText(TextTags.Space, " ")
                             |]
                             |> ResizeArray
 
+                        if argument.Type.IsFunctionType then
+                            display.Add(RoslynTaggedText(TextTags.Punctuation, "("))
+
                         display.AddRange(tt)
 
+                        if argument.Type.IsFunctionType then
+                            display.Add(RoslynTaggedText(TextTags.Punctuation, ")"))
+
                         let info =
-                            { ParameterName = argument.DisplayName
+                            { ParameterName = name
                               IsOptional = false
-                              CanonicalTypeTextForSorting = argument.FullName
+                              // No need to do anything different here, as this field is only relevant for overloaded parameter names in methods.
+                              CanonicalTypeTextForSorting = name
                               Documentation = ResizeArray()
                               DisplayParts = display }
 
-                        displayArgs.Add(info)
+                        displayArgs.Add(info))
 
                     do! Option.guard (displayArgs.Count > 0)
 
                     let prefixParts =
                         [|
                             if mfv.IsMember then
-                                TaggedText(TextTags.Keyword, "member")
+                                RoslynTaggedText(TextTags.Keyword, "member")
                             else
-                                TaggedText(TextTags.Keyword, "val")
-                            TaggedText(TextTags.Space, " ")
-                            TaggedText(TextTags.Method, mfv.DisplayName)
-                            TaggedText(TextTags.Punctuation, ":")
-                            TaggedText(TextTags.Space, " ")
+                                RoslynTaggedText(TextTags.Keyword, "val")
+                            RoslynTaggedText(TextTags.Space, " ")
+                            RoslynTaggedText(TextTags.Method, mfv.DisplayName)
+                            RoslynTaggedText(TextTags.Punctuation, ":")
+                            RoslynTaggedText(TextTags.Space, " ")
                         |]
 
                     let separatorParts =
                         [|
-                            TaggedText(TextTags.Space, " ")
-                            TaggedText(TextTags.Operator, "->")
-                            TaggedText(TextTags.Space, " ")
+                            RoslynTaggedText(TextTags.Space, " ")
+                            RoslynTaggedText(TextTags.Operator, "->")
+                            RoslynTaggedText(TextTags.Space, " ")
                         |]
 
                     let sigHelpItem =

@@ -5161,7 +5161,7 @@ let ``add files with same name from different folders`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
     let errors =
         wholeProjectResults.Errors
-        |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
+        |> Array.filter (fun x -> x.Severity = FSharpDiagnosticSeverity.Error)
     if errors.Length > 0 then
         printfn "add files with same name from different folders"
         for err in errors do
@@ -5309,7 +5309,7 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
     let fileName, options = mkTestFileAndOptions source args
 
     let _, checkResults = parseAndCheckFile fileName source options
-    checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpErrorSeverity.Error) |> shouldEqual errorSeverities 
+    checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpDiagnosticSeverity.Error) |> shouldEqual errorSeverities 
 
 
 //------------------------------------------------------
@@ -5588,3 +5588,32 @@ module Nested =
              (6, 0), (7, 15)
              (11, 0), (14, 15)
              (13, 0), (14, 15) ]
+
+let checkContentAsScript content =
+    // can't use the helper function in these tests because `getParseAndCheckResults` doesn't seem to operate in a mode
+    // that uses the dependency manager (possibly because `useSdkScripts` isn't set/`assumeDotNetFramework` is implicitly
+    // set).
+    // because of this we have to do it all manually
+    let scriptName = "test.fsx"
+    let tempDir = Path.GetTempPath()
+    let scriptFullPath = Path.Combine(tempDir, scriptName)
+    let sourceText = FSharp.Compiler.Text.SourceText.ofString content
+    let projectOptions, _ = checker.GetProjectOptionsFromScript(scriptFullPath, sourceText, useSdkRefs = true, assumeDotNetFramework = false) |> Async.RunSynchronously
+    let parseOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+    let parseResults = checker.ParseFile(scriptFullPath, sourceText, parseOptions) |> Async.RunSynchronously
+    let checkResults = checker.CheckFileInProject(parseResults, scriptFullPath, 0, sourceText, projectOptions) |> Async.RunSynchronously
+    match checkResults with
+    | FSharpCheckFileAnswer.Aborted -> failwith "no check results"
+    | FSharpCheckFileAnswer.Succeeded r -> r
+
+[<Test>]
+let ``References from #r nuget are included in script project options`` () =
+    let checkResults = checkContentAsScript """
+#r "nuget: Dapper"
+"""
+    let assemblyNames =
+        checkResults.ProjectContext.GetReferencedAssemblies()
+        |> Seq.choose (fun f -> f.FileName |> Option.map Path.GetFileName)
+        |> Seq.distinct
+    printfn "%s" (assemblyNames |> String.concat "\n")
+    assemblyNames |> should contain "Dapper.dll"

@@ -53,7 +53,7 @@ module Commands =
                     // Timed out resolving throw a diagnostic.
                     raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
                 else
-                    ()
+                    p.WaitForExit()
     #if DEBUG
             File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
             File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
@@ -293,13 +293,19 @@ let config configurationName envVars =
         if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
         else DOTNET_EXE
 
+#if !NETCOREAPP
     let FSI_PATH = ("fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe")
+#else
+    let FSI_PATH = ("fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.dll")
+#endif
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
     let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
     let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
-#endif
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
+#else
+    let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
+#endif
     let FSCOREDLLPATH = requireArtifact ("FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
 
     let defaultPlatform =

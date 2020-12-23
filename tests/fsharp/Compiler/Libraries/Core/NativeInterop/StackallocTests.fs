@@ -69,7 +69,7 @@ module ``Stackalloc Tests`` =
 
 let _ = NativeInterop.NativePtr.stackalloc<System.Object> 1
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (4, 9, 4, 43)
             "A generic construct requires that the type 'System.Object' is an unmanaged type"
@@ -82,7 +82,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.Object> 1
 
 let _ = NativeInterop.NativePtr.stackalloc<System.Collections.IEnumerable> 1
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (4, 9, 4, 43)
             "A generic construct requires that the type 'System.Collections.IEnumerable' is an unmanaged type"
@@ -95,7 +95,7 @@ let _ = NativeInterop.NativePtr.stackalloc<System.Collections.IEnumerable> 1
 
 let _ = NativeInterop.NativePtr.stackalloc<System.EventHandler> 1
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (4, 9, 4, 43)
             "A generic construct requires that the type 'System.EventHandler' is an unmanaged type"
@@ -149,7 +149,7 @@ type C() =
 
 let _ = NativeInterop.NativePtr.stackalloc<C> 1
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (10, 9, 10, 43)
             "A generic construct requires that the type 'C' is an unmanaged type"
@@ -164,7 +164,7 @@ type R = { A : int }
 
 let _ = NativeInterop.NativePtr.stackalloc<R> 1
             """
-            FSharpErrorSeverity.Error
+            FSharpDiagnosticSeverity.Error
             1
             (6, 9, 6, 43)
             "A generic construct requires that the type 'R' is an unmanaged type"
