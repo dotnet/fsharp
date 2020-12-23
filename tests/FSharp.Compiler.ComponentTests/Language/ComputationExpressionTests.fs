@@ -11,9 +11,9 @@ module ComputationExpressionTests =
         FSharp """
 module ComputationExpressionTests
 type ListBuilder () =
-    member __.Combine (a: List<'T>, b) = a @ b
-    member __.Yield  x = List.singleton x
-    member __.Delay expr = expr () :  List<'T>
+    member _.Combine (a: List<'T>, b) = a @ b
+    member _.Yield  x = List.singleton x
+    member _.Delay expr = expr () :  List<'T>
 
 let lb = ListBuilder ()
 
@@ -28,9 +28,9 @@ let x = lb {1; 2;}
         FSharp """
 module ComputationExpressionTests
 type ListBuilder () =
-    member __.Combine (a: List<'T>, b) = a @ b
-    member __.Yield  x = List.singleton x
-    member __.Delay expr = expr () :  List<'T>
+    member _.Combine (a: List<'T>, b) = a @ b
+    member _.Yield  x = List.singleton x
+    member _.Delay expr = expr () :  List<'T>
 
 let lb = ListBuilder ()
 
@@ -46,10 +46,10 @@ let x = lb {1; 2;()}
         FSharp """
 module ComputationExpressionTests
 type ListBuilder () =
-    member __.Zero () = []
-    member __.Combine (a: List<'T>, b) = a @ b
-    member __.Yield  x = List.singleton x
-    member __.Delay expr = expr () :  List<'T>
+    member _.Zero () = []
+    member _.Combine (a: List<'T>, b) = a @ b
+    member _.Yield  x = List.singleton x
+    member _.Delay expr = expr () :  List<'T>
 
 let lb = ListBuilder ()
 
@@ -64,9 +64,9 @@ let x = lb {1; 2;()}
         FSharp """
 module ComputationExpressionTests
 type ListBuilder () =
-    member __.Combine (a: List<'T>, b) = a @ b
-    member __.Yield  x = List.singleton x
-    member __.Delay expr = expr () :  List<'T>
+    member _.Combine (a: List<'T>, b) = a @ b
+    member _.Yield  x = List.singleton x
+    member _.Delay expr = expr () :  List<'T>
 
 let lb = ListBuilder ()
 
@@ -81,9 +81,9 @@ let x = lb {1; 2; if true then 3 else 4;}
         FSharp """
 module ComputationExpressionTests
 type ListBuilder () =
-    member __.Combine (a: List<'T>, b) = a @ b
-    member __.Yield  x = List.singleton x
-    member __.Delay expr = expr () :  List<'T>
+    member _.Combine (a: List<'T>, b) = a @ b
+    member _.Yield  x = List.singleton x
+    member _.Delay expr = expr () :  List<'T>
 
 let lb = ListBuilder ()
 

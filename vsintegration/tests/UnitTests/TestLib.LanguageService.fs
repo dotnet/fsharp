@@ -422,7 +422,7 @@ type LanguageServiceBaseTests() =
             failwith "LanguageServiceBaseTests.UsingNewVS was called when 'active' instance of VS is not 'default' one - this may denote that tests contains errors"
         currentVS <- ops.CreateVisualStudio()
         { new System.IDisposable with 
-            member __.Dispose() = 
+            member _.Dispose() = 
                 if box currentVS = box defaultVS then
                     failwith "At this moment 'current' instance of VS cannot be the same as the 'default' one. This may denote that tests contains errors."
                 GlobalFunctions.Cleanup(currentVS)

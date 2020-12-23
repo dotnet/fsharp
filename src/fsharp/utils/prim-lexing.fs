@@ -49,36 +49,36 @@ type StringText(str: string) =
         // So, it's ok that we do this for now.
         lazy getLines str
 
-    member __.String = str
+    member _.String = str
 
-    override __.GetHashCode() = str.GetHashCode()
-    override __.Equals(obj: obj) = 
+    override _.GetHashCode() = str.GetHashCode()
+    override _.Equals(obj: obj) = 
         match obj with
         | :? StringText as other -> other.String.Equals(str)
         | :? string as other -> other.Equals(str)
         | _ -> false        
-    override __.ToString() = str
+    override _.ToString() = str
 
     interface ISourceText with
 
-        member __.Item with get index = str.[index]
+        member _.Item with get index = str.[index]
 
-        member __.GetLastCharacterPosition() =
+        member _.GetLastCharacterPosition() =
             let lines = getLines.Value
             if lines.Length > 0 then
                 (lines.Length, lines.[lines.Length - 1].Length)
             else
                 (0, 0)
 
-        member __.GetLineString(lineIndex) = 
+        member _.GetLineString(lineIndex) = 
             getLines.Value.[lineIndex]
 
-        member __.GetLineCount() = getLines.Value.Length
+        member _.GetLineCount() = getLines.Value.Length
 
-        member __.GetSubTextString(start, length) = 
+        member _.GetSubTextString(start, length) = 
             str.Substring(start, length)
 
-        member __.SubTextEquals(target, startIndex) =
+        member _.SubTextEquals(target, startIndex) =
             if startIndex < 0 || startIndex >= str.Length then
                 invalidArg "startIndex" "Out of range."
 
@@ -91,14 +91,14 @@ type StringText(str: string) =
 
             str.IndexOf(target, startIndex, target.Length) <> -1              
 
-        member __.Length = str.Length
+        member _.Length = str.Length
 
         member this.ContentEquals(sourceText) =
             match sourceText with
             | :? StringText as sourceText when sourceText = this || sourceText.String = str -> true
             | _ -> false
 
-        member __.CopyTo(sourceIndex, destination, destinationIndex, count) =
+        member _.CopyTo(sourceIndex, destination, destinationIndex, count) =
             str.CopyTo(sourceIndex, destination, destinationIndex, count)
 
 module SourceText =
@@ -247,7 +247,7 @@ namespace Internal.Utilities.Text.Lexing
                 Array.blit buffer bufferScanStart repl bufferScanStart bufferScanLength
                 buffer <- repl
 
-        member __.SupportsFeature featureId = supportsFeature featureId
+        member _.SupportsFeature featureId = supportsFeature featureId
 
         static member FromFunction (supportsFeature:LanguageFeature -> bool, f : 'Char[] * int * int -> int) : LexBuffer<'Char> =
             let extension= Array.zeroCreate 4096

@@ -3,9 +3,7 @@
 /// Helper members to integrate DependencyManagers into F# codebase
 namespace Microsoft.DotNet.DependencyManager
 
-open System
 open System.Runtime.InteropServices
-
 
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
@@ -14,10 +12,10 @@ type IResolveDependenciesResult =
     abstract Success: bool
 
     /// The resolution output log
-    abstract StdOut: string array
+    abstract StdOut: string[]
 
     /// The resolution error log (process stderr)
-    abstract StdError: string array
+    abstract StdError: string[]
 
     /// The resolution paths - the full paths to selected resolved dll's.
     /// In scripts this is equivalent to #r @"c:\somepath\to\packages\ResolvedPackage\1.1.1\lib\netstandard2.0\ResolvedAssembly.dll"

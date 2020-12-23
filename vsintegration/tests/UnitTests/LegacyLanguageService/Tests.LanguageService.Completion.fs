@@ -346,22 +346,22 @@ a.
             [
                 [
                 "type A() ="
-                "   member __.X = ()"
+                "   member _.X = ()"
                 "   member this."
                 ]
                 [
                 "type A() ="
-                "   member __.X = ()"
+                "   member _.X = ()"
                 "   member private this."
                 ]
                 [
                 "type A() ="
-                "   member __.X = ()"
+                "   member _.X = ()"
                 "   member public this."
                 ]
                 [
                 "type A() ="
-                "   member __.X = ()"
+                "   member _.X = ()"
                 "   member internal this."
                 ]
 
@@ -519,10 +519,10 @@ a.
             [
                 "type Foo = Foo"
                 "    with"
-                "        member __.Bar = 1"
-                "        member __.PublicMethodForIntellisense() = 2"
-                "        member internal __.InternalMethod() = 3"
-                "        member private __.PrivateProperty = 4"
+                "        member _.Bar = 1"
+                "        member _.PublicMethodForIntellisense() = 2"
+                "        member internal _.InternalMethod() = 3"
+                "        member private _.PrivateProperty = 4"
                 ""
                 "let u: Unit ="
                 "    [ Foo ]"
@@ -3864,7 +3864,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             [ @"
                     type C() = 
                         let someValue = ""abc""
-                        member __.M() = 
+                        member _.M() = 
                           let x = 1
                           match someValue. with
                             let x = 1
@@ -5546,8 +5546,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type T() = 
-                    member __.P with get() = new T()
-                    member __.M() = [|1..2|]
+                    member _.P with get() = new T()
+                    member _.M() = [|1..2|]
                 let t = new T()
                 t.P.M()(*marker*)  """,
             marker = "(*marker*)",
@@ -5558,7 +5558,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = """
                 type T() = 
-                    member __.M() = [|1..2|]
+                    member _.M() = [|1..2|]
 
                 type R = { P : T } 
                     

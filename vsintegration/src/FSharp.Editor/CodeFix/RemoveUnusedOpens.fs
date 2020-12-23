@@ -9,7 +9,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider
@@ -56,5 +56,5 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
-    override __.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
+    override _.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
  

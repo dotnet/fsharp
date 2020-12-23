@@ -1154,7 +1154,7 @@ module internal Array =
         if len > 1 then
             let keys = (array.Clone() :?> array<'T>)
             let comparer = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(comparer)
-            let c = { new IComparer<'T> with member __.Compare(x, y) = comparer.Invoke(x, y) }
+            let c = { new IComparer<'T> with member _.Compare(x, y) = comparer.Invoke(x, y) }
             stableSortWithKeysAndComparer c c array keys
 
     let inline subUnchecked startIndex count (array : 'T[]) =

@@ -4,6 +4,7 @@ module internal FSharp.Compiler.Detuple
 
 open FSharp.Compiler.AbstractIL.Internal 
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val DetupleImplFile: CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile

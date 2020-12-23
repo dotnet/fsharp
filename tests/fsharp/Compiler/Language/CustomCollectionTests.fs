@@ -14,7 +14,7 @@ open System
 type foo() = 
     let mutable i = ""
     member this.GetReverseIndex(_x: int, y: string) = y + " "
-    member __.Item with get (_x: string) = i and set idx value = i <- idx + value
+    member _.Item with get (_x: string) = i and set idx value = i <- idx + value
 
 let a = foo()
 a.[^"2"] <- "-1"
@@ -63,7 +63,7 @@ open System
 type foo() = 
     let mutable i = ""
     member this.GetReverseIndex(x: int, y: string) = x.ToString() + " " + y
-    member __.Item with get (_x: string) = i and set (idx1, idx2) value = i <- idx1 + " " + idx2 + " " + value
+    member _.Item with get (_x: string) = i and set (idx1, idx2) value = i <- idx1 + " " + idx2 + " " + value
 
 let a = foo()
 a.[^"1",^"2"] <- "3"

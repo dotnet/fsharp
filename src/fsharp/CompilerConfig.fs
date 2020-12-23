@@ -25,16 +25,16 @@ open FSharp.Compiler.AbstractIL.Internal.Utils
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
-open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 
 open Microsoft.DotNet.DependencyManager
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices
 #endif
 
 let (++) x s = x @ [s]
@@ -328,7 +328,7 @@ type TcConfigBuilder =
       mutable implicitOpens: string list
       mutable useFsiAuxLib: bool
       mutable framework: bool
-      mutable resolutionEnvironment: ReferenceResolver.ResolutionEnvironment
+      mutable resolutionEnvironment: LegacyResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
@@ -399,7 +399,7 @@ type TcConfigBuilder =
       mutable win32manifest: string
       mutable includewin32manifest: bool
       mutable linkResources: string list
-      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: LegacyReferenceResolver
       mutable fxResolver: FxResolver 
 
       mutable showFullPaths: bool
@@ -496,7 +496,7 @@ type TcConfigBuilder =
           useFsiAuxLib = false
           implicitOpens = []
           includes = []
-          resolutionEnvironment = ResolutionEnvironment.EditingOrCompilation false
+          resolutionEnvironment = LegacyResolutionEnvironment.EditingOrCompilation false
           framework = true
           implicitlyResolveAssemblies = true
           compilerToolPaths = []
@@ -872,7 +872,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
                 let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim filename))
-                clrRoot, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
+                clrRoot, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
                 error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
@@ -883,7 +883,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 None, ""
             else
 #endif
-                None, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
+                None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
     let systemAssemblies = data.fxResolver.GetSystemAssemblies()
 
@@ -1050,7 +1050,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
 
                 match tcConfig.resolutionEnvironment with
-                | ResolutionEnvironment.CompilationAndEvaluation ->
+                | LegacyResolutionEnvironment.CompilationAndEvaluation ->
                     // Default compilation-and-execution-time references on .NET Framework and Mono, e.g. for F# Interactive
                     //
                     // In the current way of doing things, F# Interactive refers to implementation assemblies.
@@ -1065,7 +1065,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         yield path
                     | _ -> ()
 
-                | ResolutionEnvironment.EditingOrCompilation _ ->
+                | LegacyResolutionEnvironment.EditingOrCompilation _ ->
 #if ENABLE_MONO_SUPPORT
                     if runningOnMono then 
                         // Default compilation-time references on Mono
@@ -1089,7 +1089,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         // Default compilation-time references on .NET Framework
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
-                        let frameworkRoot = tcConfig.legacyReferenceResolver.DotNetFrameworkReferenceAssembliesRootDirectory
+                        let frameworkRoot = tcConfig.legacyReferenceResolver.Impl.DotNetFrameworkReferenceAssembliesRootDirectory
                         let frameworkRootVersion = Path.Combine(frameworkRoot, tcConfig.targetFrameworkVersion)
                         yield frameworkRootVersion
                         let facades = Path.Combine(frameworkRootVersion, "Facades")

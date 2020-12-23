@@ -2,13 +2,14 @@
 
 module internal FSharp.Compiler.PatternMatchCompilation
 
-open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.Range
-open FSharp.Compiler.InfoReader
 
 /// What should the decision tree contain for any incomplete match? 
 type ActionOnFailure = 

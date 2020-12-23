@@ -53,59 +53,60 @@ type IFileSystem =
     abstract IsStableFileHeuristic: fileName: string -> bool
 
 
+type DefaultFileSystem() =
+    interface IFileSystem with
+
+        member _.AssemblyLoadFrom(fileName: string) = 
+            Assembly.UnsafeLoadFrom fileName
+
+        member _.AssemblyLoad(assemblyName: AssemblyName) = 
+            Assembly.Load assemblyName
+
+        member _.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
+
+        member _.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
+
+        member _.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
+
+        member _.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
+
+        member _.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
+
+        member _.IsPathRootedShim (path: string) = Path.IsPathRooted path
+
+        member _.IsInvalidPathShim(path: string) = 
+            let isInvalidPath(p: string) = 
+                String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+
+            let isInvalidFilename(p: string) = 
+                String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+
+            let isInvalidDirectory(d: string) = 
+                d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+
+            isInvalidPath path || 
+            let directory = Path.GetDirectoryName path
+            let filename = Path.GetFileName path
+            isInvalidDirectory directory || isInvalidFilename filename
+
+        member _.GetTempPathShim() = Path.GetTempPath()
+
+        member _.GetLastWriteTimeShim (fileName: string) = File.GetLastWriteTimeUtc fileName
+
+        member _.SafeExists (fileName: string) = File.Exists fileName 
+
+        member _.FileDelete (fileName: string) = File.Delete fileName
+
+        member _.IsStableFileHeuristic (fileName: string) = 
+            let directory = Path.GetDirectoryName fileName
+            directory.Contains("Reference Assemblies/") || 
+            directory.Contains("Reference Assemblies\\") || 
+            directory.Contains("packages/") || 
+            directory.Contains("packages\\") || 
+            directory.Contains("lib/mono/")
+
 [<AutoOpen>]
 module FileSystemAutoOpens =
-    type DefaultFileSystem() =
-        interface IFileSystem with
-
-            member __.AssemblyLoadFrom(fileName: string) = 
-                Assembly.UnsafeLoadFrom fileName
-
-            member __.AssemblyLoad(assemblyName: AssemblyName) = 
-                Assembly.Load assemblyName
-
-            member __.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
-
-            member __.FileStreamReadShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)  :> Stream
-
-            member __.FileStreamCreateShim (fileName: string) = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
-
-            member __.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName, FileMode.Open, FileAccess.Write, FileShare.Read, 0x1000, false) :> Stream
-
-            member __.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
-
-            member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
-
-            member __.IsInvalidPathShim(path: string) = 
-                let isInvalidPath(p: string) = 
-                    String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-
-                let isInvalidFilename(p: string) = 
-                    String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
-
-                let isInvalidDirectory(d: string) = 
-                    d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-
-                isInvalidPath path || 
-                let directory = Path.GetDirectoryName path
-                let filename = Path.GetFileName path
-                isInvalidDirectory directory || isInvalidFilename filename
-
-            member __.GetTempPathShim() = Path.GetTempPath()
-
-            member __.GetLastWriteTimeShim (fileName: string) = File.GetLastWriteTimeUtc fileName
-
-            member __.SafeExists (fileName: string) = File.Exists fileName 
-
-            member __.FileDelete (fileName: string) = File.Delete fileName
-
-            member __.IsStableFileHeuristic (fileName: string) = 
-                let directory = Path.GetDirectoryName fileName
-                directory.Contains("Reference Assemblies/") || 
-                directory.Contains("Reference Assemblies\\") || 
-                directory.Contains("packages/") || 
-                directory.Contains("packages\\") || 
-                directory.Contains("lib/mono/")
 
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem
 

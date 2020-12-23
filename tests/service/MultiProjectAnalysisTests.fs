@@ -8,8 +8,8 @@
 module Tests.Service.MultiProjectAnalysisTests
 #endif
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 open NUnit.Framework
 open FsUnit
@@ -23,7 +23,7 @@ let numProjectsForStressTest = 100
 let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
 /// Extract range info 
-let internal tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
+let internal tups (m:range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 
 
 module internal Project1A = 
@@ -871,7 +871,7 @@ let ``Type provider project references should not throw exceptions`` () =
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
-    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, FSharp.Compiler.Text.SourceText.ofString fileSource, options) |> Async.RunSynchronously
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunSynchronously
     let fileCheckResults = 
         match fileCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -967,7 +967,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
-    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, FSharp.Compiler.Text.SourceText.ofString fileSource, options) |> Async.RunSynchronously
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString fileSource, options) |> Async.RunSynchronously
     let fileCheckResults = 
         match fileCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res

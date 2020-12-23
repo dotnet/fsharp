@@ -22,6 +22,7 @@ F#のソースコードに対して、トークナイザは
 *)
 #r "FSharp.Compiler.Service.dll"
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 (**
 すると `FSharpSourceTokenizer` のインスタンスを作成できるようになります。
 このクラスには2つの引数を指定します。
@@ -32,7 +33,7 @@ open FSharp.Compiler.SourceCodeServices
 ファイル名はソースコードの位置を特定する場合にのみ指定する必要があります
 (存在しないファイル名でも指定できます):
 *)
-let sourceTok = FSharpSourceTokenizer([], "C:\\test.fsx")
+let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
 (**
 `sourceTok` オブジェクトを使用することでF#ソースコードの各行を
 (繰り返し)トークン化することができます。

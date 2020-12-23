@@ -17,7 +17,7 @@ open Xunit
 type InteractiveTests() =
 
     [<Fact>]
-    member __.``Eval object value``() =
+    member _.``Eval object value``() =
         use script = new FSharpScript()
         let opt = script.Eval("1+1") |> getValue
         let value = opt.Value
@@ -25,7 +25,7 @@ type InteractiveTests() =
         Assert.Equal(2, value.ReflectionValue :?> int)
 
     [<Fact>]
-    member __.``Declare and eval object value``() =
+    member _.``Declare and eval object value``() =
         use script = new FSharpScript()
         let opt = script.Eval("let x = 1 + 2\r\nx") |> getValue
         let value = opt.Value
@@ -33,7 +33,7 @@ type InteractiveTests() =
         Assert.Equal(3, value.ReflectionValue :?> int)
 
     [<Fact>]
-    member __.``Capture console input``() =
+    member _.``Capture console input``() =
         use input = new RedirectConsoleInput()
         use script = new FSharpScript()
         input.ProvideInput "stdin:1234\r\n"
@@ -43,7 +43,7 @@ type InteractiveTests() =
         Assert.Equal("stdin:1234", downcast value.ReflectionValue)
 
     [<Fact>]
-    member __.``Capture console output/error``() =
+    member _.``Capture console output/error``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript()
         use sawOutputSentinel = new ManualResetEvent(false)
@@ -55,7 +55,7 @@ type InteractiveTests() =
         Assert.True(sawErrorSentinel.WaitOne(TimeSpan.FromSeconds(5.0)), "Expected to see error sentinel value written")
 
     [<Fact>]
-    member __.``Maintain state between submissions``() =
+    member _.``Maintain state between submissions``() =
         use script = new FSharpScript()
         script.Eval("let add x y = x + y") |> ignoreValue
         let opt = script.Eval("add 2 3") |> getValue
@@ -64,7 +64,7 @@ type InteractiveTests() =
         Assert.Equal(5, downcast value.ReflectionValue)
 
     [<Fact>]
-    member __.``Assembly reference event successful``() =
+    member _.``Assembly reference event successful``() =
         use script = new FSharpScript()
         let testCode = """
 #r "System.dll"
@@ -76,7 +76,7 @@ stacktype.Name = "Stack"
         Assert.Equal(true, downcast value.ReflectionValue)
 
     [<Fact>]
-    member __.``Assembly reference unsuccessful``() =
+    member _.``Assembly reference unsuccessful``() =
         use script = new FSharpScript()
         let testAssembly = "not-an-assembly-that-can-be-found.dll"
         let _result, errors = script.Eval(sprintf "#r \"%s\"" testAssembly)
@@ -197,7 +197,7 @@ System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOC
 /// Native dll resolution is not implemented on desktop
 #if NETSTANDARD
     [<Fact>]
-    member __.``ML - use assembly with native dependencies``() =
+    member _.``ML - use assembly with native dependencies``() =
         let code = @"
 #r ""nuget:Microsoft.ML,version=1.4.0-preview""
 #r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
@@ -243,7 +243,7 @@ printfn ""%A"" result
 #endif
 
     [<Fact>]
-    member __.``Eval script with package manager invalid key``() =
+    member _.``Eval script with package manager invalid key``() =
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let result, _errors = script.Eval(@"#r ""nugt:FSharp.Data""")
         match result with
@@ -251,7 +251,7 @@ printfn ""%A"" result
         | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
     [<Fact>]
-    member __.``Eval script with invalid PackageName should fail immediately``() =
+    member _.``Eval script with invalid PackageName should fail immediately``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let mutable found = 0
@@ -267,7 +267,7 @@ printfn ""%A"" result
         Assert.True( errors |> Seq.exists (fun error -> error.Message.Contains("FSharp.Really.Not.A.Package")), "Expect to error containing 'FSharp.Really.Not.A.Package'")
 
     [<Fact>]
-    member __.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
+    member _.``Eval script with invalid PackageName should fail immediately and resolve one time only``() =
         use output = new RedirectConsoleOutput()
         use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
         let mutable foundResolve = 0
@@ -283,7 +283,7 @@ printfn ""%A"" result
         Assert.Equal(1, (errors |> Seq.filter (fun error -> error.Message.Contains("FSharp.Really.Not.Another.Package")) |> Seq.length))
 
     [<Fact>]
-    member __.``ML - use assembly with ref dependencies``() =
+    member _.``ML - use assembly with ref dependencies``() =
         let code = """
 #r "nuget:Microsoft.ML.OnnxTransformer,1.4.0"
 #r "nuget:System.Memory,4.5.4"
@@ -300,7 +300,7 @@ tInput.Length
         Assert.Equal(4L, downcast value.ReflectionValue)
 
     [<Fact>]
-    member __.``System.Device.Gpio - Ensure we reference the runtime version of the assembly``() =
+    member _.``System.Device.Gpio - Ensure we reference the runtime version of the assembly``() =
         let code = """
 #r "nuget:System.Device.Gpio, 1.0.0"
 typeof<System.Device.Gpio.GpioController>.Assembly.Location
@@ -318,7 +318,7 @@ typeof<System.Device.Gpio.GpioController>.Assembly.Location
             ()
 
     [<Fact>]
-    member __.``Simple pinvoke should not be impacted by native resolver``() =
+    member _.``Simple pinvoke should not be impacted by native resolver``() =
         let code = @"
 open System
 open System.Runtime.InteropServices

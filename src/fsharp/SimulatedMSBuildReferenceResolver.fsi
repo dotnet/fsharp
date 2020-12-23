@@ -2,7 +2,5 @@
 
 module internal FSharp.Compiler.SimulatedMSBuildReferenceResolver
 
-open FSharp.Compiler.ReferenceResolver
-
-val getResolver: unit -> Resolver
+val getResolver: unit -> LegacyReferenceResolver
 

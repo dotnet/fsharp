@@ -5,6 +5,7 @@ namespace FSharp.Compiler.Scripting
 open System
 open System.Threading
 open FSharp.Compiler
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Interactive.Shell
 
 [<RequireQualifiedAccess>]
@@ -41,11 +42,11 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
 
     let fsi = FsiEvaluationSession.Create (config, argv, stdin, stdout, stderr)
 
-    member __.ValueBound = fsi.ValueBound
+    member _.ValueBound = fsi.ValueBound
 
-    member __.Fsi = fsi
+    member _.Fsi = fsi
 
-    member __.Eval(code: string, ?cancellationToken: CancellationToken) =
+    member _.Eval(code: string, ?cancellationToken: CancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
         let ch, errors = fsi.EvalInteractionNonThrowing(code, cancellationToken)
         match ch with
@@ -57,7 +58,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
     /// <param name="text">The input text on which completions will be calculated</param>
     /// <param name="line">The 1-based line index</param>
     /// <param name="column">The 0-based column index</param>
-    member __.GetCompletionItems(text: string, line: int, column: int) =
+    member _.GetCompletionItems(text: string, line: int, column: int) =
         async {
             let! parseResults, checkResults, _projectResults = fsi.ParseAndCheckInteraction(text)
             let lineText = text.Split('\n').[line - 1]
@@ -67,5 +68,5 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         }
 
     interface IDisposable with
-        member __.Dispose() =
+        member _.Dispose() =
             (fsi :> IDisposable).Dispose()

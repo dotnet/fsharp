@@ -7,11 +7,11 @@ open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.TextLayout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree
@@ -337,7 +337,7 @@ type ReqdItemsForDefn =
     { 
         reqdTypars: Zset<Typar>
         reqdItems: Zset<ReqdItem>
-        m: Range.range
+        m: range
     }
 
     member env.ReqdSubEnvs = [ for x in env.reqdItems do match x with | ReqdSubEnv f -> yield f | ReqdVal _ -> () ]
@@ -676,7 +676,7 @@ type PackedReqdItems =
 // step3: FlatEnvPacks
 //-------------------------------------------------------------------------
 
-exception AbortTLR of Range.range
+exception AbortTLR of range
 
 /// A naive packing of environments.
 /// Chooses to pass all env values as explicit args (no tupling).

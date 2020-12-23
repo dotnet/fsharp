@@ -7,7 +7,8 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open FSharp.Compiler.Range 
+open FSharp.Compiler
+open FSharp.Compiler.Text
 open FSharp.Compiler.SyntaxTree
 
 /// Indicates a kind of item to show in an F# navigation bar

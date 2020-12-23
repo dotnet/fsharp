@@ -5,9 +5,9 @@
 module internal FSharp.Compiler.TypeRelations
 
 open FSharp.Compiler.Import
-open FSharp.Compiler.Range
-open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.TypedTree
 
 type CanCoerce =
     | CanCoerce

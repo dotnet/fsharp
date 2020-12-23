@@ -8,7 +8,7 @@ open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
 open FSharp.Compiler.AbstractIL.Morphs 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
 
 // -------------------------------------------------------------------- 
 // Erase closures and function types
@@ -125,7 +125,7 @@ type cenv =
       addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef
     }
 
-    override __.ToString() = "<cenv>"
+    override _.ToString() = "<cenv>"
 
   
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) = 

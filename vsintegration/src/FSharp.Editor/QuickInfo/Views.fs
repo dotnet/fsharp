@@ -5,7 +5,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System.Collections.Generic
 open FSharp.Compiler.TextLayout
 open Microsoft.CodeAnalysis.Classification
-open FSharp.Compiler
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Language.StandardClassification
 open Microsoft.VisualStudio.Text.Adornments

@@ -17,17 +17,11 @@ open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
-open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Features
-open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Lib
-open FSharp.Compiler.Range
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
-open FSharp.Compiler.TextLayout.TaggedText
-open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps 
 open FSharp.Compiler.ErrorLogger
 

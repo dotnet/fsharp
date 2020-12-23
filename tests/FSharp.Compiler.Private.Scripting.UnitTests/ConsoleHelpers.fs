@@ -23,7 +23,7 @@ type internal RedirectConsoleInput() =
     member _.ProvideInput(text: string) =
         newStdIn.ProvideInput(text)
     interface IDisposable with
-        member __.Dispose() =
+        member _.Dispose() =
             Console.SetIn(oldStdIn)
             newStdIn.Dispose()
 
@@ -57,7 +57,7 @@ type internal RedirectConsoleOutput() =
     member _.OutputProduced = outputProduced.Publish
     member _.ErrorProduced = errorProduced.Publish
     interface IDisposable with
-        member __.Dispose() =
+        member _.Dispose() =
             Console.SetOut(oldStdOut)
             Console.SetError(oldStdErr)
             newStdOut.Dispose()

@@ -8,7 +8,8 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System.Collections.Generic
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 
@@ -74,8 +75,8 @@ type FSharpNavigationItems(declarations:FSharpNavigationTopLevelDeclaration[]) =
 
 module NavigationImpl =
     let unionRangesChecked r1 r2 =
-        if FSharp.Compiler.Range.equals r1 range.Zero then r2
-        elif FSharp.Compiler.Range.equals r2 range.Zero then r1
+        if Range.equals r1 range.Zero then r2
+        elif Range.equals r2 range.Zero then r1
         else unionRanges r1 r2
     
     let rangeOfDecls2 f decls = 
@@ -209,9 +210,9 @@ module NavigationImpl =
                 | SynTypeDefnSimpleRepr.TypeAbbrev(_, _, mb) ->
                     [ createDeclLid(baseName, lid, TypeDecl, FSharpGlyph.Typedef, m, bodyRange mb topMembers, topMembers, FSharpEnclosingEntityKind.Class, false, access) ]
                           
-                //| SynTypeDefnSimpleRepr.General of TyconKind * (SynType * range * ident option) list * (valSpfn * MemberFlags) list * fieldDecls * bool * bool * range 
-                //| SynTypeDefnSimpleRepr.LibraryOnlyILAssembly of ILType * range
-                //| TyconCore_repr_hidden of range
+                //| SynTypeDefnSimpleRepr.General of TyconKind * (SynType * Range * ident option) list * (valSpfn * MemberFlags) list * fieldDecls * bool * bool * Range 
+                //| SynTypeDefnSimpleRepr.LibraryOnlyILAssembly of ILType * Range
+                //| TyconCore_repr_hidden of Range
                 | _ -> [] 
                   
         // Returns class-members for the right dropdown                  

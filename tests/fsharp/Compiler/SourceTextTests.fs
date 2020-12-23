@@ -5,6 +5,7 @@ namespace FSharp.Compiler.UnitTests
 open System
 open NUnit.Framework
 
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 
 [<TestFixture>]

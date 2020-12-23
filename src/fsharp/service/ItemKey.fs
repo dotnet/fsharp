@@ -9,15 +9,14 @@ open System.Reflection.Metadata
 
 open FSharp.NativeInterop
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TcGlobals
 
 #nowarn "9"
 
@@ -176,7 +175,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
     let writeString (str: string) =
         b.WriteUTF16 str
 
-    let writeRange (m: Range.range) =
+    let writeRange (m: range) =
         b.WriteInt32(m.StartLine)
         b.WriteInt32(m.StartColumn)
         b.WriteInt32(m.EndLine)
@@ -287,7 +286,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
 
-    member _.Write (m: Range.range, item: Item) =
+    member _.Write (m: range, item: Item) =
         writeRange m
 
         let fixup = b.ReserveBytes 4 |> BlobWriter

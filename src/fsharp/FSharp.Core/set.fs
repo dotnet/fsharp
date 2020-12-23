@@ -453,13 +453,13 @@ module internal SetTree =
     let mkIEnumerator s = 
         let mutable  i = mkIterator s
         { new IEnumerator<_> with 
-              member __.Current = current i
+              member _.Current = current i
           interface IEnumerator with 
-              member __.Current = box (current i)
-              member __.MoveNext() = moveNext i
-              member __.Reset() = i <- mkIterator s
+              member _.Current = box (current i)
+              member _.MoveNext() = moveNext i
+              member _.Reset() = i <- mkIterator s
           interface System.IDisposable with 
-              member __.Dispose() = () }
+              member _.Dispose() = () }
 
     /// Set comparison.  Note this can be expensive.
     let rec compareStacks (comparer: IComparer<'T>) (l1:SetTree<'T> list) (l2:SetTree<'T> list) : int =
@@ -581,17 +581,17 @@ type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T
         Set<'T>(comparer, SetTree.empty)
 
     [<System.Runtime.Serialization.OnSerializingAttribute>]
-    member __.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
+    member _.OnSerializing(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         serializedData <- SetTree.toArray tree
 
     // Do not set this to null, since concurrent threads may also be serializing the data
     //[<System.Runtime.Serialization.OnSerializedAttribute>]
-    //member __.OnSerialized(context: System.Runtime.Serialization.StreamingContext) =
+    //member _.OnSerialized(context: System.Runtime.Serialization.StreamingContext) =
     //    serializedData <- null
 
     [<System.Runtime.Serialization.OnDeserializedAttribute>]
-    member __.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
+    member _.OnDeserialized(context: System.Runtime.Serialization.StreamingContext) =
         ignore context
         comparer <- LanguagePrimitives.FastGenericComparer<'T>
         tree <- SetTree.ofArray comparer serializedData
