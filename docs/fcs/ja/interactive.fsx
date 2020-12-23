@@ -245,7 +245,6 @@ checkResults.Errors.Length // 1
 要求することもできます:
 
 *)
-open FSharp.Compiler
 
 // ツールチップを取得する
 checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT) 

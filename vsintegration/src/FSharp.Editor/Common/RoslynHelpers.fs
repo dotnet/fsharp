@@ -8,7 +8,6 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open FSharp.Compiler
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text

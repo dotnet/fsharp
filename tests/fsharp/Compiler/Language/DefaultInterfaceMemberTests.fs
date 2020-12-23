@@ -104,13 +104,13 @@ type Test () =
 
     interface ITest3 with
 
-        member _.Method1 () = Console.Write("FSharp-Method1")
+        member __.Method1 () = Console.Write("FSharp-Method1")
 
-        member _.Method2 () = Console.Write("FSharp-Method2")
+        member __.Method2 () = Console.Write("FSharp-Method2")
 
-        member _.Method3 () = Console.Write("FSharp-Method3")
+        member __.Method3 () = Console.Write("FSharp-Method3")
 
-        member _.Method4 () = Console.Write("FSharp-Method4")
+        member __.Method4 () = Console.Write("FSharp-Method4")
 
 [<EntryPoint>]
 let main _ =
@@ -210,7 +210,7 @@ type Test () =
 
     interface ITest with
 
-        member _.NonDefaultMethod () = ()
+        member __.NonDefaultMethod () = ()
             """
         
         let csCmpl =
@@ -301,7 +301,7 @@ type Test () =
 
     interface ITest with
 
-        member _.NonDefaultMethod () = Console.Write("NonDefaultMethod")
+        member __.NonDefaultMethod () = Console.Write("NonDefaultMethod")
             """
 
         let csCmpl =
@@ -347,9 +347,9 @@ type Test () =
 
     interface ITest with
 
-        member _.DefaultMethod () = Console.Write("DefaultMethod")
+        member __.DefaultMethod () = Console.Write("DefaultMethod")
 
-        member _.NonDefaultMethod () = Console.Write("NonDefaultMethod")
+        member __.NonDefaultMethod () = Console.Write("NonDefaultMethod")
             """
 
         let csCmpl =
@@ -726,10 +726,10 @@ type Test () =
     interface ITest with
 
         // protected member
-        member _.M1() = 
+        member __.M1() = 
             Console.Write("Protected")
 
-        member _.M2() =
+        member __.M2() =
             Console.Write("Explicit")
 
 type Test2 () =
@@ -738,7 +738,7 @@ type Test2 () =
     interface ITest2 with
 
         // protected member
-        member _.M1() =
+        member __.M1() =
             Console.Write("ProtectedOverride")
 
 [<EntryPoint>]
@@ -807,28 +807,28 @@ type Test () =
 
     interface IA<int> with
 
-        member _.M(_x: int) = Console.Write("InTest")
+        member __.M(_x: int) = Console.Write("InTest")
 
-        member _.M<'Item> (x: int, y: 'Item) = 
+        member __.M<'Item> (x: int, y: 'Item) = 
             Console.Write(x.ToString())
             Console.Write(y.ToString ())
 
-        member _.M<'TTT> (x: 'TTT) =
+        member __.M<'TTT> (x: 'TTT) =
             Console.Write(x.ToString ())
 
-        member _.M (x: int, text: string) =
+        member __.M (x: int, text: string) =
             Console.Write("ABC")
             Console.Write(x.ToString())
             Console.Write(text)
 
-        member _.M<'U> (_x: 'U, _y: int) = ()
+        member __.M<'U> (_x: 'U, _y: int) = ()
 
 type Test2 () =
     inherit Test ()
 
     interface IB<int> with
 
-        member _.M(_x: int) = Console.Write("InTest2")
+        member __.M(_x: int) = Console.Write("InTest2")
 
 [<EntryPoint>]
 let main _ =
@@ -909,16 +909,16 @@ type Test () =
 
     interface IA<int> with
 
-        member _.M(_x: int) = Console.Write("InTest")
+        member __.M(_x: int) = Console.Write("InTest")
 
-        member _.M<'Item> (x: int, y: 'Item) = 
+        member __.M<'Item> (x: int, y: 'Item) = 
             Console.Write(string x)
             Console.Write(y.ToString ())
 
-        member _.M<'TTT> (x: 'TTT) =
+        member __.M<'TTT> (x: 'TTT) =
             Console.Write(x.ToString ())
 
-        member _.M (x: int, text: string) =
+        member __.M (x: int, text: string) =
             Console.Write("ABC")
             Console.Write(string x)
             Console.Write(text)
@@ -1658,10 +1658,10 @@ type Test () =
 
     interface ITest with
 
-        member _.DefaultMethod () =
+        member __.DefaultMethod () =
             Console.Write("DefaultMethod")
 
-        member _.NonDefaultMethod () =
+        member __.NonDefaultMethod () =
             Console.Write("NonDefaultMethod")
             """
 

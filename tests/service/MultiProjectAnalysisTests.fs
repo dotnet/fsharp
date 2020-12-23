@@ -8,7 +8,6 @@
 module Tests.Service.MultiProjectAnalysisTests
 #endif
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
 

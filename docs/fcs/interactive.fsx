@@ -228,7 +228,6 @@ based on the declarations executed so far.
 
 You can also request declaration list information, tooltip text and symbol resolution:
 *)
-open FSharp.Compiler
 
 // get a tooltip
 checkResults.GetToolTipText(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT)

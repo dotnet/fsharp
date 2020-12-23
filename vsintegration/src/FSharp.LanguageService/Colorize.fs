@@ -13,10 +13,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Text
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text.Range
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 

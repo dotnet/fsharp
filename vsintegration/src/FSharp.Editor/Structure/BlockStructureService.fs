@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Structure
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Structure
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.Structure
 open FSharp.Compiler.SyntaxTree
