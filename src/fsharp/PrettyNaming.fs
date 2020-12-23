@@ -13,10 +13,8 @@ open System.Text
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.Internal.Library
-
-open Internal.Utilities
-open Internal.Utilities.StructuredFormat
-open Internal.Utilities.StructuredFormat.LayoutOps
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
 
 //------------------------------------------------------------------------
 // Operator name compilation
@@ -308,7 +306,7 @@ let DemangleOperatorName nm =
     
 let DemangleOperatorNameAsLayout nonOpTagged nm =
     let nm = DecompileOpName nm
-    if IsOperatorOrBacktickedName nm then wordL (TaggedTextOps.tagPunctuation "(") ^^ wordL (TaggedTextOps.tagOperator nm) ^^ wordL (TaggedTextOps.tagPunctuation ")")
+    if IsOperatorOrBacktickedName nm then wordL (TaggedText.tagPunctuation "(") ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
     else wordL (nonOpTagged nm)
 
 let opNameCons = CompileOpName "::"
@@ -488,7 +486,6 @@ let GetBasicNameOfPossibleCompilerGeneratedName (name: string) =
 
 let CompilerGeneratedNameSuffix (basicName: string) suffix =
     basicName+compilerGeneratedMarker+suffix
-
 
 //-------------------------------------------------------------------------
 // Handle mangled .NET generic type names
@@ -703,7 +700,6 @@ let mangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
     else
         typeLogicalName + "," + nonDefaultArgsText
 
-
 /// Mangle the static parameters for a provided type or method
 let computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues) =
     let nonDefaultArgs = 
@@ -762,10 +758,13 @@ let unassignedTyparName = "?"
 //--------------------------------------------------------------------------
 
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
+
 // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
 // don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'
 // or 'FSharpSignatureData'
 let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
+
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 

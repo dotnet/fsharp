@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
-        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="translated">Error en la operación. El texto del error se ha impreso en la secuencia de errores. Para devolver el correspondiente FSharpErrorInfo, use EvalInteractionNonThrowing, EvalScriptNonThrowing o EvalExpressionNonThrowing</target>
+        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
+        <target state="translated">Error en la operación. El texto del error se ha impreso en la secuencia de errores. Para devolver el correspondiente FSharpDiagnostic, use EvalInteractionNonThrowing, EvalScriptNonThrowing o EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">
@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
         <source>  F# Interactive directives:</source>
-        <target state="translated">Directivas de F# interactivo:</target>
+        <target state="translated"> Directivas de F# interactivo:</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHashrInfo">

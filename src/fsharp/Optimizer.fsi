@@ -4,6 +4,7 @@ module internal FSharp.Compiler.Optimizer
 
 open FSharp.Compiler 
 open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
@@ -51,14 +52,14 @@ val internal OptimizeImplFile:
     Import.ImportMap *
     IncrementalOptimizationEnv *
     isIncrementalFragment: bool *
-    emitTaicalls: bool *
+    emitTailcalls: bool *
     SignatureHidingInfo * 
     TypedImplFile 
        -> (IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) * (bool -> Expr -> Expr)
 
 #if DEBUG
 /// Displaying optimization data
-val internal moduleInfoL: TcGlobals -> LazyModuleInfo -> Layout.layout
+val internal moduleInfoL: TcGlobals -> LazyModuleInfo -> Layout
 #endif
 
 /// Saving and re-reading optimization information 

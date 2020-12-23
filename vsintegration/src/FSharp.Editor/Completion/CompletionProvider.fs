@@ -45,7 +45,7 @@ type internal FSharpCompletionProvider
     static let [<Literal>] KeywordDescription = "KeywordDescription"
 
     static let keywordCompletionItems =
-        Keywords.KeywordsWithDescription
+        FSharpKeywords.KeywordsWithDescription
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
         |> List.sortBy (fun (keyword, _) -> keyword)
         |> List.mapi (fun n (keyword, description) ->
@@ -107,23 +107,21 @@ type internal FSharpCompletionProvider
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list, languageServicePerformanceOptions: LanguageServicePerformanceOptions, intellisenseOptions: IntelliSenseOptions) = 
+
         asyncMaybe {
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, languageServicePerformanceOptions, userOpName = userOpName)
-
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
             let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-            
             let getAllSymbols() =
                 getAllSymbols checkFileResults 
-                |> List.filter (fun assemblySymbol -> 
+                |> List.filter (fun assemblySymbol ->
                      assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorName assemblySymbol.Symbol.DisplayName))
-
-            let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
-                                                                        partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
+            let declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
+                                                                       partialName, getAllSymbols)
             let results = List<Completion.CompletionItem>()
             
             declarationItems <-
@@ -168,7 +166,7 @@ type internal FSharpCompletionProvider
                         
                 let completionItem =
                     match declarationItem.Kind with
-                    | CompletionItemKind.Method (isExtension = true) ->
+                    | FSharpCompletionItemKind.Method (isExtension = true) ->
                             completionItem.AddProperty(IsExtensionMemberPropName, "")
                     | _ -> completionItem
                 
@@ -223,7 +221,6 @@ type internal FSharpCompletionProvider
     override _.ProvideCompletionsAsync(context: Completion.CompletionContext) =
         asyncMaybe {
             use _logBlock = Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
-
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
@@ -237,10 +234,9 @@ type internal FSharpCompletionProvider
             let! results = 
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, projectOptions, document.FilePath,
                                                                     textVersion.GetHashCode(), getAllSymbols, settings.LanguageServicePerformance, settings.IntelliSense)
-            
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
-        
+
     override _.GetDescriptionAsync(document: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
             use _logBlock = Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync

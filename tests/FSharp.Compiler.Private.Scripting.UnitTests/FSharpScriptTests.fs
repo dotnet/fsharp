@@ -117,6 +117,19 @@ stacktype.Name = "Stack"
         | Ok(_) -> Assert.False(true, "expected a failure")
         | Error(ex) -> Assert.IsAssignableFrom(typeof<FsiCompilationException>, ex)
 
+
+    [<Fact>]
+    member _.``Script using System.Configuration succeeds``() =
+        use script = new FSharpScript()
+        let result, errors = script.Eval("""
+#r "nuget:System.Configuration.ConfigurationManager,5.0.0"
+open System.Configuration
+System.Configuration.ConfigurationManager.AppSettings.Item "Environment" <- "LOCAL" """)
+        Assert.Empty(errors)
+        match result with
+        | Ok(_) -> ()
+        | Error(ex) -> Assert.True(true, "expected no failures")
+
     [<Theory>]
     [<InlineData("""#i""", "input.fsx (1,1)-(1,3) interactive warning Invalid directive '#i '")>]                                               // No argument
     [<InlineData("""#i "" """, "input.fsx (1,1)-(1,6) interactive error #i is not supported by the registered PackageManagers")>]               // empty argument
@@ -130,7 +143,7 @@ stacktype.Name = "Stack"
     [<Theory>]
     [<InlineData("""#i " """,                                                                           // Single quote
                  "input.fsx (1,4)-(1,5) parse error End of file in string begun at or before here",
-                 "input.fsx (1,1)-(1,6) interactive warning Invalid directive '#i '")>]
+                 "input.fsx (1,1)-(1,3) interactive warning Invalid directive '#i '")>]
     member _.``Script with more #i syntax errors fail``(code, error0, error1) =
         use script = new FSharpScript()
         let result, errors = script.Eval(code)
@@ -186,15 +199,14 @@ stacktype.Name = "Stack"
     [<Fact>]
     member __.``ML - use assembly with native dependencies``() =
         let code = @"
-#r ""nuget:RestoreSources=https://dotnet.myget.org/F/dotnet-corefxlab/api/v3/index.json""
 #r ""nuget:Microsoft.ML,version=1.4.0-preview""
 #r ""nuget:Microsoft.ML.AutoML,version=0.16.0-preview""
-#r ""nuget:Microsoft.Data.DataFrame,version=0.1.1-e191008-1""
+#r ""nuget:Microsoft.Data.Analysis,version=0.4.0""
 
 open System
 open System.IO
 open System.Linq
-open Microsoft.Data
+open Microsoft.Data.Analysis
 
 let Shuffle (arr:int[]) =
     let rnd = Random()
@@ -206,9 +218,9 @@ let Shuffle (arr:int[]) =
     arr
 
 let housingPath = ""housing.csv""
-let housingData = DataFrame.ReadCsv(housingPath)
-let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.RowCount) - 1)).ToArray()))
-let testSize = int (float (housingData.RowCount) * 0.1)
+let housingData = DataFrame.LoadCsv(housingPath)
+let randomIndices = (Shuffle(Enumerable.Range(0, (int (housingData.Rows.Count) - 1)).ToArray()))
+let testSize = int (float (housingData.Rows.Count) * 0.1)
 let trainRows = randomIndices.[testSize..]
 let testRows = randomIndices.[..testSize]
 let housing_train = housingData.[trainRows]

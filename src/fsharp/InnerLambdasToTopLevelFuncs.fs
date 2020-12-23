@@ -9,9 +9,11 @@ open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
-open FSharp.Compiler.Layout
 open FSharp.Compiler.Lib
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -897,7 +899,7 @@ module Pass4_RewriteAssembly =
     ///
     /// Top-level status ends when stepping inside a lambda, where a lambda is:
     ///   Expr.TyLambda, Expr.Lambda, Expr.Obj (and tmethods).
-    ///   [... also, try_catch handlers, and switch targets...]
+    ///   [... also, try_with handlers, and switch targets...]
     ///
     /// Top* repr bindings already at top-level do not need moving...
     ///   [and should not be, since they may lift over unmoved defns on which they depend].

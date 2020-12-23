@@ -92,6 +92,11 @@
         <target state="translated">bezkropkowy literał float32</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="translated">więcej typów obsługuje jednostki miary</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">część o stałym indeksie 3d/4d</target>
@@ -247,6 +252,11 @@
         <target state="translated">Nierozpoznana wartość „{0}” dla parametru –langversion; podaj parametr –langversion:?, aby uzyskać pełną listę</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="translated">Wyświetl baner wersji kompilatora i zakończ</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">Funkcja zarządzania pakietami wymaga języka w wersji 5.0, użyj parametru /langversion:preview</target>
@@ -277,6 +287,11 @@
         <target state="translated">Niekompletny interpolowany dosłowny ciąg rozpoczęty w tym miejscu lub wcześniej</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="translated">Nieoczekiwany token w definicji typu. Oczekiwano znaku „=” po typie „{0}”.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Nieoczekiwany symbol „.” w definicji składowej. Oczekiwano ciągu „with”, znaku „=” lub innego tokenu.</target>
@@ -295,6 +310,11 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">Element #i nie jest obsługiwany przez zarejestrowanych menedżerów pakietów</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -2708,8 +2728,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
-        <target state="translated">Jednostki miary są obsługiwane tylko w przypadku typów float, float32, decimal i signed integer</target>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="translated">Jednostki miary są obsługiwane tylko w przypadku typów float, float32, decimal i integer.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -6319,7 +6339,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">{0} zmienna in kolekcja</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">

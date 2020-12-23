@@ -68,7 +68,7 @@ Uploads the final `FSharp.Compiler.Service` package from the specified build to 
 branch can be selected.  This should only be run when we're fairly certain that the package is complete.
 
 [FCS (Preview NuGet Release)](https://dev.azure.com/dnceng/internal/_release?view=mine&_a=releases&definitionId=98).
-Uploads the preview `FSharp.Compiler.Service.*-beta.*` package from the specified build to NuGet.  Only builds from the
+Uploads the preview `FSharp.Compiler.Service.*-preview.*` package from the specified build to NuGet.  Only builds from the
 `main` branch can be selected.  This can be run whenever we think we're ready to preview a new FCS build.
 
 [Nightly VSIX (main) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=70).  Uploads
@@ -77,8 +77,5 @@ a package from every build of `main` to the [Nightly VSIX feed](README.md#using-
 [Nightly VSIX (preview) uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=71).  Uploads
 a package from every build of the branch that corresponds to the current Visual Studio preview to the
 [Preview VSIX feed](README.md#using-nightly-releases-in-visual-studio).
-
-[MyGet package uploader](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=69).  Uploads various
-packages for internal consumption.  Feed URL is `https://dotnet.myget.org/F/fsharp/api/v3/index.json`.
 
 [Internal source mirror](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp).

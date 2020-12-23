@@ -92,6 +92,11 @@
         <target state="translated">literal float32 sin punto</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="translated">más tipos admiten las unidades de medida</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">segmento de índice fijo 3d/4d</target>
@@ -247,6 +252,11 @@
         <target state="translated">Valor no reconocido "{0}" para --langversion, use --langversion:? para una lista completa</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="translated">Mostrar el banner de versión del compilador y salir</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">La característica de administración de paquetes requiere la versión de lenguaje 5.0; use /langversion:preview</target>
@@ -277,6 +287,11 @@
         <target state="translated">La cadena textual interpolada incompleta comenzaba aquí o antes.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="translated">Token inesperado en la definición de tipo. Se esperaba "=" después del tipo "{0}".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Símbolo inesperado "." en la definición de miembro. Se esperaba "with", "=" u otro token.</target>
@@ -295,6 +310,11 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">Los elementos PackageManager registrados no admiten #i</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -494,7 +514,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
+        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -2708,8 +2728,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
-        <target state="translated">Solo se admiten unidades de medida en los tipos float, float32, decimal y de entero firmado.</target>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="translated">Las unidades de medida solo se admiten en los tipos float, float32, decimal y de entero.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -6319,7 +6339,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">Variable {0} de la colección</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">

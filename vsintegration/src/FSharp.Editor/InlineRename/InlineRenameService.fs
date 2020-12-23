@@ -59,7 +59,7 @@ type internal InlineRenameLocationSet(locations: FSharpInlineRenameLocation [], 
                     match symbolKind with
                     | LexerSymbolKind.GenericTypeParameter
                     | LexerSymbolKind.StaticallyResolvedTypeParameter -> replacementText
-                    | _ -> Keywords.NormalizeIdentifierBackticks replacementText
+                    | _ -> FSharpKeywords.NormalizeIdentifierBackticks replacementText
                 return 
                     { new IFSharpInlineRenameReplacementInfo with
                         member __.NewSolution = newSolution
@@ -157,7 +157,7 @@ type internal InlineRenameService
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, userOpName = userOpName)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland, userOpName=userOpName)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
 
             let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)

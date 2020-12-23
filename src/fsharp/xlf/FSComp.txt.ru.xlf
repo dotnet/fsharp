@@ -92,6 +92,11 @@
         <target state="translated">литерал float32 без точки</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExpandedMeasurables">
+        <source>more types support units of measure</source>
+        <target state="translated">другие типы поддерживают единицы измерения</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFixedIndexSlice3d4d">
         <source>fixed-index slice 3d/4d</source>
         <target state="translated">срез с фиксированным индексом 3d/4d</target>
@@ -247,6 +252,11 @@
         <target state="translated">Не удалось распознать значение "{0}" для параметра --langversion. Для получения полного списка допустимых значений выполните команду use --langversion:?</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsVersion">
+        <source>Display compiler version banner and exit</source>
+        <target state="translated">Отобразить окно с версией компилятора и выйти</target>
+        <note />
+      </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
         <source>The package management feature requires language version 5.0 use /langversion:preview</source>
         <target state="translated">Для функции управления пакетами требуется версия языка 5.0, используйте параметр /langversion:preview</target>
@@ -277,6 +287,11 @@
         <target state="translated">Неполная интерполированная буквальная строка, начатая в этой позиции или до нее</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsEqualsMissingInTypeDefinition">
+        <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
+        <target state="translated">Неожиданный токен в определении типа. После типа "{0}" ожидается "=".</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Неожиданный символ "." в определении члена. Ожидаемые инструкции: "with", "=" или другие токены.</target>
@@ -295,6 +310,11 @@
       <trans-unit id="poundiNotSupportedByRegisteredDependencyManagers">
         <source>#i is not supported by the registered PackageManagers</source>
         <target state="translated">#i не поддерживается зарегистрированными диспетчерами пакетов</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDetermined">
+        <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
+        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -2708,8 +2728,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForUnitsOfMeasure">
-        <source>Units-of-measure supported only on float, float32, decimal and signed integer types</source>
-        <target state="translated">Единицы измерения поддерживаются только с типами float, float32, decimal и signed integer</target>
+        <source>Units-of-measure are only supported on float, float32, decimal, and integer types.</source>
+        <target state="translated">Единицы измерения поддерживаются только с типами float, float32, decimal и integer.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedConstUint16Array">
@@ -6319,7 +6339,7 @@
       </trans-unit>
       <trans-unit id="customOperationTextLikeZip">
         <source>{0} var in collection</source>
-        <target state="translated">Переменная {0} в коллекции</target>
+        <target state="translated">{0} var in collection</target>
         <note />
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresVariable">
@@ -6334,7 +6354,7 @@
       </trans-unit>
       <trans-unit id="tcBinaryOperatorRequiresBody">
         <source>'{0}' must come after a 'for' selection clause and be followed by the rest of the query. Syntax: ... {1} ...</source>
-        <target state="translated">Перед "{0}" должно идти предложение выбора "for", а после — оставшаяся часть запроса. Синтаксис: … {1} …</target>
+        <target state="translated">Перед "{0}" должно идти предложение выбора "for", а после — оставшаяся часть запроса. Синтаксис: ... {1} ...</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCustomOperationHasIncorrectArgCount">

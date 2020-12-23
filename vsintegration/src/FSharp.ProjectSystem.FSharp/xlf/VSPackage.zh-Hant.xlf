@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="DefaultNamespaceDescription">
         <source>Specifies the default namespace for added items, such as classes, that are added via the Add New Item Dialog Box.</source>
-        <target state="translated">為已經加入的項目指定預設命名空間，例如經由 [加入新項目]5D; 對話方塊加入的類別。</target>
+        <target state="translated">為已經加入的項目指定預設命名空間，例如經由 [加入新項目] 對話方塊加入的類別。</target>
         <note />
       </trans-unit>
       <trans-unit id="StartupObject">

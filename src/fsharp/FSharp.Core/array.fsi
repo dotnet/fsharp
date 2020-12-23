@@ -1403,7 +1403,7 @@ namespace Microsoft.FSharp.Collections
             /// the array comprised of the results "x" for each element where
             /// the function returns Some(x).</summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="chooser">The function to generate options from the elements.</param>
@@ -1417,7 +1417,7 @@ namespace Microsoft.FSharp.Collections
 
             /// <summary>For each element of the array, apply the given function. Concatenate all the results and return the combined array.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="mapping"></param>
@@ -1432,7 +1432,7 @@ namespace Microsoft.FSharp.Collections
             /// <summary>Build a new array whose elements are the results of applying the given function
             /// to each of the elements of the array.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="mapping"></param>
@@ -1448,7 +1448,7 @@ namespace Microsoft.FSharp.Collections
             /// to each of the elements of the array. The integer index passed to the
             /// function indicates the index of element being transformed.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="mapping"></param>
@@ -1462,7 +1462,7 @@ namespace Microsoft.FSharp.Collections
 
             /// <summary>Apply the given function to each element of the array. </summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="action"></param>
@@ -1475,7 +1475,7 @@ namespace Microsoft.FSharp.Collections
             /// <summary>Apply the given function to each element of the array. The integer passed to the
             /// function indicates the index of element.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to elements of the input array is not specified.</remarks>
             ///
             /// <param name="action"></param>
@@ -1487,7 +1487,7 @@ namespace Microsoft.FSharp.Collections
             
             /// <summary>Create an array given the dimension and a generator function to compute the elements.</summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to indices is not specified.</remarks>
             ///
             /// <param name="count"></param>
@@ -1501,7 +1501,7 @@ namespace Microsoft.FSharp.Collections
             /// elements for which the given predicate returns "true" and "false"
             /// respectively </summary>
             ///
-            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Parallel.For" />.
+            /// <remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
             /// The order in which the given function is applied to indices is not specified.</remarks>
             ///
             /// <param name="predicate">The function to test the input elements.</param>

@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../../artifacts/bin/fcs/net461"
+#I "../../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 インタラクティブサービス: F# Interactiveの組み込み
 ==================================================
@@ -55,8 +55,8 @@ open System.IO
 open System.Text
 
 // 入出力のストリームを初期化
-let sbOut = new StringBuilder()
-let sbErr = new StringBuilder()
+let sbOut = StringBuilder()
+let sbErr = StringBuilder()
 let inStream = new StringReader("")
 let outStream = new StringWriter(sbOut)
 let errStream = new StringWriter(sbErr)
@@ -127,7 +127,7 @@ fsiSession.EvalScript "sample.fsx"
 `EvalExpression` 、 `EvalInteraction` そして `EvalScript` ではあまりうまく処理されません。
 これらのケースでは、 `EvalExpressionNonThrowing` 、 `EvalInteractionNonThrowing`
 そして `EvalScriptNonThrowing` を使うことが出来ます。
-これらは結果と `FSharpErrorInfo` 値の配列の組を返します。
+これらは結果と `FSharpDiagnostic` 値の配列の組を返します。
 これらはエラーと警告を表します。結果の部分は実際の結果と例外のいずれかを表す
 `Choice<_,_>` です。
 

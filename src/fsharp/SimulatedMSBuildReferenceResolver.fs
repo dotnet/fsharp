@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if INTERACTIVE
-#load "../utils/ResizeArray.fs" "../absil/illib.fs" "../fsharp/ReferenceResolver.fs"
-#else
 module internal FSharp.Compiler.SimulatedMSBuildReferenceResolver
-#endif
 
 open System
 open System.IO
@@ -13,6 +9,7 @@ open Microsoft.Win32
 open Microsoft.Build.Utilities
 open FSharp.Compiler.ReferenceResolver
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.SourceCodeServices
 
 // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
 // 1. List of frameworks

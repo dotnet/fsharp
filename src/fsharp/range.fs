@@ -11,6 +11,7 @@ open Microsoft.FSharp.Core.Printf
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Lib.Bits
+open FSharp.Compiler.SourceCodeServices
 
 type FileIndex = int32 
 
@@ -199,7 +200,7 @@ let fileIndexOfFile filePath = fileIndexOfFileAux false filePath
 
 let fileOfFileIndex idx = fileIndexTable.IndexToFile idx
 
-let mkPos l c = pos (l, c)
+let mkPos line column = pos (line, column)
 
 let unknownFileName = "unknown"
 let startupFileName = "startup"
@@ -370,7 +371,7 @@ module Line =
 
 module Pos =
 
-    let fromZ (line:Line0) idx = mkPos (Line.fromZ line) idx 
+    let fromZ (line:Line0) column = mkPos (Line.fromZ line) column 
 
     let toZ (p:pos) = (Line.toZ p.Line, p.Column)
 
@@ -385,4 +386,16 @@ module Range =
             member _.Equals(x1, x2) = equals x1 x2 
             member _.GetHashCode o = o.GetHashCode() }
 
-
+let mkFirstLineOfFile (file: string) =
+    try
+        let lines = File.ReadLines(file) |> Seq.indexed 
+        let nonWhiteLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrWhiteSpace s))
+        match nonWhiteLine with 
+        | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
+        | None -> 
+        let nonEmptyLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrEmpty s))
+        match nonEmptyLine with 
+        | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
+        | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
+    with _ -> 
+        mkRange file (mkPos 1 0) (mkPos 1 80)

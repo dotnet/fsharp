@@ -14,8 +14,8 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 type private ReferenceType =
-| AddProjectRef of ProjectReference
-| AddMetadataRef of MetadataReference
+    | AddProjectRef of ProjectReference
+    | AddMetadataRef of MetadataReference
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "MissingReference"); Shared>]
 type internal MissingReferenceCodeFixProvider() =

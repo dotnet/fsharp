@@ -281,7 +281,7 @@ let ceResult : Trace<int> =
         return if y then x else -1
     }
             """
-            [| FSharpErrorSeverity.Error, 3344, (6, 9, 8, 35), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
+            [| FSharpDiagnosticSeverity.Error, 3344, (6, 9, 8, 35), "This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature." |]
 
     [<Test>]
     let ``AndBang TraceMultiBindingMonoid`` () =
@@ -582,7 +582,7 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpErrorSeverity.Error, 3343, (6, 9, 6, 25), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSource' and 'Bind' methods")|]
+            [|(FSharpDiagnosticSeverity.Error, 3343, (6, 9, 6, 25), "The 'let! ... and! ...' construct may only be used if the computation expression builder defines either a 'Bind2' method or appropriate 'MergeSource' and 'Bind' methods")|]
 
     [<Test>]
     let ``AndBang Negative TraceApplicative missing Bind and BindReturn`` () =
@@ -596,7 +596,7 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpErrorSeverity.Error, 708, (6, 9, 6, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method")|]
+            [|(FSharpDiagnosticSeverity.Error, 708, (6, 9, 6, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method")|]
 
 
     [<Test>]
@@ -612,7 +612,7 @@ let _ =
         return x + y
     }
     """
-            [| FSharpErrorSeverity.Error, 708, (7, 9, 7, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method" |]
+            [| FSharpDiagnosticSeverity.Error, 708, (7, 9, 7, 25), "This control construct may only be used if the computation expression builder defines a 'Bind' method" |]
 
     [<Test>]
     let ``AndBang TraceApplicative with do-bang`` () =
@@ -627,9 +627,9 @@ let _ =
         return x + y
     }
     """
-            [|(FSharpErrorSeverity.Error, 10, (7, 9, 7, 13),"Unexpected keyword 'and!' in expression. Expected '}' or other token.");
-              (FSharpErrorSeverity.Error, 604, (5, 12, 5, 13), "Unmatched '{'");
-              (FSharpErrorSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in implementation file")|]
+            [|(FSharpDiagnosticSeverity.Error, 10, (7, 9, 7, 13),"Unexpected keyword 'and!' in expression. Expected '}' or other token.");
+              (FSharpDiagnosticSeverity.Error, 604, (5, 12, 5, 13), "Unmatched '{'");
+              (FSharpDiagnosticSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in implementation file")|]
 
     [<Test>]
     let ``AndBang Negative TraceApplicative let betweeen let! and and!`` () =
@@ -644,7 +644,7 @@ let _ =
         return x + y
     }
     """
-            [| (FSharpErrorSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in expression") |]
+            [| (FSharpDiagnosticSeverity.Error, 10, (8, 9, 8, 13), "Unexpected keyword 'and!' in expression") |]
 
 
     [<Test>]
@@ -658,7 +658,7 @@ let _ =
         and! y = Trace 2
     }
     """
-            [|(FSharpErrorSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")|]
+            [|(FSharpDiagnosticSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")|]
 
     [<Test>]
     let ``AndBang TraceApplicative conditional return`` () =

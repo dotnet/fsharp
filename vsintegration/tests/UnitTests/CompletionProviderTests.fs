@@ -125,6 +125,13 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
 let VerifyNoCompletionList(fileContents: string, marker: string) =
     VerifyCompletionListExactly(fileContents, marker, [])
 
+let VerifyCompletionListSpan(fileContents: string, marker: string, expected: string) =
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let sourceText = SourceText.From(fileContents)
+    let resultSpan = CompletionUtils.getDefaultCompletionListSpan(sourceText, caretPosition, documentId, filePath, [])
+    Assert.AreEqual(expected, sourceText.ToString(resultSpan))
+
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
     let testCases = 
@@ -686,6 +693,48 @@ module Extensions =
     wrappedMessage.
 """
     VerifyCompletionList(fileContents, "wrappedMessage.", ["PrintRef"], [])
+
+[<Test>]
+let ``Completion list span works with underscore in identifier``() =
+    let fileContents = """
+let x = A.B_C
+"""
+    VerifyCompletionListSpan(fileContents, "A.B_C", "B_C")
+
+[<Test>]
+let ``Completion list span works with digit in identifier``() =
+    let fileContents = """
+let x = A.B1C
+"""
+    VerifyCompletionListSpan(fileContents, "A.B1C", "B1C")
+
+[<Test>]
+let ``Completion list span works with enclosed backtick identifier``() =
+    let fileContents = """
+let x = A.``B C``
+"""
+    VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
+
+[<Test>]
+let ``Completion list span works with partial backtick identifier``() =
+    let fileContents = """
+let x = A.``B C
+"""
+    VerifyCompletionListSpan(fileContents, "A.``B C", "``B C")
+
+[<Test>]
+let ``Completion list span works with first of multiple enclosed backtick identifiers``() =
+    let fileContents = """
+let x = A.``B C`` + D.``E F``
+"""
+    VerifyCompletionListSpan(fileContents, "A.``B C``", "``B C``")
+
+[<Test>]
+let ``Completion list span works with last of multiple enclosed backtick identifiers``() =
+    let fileContents = """
+let x = A.``B C`` + D.``E F``
+"""
+    VerifyCompletionListSpan(fileContents, "D.``E F``", "``E F``")
 
 #if EXE
 ShouldDisplaySystemNamespace()

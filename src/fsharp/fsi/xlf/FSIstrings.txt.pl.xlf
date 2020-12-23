@@ -13,8 +13,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fsiOperationFailed">
-        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
-        <target state="translated">Operacja nie powiodła się. Tekst błędu został umieszczony w strumieniu błędów. Aby zwrócić odpowiedni element FSharpErrorInfo, użyj elementu EvalInteractionNonThrowing, eEvalScriptNonThrowing lub EvalExpressionNonThrowing</target>
+        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
+        <target state="translated">Operacja nie powiodła się. Tekst błędu został umieszczony w strumieniu błędów. Aby zwrócić odpowiedni element FSharpDiagnostic, użyj elementu EvalInteractionNonThrowing, eEvalScriptNonThrowing lub EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
       <trans-unit id="stoppedDueToError">

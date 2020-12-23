@@ -5,5 +5,5 @@
 
 let quote = <@@ try () with _ -> () @@>
 
-// Problem was that we blew up when quoting trycatch blocks
+// Problem was that we blew up when quoting trywith blocks
 exit 0

@@ -2,9 +2,34 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="de" original="../FSharp.Editor.resx">
     <body>
+      <trans-unit id="AddMissingEqualsToTypeDefinition">
+        <source>Add missing '=' to type definition</source>
+        <target state="translated">Fehlende "=" zur Typdefinition hinzufügen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="new">Add missing 'fun' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">Schlüsselwort "new" hinzufügen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToAnonymousRecord">
+        <source>Convert to Anonymous Record</source>
+        <target state="translated">In anonymen Datensatz konvertieren</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToSingleEqualsEqualityExpression">
+        <source>Use '=' for equality check</source>
+        <target state="translated">"=" für Gleichheitsüberprüfung verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangePrefixNegationToInfixSubtraction">
+        <source>Use subtraction instead of negation</source>
+        <target state="translated">Subtraktion anstelle von Negation verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
@@ -37,9 +62,39 @@
         <target state="translated">Schnittstelle ohne Typanmerkung implementieren</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="translated">Deklaration "änderbar" machen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make '{0}' recursive</source>
+        <target state="new">Make '{0}' recursive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">"{0}" einen Unterstrich voranstellen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturn">
+        <source>Remove 'return'</source>
+        <target state="new">Remove 'return'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturnBang">
+        <source>Remove 'return!'</source>
+        <target state="new">Remove 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYield">
+        <source>Remove 'yield'</source>
+        <target state="new">Remove 'yield'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYieldBang">
+        <source>Remove 'yield!'</source>
+        <target state="new">Remove 'yield!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
@@ -170,6 +225,36 @@
       <trans-unit id="6014">
         <source>Formatting</source>
         <target state="translated">Formatierung</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseFSharpLambda">
+        <source>Use F# lambda syntax</source>
+        <target state="new">Use F# lambda syntax</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseMutationWhenValueIsMutable">
+        <source>Use '&lt;-' to mutate value</source>
+        <target state="translated">"&lt;-" zum Ändern des Werts verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastKeyword">
+        <source>Use 'upcast'</source>
+        <target state="translated">"upcast" verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastOperator">
+        <source>Use ':&gt;' operator</source>
+        <target state="translated">Operator ":&gt;" verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNotForNegation">
+        <source>Use 'not' to negate expression</source>
+        <target state="translated">"not" zum Negieren eines Ausdruck verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WrapExpressionInParentheses">
+        <source>Wrap expression in parentheses</source>
+        <target state="translated">Ausdruck in Klammern einschließen</target>
         <note />
       </trans-unit>
     </body>

@@ -6,21 +6,18 @@ open System.Composition
 open System.Collections.Immutable
 open System.Threading.Tasks
 
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open SymbolHelpers
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "SimplifyNames"); Shared>]
 type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticId = FSharpIDEDiagnosticIds.SimplifyNamesDiagnosticId
         
-    override __.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
+    override _.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
 
-    override __.RegisterCodeFixesAsync(context: CodeFixContext) : Task =
+    override _.RegisterCodeFixesAsync(context: CodeFixContext) : Task =
        async {
            for diagnostic in context.Diagnostics |> Seq.filter (fun x -> x.Id = fixableDiagnosticId) do
                let title =

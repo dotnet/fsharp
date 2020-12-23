@@ -2,9 +2,34 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSharp.Editor.resx">
     <body>
+      <trans-unit id="AddMissingEqualsToTypeDefinition">
+        <source>Add missing '=' to type definition</source>
+        <target state="translated">将缺少的 "=" 添加到类型定义</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddMissingFunKeyword">
+        <source>Add missing 'fun' keyword</source>
+        <target state="new">Add missing 'fun' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="AddNewKeyword">
         <source>Add 'new' keyword</source>
         <target state="translated">添加“新”关键字</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToAnonymousRecord">
+        <source>Convert to Anonymous Record</source>
+        <target state="translated">转换为匿名记录</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToSingleEqualsEqualityExpression">
+        <source>Use '=' for equality check</source>
+        <target state="translated">使用 "=" 进行同等性检查</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ChangePrefixNegationToInfixSubtraction">
+        <source>Use subtraction instead of negation</source>
+        <target state="translated">使用减法代替求反</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
@@ -37,9 +62,39 @@
         <target state="translated">无类型批注的实现接口</target>
         <note />
       </trans-unit>
+      <trans-unit id="MakeDeclarationMutable">
+        <source>Make declaration 'mutable'</source>
+        <target state="translated">将声明设为“可变”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MakeOuterBindingRecursive">
+        <source>Make '{0}' recursive</source>
+        <target state="new">Make '{0}' recursive</target>
+        <note />
+      </trans-unit>
       <trans-unit id="PrefixValueNameWithUnderscore">
         <source>Prefix '{0}' with underscore</source>
         <target state="translated">带下划线的前缀“{0}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturn">
+        <source>Remove 'return'</source>
+        <target state="new">Remove 'return'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveReturnBang">
+        <source>Remove 'return!'</source>
+        <target state="new">Remove 'return!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYield">
+        <source>Remove 'yield'</source>
+        <target state="new">Remove 'yield'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveYieldBang">
+        <source>Remove 'yield!'</source>
+        <target state="new">Remove 'yield!'</target>
         <note />
       </trans-unit>
       <trans-unit id="RenameValueToUnderscore">
@@ -129,7 +184,7 @@
       </trans-unit>
       <trans-unit id="LocatingSymbol">
         <source>Locating the symbol under the caret...</source>
-        <target state="translated">正在确定插入点下的符号…</target>
+        <target state="translated">正在确定插入点下的符号...</target>
         <note />
       </trans-unit>
       <trans-unit id="NavigatingTo">
@@ -170,6 +225,36 @@
       <trans-unit id="6014">
         <source>Formatting</source>
         <target state="translated">正在格式化</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseFSharpLambda">
+        <source>Use F# lambda syntax</source>
+        <target state="new">Use F# lambda syntax</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseMutationWhenValueIsMutable">
+        <source>Use '&lt;-' to mutate value</source>
+        <target state="translated">使用 "&lt;-" 来更改值</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastKeyword">
+        <source>Use 'upcast'</source>
+        <target state="translated">使用“向上转换”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseUpcastOperator">
+        <source>Use ':&gt;' operator</source>
+        <target state="translated">使用 ":&gt;" 运算符</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseNotForNegation">
+        <source>Use 'not' to negate expression</source>
+        <target state="translated">使用 "not" 对表达式求反</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WrapExpressionInParentheses">
+        <source>Wrap expression in parentheses</source>
+        <target state="translated">将表达式用括号括起来</target>
         <note />
       </trans-unit>
     </body>

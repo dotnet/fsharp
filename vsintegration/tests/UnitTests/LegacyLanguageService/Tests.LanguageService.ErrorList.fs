@@ -509,15 +509,15 @@ but here has type
     member public this.``TypeProvider.ProhibitedMethods`` () =
         let cases = 
             [
-                "let x = BadMethods.Arr.GetFirstElement([||])", "Get"
-                "let y = BadMethods.Arr.SetFirstElement([||], 5)", "Set"
-                "let z = BadMethods.Arr.AddressOfFirstElement([||])", "Address"
+                "let x = BadMethods.Arr.GetFirstElement([||])", "GetFirstElement"
+                "let y = BadMethods.Arr.SetFirstElement([||], 5)", "SetFirstElement"
+                "let z = BadMethods.Arr.AddressOfFirstElement([||])", "AddressOfFirstElement"
             ]
         for (code, str) in cases do
             this.VerifyErrorListContainedExpectedString
                 (
                     code,
-                    sprintf "Array method '%s' is supplied by the runtime and cannot be directly used in code." str,
+                    sprintf "The type provider 'DummyProviderForLanguageServiceTesting.TypeProviderThatEmitsBadMethods' reported an error in the context of provided type 'BadMethods.Arr', member '%s'. The error: The operation 'GetMethodImpl' on item 'Int32[]' should not be called on provided type, member or parameter of type 'ProviderImplementation.ProvidedTypes.TypeSymbol'." str,
                     addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]
                 )    
     

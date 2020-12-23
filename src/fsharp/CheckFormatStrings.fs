@@ -153,9 +153,9 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
             //printfn "fmts = %A" fmts
 
             // Join the fragments with holes. Note this join is only used on the IDE path,
-            // the TypeChecker.fs does its own joining with the right alignments etc. substituted
+            // the CheckExpressions.fs does its own joining with the right alignments etc. substituted
             // On the IDE path we don't do any checking of these in this file (some checking is
-            // done in TypeChecker.fs) so it's ok to join with just '%P()'.  
+            // done in CheckExpressions.fs) so it's ok to join with just '%P()'.  
             let fmt = fmts |> List.map p23 |> String.concat "%P()" 
             let fragments, _ = 
                 (0, fmts) ||> List.mapFold (fun i (offset, fmt, fragRange) ->
@@ -471,8 +471,8 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
     let results = parseLoop [] (0, 0, m.StartColumn) fragments
     results, Seq.toList specifierLocations, dotnetFormatString.ToString(), percentATys.ToArray()
 
-let ParseFormatString m ms g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
-    let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m ms g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
+let ParseFormatString m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
+    let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
     let printerTy = List.foldBack (-->) argTys printerResultTy
     let printerTupleTy = mkRefTupledTy g argTys
     argTys, printerTy, printerTupleTy, percentATys, specifierLocations, dotnetFormatString

@@ -15,9 +15,9 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = set ["FS3217"]
         
-    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
+    override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
-    override __.RegisterCodeFixesAsync context : Task =
+    override _.RegisterCodeFixesAsync context : Task =
         async {
             let diagnostics = 
                 context.Diagnostics 

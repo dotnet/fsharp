@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../artifacts/bin/fcs/net461"
+#I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
 Interactive Service: Embedding F# Interactive
 =============================================
@@ -115,7 +115,7 @@ Catching errors
 ``EvalExpression``, ``EvalInteraction`` and ``EvalScript`` are awkward if the
 code has type checking warnings or errors, or if evaluation fails with an exception.
 In these cases you can use ``EvalExpressionNonThrowing``, ``EvalInteractionNonThrowing``
-and ``EvalScriptNonThrowing``. These return a tuple of a result and an array of ``FSharpErrorInfo`` values.
+and ``EvalScriptNonThrowing``. These return a tuple of a result and an array of ``FSharpDiagnostic`` values.
 These represent the errors and warnings. The result part is a ``Choice<_,_>`` between an actual
 result and an exception.
 

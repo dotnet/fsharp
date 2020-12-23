@@ -12,13 +12,11 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
 open FSharp.Compiler.PrettyNaming
 open FSharp.Compiler.Range
-open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.XmlDoc
+open FSharp.Compiler.SourceCodeServices
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()
@@ -35,11 +33,10 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
     member x.ExplicitlySet = status.IsSome
     member x.WarnOnMultipleTokens = warn
     
-
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager(?capacity: int) =
-    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(defaultArg capacity 1024)
+    let strings = new System.Collections.Concurrent.ConcurrentDictionary<string, Parser.token>(Environment.ProcessorCount, defaultArg capacity 1024)
     member x.InternIdentifierToken(s) = 
         match strings.TryGetValue s with
         | true, res -> res
@@ -124,9 +121,9 @@ let stringBufferAsBytes (buf: ByteBuffer) =
 type LexerStringFinisher =
     | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> bool -> LexerContinuation -> token)
 
-    member fin.Finish (buf: ByteBuffer) kind isPart cont =
+    member fin.Finish (buf: ByteBuffer) kind isInterpolatedStringPart cont =
         let (LexerStringFinisher f)  = fin
-        f buf kind isPart cont
+        f buf kind isInterpolatedStringPart cont
 
     static member Default =
         LexerStringFinisher (fun buf kind isPart cont ->
@@ -230,7 +227,6 @@ let escape c =
 //-----------------------------------------------------------------------   
 
 exception ReservedKeyword of string * range
-exception IndentationProblem of string * range
 
 module Keywords = 
     type private compatibilityMode =

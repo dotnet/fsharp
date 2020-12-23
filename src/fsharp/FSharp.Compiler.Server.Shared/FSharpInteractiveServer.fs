@@ -27,10 +27,6 @@ open System.Runtime.Remoting.Lifetime
 type internal FSharpInteractiveServer() =
     inherit System.MarshalByRefObject()  
     abstract Interrupt       : unit -> unit
-#if FSI_SERVER_INTELLISENSE
-    abstract Completions     : prefix:string -> string array
-    abstract GetDeclarations : text:string * names:string array -> (string * string * string * int) array
-#endif
     default x.Interrupt() = ()
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters")>]

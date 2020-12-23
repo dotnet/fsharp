@@ -6,7 +6,6 @@
 module internal FSharp.Compiler.Optimizer
 
 open Internal.Utilities
-open Internal.Utilities.StructuredFormat
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
@@ -17,12 +16,14 @@ open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.Layout
-open FSharp.Compiler.Layout.TaggedTextOps
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.TextLayout
+open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.TextLayout.LayoutRender
+open FSharp.Compiler.TextLayout.TaggedText
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -32,6 +33,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
+open System.Collections.ObjectModel
 
 #if DEBUG
 let verboseOptimizationInfo = 
@@ -51,8 +53,8 @@ let [<Literal>] callSize = 1
 /// size of a for/while loop
 let [<Literal>] forAndWhileLoopSize = 5 
 
-/// size of a try/catch 
-let [<Literal>] tryCatchSize = 5  
+/// size of a try/with
+let [<Literal>] tryWithSize = 5
 
 /// size of a try/finally
 let [<Literal>] tryFinallySize = 5 
@@ -76,7 +78,7 @@ type ExprValueInfo =
   /// SizeValue(size, value)
   /// 
   /// Records size info (maxDepth) for an ExprValueInfo 
-  | SizeValue of int * ExprValueInfo        
+  | SizeValue of size: int * ExprValueInfo        
 
   /// ValValue(vref, value)
   ///
@@ -101,10 +103,10 @@ type ExprValueInfo =
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
   ///    ty: The type of lambda term
-  | CurriedLambdaValue of Unique * int * int * Expr * TType
+  | CurriedLambdaValue of id: Unique * arity: int * size: int * value: Expr * TType
 
   /// ConstExprValue(size, value)
-  | ConstExprValue of int * Expr
+  | ConstExprValue of size: int * value: Expr
 
 type ValInfo =
     { ValMakesNoCriticalTailcalls: bool
@@ -162,7 +164,7 @@ type ValInfos(entries) =
                 if dict.ContainsKey vkey then 
                     failwithf "dictionary already contains key %A" vkey
                 dict.Add(vkey, p) |> ignore
-            dict), id)
+            ReadOnlyDictionary dict), id)
 
     member x.Entries = valInfoTable.Force().Values
 
@@ -226,7 +228,7 @@ type Summary<'Info> =
       
       /// Meaning: could mutate, could non-terminate, could raise exception 
       /// One use: an effect expr can not be eliminated as dead code (e.g. sequencing)
-      /// One use: an effect=false expr can not throw an exception? so try-catch is removed.
+      /// One use: an effect=false expr can not throw an exception? so try-with is removed.
       HasEffect: bool  
       
       /// Indicates that a function may make a useful tailcall, hence when called should itself be tailcalled
@@ -356,7 +358,7 @@ type OptimizationSettings =
     member x.EliminateUnusedBindings () = x.localOpt () 
 
     /// eliminate try around expr with no effect 
-    member x.EliminateTryCatchAndTryFinally () = false // deemed too risky, given tiny overhead of including try/catch. See https://github.com/Microsoft/visualfsharp/pull/376
+    member x.EliminateTryWithAndTryFinally () = false // deemed too risky, given tiny overhead of including try/with. See https://github.com/Microsoft/visualfsharp/pull/376
 
     /// eliminate first part of seq if no effect 
     member x.EliminateSequential () = x.localOpt () 
@@ -1251,17 +1253,17 @@ let RemapOptimizationInfo g tmenv =
 let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
     let mrpi = mkRepackageRemapping repackage
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #else
     ignore (msg, m)
 #endif
     let info = info |> AbstractLazyModulInfoByHiding false hidden
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #endif
     let info = info |> RemapOptimizationInfo g mrpi
 #if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (Layout.showL (Display.squashTo 192 (moduleInfoL g info)))
+    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
 #endif
     info
 
@@ -1395,7 +1397,7 @@ and OpHasEffect g m op =
     | TOp.Reraise
     | TOp.For _ 
     | TOp.While _
-    | TOp.TryCatch _ (* conservative *)
+    | TOp.TryWith _ (* conservative *)
     | TOp.TryFinally _ (* conservative *)
     | TOp.TraitCall _
     | TOp.Goto _
@@ -2007,12 +2009,12 @@ and OptimizeInterfaceImpl cenv env baseValOpt (ty, overrides) =
 and MakeOptimizedSystemStringConcatCall cenv env m args =
     let rec optimizeArg argExpr accArgs =
         match argExpr, accArgs with
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ 
-          when IsILMethodRefSystemStringConcatArray mref ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ], _), _ 
+          when IsILMethodRefSystemStringConcatArray ilMethRef ->
             optimizeArgs args accArgs
 
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args, _), _ 
-          when IsILMethodRefSystemStringConcat mref ->
+        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args, _), _ 
+          when IsILMethodRefSystemStringConcat ilMethRef ->
             optimizeArgs args accArgs
 
 // String constant folding requires a bit more work as we cannot quadratically concat strings at compile time.
@@ -2045,8 +2047,8 @@ and MakeOptimizedSystemStringConcatCall cenv env m args =
             mkStaticCall_String_Concat_Array cenv.g m arg
 
     match expr with
-    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _) as op, tyargs, args, m) 
-      when IsILMethodRefSystemStringConcat mref || IsILMethodRefSystemStringConcatArray mref ->
+    | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _) as op, tyargs, args, m) 
+      when IsILMethodRefSystemStringConcat ilMethRef || IsILMethodRefSystemStringConcatArray ilMethRef ->
         OptimizeExprOpReductions cenv env (op, tyargs, args, m)
     | _ ->
         OptimizeExpr cenv env expr
@@ -2093,8 +2095,8 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.TryFinally (spTry, spFinally), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
         OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
 
-    | TOp.TryCatch (spTry, spWith), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] ->
-        OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
+    | TOp.TryWith (spTry, spWith), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [vf], ef, _, _); Expr.Lambda (_, _, _, [vh], eh, _, _)] ->
+        OptimizeTryWith cenv env (e1, vf, ef, vh, eh, m, resty, spTry, spWith)
 
     | TOp.TraitCall traitInfo, [], args ->
         OptimizeTraitCall cenv env (traitInfo, args, m) 
@@ -2102,9 +2104,9 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
    // This code hooks arr.Length. The idea is to ensure loops end up in the "same shape"as the forms of loops that the .NET JIT
    // guarantees to optimize.
   
-    | TOp.ILCall (_, _, _, _, _, _, _, mref, _enclTypeArgs, _methTypeArgs, _tys), _, [arg]
-        when (mref.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
-              mref.Name = "get_Length" &&
+    | TOp.ILCall (_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [arg]
+        when (ilMethRef.DeclaringTypeRef.Name = cenv.g.ilg.typ_Array.TypeRef.Name &&
+              ilMethRef.Name = "get_Length" &&
               isArray1DTy cenv.g (tyOfExpr cenv.g arg)) -> 
          OptimizeExpr cenv env (Expr.Op (TOp.ILAsm (i_ldlen, [cenv.g.int_ty]), [], [arg], m))
 
@@ -2113,11 +2115,11 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
     | TOp.ILAsm ([], [ty]), _, [a] when typeEquiv cenv.g (tyOfExpr cenv.g a) ty -> OptimizeExpr cenv env a
 
     // Optimize calls when concatenating strings, e.g. "1" + "2" + "3" + "4" .. etc.
-    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] 
-      when IsILMethodRefSystemStringConcatArray mref ->
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, [ Expr.Op(TOp.Array, _, args, _) ] 
+      when IsILMethodRefSystemStringConcatArray ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
-    | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), _, args 
-      when IsILMethodRefSystemStringConcat mref ->
+    | TOp.ILCall(_, _, _, _, _, _, _, ilMethRef, _, _, _), _, args 
+      when IsILMethodRefSystemStringConcat ilMethRef ->
         MakeOptimizedSystemStringConcatCall cenv env m args
 
     | _ -> 
@@ -2177,13 +2179,13 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
               | StripUnionCaseValue (uc, info) -> UnionCaseValue(uc, info) 
               | _ -> valu
           0, valu
-      | TOp.ILAsm (instrs, tys) -> 
+      | TOp.ILAsm (instrs, retTypes) -> 
           min instrs.Length 1, 
-          mkAssemblyCodeValueInfo cenv.g instrs argValues tys
+          mkAssemblyCodeValueInfo cenv.g instrs argValues retTypes
       | TOp.Bytes bytes -> bytes.Length/10, valu
       | TOp.UInt16s bytes -> bytes.Length/10, valu
       | TOp.ValFieldGetAddr _     
-      | TOp.Array | TOp.For _ | TOp.While _ | TOp.TryCatch _ | TOp.TryFinally _
+      | TOp.Array | TOp.For _ | TOp.While _ | TOp.TryWith _ | TOp.TryFinally _
       | TOp.ILCall _ | TOp.TraitCall _ | TOp.LValueOp _ | TOp.ValFieldSet _
       | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet _ | TOp.Coerce | TOp.Reraise
       | TOp.UnionCaseFieldGetAddr _   
@@ -2204,7 +2206,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
     // Indirect calls to IL code are always taken as tailcalls
     let mayBeCriticalTailcall = 
         match op with
-        | TOp.ILCall (virt, _, newobj, _, _, _, _, _, _, _, _) -> not newobj && virt
+        | TOp.ILCall (isVirtual, _, isCtor, _, _, _, _, _, _, _, _) -> not isCtor && isVirtual
         | _ -> false
     
     let vinfo = { TotalSize=argsTSize + cost
@@ -2407,7 +2409,7 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
           MightMakeCriticalTailcall = false // no tailcalls from inside in try/finally
           Info = UnknownValue } 
     // try-finally, so no effect means no exception can be raised, so just sequence the finally
-    if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
+    if cenv.settings.EliminateTryWithAndTryFinally () && not e1info.HasEffect then 
         let sp = 
             match spTry with 
             | DebugPointAtTry.Yes _ -> DebugPointAtSequential.Both 
@@ -2418,19 +2420,19 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
         mkTryFinally cenv.g (e1R, e2R, m, ty, spTry, spFinally), 
         info
 
-/// Optimize/analyze a try/catch construct.
-and OptimizeTryCatch cenv env (e1, vf, ef, vh, eh, m, ty, spTry, spWith) =
+/// Optimize/analyze a try/with construct.
+and OptimizeTryWith cenv env (e1, vf, ef, vh, eh, m, ty, spTry, spWith) =
     let e1R, e1info = OptimizeExpr cenv env e1    
-    // try-catch, so no effect means no exception can be raised, so discard the catch 
-    if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
+    // try-with, so no effect means no exception can be raised, so discard the with 
+    if cenv.settings.EliminateTryWithAndTryFinally () && not e1info.HasEffect then 
         e1R, e1info 
     else
         let envinner = BindInternalValToUnknown cenv vf (BindInternalValToUnknown cenv vh env)
         let efR, efinfo = OptimizeExpr cenv envinner ef 
         let ehR, ehinfo = OptimizeExpr cenv envinner eh 
         let info = 
-            { TotalSize = e1info.TotalSize + efinfo.TotalSize+ ehinfo.TotalSize + tryCatchSize
-              FunctionSize = e1info.FunctionSize + efinfo.FunctionSize+ ehinfo.FunctionSize + tryCatchSize
+            { TotalSize = e1info.TotalSize + efinfo.TotalSize+ ehinfo.TotalSize + tryWithSize
+              FunctionSize = e1info.FunctionSize + efinfo.FunctionSize+ ehinfo.FunctionSize + tryWithSize
               HasEffect = e1info.HasEffect || efinfo.HasEffect || ehinfo.HasEffect
               MightMakeCriticalTailcall = false
               Info = UnknownValue } 
@@ -2455,7 +2457,7 @@ and OptimizeWhileLoop cenv env (spWhile, marker, e1, e2, m) =
 and OptimizeTraitCall cenv env (traitInfo, args, m) =
 
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 

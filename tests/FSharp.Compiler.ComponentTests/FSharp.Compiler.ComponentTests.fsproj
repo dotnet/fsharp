@@ -22,6 +22,7 @@
     <Compile Include="EmittedIL\Operators.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
+    <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
     <Compile Include="ErrorMessages\ClassesTests.fs" />
@@ -40,23 +41,57 @@
     <Compile Include="ErrorMessages\WarnExpressionTests.fs" />
     <Compile Include="ErrorMessages\WrongSyntaxInForLoop.fs" />
     <Compile Include="ErrorMessages\ConfusingTypeName.fs" />
+    <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\XmlComments.fs" />
     <Compile Include="Language\CompilerDirectiveTests.fs" />
     <Compile Include="Language\CodeQuotationTests.fs" />
+    <Compile Include="Language\ComputationExpressionTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
+    <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
+    <Compile Include="CompilerOptions\fsc\noframework.fs" />
+    <Compile Include="CompilerOptions\fsc\platform.fs" />
+    <Compile Include="CompilerOptions\fsc\times.fs" />
+    <Compile Include="CompilerOptions\fsc\warn.fs" />
+    <Compile Include="CompilerOptions\fsc\warnon.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\RecordTypes.fs" />
+    <Compile Include="Conformance\BasicTypeAndModuleDefinitions\UnionTypes.fs" />
+    <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions.fs" />
+    <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication.fs" />
+    <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching.fs" />
+    <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration.fs" />
+    <Compile Include="Conformance\Expressions\Type-relatedExpressions.fs" />
+    <Compile Include="Conformance\InferenceProcedures\RecursiveSafetyAnalysis.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\Comments.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\NumericLiterals.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\Shift\Generics.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\SymbolicKeywords.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\SymbolicOperators.fs" />
+    <Compile Include="Conformance\LexicalFiltering\Basic\OffsideExceptions.fs" />
+    <Compile Include="Conformance\LexicalFiltering\HashLight.fs" />
+    <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ImplicitObjectConstructors.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ValueRestriction.fs" />
+    <Compile Include="Conformance\ObjectOrientedTypeDefinitions\StructTypes.fs" />
+    <Compile Include="Conformance\PatternMatching\Simple.fs" />
+    <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes.fs" />
+    <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
+    <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
+    <Compile Include="Diagnostics\async.fs" />
+    <Compile Include="Diagnostics\General.fs" />
+    <Compile Include="OCamlCompat\OCamlCompat.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="NewFolder\" />
   </ItemGroup>
 </Project>

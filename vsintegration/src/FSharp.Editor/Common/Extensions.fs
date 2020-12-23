@@ -5,6 +5,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 open System
 open System.IO
+open System.Collections.Immutable
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -243,7 +244,6 @@ module Option =
 
 [<RequireQualifiedAccess>]
 module Seq =
-    open System.Collections.Immutable
 
     let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
 
@@ -256,6 +256,8 @@ module Array =
             state <- folder state i x
             i <- i + 1
         state
+
+    let toImmutableArray (xs: 'T[]) = xs.ToImmutableArray()
 
 [<RequireQualifiedAccess>]
 module Exception =

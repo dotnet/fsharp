@@ -684,10 +684,10 @@ namespace Microsoft.FSharp.Collections
             (* Note: don't create or dispose any IEnumerable if n = 0 *)
             if count = 0 then empty else
             seq { use e = source.GetEnumerator()
-                  for x in 0 .. count - 1 do
+                  for x in count .. - 1 .. 1 do
                       if not (e.MoveNext()) then
-                          invalidOpFmt "tried to take {0} {1} past the end of the seq"
-                            [|SR.GetString SR.notEnoughElements; x; (if x = 1 then "element" else "elements")|]
+                          invalidOpFmt "{0}: tried to take {1} {2} past the end of the seq. Use Seq.truncate to get {3} or less elements"
+                            [|SR.GetString SR.notEnoughElements; x; (if x = 1 then "element" else "elements"); count|]
                       yield e.Current }
 
         [<CompiledName("IsEmpty")>]

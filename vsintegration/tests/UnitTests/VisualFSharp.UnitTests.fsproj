@@ -25,8 +25,8 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fs">
       <Link>Internal.Utilities.Collections.fs</Link>
     </Compile>
-    <EmbeddedText Include="$(FSharpSourcesRoot)\utils\UtilsStrings.txt" />
-    <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
+    <EmbeddedText Include="$(FSharpSourcesRoot)\fsharp\utils\UtilsStrings.txt" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\utils\CompilerLocationUtils.fs">
       <Link>Internal.Utilities.CompilerLocationUtils.fs</Link>
     </Compile>
     <Compile Include="TestLib.Utils.fs" />
@@ -40,7 +40,6 @@
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.General.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.Completion.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.IncrementalBuild.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.GotoDefinition.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.NavigationBar.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.ParameterInfo.fs" />
@@ -125,13 +124,10 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="..\Salsa\VisualFSharp.Salsa.fsproj" />
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj" />
-    <ProjectReference Include="..\..\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
     <ProjectReference Include="..\..\src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
-    <ProjectReference Include="..\..\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
     <ProjectReference Include="..\..\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
   </ItemGroup>
 
@@ -205,7 +201,8 @@
     <PackageReference Include="System.ValueTuple" Version="$(SystemValueTupleVersion)" />
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" />
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="all" ExcludeAssets="contentFiles;build;analyzers;native" />
-	<PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
+	  <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
+    <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="16.6.255" />
   </ItemGroup>
 
 </Project>
