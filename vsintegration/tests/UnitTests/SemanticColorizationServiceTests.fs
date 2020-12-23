@@ -5,7 +5,7 @@ open System
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler
+open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 
@@ -31,7 +31,7 @@ type SemanticClassificationServiceTests() =
     let checker = FSharpChecker.Create()
     let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
-    let getRanges (source: string) : struct (Range * SemanticClassificationType) list =
+    let getRanges (source: string) : struct (range * SemanticClassificationType) list =
         asyncMaybe {
 
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")

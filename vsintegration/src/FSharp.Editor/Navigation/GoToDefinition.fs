@@ -20,6 +20,7 @@ open Microsoft.VisualStudio.Shell.Interop
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 module private Symbol =
     let fullName (root: ISymbol) : string =

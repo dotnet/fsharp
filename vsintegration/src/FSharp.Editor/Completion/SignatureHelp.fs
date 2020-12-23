@@ -12,10 +12,11 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.SignatureHelp
 open Microsoft.VisualStudio.Shell
 
 open FSharp.Compiler
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TextLayout
 
 type SignatureHelpParameterInfo =
     { ParameterName: string

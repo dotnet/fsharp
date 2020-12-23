@@ -13,9 +13,8 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.CompilerOptions
 open FSharp.Compiler.IlxGen
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps 

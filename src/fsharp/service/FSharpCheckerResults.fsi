@@ -15,10 +15,11 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]

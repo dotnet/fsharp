@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.Optimizer
 
 open FSharp.Compiler 
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
@@ -22,7 +21,8 @@ type OptimizationSettings =
       reportNoNeedToTailcall: bool
       reportFunctionSizes: bool
       reportHasEffect: bool
-      reportTotalSizes: bool }
+      reportTotalSizes: bool
+    }
 
     member jitOpt: unit -> bool 
     member localOpt: unit -> bool 

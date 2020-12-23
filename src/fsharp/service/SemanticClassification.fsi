@@ -6,7 +6,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.Import
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 

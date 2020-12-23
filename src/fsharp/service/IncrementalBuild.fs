@@ -25,10 +25,11 @@ open FSharp.Compiler.CreateILModule
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree 
 open FSharp.Compiler.TypedTreeOps
 

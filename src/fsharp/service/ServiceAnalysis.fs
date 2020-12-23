@@ -2,15 +2,13 @@
 
 namespace FSharp.Compiler.SourceCodeServices
 
-open System.Threading
-
-open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open System.Collections.Generic
 open System.Runtime.CompilerServices
+
 open FSharp.Compiler.AbstractIL.Internal.Library
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Text
 
 module UnusedOpens =
 

@@ -13,7 +13,7 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Driver
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 [<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] 
 do ()

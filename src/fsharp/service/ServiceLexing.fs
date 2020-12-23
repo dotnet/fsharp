@@ -21,8 +21,9 @@ open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 open Internal.Utilities
 

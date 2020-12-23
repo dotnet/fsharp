@@ -14,8 +14,8 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 
 module internal TaggedText =

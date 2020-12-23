@@ -7,7 +7,7 @@
 module internal FSharp.Compiler.TypedTreeBasics
 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val getNameOfScopeRef: sref:ILScopeRef -> string

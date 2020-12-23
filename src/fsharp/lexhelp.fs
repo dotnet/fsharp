@@ -14,9 +14,10 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 /// The "mock" filename used by fsi.exe when reading from stdin.
 /// Has special treatment by the lexer, i.e. __SOURCE_DIRECTORY__ becomes GetCurrentDirectory()

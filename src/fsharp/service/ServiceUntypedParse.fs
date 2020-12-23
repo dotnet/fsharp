@@ -17,11 +17,12 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library  
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Lib
-open FSharp.Compiler.SourceCodeServices.Pos
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 
 /// Methods for dealing with F# sources files.
 module SourceFile =

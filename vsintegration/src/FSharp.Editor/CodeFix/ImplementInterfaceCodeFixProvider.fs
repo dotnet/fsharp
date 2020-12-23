@@ -15,6 +15,7 @@ open Microsoft.CodeAnalysis.CodeActions
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 [<NoEquality; NoComparison>]
 type internal InterfaceState =

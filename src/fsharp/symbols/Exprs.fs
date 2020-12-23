@@ -6,12 +6,11 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
 open FSharp.Compiler.QuotationTranslator
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

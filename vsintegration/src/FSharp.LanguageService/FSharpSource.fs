@@ -22,6 +22,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -371,7 +372,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   Stamp = None }
                 |> ic.GetParsingOptionsFromProjectOptions
 
-            ic.ParseFile(fileName,  FSharp.Compiler.SourceCodeServices.SourceText.ofString (source.GetText()), co) |> Async.RunSynchronously
+            ic.ParseFile(fileName,  FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunSynchronously
 
         override source.GetCommentFormat() = 
             let mutable info = new CommentInfo()

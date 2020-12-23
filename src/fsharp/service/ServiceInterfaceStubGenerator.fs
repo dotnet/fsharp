@@ -7,10 +7,11 @@ open System.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library 
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
         
 #if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]

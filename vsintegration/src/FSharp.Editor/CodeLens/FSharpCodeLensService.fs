@@ -16,9 +16,8 @@ open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging

@@ -33,6 +33,7 @@ open System
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
+open FSharp.Compiler.Text
 
 let stringMethods = 
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
@@ -124,8 +125,8 @@ let ``Basic cancellation test`` () =
     let file = "/home/user/Test.fsx"
     async { 
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, FSharp.Compiler.SourceCodeServices.SourceText.ofString input) 
-        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.SourceCodeServices.SourceText.ofString input, checkOptions) 
+        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) 
+        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, checkOptions) 
         return parseResult, typedRes
     } |> Async.RunSynchronously
       |> ignore

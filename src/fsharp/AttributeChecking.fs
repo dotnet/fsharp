@@ -12,11 +12,10 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
 open FSharp.Compiler.ExtensionTyping

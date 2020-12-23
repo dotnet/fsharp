@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 

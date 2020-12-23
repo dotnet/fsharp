@@ -31,6 +31,7 @@ To use the interactive checker, reference `FSharp.Compiler.Service.dll` and open
 #r "FSharp.Compiler.Service.dll"
 open System
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 (**
 
 ### Performing untyped parse

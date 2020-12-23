@@ -6,18 +6,20 @@ namespace FSharp.Compiler
 
 #if !NO_EXTENSIONTYPING
 
+open System
+open System.IO
+open System.Collections.Generic
+open System.Reflection
+open FSharp.Core.CompilerServices
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
+open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
+open Internal.Utilities.FSharpEnvironment  
+
 module internal ExtensionTyping =
-    open System
-    open System.IO
-    open System.Collections.Generic
-    open System.Reflection
-    open FSharp.Core.CompilerServices
-    open FSharp.Compiler.AbstractIL.IL
-    open FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
-    open FSharp.Compiler.ErrorLogger
-    open FSharp.Compiler.SourceCodeServices.Range
-    open FSharp.Compiler.SourceCodeServices
-    open Internal.Utilities.FSharpEnvironment  
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 

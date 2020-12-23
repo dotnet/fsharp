@@ -11,7 +11,8 @@ open NUnit.Framework
 open System.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 
 // Add additional imports/constructs into this script text to verify that common scenarios
 // for FCS script typechecking can be supported

@@ -3,7 +3,6 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open System
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Qualified long name.

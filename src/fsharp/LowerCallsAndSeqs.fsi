@@ -3,9 +3,9 @@
 module internal FSharp.Compiler.LowerCallsAndSeqs
 
 open FSharp.Compiler.Import
-open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.Text
 
 /// An "expr -> expr" pass that eta-expands under-applied values of
 /// known arity to lambda expressions and beta-var-reduces to bind

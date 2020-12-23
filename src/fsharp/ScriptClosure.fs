@@ -9,7 +9,6 @@ open System.IO
 open System.Text
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.CompilerConfig
@@ -19,8 +18,9 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 open Microsoft.DotNet.DependencyManager
 
@@ -78,7 +78,6 @@ type CodeContext =
     | Editing // in VS
 
 module ScriptPreprocessClosure = 
-    open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
     type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: ISourceText * parseRequired: bool 

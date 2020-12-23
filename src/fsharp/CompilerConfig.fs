@@ -26,7 +26,8 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lib
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 
 open Microsoft.DotNet.DependencyManager

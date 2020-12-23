@@ -10,8 +10,8 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Detuple.GlobalUsageAnalysis
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree

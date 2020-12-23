@@ -8,9 +8,9 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals

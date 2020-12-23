@@ -15,6 +15,7 @@ open System
 open System.IO
 
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 
 module internal Project1 = 
@@ -35,7 +36,7 @@ let fff () = xxx + xxx
 
 type CAbbrev = C
     """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
 
     let fileSource2Text = """
@@ -80,7 +81,7 @@ let mmmm1 : M.C = new M.C()             // note, these don't count as uses of CA
 let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 
     """
-    let fileSource2 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource2Text
+    let fileSource2 = SourceText.ofString fileSource2Text
     File.WriteAllText(fileName2, fileSource2Text)
 
     let fileNames = [fileName1; fileName2]
@@ -2426,7 +2427,7 @@ and F = { Field1 : int; Field2 : int }
 and G = Case1 | Case2 of int
 
     """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
 
     let sigFileSource1Text = """
@@ -2448,7 +2449,7 @@ and F = { Field1 : int; Field2 : int }
 and G = Case1 | Case2 of int
 
     """
-    let sigFileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString sigFileSource1Text
+    let sigFileSource1 = SourceText.ofString sigFileSource1Text
     File.WriteAllText(sigFileName1, sigFileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" elif a = sigFileName1 then "sig1"  else "??"
 
@@ -4496,7 +4497,7 @@ module internal Project35b =
 #r "System.dll"
 #r "notexist.dll"
 """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
@@ -5138,7 +5139,7 @@ module internal ProjectBig =
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
     for (f,text) in fileSources do File.WriteAllText(f, text)
-    let fileSources2 = [ for (i,f) in fileSources -> FSharp.Compiler.SourceCodeServices.SourceText.ofString f ]
+    let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5224,7 +5225,7 @@ module M
 # 10 "Test.fsy"
 let x = (1 = 3.0)
     """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
@@ -5265,7 +5266,7 @@ let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is create
 type A(i:int) =
     member x.Value = i
 """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]
@@ -5356,7 +5357,7 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
 """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]
@@ -5429,7 +5430,7 @@ type UseTheThings(i:int) =
     member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
     member x.UseSomeUsedModuleContainingUnion() = A
 """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]
@@ -5510,7 +5511,7 @@ module M2 =
 
     let foo x = x.Field
 """
-    let fileSource1 = FSharp.Compiler.SourceCodeServices.SourceText.ofString fileSource1Text
+    let fileSource1 = SourceText.ofString fileSource1Text
     File.WriteAllText(fileName1, fileSource1Text)
 
     let fileNames = [fileName1]

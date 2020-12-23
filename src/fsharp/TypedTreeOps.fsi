@@ -11,10 +11,11 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.Internal 
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals

@@ -5,6 +5,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
         
 #if !FX_NO_INDENTED_TEXT_WRITER
 /// Capture information about an interface in ASTs

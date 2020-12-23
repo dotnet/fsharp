@@ -5,7 +5,7 @@ namespace FSharp.Compiler.SourceCodeServices
 open System
 open System.Threading
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 
 // Prevents warnings of experimental APIs within the signature file itself.

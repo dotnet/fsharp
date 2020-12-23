@@ -8,9 +8,9 @@ open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Import
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv

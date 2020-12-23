@@ -23,9 +23,10 @@ open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender

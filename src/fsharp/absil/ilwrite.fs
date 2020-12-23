@@ -18,7 +18,7 @@ open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text.Range
 
 #if DEBUG
 let showEntryLookups = false

@@ -12,8 +12,8 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.MethodCalls
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

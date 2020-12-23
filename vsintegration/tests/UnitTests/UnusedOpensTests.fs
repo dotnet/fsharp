@@ -4,8 +4,8 @@ module Tests.ServiceAnalysis.UnusedOpens
 
 open System
 open NUnit.Framework
-open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 /// like "should equal", but validates same-type
 let shouldEqual (x: 'a) (y: 'a) = Assert.AreEqual(x, y, sprintf "Expected: %A\nActual: %A" x y)
@@ -31,7 +31,7 @@ let private checker = FSharpChecker.Create()
 let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int * (*end column*)int)) list) =
     let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.SourceCodeServices.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
+    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
     
     let checkFileResults =
         match checkFileAnswer with

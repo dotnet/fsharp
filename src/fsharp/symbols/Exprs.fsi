@@ -6,6 +6,7 @@ open FSharp.Compiler
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
 /// Represents the definitional contents of an assembly, as seen by the F# language

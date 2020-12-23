@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler
+open FSharp.Compiler.Text
 
 module public UnusedOpens =
 

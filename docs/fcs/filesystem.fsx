@@ -22,6 +22,7 @@ open System.IO
 open System.Collections.Generic
 open System.Text
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 let defaultFileSystem = FileSystem
 

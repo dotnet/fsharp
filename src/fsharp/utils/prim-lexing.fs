@@ -2,7 +2,7 @@
 
 #nowarn "47" // recursive initialization of LexBuffer
 
-namespace FSharp.Compiler.SourceCodeServices
+namespace FSharp.Compiler.Text
 
 open System
 open System.IO
@@ -108,7 +108,7 @@ module SourceText =
 
 namespace Internal.Utilities.Text.Lexing
 
-    open FSharp.Compiler.SourceCodeServices
+    open FSharp.Compiler.Text
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
     open FSharp.Compiler.Features

@@ -6,7 +6,6 @@ module internal FSharp.Compiler.IlxGen
 open System.IO
 open System.Reflection
 open System.Collections.Generic
-open System.Collections.Immutable
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -15,24 +14,23 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
+open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
 open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.AbstractIL.Extensions.ILX
 open FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-open FSharp.Compiler.AbstractIL.Internal.BinaryConstants
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
+open FSharp.Compiler.Infos
 open FSharp.Compiler.Lib
 open FSharp.Compiler.LowerCallsAndSeqs
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.TextLayout
-open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout.LayoutRender
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics

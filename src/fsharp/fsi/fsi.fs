@@ -46,11 +46,12 @@ open FSharp.Compiler.Lib
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.OptimizeInputs
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
 open FSharp.Compiler.TextLayout.LayoutRender

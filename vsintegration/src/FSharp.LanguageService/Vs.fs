@@ -8,7 +8,7 @@ open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open System.Runtime.InteropServices
 
 /// Helper methods for interoperating with COM                

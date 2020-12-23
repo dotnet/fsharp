@@ -11,6 +11,7 @@ open System.Collections.Generic
 
 open FSharp.Compiler
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 [<Sealed>]
 /// Represents the results of parsing an F# file

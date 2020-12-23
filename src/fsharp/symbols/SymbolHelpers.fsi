@@ -8,11 +8,11 @@ namespace FSharp.Compiler.SourceCodeServices
 
 open System
 open FSharp.Compiler 
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.TcGlobals 
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps

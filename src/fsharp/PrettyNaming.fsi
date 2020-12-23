@@ -5,7 +5,7 @@
 module public FSharp.Compiler.SourceCodeServices.PrettyNaming
 
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 
 [<LiteralAttribute>]

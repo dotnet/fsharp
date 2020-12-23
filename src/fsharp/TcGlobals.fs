@@ -20,8 +20,9 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Features
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices.FileIndex
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.FileIndex
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 

@@ -13,6 +13,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.DocumentHighlighting
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 type internal FSharpHighlightSpan =
     { IsDefinition: bool

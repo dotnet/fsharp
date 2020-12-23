@@ -43,6 +43,7 @@ F# Interactiveの開始
 
 #r "FSharp.Compiler.Service.dll"
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open FSharp.Compiler.Interactive.Shell
 
 (**

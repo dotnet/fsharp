@@ -5,7 +5,8 @@ module public FSharp.Compiler.ErrorLogger
 open FSharp.Compiler 
 open FSharp.Compiler.Features
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Text
 open System
 
 //------------------------------------------------------------------------

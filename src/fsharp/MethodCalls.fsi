@@ -11,8 +11,8 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 

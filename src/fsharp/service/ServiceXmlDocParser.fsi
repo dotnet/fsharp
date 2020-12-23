@@ -3,7 +3,7 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.SyntaxTree
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 /// Represent an Xml documentation block in source code
 type public XmlDocable =

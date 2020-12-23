@@ -3,6 +3,7 @@
 namespace FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 module AstTraversal = 
   val rangeContainsPosLeftEdgeInclusive : m1:range -> p:pos -> bool

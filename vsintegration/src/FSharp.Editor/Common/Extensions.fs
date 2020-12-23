@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Host
 
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open FSharp.Compiler.SyntaxTree
 
 type private FSharpGlyph = FSharp.Compiler.SourceCodeServices.FSharpGlyph

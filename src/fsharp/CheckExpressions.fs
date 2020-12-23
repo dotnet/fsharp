@@ -29,12 +29,13 @@ open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.Rational
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps

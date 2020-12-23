@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 
 [<Export(typeof<IFSharpFindUsagesService>)>]

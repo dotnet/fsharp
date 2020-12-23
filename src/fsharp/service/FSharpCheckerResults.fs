@@ -34,16 +34,17 @@ open FSharp.Compiler.Parser
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.ScriptClosure
+open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
+open FSharp.Compiler.TcGlobals 
+open FSharp.Compiler.Text
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TextLayout.Layout
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.TcGlobals 
-open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.PrettyNaming
-open FSharp.Compiler.SourceCodeServices.Range
-open FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 open Internal.Utilities
 open Internal.Utilities.Collections

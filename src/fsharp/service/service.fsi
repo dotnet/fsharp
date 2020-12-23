@@ -11,6 +11,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet

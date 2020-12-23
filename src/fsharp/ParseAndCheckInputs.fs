@@ -14,7 +14,6 @@ open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Internal
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
@@ -30,8 +29,9 @@ open FSharp.Compiler.SourceCodeServices.PrettyNaming
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals

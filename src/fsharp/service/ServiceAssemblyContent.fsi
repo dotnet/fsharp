@@ -8,6 +8,7 @@ open System.Collections.Generic
 
 open FSharp.Compiler
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 
 /// Assembly content type.
 type public AssemblyContentType = 

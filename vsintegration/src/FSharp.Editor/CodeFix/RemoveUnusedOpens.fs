@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 open FSharp.Compiler
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider

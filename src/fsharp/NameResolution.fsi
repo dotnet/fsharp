@@ -10,6 +10,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SourceCodeServices.PrettyNaming
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -400,7 +401,8 @@ type internal OpenDeclaration =
       AppliedScope: range 
       
       /// If it's `namespace Xxx.Yyy` declaration.
-      IsOwnNamespace: bool }
+      IsOwnNamespace: bool
+    }
     
     /// Create a new instance of OpenDeclaration.
     static member Create: target: SynOpenDeclTarget * modules: ModuleOrNamespaceRef list * types: TType list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
@@ -409,8 +411,10 @@ type internal OpenDeclaration =
 type FormatStringCheckContext =
     { /// Source text
       SourceText: ISourceText
+
       /// Array of line start positions
-      LineStartPositions: int[] }
+      LineStartPositions: int[]
+    }
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =

@@ -25,11 +25,12 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.Lib
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Parser
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 module Ranges =
     /// Whether valid as signed int8 when a minus sign is prepended, compares true to 0x80

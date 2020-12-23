@@ -12,10 +12,10 @@ open FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Lib
 open FSharp.Compiler.Infos
-open FSharp.Compiler.SourceCodeServices.Range
-open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TextLayout
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics

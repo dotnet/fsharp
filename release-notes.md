@@ -90,13 +90,13 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 * 
 *     module FSharp.Compiler.Layout.TaggedTextOps.Literals  -> FSharp.Compiler.TextLayout.TaggedText
 * 
-*     type FSharp.Compiler.Range.range --> FSharp.Compiler.SourceCodeServices.Range (with 'range' abbreviation)
+*     type FSharp.Compiler.Range.range --> FSharp.Compiler.Text.Range (with 'range' abbreviation)
 * 
-*     type FSharp.Compiler.Range.pos --> FSharp.Compiler.SourceCodeServices.Pos (with 'pos' abbreviation)
+*     type FSharp.Compiler.Range.pos --> FSharp.Compiler.Text.Pos (with 'pos' abbreviation)
 * 
 *     module FSharp.Compiler.Range.Range --> (split)
-*          module FSharp.Compiler.SourceCodeServices.Pos
-*          module FSharp.Compiler.SourceCodeServices.Range
+*          module FSharp.Compiler.Text.Pos
+*          module FSharp.Compiler.Text.Range
 *
 *     module FSharp.Compiler.QuickParse --> FSharp.Compiler.SourceCodeServices.QuickParse
 *
@@ -107,8 +107,6 @@ This release covers three important milestones: F# 5, Visual Studio 16.8, and .N
 *     val FSharpKeywords.PrettyNaming.QuoteIdentifierIfNeeded  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.QuoteIdentifierIfNeeded
 *
 *     val FSharpKeywords.PrettyNaming.FormatAndOtherOverloadsString  --> FSharp.Compiler.SourceCodeServices.FSharpKeywords.FormatAndOtherOverloadsString
-*
-*     type FSharp.Compiler.Text.ISourceText --> FSharp.Compiler.SourceCodeServices.ISourceText
 *
 * Renamings in FSharp.Compiler.SourceCodeServices
 *   Lexer.* --> FSharp.Compiler.SourceCodeServices.*

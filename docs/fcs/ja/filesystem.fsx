@@ -20,6 +20,7 @@ FileSystemの設定
 open System.IO
 open System.Text
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
 
 let defaultFileSystem = FileSystem
 

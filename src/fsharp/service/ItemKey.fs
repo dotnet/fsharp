@@ -9,16 +9,14 @@ open System.Reflection.Metadata
 
 open FSharp.NativeInterop
 
-open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Infos
 open FSharp.Compiler.NameResolution
-open FSharp.Compiler.SourceCodeServices.Pos
-open FSharp.Compiler.SourceCodeServices.Range
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Pos
+open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
-open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeBasics
-open FSharp.Compiler.TcGlobals
 
 #nowarn "9"
 

@@ -14,8 +14,9 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Text
 open FSharp.Compiler
-open FSharp.Compiler.SourceCodeServices.Range
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Range
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
@@ -148,7 +149,7 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
         lineTokenizer <- makeLineTokenizer lineText
 
     /// Adjust the set of extra colorizations and return a sorted list of affected lines.
-    member _.SetExtraColorizations (tokens: struct (Range * SemanticClassificationType)[]) =
+    member _.SetExtraColorizations (tokens: struct (range * SemanticClassificationType)[]) =
         if tokens.Length = 0 && extraColorizations.IsNone then
             [| |]
         else

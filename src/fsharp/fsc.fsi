@@ -5,9 +5,6 @@ module internal FSharp.Compiler.Driver
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.Internal.Library
-open FSharp.Compiler.AbstractIL.Internal.StrongNameSign
-open FSharp.Compiler.CheckExpressions
-open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
