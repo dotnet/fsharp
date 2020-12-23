@@ -321,8 +321,8 @@ module MapImplementation =
         override x.Filter(_) = x :> MapNode<_,_>
         override x.Choose(_) = MapEmpty.Instance
 
-        override x.UnsafeRemoveHeadV() = failwith "empty"
-        override x.UnsafeRemoveTailV() = failwith "empty"
+        override x.UnsafeRemoveHeadV() = raise <| NotSupportedException "cannot remove head from empty node"
+        override x.UnsafeRemoveTailV() = raise <| NotSupportedException "cannot remove tail from empty node"
 
         override x.SplitV(_,_) =
             (x :> MapNode<_,_>, x :> MapNode<_,_>, ValueNone)
@@ -454,22 +454,17 @@ module MapImplementation =
                             r.Right
                         ) 
                     else
-                        // right left case
-                        match r.Left with
-                        | :? MapInner<'Key, 'Value> as rl ->
-                            //let rl = r.Left :?> MapInner<'Key, 'Value>
-                            let t1 = l
-                            let t2 = rl.Left
-                            let t3 = rl.Right
-                            let t4 = r.Right
+                        let rl = r.Left :?> MapInner<'Key, 'Value> // must work
+                        let t1 = l
+                        let t2 = rl.Left
+                        let t3 = rl.Right
+                        let t4 = r.Right
 
-                            MapInner.Create(
-                                MapInner.Create(t1, k, v, t2),
-                                rl.Key, rl.Value,
-                                MapInner.Create(t3, r.Key, r.Value, t4)
-                            )
-                        | _ ->
-                            failwith "impossible"
+                        MapInner.Create(
+                            MapInner.Create(t1, k, v, t2),
+                            rl.Key, rl.Value,
+                            MapInner.Create(t3, r.Key, r.Value, t4)
+                        )
                             
 
                 elif b < -2 then   
@@ -483,19 +478,16 @@ module MapImplementation =
                         )
 
                     else
-                        match l.Right with
-                        | :? MapInner<'Key, 'Value> as lr -> 
-                            let t1 = l.Left
-                            let t2 = lr.Left
-                            let t3 = lr.Right
-                            let t4 = r
-                            MapInner.Create(
-                                MapInner.Create(t1, l.Key, l.Value, t2),
-                                lr.Key, lr.Value,
-                                MapInner.Create(t3, k, v, t4)
-                            )
-                        | _ ->
-                            failwith "impossible"
+                        let lr = l.Right :?> MapInner<'Key, 'Value>
+                        let t1 = l.Left
+                        let t2 = lr.Left
+                        let t3 = lr.Right
+                        let t4 = r
+                        MapInner.Create(
+                            MapInner.Create(t1, l.Key, l.Value, t2),
+                            lr.Key, lr.Value,
+                            MapInner.Create(t3, k, v, t4)
+                        )
 
                 else
                     MapInner(l, k, v, r) :> MapNode<_,_>
@@ -1169,9 +1161,9 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
             | :? MapLeaf<'Key, 'Value> as n ->
                 let c = cmp.Compare(key, n.Key)
                 if c = 0 then n.Value
-                else raise <| KeyNotFoundException()
+                else raise <| KeyNotFoundException(SR.GetString(SR.keyNotFound))
             | _ ->
-                raise <| KeyNotFoundException()
+                raise <| KeyNotFoundException(SR.GetString(SR.keyNotFound))
         run comparer key root 
 
     member x.Item
@@ -1214,7 +1206,7 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
     member x.FindKey(predicate : 'Key -> 'Value -> bool) =
         match x.TryFindKeyV predicate with
         | ValueSome k -> k
-        | ValueNone -> raise <| KeyNotFoundException()
+        | ValueNone -> raise <| KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt))
         
     member x.TryPick(mapping : 'Key -> 'Value -> option<'T>) =
         let rec run (mapping : OptimizedClosures.FSharpFunc<'Key, 'Value, option<'T>>) (node : MapNode<'Key, 'Value>) =
@@ -1237,7 +1229,7 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
     member x.Pick(mapping : 'Key -> 'Value -> option<'T>) =
         match x.TryPick mapping with
         | Some k -> k
-        | None -> raise <| KeyNotFoundException()
+        | None -> raise <| KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt))
 
     member x.Partition(predicate : 'Key -> 'Value -> bool) =
         let predicate = OptimizedClosures.FSharpFunc<_,_,_>.Adapt predicate
@@ -1406,10 +1398,10 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
             false
 
     interface System.IComparable with
-        member x.CompareTo o = 
-            match o with
+        member x.CompareTo obj = 
+            match obj with
             | :? Map<'Key, 'Value> as o -> x.CompareTo o
-            | _ -> raise <| ArgumentException()
+            | _ -> invalidArg "obj" (SR.GetString(SR.notComparable))
 
     interface System.Collections.IEnumerable with
         member x.GetEnumerator() = new MapEnumerator<_,_>(root) :> _
@@ -1420,15 +1412,15 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
     interface System.Collections.Generic.ICollection<KeyValuePair<'Key, 'Value>> with
         member x.Count = x.Count
         member x.IsReadOnly = true
-        member x.Clear() = raise <| NotSupportedException()
-        member x.Add(_) = raise <| NotSupportedException()
-        member x.Remove(_) = raise <| NotSupportedException()
+        member x.Clear() = raise <| NotSupportedException(SR.GetString(SR.mapCannotBeMutated))
+        member x.Add(_) = raise <| NotSupportedException(SR.GetString(SR.mapCannotBeMutated))
+        member x.Remove(_) = raise <| NotSupportedException(SR.GetString(SR.mapCannotBeMutated))
         member x.Contains(kvp : KeyValuePair<'Key, 'Value>) =
             match x.TryFindV kvp.Key with
             | ValueSome v -> Unchecked.equals v kvp.Value
             | ValueNone -> false
         member x.CopyTo(array : KeyValuePair<'Key, 'Value>[], startIndex : int) =
-            if startIndex < 0 || startIndex + x.Count > array.Length then raise <| System.IndexOutOfRangeException("Map.CopyTo")
+            if startIndex < 0 || startIndex + x.Count > array.Length then raise <| System.IndexOutOfRangeException()
             let rec copyTo (arr : array<_>) (index : int) (n : MapNode<_,_>) =
                 match n with
                 | :? MapInner<'Key, 'Value> as n ->
@@ -1457,8 +1449,8 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
     interface System.Collections.Generic.IDictionary<'Key, 'Value> with
         member x.TryGetValue(key : 'Key,  [<Out>] value : byref<'Value>) = x.TryGetValue(key, &value)
 
-        member x.Add(_,_) = raise <| NotSupportedException()
-        member x.Remove(_) = raise <| NotSupportedException()
+        member x.Add(_,_) = raise <| NotSupportedException(SR.GetString(SR.mapCannotBeMutated))
+        member x.Remove(_) = raise <| NotSupportedException(SR.GetString(SR.mapCannotBeMutated))
 
         member x.Keys =
             let rec copyTo (arr : array<_>) (index : int) (n : MapNode<_,_>) =
@@ -1497,7 +1489,7 @@ type Map< [<EqualityConditionalOn>] 'Key, [<EqualityConditionalOn;ComparisonCond
 
         member x.Item
             with get (key : 'Key) = x.Find key
-            and set _ _ = raise <| NotSupportedException()
+            and set _ _ = raise <| NotSupportedException(SR.GetString(SR.mapCannotBeMutated))
 
     new(comparer : IComparer<'Key>) = 
         Map<'Key, 'Value>(comparer, MapEmpty.Instance)
@@ -1512,23 +1504,24 @@ and [<NoComparison; NoEquality>]
         val mutable public Root : MapNode<'Key, 'Value>
         val mutable public Stack : list<struct(MapNode<'Key, 'Value> * bool)>
         val mutable public Value : KeyValuePair<'Key, 'Value>
-        val mutable public Valid : bool
+        val mutable public Valid : int
 
         member x.Current : KeyValuePair<'Key, 'Value> = 
-            if x.Valid then x.Value
-            else raise <| InvalidOperationException()
+            if x.Valid = 0 then x.Value
+            elif x.Valid = -1 then raise <| InvalidOperationException(SR.GetString(SR.enumerationNotStarted))
+            else raise <| InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished))
 
         member x.Reset() =
             if x.Root.Height > 0 then
                 x.Stack <- [struct(x.Root, true)]
                 x.Value <- Unchecked.defaultof<_>
-            x.Valid <- false
+            x.Valid <- -1
 
         member x.Dispose() =
             x.Root <- MapEmpty.Instance
             x.Stack <- []
             x.Value <- Unchecked.defaultof<_>
-            x.Valid <- false
+            x.Valid <- -1
                 
         member inline private x.MoveNext(deep : bool, top : MapNode<'Key, 'Value>) =
             let mutable top = top
@@ -1555,7 +1548,7 @@ and [<NoComparison; NoEquality>]
                         run <- false
 
                 | _ ->
-                    failwith "empty node"
+                    raise <| InvalidOperationException "empty node on stack"
     
             
         member x.MoveNext() : bool =
@@ -1563,10 +1556,10 @@ and [<NoComparison; NoEquality>]
             | struct(n, deep) :: rest ->
                 x.Stack <- rest
                 x.MoveNext(deep, n)
-                x.Valid <- true
+                x.Valid <- 0
                 true
             | [] ->
-                x.Valid <- false
+                x.Valid <- -2
                 false
                             
             
@@ -1584,14 +1577,14 @@ and [<NoComparison; NoEquality>]
         new(r : MapNode<'Key, 'Value>) =
             if r.Height = 0 then
                 {
-                    Valid = false
+                    Valid = -1
                     Root = r
                     Stack = []
                     Value = Unchecked.defaultof<_>
                 }
             else       
                 { 
-                    Valid = false
+                    Valid = -1
                     Root = r
                     Stack = [struct(r, true)]
                     Value = Unchecked.defaultof<_>
