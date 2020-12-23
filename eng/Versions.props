@@ -25,7 +25,7 @@
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion).$(FSRevisionVersion)</FSCoreVersion>
     <FCSMajorVersion>38</FCSMajorVersion>
     <FCSMinorVersion>0</FCSMinorVersion>
-    <FCSBuildVersion>1</FCSBuildVersion>
+    <FCSBuildVersion>2</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
