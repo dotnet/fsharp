@@ -3250,6 +3250,23 @@ module EstablishTypeDefinitionCores =
         let paramNames =
             match synTyconRepr with 
             | SynTypeDefnSimpleRepr.General (TyconDelegate (_ty, arity), _, _, _, _, _, _, _) -> arity.ArgNames
+            | SynTypeDefnSimpleRepr.General (TyconUnspecified, _, _, _, _, _, Some synPats, _) ->
+                let rec patName (p: SynSimplePat) =
+                    match p with
+                    | SynSimplePat.Id (id, _, _, _, _, _) -> id.idText
+                    | SynSimplePat.Typed(pat, _, _) -> patName pat
+                    | SynSimplePat.Attrib(pat, _, _) -> patName pat
+
+                let rec pats (p: SynSimplePats) =
+                    match p with
+                    | SynSimplePats.SimplePats (ps, _) -> ps
+                    | SynSimplePats.Typed (ps, _, _) -> pats ps
+
+                let patNames =
+                    pats synPats
+                    |> List.map patName
+
+                patNames
             | _ -> []
         let doc = doc.ToXmlDoc(true, Some paramNames )
         Construct.NewTycon
