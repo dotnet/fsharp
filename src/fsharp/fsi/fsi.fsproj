@@ -12,9 +12,10 @@
     <OtherFlags>--warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
     <NGenBinary>true</NGenBinary>
-    <UseAppHost>true</UseAppHost>
+<!--    <UseAppHost>true</UseAppHost>   -->
   </PropertyGroup>
 
+<!--
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <NGenBinary>false</NGenBinary>
     <UseAppHost>true</UseAppHost>
@@ -24,7 +25,7 @@
     <NGenBinary>true</NGenBinary>
     <UseAppHost>false</UseAppHost>
   </PropertyGroup>
-
+-->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <PlatformTarget>x86</PlatformTarget>
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
