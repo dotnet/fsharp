@@ -175,6 +175,10 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 let altNameRefCell = Some (ref (Undecided (mkSynId m (synArgNameGenerator.New()))))
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
+            | SynPat.Named(_, ident, _, _, _) ->
+                // named pats should be referred to as their name in docs, tooltips, etc.
+                let item = mkSynIdGet m ident.idText
+                false, None, ident, item
             | _ ->
                 let nm = synArgNameGenerator.New()
                 let id = mkSynId m nm
