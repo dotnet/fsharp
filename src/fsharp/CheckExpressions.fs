@@ -9755,6 +9755,9 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
             | _ when inlineFlag.MustInline -> 
                 error(Error(FSComp.SR.tcInvalidInlineSpecification(), m))
 
+            | TPat_query _ when HasFSharpAttribute cenv.g cenv.g.attrib_LiteralAttribute attrs ->
+                error(Error(FSComp.SR.tcLiteralAttributeCannotUseActivePattern(), m))
+
             | _ -> 
 
                 let tmp, _ = mkCompGenLocal m "patternInput" (generalizedTypars +-> tauTy)
