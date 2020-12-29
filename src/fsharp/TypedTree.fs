@@ -467,7 +467,11 @@ type EntityFlags(flags: int64) =
 
 
 
-exception UndefinedName of int * (string -> string) * Ident * ErrorLogger.Suggestions
+exception UndefinedName of 
+    depth: int * 
+    error: (string -> string) * 
+    id: Ident * 
+    suggestions: ErrorLogger.Suggestions
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
@@ -2254,45 +2258,45 @@ type Typar =
 type TyparConstraint = 
 
     /// A constraint that a type is a subtype of the given type 
-    | CoercesTo of TType * range
+    | CoercesTo of ty: TType * range: range
 
     /// A constraint for a default value for an inference type variable should it be neither generalized nor solved 
-    | DefaultsTo of int * TType * range 
+    | DefaultsTo of priority: int * ty: TType * range: range 
     
     /// A constraint that a type has a 'null' value 
-    | SupportsNull of range 
+    | SupportsNull of range: range 
     
     /// A constraint that a type has a member with the given signature 
-    | MayResolveMember of TraitConstraintInfo * range
+    | MayResolveMember of constraintInfo: TraitConstraintInfo * range: range
     
     /// A constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 
     /// generate verifiable code we must attach them to F# generalized type variables as well. 
-    | IsNonNullableStruct of range 
+    | IsNonNullableStruct of range: range 
     
     /// A constraint that a type is a reference type 
-    | IsReferenceType of range 
+    | IsReferenceType of range: range 
 
     /// A constraint that a type is a simple choice between one of the given ground types. Only arises from 'printf' format strings. See format.fs 
-    | SimpleChoice of TTypes * range 
+    | SimpleChoice of tys: TTypes * range: range 
 
     /// A constraint that a type has a parameterless constructor 
-    | RequiresDefaultConstructor of range 
+    | RequiresDefaultConstructor of range: range 
 
     /// A constraint that a type is an enum with the given underlying 
-    | IsEnum of TType * range 
+    | IsEnum of ty: TType * range: range 
     
     /// A constraint that a type implements IComparable, with special rules for some known structural container types
-    | SupportsComparison of range 
+    | SupportsComparison of range: range 
     
     /// A constraint that a type does not have the Equality(false) attribute, or is not a structural type with this attribute, with special rules for some known structural container types
-    | SupportsEquality of range 
+    | SupportsEquality of range: range 
     
     /// A constraint that a type is a delegate from the given tuple of args to the given return type
-    | IsDelegate of TType * TType * range 
+    | IsDelegate of aty: TType * bty: TType * range: range 
     
     /// A constraint that a type is .NET unmanaged type
-    | IsUnmanaged of range
+    | IsUnmanaged of range: range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -2359,7 +2363,7 @@ type TraitConstraintSln =
     ///    ty -- the type and its instantiation
     ///    vref -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | FSMethSln of TType * ValRef * TypeInst 
+    | FSMethSln of ty: TType * vref: ValRef * minsts: TypeInst 
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -2367,10 +2371,10 @@ type TraitConstraintSln =
     ///    tinst -- the instantiation of the declaring type
     ///    rfref -- the reference to the record field
     ///    isSetProp -- indicates if this is a set of a record field
-    | FSRecdFieldSln of TypeInst * RecdFieldRef * bool
+    | FSRecdFieldSln of tinst: TypeInst * rfref: RecdFieldRef * isSetProp: bool
 
     /// Indicates a trait is solved by an F# anonymous record field.
-    | FSAnonRecdFieldSln of AnonRecdTypeInfo * TypeInst * int
+    | FSAnonRecdFieldSln of anonInfo: AnonRecdTypeInfo * tinst: TypeInst * index: int
 
     /// ILMethSln(ty, extOpt, ilMethodRef, minst)
     ///
@@ -2379,12 +2383,12 @@ type TraitConstraintSln =
     ///    extOpt -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | ILMethSln of TType * ILTypeRef option * ILMethodRef * TypeInst    
+    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst    
 
     /// ClosedExprSln expr
     ///
     /// Indicates a trait is solved by an erased provided expression
-    | ClosedExprSln of Expr 
+    | ClosedExprSln of expr: Expr 
 
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
@@ -3925,40 +3929,40 @@ type TType =
     /// TType_forall(typars, bodyTy).
     ///
     /// Indicates the type is a universal type, only used for types of values and members 
-    | TType_forall of Typars * TType
+    | TType_forall of typars: Typars * bodyTy: TType
 
     /// TType_app(tyconRef, typeInstantiation).
     ///
     /// Indicates the type is built from a named type and a number of type arguments
-    | TType_app of TyconRef * TypeInst
+    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst
 
     /// TType_anon
     ///
     /// Indicates the type is an anonymous record type whose compiled representation is located in the given assembly
-    | TType_anon of AnonRecdTypeInfo * TType list
+    | TType_anon of anonInfo: AnonRecdTypeInfo * tys: TType list
 
     /// TType_tuple(elementTypes).
     ///
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
-    | TType_tuple of TupInfo * TTypes
+    | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
 
     /// TType_fun(domainType, rangeType).
     ///
     /// Indicates the type is a function type 
-    | TType_fun of TType * TType
+    | TType_fun of domainType: TType * rangeType: TType
 
     /// TType_ucase(unionCaseRef, typeInstantiation)
     ///
     /// Indicates the type is a non-F#-visible type representing a "proof" that a union value belongs to a particular union case
     /// These types are not user-visible and will never appear as an inferred type. They are the types given to
     /// the temporaries arising out of pattern matching on union values.
-    | TType_ucase of UnionCaseRef * TypeInst
+    | TType_ucase of unionCaseRef: UnionCaseRef * typeInstantiation: TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    | TType_var of Typar 
+    | TType_var of typar: Typar 
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
-    | TType_measure of Measure
+    | TType_measure of measure: Measure
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
@@ -4825,7 +4829,7 @@ type ValUseFlag =
     /// a .NET 2.0 constrained call. A constrained call is only used for calls where 
     // the object argument is a value type or generic type, and the call is to a method
     //  on System.Object, System.ValueType, System.Enum or an interface methods.
-    | PossibleConstrainedCall of TType
+    | PossibleConstrainedCall of typ: TType
 
     /// A normal use of a value
     | NormalValUse
@@ -4940,19 +4944,19 @@ type ModuleOrNamespaceExprWithSig =
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
 type ModuleOrNamespaceExpr = 
     /// Indicates the module is a module with a signature 
-    | TMAbstract of ModuleOrNamespaceExprWithSig
+    | TMAbstract of moduleOrNamespaceExprWithSig: ModuleOrNamespaceExprWithSig
 
     /// Indicates the module fragment is made of several module fragments in succession 
-    | TMDefs of ModuleOrNamespaceExpr list  
+    | TMDefs of moduleOrNamespaceExprs: ModuleOrNamespaceExpr list  
 
     /// Indicates the module fragment is a 'let' definition 
-    | TMDefLet of Binding * range
+    | TMDefLet of binding: Binding * range: range
 
     /// Indicates the module fragment is an evaluation of expression for side-effects
-    | TMDefDo of Expr * range
+    | TMDefDo of expr: Expr * range: range
 
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
-    | TMDefRec of isRec: bool * Tycon list * ModuleOrNamespaceBinding list * range
+    | TMDefRec of isRec: bool * tycons: Tycon list * moduleOrNamespaceBindings: ModuleOrNamespaceBinding list * range: range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4969,9 +4973,9 @@ type ModuleOrNamespaceBinding =
     | Module of 
          /// This ModuleOrNamespace that represents the compilation of a module as a class. 
          /// The same set of tycons etc. are bound in the ModuleOrNamespace as in the ModuleOrNamespaceExpr
-         ModuleOrNamespace * 
+         moduleOrNamespace: ModuleOrNamespace * 
          /// This is the body of the module/namespace 
-         ModuleOrNamespaceExpr
+         moduleOrNamespaceExpr: ModuleOrNamespaceExpr
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
