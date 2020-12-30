@@ -56,7 +56,8 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     static let getDotnetHostPath() =
         match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
         | value when not (String.IsNullOrEmpty(value)) ->
-            value                           // Value set externally
+            // Set externally
+            value
         | _ ->
             match getDotnetDirectory() with
             | Some dotnetDir ->
@@ -68,32 +69,75 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     /// we repeatedly try to run dotnet.exe on every keystroke for a script
     static let desiredDotNetSdkVersionForDirectoryCache = ConcurrentDictionary<string, Result<string, exn>>()
 
-    /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
+    // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
+    // returns exit code, stdio and stderr as string arrays
+    let executeProcess pathToExe arguments (workingDir:string option) timeout =
+        if not (String.IsNullOrEmpty pathToExe) then
+            let errorsList = ResizeArray()
+            let outputList = ResizeArray()
+            let mutable errorslock = obj
+            let mutable outputlock = obj
+            let outputDataReceived (message: string) =
+                if not (isNull message) then
+                    lock outputlock (fun () -> outputList.Add(message))
+
+            let errorDataReceived (message: string) =
+                if not (isNull message) then
+                    lock errorslock (fun () -> errorsList.Add(message))
+
+            let psi = ProcessStartInfo()
+            psi.FileName <- pathToExe
+            if workingDir.IsSome  then
+                psi.WorkingDirectory <- workingDir.Value
+            psi.RedirectStandardOutput <- true
+            psi.RedirectStandardError <- true
+            psi.Arguments <- arguments
+            psi.CreateNoWindow <- true
+            psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
+            psi.UseShellExecute <- false
+
+            use p = new Process()
+            p.StartInfo <- psi
+
+            p.OutputDataReceived.Add(fun a -> outputDataReceived a.Data)
+            p.ErrorDataReceived.Add(fun a ->  errorDataReceived a.Data)
+
+            if p.Start() then
+                p.BeginOutputReadLine()
+                p.BeginErrorReadLine()
+                if not(p.WaitForExit(timeout)) then
+                    // Timed out resolving throw a diagnostic.
+                    raise (new TimeoutException(sprintf "Timeout executing command '%s' '%s'" (psi.FileName) (psi.Arguments)))
+                else
+                    p.WaitForExit()
+#if DEBUG
+            if workingDir.IsSome then
+                File.WriteAllLines(Path.Combine(workingDir.Value, "StandardOutput.txt"), outputList)
+                File.WriteAllLines(Path.Combine(workingDir.Value, "StandardError.txt"), errorsList)
+#endif
+            p.ExitCode, outputList.ToArray(), errorsList.ToArray()
+        else
+            -1, Array.empty, Array.empty
+
+ /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
     /// taking into account any global.json
     let tryGetDesiredDotNetSdkVersionForDirectoryInfo() =
         desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
             let dotnetHostPath = getDotnetHostPath()
             try
-                let psi = ProcessStartInfo(dotnetHostPath, "--version")
-                psi.RedirectStandardOutput <- true
-                psi.RedirectStandardError <- true
-                psi.UseShellExecute <- false
-                psi.CreateNoWindow <- true
-                psi.StandardOutputEncoding <- Encoding.UTF8
-                psi.StandardErrorEncoding <- Encoding.UTF8
-                if Directory.Exists(projectDir) then
-                    psi.WorkingDirectory <- projectDir
-                let p = Process.Start(psi)
-                let stdout = p.StandardOutput.ReadToEnd()
-                let stderr = p.StandardError.ReadToEnd()
-                p.WaitForExit()
-                if p.ExitCode <> 0 then 
-                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, stderr, p.ExitCode), rangeForErrors))
+                let workingDir =
+                    if Directory.Exists(projectDir) then
+                        Some projectDir
+                    else
+                        None
+                let exitCode, output, errors = executeProcess dotnetHostPath "--version" workingDir 30000
+                if exitCode <> 0 then
+                    Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, (errors |> String.concat "\n"), exitCode), rangeForErrors))
                 else
-                    Result.Ok (stdout.Trim())
+                    Result.Ok (output |> String.concat "\n")
             with err -> 
                 Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), rangeForErrors))))
-    
+
     let tryGetDesiredDotNetSdkVersionForDirectory() =
     // Make sure the warning gets replayed each time we call this
         match tryGetDesiredDotNetSdkVersionForDirectoryInfo() with
