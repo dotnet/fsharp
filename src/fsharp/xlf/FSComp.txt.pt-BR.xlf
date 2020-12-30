@@ -367,6 +367,11 @@
         <target state="translated">use! não pode ser combinado com and!</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="new">A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
         <source>Cannot assign a value to another value marked literal</source>
         <target state="translated">Não é possível atribuir um valor a outro valor marcado como literal</target>
