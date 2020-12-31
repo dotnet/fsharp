@@ -1259,7 +1259,7 @@ type EntityData = Entity
 
 /// Represents the parent entity of a type definition, if any
 type ParentRef = 
-    | Parent of EntityRef
+    | Parent of parent: EntityRef
     | ParentNone
     
 /// Specifies the compiled representations of type and exception definitions. Basically
@@ -1276,9 +1276,9 @@ type CompiledTypeRepr =
     /// The ilTypeOpt is present for non-generic types. It is an ILType corresponding to the first two elements of the case. This
     /// prevents reallocation of the ILType each time we need to generate it. For generic types, it is None.
     | ILAsmNamed of 
-         ILTypeRef * 
-         ILBoxity * 
-         ILType option
+         ilTypeRef: ILTypeRef * 
+         ilBoxity: ILBoxity * 
+         ilTypeOpt: ILType option
          
     /// An AbstractIL type representation that may include type variables
     // This case is only used for types defined in the F# library by their translation to ILASM types, e.g.
@@ -1288,7 +1288,7 @@ type CompiledTypeRepr =
     //   type byref<'T> = (# "!0&" #)
     //   type nativeptr<'T when 'T: unmanaged> = (# "native int" #)
     //   type ilsigptr<'T> = (# "!0*" #)
-    | ILAsmOpen of ILType  
+    | ILAsmOpen of ilType: ILType  
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -1507,7 +1507,7 @@ type TyconObjModelKind =
     | TTyconStruct 
 
     /// Indicates the type is a delegate with the given Invoke signature 
-    | TTyconDelegate of SlotSig 
+    | TTyconDelegate of slotSig: SlotSig 
 
     /// Indicates the type is an enumeration 
     | TTyconEnum
@@ -2026,7 +2026,7 @@ type Tycon = Entity
 type Accessibility = 
 
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
-    | TAccess of CompilationPath list
+    | TAccess of compilationPaths: CompilationPath list
     
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2363,7 +2363,7 @@ type TraitConstraintSln =
     ///    ty -- the type and its instantiation
     ///    vref -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | FSMethSln of ty: TType * vref: ValRef * minsts: TypeInst 
+    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst 
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -3874,7 +3874,7 @@ type UnionCaseRef =
 /// Represents a reference to a field in a record, class or struct
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type RecdFieldRef = 
-    | RecdFieldRef of TyconRef * string
+    | RecdFieldRef of tcref: TyconRef * id: string
 
     /// Get a reference to the type containing this union case
     member x.TyconRef = let (RecdFieldRef(tcref, _)) = x in tcref
@@ -4070,22 +4070,22 @@ type TupInfo =
 type Measure = 
 
     /// A variable unit-of-measure
-    | Var of Typar
+    | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Con of TyconRef
+    | Con of tyconRef: TyconRef
 
     /// A product of two units of measure
-    | Prod of Measure*Measure
+    | Prod of measure1: Measure * measure2: Measure
 
     /// An inverse of a units of measure expression
-    | Inv of Measure
+    | Inv of measure: Measure
 
     /// The unit of measure '1', e.g. float = float<1>
     | One
 
     /// Raising a measure to a rational power 
-    | RationalPower of Measure * Rational
+    | RationalPower of measure: Measure * power: Rational
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4099,10 +4099,10 @@ type Attribs = Attrib list
 type AttribKind = 
 
     /// Indicates an attribute refers to a type defined in an imported .NET assembly 
-    | ILAttrib of ILMethodRef 
+    | ILAttrib of ilMethodRef: ILMethodRef 
 
     /// Indicates an attribute refers to a type defined in an imported F# assembly 
-    | FSAttrib of ValRef
+    | FSAttrib of valRef: ValRef
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4110,11 +4110,18 @@ type AttribKind =
 
     override x.ToString() = sprintf "%+A" x 
 
-/// Attrib(kind, unnamedArgs, propVal, appliedToAGetterOrSetter, targetsOpt, range)
+/// Attrib(tyconRef, kind, unnamedArgs, propVal, appliedToAGetterOrSetter, targetsOpt, range)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Attrib = 
 
-    | Attrib of TyconRef * AttribKind * AttribExpr list * AttribNamedArg list * bool * AttributeTargets option * range
+    | Attrib of
+        tyconRef: TyconRef *
+        kind: AttribKind *
+        unnamedArgs: AttribExpr list *
+        propVal: AttribNamedArg list *
+        appliedToAGetterOrSetter: bool *
+        targetsOpt: AttributeTargets option *
+        range: range
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4130,7 +4137,7 @@ type Attrib =
 type AttribExpr = 
 
     /// AttribExpr(source, evaluated)
-    | AttribExpr of Expr * Expr 
+    | AttribExpr of source: Expr * evaluated: Expr 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4209,14 +4216,14 @@ type DecisionTree =
     ///    cases -- The list of tests and their subsequent decision trees
     ///    default -- The default decision tree, if any
     ///    range -- (precise documentation needed)
-    | TDSwitch of Expr * DecisionTreeCase list * DecisionTree option * range
+    | TDSwitch of input: Expr * cases: DecisionTreeCase list * defaultOpt: DecisionTree option * range: range
 
     /// TDSuccess(results, targets)
     ///
     /// Indicates the decision tree has terminated with success, transferring control to the given target with the given parameters.
     ///    results -- the expressions to be bound to the variables at the target
     ///    target -- the target number for the continuation
-    | TDSuccess of Exprs * int  
+    | TDSuccess of results: Exprs * targetNum: int  
 
     /// TDBind(binding, body)
     ///
@@ -4225,7 +4232,7 @@ type DecisionTree =
     /// repeated computations in decision trees.
     ///    binding -- the value and the expression it is bound to
     ///    body -- the rest of the decision tree
-    | TDBind of Binding * DecisionTree
+    | TDBind of binding: Binding * body: DecisionTree
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4236,7 +4243,7 @@ type DecisionTree =
 /// Represents a test and a subsequent decision tree
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeCase = 
-    | TCase of DecisionTreeTest * DecisionTree
+    | TCase of discriminator: DecisionTreeTest * caseTree: DecisionTree
 
     /// Get the discriminator associated with the case
     member x.Discriminator = let (TCase(d, _)) = x in d
@@ -4252,13 +4259,13 @@ type DecisionTreeCase =
 [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
 type DecisionTreeTest = 
     /// Test if the input to a decision tree matches the given union case
-    | UnionCase of UnionCaseRef * TypeInst
+    | UnionCase of caseRef: UnionCaseRef * tinst: TypeInst
 
     /// Test if the input to a decision tree is an array of the given length 
-    | ArrayLength of int * TType  
+    | ArrayLength of length: int * ty: TType  
 
     /// Test if the input to a decision tree is the given constant value 
-    | Const of Const
+    | Const of value: Const
 
     /// Test if the input to a decision tree is null 
     | IsNull 
@@ -4266,7 +4273,7 @@ type DecisionTreeTest =
     /// IsInst(source, target)
     ///
     /// Test if the input to a decision tree is an instance of the given type 
-    | IsInst of TType * TType
+    | IsInst of source: TType * target: TType
 
     /// Test.ActivePatternCase(activePatExpr, activePatResTys, activePatIdentity, idx, activePatInfo)
     ///
@@ -4277,10 +4284,15 @@ type DecisionTreeTest =
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
     ///     idx -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
-    | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
+    | ActivePatternCase of
+        activePatExpr: Expr *        
+        activePatResTys: TTypes *
+        activePatIdentity: (ValRef * TypeInst) option *
+        idx: int *
+        activePatternInfo: ActivePatternInfo
 
     /// Used in error recovery
-    | Error of range
+    | Error of range: range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -4304,7 +4316,7 @@ type Bindings = Binding list
 /// A binding of a variable to an expression, as in a `let` binding or similar
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Binding = 
-    | TBind of Val * Expr * DebugPointForBinding
+    | TBind of var: Val * expr: Expr * debugPoint: DebugPointForBinding
 
     /// The value being bound
     member x.Var = (let (TBind(v, _, _)) = x in v)
@@ -4324,7 +4336,7 @@ type Binding =
 /// integer indicates which choice in the target set is being selected by this item. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ActivePatternElemRef = 
-    | APElemRef of ActivePatternInfo * ValRef * int 
+    | APElemRef of activePatternInfo: ActivePatternInfo * activePatternVal: ValRef * caseIndex: int 
 
     /// Get the full information about the active pattern being referred to
     member x.ActivePatternInfo = (let (APElemRef(info, _, _)) = x in info)
@@ -4344,8 +4356,8 @@ type ActivePatternElemRef =
 /// than a closure or a local), including argument names, attributes etc.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ValReprInfo = 
-    /// ValReprInfo (numTypars, args, result)
-    | ValReprInfo of TyparReprInfo list * ArgReprInfo list list * ArgReprInfo 
+    /// ValReprInfo (typars, args, result)
+    | ValReprInfo of typars: TyparReprInfo list * args: ArgReprInfo list list * result: ArgReprInfo 
 
     /// Get the extra information about the arguments for the value
     member x.ArgInfos = (let (ValReprInfo(_, args, _)) = x in args)
@@ -4829,7 +4841,7 @@ type ValUseFlag =
     /// a .NET 2.0 constrained call. A constrained call is only used for calls where 
     // the object argument is a value type or generic type, and the call is to a method
     //  on System.Object, System.ValueType, System.Enum or an interface methods.
-    | PossibleConstrainedCall of typ: TType
+    | PossibleConstrainedCall of ty: TType
 
     /// A normal use of a value
     | NormalValUse
@@ -4847,10 +4859,10 @@ type ValUseFlag =
 type StaticOptimization = 
 
     /// Indicates the static optimization applies when a type equality holds
-    | TTyconEqualsTycon of TType * TType
+    | TTyconEqualsTycon of ty1: TType * ty2: TType
 
     /// Indicates the static optimization applies when a type is a struct
-    | TTyconIsStruct of TType 
+    | TTyconIsStruct of ty: TType 
   
 /// A representation of a method in an object expression. 
 ///
@@ -4858,7 +4870,13 @@ type StaticOptimization =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ObjExprMethod = 
 
-    | TObjExprMethod of SlotSig * Attribs * Typars * Val list list * Expr * range
+    | TObjExprMethod of
+        slotSig: SlotSig *
+        attribs: Attribs *
+        methTyparsOfOverridingMethod: Typars *
+        methodParams: Val list list *
+        methodBodyExpr: Expr *
+        range: range
 
     member x.Id = let (TObjExprMethod(slotsig, _, _, _, _, m)) = x in mkSynId m slotsig.Name
 
@@ -4968,7 +4986,7 @@ type ModuleOrNamespaceExpr =
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type ModuleOrNamespaceBinding = 
 
-    | Binding of Binding 
+    | Binding of binding: Binding 
 
     | Module of 
          /// This ModuleOrNamespace that represents the compilation of a module as a class. 
@@ -4984,10 +5002,16 @@ type ModuleOrNamespaceBinding =
 
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
-/// TImplFile (qualifiedNameOfFile, pragmas, implementationExpressionWithSignature, hasExplicitEntryPoint, isScript)
+/// TImplFile (qualifiedNameOfFile, pragmas, implementationExpressionWithSignature, hasExplicitEntryPoint, isScript, anonRecdTypeInfo)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TypedImplFile = 
-    | TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool * StampMap<AnonRecdTypeInfo>
+    | TImplFile of 
+        qualifiedNameOfFile: QualifiedNameOfFile *
+        pragmas: ScopedPragma list *
+        implementationExpressionWithSignature: ModuleOrNamespaceExprWithSig *
+        hasExplicitEntryPoint: bool *
+        isScript: bool *
+        anonRecdTypeInfo: StampMap<AnonRecdTypeInfo>
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
