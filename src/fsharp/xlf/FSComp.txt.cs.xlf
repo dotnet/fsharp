@@ -367,6 +367,11 @@
         <target state="translated">use! se nedá kombinovat s and!.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
+        <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
+        <target state="new">A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
         <source>Cannot assign a value to another value marked literal</source>
         <target state="translated">Hodnota se nedá přiřadit k jiné hodnotě, která je označená jako literál.</target>

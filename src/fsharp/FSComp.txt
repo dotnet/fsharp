@@ -1552,3 +1552,4 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3390,xmlDocDuplicateParameter,"This XML comment is invalid: multiple documentation entries for parameter '%s'"
 3390,xmlDocUnresolvedCrossReference,"This XML comment is invalid: unresolved cross-reference '%s'"
 3390,xmlDocMissingParameter,"This XML comment is incomplete: no documentation for parameter '%s'"
+3391,tcLiteralAttributeCannotUseActivePattern,"A [<Literal>] declaration cannot use an active pattern for its identifier"
