@@ -314,7 +314,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</target>
+        <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。ディレクトリ '{1}' の '{0} --version' からの出力は '{2}' で、終了コードは '{3}' でした。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
@@ -627,11 +627,6 @@
         <target state="translated">'--pdb' オプションでは '--debug' オプションを使用する必要があります</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildInvalidHashloadDirective">
-        <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="new">Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildInvalidSearchDirectory">
         <source>The search directory '{0}' is invalid</source>
         <target state="translated">検索ディレクトリ '{0}' が無効です</target>
@@ -730,6 +725,11 @@
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
         <target state="translated">ディレクティブが無効です。'#r \"&lt;file-or-assembly&gt;\"' という形式で指定する必要があります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="buildInvalidHashloadDirective">
+        <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
+        <target state="translated">ディレクティブが無効です。'#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"' が必要でした。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
@@ -3502,11 +3502,6 @@
         <target state="translated">継承された型はオブジェクト モデル型ではありません</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsFullpaths">
-        <source>Output messages with fully qualified paths</source>
-        <target state="new">Output messages with fully qualified paths</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcObjectConstructionExpressionCanOnlyImplementConstructorsInObjectModelTypes">
         <source>Object construction expressions (i.e. record expressions with inheritance specifications) may only be used to implement constructors in object model types. Use 'new ObjectType(args)' to construct instances of object model types outside of constructors</source>
         <target state="translated">オブジェクト構築式 (つまり、継承の指定があるレコード式) は、オブジェクト モデル型のコンストラクターを実装する場合にのみ使用できます。コンストラクターの外側でオブジェクト モデル型のインスタンスを構築するには、'new ObjectType(args)' を使用してください。</target>
@@ -3555,11 +3550,6 @@
       <trans-unit id="tcUseYieldBangForMultipleResults">
         <source>In sequence expressions, multiple results are generated using 'yield!'</source>
         <target state="translated">シーケンス式で、複数の結果は 'yield!' を使用して生成されます</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsInternalNoDescription">
-        <source>The command-line option '{0}' is for test purposes only</source>
-        <target state="new">The command-line option '{0}' is for test purposes only</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidAssignment">
@@ -4737,6 +4727,11 @@
         <target state="translated">UTF-8 エンコードでメッセージを出力します</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsFullpaths">
+        <source>Output messages with fully qualified paths</source>
+        <target state="translated">完全修飾パスを含むメッセージを出力します</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLib">
         <source>Specify a directory for the include path which is used to resolve source files and assemblies (Short form: -I)</source>
         <target state="translated">ソース ファイルおよびアセンブリの解決に使用する include パスのディレクトリを指定します (短い形式: -I)</target>
@@ -4855,6 +4850,11 @@
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'</source>
         <target state="translated">認識されないプラットフォーム '{0}'。有効な値は 'x86'、'x64'、'Itanium'、'anycpu32bitpreferred'、および 'anycpu' です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInternalNoDescription">
+        <source>The command-line option '{0}' is for test purposes only</source>
+        <target state="translated">コマンド ライン オプション '{0}' はテスト目的でのみ使用できます</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDCLONoDescription">
