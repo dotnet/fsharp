@@ -6842,7 +6842,7 @@ FSharp.Compiler.SyntaxTree+SynExpr+ArbitraryAfterError: FSharp.Compiler.Text.Ran
 FSharp.Compiler.SyntaxTree+SynExpr+ArbitraryAfterError: System.String debugStr
 FSharp.Compiler.SyntaxTree+SynExpr+ArbitraryAfterError: System.String get_debugStr()
 FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Boolean get_isArray()
-FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Boolean isList
+FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Boolean isArray
 FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+ArrayOrList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynExpr] exprs
