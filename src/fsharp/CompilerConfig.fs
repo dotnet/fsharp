@@ -364,6 +364,7 @@ type TcConfigBuilder =
       mutable simulateException: string option
       mutable printAst: bool
       mutable tokenizeOnly: bool
+      mutable preLexFilterTokenizeOnly: bool
       mutable testInteractionParser: bool
       mutable reportNumDecls: bool
       mutable printSignature: bool
@@ -532,6 +533,7 @@ type TcConfigBuilder =
           simulateException = None
           printAst = false
           tokenizeOnly = false
+          preLexFilterTokenizeOnly = false
           testInteractionParser = false
           reportNumDecls = false
           printSignature = false
@@ -935,6 +937,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.printAst = data.printAst
     member x.targetFrameworkVersion = targetFrameworkVersionValue
     member x.tokenizeOnly = data.tokenizeOnly
+    member x.preLexFilterTokenizeOnly = data.preLexFilterTokenizeOnly
     member x.testInteractionParser = data.testInteractionParser
     member x.reportNumDecls = data.reportNumDecls
     member x.printSignature = data.printSignature

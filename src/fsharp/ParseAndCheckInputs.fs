@@ -287,6 +287,17 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
         let filteringErrorLogger = GetErrorLoggerFilteringByScopedPragmas(false, scopedPragmas, errorLogger)
         delayLogger.CommitDelayedDiagnostics filteringErrorLogger
 
+// Show all pre-lex filter tokens in the stream, for testing purposes
+let ShowAllPreLexFilterTokensAndExit (shortFilename, tokenizer: (LexBuffer<char> -> Parser.token), lexbuf: LexBuffer<char>) =
+    while true do 
+        printf "tokenize - getting one token from %s\n" shortFilename
+        let t = tokenizer(lexbuf)
+        printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
+        match t with
+        | Parser.EOF _ -> exit 0 
+        | _ -> ()
+        if lexbuf.IsPastEndOfStream then printf "!!! at end of stream\n"
+
 // Show all tokens in the stream, for testing purposes
 let ShowAllTokensAndExit (shortFilename, tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
     while true do 
@@ -340,9 +351,15 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
 
         let input = 
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
-                
+
+                let tokenizerPreLexFilter = Lexer.token lexargs skipWhitespaceTokens
+
+                // If '--pre-lexfilter-tokenize' then show the tokens pre-LexFilter and exit
+                if tcConfig.preLexFilterTokenizeOnly then 
+                    ShowAllPreLexFilterTokensAndExit(shortFilename, tokenizerPreLexFilter, lexbuf)
+
                 // Set up the LexFilter over the token stream
-                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf)
+                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, tokenizerPreLexFilter, lexbuf)
 
                 // If '--tokenize' then show the tokens now and exit
                 if tcConfig.tokenizeOnly then 

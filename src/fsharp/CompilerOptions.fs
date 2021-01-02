@@ -1135,6 +1135,11 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
        ("tokenize", tagNone,
         OptionUnit (fun () -> tcConfigB.tokenizeOnly <- true),
         Some(InternalCommandLineOption("--tokenize", rangeCmdArgs)), None)
+
+    CompilerOption
+        ("pre-lexfilter-tokenize", tagNone,
+         OptionUnit (fun () -> tcConfigB.preLexFilterTokenizeOnly <- true),
+         Some(InternalCommandLineOption("--pre-lexfilter-tokenize", rangeCmdArgs)), None)
     
     CompilerOption
        ("testInteractionParser", tagNone,
