@@ -314,7 +314,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</target>
+        <target state="translated">Não foi possível determinar o SDK do .NET para esse script. Se o script estiver em um diretório usando um 'global.json', verifique se o SDK relevante do .NET está instalado. A saída de '{0} --version' no diretório '{1}' foi: '{2}' e o código de saída foi '{3}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">

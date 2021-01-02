@@ -314,7 +314,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
-        <target state="new">The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</target>
+        <target state="translated">無法判斷這個指令碼的 .NET SDK。如果指令碼位於使用 'global.json' 的目錄中，請確認已安裝相關的 .NET SDK。目錄 '{1}' 中 '{0} --version' 的輸出為: '{2}'，結束代碼為 '{3}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAndBangNotSupported">

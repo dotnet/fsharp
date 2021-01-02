@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="needs-review-translation">64-Bit-Version von F# Interactive</target>
+        <target state="translated">64-Bit-Version von F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="needs-review-translation">Wenn diese Einstellung auf "True" gesetzt ist und der aktuelle Computer eine 64-Bit-Version ist, müssen Sie F# Interactive als einen 64-Bit-Prozess ausführen (Andernfalls ist F# Interactive ein 32-Bit-Prozess).</target>
+        <target state="translated">Wenn diese Einstellung auf "True" gesetzt ist und der aktuelle Computer eine 64-Bit-Version ist, müssen Sie F# Interactive als einen 64-Bit-Prozess ausführen (Andernfalls ist F# Interactive ein 32-Bit-Prozess).</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="new">Misc</target>
+        <target state="translated">Verschiedene</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractivePreviewModeDescr">
         <source>Enable preview of in-development language features in F# Interactive</source>
-        <target state="needs-review-translation">Vorschau der in Entwicklung befindlichen Sprachfeatures in F# Interactive aktivieren</target>
+        <target state="translated">Vorschau der in Entwicklung befindlichen Sprachfeatures in F# Interactive aktivieren</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="needs-review-translation">Verhindert, dass referenzierte Assemblys vom F# Interactive-Prozess gesperrt werden.</target>
+        <target state="translated">Verhindert, dass referenzierte Assemblys vom F# Interactive-Prozess gesperrt werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="needs-review-translation">Debuggen von F#-Skripts aktivieren (kann die Skriptleistung beeinträchtigen, erfordert das Zurücksetzen von F# Interactive)</target>
+        <target state="translated">Debuggen von F#-Skripts aktivieren (kann die Skriptleistung beeinträchtigen, erfordert das Zurücksetzen von F# Interactive)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">
@@ -69,12 +69,12 @@
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCore">
         <source>Use .NET Core Scripting</source>
-        <target state="new">Use .NET Core Scripting</target>
+        <target state="translated">.NET Core-Skripts verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveUseNetCoreDescr">
         <source>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</source>
-        <target state="new">Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</target>
+        <target state="translated">.NET Core-Skriptbearbeitung und -ausführung für alle F#-Skripts und das F# Interactive-Fenster aktivieren</target>
         <note />
       </trans-unit>
     </body>
