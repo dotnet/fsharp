@@ -5,12 +5,11 @@ namespace FSharp.Compiler.ComponentTests.AttributeChecking
 open Xunit
 open FSharp.Test.Utilities.Compiler
 
-[<TestFixture>]
 module AttributeCheckingTests =
 
-        [<Fact>]
+    [<Fact>]
     let ``attributes check inherited AllowMultiple`` () =
-        Fsx"""
+        Fsx """
 open System
 
 [<AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)>]
