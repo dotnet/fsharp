@@ -592,7 +592,7 @@ type SynExpr =
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of
-        isList: bool *
+        isArray: bool *
         exprs: SynExpr list *
         range: range
 
