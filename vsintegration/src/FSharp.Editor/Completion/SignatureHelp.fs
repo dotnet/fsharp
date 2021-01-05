@@ -465,19 +465,9 @@ type internal FSharpSignatureHelpProvider
             let perfOptions = document.FSharpOptions.LanguageServicePerformance
 
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
-            match parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn) with
-            | Some paramInfoLocations ->
-                return!
-                    FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
-                        caretLinePos,
-                        caretLineColumn,
-                        paramInfoLocations,
-                        checkFileResults,
-                        documentationBuilder,
-                        sourceText,
-                        caretPosition,
-                        triggerTypedChar)
-            | None ->
+
+            match triggerTypedChar with
+            | Some ' ' ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                         parseResults,
@@ -488,6 +478,18 @@ type internal FSharpSignatureHelpProvider
                         sourceText,
                         caretPosition,
                         filePath)
+            | _ ->
+                let! paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
+                return!
+                    FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(
+                        caretLinePos,
+                        caretLineColumn,
+                        paramInfoLocations,
+                        checkFileResults,
+                        documentationBuilder,
+                        sourceText,
+                        caretPosition,
+                        triggerTypedChar)
         }
 
     interface IFSharpSignatureHelpProvider with
