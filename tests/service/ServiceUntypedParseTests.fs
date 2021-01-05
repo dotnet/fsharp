@@ -672,6 +672,37 @@ add2 x y
         Assert.True(parseFileResults.IsPosContainedInApplication (mkPos 3 6), "Pos should be in application")
 
     [<Test>]
+    let ``IsPosContainedInApplication - inside computation expression - no``() =
+        let source = """
+async {
+    sqrt
+}
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE return - no``() =
+        let source = """
+async {
+    return sqrt
+}
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 2 5), "Pos should not be in application")
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE - yes``() =
+        let source = """
+let myAdd x y = x + y
+async {
+    return myAdd 1
+}
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsPosContainedInApplication (mkPos 3 18), "Pos should not be in application")
+
+    [<Test>]
     let ``TryRangeOfFunctionOrMethodBeingApplied - no application``() =
         let source = """
 let add2 x y = x + y
@@ -786,6 +817,23 @@ add2 1 2
             range
             |> tups
             |> shouldEqual ((3, 17), (3, 18))
+
+    [<Test>]
+    let ``TryRangeOfFunctionOrMethodBeingApplied - inside CE``() =
+        let source = """
+let myAdd x y = x + y
+async {
+    return myAdd 1 
+}
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.TryRangeOfFunctionOrMethodBeingApplied (mkPos 4 18)
+        match res with
+        | None -> Assert.Fail("Expected 'myAdd' but got nothing")
+        | Some range ->
+            range
+            |> tups
+            |> shouldEqual ((4, 11), (4, 16))
 
 module PipelinesAndArgs =
     [<Test>]
