@@ -466,8 +466,27 @@ type internal FSharpSignatureHelpProvider
 
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText, options, perfOptions, userOpName = userOpName)
 
+            let adjustedColumnInSource =
+                let rec loop s c =
+                    if String.IsNullOrWhiteSpace(s.ToString()) then
+                        loop (sourceText.GetSubText(c - 1)) (c - 1)
+                    else
+                        c
+                let startText =
+                    if caretPosition = sourceText.Length then
+                        sourceText.GetSubText(caretPosition)
+                    else
+                        sourceText.GetSubText(TextSpan(caretPosition, 1))
+                
+                loop startText caretPosition
+
+            let adjustedColumnString = sourceText.GetSubText(TextSpan(adjustedColumnInSource, 1)).ToString()
+
             match triggerTypedChar with
-            | Some ' ' ->
+            // Generally ' ' indicates a function application, but it's also used commonly after a comma in a method call.
+            // This means that the adjusted position relative to the caret could be a ',' or a ')' or '>',
+            // which would mean we're already inside of a method call - not a function argument. So we bail if that's the case.
+            | Some ' ' when adjustedColumnString <> "," && adjustedColumnString <> ")" && adjustedColumnString <> ">" ->
                 return!
                     FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
                         parseResults,

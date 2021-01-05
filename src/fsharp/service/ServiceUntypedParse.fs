@@ -236,14 +236,8 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
             AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
                 member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                     match expr with
-                    //| SynExpr.App (_, _, funcExpr, _, _) when posEq funcExpr.Range.End pos ->
-                    //    Some funcExpr.Range
-
                     | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
                         getIdentRangeForFuncExprInApp traverseSynExpr app pos
-
-                    | expr when posGt expr.Range.End pos ->
-                        None
                     | _ -> defaultTraverse expr
             })
         | None -> None
