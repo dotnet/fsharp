@@ -290,7 +290,7 @@ module SyntaxExpressions =
             failwith "Could not find SynExpr.Do"
 
 module Strings =
-    let getBindingConstValue (parseResults: ParsedInput option) bindingName =
+    let getBindingConstValue (parseResults: ParsedInput option) =
         parseResults
         |> Option.bind
             (fun tree ->
@@ -318,42 +318,67 @@ module Strings =
                                                               _,
                                                               SynExpr.Const (c, _),
                                                               _,
-                                                              _) when ident.idText = bindingName -> Some c
+                                                              _) -> Some c
                                         | _ -> None)
                                 | _ -> None))
                 | _ -> None)
 
-    [<TestCase("string1", false)>]
-    [<TestCase("string2", true)>]
-    [<TestCase("bytes1", false)>]
-    [<TestCase("bytes2", true)>]
     [<Test>]
-    let ``SynConst.String tracks verbatim-ness`` (bindingName: string, isVerbatim: bool) =
+    let ``SynConst.String with SynStringKind.Regular`` () =
         let parseResults =
             getParseResults
                 """
- let string1 = "yo"
- let string2 = @"yo"
- let bytes1 = "yo"B
- let bytes2 = @"yo"B
+ let s = "yo"
  """
 
-        match getBindingConstValue parseResults bindingName with
-        | Some (SynConst.String (_, verbatim, _, _)) -> verbatim |> should equal isVerbatim
-        | Some (SynConst.Bytes (_, verbatim, _)) -> verbatim |> should equal isVerbatim
-        | _ -> failwithf "Couldn't find const named %s" bindingName
+        match getBindingConstValue parseResults with
+        | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.Regular
+        | _ -> failwithf "Couldn't find const"
 
-    [<TestCase("string1", false)>]
-    [<TestCase("string2", true)>]
     [<Test>]
-    let ``SynConst.String tracks triple quotes`` (bindingName: string, isTripleQuote: bool) =
+    let ``SynConst.String with SynStringKind.Verbatim`` () =
+        let parseResults =
+            getParseResults
+                """
+ let s = @"yo"
+ """
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.Verbatim
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynConst.String with SynStringKind.TripleQuote`` () =
         let parseResults =
             getParseResults
                 "
- let string1 = \"yo\"
- let string2 = \"\"\"yo\"\"\"
+ let s = \"\"\"yo\"\"\"
  "
 
-        match getBindingConstValue parseResults bindingName with
-        | Some (SynConst.String (_, _, tripleQuote_, _)) -> tripleQuote_ |> should equal isTripleQuote
-        | _ -> failwithf "Couldn't find const named %s" bindingName
+        match getBindingConstValue parseResults with
+        | Some (SynConst.String (_,  kind, _)) -> kind |> should equal SynStringKind.TripleQuote
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynConst.Bytes with SynByteStringKind.Regular`` () =
+        let parseResults =
+            getParseResults
+                """
+let bytes = "yo"B
+ """
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.Bytes (_,  kind, _)) -> kind |> should equal SynByteStringKind.Regular
+        | _ -> failwithf "Couldn't find const"
+
+    [<Test>]
+    let ``SynConst.Bytes with SynByteStringKind.Verbatim`` () =
+        let parseResults =
+            getParseResults
+                """
+let bytes = @"yo"B
+ """
+
+        match getBindingConstValue parseResults with
+        | Some (SynConst.Bytes (_,  kind, _)) -> kind |> should equal SynByteStringKind.Verbatim
+        | _ -> failwithf "Couldn't find const"

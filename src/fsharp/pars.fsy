@@ -2667,7 +2667,7 @@ cPrototype:
         let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic,
                                   false,
                                   SynExpr.Ident (ident("failwith", rhs parseState 6)),
-                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", false, false, rhs parseState 8), rhs parseState 8),
+                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                                   mRhs)
         (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
@@ -2912,11 +2912,16 @@ rawConstant:
 
   | stringOrKeywordString
     { let s, isVerbatim, isTripleQuote = $1
-      SynConst.String (s, isVerbatim, isTripleQuote, lhs parseState) } 
+      let synStringKind =
+          if isVerbatim then SynStringKind.Verbatim
+          elif isTripleQuote then SynStringKind.TripleQuote
+          else SynStringKind.Regular
+      SynConst.String (s, synStringKind, lhs parseState) } 
 
   | BYTEARRAY
     { let (v, isVerbatim, _) = $1
-      SynConst.Bytes (v, isVerbatim, lhs parseState) }
+      let synByteStringKind = if isVerbatim then SynByteStringKind.Verbatim else SynByteStringKind.Regular
+      SynConst.Bytes (v, synByteStringKind, lhs parseState) }
 
 rationalConstant:
   | INT32 INFIX_STAR_DIV_MOD_OP INT32
@@ -3855,7 +3860,7 @@ declExpr:
 
 dynamicArg:
   | IDENT
-      { let con = SynConst.String ($1, false, false, rhs parseState 1)
+      { let con = SynConst.String ($1, SynStringKind.Regular, rhs parseState 1)
         let arg2 = SynExpr.Const (con, con.Range (rhs parseState 1)) 
         arg2 }
 
@@ -5076,7 +5081,7 @@ atomType:
 
   | NULL
      { let m = rhs parseState 1
-       SynType.StaticConstant(SynConst.String (null, false, false, m), m) }
+       SynType.StaticConstant(SynConst.String (null, SynStringKind.Regular, m), m) }
 
   | CONST atomicExpr
      {  let e, _ = $2
