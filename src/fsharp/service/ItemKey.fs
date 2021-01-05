@@ -295,7 +295,16 @@ and [<Sealed>] ItemKeyStoreBuilder() =
 
         match item with
         | Item.Value vref ->
-            writeValRef vref
+            if vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
+                writeString ItemKeyTags.itemProperty
+                writeString vref.PropertyName
+                match vref.DeclaringEntity with
+                | ParentRef.Parent parent ->
+                    writeEntityRef parent
+                | _ ->
+                    ()
+            else
+                writeValRef vref
 
         | Item.UnionCase(info, _) -> 
             writeString ItemKeyTags.typeUnionCase
@@ -352,8 +361,11 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.Property(nm, infos) ->
             writeString ItemKeyTags.itemProperty
             writeString nm
-            infos
-            |> List.iter (fun info -> writeEntityRef info.DeclaringTyconRef)
+            match infos |> List.tryHead with
+            | Some info ->
+                writeEntityRef info.DeclaringTyconRef
+            | _ ->
+                ()
 
         | Item.TypeVar(_, typar) ->
             writeTypar true typar
