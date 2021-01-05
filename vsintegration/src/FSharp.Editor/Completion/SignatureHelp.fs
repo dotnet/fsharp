@@ -226,24 +226,10 @@ type internal FSharpSignatureHelpProvider
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
+            adjustedColumnInSource: int,
             filePath: string
         ) =
         asyncMaybe {
-            // Backtrack to find a non-whitespace character to get curried arg infos (if present) and a symbol to inspect.
-            let adjustedColumnInSource =
-                let rec loop s c =
-                    if String.IsNullOrWhiteSpace(s.ToString()) then
-                        loop (sourceText.GetSubText(c - 1)) (c - 1)
-                    else
-                        c
-                let startText =
-                    if caretPosition = sourceText.Length then
-                        sourceText.GetSubText(caretPosition)
-                    else
-                        sourceText.GetSubText(TextSpan(caretPosition, 1))
-                
-                loop startText caretPosition
-
             let textLine = sourceText.Lines.GetLineFromPosition(adjustedColumnInSource)
             let textLinePos = sourceText.Lines.GetLinePosition(adjustedColumnInSource)
             let pos = mkPos (Line.fromZ textLinePos.Line) textLinePos.Character
@@ -496,6 +482,7 @@ type internal FSharpSignatureHelpProvider
                         documentationBuilder,
                         sourceText,
                         caretPosition,
+                        adjustedColumnInSource,
                         filePath)
             | _ ->
                 let! paramInfoLocations = parseResults.FindNoteworthyParamInfoLocations(Pos.fromZ caretLinePos.Line caretLineColumn)
