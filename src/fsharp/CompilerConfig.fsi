@@ -214,7 +214,6 @@ type TcConfigBuilder =
       mutable includewin32manifest: bool
       mutable linkResources: string list
       mutable legacyReferenceResolver: LegacyReferenceResolver
-      mutable fxResolver: FxResolver
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
       mutable utf8output: bool
@@ -257,6 +256,8 @@ type TcConfigBuilder =
       mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
+      mutable fxResolver: FxResolver
+      mutable rangeForErrors: range
       mutable sdkDirOverride: string option
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
@@ -276,16 +277,17 @@ type TcConfigBuilder =
 
     static member Initial: TcConfigBuilder
 
-    static member CreateNew: 
+    static member CreateNew:
         legacyReferenceResolver: LegacyReferenceResolver *
-        fxResolver: FxResolver *
         defaultFSharpBinariesDir: string * 
         reduceMemoryUsage: ReduceMemoryFlag * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
         isInvalidationSupported: bool *
         defaultCopyFSharpCore: CopyFSharpCoreFlag *
-        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot *
+        sdkDirOverride: string option *
+        rangeForErrors: range
           -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
@@ -316,6 +318,9 @@ type TcConfigBuilder =
     member AddReferenceDirective: dependencyProvider: DependencyProvider * m: range * path: string * directive: Directive -> unit
 
     member AddLoadedSource: m: range * originalPath: string * pathLoadedFrom: string -> unit
+
+    member FxResolver: FxResolver
+
 
 /// Immutable TcConfig, modifications are made via a TcConfigBuilder
 [<Sealed>]

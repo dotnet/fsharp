@@ -119,7 +119,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
         else
             -1, Array.empty, Array.empty
 
- /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
+    /// Find the relevant sdk version by running `dotnet --version` in the script/project location,
     /// taking into account any global.json
     let tryGetDesiredDotNetSdkVersionForDirectoryInfo() =
         desiredDotNetSdkVersionForDirectoryCache.GetOrAdd(projectDir, (fun _ -> 
@@ -763,38 +763,40 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
     member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework) =
-        if assumeDotNetFramework then
-            getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
-        else
-            if useSdkRefs then
-                // Go fetch references
-                match tryGetSdkRefsPackDirectory() with
-                | Some path ->
-                    try 
-                        let sdkReferences = 
-                            [ yield! Directory.GetFiles(path, "*.dll")
-                              yield getFSharpCoreImplementationReference()
-                              if useFsiAuxLib then yield getFsiLibraryImplementationReference()
-                            ]
-                        sdkReferences, false
-                    with _ -> 
+        let defaultReferences =
+            if assumeDotNetFramework then
+                getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
+            else
+                if useSdkRefs then
+                    // Go fetch references
+                    match tryGetSdkRefsPackDirectory() with
+                    | Some path ->
+                        try 
+                            let sdkReferences = 
+                                [ yield! Directory.GetFiles(path, "*.dll")
+                                  yield getFSharpCoreImplementationReference()
+                                  if useFsiAuxLib then yield getFsiLibraryImplementationReference()
+                                ]
+                            sdkReferences, false
+                        with _ -> 
+                            if isRunningOnCoreClr then
+                                // If running on .NET Core and something goes wrong with getting the
+                                // .NET Core references then use .NET Core implementation assemblies for running process
+                                getDotNetCoreImplementationReferences useFsiAuxLib, false
+                            else
+                                // If running on .NET Framework and something goes wrong with getting the
+                                // .NET Core references then default back to .NET Framework and return a flag indicating this has been done
+                                getDotNetFrameworkDefaultReferences useFsiAuxLib, true
+                    | None ->
                         if isRunningOnCoreClr then
-                            // If running on .NET Core and something goes wrong with getting the
-                            // .NET Core references then use .NET Core implementation assemblies for running process
+                            // If running on .NET Core and there is no Sdk refs pack directory
+                            // then use .NET Core implementation assemblies for running process
                             getDotNetCoreImplementationReferences useFsiAuxLib, false
                         else
-                            // If running on .NET Framework and something goes wrong with getting the
-                            // .NET Core references then default back to .NET Framework and return a flag indicating this has been done
+                            // If running on .NET Framework and there is no Sdk refs pack directory
+                            // then default back to .NET Framework and return a flag indicating this has been done
                             getDotNetFrameworkDefaultReferences useFsiAuxLib, true
-                | None ->
-                    if isRunningOnCoreClr then
-                        // If running on .NET Core and there is no Sdk refs pack directory
-                        // then use .NET Core implementation assemblies for running process
-                        getDotNetCoreImplementationReferences useFsiAuxLib, false
-                    else
-                        // If running on .NET Framework and there is no Sdk refs pack directory
-                        // then default back to .NET Framework and return a flag indicating this has been done
-                        getDotNetFrameworkDefaultReferences useFsiAuxLib, true
-            else
-                getDotNetCoreImplementationReferences useFsiAuxLib, assumeDotNetFramework
+                else
+                    getDotNetCoreImplementationReferences useFsiAuxLib, assumeDotNetFramework
+        defaultReferences
 
