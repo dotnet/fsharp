@@ -4,6 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net472;net5.0</TargetFrameworks>
     <NoWarn>$(NoWarn);44;75;</NoWarn>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <NoWarn>$(NoWarn);44;75;1182</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
