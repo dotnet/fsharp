@@ -1303,29 +1303,32 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchString.Length))
                     | _ -> None
 
-                let assumeDotNetFramework =
-                    match loadClosureOpt with 
-                    | None -> None
-                    | Some loadClosure -> Some loadClosure.UseDesktopFramework
-
                 let sdkDirOverride =
                     match loadClosureOpt with 
                     | None -> None
                     | Some loadClosure -> loadClosure.SdkDirOverride
 
-                let fxResolver = FxResolver(assumeDotNetFramework, projectDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=sdkDirOverride)
-
                 // see also fsc.fs: runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-                let tcConfigB = 
-                    TcConfigBuilder.CreateNew(legacyReferenceResolver, 
-                         fxResolver,
-                         defaultFSharpBinariesDir, 
-                         implicitIncludeDir=projectDirectory, 
-                         reduceMemoryUsage=ReduceMemoryFlag.Yes, 
-                         isInteractive=useScriptResolutionRules, 
-                         isInvalidationSupported=true, 
-                         defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-                         tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
+                let tcConfigB =
+                    TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                         defaultFSharpBinariesDir,
+                         implicitIncludeDir=projectDirectory,
+                         reduceMemoryUsage=ReduceMemoryFlag.Yes,
+                         isInteractive=useScriptResolutionRules,
+                         isInvalidationSupported=true,
+                         defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
+                         tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+                         sdkDirOverride=sdkDirOverride,
+                         rangeForErrors=range0)
+
+                tcConfigB.primaryAssembly <-
+                    match loadClosureOpt with
+                    | None -> PrimaryAssembly.Mscorlib
+                    | Some loadClosure ->
+                        if loadClosure.UseDesktopFramework then
+                            PrimaryAssembly.Mscorlib
+                        else
+                            PrimaryAssembly.System_Runtime
 
                 tcConfigB.resolutionEnvironment <- (LegacyResolutionEnvironment.EditingOrCompilation true)
 

@@ -316,7 +316,8 @@ type PackageManagerLine =
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
-    { mutable primaryAssembly: PrimaryAssembly
+    {
+      mutable primaryAssembly: PrimaryAssembly
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
@@ -400,7 +401,6 @@ type TcConfigBuilder =
       mutable includewin32manifest: bool
       mutable linkResources: string list
       mutable legacyReferenceResolver: LegacyReferenceResolver
-      mutable fxResolver: FxResolver 
 
       mutable showFullPaths: bool
       mutable errorStyle: ErrorStyle
@@ -464,7 +464,11 @@ type TcConfigBuilder =
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences: bool
       mutable useSdkRefs: bool
-      
+      mutable fxResolver: FxResolver
+
+      /// specify the error range for FxResolver
+      mutable rangeForErrors: range
+
       /// Override the SDK directory used by FxResolver, used for FCS only
       mutable sdkDirOverride: string option
 
@@ -571,7 +575,6 @@ type TcConfigBuilder =
           includewin32manifest = true
           linkResources = []
           legacyReferenceResolver = null
-          fxResolver = Unchecked.defaultof<_>
           showFullPaths = false
           errorStyle = ErrorStyle.DefaultErrors
 
@@ -611,6 +614,8 @@ type TcConfigBuilder =
           copyFSharpCore = CopyFSharpCoreFlag.No
           shadowCopyReferences = false
           useSdkRefs = true
+          fxResolver = Unchecked.defaultof<FxResolver>
+          rangeForErrors = range0
           sdkDirOverride = None
           tryGetMetadataSnapshot = (fun _ -> None)
           internalTestSpanStackReferring = false
@@ -638,8 +643,16 @@ type TcConfigBuilder =
         } 
         |> Seq.distinct
 
-    static member CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, reduceMemoryUsage, implicitIncludeDir,
-                            isInteractive, isInvalidationSupported, defaultCopyFSharpCore, tryGetMetadataSnapshot) =
+    static member CreateNew(legacyReferenceResolver,
+                            defaultFSharpBinariesDir,
+                            reduceMemoryUsage,
+                            implicitIncludeDir,
+                            isInteractive,
+                            isInvalidationSupported,
+                            defaultCopyFSharpCore,
+                            tryGetMetadataSnapshot,
+                            sdkDirOverride,
+                            rangeForErrors) =
 
         Debug.Assert(FileSystem.IsPathRootedShim implicitIncludeDir, sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
 
@@ -647,19 +660,33 @@ type TcConfigBuilder =
             failwith "Expected a valid defaultFSharpBinariesDir"
 
         let tcConfigBuilder =
-            { TcConfigBuilder.Initial with 
+            { TcConfigBuilder.Initial with
                 implicitIncludeDir = implicitIncludeDir
                 defaultFSharpBinariesDir = defaultFSharpBinariesDir
                 reduceMemoryUsage = reduceMemoryUsage
                 legacyReferenceResolver = legacyReferenceResolver
-                fxResolver = fxResolver
                 isInteractive = isInteractive
                 isInvalidationSupported = isInvalidationSupported
                 copyFSharpCore = defaultCopyFSharpCore
                 tryGetMetadataSnapshot = tryGetMetadataSnapshot
                 useFsiAuxLib = isInteractive
+                rangeForErrors = rangeForErrors
+                sdkDirOverride = sdkDirOverride
             }
         tcConfigBuilder
+
+    member tcConfigB.FxResolver =
+        let resolver =
+            lazy (let assumeDotNetFramework = Some (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
+                  FxResolver(assumeDotNetFramework, tcConfigB.implicitIncludeDir, rangeForErrors=tcConfigB.rangeForErrors, useSdkRefs=tcConfigB.useSdkRefs, isInteractive=tcConfigB.isInteractive, sdkDirOverride=tcConfigB.sdkDirOverride))
+
+        if tcConfigB.fxResolver = Unchecked.defaultof<FxResolver> then
+            lock tcConfigB (fun () ->
+                if tcConfigB.fxResolver = Unchecked.defaultof<FxResolver> then
+                    tcConfigB.fxResolver <- resolver.Force()
+            )
+
+        tcConfigB.fxResolver
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -801,7 +828,7 @@ type TcConfigBuilder =
 
     member tcConfigB.AddPathMapping (oldPrefix, newPrefix) =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
-    
+
     static member SplitCommandLineResourceInfo (ri: string) =
         let p = ri.IndexOf ','
         if p <> -1 then
@@ -885,9 +912,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 #endif
                 None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
-    let systemAssemblies = data.fxResolver.GetSystemAssemblies()
-
-    member x.FxResolver = data.fxResolver
+    member x.FxResolver = data.FxResolver
     member x.primaryAssembly = data.primaryAssembly
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
@@ -1166,7 +1191,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         try
             FileSystem.SafeExists filename &&
             ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
-             (systemAssemblies.Contains (fileNameWithoutExtension filename)) ||
+             (tcConfig.FxResolver.GetSystemAssemblies().Contains (fileNameWithoutExtension filename)) ||
              tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory filename)
         with _ ->
             false

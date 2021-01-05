@@ -841,7 +841,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member _.WriteReferencesAndExit = writeReferencesAndExit
 
     member _.DependencyProvider = dependencyProvider
-    member _.FxResolver = tcConfigB.fxResolver
+    member _.FxResolver = tcConfigB.FxResolver
 
 /// Set the current ui culture for the current thread.
 let internal SetCurrentUICultureForThread (lcid : int option) =
@@ -2757,21 +2757,17 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | None -> SimulatedMSBuildReferenceResolver.getResolver()
         | Some rr -> rr
 
-    // We know the target framework up front
-    let assumeDotNetFramework = not FSharpEnvironment.isRunningOnCoreClr
-
-    let fxResolver = FxResolver(Some assumeDotNetFramework, currentDirectory, rangeForErrors=range0, useSdkRefs=true, isInteractive=true, sdkDirOverride=None)
-
     let tcConfigB =
-        TcConfigBuilder.CreateNew(legacyReferenceResolver, 
-            fxResolver,
-            defaultFSharpBinariesDir=defaultFSharpBinariesDir, 
-            reduceMemoryUsage=ReduceMemoryFlag.Yes, 
-            implicitIncludeDir=currentDirectory, 
-            isInteractive=true, 
-            isInvalidationSupported=false, 
-            defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+        TcConfigBuilder.CreateNew(legacyReferenceResolver,
+            defaultFSharpBinariesDir=defaultFSharpBinariesDir,
+            reduceMemoryUsage=ReduceMemoryFlag.Yes,
+            implicitIncludeDir=currentDirectory,
+            isInteractive=true,
+            isInvalidationSupported=false,
+            defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+            sdkDirOverride=None,
+            rangeForErrors=range0)
 
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- LegacyResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
@@ -2803,7 +2799,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let updateBannerText() =
       tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName(FSharpEnvironment.FSharpBannerVersion)
-  
+
     do updateBannerText() // setting the correct banner so that 'fsi -?' display the right thing
 
     let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)

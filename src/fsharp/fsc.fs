@@ -445,16 +445,20 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
-    let fxResolver = FxResolver(None, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
-
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
-    let tcConfigB = 
-       TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
-          reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
-          isInteractive=false, isInvalidationSupported=false, 
-          defaultCopyFSharpCore=defaultCopyFSharpCore, 
-          tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+    let tcConfigB =
+       TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                                 defaultFSharpBinariesDir,
+                                 reduceMemoryUsage=reduceMemoryUsage,
+                                 implicitIncludeDir=directoryBuildingFrom,
+                                 isInteractive=false,
+                                 isInvalidationSupported=false,
+                                 defaultCopyFSharpCore=defaultCopyFSharpCore,
+                                 tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+                                 sdkDirOverride=None,
+                                 rangeForErrors=range0
+                                 )
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -464,8 +468,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
     let delayForFlagsLogger =  errorLoggerProvider.CreateDelayAndForwardLogger exiter
 
-    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)          
-    
+    let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)
+
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
@@ -482,10 +486,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         with e -> 
             errorRecovery e rangeStartup
             delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
-            exiter.Exit 1 
-    
-    let assumeDotNetFramework = (tcConfigB.primaryAssembly = PrimaryAssembly.Mscorlib)
-    tcConfigB.fxResolver <- FxResolver(Some assumeDotNetFramework, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+            exiter.Exit 1
 
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
 
@@ -633,16 +634,16 @@ let main1OfAst
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
 
-    let fxResolver = FxResolver(None, directoryBuildingFrom, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
-
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
     let tcConfigB = 
-        TcConfigBuilder.CreateNew(legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, 
+        TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, 
             reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, 
             isInteractive=false, isInvalidationSupported=false, 
             defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
-            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot,
+            sdkDirOverride=None,
+            rangeForErrors=range0)
 
     let primaryAssembly =
         // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
