@@ -24,15 +24,22 @@ module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 open System
 open System.IO
 open System.Text
+
 open NUnit.Framework
+
 open Microsoft.CodeAnalysis.Text
+
 open VisualFSharp.UnitTests.Roslyn
+
 open Microsoft.VisualStudio.FSharp.Editor
+
 open UnitTests.TestLib.LanguageService
-open FSharp.Compiler
+
 open FSharp.Compiler.Text
 open FSharp.Compiler.SourceCodeServices
+
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 
 let filePath = "C:\\test.fs"
 
@@ -273,6 +280,21 @@ sqrt
         if x.IsNone then
             Assert.Fail("Could not parse and check document.")
         x.Value
+
+    
+    let adjustedColumnInSource =
+        let rec loop s c =
+            if String.IsNullOrWhiteSpace(s.ToString()) then
+                loop (sourceText.GetSubText(c - 1)) (c - 1)
+            else
+                c
+        let startText =
+            if caretPosition = sourceText.Length then
+                sourceText.GetSubText(caretPosition)
+            else
+                sourceText.GetSubText(TextSpan(caretPosition, 1))
+        
+        loop startText caretPosition
     
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
@@ -283,6 +305,7 @@ sqrt
             DefaultDocumentationProvider,
             sourceText,
             caretPosition,
+            adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
 
@@ -315,6 +338,20 @@ add2 1
         if x.IsNone then
             Assert.Fail("Could not parse and check document.")
         x.Value
+
+    let adjustedColumnInSource =
+        let rec loop s c =
+            if String.IsNullOrWhiteSpace(s.ToString()) then
+                loop (sourceText.GetSubText(c - 1)) (c - 1)
+            else
+                c
+        let startText =
+            if caretPosition = sourceText.Length then
+                sourceText.GetSubText(caretPosition)
+            else
+                sourceText.GetSubText(TextSpan(caretPosition, 1))
+        
+        loop startText caretPosition
     
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
@@ -325,6 +362,7 @@ add2 1
             DefaultDocumentationProvider,
             sourceText,
             caretPosition,
+            adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
 
@@ -358,7 +396,21 @@ M.f
         if x.IsNone then
             Assert.Fail("Could not parse and check document.")
         x.Value
+
+    let adjustedColumnInSource =
+        let rec loop s c =
+            if String.IsNullOrWhiteSpace(s.ToString()) then
+                loop (sourceText.GetSubText(c - 1)) (c - 1)
+            else
+                c
+        let startText =
+            if caretPosition = sourceText.Length then
+                sourceText.GetSubText(caretPosition)
+            else
+                sourceText.GetSubText(TextSpan(caretPosition, 1))
     
+        loop startText caretPosition
+
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
             parseResults,
@@ -368,6 +420,7 @@ M.f
             DefaultDocumentationProvider,
             sourceText,
             caretPosition,
+            adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
 
@@ -400,6 +453,20 @@ let ``function application in single pipeline with no additional args``() =
             Assert.Fail("Could not parse and check document.")
         x.Value
     
+    let adjustedColumnInSource =
+        let rec loop s c =
+            if String.IsNullOrWhiteSpace(s.ToString()) then
+                loop (sourceText.GetSubText(c - 1)) (c - 1)
+            else
+                c
+        let startText =
+            if caretPosition = sourceText.Length then
+                sourceText.GetSubText(caretPosition)
+            else
+                sourceText.GetSubText(TextSpan(caretPosition, 1))
+    
+        loop startText caretPosition
+
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
             parseResults,
@@ -409,6 +476,7 @@ let ``function application in single pipeline with no additional args``() =
             DefaultDocumentationProvider,
             sourceText,
             caretPosition,
+            adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
 
@@ -437,6 +505,20 @@ let ``function application in single pipeline with an additional argument``() =
             Assert.Fail("Could not parse and check document.")
         x.Value
     
+    let adjustedColumnInSource =
+        let rec loop s c =
+            if String.IsNullOrWhiteSpace(s.ToString()) then
+                loop (sourceText.GetSubText(c - 1)) (c - 1)
+            else
+                c
+        let startText =
+            if caretPosition = sourceText.Length then
+                sourceText.GetSubText(caretPosition)
+            else
+                sourceText.GetSubText(TextSpan(caretPosition, 1))
+    
+        loop startText caretPosition
+
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
             parseResults,
@@ -446,6 +528,7 @@ let ``function application in single pipeline with an additional argument``() =
             DefaultDocumentationProvider,
             sourceText,
             caretPosition,
+            adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
 
@@ -480,6 +563,20 @@ let ``function application in middle of pipeline with an additional argument``()
             Assert.Fail("Could not parse and check document.")
         x.Value
     
+    let adjustedColumnInSource =
+        let rec loop s c =
+            if String.IsNullOrWhiteSpace(s.ToString()) then
+                loop (sourceText.GetSubText(c - 1)) (c - 1)
+            else
+                c
+        let startText =
+            if caretPosition = sourceText.Length then
+                sourceText.GetSubText(caretPosition)
+            else
+                sourceText.GetSubText(TextSpan(caretPosition, 1))
+    
+        loop startText caretPosition
+
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
             parseResults,
@@ -489,6 +586,7 @@ let ``function application in middle of pipeline with an additional argument``()
             DefaultDocumentationProvider,
             sourceText,
             caretPosition,
+            adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
 
@@ -522,6 +620,20 @@ derp
             Assert.Fail("Could not parse and check document.")
         x.Value
     
+    let adjustedColumnInSource =
+        let rec loop s c =
+            if String.IsNullOrWhiteSpace(s.ToString()) then
+                loop (sourceText.GetSubText(c - 1)) (c - 1)
+            else
+                c
+        let startText =
+            if caretPosition = sourceText.Length then
+                sourceText.GetSubText(caretPosition)
+            else
+                sourceText.GetSubText(TextSpan(caretPosition, 1))
+    
+        loop startText caretPosition
+
     let sigHelp =
         FSharpSignatureHelpProvider.ProvideParametersAsyncAux(
             parseResults,
@@ -531,6 +643,7 @@ derp
             DefaultDocumentationProvider,
             sourceText,
             caretPosition,
+            adjustedColumnInSource,
             filePath)
         |> Async.RunSynchronously
 
