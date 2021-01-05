@@ -7,6 +7,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218</OtherFlags>
     <OtherFlags>--nowarn:3390 --nowarn:3218 --nowarn:1182</OtherFlags>
+    <NoWarn>$(NoWarn);3390;3218;1182</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
