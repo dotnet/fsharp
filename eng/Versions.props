@@ -38,7 +38,7 @@
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
     <FSToolsMajorVersion>11</FSToolsMajorVersion>
-    <FSToolsMinorVersion>$(FSMinorVersion)</FSToolsMinorVersion>
+    <FSToolsMinorVersion>2</FSToolsMinorVersion>
     <FSToolsBuildVersion>$(FSBuildVersion)</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
