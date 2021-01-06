@@ -123,20 +123,27 @@ module ScriptPreprocessClosure =
             useSimpleResolution, useFsiAuxLib, 
             basicReferences, applyCommandLineArgs, 
             assumeDotNetFramework, useSdkRefs, sdkDirOverride,
-            tryGetMetadataSnapshot, reduceMemoryUsage) =  
+            tryGetMetadataSnapshot, reduceMemoryUsage) =
 
         let projectDir = Path.GetDirectoryName filename
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
 
         let rangeForErrors = mkFirstLineOfFile filename
-        let fxResolver = FxResolver(Some assumeDotNetFramework, projectDir, rangeForErrors=rangeForErrors, useSdkRefs=useSdkRefs, isInteractive=isInteractive, sdkDirOverride=sdkDirOverride)
-
-        let tcConfigB = 
-            TcConfigBuilder.CreateNew
-                (legacyReferenceResolver, fxResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, 
-                 isInteractive, isInvalidationSupported, CopyFSharpCoreFlag.No, 
-                 tryGetMetadataSnapshot) 
+        let tcConfigB =
+            let tcb =
+                TcConfigBuilder.CreateNew(legacyReferenceResolver,
+                                          defaultFSharpBinariesDir,
+                                          reduceMemoryUsage,
+                                          projectDir,
+                                          isInteractive,
+                                          isInvalidationSupported,
+                                          CopyFSharpCoreFlag.No,
+                                          tryGetMetadataSnapshot,
+                                          sdkDirOverride,
+                                          rangeForErrors)
+            tcb.useSdkRefs <- useSdkRefs
+            tcb
 
         applyCommandLineArgs tcConfigB
 
@@ -147,7 +154,7 @@ module ScriptPreprocessClosure =
             | None ->
                 let errorLogger = CapturingErrorLogger("ScriptDefaultReferences") 
                 use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
-                let references, assumeDotNetFramework = fxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework)
+                let references, assumeDotNetFramework = tcConfigB.FxResolver.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework)
                 // Add script references
                 for reference in references do
                     tcConfigB.AddReferencedAssemblyByPath(range0, reference)
