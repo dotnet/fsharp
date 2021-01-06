@@ -19,10 +19,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
 
     let nativeLibraryTryLoad =
         let nativeLibraryType: Type = Type.GetType("System.Runtime.InteropServices.NativeLibrary, System.Runtime.InteropServices", false)
-        if not (isNull nativeLibraryType) then
-            nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
-        else
-            Unchecked.defaultof<MethodInfo>
+        nativeLibraryType.GetMethod("TryLoad", [| typeof<string>; typeof<IntPtr>.MakeByRefType() |])
 
     let loadNativeLibrary path =
         let arguments = [| path:>obj; IntPtr.Zero:>obj |]
@@ -96,21 +93,14 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
     //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
     let eventInfo, handler, defaultAssemblyLoadContext =
-        if not (isNull assemblyLoadContextType) then
-            assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"), 
-            Func<Assembly, string, IntPtr> (resolveUnmanagedDll), 
-            assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
-        else
-            Unchecked.defaultof<EventInfo>, Unchecked.defaultof<Func<Assembly, string, IntPtr>>, Unchecked.defaultof<_>
+        assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"), 
+        Func<Assembly, string, IntPtr> (resolveUnmanagedDll), 
+        assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
 
-    do
-        if not (isNull eventInfo) then
-            eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
+    do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)
 
     interface IDisposable with
-        member _x.Dispose() =
-            if not (isNull eventInfo) then
-                eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
+        member _x.Dispose() = eventInfo.RemoveEventHandler(defaultAssemblyLoadContext, handler)
 
 
 type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =

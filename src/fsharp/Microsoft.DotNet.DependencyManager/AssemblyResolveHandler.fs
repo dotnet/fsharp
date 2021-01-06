@@ -22,9 +22,8 @@ type AssemblyResolveHandlerCoreclr (assemblyProbingPaths: AssemblyResolutionProb
 
     let eventInfo, handler, defaultAssemblyLoadContext =
         let eventInfo = assemblyLoadContextType.GetEvent("Resolving")
-        let ty = this.GetType()
         let mi =
-            let gmi = ty.GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
+            let gmi = this.GetType().GetMethod("ResolveAssemblyNetStandard", BindingFlags.Instance ||| BindingFlags.NonPublic)
             gmi.MakeGenericMethod(assemblyLoadContextType)
 
         eventInfo,
