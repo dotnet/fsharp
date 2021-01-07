@@ -113,25 +113,25 @@ let ``Intro test`` () =
 
 
 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
-#if !INTERACTIVE && !NETCOREAPP // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
-[<Test>]
-let ``Basic cancellation test`` () = 
-   try 
-    printfn "locally injecting a cancellation condition in incremental building"
-    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
-    
-    // Split the input & define file name
-    let inputLines = input.Split('\n')
-    let file = "/home/user/Test.fsx"
-    async { 
-        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) 
-        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, checkOptions) 
-        return parseResult, typedRes
-    } |> Async.RunSynchronously
-      |> ignore
-    Assert.Fail("expected a cancellation")
-   with :? OperationCanceledException -> ()
+#if !INTERACTIVE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+//[<Test>]
+//let ``Basic cancellation test`` () = 
+//   try 
+//    printfn "locally injecting a cancellation condition in incremental building"
+//    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
+//    
+//    // Split the input & define file name
+//    let inputLines = input.Split('\n')
+//    let file = "/home/user/Test.fsx"
+//    async { 
+//        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+//        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) 
+//        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, checkOptions) 
+//        return parseResult, typedRes
+//    } |> Async.RunSynchronously
+//      |> ignore
+//    Assert.Fail("expected a cancellation")
+//   with :? OperationCanceledException -> ()
 #endif
 
 [<Test>]
