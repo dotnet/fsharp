@@ -187,8 +187,10 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | Some input ->
             let result =
                 AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
-                    member _.VisitExpr(_, _, defaultTraverse, expr) =
+                    member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                         match expr with
+                        | SynExpr.App(_, _, _, SynExpr.CompExpr (_, _, expr, _), range) when rangeContainsPos range pos ->
+                            traverseSynExpr expr
                         | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
                             Some range
                         | _ -> defaultTraverse expr
@@ -197,40 +199,45 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
         | None -> false
 
     member scope.TryRangeOfFunctionOrMethodBeingApplied pos =
-        let rec getIdentRangeForFuncExprInApp expr pos =
+        let rec getIdentRangeForFuncExprInApp traverseSynExpr expr pos =
             match expr with
-            | SynExpr.Ident ident -> ident.idRange
+            | SynExpr.Ident ident -> Some ident.idRange
             
-            | SynExpr.LongIdent(_, _, _, range) -> range
+            | SynExpr.LongIdent(_, _, _, range) -> Some range
 
             | SynExpr.Paren(expr, _, _, range) when rangeContainsPos range pos ->
-                getIdentRangeForFuncExprInApp expr pos
+                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
+
+            // This matches computation expressions like 'async { ... }'
+            | SynExpr.App(_, _, _, SynExpr.CompExpr (_, _, expr, range), _) when rangeContainsPos range pos ->
+                getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
             | SynExpr.App(_, _, funcExpr, argExpr, _) ->
                 match argExpr with
                 | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
-                    getIdentRangeForFuncExprInApp argExpr pos
+                    getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
                 | _ ->
                     match funcExpr with
                     | SynExpr.App (_, true, _, _, _) when rangeContainsPos argExpr.Range pos ->
                         // x |> List.map 
                         // Don't dive into the funcExpr (the operator expr)
                         // because we dont want to offer sig help for that!
-                        getIdentRangeForFuncExprInApp argExpr pos
+                        getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
                     | _ ->
                         // Generally, we want to dive into the func expr to get the range
                         // of the identifier of the function we're after
-                        getIdentRangeForFuncExprInApp funcExpr pos
-            | expr -> expr.Range // Exhaustiveness, this shouldn't actually be necessary...right?
+                        getIdentRangeForFuncExprInApp traverseSynExpr funcExpr pos
+            | expr ->
+                traverseSynExpr expr
+                |> Option.map (fun expr -> expr)
 
         match scope.ParseTree with
         | Some input ->
             AstTraversal.Traverse(pos, input, { new AstTraversal.AstVisitorBase<_>() with
-                member _.VisitExpr(_, _, defaultTraverse, expr) =
+                member _.VisitExpr(_, traverseSynExpr, defaultTraverse, expr) =
                     match expr with
                     | SynExpr.App (_, _, _funcExpr, _, range) as app when rangeContainsPos range pos ->
-                        getIdentRangeForFuncExprInApp app pos
-                        |> Some
+                        getIdentRangeForFuncExprInApp traverseSynExpr app pos
                     | _ -> defaultTraverse expr
             })
         | None -> None
