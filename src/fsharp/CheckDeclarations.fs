@@ -483,9 +483,9 @@ module TcRecdUnionAndEnumDeclarations =
                     | Some fieldId, Parent tcref ->
                         let item = Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i)
                         CallNameResolutionSink cenv.tcSink (fieldId.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Binding, env.AccessRights)
-                    | _ -> ()
-
-                    TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
+                        TcNamedFieldDecl cenv env parent false tpenv fld
+                    | _ ->
+                        TcAnonFieldDecl cenv env parent tpenv (mkUnionCaseFieldName nFields i) fld)
                 ValidateFieldNames(flds, rfields)
                 
                 rfields, thisTy
