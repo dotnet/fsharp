@@ -658,7 +658,7 @@ x |> Seq.iter(fun r ->
         Assert.False (assemblyFound, "Invoke the assemblyProbingRoots callback -- Error the AssemblyResolve still fired ")
 
     [<Fact>]
-    member _.``Verify that Dispose cleans up the native paths added``() =
+    member __.``Verify that Dispose cleans up the native paths added``() =
         let nativeProbingRoots () = Seq.empty<string>
 
         let appendSemiColon (p:string) =
@@ -705,7 +705,46 @@ x |> Seq.iter(fun r ->
         Assert.True(currentPath <> initialPath)      // The path was modified by #r "nuget: ..."
         Assert.Equal(finalPath, initialPath)        // IDispose correctly cleaned up the path
 
-        ()
+    [<Fact>]
+    member _.``Verify that Paths are added and Disposed correctly cleans up the native paths added``() =
+        let nativeProbingRoots () = Seq.empty<string>
+
+        let ensureTrailingPathSeparator (p: string) =
+            if not(p.EndsWith(Path.PathSeparator.ToString(), StringComparison.OrdinalIgnoreCase)) then
+                p + Path.PathSeparator.ToString()
+            else
+                p
+
+        let useOSSpecificDirectorySeparator (p: string) =
+            p.Replace('/', Path.DirectorySeparatorChar)
+
+        let reportError =
+            let report errorType code message =
+                match errorType with
+                | ErrorReportType.Error -> printfn "PackageManagementError %d : %s" code message
+                | ErrorReportType.Warning -> printfn "PackageManagementWarning %d : %s" code message
+            ResolvingErrorReport (report)
+
+        let mutable initialPath:string = null
+        let mutable addedPath:string = null
+        let mutable currentPath:string = null
+        let mutable finalPath:string =  null
+        do
+            initialPath <- ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+            use dp = new DependencyProvider(NativeResolutionProbe(nativeProbingRoots))
+            let idm = dp.TryFindDependencyManagerByKey(Seq.empty, "", reportError, "nuget")
+            let result =
+                dp.Resolve(idm, ".fsx",
+                    [| "r", "Microsoft.ML.OnnxRuntime,1.5.2";
+                       "r", "Microsoft.ML.OnnxRuntime.Managed,1.5.2"
+                    |], reportError, "netstandard2.0")
+            Assert.Equal(true, result.Success)
+            currentPath <-  ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+        finalPath <- ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
+        addedPath <- currentPath.Replace(initialPath, "")
+        Assert.True(currentPath <> "")                          // The path was modified by #r "nuget: ..."
+        Assert.Equal(currentPath, addedPath + initialPath)      // The path additions were added to the front of the environment
+        Assert.Equal(finalPath, initialPath)                    // IDispose correctly cleaned up the path
 
     [<Fact>]
     member _.``Verify that #help produces help text for fsi + dependency manager``() =

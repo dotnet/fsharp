@@ -86,7 +86,8 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
                             RidHelpers.probingRids |> Seq.tryPick(fun rid -> probeForNativeLibrary root rid name)))
 
         match probe with
-        | Some path -> loadNativeLibrary(path)
+        | Some path ->
+            loadNativeLibrary path
         | None -> IntPtr.Zero
 
     // netstandard 2.1 has this property, unfortunately we don't build with that yet
@@ -110,25 +111,28 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
         else
             None
 
-    let appendSemiColon (p: string) =
-        if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
-            p + ";"
+    let ensureTrailingPathSeparator (p: string) =
+        if not(p.EndsWith(Path.PathSeparator.ToString(), StringComparison.OrdinalIgnoreCase)) then
+            p + Path.PathSeparator.ToString()
         else
             p
+
+    let useOSSpecificDirectorySeparator (p: string) =
+        p.Replace('/', Path.DirectorySeparatorChar)
 
     let addedPaths = ConcurrentBag<string>()
 
     let addProbeToProcessPath probePath =
-        let probe = appendSemiColon probePath
-        let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        let probe = useOSSpecificDirectorySeparator (ensureTrailingPathSeparator probePath)
+        let path = ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
         if not (path.Contains(probe)) then
-            Environment.SetEnvironmentVariable("PATH", path + probe)
+            Environment.SetEnvironmentVariable("PATH", probe + path)
             addedPaths.Add probe
 
     let removeProbeFromProcessPath probePath =
         if not(String.IsNullOrWhiteSpace(probePath)) then
-            let probe = appendSemiColon probePath
-            let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            let probe = useOSSpecificDirectorySeparator (ensureTrailingPathSeparator probePath)
+            let path = ensureTrailingPathSeparator (Environment.GetEnvironmentVariable("PATH"))
             if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
 
     member internal _.RefreshPathsInEnvironment(roots: string seq) =
