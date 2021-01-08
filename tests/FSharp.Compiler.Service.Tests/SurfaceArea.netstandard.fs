@@ -6873,7 +6873,9 @@ FSharp.Compiler.SyntaxTree+SynExpr+DiscardAfterMissingQualificationAfterDot: FSh
 FSharp.Compiler.SyntaxTree+SynExpr+DiscardAfterMissingQualificationAfterDot: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+DiscardAfterMissingQualificationAfterDot: SynExpr expr
 FSharp.Compiler.SyntaxTree+SynExpr+DiscardAfterMissingQualificationAfterDot: SynExpr get_expr()
+FSharp.Compiler.SyntaxTree+SynExpr+Do: FSharp.Compiler.Text.Range get_keywordRange()
 FSharp.Compiler.SyntaxTree+SynExpr+Do: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.SyntaxTree+SynExpr+Do: FSharp.Compiler.Text.Range keywordRange
 FSharp.Compiler.SyntaxTree+SynExpr+Do: FSharp.Compiler.Text.Range range
 FSharp.Compiler.SyntaxTree+SynExpr+Do: SynExpr expr
 FSharp.Compiler.SyntaxTree+SynExpr+Do: SynExpr get_expr()
@@ -7572,7 +7574,7 @@ FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewAssert(SynExpr, FSharp.Compiler.T
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewCompExpr(Boolean, Microsoft.FSharp.Core.FSharpRef`1[System.Boolean], SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewConst(SynConst, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewDiscardAfterMissingQualificationAfterDot(SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewDo(SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewDo(SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewDoBang(SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewDotGet(SynExpr, FSharp.Compiler.Text.Range, LongIdentWithDots, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTree+SynExpr: SynExpr NewDotIndexedGet(SynExpr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.SyntaxTree+SynIndexerArg], FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)

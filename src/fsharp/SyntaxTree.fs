@@ -695,6 +695,7 @@ type SynExpr =
     /// F# syntax: do expr
     | Do of
         expr: SynExpr *
+        keywordRange: range *
         range: range
 
     /// F# syntax: assert expr

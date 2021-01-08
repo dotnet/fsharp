@@ -5281,7 +5281,7 @@ let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _>) env =
 
 let CheckLetOrDoInNamespace binds m =
     match binds with 
-    | [ Binding (None, (StandaloneExpression | DoBinding), false, false, [], _, _, _, None, (SynExpr.Do (SynExpr.Const (SynConst.Unit, _), _) | SynExpr.Const (SynConst.Unit, _)), _, _) ] ->
+    | [ Binding (None, (StandaloneExpression | DoBinding), false, false, [], _, _, _, None, (SynExpr.Do (SynExpr.Const (SynConst.Unit, _), _, _) | SynExpr.Const (SynConst.Unit, _)), _, _) ] ->
         ()
     | [] -> 
         error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), m)) 

@@ -814,7 +814,7 @@ module InterfaceStubGenerator =
 
                 | SynExpr.Lazy (synExpr, _range) ->
                     walkExpr synExpr
-                | SynExpr.Do (synExpr, _range) ->
+                | SynExpr.Do (synExpr, _, _range) ->
                     walkExpr synExpr
                 | SynExpr.Assert (synExpr, _range) -> 
                     walkExpr synExpr

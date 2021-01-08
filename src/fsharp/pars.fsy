@@ -3387,7 +3387,10 @@ declExpr:
 
   | hardwhiteDoBinding %prec expr_let
      { let e = snd $1
-       SynExpr.Do (e, unionRanges (rhs parseState 1).StartRange e.Range) }
+       let doKeywordRange = 
+           match fst $1 with
+           | BindingSet.BindingSetPreAttrs(m, _, _, _, _) -> m
+       SynExpr.Do (e, doKeywordRange, unionRanges (rhs parseState 1).StartRange e.Range) }
 
   | anonMatchingExpr %prec expr_function
       { $1 }

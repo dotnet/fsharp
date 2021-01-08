@@ -5683,7 +5683,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             // this will type-check the first expression over again.
             TcExpr cenv overallTy env tpenv otherExpr
 
-    | SynExpr.Do (synInnerExpr, m) ->
+    | SynExpr.Do (synInnerExpr, _, m) ->
         UnifyTypes cenv env m overallTy cenv.g.unit_ty
         TcStmtThatCantBeCtorBody cenv env tpenv synInnerExpr
 

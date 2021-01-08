@@ -429,7 +429,7 @@ type FSharpParseFileResults(errors: FSharpDiagnostic[], input: ParsedInput optio
                   | SynExpr.Typed (e, _, _)
                   | SynExpr.FromParseError (e, _) 
                   | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _) 
-                  | SynExpr.Do (e, _)
+                  | SynExpr.Do (e, _, _)
                   | SynExpr.Assert (e, _)
                   | SynExpr.Fixed (e, _)
                   | SynExpr.DotGet (e, _, _, _) 
@@ -1094,7 +1094,7 @@ module UntypedParseImpl =
                 List.tryPick walkClause synMatchClauseList
             | SynExpr.Match (_, e, synMatchClauseList, _) -> 
                 walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
-            | SynExpr.Do (e, _) -> walkExprWithKind parentKind e
+            | SynExpr.Do (e, _, _) -> walkExprWithKind parentKind e
             | SynExpr.Assert (e, _) -> walkExprWithKind parentKind e
             | SynExpr.App (_, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.TypeApp (e, _, tys, _, _, _, _) -> 

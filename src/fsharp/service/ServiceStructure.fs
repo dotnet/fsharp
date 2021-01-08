@@ -229,7 +229,7 @@ module Structure =
             | SynExpr.InferredDowncast (e, _)
             | SynExpr.InferredUpcast (e, _)
             | SynExpr.DotGet (e, _, _, _)
-            | SynExpr.Do (e, _)
+            | SynExpr.Do (e, _, _)
             | SynExpr.Typed (e, _, _)
             | SynExpr.DotIndexedGet (e, _, _, _) -> 
                 parseExpr e

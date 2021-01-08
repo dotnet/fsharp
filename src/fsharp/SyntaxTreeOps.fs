@@ -643,7 +643,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.ArrayOrListOfSeqExpr (_, e, _)
           | SynExpr.Typed (e, _, _)
           | SynExpr.FromParseError (e, _)
-          | SynExpr.Do (e, _)
+          | SynExpr.Do (e, _, _)
           | SynExpr.Assert (e, _)
           | SynExpr.DotGet (e, _, _, _)
           | SynExpr.LongIdentSet (_, e, _)

@@ -10,6 +10,7 @@ module Tests.Service.Symbols
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.SyntaxTree
+open FSharp.Compiler.Text
 open FsUnit
 open NUnit.Framework
 
@@ -254,3 +255,33 @@ let tester2: int Group = []
                         |> should equal expectedTypeFormat
                 | _ -> failwithf "Couldn't get member: %s" entityName
             )
+
+module SyntaxExpressions =
+    [<Test>]
+    let ``SynExpr.Do contains the range of the do keyword`` () =
+        let ast = """
+let x =
+    // Import new etags of pushed items
+    do
+        pushed
+        |> Option.bind Dto.changesAsImport
+        |> Option.iter (fun changes -> update (Import changes) |> ignore)
+"""
+                        |> getParseResults
+
+        let expectedRangeStart = Pos.mkPos 4 4
+        let expectedRangEnd = Pos.mkPos 4 6
+
+        match ast with
+        | Some(ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+                    SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                        SynModuleDecl.Let(bindings = [
+                            SynBinding.Binding( expr = SynExpr.Do(_, keywordRange, _))
+                        ])
+                    ])
+                ]))) ->
+            Assert.AreEqual(expectedRangeStart, keywordRange.Start) |> ignore
+            Assert.AreEqual(expectedRangEnd, keywordRange.End) |> ignore
+        | _ ->
+            failwith "Could not find SynExpr.Do"
+  

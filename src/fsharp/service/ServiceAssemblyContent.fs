@@ -563,7 +563,7 @@ module ParsedInput =
             | SynExpr.YieldOrReturn (_, e, _)
             | SynExpr.ArrayOrListOfSeqExpr (_, e, _)
             | SynExpr.CompExpr (_, _, e, _)
-            | SynExpr.Do (e, _)
+            | SynExpr.Do (e, _, _)
             | SynExpr.Assert (e, _)
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e

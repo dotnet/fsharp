@@ -412,7 +412,7 @@ module public AstTraversal =
                      yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
                     |> pick expr
 
-                | SynExpr.Do (synExpr, _range) -> traverseSynExpr synExpr
+                | SynExpr.Do (synExpr, _, _range) -> traverseSynExpr synExpr
 
                 | SynExpr.Assert (synExpr, _range) -> traverseSynExpr synExpr
 
