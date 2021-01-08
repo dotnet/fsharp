@@ -24,7 +24,7 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
 
             let getChangedText (sourceText: SourceText) =
                 sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "("))
-                          .WithChanges(TextChange(TextSpan(context.Span.End, 0), ")"))
+                          .WithChanges(TextChange(TextSpan(context.Span.End + 1, 0), ")"))
 
             context.RegisterCodeFix(
                 CodeAction.Create(
