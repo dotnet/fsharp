@@ -31,7 +31,6 @@ type internal FSharpWrapExpressionInParenthesesFixProvider() =
                     title,
                     (fun (cancellationToken: CancellationToken) ->
                         async {
-                            let! cancellationToken = Async.CancellationToken
                             let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return context.Document.WithText(getChangedText sourceText)
                         } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
