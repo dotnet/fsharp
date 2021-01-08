@@ -91,7 +91,7 @@ let rec IsControlFlowExpression e =
 
 let mkSynAnonField (ty: SynType) = SynField([], false, None, ty, false, PreXmlDoc.Empty, None, ty.Range)
 
-let mkSynNamedField (ident, ty: SynType, m) = SynField([], false, Some ident, ty, false, PreXmlDoc.Empty, None, m)
+let mkSynNamedField (ident, ty: SynType, xmlDoc, m) = SynField([], false, Some ident, ty, false, xmlDoc, None, m)
 
 let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
