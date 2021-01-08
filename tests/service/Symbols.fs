@@ -1583,3 +1583,43 @@ else (* some long comment here *) if c then
             assertRange (4, 34) (4, 36) mIf2
 
         | _ -> Assert.Fail "Could not get valid AST"
+
+
+module UnionCaseComments =
+    [<Test>]
+    let ``Union Case fields can have comments`` () =
+        let ast = """
+type Foo =
+/// docs for Thing
+| Thing of
+  /// docs for first
+  first: string *
+  /// docs for second
+  second: bool
+"""
+                        |> getParseResults
+
+        match ast with
+        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Types ([
+                    SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
+                        SynUnionCase.SynUnionCase (caseType = SynUnionCaseKind.Fields [
+                            SynField.SynField(xmlDoc = firstXml)
+                            SynField.SynField(xmlDoc = anonXml)
+                        ])
+                    ])))
+                ], _)
+            ])
+          ])) ->
+            let firstDocs = firstXml.ToXmlDoc(false, None).GetXmlText()
+            let anonDocs = anonXml.ToXmlDoc(false, None).GetXmlText()
+
+            Assert.AreEqual("""<summary>
+ docs for first
+</summary>""", firstDocs)
+            Assert.AreEqual("""<summary>
+ docs for anon field
+</summary>""", anonDocs)
+        | _ ->
+            failwith "Could not find SynExpr.Do"
