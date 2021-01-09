@@ -2,6 +2,7 @@
 namespace Microsoft.FSharp.Collections
 
 open System
+open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.Numerics
@@ -39,22 +40,29 @@ module MapTree =
         static member private CompareCG<'U when  'U :> IComparable<'U>>(l:'U, r:'U):int = l.CompareTo(r)
 
         // A call to IComparable.CompareTo
-//        static member private CompareC<'U when  'U :> IComparable>(l:'U, r:'U):int = l.CompareTo(r)
+        static member private CompareC<'U when  'U :> IComparable>(l:'U, r:'U):int = l.CompareTo(r)
 
         static member val CompareToDlg : Func<'T,'T,int> =
                 let dlg =
-                    try
-                        // See #816, IComparable<'T> actually does not satisfy comparison constraint, but it should be preferred 
-                        if typeof<IComparable<'T>>.IsAssignableFrom(typeof<'T>) then 
-                            let m =
-                                typeof<CompareHelper<'T>>.GetMethod("CompareCG", BindingFlags.NonPublic ||| BindingFlags.Static)
-                                    .MakeGenericMethod([|typeof<'T>|])
-                            Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
-//                        elif typeof<IComparable>.IsAssignableFrom(typeof<'T>) then 
-//                            let m =
-//                                typeof<CompareHelper<'T>>.GetMethod("CompareC", BindingFlags.NonPublic ||| BindingFlags.Static)
-//                                    .MakeGenericMethod([|typeof<'T>|])
-//                            Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
+                    let ty = typeof<'T>
+                    try 
+                        if not (typeof<IStructuralComparable>.IsAssignableFrom(ty))
+                             && isNull (Attribute.GetCustomAttribute(ty, typeof<NoComparisonAttribute>))
+                             && isNull (Attribute.GetCustomAttribute(ty, typeof<StructuralComparisonAttribute>))
+                             && not (ty.IsArray) then
+                        
+                            // See #816, IComparable<'T> actually does not satisfy comparison constraint, but it should be preferred 
+                            if typeof<IComparable<'T>>.IsAssignableFrom(ty) then 
+                                let m =
+                                    typeof<CompareHelper<'T>>.GetMethod("CompareCG", BindingFlags.NonPublic ||| BindingFlags.Static)
+                                        .MakeGenericMethod([|ty|])
+                                Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
+                            elif typeof<IComparable>.IsAssignableFrom(ty) then 
+                                let m =
+                                    typeof<CompareHelper<'T>>.GetMethod("CompareC", BindingFlags.NonPublic ||| BindingFlags.Static)
+                                        .MakeGenericMethod([|typeof<'T>|])
+                                Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
+                            else null
                         else null
                     with _ -> null
                 dlg
@@ -128,6 +136,7 @@ module MapTree =
         else if Type.op_Equality(typeof<'T>, typeof<TimeSpan>) then unbox<TimeSpan>(box(l)).CompareTo(unbox<TimeSpan>(box(r)))
         
         else if Type.op_Equality(typeof<'T>, typeof<BigInteger>) then unbox<BigInteger>(box(l)).CompareTo(unbox<BigInteger>(box(r)))
+        else if Type.op_Equality(typeof<'T>, typeof<Guid>) then unbox<Guid>(box(l)).CompareTo(unbox<Guid>(box(r)))
         
         else if Type.op_Equality(typeof<'T>, typeof<string>) then
             // same as in GenericComparisonFast
