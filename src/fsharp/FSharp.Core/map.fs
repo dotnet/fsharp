@@ -96,24 +96,32 @@ module MapTree =
         else if Type.op_Equality(typeof<'T>, typeof<uint16>) then unbox<uint16>(box(l)).CompareTo(unbox<uint16>(box(r)))
         else if Type.op_Equality(typeof<'T>, typeof<uint32>) then unbox<uint32>(box(l)).CompareTo(unbox<uint32>(box(r)))
         else if Type.op_Equality(typeof<'T>, typeof<uint64>) then unbox<uint64>(box(l)).CompareTo(unbox<uint64>(box(r)))
-        else if Type.op_Equality(typeof<'T>, typeof<nativeint>) then if (# "clt" l r : bool #) then (-1) else (# "cgt" l r : int #)
-        else if Type.op_Equality(typeof<'T>, typeof<unativeint>) then if (# "clt" l r : bool #) then (-1) else (# "cgt" l r : int #)
+        else if Type.op_Equality(typeof<'T>, typeof<nativeint>) then
+            unbox<nativeint>(box(l)).ToInt64().CompareTo( (unbox<nativeint>(box(r))).ToInt64())
+        else if Type.op_Equality(typeof<'T>, typeof<unativeint>) then
+            unbox<unativeint>(box(l)).ToUInt64().CompareTo( (unbox<unativeint>(box(r))).ToUInt64())
         else if Type.op_Equality(typeof<'T>, typeof<bool>) then unbox<bool>(box(l)).CompareTo(unbox<bool>(box(r)))
         else if Type.op_Equality(typeof<'T>, typeof<char>) then unbox<char>(box(l)).CompareTo(unbox<char>(box(r)))
         
         // F# rules for floats
         else if Type.op_Equality(typeof<'T>, typeof<float>) then
-            if   (# "clt" l r : bool #) then (-1)
-            elif (# "cgt" l r : bool #) then (1)
-            elif (# "ceq" l r : bool #) then (0)
-            elif (# "ceq" r r : bool #) then (-1)
-            else (# "ceq" l l : int #)
+            let l = unbox<float>(box(l))
+            let r = unbox<float>(box(r))
+            if  l < r then (-1)
+            elif l > r then (1)
+            elif l = r then (0)
+            elif r = r then (-1)
+            elif l = l then (1)
+            else 0
         else if Type.op_Equality(typeof<'T>, typeof<float32>) then
-            if   (# "clt" l r : bool #) then (-1)
-            elif (# "cgt" l r : bool #) then (1)
-            elif (# "ceq" l r : bool #) then (0)
-            elif (# "ceq" r r : bool #) then (-1)
-            else (# "ceq" l l : int #)
+            let l = unbox<float32>(box(l))
+            let r = unbox<float32>(box(r))
+            if  l < r then (-1)
+            elif l > r then (1)
+            elif l = r then (0)
+            elif r = r then (-1)
+            elif l = l then (1)
+            else 0
         else if Type.op_Equality(typeof<'T>, typeof<decimal>) then unbox<decimal>(box(l)).CompareTo(unbox<decimal>(box(r)))
         else if Type.op_Equality(typeof<'T>, typeof<DateTime>) then unbox<DateTime>(box(l)).CompareTo(unbox<DateTime>(box(r)))
         else if Type.op_Equality(typeof<'T>, typeof<DateTimeOffset>) then unbox<DateTimeOffset>(box(l)).CompareTo(unbox<DateTimeOffset>(box(r)))
