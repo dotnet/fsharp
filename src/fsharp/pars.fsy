@@ -2517,10 +2517,11 @@ unionCaseReprElement:
   | ident COLON appType
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let wholeRange = rhs2 parseState 1 3
-       mkSynNamedField($1, $3, xmlDoc, wholeRange) }
+       mkSynNamedField ($1, $3, xmlDoc, wholeRange) }
 
   | appType
-     { mkSynAnonField $1 }
+     { let xmlDoc = grabXmlDoc(parseState, [], 1)
+       mkSynAnonField ($1, xmlDoc) }
 
 unionCaseRepr:
   | braceFieldDeclList

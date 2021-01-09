@@ -1594,8 +1594,8 @@ type Foo =
 | Thing of
   /// docs for first
   first: string *
-  /// docs for second
-  second: bool
+  /// docs for anon field
+  bool
 """
                         |> getParseResults
 
