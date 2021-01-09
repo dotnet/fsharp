@@ -39,7 +39,7 @@ module MapTree =
         static member private CompareCG<'U when  'U :> IComparable<'U>>(l:'U, r:'U):int = l.CompareTo(r)
 
         // A call to IComparable.CompareTo
-        static member private CompareC<'U when  'U :> IComparable>(l:'U, r:'U):int = l.CompareTo(r)
+//        static member private CompareC<'U when  'U :> IComparable>(l:'U, r:'U):int = l.CompareTo(r)
 
         static member val CompareToDlg : Func<'T,'T,int> =
                 let dlg =
@@ -50,11 +50,11 @@ module MapTree =
                                 typeof<CompareHelper<'T>>.GetMethod("CompareCG", BindingFlags.NonPublic ||| BindingFlags.Static)
                                     .MakeGenericMethod([|typeof<'T>|])
                             Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
-                        elif typeof<IComparable>.IsAssignableFrom(typeof<'T>) then 
-                            let m =
-                                typeof<CompareHelper<'T>>.GetMethod("CompareC", BindingFlags.NonPublic ||| BindingFlags.Static)
-                                    .MakeGenericMethod([|typeof<'T>|])
-                            Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
+//                        elif typeof<IComparable>.IsAssignableFrom(typeof<'T>) then 
+//                            let m =
+//                                typeof<CompareHelper<'T>>.GetMethod("CompareC", BindingFlags.NonPublic ||| BindingFlags.Static)
+//                                    .MakeGenericMethod([|typeof<'T>|])
+//                            Delegate.CreateDelegate(typeof<Func<'T,'T,int>>, m) :?> Func<'T,'T,int>
                         else null
                     with _ -> null
                 dlg
