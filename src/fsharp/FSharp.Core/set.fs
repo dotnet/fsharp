@@ -145,7 +145,6 @@ module internal SetTree =
             let c = comparer.Compare(k, t.Key)
             if t.Height = 1 then
                 // nb. no check for rebalance needed for small trees, also be sure to reuse node already allocated 
-                let c = comparer.Compare(k, t.Key) 
                 if c < 0   then SetTreeNode (k, empty, t, 2) :> SetTree<'T>
                 elif c = 0 then t
                 else            SetTreeNode (k, t, empty, 2) :> SetTree<'T>
